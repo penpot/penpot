@@ -570,6 +570,10 @@ find /tmp/penpot-inspect -name "*.json" | head -20
 cat /tmp/penpot-inspect/files/*/pages/*/*.json | jq .
 ```
 
+### Browser-Based Inspector
+
+For an interactive way to explore a `.penpot` file, try the [**Penpot file inspector**](/technical-guide/developer/data-model/penpot-file-inspector/). It runs entirely in your browser, displays a collapsible file tree, syntax-highlighted JSON, image previews, and clickable cross-references between shapes, components, colors, and media.
+
 ### Quick Inspection Script
 
 ```bash
@@ -603,6 +607,7 @@ rm -rf "$TMPDIR"
 
 ## Cross-References
 
+- [Penpot file inspector](/technical-guide/developer/data-model/penpot-file-inspector/) - Browser-based interactive inspector
 - [Data Model](/technical-guide/developer/data-model/) - Conceptual data model
 - [Data Guide](/technical-guide/developer/data-guide/) - Working with data structures
 - [Export/Import Files](/user-guide/export-import/export-import-files/) - User guide for exporting and importing

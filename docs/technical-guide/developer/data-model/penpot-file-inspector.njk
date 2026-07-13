@@ -1,0 +1,1258 @@
+---
+title: 3.02.02. Penpot file inspector
+desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file to explore its ZIP structure, browse JSON contents, preview images, and navigate cross-references.
+---
+
+<style>
+  .inspector-wrap {
+    margin: 1rem 0 2rem;
+    display: block;
+  }
+  .inspector-drop {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 2px dashed var(--color-gray-medium);
+    border-radius: 8px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    background: var(--color-gray-light);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .inspector-drop:hover,
+  .inspector-drop.dragover {
+    border-color: var(--primarydark);
+    background: var(--advice);
+  }
+  .inspector-drop input[type=file] { display: none; }
+  .inspector-drop-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.4rem; color: var(--color-gray-dark); }
+  .inspector-drop-hint { font-size: 0.9rem; color: var(--graymedium); margin: 0; }
+  .inspector-status {
+    margin-top: 0.8rem;
+    font-size: 0.9rem;
+    color: var(--graymedium);
+    min-height: 1.2em;
+  }
+  .inspector-status.error { color: #b00020; }
+
+  .inspector-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    min-height: 500px;
+  }
+  @media (max-width: 900px) {
+    .inspector-layout { grid-template-columns: 1fr; }
+    .inspector-sidebar { max-height: 320px; }
+  }
+
+  .inspector-sidebar {
+    grid-column: 1;
+    order: 1;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 6px;
+    background: var(--white);
+    overflow: auto;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+  .inspector-search {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
+  .inspector-tree { list-style: none; padding: 0; margin: 0; }
+  .inspector-tree ul {
+    list-style: none;
+    padding-left: 1rem;
+    margin: 0;
+  }
+  .inspector-tree li { margin: 0; }
+  .inspector-tree-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.3rem;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.4;
+  }
+  .inspector-tree-row:hover { background: var(--color-gray-light); }
+  .inspector-tree-row.active { background: var(--advice); color: var(--primarydark); font-weight: 500; }
+  .inspector-tree-toggle {
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    color: var(--graymedium);
+    flex-shrink: 0;
+  }
+  .inspector-tree-toggle.leaf { visibility: hidden; }
+  .inspector-tree-icon { flex-shrink: 0; font-size: 0.85em; }
+  .inspector-tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .inspector-tree-size { color: var(--graymedium); font-size: 0.75rem; flex-shrink: 0; }
+  .inspector-tree-row.hidden { display: none; }
+  .inspector-search-empty { color: var(--graymedium); font-style: italic; padding: 0.4rem; }
+
+  .inspector-content {
+    grid-column: 2;
+    order: 2;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 6px;
+    background: var(--white);
+    overflow: auto;
+    padding: 1.2rem;
+  }
+
+  .inspector-empty { color: var(--graymedium); text-align: center; padding: 3rem 1rem; }
+
+  .inspector-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--color-gray-medium);
+  }
+  .inspector-toolbar input[type=search] {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+  .inspector-toolbar label { font-size: 0.85rem; color: var(--graymedium); }
+  .inspector-toolbar input[type=number] {
+    width: 4rem;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .inspector-toolbar button {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--color-gray-medium);
+    background: var(--white);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  .inspector-toolbar button:hover { background: var(--color-gray-light); }
+
+  .inspector-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  .inspector-card {
+    background: var(--color-gray-light);
+    border-radius: 6px;
+    padding: 0.8rem;
+  }
+  .inspector-card-label { font-size: 0.75rem; text-transform: uppercase; color: var(--graymedium); letter-spacing: 0.04em; }
+  .inspector-card-value { font-size: 1.4rem; font-weight: 600; color: var(--color-gray-dark); margin-top: 0.2rem; }
+  .inspector-card-detail { font-size: 0.8rem; color: var(--graymedium); margin-top: 0.2rem; }
+
+  .inspector-shape-card {
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .inspector-shape-card h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+  .inspector-shape-grid { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 0.8rem; font-size: 0.85rem; }
+  .inspector-shape-grid dt { color: var(--graymedium); }
+  .inspector-shape-grid dd { margin: 0; }
+  .inspector-swatch {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 1px solid var(--color-gray-medium);
+    vertical-align: middle;
+    margin-right: 0.3em;
+  }
+  .inspector-shape-thumb {
+    max-width: 120px;
+    max-height: 80px;
+    border: 1px solid var(--color-gray-medium);
+    background: var(--white);
+    display: block;
+    margin-top: 0.4rem;
+  }
+
+  .inspector-media {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  .inspector-media-preview {
+    background: var(--color-gray-light);
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    max-width: 100%;
+  }
+  .inspector-media-preview img { max-width: 400px; max-height: 400px; display: block; }
+  .inspector-media-info { font-size: 0.85rem; }
+  .inspector-media-info dt { color: var(--graymedium); }
+
+  .inspector-jtree { font-family: 'Menlo', 'Consolas', monospace; font-size: 0.85rem; line-height: 1.5; }
+  .inspector-jtree .jrow { display: flex; align-items: flex-start; }
+  .inspector-jtree .jtoggle {
+    display: inline-block;
+    width: 1em;
+    cursor: pointer;
+    color: var(--graymedium);
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .inspector-jtree .jtoggle.leaf { visibility: hidden; }
+  .inspector-jtree .jkey { color: #2a6f97; }
+  .inspector-jtree .jstr { color: #2a8030; }
+  .inspector-jtree .jnum { color: #c75b12; }
+  .inspector-jtree .jbool { color: #7b3aa3; }
+  .inspector-jtree .jnull { color: var(--graymedium); font-style: italic; }
+  .inspector-jtree .jmeta { color: var(--graymedium); margin-left: 0.4em; }
+  .inspector-jtree .jrow.match > .jkey,
+  .inspector-jtree .jrow.match > .jstr,
+  .inspector-jtree .jrow.match > .jnum { background: #fff3a3; }
+  .inspector-jtree .jchildren.collapsed { display: none; }
+  .inspector-jtree .juuid { color: #1d6fb8; text-decoration: underline dotted; cursor: pointer; }
+  .inspector-jtree .juuid:hover { background: var(--advice); }
+
+  .inspector-backlinks {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--color-gray-medium);
+    font-size: 0.85rem;
+  }
+  .inspector-backlinks h4 { margin: 0 0 0.4rem; font-size: 0.85rem; text-transform: uppercase; color: var(--graymedium); letter-spacing: 0.04em; }
+  .inspector-backlinks ul { list-style: none; padding: 0; margin: 0; }
+  .inspector-backlinks li { margin: 0 0 0.2rem; }
+  .inspector-backlinks a { cursor: pointer; }
+
+  .inspector-error {
+    padding: 1rem;
+    background: #fde8e8;
+    border: 1px solid #b00020;
+    border-radius: 4px;
+    color: #b00020;
+    font-size: 0.9rem;
+  }
+</style>
+
+<h1 id="penpot-file-inspector">Penpot file inspector</h1>
+
+<p class="main-paragraph">Upload a <code class="language-text">.penpot</code> file to explore its contents. The inspector runs entirely in your browser — your file is never uploaded to a server.</p>
+
+<div class="inspector-wrap">
+  <label class="inspector-drop" id="drop-zone">
+    <input type="file" id="file-input" accept=".penpot,.zip" />
+    <p class="inspector-drop-title">Drop a <code>.penpot</code> file here, or click to choose</p>
+    <p class="inspector-drop-hint">Supported: <code>.penpot</code> (v3 ZIP format)</p>
+  </label>
+  <div class="inspector-status" id="status"></div>
+
+  <div class="inspector-layout" id="app" hidden>
+    <aside class="inspector-sidebar">
+      <input type="search" class="inspector-search" id="tree-search" placeholder="Filter files..." />
+      <div class="inspector-tree" id="tree"></div>
+    </aside>
+    <main class="inspector-content" id="content">
+      <div class="inspector-empty">Select a file from the sidebar to inspect it.</div>
+    </main>
+  </div>
+</div>
+
+<h2 id="how-it-works">How it works</h2>
+
+<p>This tool is a static page with no backend. When you upload a file, the browser:</p>
+
+<ol>
+  <li>Reads the file as a ZIP archive using <a href="https://stuk.github.io/jszip/">JSZip</a> (loaded lazily from a CDN on first use).</li>
+  <li>Parses the manifest, file metadata, and structure to build an overview.</li>
+  <li>Lets you navigate the file tree, view JSON contents with syntax highlighting, preview embedded images, and click through cross-references (UUIDs).</li>
+</ol>
+
+<p>For full details on the file format, see the <a href="/technical-guide/developer/data-model/penpot-file-format/">complete technical specification</a>.</p>
+
+<h2 id="privacy">Privacy</h2>
+
+<p>Your file is processed entirely in your browser. Nothing is uploaded to any server. The only network request the page makes is fetching the JSZip library from <code class="language-text">cdn.jsdelivr.net</code> on the first file upload.</p>
+
+<script type="module">
+(function () {
+  'use strict';
+
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+  const FONT_EXTS = ['woff', 'woff2', 'ttf', 'otf'];
+  const JSON_EXTS = ['json'];
+
+  const MIME_BY_EXT = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+    woff: 'font/woff',
+    woff2: 'font/woff2',
+    ttf: 'font/ttf',
+    otf: 'font/otf',
+  };
+
+  function mimeFor(name) {
+    return MIME_BY_EXT[getExt(name)] || 'application/octet-stream';
+  }
+
+  let JSZip = null;
+  let currentArchive = null;
+  let currentFiles = []; // [{ name, dir, json, blob, url, type }]
+  let fileIndex = new Map(); // name -> file entry
+  let selectedName = null;
+  let backlinks = new Map(); // uuid -> [filename, ...]
+
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const statusEl = document.getElementById('status');
+  const appEl = document.getElementById('app');
+  const treeEl = document.getElementById('tree');
+  const contentEl = document.getElementById('content');
+  const treeSearch = document.getElementById('tree-search');
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg || '';
+    statusEl.classList.toggle('error', !!isError);
+  }
+
+  async function loadJSZip() {
+    if (JSZip) return JSZip;
+    setStatus('Loading JSZip...');
+    const mod = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
+    JSZip = mod.default;
+    return JSZip;
+  }
+
+  function getExt(name) {
+    const m = name.match(/\.([^.]+)$/);
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  function isImage(name) { return IMAGE_EXTS.includes(getExt(name)); }
+  function isFont(name) { return FONT_EXTS.includes(getExt(name)); }
+  function isJson(name) { return getExt(name) === 'json'; }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function iconFor(name, isDir) {
+    if (isDir) return '\u{1F4C1}';
+    const ext = getExt(name);
+    if (ext === 'json') return '\u{1F4CB}';
+    if (isImage(name)) return '\u{1F5BC}';
+    if (isFont(name)) return '\u{1F520}';
+    return '\u{1F4CE}';
+  }
+
+  function resetArchive() {
+    currentFiles.forEach(f => { if (f.url) URL.revokeObjectURL(f.url); });
+    currentFiles = [];
+    fileIndex.clear();
+    backlinks.clear();
+    selectedName = null;
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    setStatus('');
+    resetArchive();
+    try {
+      const Zip = await loadJSZip();
+      setStatus('Extracting ' + file.name + '...');
+      const zip = await Zip.loadAsync(file);
+      currentArchive = { name: file.name, zip };
+
+      const names = [];
+      zip.forEach((relPath, entry) => {
+        if (!entry.dir) names.push(relPath);
+      });
+      names.sort();
+
+      let count = 0;
+      for (const name of names) {
+        const entry = zip.file(name);
+        if (!entry) continue;
+        const blob = await entry.async('blob');
+        const ext = getExt(name);
+        const mime = MIME_BY_EXT[ext] || '';
+        const entry_data = {
+          name,
+          blob,
+          size: blob.size,
+          type: mime || blob.type,
+          ext,
+          url: null,
+          json: null,
+        };
+        if (isJson(name)) {
+          try {
+            const text = await blob.text();
+            entry_data.json = JSON.parse(text);
+            if (entry_data.json) {
+              entry_data.url = null;
+            }
+          } catch (e) {
+            entry_data.json = null;
+            entry_data.parseError = e.message;
+          }
+        } else if (isImage(name) || isFont(name)) {
+          const typedBlob = new Blob([blob], { type: mime || 'application/octet-stream' });
+          entry_data.type = typedBlob.type;
+          entry_data.url = URL.createObjectURL(typedBlob);
+        }
+        currentFiles.push(entry_data);
+        fileIndex.set(name, entry_data);
+        count++;
+      }
+
+      for (const f of currentFiles) {
+        if (!f.json) continue;
+        if (typeof f.json.contentType !== 'string') continue;
+        if (f.json.id && typeof f.json.id === 'string') {
+          const storageId = f.json.id;
+          for (const other of currentFiles) {
+            if (other === f) continue;
+            if (other.url && other.name.startsWith('objects/' + storageId + '.') && other.type !== f.json.contentType) {
+              URL.revokeObjectURL(other.url);
+              const tb = new Blob([other.blob], { type: f.json.contentType });
+              other.url = URL.createObjectURL(tb);
+              other.type = f.json.contentType;
+            }
+          }
+        }
+      }
+
+      indexBacklinks();
+      setStatus('Loaded ' + count + ' files from ' + file.name);
+      appEl.hidden = false;
+      buildTree();
+      showOverview();
+    } catch (e) {
+      setStatus('Failed to load: ' + e.message, true);
+      console.error(e);
+    }
+  }
+
+  function indexBacklinks() {
+    backlinks.clear();
+    for (const f of currentFiles) {
+      if (!f.json) continue;
+      const myId = typeof f.json.id === 'string' && UUID_RE.test(f.json.id) ? f.json.id : null;
+      const refs = new Set();
+      walkJson(f.json, (val) => {
+        if (typeof val === 'string' && UUID_RE.test(val) && val !== myId) {
+          refs.add(val);
+        }
+      });
+      for (const ref of refs) {
+        if (!backlinks.has(ref)) backlinks.set(ref, []);
+        backlinks.get(ref).push(f.name);
+      }
+    }
+  }
+
+  function walkJson(node, visit) {
+    if (node === null) return;
+    if (Array.isArray(node)) {
+      for (const v of node) { visit(v); walkJson(v, visit); }
+    } else if (typeof node === 'object') {
+      for (const [k, v] of Object.entries(node)) { visit(k); visit(v); walkJson(v, visit); }
+    }
+  }
+
+  function buildTree() {
+    treeEl.innerHTML = '';
+    const root = { name: '', children: new Map(), isDir: true };
+    for (const f of currentFiles) {
+      const parts = f.name.split('/');
+      let cur = root;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (!cur.children.has(part)) {
+          cur.children.set(part, { name: part, children: new Map(), isDir: true, files: [] });
+        }
+        cur = cur.children.get(part);
+      }
+      const leaf = parts[parts.length - 1];
+      cur.children.set(leaf, {
+        name: leaf,
+        fullPath: f.name,
+        isDir: false,
+        file: f,
+      });
+    }
+    treeEl.appendChild(renderTreeNode(root, true));
+  }
+
+  function renderTreeNode(node, isRoot) {
+    const ul = document.createElement('ul');
+    if (!isRoot) ul.style.paddingLeft = '0.4rem';
+    const entries = Array.from(node.children ? node.children.values() : []);
+    entries.sort((a, b) => {
+      if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    for (const child of entries) {
+      const li = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 'inspector-tree-row';
+      const toggle = document.createElement('span');
+      toggle.className = 'inspector-tree-toggle';
+      if (child.isDir) {
+        toggle.textContent = '\u25BE';
+        let collapsed = false;
+        const childUl = renderTreeNode(child, false);
+        childUl.style.display = '';
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          collapsed = !collapsed;
+          childUl.style.display = collapsed ? 'none' : '';
+          toggle.textContent = collapsed ? '\u25B8' : '\u25BE';
+        });
+        row.addEventListener('click', () => toggle.click());
+        row.appendChild(toggle);
+        row.appendChild(iconSpan(iconFor(child.name, true)));
+        row.appendChild(labelSpan(child.name));
+        li.appendChild(row);
+        li.appendChild(childUl);
+      } else {
+        toggle.classList.add('leaf');
+        row.appendChild(toggle);
+        row.appendChild(iconSpan(iconFor(child.file.name, false)));
+        row.appendChild(labelSpan(child.name));
+        if (child.file.size != null) {
+          row.appendChild(sizeSpan(formatSize(child.file.size)));
+        }
+        row.addEventListener('click', () => selectFile(child.file.name, row));
+        row._fullPath = child.file.name;
+        li.appendChild(row);
+        child._row = row;
+        child._name = child.name;
+      }
+      ul.appendChild(li);
+    }
+    return ul;
+  }
+
+  function iconSpan(text) {
+    const s = document.createElement('span');
+    s.className = 'inspector-tree-icon';
+    s.textContent = text + ' ';
+    return s;
+  }
+  function labelSpan(text) {
+    const s = document.createElement('span');
+    s.className = 'inspector-tree-label';
+    s.textContent = text;
+    return s;
+  }
+  function sizeSpan(text) {
+    const s = document.createElement('span');
+    s.className = 'inspector-tree-size';
+    s.textContent = text;
+    return s;
+  }
+
+  function selectFile(name, rowEl) {
+    selectedName = name;
+    document.querySelectorAll('.inspector-tree-row.active').forEach(r => r.classList.remove('active'));
+    if (rowEl) rowEl.classList.add('active');
+    const f = fileIndex.get(name);
+    if (!f) return;
+    contentEl.innerHTML = '';
+    if (f.json !== null && f.json !== undefined) {
+      renderJsonContent(f);
+    } else if (f.url && isImage(f.name)) {
+      renderMediaContent(f);
+    } else if (f.url && isFont(f.name)) {
+      renderMediaContent(f);
+    } else if (f.parseError) {
+      const err = document.createElement('div');
+      err.className = 'inspector-error';
+      err.textContent = 'Failed to parse JSON: ' + f.parseError;
+      contentEl.appendChild(err);
+    } else if (f.blob) {
+      renderBinaryContent(f);
+    }
+  }
+
+  function isShapeFile(name) {
+    return /^files\/[^/]+\/pages\/[^/]+\/[^/]+\.json$/.test(name);
+  }
+  function isMediaJsonFile(name) {
+    return /^files\/[^/]+\/media\/[^/]+\.json$/.test(name);
+  }
+
+  function renderJsonContent(f) {
+    if (isShapeFile(f.name)) {
+      const card = buildShapeCard(f.json, f.name);
+      if (card) contentEl.appendChild(card);
+    }
+    const toolbar = buildJsonToolbar(f);
+    contentEl.appendChild(toolbar);
+    const treeWrap = document.createElement('div');
+    treeWrap.className = 'inspector-jtree';
+    const root = renderJsonNode(f.json, null, true, 0, f.name);
+    treeWrap.appendChild(root);
+    contentEl.appendChild(treeWrap);
+    renderBacklinks(f);
+  }
+
+  function buildJsonToolbar(f) {
+    const bar = document.createElement('div');
+    bar.className = 'inspector-toolbar';
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.placeholder = 'Search keys/values...';
+    const depthLabel = document.createElement('label');
+    depthLabel.textContent = 'Expand to depth:';
+    const depthInput = document.createElement('input');
+    depthInput.type = 'number';
+    depthInput.min = '0';
+    depthInput.max = '20';
+    depthInput.value = '2';
+    const expandBtn = document.createElement('button');
+    expandBtn.textContent = 'Apply';
+    const collapseBtn = document.createElement('button');
+    collapseBtn.textContent = 'Collapse all';
+
+    search.addEventListener('input', () => {
+      applyJsonSearch(search.value);
+    });
+    expandBtn.addEventListener('click', () => {
+      const d = parseInt(depthInput.value, 10);
+      applyJsonDepth(isNaN(d) ? 99 : d);
+    });
+    collapseBtn.addEventListener('click', () => {
+      applyJsonDepth(0);
+      depthInput.value = '0';
+    });
+
+    bar.appendChild(search);
+    bar.appendChild(depthLabel);
+    bar.appendChild(depthInput);
+    bar.appendChild(expandBtn);
+    bar.appendChild(collapseBtn);
+    return bar;
+  }
+
+  function applyJsonSearch(q) {
+    const ql = (q || '').toLowerCase().trim();
+    const rows = contentEl.querySelectorAll('.inspector-jtree .jrow');
+    rows.forEach(r => r.classList.remove('match'));
+    if (!ql) return;
+    rows.forEach(r => {
+      const text = r.textContent.toLowerCase();
+      if (text.includes(ql)) {
+        r.classList.add('match');
+        let p = r.parentElement;
+        while (p && !p.classList.contains('jchildren')) {
+          if (p.classList.contains('jchildren') && p.classList.contains('collapsed')) {
+            const t = p.previousElementSibling?.querySelector?.('.jtoggle');
+            if (t) t.click();
+          }
+          p = p.parentElement;
+        }
+      }
+    });
+  }
+
+  function applyJsonDepth(depth) {
+    const children = contentEl.querySelectorAll('.inspector-jtree .jchildren');
+    children.forEach(c => {
+      const lvl = parseInt(c.dataset.depth, 10);
+      if (lvl < depth) {
+        c.classList.remove('collapsed');
+        const t = c.previousElementSibling;
+        if (t) {
+          const tg = t.querySelector('.jtoggle');
+          if (tg) tg.textContent = '\u25BE';
+        }
+      } else {
+        c.classList.add('collapsed');
+        const t = c.previousElementSibling;
+        if (t) {
+          const tg = t.querySelector('.jtoggle');
+          if (tg) tg.textContent = '\u25B8';
+        }
+      }
+    });
+  }
+
+  function renderJsonNode(value, key, isLast, depth, fileName) {
+    const row = document.createElement('div');
+    row.className = 'jrow';
+    const toggle = document.createElement('span');
+    toggle.className = 'jtoggle';
+    row.appendChild(toggle);
+
+    if (key !== null && key !== undefined) {
+      const k = document.createElement('span');
+      k.className = 'jkey';
+      k.textContent = JSON.stringify(key);
+      row.appendChild(k);
+      row.appendChild(textSpan(': '));
+    }
+
+    const type = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+    if (type === 'object' && value !== null) {
+      const keys = Object.keys(value);
+      const meta = document.createElement('span');
+      meta.className = 'jmeta';
+      meta.textContent = '{ ' + keys.length + ' keys }';
+      row.appendChild(meta);
+      toggle.textContent = '\u25BE';
+      const children = document.createElement('div');
+      children.className = 'jchildren';
+      children.dataset.depth = String(depth);
+      if (depth >= 2) {
+        children.classList.add('collapsed');
+        toggle.textContent = '\u25B8';
+      }
+      toggle.addEventListener('click', () => {
+        const collapsed = children.classList.toggle('collapsed');
+        toggle.textContent = collapsed ? '\u25B8' : '\u25BE';
+      });
+      keys.forEach((k, i) => {
+        children.appendChild(renderJsonNode(value[k], k, i === keys.length - 1, depth + 1, fileName));
+      });
+      const wrap = document.createElement('div');
+      wrap.appendChild(row);
+      wrap.appendChild(children);
+      return wrap;
+    } else if (type === 'array') {
+      const meta = document.createElement('span');
+      meta.className = 'jmeta';
+      meta.textContent = '[ ' + value.length + ' items ]';
+      row.appendChild(meta);
+      toggle.textContent = '\u25BE';
+      const children = document.createElement('div');
+      children.className = 'jchildren';
+      children.dataset.depth = String(depth);
+      if (depth >= 2) {
+        children.classList.add('collapsed');
+        toggle.textContent = '\u25B8';
+      }
+      toggle.addEventListener('click', () => {
+        const collapsed = children.classList.toggle('collapsed');
+        toggle.textContent = collapsed ? '\u25B8' : '\u25BE';
+      });
+      value.forEach((v, i) => {
+        children.appendChild(renderJsonNode(v, i, i === value.length - 1, depth + 1, fileName));
+      });
+      const wrap = document.createElement('div');
+      wrap.appendChild(row);
+      wrap.appendChild(children);
+      return wrap;
+    } else {
+      toggle.classList.add('leaf');
+      const val = document.createElement('span');
+      if (type === 'string') {
+        if (UUID_RE.test(value)) {
+          val.className = 'juuid';
+          val.textContent = JSON.stringify(value);
+          val.title = 'Jump to referenced file';
+          val.addEventListener('click', (e) => {
+            e.stopPropagation();
+            jumpToUuid(value);
+          });
+        } else {
+          val.className = 'jstr';
+          val.textContent = JSON.stringify(value);
+        }
+      } else if (type === 'number') {
+        val.className = 'jnum';
+        val.textContent = String(value);
+      } else if (type === 'boolean') {
+        val.className = 'jbool';
+        val.textContent = String(value);
+      } else if (type === 'null') {
+        val.className = 'jnull';
+        val.textContent = 'null';
+      } else {
+        val.textContent = String(value);
+      }
+      row.appendChild(val);
+      if (!isLast) row.appendChild(textSpan(','));
+      return row;
+    }
+  }
+
+  function textSpan(t) {
+    const s = document.createElement('span');
+    s.textContent = t;
+    return s;
+  }
+
+  function jumpToUuid(uuid) {
+    const candidates = [];
+    for (const f of currentFiles) {
+      if (f.name.includes(uuid) || (f.json && JSON.stringify(f.json).includes(uuid))) {
+        candidates.push(f);
+      }
+    }
+    const exact = candidates.find(f => f.name.includes(uuid) && /[/.]json$|[/.][a-z0-9]+$/.test(f.name));
+    let target = null;
+    if (exact) {
+      target = exact;
+    } else {
+      const mediaRef = candidates.find(f => isMediaJsonFile(f.name) && f.json && (f.json.id === uuid || f.json.mediaId === uuid));
+      if (mediaRef) target = mediaRef;
+      else if (candidates.length > 0) target = candidates[0];
+    }
+    if (target) {
+      const row = findTreeRow(target.name);
+      if (row) {
+        expandAncestors(row);
+        selectFile(target.name, row);
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    } else {
+      setStatus('UUID ' + uuid + ' is referenced but no matching file was found in the archive.', true);
+      setTimeout(() => setStatus('Loaded ' + currentFiles.length + ' files'), 3000);
+    }
+  }
+
+  function findTreeRow(name) {
+    const rows = document.querySelectorAll('.inspector-tree-row');
+    for (const r of rows) {
+      if (r._fullPath === name) return r;
+    }
+    return null;
+  }
+
+  function expandAncestors(row) {
+    let parent = row.parentElement;
+    while (parent) {
+      if (parent.classList && parent.classList.contains('jchildren')) {
+        parent.classList.remove('collapsed');
+        const t = parent.previousElementSibling?.querySelector?.('.jtoggle');
+        if (t) t.textContent = '\u25BE';
+      }
+      parent = parent.parentElement;
+    }
+  }
+
+  function renderBacklinks(f) {
+    if (!f.json) return;
+    const myId = typeof f.json.id === 'string' && UUID_RE.test(f.json.id) ? f.json.id : null;
+    if (!myId) return;
+    const refs = backlinks.get(myId) || [];
+    if (refs.length === 0) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'inspector-backlinks';
+    const h = document.createElement('h4');
+    h.textContent = 'Referenced by (' + refs.length + ')';
+    wrap.appendChild(h);
+    const ul = document.createElement('ul');
+    for (const refFile of refs) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.textContent = refFile;
+      a.addEventListener('click', () => {
+        const row = findTreeRow(refFile);
+        if (row) {
+          expandAncestors(row);
+          selectFile(refFile, row);
+          row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      });
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+    wrap.appendChild(ul);
+    contentEl.appendChild(wrap);
+  }
+
+  function buildShapeCard(shape, fileName) {
+    if (!shape || typeof shape !== 'object') return null;
+    const card = document.createElement('div');
+    card.className = 'inspector-shape-card';
+    const h = document.createElement('h3');
+    h.textContent = (shape.name || '(unnamed)') + ' \u2014 ' + (shape.type || '?');
+    card.appendChild(h);
+    const dl = document.createElement('dl');
+    dl.className = 'inspector-shape-grid';
+    function addRow(label, val) {
+      const dt = document.createElement('dt'); dt.textContent = label;
+      const dd = document.createElement('dd'); dd.textContent = val;
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    if (shape.id) addRow('id', shape.id);
+    if (shape.x != null && shape.y != null) addRow('position', shape.x + ', ' + shape.y);
+    if (shape.width != null && shape.height != null) addRow('size', shape.width + ' \u00D7 ' + shape.height);
+    if (shape.rotation != null && shape.rotation !== 0) addRow('rotation', shape.rotation + '\u00B0');
+    if (shape.opacity != null && shape.opacity !== 1) addRow('opacity', shape.opacity);
+    if (shape.blendMode && shape.blendMode !== 'normal') addRow('blend', shape.blendMode);
+    if (shape.fills && shape.fills.length > 0) {
+      const dt = document.createElement('dt'); dt.textContent = 'fills';
+      const dd = document.createElement('dd');
+      shape.fills.forEach((f, i) => {
+        if (f.fillColor) {
+          const sw = document.createElement('span');
+          sw.className = 'inspector-swatch';
+          sw.style.background = renderFillColor(f.fillColor);
+          dd.appendChild(sw);
+          dd.appendChild(textSpan(f.fillColor + ' '));
+        } else if (f.fillImage) {
+          dd.appendChild(textSpan('[image fill] '));
+        } else if (f.fillGradient) {
+          dd.appendChild(textSpan('[gradient] '));
+        }
+      });
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    if (shape.strokes && shape.strokes.length > 0) {
+      const dt = document.createElement('dt'); dt.textContent = 'strokes';
+      const dd = document.createElement('dd');
+      shape.strokes.forEach((s) => {
+        if (s.strokeColor) {
+          const sw = document.createElement('span');
+          sw.className = 'inspector-swatch';
+          sw.style.background = renderFillColor(s.strokeColor);
+          dd.appendChild(sw);
+          dd.appendChild(textSpan(s.strokeColor + ' '));
+        }
+      });
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    if (shape.content && typeof shape.content === 'object' && shape.content.text) {
+      const dt = document.createElement('dt'); dt.textContent = 'text';
+      const dd = document.createElement('dd');
+      const preview = String(shape.content.text).slice(0, 100);
+      dd.textContent = preview + (String(shape.content.text).length > 100 ? '\u2026' : '');
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    card.appendChild(dl);
+
+    if (shape.type === 'image' || (shape.metadata && shape.metadata.id)) {
+      const mediaId = shape.metadata && shape.metadata.id;
+      if (mediaId) {
+        const mediaFile = findMediaFileForShape(mediaId);
+        if (mediaFile && mediaFile.url && isImage(mediaFile.name)) {
+          const img = document.createElement('img');
+          img.className = 'inspector-shape-thumb';
+          img.src = mediaFile.url;
+          img.alt = 'media preview';
+          card.appendChild(img);
+        }
+      }
+    }
+    return card;
+  }
+
+  function findMediaFileForShape(mediaId) {
+    for (const f of currentFiles) {
+      if (isMediaJsonFile(f.name) && f.json && f.json.id === mediaId) {
+        if (f.json.mediaId) {
+          const obj = findStorageObject(f.json.mediaId);
+          if (obj) return obj;
+        }
+      }
+    }
+    return null;
+  }
+
+  function findStorageObject(storageId) {
+    for (const f of currentFiles) {
+      if (f.name.startsWith('objects/' + storageId + '.') || f.name === 'objects/' + storageId) {
+        return f;
+      }
+    }
+    return null;
+  }
+
+  function renderFillColor(c) {
+    if (!c) return 'transparent';
+    if (typeof c === 'string') {
+      if (c.startsWith('#')) return c;
+      return '#' + c;
+    }
+    if (typeof c === 'object') {
+      if (c.color) return renderFillColor(c.color);
+      if (c.r != null) {
+        const a = c.alpha != null ? c.alpha : 1;
+        return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + a + ')';
+      }
+    }
+    return 'transparent';
+  }
+
+  function renderMediaContent(f) {
+    const wrap = document.createElement('div');
+    wrap.className = 'inspector-media';
+    const preview = document.createElement('div');
+    preview.className = 'inspector-media-preview';
+    if (isImage(f.name)) {
+      const img = document.createElement('img');
+      img.src = f.url;
+      img.alt = f.name;
+      preview.appendChild(img);
+    } else if (isFont(f.name)) {
+      const label = document.createElement('div');
+      label.textContent = 'Font file: ' + f.name;
+      label.style.padding = '2rem';
+      label.style.color = 'var(--graymedium)';
+      preview.appendChild(label);
+    }
+    wrap.appendChild(preview);
+    const info = document.createElement('dl');
+    info.className = 'inspector-shape-grid inspector-media-info';
+    function addInfo(label, val) {
+      const dt = document.createElement('dt'); dt.textContent = label;
+      const dd = document.createElement('dd'); dd.textContent = val;
+      info.appendChild(dt); info.appendChild(dd);
+    }
+    addInfo('name', f.name);
+    addInfo('size', formatSize(f.size));
+    addInfo('mime', f.type || '(unknown)');
+    wrap.appendChild(info);
+    contentEl.appendChild(wrap);
+
+    if (isMediaJsonFile(f.name)) {
+      renderJsonContentFor(f);
+    } else {
+      const mediaJson = findMediaJsonForObject(f.name);
+      if (mediaJson) {
+        const note = document.createElement('div');
+        note.style.marginTop = '1rem';
+        note.style.fontSize = '0.85rem';
+        note.style.color = 'var(--graymedium)';
+        note.textContent = 'Referenced by: ';
+        const a = document.createElement('a');
+        a.textContent = mediaJson.name;
+        a.style.cursor = 'pointer';
+        a.addEventListener('click', () => {
+          const row = findTreeRow(mediaJson.name);
+          if (row) { expandAncestors(row); selectFile(mediaJson.name, row); }
+        });
+        note.appendChild(a);
+        contentEl.appendChild(note);
+      }
+    }
+  }
+
+  function findMediaJsonForObject(objectPath) {
+    const m = objectPath.match(/^objects\/([^.]+)/);
+    if (!m) return null;
+    const storageId = m[1];
+    for (const f of currentFiles) {
+      if (isMediaJsonFile(f.name) && f.json && f.json.mediaId === storageId) return f;
+    }
+    return null;
+  }
+
+  function renderJsonContentFor(f) {
+    const h = document.createElement('h3');
+    h.style.marginTop = '1.5rem';
+    h.style.fontSize = '0.95rem';
+    h.textContent = 'Metadata';
+    contentEl.appendChild(h);
+    const treeWrap = document.createElement('div');
+    treeWrap.className = 'inspector-jtree';
+    treeWrap.appendChild(renderJsonNode(f.json, null, true, 0, f.name));
+    contentEl.appendChild(treeWrap);
+    renderBacklinks(f);
+  }
+
+  function renderBinaryContent(f) {
+    const info = document.createElement('div');
+    info.innerHTML = '<p><strong>' + escapeHtml(f.name) + '</strong></p>' +
+      '<p>Size: ' + formatSize(f.size) + '<br>Type: ' + (f.type || '(unknown)') + '</p>';
+    contentEl.appendChild(info);
+    if (f.url) {
+      const a = document.createElement('a');
+      a.href = f.url;
+      a.download = f.name.split('/').pop();
+      a.textContent = 'Download';
+      a.className = 'inspector-card';
+      a.style.display = 'inline-block';
+      a.style.textDecoration = 'none';
+      contentEl.appendChild(a);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  function showOverview() {
+    contentEl.innerHTML = '';
+    const summary = buildOverview();
+    contentEl.appendChild(summary);
+    const h = document.createElement('h2');
+    h.textContent = 'Quick links';
+    h.style.marginTop = '1.5rem';
+    h.style.fontSize = '1.1rem';
+    contentEl.appendChild(h);
+    const ul = document.createElement('ul');
+    const manifest = currentFiles.find(f => f.name === 'manifest.json');
+    if (manifest) ul.appendChild(quickLink(manifest.name, 'manifest.json'));
+    for (const f of currentFiles) {
+      if (/^files\/[^/]+\.json$/.test(f.name)) {
+        ul.appendChild(quickLink(f.name, f.name.split('/').pop()));
+      }
+    }
+    for (const f of currentFiles) {
+      if (isMediaJsonFile(f.name)) {
+        ul.appendChild(quickLink(f.name, f.name));
+        break;
+      }
+    }
+    contentEl.appendChild(ul);
+  }
+
+  function buildOverview() {
+    const wrap = document.createElement('div');
+    const summary = collectSummary();
+    const grid = document.createElement('div');
+    grid.className = 'inspector-summary';
+    function addCard(label, value, detail) {
+      const c = document.createElement('div');
+      c.className = 'inspector-card';
+      c.innerHTML = '<div class="inspector-card-label">' + escapeHtml(label) + '</div>' +
+        '<div class="inspector-card-value">' + escapeHtml(String(value)) + '</div>' +
+        (detail ? '<div class="inspector-card-detail">' + detail + '</div>' : '');
+      grid.appendChild(c);
+    }
+    addCard('Version', summary.version || '?');
+    addCard('Generator', summary.generator || '?');
+    addCard('Files', summary.fileCount, summary.fileNames.length <= 3 ? summary.fileNames.join(', ') : summary.fileNames.slice(0, 3).join(', ') + '\u2026');
+    addCard('Pages', summary.pageCount);
+    addCard('Shapes', summary.shapeCount);
+    addCard('Library assets', summary.colors + ' colors, ' + summary.components + ' components, ' + summary.typographies + ' typographies');
+    addCard('Storage objects', summary.storageCount, 'total ' + formatSize(summary.storageSize));
+    addCard('Media types', Object.entries(summary.mediaByMime).map(([k, v]) => k + ': ' + v).join(', ') || '\u2014');
+    wrap.appendChild(grid);
+
+    if (summary.relations && Object.keys(summary.relations).length > 0) {
+      const h = document.createElement('h3');
+      h.style.fontSize = '1rem';
+      h.style.marginTop = '1rem';
+      h.textContent = 'Library dependencies';
+      wrap.appendChild(h);
+      const ul = document.createElement('ul');
+      for (const [k, v] of Object.entries(summary.relations)) {
+        const li = document.createElement('li');
+        li.textContent = k + ' \u2192 ' + (Array.isArray(v) ? v.join(', ') : String(v));
+        ul.appendChild(li);
+      }
+      wrap.appendChild(ul);
+    }
+    return wrap;
+  }
+
+  function collectSummary() {
+    const out = { fileCount: 0, fileNames: [], pageCount: 0, shapeCount: 0,
+      colors: 0, components: 0, typographies: 0, storageCount: 0, storageSize: 0,
+      mediaByMime: {}, relations: null, version: null, generator: null };
+    const manifest = currentFiles.find(f => f.name === 'manifest.json');
+    if (manifest && manifest.json) {
+      out.version = manifest.json.version;
+      out.generator = manifest.json.generator;
+      out.fileCount = (manifest.json.files || []).length;
+      out.fileNames = (manifest.json.files || []).map(f => f.name || '?');
+      if (manifest.json.relations) out.relations = manifest.json.relations;
+    }
+    for (const f of currentFiles) {
+      const m = f.name.match(/^files\/[^/]+\/pages\/[^/]+\.json$/);
+      if (m) out.pageCount++;
+      const sm = f.name.match(/^files\/[^/]+\/pages\/[^/]+\/[^/]+\.json$/);
+      if (sm) out.shapeCount++;
+      if (/^files\/[^/]+\/colors\/[^/]+\.json$/.test(f.name)) out.colors++;
+      if (/^files\/[^/]+\/components\/[^/]+\.json$/.test(f.name)) out.components++;
+      if (/^files\/[^/]+\/typographies\/[^/]+\.json$/.test(f.name)) out.typographies++;
+      if (/^objects\//.test(f.name)) {
+        out.storageCount++;
+        out.storageSize += f.size;
+        const mime = f.type || 'application/octet-stream';
+        out.mediaByMime[mime] = (out.mediaByMime[mime] || 0) + 1;
+      }
+    }
+    return out;
+  }
+
+  function quickLink(fileName, label) {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.textContent = label;
+    a.style.cursor = 'pointer';
+    a.addEventListener('click', () => {
+      const row = findTreeRow(fileName);
+      if (row) { expandAncestors(row); selectFile(fileName, row); }
+    });
+    li.appendChild(a);
+    return li;
+  }
+
+  treeSearch.addEventListener('input', () => {
+    const q = treeSearch.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.inspector-tree .inspector-tree-row');
+    if (!q) {
+      rows.forEach(r => r.classList.remove('hidden'));
+      document.querySelectorAll('.inspector-search-empty').forEach(e => e.remove());
+      return;
+    }
+    rows.forEach(r => {
+      const label = r.querySelector('.inspector-tree-label')?.textContent.toLowerCase() || '';
+      r.classList.toggle('hidden', !label.includes(q));
+    });
+    const empty = document.querySelector('.inspector-search-empty');
+    const anyVisible = Array.from(rows).some(r => !r.classList.contains('hidden'));
+    if (!anyVisible && !empty) {
+      const e = document.createElement('div');
+      e.className = 'inspector-search-empty';
+      e.textContent = 'No files match.';
+      treeEl.appendChild(e);
+    } else if (anyVisible && empty) {
+      empty.remove();
+    }
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) handleFile(f);
+    e.target.value = '';
+  });
+
+  window.__inspector = { handleFile };
+})();
+</script>
