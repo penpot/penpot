@@ -21,6 +21,15 @@ const copyCssPlugin = () => ({
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
+  css: {
+    preprocessorOptions: {
+      scss: {
+        loadPaths: [
+          path.resolve(import.meta.dirname, '../../src/app/main/ui'),
+        ],
+      },
+    },
+  },
   plugins: [
     react({
       babel: {

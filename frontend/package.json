@@ -57,7 +57,6 @@
     "@penpot/text-editor": "link:text-editor",
     "@penpot/tokenscript": "link:packages/tokenscript",
     "@penpot/ua-parser": "penpot/ua-parser#1.0.0",
-    "@penpot/ui": "link:packages/ui",
     "@playwright/test": "1.61.1",
     "@storybook/addon-docs": "10.4.6",
     "@storybook/addon-themes": "10.4.6",
@@ -128,5 +127,9 @@
     "watcher": "^2.3.1",
     "workerpool": "^10.0.3",
     "xregexp": "^5.1.2"
+  },
+  "dependencies": {
+    "@penpot/ui": "link:packages/ui",
+    "react-aria-components": "^1.19.0"
   }
 }
