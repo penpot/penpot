@@ -255,7 +255,7 @@
     counter-el))
 
 (mf/defc grid-item*
-  [{:keys [file origin can-edit selected-files can-restore]}]
+  [{:keys [file origin can-edit selected-files can-restore layout]}]
   (let [file-id  (get file :id)
         state    (mf/deref refs/dashboard-local)
 
@@ -401,73 +401,121 @@
            (when (kbd/enter? event)
              (dom/stop-propagation event)
              (dom/prevent-default event)
-             (on-menu-click event))))]
+             (on-menu-click event))))
 
-    [:li {:class (stl/css-case :grid-item true
-                               :project-th true
-                               :library is-library-view?)}
-     [:div
-      {:class (stl/css-case :selected selected?
-                            :library is-library-view?)
-       :ref node-ref
-       :role "button"
-       :title (:name file)
-       :aria-label (:name file)
-       :draggable (dm/str can-edit)
-       :on-click on-select
-       :on-key-down on-key-down
-       :on-double-click on-navigate
-       :on-drag-start on-drag-start
-       :on-context-menu on-context-menu}
+        list?
+        (= layout :list)
 
-      [:div {:class (stl/css :overlay)}]
+        editing?
+        (and (= file-id (:file-id state)) (:edition state))
 
-      (if ^boolean is-library-view?
-        [:> grid-item-library* {:file file :can-restore can-restore}]
-        [:> grid-item-thumbnail* {:file file :can-edit can-edit :can-restore can-restore}])
+        ;; The options menu is identical in both layouts, so we build it once
+        ;; and place it where each layout needs it. NOTE: hiccup bound in a
+        ;; let is not compiled by rumext, so it must be wrapped in mf/html.
+        menu-element
+        (mf/html
+         [:div {:class (stl/css-case :project-th-actions true :force-display menu-open?)}
+         [:div
+          {:class (stl/css :project-th-icon :menu)
+           :tab-index "0"
+           :role "button"
+           :aria-label (tr "dashboard.options")
+           :ref menu-ref
+           :id (dm/str file-id "-action-menu")
+           :on-click on-menu-click
+           :on-key-down on-menu-key-down}
 
-      (when (and (:is-shared file) (not is-library-view?))
-        [:div {:class (stl/css :item-badge)} deprecated-icon/library])
+          menu-icon
+          (when (and selected? menu-open?)
+            ;; When the menu is open we disable events in the dashboard. We need to force pointer events
+            ;; so the menu can be handled
+            [:> portal-on-document* {}
+             [:> file-menu* {:files (vals selected-files)
+                             :left (+ 24 (:x menu-pos))
+                             :top (:y menu-pos)
+                             :can-edit can-edit
+                             :navigate true
+                             :on-edit on-edit
+                             :on-close on-menu-close
+                             :origin origin
+                             :parent-id (dm/str file-id "-action-menu")
+                             :can-restore can-restore}]])]])]
 
-      [:div {:class (stl/css :info-wrapper)}
-       [:div {:class (stl/css :item-info)}
-        (if (and (= file-id (:file-id state)) (:edition state))
+    (if ^boolean list?
+      [:li {:class (stl/css-case :grid-item true
+                                 :list-item true
+                                 :library is-library-view?)}
+       [:div
+        {:class (stl/css-case :list-item-row true
+                              :selected selected?)
+         :ref node-ref
+         :role "button"
+         :title (:name file)
+         :aria-label (:name file)
+         :draggable (dm/str can-edit)
+         :on-click on-select
+         :on-key-down on-key-down
+         :on-double-click on-navigate
+         :on-drag-start on-drag-start
+         :on-context-menu on-context-menu}
+
+        (if ^boolean editing?
           [:& inline-edition {:content (:name file)
                               :on-end edit
                               :max-length 250}]
-          [:h3 (:name file)])
-        [:> grid-item-metadata* {:file file}]]
+          [:h3 {:class (stl/css :list-item-name)} (:name file)])
 
-       [:div {:class (stl/css-case :project-th-actions true :force-display menu-open?)}
-        [:div
-         {:class (stl/css :project-th-icon :menu)
-          :tab-index "0"
-          :role "button"
-          :aria-label (tr "dashboard.options")
-          :ref menu-ref
-          :id (dm/str file-id "-action-menu")
-          :on-click on-menu-click
-          :on-key-down on-menu-key-down}
+        (when (and (:is-shared file) (not is-library-view?))
+          [:span {:class (stl/css :list-item-badge)
+                  :aria-label (tr "workspace.assets.shared-library")
+                  :title (tr "workspace.assets.shared-library")}
+           deprecated-icon/library])
 
-         menu-icon
-         (when (and selected? menu-open?)
-           ;; When the menu is open we disable events in the dashboard. We need to force pointer events
-           ;; so the menu can be handled
-           [:> portal-on-document* {}
-            [:> file-menu* {:files (vals selected-files)
-                            :left (+ 24 (:x menu-pos))
-                            :top (:y menu-pos)
-                            :can-edit can-edit
-                            :navigate true
-                            :on-edit on-edit
-                            :on-close on-menu-close
-                            :origin origin
-                            :parent-id (dm/str file-id "-action-menu")
-                            :can-restore can-restore}]])]]]]]))
+        [:> grid-item-metadata* {:file file}]
+
+        menu-element]]
+
+      [:li {:class (stl/css-case :grid-item true
+                                 :project-th true
+                                 :library is-library-view?)}
+       [:div
+        {:class (stl/css-case :selected selected?
+                              :library is-library-view?)
+         :ref node-ref
+         :role "button"
+         :title (:name file)
+         :aria-label (:name file)
+         :draggable (dm/str can-edit)
+         :on-click on-select
+         :on-key-down on-key-down
+         :on-double-click on-navigate
+         :on-drag-start on-drag-start
+         :on-context-menu on-context-menu}
+
+        [:div {:class (stl/css :overlay)}]
+
+        (if ^boolean is-library-view?
+          [:> grid-item-library* {:file file :can-restore can-restore}]
+          [:> grid-item-thumbnail* {:file file :can-edit can-edit :can-restore can-restore}])
+
+        (when (and (:is-shared file) (not is-library-view?))
+          [:div {:class (stl/css :item-badge)} deprecated-icon/library])
+
+        [:div {:class (stl/css :info-wrapper)}
+         [:div {:class (stl/css :item-info)}
+          (if ^boolean editing?
+            [:& inline-edition {:content (:name file)
+                                :on-end edit
+                                :max-length 250}]
+            [:h3 (:name file)])
+          [:> grid-item-metadata* {:file file}]]
+
+         menu-element]]])))
 
 (mf/defc grid*
-  [{:keys [files project origin limit create-fn can-edit selected-files can-restore]}]
+  [{:keys [files project origin limit create-fn can-edit selected-files can-restore layout]}]
   (let [dragging?  (mf/use-state false)
+        list?      (= layout :list)
         project-id (get project :id)
         team-id    (get project :team-id)
 
@@ -534,6 +582,18 @@
        (nil? files)
        [:> loading-placeholder*]
 
+       (and (seq files) list?)
+       [:ul {:class (stl/css :grid-row :list-view)}
+        (for [item files]
+          [:> grid-item*
+           {:file item
+            :key (dm/str (:id item))
+            :origin origin
+            :selected-files selected-files
+            :can-edit can-edit
+            :can-restore can-restore
+            :layout :list}])]
+
        (seq files)
        (for [[index slice] (d/enumerate (partition-all limit files))]
 
@@ -560,26 +620,39 @@
          :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files dragging? limit can-edit can-restore] :as props}]
+  [{:keys [files selected-files dragging? limit can-edit can-restore layout] :as props}]
   (let [elements limit
-        limit (if dragging? (dec limit) limit)]
-    [:ul {:class (stl/css :grid-row :no-wrap)
-          :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
+        limit (if dragging? (dec limit) limit)
+        list? (= layout :list)]
+    (if ^boolean list?
+      [:ul {:class (stl/css :grid-row :list-view)}
+       (for [item (take limit files)]
+         [:> grid-item*
+          {:id (:id item)
+           :file item
+           :selected-files selected-files
+           :can-edit can-edit
+           :key (dm/str (:id item))
+           :can-restore can-restore
+           :layout :list}])]
 
-     (when dragging?
-       [:li {:class (stl/css :grid-item :dragged)}])
+      [:ul {:class (stl/css :grid-row :no-wrap)
+            :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
 
-     (for [item (take limit files)]
-       [:> grid-item*
-        {:id (:id item)
-         :file item
-         :selected-files selected-files
-         :can-edit can-edit
-         :key (dm/str (:id item))
-         :can-restore can-restore}])]))
+       (when dragging?
+         [:li {:class (stl/css :grid-item :dragged)}])
+
+       (for [item (take limit files)]
+         [:> grid-item*
+          {:id (:id item)
+           :file item
+           :selected-files selected-files
+           :can-edit can-edit
+           :key (dm/str (:id item))
+           :can-restore can-restore}])])))
 
 (mf/defc line-grid
-  [{:keys [project team files limit create-fn can-edit can-restore] :as props}]
+  [{:keys [project team files limit create-fn can-edit can-restore layout] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -678,7 +751,8 @@
                           :dragging? @dragging?
                           :can-edit can-edit
                           :limit limit
-                          :can-restore can-restore}]
+                          :can-restore can-restore
+                          :layout layout}]
 
        :else
        [:> empty-grid-placeholder*

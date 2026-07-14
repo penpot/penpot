@@ -382,3 +382,104 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
 .deleted-item {
   opacity: 0.5;
 }
+
+// LIST VIEW
+.grid-row.list-view {
+  display: flex;
+  flex-direction: column;
+  grid-auto-flow: initial;
+  grid-auto-columns: initial;
+  gap: deprecated.$s-8;
+  padding: deprecated.$s-8 0;
+  width: 100%;
+}
+
+.grid-item.list-item {
+  align-items: stretch;
+  flex-direction: row;
+  margin: 0;
+  text-align: initial;
+  width: 100%;
+
+  .list-item-row {
+    align-items: center;
+    border-radius: deprecated.$br-8;
+    border: 1px solid var(--color-background-secondary);
+    cursor: pointer;
+    display: flex;
+    gap: deprecated.$s-12;
+    padding: deprecated.$s-8 deprecated.$s-12;
+    width: 100%;
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+      background-color: var(--color-background-tertiary);
+    }
+
+    &.selected {
+      background-color: var(--color-background-tertiary);
+      outline: deprecated.$s-2 solid var(--color-accent-tertiary);
+    }
+  }
+
+  .list-item-name {
+    color: var(--color-foreground-primary);
+    flex: 1 1 auto;
+    font-size: deprecated.$fs-14;
+    font-weight: deprecated.$fw400;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .list-item-badge {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    height: deprecated.$s-20;
+    justify-content: center;
+    width: deprecated.$s-20;
+
+    svg {
+      stroke: var(--color-foreground-secondary);
+      fill: none;
+      height: deprecated.$s-16;
+      width: deprecated.$s-16;
+    }
+  }
+
+  .date {
+    color: var(--color-foreground-secondary);
+    flex: 0 0 auto;
+    font-size: deprecated.$fs-12;
+    white-space: nowrap;
+
+    &::first-letter {
+      text-transform: capitalize;
+    }
+  }
+
+  // Reuse the grid options menu, but neutralize the card-oriented offsets so
+  // it sits inline at the end of the row.
+  .project-th-actions {
+    flex: 0 0 auto;
+    height: auto;
+    opacity: 1;
+    width: auto;
+  }
+
+  .project-th-icon {
+    margin: 0;
+  }
+
+  .menu {
+    align-items: center;
+    flex-direction: row;
+    height: deprecated.$s-32;
+    margin: 0;
+    width: auto;
+  }
+}

@@ -19,6 +19,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.deleted :as deleted]
+   [app.main.ui.dashboard.files-layout :as files-layout :refer [files-layout-toggle*]]
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
@@ -55,11 +56,13 @@
     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
-     (when can-edit
-       [:button {:class (stl/css :btn-secondary :btn-small)
-                 :on-click on-click
-                 :data-testid "new-project-button"}
-        (tr "dashboard.new-project")])]))
+     [:div {:class (stl/css :dashboard-header-actions)}
+      [:> files-layout-toggle*]
+      (when can-edit
+        [:button {:class (stl/css :btn-secondary :btn-small)
+                  :on-click on-click
+                  :data-testid "new-project-button"}
+         (tr "dashboard.new-project")])]]))
 
 (mf/defc team-hero*
   {::mf/wrap [mf/memo]}
@@ -99,7 +102,7 @@
 
 (mf/defc project-item*
   {::mf/private true}
-  [{:keys [project is-first team files can-edit]}]
+  [{:keys [project is-first team files can-edit layout]}]
   (let [project-id (get project :id)
         team-id    (get team :id)
 
@@ -291,7 +294,8 @@
           :files files
           :create-fn create-file
           :can-edit can-edit
-          :limit limit}])]
+          :limit limit
+          :layout layout}])]
 
      (when (and (> limit 0)
                 (> file-count limit))
@@ -328,6 +332,8 @@
         default-team?   (:is-default team)
 
         show-deleted?   (:can-edit permisions)
+
+        layout          (mf/deref files-layout/ref)
 
         projects
         (mf/with-memo [projects]
@@ -389,5 +395,6 @@
                                  :team team
                                  :files files
                                  :can-edit can-edit
+                                 :layout layout
                                  :is-first (= project (first projects))
                                  :key id}]))]]]])))

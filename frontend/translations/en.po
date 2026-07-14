@@ -490,6 +490,14 @@ msgstr "Once a project member creates a file, it will be displayed here."
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "No files yet."
 
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Grid view"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "List view"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:117
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"

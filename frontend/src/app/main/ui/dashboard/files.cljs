@@ -14,6 +14,7 @@
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.dashboard.files-layout :as files-layout :refer [files-layout-toggle*]]
    [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
@@ -95,6 +96,8 @@
            (:name project)]]))
 
      [:div {:class (stl/css :dashboard-header-actions)}
+      [:> files-layout-toggle*]
+
       (when ^boolean can-edit
         [:a {:class (stl/css :btn-secondary :btn-small :new-file)
              :tab-index "0"
@@ -154,6 +157,7 @@
                                 (= 0 file-count))
 
         selected-files     (mf/deref refs/selected-files)
+        layout             (mf/deref files-layout/ref)
 
         on-file-created
         (mf/use-fn
@@ -206,5 +210,6 @@
                    :can-edit can-edit?
                    :origin :files
                    :create-fn create-file
-                   :limit limit}])]]))
+                   :limit limit
+                   :layout layout}])]]))
 
