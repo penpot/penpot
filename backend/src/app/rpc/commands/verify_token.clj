@@ -215,8 +215,8 @@
 
         (when (nil? invitation)
           (ex/raise :type :validation
-                    :code :invalid-token
-                    :hint "no invitation associated with the token"))
+                    :code (if organization-id :canceled-invitation :invalid-token)
+                    :hint "the invitation has been canceled"))
 
 
         ;; if we have logged-in user and it matches the invitation we proceed
@@ -251,12 +251,15 @@
               (assoc :org-team-id accepted-team-id)))))
 
       (do
-        ;; If the user is not logged-in and the token is invalid we throw the error
-        ;; Taiga issue #14182
+        ;; If the user is not logged-in and the invitation has been canceled
+        ;; we return a specific error code so the frontend can redirect to
+        ;; login with an appropriate message instead of showing the error page.
+        ;; This only applies to org invitations; team invitations keep the
+        ;; existing :invalid-token behavior.
         (when (nil? invitation)
           (ex/raise :type :validation
-                    :code :invalid-token
-                    :hint "no invitation associated with the token"))
+                    :code (if organization-id :canceled-invitation :invalid-token)
+                    :hint "the invitation has been canceled"))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
         ;; redirect user to login, if no member-id is present and  in the invitation
