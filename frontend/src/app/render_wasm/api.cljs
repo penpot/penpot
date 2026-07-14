@@ -2498,19 +2498,22 @@
   ;; After the content is returned we discard that temporary context
   (h/call wasm/internal-module "_start_temp_objects")
 
-  (let [bool-type (get shape :bool-type)
-        ids (get shape :shapes)
-        all-children
-        (->> ids
-             (mapcat #(cfh/get-children-with-self objects %)))]
+  (try
+    (let [bool-type (get shape :bool-type)
+          ids (get shape :shapes)
+          all-children
+          (->> ids
+               (mapcat #(cfh/get-children-with-self objects %)))]
 
-    (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-    (run! set-object all-children)
+      (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+      (run! set-object all-children)
 
-    (let [content (-> (calculate-bool* bool-type ids)
-                      (path.impl/path-data))]
-      (h/call wasm/internal-module "_end_temp_objects")
-      content)))
+      (-> (calculate-bool* bool-type ids)
+          (path.impl/path-data)))
+    (finally
+      ;; Always restore the main shapes pool: leaving the temp pool
+      ;; active would make the next `_start_temp_objects` panic.
+      (h/call wasm/internal-module "_end_temp_objects"))))
 
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
