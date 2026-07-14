@@ -200,7 +200,7 @@
           [:div {:class (stl/css :nitrate-content)}
            [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
           [:div {:class (stl/css :nitrate-content)}
-           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
+           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description-text")]
            [:> button* {:variant "primary"
                         :type "button"
                         :class (stl/css :nitrate-bottom-button)

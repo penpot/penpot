@@ -5771,10 +5771,10 @@ msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Unlock Enterprise features"
 
 #: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
+msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Set fine-grained permissions and keep your design operations secure, "
-"without compromising the open-source freedom your team already loves."
+"Set fine-grained permissions and stay in control, "
+"without compromising the open-source freedom your team loves."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
