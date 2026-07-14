@@ -381,6 +381,18 @@
   {::yres/status  302
    ::yres/headers {"location" "/dbg/graph"}})
 
+(defn graph-reload-handler
+  "Re-ingest the currently loaded file into the in-memory graph session."
+  [cfg {:keys [::session/profile-id]}]
+  (if-let [file-id (some-> (graph.debug/session-info profile-id) :file-id)]
+    (do
+      (graph.debug/load-session! cfg profile-id file-id)
+      {::yres/status  302
+       ::yres/headers {"location" "/dbg/graph"}})
+    (ex/raise :type :not-found
+              :code :graph-session-not-loaded
+              :hint "load a file graph before reloading")))
+
 (defn graph-query-handler
   [_cfg {:keys [params ::session/profile-id]}]
   (let [query (:query params)]
@@ -649,6 +661,7 @@
      ["/graph-load" {:handler (partial graph-load-handler cfg)}]
      ["/graph-query" {:handler (partial graph-query-handler cfg)}]
      ["/graph-unload" {:handler (partial graph-unload-handler cfg)}]
+     ["/graph-reload" {:handler (partial graph-reload-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
 

@@ -45,10 +45,19 @@ Graph Console
       <desc>
         <p>
           File: <b>{{session.name}}</b> ({{session.file-id}})<br />
-          Revision: <b>{{session.revn}}</b><br />
+          Revision: <b id="graph-session-revn">{{session.revn}}</b><br />
           Schema: <b>{{session.schema-version}}</b><br />
           Loaded at: <b>{{session.loaded-at}}</b>
         </p>
+        <p id="graph-sync-status">
+          Sync: <b id="graph-ws-status">connecting…</b>
+          <span id="graph-stale-badge" style="display:none; margin-left: 1em; color: #b45309;">
+            graph stale (file revn <b id="graph-current-revn"></b>)
+          </span>
+        </p>
+        <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload" style="display:none;">
+          <input type="submit" value="Reload graph" />
+        </form>
         {% if session.projection.stats %}
         <p>
           Projection:
@@ -58,6 +67,27 @@ Graph Console
         </p>
         {% endif %}
       </desc>
+    </fieldset>
+
+    <fieldset>
+      <legend>File changes (live)</legend>
+      <desc>
+        Subscribes to the same WebSocket channel the workspace uses
+        (<code>:subscribe-file</code> → <code>:file-change</code> via msgbus).
+        Edits from other tabs or users appear here; the in-memory graph stays at
+        the loaded revision until you reload it.
+      </desc>
+      <div id="graph-changelog-empty" style="color: #666;">Waiting for changes…</div>
+      <table id="graph-changelog" border="1" cellpadding="4" cellspacing="0"
+             style="border-collapse: collapse; width: 100%; display: none;">
+        <thead>
+          <tr>
+            <th>revn</th>
+            <th>changes</th>
+          </tr>
+        </thead>
+        <tbody id="graph-changelog-body"></tbody>
+      </table>
     </fieldset>
 
     <fieldset>
@@ -105,4 +135,159 @@ Graph Console
     {% endif %}
   </section>
 </main>
+
+{% if session %}
+<script>
+(function () {
+  const fileId = "{{session.file-id}}";
+  const sessionRevn = {{session.revn}};
+  const sessionId = crypto.randomUUID();
+  const wsScheme = location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = wsScheme + "//" + location.host
+    + "/ws/notifications?session-id=" + sessionId;
+
+  const wsStatus = document.getElementById("graph-ws-status");
+  const staleBadge = document.getElementById("graph-stale-badge");
+  const currentRevnEl = document.getElementById("graph-current-revn");
+  const reloadForm = document.getElementById("graph-reload-form");
+  const changelog = document.getElementById("graph-changelog");
+  const changelogBody = document.getElementById("graph-changelog-body");
+  const changelogEmpty = document.getElementById("graph-changelog-empty");
+
+  let latestRevn = sessionRevn;
+  let ws = null;
+
+  function encodeTransitUuid(uuid) {
+    return "~u" + uuid;
+  }
+
+  function encodeSubscribe(fileId) {
+    return JSON.stringify({
+      "~:type": "~:subscribe-file",
+      "~:file-id": encodeTransitUuid(fileId)
+    });
+  }
+
+  function encodeUnsubscribe(fileId) {
+    return JSON.stringify({
+      "~:type": "~:unsubscribe-file",
+      "~:file-id": encodeTransitUuid(fileId)
+    });
+  }
+
+  function parseTransitValue(value) {
+    if (typeof value === "string") {
+      if (value.startsWith("~:")) return value.slice(2);
+      if (value.startsWith("~u")) return value.slice(2);
+    }
+    if (Array.isArray(value)) return value.map(parseTransitValue);
+    if (value && typeof value === "object") return parseTransitMap(value);
+    return value;
+  }
+
+  function parseTransitMap(obj) {
+    const out = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const name = key.startsWith("~:") ? key.slice(2) : key;
+      out[name] = parseTransitValue(value);
+    }
+    return out;
+  }
+
+  function summarizeChange(change) {
+    const parts = [change.type];
+    if (change.id) parts.push("id=" + change.id);
+    if (change.obj && change.obj.type) parts.push("shape=" + change.obj.type);
+    if (change.operations && change.operations.length) {
+      const attrs = change.operations
+        .map(function (op) { return op.attr; })
+        .filter(Boolean);
+      if (attrs.length) parts.push("attrs=" + attrs.join(","));
+    }
+    return parts.join(" ");
+  }
+
+  function summarizeChanges(changes) {
+    if (!changes || !changes.length) return "(empty)";
+    return changes.map(summarizeChange).join("; ");
+  }
+
+  function updateStaleUi() {
+    const stale = latestRevn > sessionRevn;
+    staleBadge.style.display = stale ? "inline" : "none";
+    reloadForm.style.display = stale ? "block" : "none";
+    currentRevnEl.textContent = String(latestRevn);
+  }
+
+  function appendChange(revn, summary) {
+    changelogEmpty.style.display = "none";
+    changelog.style.display = "table";
+
+    const row = document.createElement("tr");
+    const revnCell = document.createElement("td");
+    const changesCell = document.createElement("td");
+
+    revnCell.textContent = String(revn);
+    changesCell.textContent = summary;
+    row.appendChild(revnCell);
+    row.appendChild(changesCell);
+    changelogBody.appendChild(row);
+    row.scrollIntoView({ block: "nearest" });
+  }
+
+  function handleMessage(raw) {
+    let msg;
+    try {
+      msg = parseTransitMap(JSON.parse(raw));
+    } catch (_err) {
+      return;
+    }
+
+    if (msg.type !== "file-change" || msg["file-id"] !== fileId) return;
+
+    latestRevn = Math.max(latestRevn, msg.revn || latestRevn);
+    updateStaleUi();
+    appendChange(msg.revn, summarizeChanges(msg.changes));
+  }
+
+  function subscribe() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(encodeSubscribe(fileId));
+    }
+  }
+
+  function connect() {
+    ws = new WebSocket(wsUrl);
+    wsStatus.textContent = "connecting…";
+
+    ws.addEventListener("open", function () {
+      wsStatus.textContent = "subscribed";
+      subscribe();
+    });
+
+    ws.addEventListener("message", function (event) {
+      handleMessage(event.data);
+    });
+
+    ws.addEventListener("close", function () {
+      wsStatus.textContent = "disconnected";
+    });
+
+    ws.addEventListener("error", function () {
+      wsStatus.textContent = "error";
+    });
+  }
+
+  updateStaleUi();
+  connect();
+
+  window.addEventListener("beforeunload", function () {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(encodeUnsubscribe(fileId));
+      ws.close();
+    }
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
