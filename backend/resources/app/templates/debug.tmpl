@@ -223,6 +223,20 @@ Debug Main Page
       </form>
     </fieldset>
     <fieldset>
+      <legend>Export graph (Ladybug):</legend>
+      <desc>Given a FILE-ID, builds the graph projection and downloads
+      the `.lbug` database file.</desc>
+
+      <form method="get" action="/dbg/actions/graph-export">
+        <div class="row">
+          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
+        </div>
+        <div class="row">
+          <input type="submit" value="Download .lbug" />
+        </div>
+      </form>
+    </fieldset>
+    <fieldset>
       <legend>Import binfile:</legend>
       <desc>Import penpot file in binary format.</desc>
 
