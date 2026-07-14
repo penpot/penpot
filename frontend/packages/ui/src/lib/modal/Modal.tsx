@@ -8,7 +8,6 @@ import {
   createContext,
   useContext,
   type ReactNode,
-  type ButtonHTMLAttributes,
 } from 'react';
 import styles from './Modal.module.scss';
 
