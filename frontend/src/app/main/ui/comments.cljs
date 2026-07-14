@@ -23,9 +23,9 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -924,12 +924,10 @@
      [:div {:class (stl/css :floating-thread-header-left)}
       (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]]
      [:div {:class (stl/css :floating-thread-header-right)}
-      (when (some? thread)
-        [:div {:class (stl/css :checkbox-wrapper)
-               :title (tr "labels.comment.mark-as-solved")
-               :on-click toggle-resolved}
-         [:span {:class (stl/css-case :checkbox true
-                                      :global/checked (:is-resolved thread))} deprecated-icon/tick]])
+       (when (some? thread)
+         [:> checkbox* {:class (stl/css :checkbox-wrapper)
+                        :checked (:is-resolved thread)
+                        :on-change toggle-resolved}])
       (when (= (:id profile) (:id owner))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")
