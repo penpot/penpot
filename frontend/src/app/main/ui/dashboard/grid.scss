@@ -384,6 +384,18 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
 }
 
 // LIST VIEW
+
+// Drop placeholder shown while dragging a file over the list, mirroring
+// the .grid-item.dragged feedback of the card view in a row shape. The
+// outline is inset so it does not overlap the adjacent rows.
+.list-item-dragged {
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-48;
+  outline: deprecated.$br-4 solid var(--color-accent-primary);
+  outline-offset: -#{deprecated.$br-4};
+  width: 100%;
+}
+
 .grid-row.list-view {
   display: flex;
   flex-direction: column;
@@ -423,9 +435,11 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
     }
   }
 
+  // The name must not stretch so the shared-library badge sits right
+  // next to it; the date is pushed to the end with an auto margin.
   .list-item-name {
     color: var(--color-foreground-primary);
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     font-size: deprecated.$fs-14;
     font-weight: deprecated.$fw400;
     margin: 0;
@@ -435,16 +449,19 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
     white-space: nowrap;
   }
 
+  // Same look as the card view .item-badge, in a row-friendly size.
   .list-item-badge {
     align-items: center;
+    background-color: var(--color-accent-primary);
+    border-radius: deprecated.$br-6;
     display: flex;
     flex: 0 0 auto;
-    height: deprecated.$s-20;
+    height: deprecated.$s-24;
     justify-content: center;
-    width: deprecated.$s-20;
+    width: deprecated.$s-24;
 
     svg {
-      stroke: var(--color-foreground-secondary);
+      stroke: var(--color-background-secondary);
       fill: none;
       height: deprecated.$s-16;
       width: deprecated.$s-16;
@@ -455,6 +472,7 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
     color: var(--color-foreground-secondary);
     flex: 0 0 auto;
     font-size: deprecated.$fs-12;
+    margin-inline-start: auto;
     white-space: nowrap;
 
     &::first-letter {

@@ -584,6 +584,8 @@
 
        (and (seq files) list?)
        [:ul {:class (stl/css :grid-row :list-view)}
+        (when @dragging?
+          [:li {:class (stl/css :list-item-dragged)}])
         (for [item files]
           [:> grid-item*
            {:file item
@@ -626,6 +628,8 @@
         list? (= layout :list)]
     (if ^boolean list?
       [:ul {:class (stl/css :grid-row :list-view)}
+       (when dragging?
+         [:li {:class (stl/css :list-item-dragged)}])
        (for [item (take limit files)]
          [:> grid-item*
           {:id (:id item)
