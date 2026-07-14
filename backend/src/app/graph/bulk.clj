@@ -72,8 +72,8 @@
     (.write w "from,to,position\n")
     (doseq [{:keys [from-id to-id position]} edges]
       (.write w (str (csv-cell from-id) ","
-                      (csv-cell to-id) ","
-                      (csv-cell position) "\n")))))
+                     (csv-cell to-id) ","
+                     (csv-cell position) "\n")))))
 
 (defn- delete-tree!
   [path]
