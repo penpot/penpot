@@ -12,10 +12,8 @@
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
-   [app.graph.ladybug :as ladybug]
    [app.graph.project.specs :as specs]
-   [app.graph.schema :as graph.schema]
-   [clojure.string :as str]))
+   [app.graph.schema :as graph.schema]))
 
 (def root-frame-id
   uuid/zero)
@@ -30,24 +28,6 @@
    :bool    "Boolean"
    :image   "Image"
    :svg-raw "SVGRaw"})
-
-(defn- create-node-statement
-  [table attrs]
-  (let [props (str/join ", "
-                        (map (fn [[k v]]
-                               (str "`" (name k) "`: " (ladybug/format-value v)))
-                             attrs))]
-    (str "CREATE (n:`" table "` {" props "});")))
-
-(defn- validated-node-statement
-  [check-fn table attrs]
-  (create-node-statement table (check-fn attrs)))
-
-(defn- merge-edge-statement
-  [from-table from-id to-table to-id position]
-  (str "MATCH (c:`" from-table "` {`id`: " (ladybug/format-uuid from-id) "}), "
-       "(p:`" to-table "` {`id`: " (ladybug/format-uuid to-id) "}) "
-       "MERGE (c)-[:`IsChildOf` {`position`: " (ladybug/format-int position) "}]->(p);"))
 
 (defn- document-attrs
   [file data]
@@ -68,8 +48,8 @@
 
 (defn- shape-node-attrs
   [shape]
-  {:id   (:id shape)
-   :name (:name shape)})
+  (specs/check-shape-node {:id   (:id shape)
+                           :name (:name shape)}))
 
 (defn- container-table?
   [table]
@@ -81,76 +61,87 @@
   (when-let [shapes (:shapes parent)]
     (vec (reverse shapes))))
 
+(defn- initial-acc
+  []
+  {:nodes {}
+   :edges []
+   :stats {:documents 0 :pages 0 :shapes 0}})
+
 (declare project-shape-ids)
 
 (defn- project-shape
-  "Project one shape node and recurse into its children."
-  [objects statements stats table shape parent-table parent-id position]
-  (let [shape-id    (:id shape)
-        statements' (conj statements
-                          (validated-node-statement specs/check-shape-node table
-                                                    (shape-node-attrs shape))
-                          (merge-edge-statement table shape-id
-                                                parent-table parent-id position))
-        stats'      (update stats :shapes inc)]
+  [objects acc table shape parent-table parent-id position]
+  (let [shape-id (:id shape)
+        acc'     (-> acc
+                     (update-in [:nodes table] (fnil conj []) (shape-node-attrs shape))
+                     (update :edges conj {:from-table table
+                                          :from-id    shape-id
+                                          :to-table   parent-table
+                                          :to-id      parent-id
+                                          :position   position})
+                     (update-in [:stats :shapes] inc))]
     (if-let [child-ids (when (container-table? table)
                          (child-shape-ids shape))]
-      (project-shape-ids objects statements' stats' table shape-id child-ids)
-      [statements' stats'])))
+      (project-shape-ids objects acc' table shape-id child-ids)
+      acc')))
 
 (defn- project-shape-ids
-  [objects statements stats parent-table parent-id child-ids]
+  [objects acc parent-table parent-id child-ids]
   (reduce
-   (fn [[stmts st] [position shape-id]]
+   (fn [acc [position shape-id]]
      (if-let [shape (get objects shape-id)]
        (if-let [table (shape-table shape)]
-         (project-shape objects stmts st table shape parent-table parent-id position)
+         (project-shape objects acc table shape parent-table parent-id position)
          (do
            (l/wrn :hint "unsupported shape type for graph slice"
                   :shape-id (str shape-id)
                   :type (:type shape))
-           [stmts st]))
+           acc))
        (do
          (l/wrn :hint "missing shape in page objects"
                 :shape-id (str shape-id))
-         [stmts st])))
-   [statements stats]
+         acc)))
+   acc
    (map-indexed vector child-ids)))
 
 (defn- project-page
-  [statements stats doc-id page position]
+  [acc doc-id page position]
   (let [page-id     (:id page)
         objects     (:objects page)
         root        (get objects root-frame-id)
-        statements' (conj statements
-                          (validated-node-statement specs/check-page "Page"
-                                                    (page-attrs page position))
-                          (merge-edge-statement "Page" page-id "Document" doc-id position))
-        stats'      (update stats :pages inc)]
+        page-node   (specs/check-page (page-attrs page position))
+        acc'        (-> acc
+                        (update-in [:nodes "Page"] (fnil conj []) page-node)
+                        (update :edges conj {:from-table "Page"
+                                             :from-id    page-id
+                                             :to-table   "Document"
+                                             :to-id      doc-id
+                                             :position   position})
+                        (update-in [:stats :pages] inc))]
     (if-let [top-level-ids (child-shape-ids root)]
-      (project-shape-ids objects statements' stats' "Page" page-id top-level-ids)
-      [statements' stats'])))
+      (project-shape-ids objects acc' "Page" page-id top-level-ids)
+      acc')))
 
-(defn projection-statements
-  "Build Cypher statements for projecting `data` into Ladybug.
+(defn projection-data
+  "Build node/edge rows for projecting `data` into Ladybug.
 
-  Returns `{:statements [...] :stats {...}}` without executing them."
+  Returns `{:nodes {table [attrs ...]} :edges [...] :stats {...}}`."
   [data file]
-  (let [doc-id    (or (:id data) (:id file))
-        pages     (seq (reverse (:pages data)))
-        initial   [(validated-node-statement specs/check-document "Document"
-                                              (document-attrs file data))]
-        [statements stats]
-        (if (empty? pages)
-          [initial {:documents 1 :pages 0 :shapes 0}]
-          (reduce (fn [[stmts st] [position page-id]]
-                    (if-let [page (get-in data [:pages-index page-id])]
-                      (project-page stmts st doc-id page position)
-                      (do
-                        (l/wrn :hint "missing page in pages-index"
-                               :page-id (str page-id))
-                        [stmts st])))
-                  [initial {:documents 1 :pages 0 :shapes 0}]
-                  (map-indexed vector pages)))]
-    {:statements statements
-     :stats     stats}))
+  (let [doc-id  (or (:id data) (:id file))
+        doc-node (specs/check-document (document-attrs file data))
+        pages   (seq (reverse (:pages data)))
+        acc0    (-> (initial-acc)
+                    (update-in [:nodes "Document"] (fnil conj []) doc-node)
+                    (assoc-in [:stats :documents] 1))
+        acc     (if (empty? pages)
+                  acc0
+                  (reduce (fn [acc [position page-id]]
+                            (if-let [page (get-in data [:pages-index page-id])]
+                              (project-page acc doc-id page position)
+                              (do
+                                (l/wrn :hint "missing page in pages-index"
+                                       :page-id (str page-id))
+                                acc)))
+                          acc0
+                          (map-indexed vector pages)))]
+    (select-keys acc [:nodes :edges :stats])))

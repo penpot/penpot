@@ -429,7 +429,8 @@
 
   Options:
   - `:db-path` path or `:memory:`
-  - `:reset-db?` delete any existing db first (default true)"
+  - `:reset-db?` delete any existing db first (default true)
+  - `:skip-stats?` skip post-ingest MATCH count queries (default false)"
   [file-id & opts]
   (let [result (apply graph.ingest/ingest-file! main/system file-id opts)]
     (graph.report/print-ingest! result)
