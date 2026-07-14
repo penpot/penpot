@@ -1,0 +1,108 @@
+{% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+Graph Console
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div class="title">
+    <h1>GRAPH CONSOLE (VERSION: {{version}})</h1>
+  </div>
+</nav>
+<main class="dashboard">
+  <section class="widget">
+    <p><a href="/dbg">&larr; Back to debug</a></p>
+
+    <fieldset>
+      <legend>Load graph in memory</legend>
+      <desc>
+        Projects the Penpot file into an in-memory Ladybug database for this
+        admin session. Loading a new file replaces the previous one.
+      </desc>
+      <form method="post" action="/dbg/actions/graph-load">
+        <div class="row">
+          <input type="text" style="width:420px" name="file-id"
+                 placeholder="file-id"
+                 value="{% if session %}{{session.file-id}}{% endif %}" />
+        </div>
+        <div class="row">                 
+          <input type="submit" value="Load" />
+        </div>
+      </form>
+      {% if session %}
+      <form method="post" action="/dbg/actions/graph-unload">
+        <div class="row">
+          <input type="submit" value="Unload" />
+        </div>
+      </form>
+      {% endif %}
+    </fieldset>
+
+    {% if session %}
+    <fieldset>
+      <legend>Loaded session</legend>
+      <desc>
+        <p>
+          File: <b>{{session.name}}</b> ({{session.file-id}})<br />
+          Revision: <b>{{session.revn}}</b><br />
+          Schema: <b>{{session.schema-version}}</b><br />
+          Loaded at: <b>{{session.loaded-at}}</b>
+        </p>
+        {% if session.projection.stats %}
+        <p>
+          Projection:
+          documents={{session.projection.stats.documents}},
+          pages={{session.projection.stats.pages}},
+          shapes={{session.projection.stats.shapes}}
+        </p>
+        {% endif %}
+      </desc>
+    </fieldset>
+
+    <fieldset>
+      <legend>Cypher query</legend>
+      <form method="post" action="/dbg/actions/graph-query">
+        <div class="row">
+          <textarea name="query" rows="8" style="width:100%; font-family: monospace;">{{query}}</textarea>
+        </div>
+        <div class="row">
+          <input type="submit" value="Run query" />
+        </div>
+      </form>
+    </fieldset>
+    {% endif %}
+
+    {% if error %}
+    <fieldset>
+      <legend>Error</legend>
+      <pre>{{error}}</pre>
+    </fieldset>
+    {% endif %}
+
+    {% if query-result %}
+    <fieldset>
+      <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
+      <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+        <thead>
+          <tr>
+            {% for column in query-result.columns %}
+            <th>{{column}}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in query-result.rows %}
+          <tr>
+            {% for cell in row %}
+            <td><code>{{cell}}</code></td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </fieldset>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

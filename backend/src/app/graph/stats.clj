@@ -30,8 +30,8 @@
                                    "RETURN count(n) AS " name "_c;"))])
                      schema/node-tables))
    :edges {:IsChildOf (count-on-connection
-                        conn
-                        "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")}})
+                       conn
+                       "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")}})
 
 (defn summarize
   "Return node/edge counts from the graph database."

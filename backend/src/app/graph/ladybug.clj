@@ -92,6 +92,46 @@
                 :statement statement
                 :err err))))
 
+(defn- query-columns
+  [^QueryResult result]
+  (let [ncols (.getNumColumns result)]
+    (vec (for [i (range ncols)]
+           (.getColumnName result (long i))))))
+
+(defn- query-row
+  [^FlatTuple tuple ncols]
+  (vec (for [i (range ncols)]
+         (with-open [^Value value (.getValue tuple (long i))]
+           (value->clj value)))))
+
+(def ^:private default-query-max-rows 200)
+
+(defn- read-query-rows
+  [^QueryResult result ncols max-rows]
+  (loop [rows [] n 0]
+    (if (and (< n max-rows) (.hasNext result))
+      (let [row (with-open [^FlatTuple tuple (.getNext result)]
+                  (query-row tuple ncols))]
+        (recur (conj rows row) (inc n)))
+      rows)))
+
+(defn query-on-connection!
+  "Execute a Cypher query on `conn` and return tabular results.
+
+  Returns `{:columns [...] :rows [[...] ...] :truncated? bool}`."
+  [^Connection conn statement & {:keys [max-rows]
+                                 :or   {max-rows default-query-max-rows}}]
+  (let [cypher (ensure-semicolon statement)]
+    (with-open [^QueryResult result (.query conn cypher)]
+      (check-success! result cypher)
+      (let [ncols   (long (.getNumColumns result))
+            columns (query-columns result)
+            rows    (read-query-rows result ncols max-rows)
+            total   (long (.getNumTuples result))]
+        {:columns    columns
+         :rows       rows
+         :truncated? (and (pos? total) (> total (count rows)))}))))
+
 (def ^:private default-query-timeout-ms
   "0 disables query timeout (recommended for bulk COPY ingest)."
   0)

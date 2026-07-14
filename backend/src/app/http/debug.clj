@@ -21,6 +21,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
+   [app.graph.debug :as graph.debug]
    [app.graph.ingest :as graph.ingest]
    [app.http.session :as session]
    [app.rpc.commands.auth :as auth]
@@ -350,6 +351,52 @@
        ::yres/headers {"content-type" "application/octet-stream"
                        "content-disposition" (str "attachment; filename=" file-id ".lbug")}})))
 
+(defn- graph-console-response
+  [profile-id data]
+  {::yres/status  200
+   ::yres/headers {"content-type" "text/html; charset=utf-8"
+                   "x-robots-tag" "noindex"}
+   ::yres/body    (-> (io/resource "app/templates/graph-console.tmpl")
+                      (tmpl/render (assoc data :version (:full cf/version))))})
+
+(defn graph-console-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (graph-console-response profile-id
+                          (graph.debug/console-context profile-id)))
+
+(defn graph-load-handler
+  [cfg {:keys [params ::session/profile-id]}]
+  (let [file-id (some-> (:file-id params) parse-uuid)]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments
+                :hint "missing file-id"))
+    (graph.debug/load-session! cfg profile-id file-id)
+    {::yres/status  302
+     ::yres/headers {"location" "/dbg/graph"}}))
+
+(defn graph-unload-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (graph.debug/unload-session! profile-id)
+  {::yres/status  302
+   ::yres/headers {"location" "/dbg/graph"}})
+
+(defn graph-query-handler
+  [_cfg {:keys [params ::session/profile-id]}]
+  (let [query (:query params)]
+    (try
+      (let [result (graph.debug/query-session! profile-id query)]
+        (graph-console-response profile-id
+                                (graph.debug/console-context profile-id
+                                                             :query query
+                                                             :query-result result)))
+      (catch Throwable e
+        (graph-console-response profile-id
+                                (graph.debug/console-context profile-id
+                                                             :query query
+                                                             :error (or (:hint (ex-data e))
+                                                                        (ex-message e))))))))
+
 (defn import-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
   (when-not (contains? params :file)
@@ -587,6 +634,7 @@
     ["" {:handler (partial index-handler cfg)}]
     ["/health" {:handler (partial health-handler cfg)}]
     ["/changelog" {:handler (partial changelog-handler cfg)}]
+    ["/graph" {:handler (partial graph-console-handler cfg)}]
     ["/error/:id" {:handler (partial error-handler cfg)}]
     ["/error" {:handler (partial error-list-handler cfg)}]
     ["/actions" {:middleware [[errors]]}
@@ -598,6 +646,9 @@
       {:handler (partial handle-team-features cfg)}]
      ["/file-export" {:handler (partial export-handler cfg)}]
      ["/graph-export" {:handler (partial graph-export-handler cfg)}]
+     ["/graph-load" {:handler (partial graph-load-handler cfg)}]
+     ["/graph-query" {:handler (partial graph-query-handler cfg)}]
+     ["/graph-unload" {:handler (partial graph-unload-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
 
