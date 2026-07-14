@@ -29,7 +29,8 @@
 (mf/defc header*
   {::mf/wrap [mf/memo]}
   []
-  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+  [:header {:class (stl/css :dashboard-header)
+            :data-testid "dashboard-header"}
    [:div {:class (stl/css :dashboard-title)}
     [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 
@@ -46,7 +47,7 @@
 
     [:*
      [:> modal-container*]
-     [:section {:class (stl/css :dashboard-layout-refactor :dashboard)}
+     [:section {:class (stl/css :dashboard)}
 
 
       [:> sidebar* {:profile profile
