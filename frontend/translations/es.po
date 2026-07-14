@@ -5628,11 +5628,10 @@ msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Desbloquea las funciones Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
+msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Establece permisos detallados y garantiza la seguridad de tus operaciones "
-"de diseño, sin renunciar a la libertad del código abierto que tanto valora "
-"tu equipo."
+"Establece permisos detallados y mantén el control, "
+"sin renunciar a la libertad del código abierto que tanto valora tu equipo."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
