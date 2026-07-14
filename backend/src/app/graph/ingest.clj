@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.types.file :as ctf]
    [app.db :as db]
+   [app.graph.bulk :as bulk]
    [app.graph.ladybug :as ladybug]
    [app.graph.project.document :as project.document]
    [app.graph.project.transforms :as project.transforms]
@@ -20,7 +21,7 @@
    [app.srepl.helpers :as h]))
 
 (defn ingest-file!
-  [system file-id & {:keys [db-path reset-db?]
+  [system file-id & {:keys [db-path reset-db? skip-stats?]
                      :or   {reset-db? true}}]
   (let [file-id (h/parse-uuid file-id)
         file    (db/run! system #(bfc/get-file % file-id :realize? true))
@@ -44,12 +45,14 @@
            :schema schema/schema-version)
     (let [data              (:data file)
           ddl               (schema/ddl-statements)
-          {:keys [statements stats]}
-          (project.document/projection-statements data file)
-          ingest-statements (conj (into ddl statements) "CHECKPOINT;")]
+          {:keys [nodes edges stats]}
+          (project.document/projection-data data file)
+          staging-path      (bulk/staging-dir db-path file-id)]
       (ladybug/with-connection! db-path
         (fn [conn]
-          (ladybug/exec-on-connection! conn ingest-statements)
+          (ladybug/exec-on-connection! conn ddl)
+          (bulk/load-projection! conn {:nodes nodes :edges edges} staging-path)
+          (ladybug/exec-on-connection! conn ["CHECKPOINT;"])
           {:file-id        file-id
            :revn           (:revn file)
            :name           (or (:name data) (:name file))
@@ -57,4 +60,5 @@
            :schema-version schema/schema-version
            :projection     {:stats stats}
            :transforms     (project.transforms/apply-transforms! system db-path data file)
-           :stats          (stats/summarize-connection conn)})))))
+           :stats          (when-not skip-stats?
+                             (stats/summarize-connection conn))})))))

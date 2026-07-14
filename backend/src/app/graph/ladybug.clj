@@ -85,11 +85,12 @@
 (defn- check-success!
   [^QueryResult result statement]
   (when-not (.isSuccess result)
-    (ex/raise :type :internal
-              :code :ladybug-query-failed
-              :hint "Ladybug query failed"
-              :statement statement
-              :err (.getErrorMessage result))))
+    (let [err (.getErrorMessage result)]
+      (ex/raise :type :internal
+                :code :ladybug-query-failed
+                :hint (str "Ladybug query failed: " err)
+                :statement statement
+                :err err))))
 
 (def ^:private default-query-timeout-seconds 120)
 
