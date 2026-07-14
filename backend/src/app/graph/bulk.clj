@@ -24,9 +24,17 @@
   string fields are treated as column separators."
   "HEADER=true, DELIM=',', QUOTE='\"'")
 
+(defn- csv-normalize-string
+  "Graph node names are single-line labels; flatten Penpot text newlines."
+  [s]
+  (-> (str s)
+      (str/replace #"\r\n" " ")
+      (str/replace #"\r" " ")
+      (str/replace #"\n" " ")))
+
 (defn- csv-escape-string
   [s]
-  (str "\"" (str/replace (str s) "\"" "\"\"") "\""))
+  (str "\"" (str/replace (csv-normalize-string s) "\"" "\"\"") "\""))
 
 (defn- csv-cell
   [v]

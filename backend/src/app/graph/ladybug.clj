@@ -92,7 +92,9 @@
                 :statement statement
                 :err err))))
 
-(def ^:private default-query-timeout-seconds 120)
+(def ^:private default-query-timeout-ms
+  "0 disables query timeout (recommended for bulk COPY ingest)."
+  0)
 
 (defn- scalar-value
   [^Connection conn statement]
@@ -119,9 +121,13 @@
 (defn with-connection!
   "Open a Ladybug connection for `db-path` and invoke `(f conn)`.
 
+  Options:
+  - `:query-timeout-ms` query timeout in milliseconds (default 0, disabled)
+
   For `:memory:`, the database only lives for the duration of this call;
   all reads and writes must happen inside `f`."
-  [db-path f]
+  [db-path f & {:keys [query-timeout-ms]
+                :or   {query-timeout-ms default-query-timeout-ms}}]
   (ensure-db-path! db-path)
   (let [^Database db (if (memory-db-path? db-path)
                        (Database.)
@@ -129,7 +135,7 @@
     (try
       (let [^Connection conn (Connection. db)]
         (try
-          (.setQueryTimeout conn default-query-timeout-seconds)
+          (.setQueryTimeout conn (long query-timeout-ms))
           (f conn)
           (finally
             (.close conn))))
