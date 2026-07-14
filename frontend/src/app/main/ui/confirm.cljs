@@ -12,6 +12,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -72,18 +73,18 @@
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
-       [:h2 {:class (stl/css :modal-title)} title]
-       [:div {:class (stl/css :modal-close-btn)}
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "labels.close")
-                          :on-click cancel-fn
-                          :icon i/close}]]]
+       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :modal-title)} title]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "labels.close")
+                         :on-click cancel-fn
+                         :icon i/close
+                         :class (stl/css :modal-close-btn)}]]
 
-      [:div {:class (stl/css :modal-content)}
-       (when (and (string? message) (not= message ""))
-         [:h3 {:class (stl/css :modal-msg)} message])
-       (when (and (string? scd-message) (not= scd-message ""))
-         [:h3 {:class (stl/css :modal-scd-msg)} scd-message])
+       [:div {:class (stl/css :modal-content)}
+        (when (and (string? message) (not= message ""))
+          [:> heading* {:level 3 :typography "body-large" :class (stl/css :modal-msg)} message])
+        (when (and (string? scd-message) (not= scd-message ""))
+          [:> heading* {:level 3 :typography "body-large" :class (stl/css :modal-scd-msg)} scd-message])
        (when (string? hint)
          [:> context-notification* {:level (or hint-level :info)
                                     :appearance :ghost}
@@ -104,8 +105,7 @@
               [:span {:class (stl/css :modal-component-name)}
                (:name item)]])]])]
 
-      [:div {:class (stl/css :modal-footer)}
-       [:div {:class (stl/css :action-buttons)}
+       [:div {:class (stl/css :modal-footer)}
         (when-not (= cancel-label :omit)
           [:> button* {:variant "secondary"
                        :on-click cancel-fn}
@@ -113,4 +113,4 @@
         [:> button* {:variant (cond (= accept-style :danger)  "destructive"
                                     (= accept-style :primary) "primary")
                      :on-click accept-fn}
-         accept-label]]]]]))
+         accept-label]]]]))
