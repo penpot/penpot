@@ -13,7 +13,10 @@
    [clojure.string :as str]))
 
 (def schema-version
-  "penpot-graph-slice-1")
+  "penpot-graph-slice-2")
+
+(def container-node-tables
+  #{"Frame" "Group" "Boolean" "SVGRaw"})
 
 (def node-tables
   [{:name "Document"
@@ -70,9 +73,13 @@
   (str "CREATE REL TABLE `IsChildOf` ("
        "FROM `Page` TO `Document`, "
        (str/join ", "
-                 (map (fn [shape]
-                        (str "FROM `" shape "` TO `Page`"))
-                      shape-node-tables))
+                 (concat
+                  (map (fn [shape]
+                         (str "FROM `" shape "` TO `Page`"))
+                       shape-node-tables)
+                  (for [shape shape-node-tables
+                        container container-node-tables]
+                    (str "FROM `" shape "` TO `" container "`"))))
        ", `position` INT64);"))
 
 (defn ddl-statements
