@@ -23,6 +23,7 @@
    [app.http.management :as mgmt]
    [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
+   [app.http.unfurl :as-alias http.unfurl]
    [app.http.websocket :as http.ws]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
@@ -278,8 +279,12 @@
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
+    ::http.unfurl/routes (ig/ref ::http.unfurl/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
+
+   ::http.unfurl/routes
+   {::db/pool         (ig/ref ::db/pool)}
 
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
