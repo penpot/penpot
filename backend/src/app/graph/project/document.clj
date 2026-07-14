@@ -7,13 +7,14 @@
 (ns app.graph.project.document
   "Project a Penpot file-data map into Ladybug nodes and structural edges.
 
-  Vertical slice: Document, Page, top-level shapes, and `IsChildOf` edges
-  mirroring beadpot's `add_document` first pass."
+  Projects Document, Page, the full shape tree (skipping the root frame),
+  and `IsChildOf` edges from shapes to their page or container parent."
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.graph.ladybug :as ladybug]
    [app.graph.project.specs :as specs]
+   [app.graph.schema :as graph.schema]
    [clojure.string :as str]))
 
 (def root-frame-id
@@ -65,37 +66,69 @@
   [shape]
   (get shape-type->table (keyword (:type shape))))
 
+(defn- shape-node-attrs
+  [shape]
+  {:id   (:id shape)
+   :name (:name shape)})
+
+(defn- container-table?
+  [table]
+  (contains? graph.schema/container-node-tables table))
+
+(defn- child-shape-ids
+  "Child ids in Penpot z-order (reversed from the stored :shapes list)."
+  [parent]
+  (when-let [shapes (:shapes parent)]
+    (vec (reverse shapes))))
+
+(declare project-shape-ids)
+
+(defn- project-shape
+  "Project one shape node and recurse into its children."
+  [objects statements stats table shape parent-table parent-id position]
+  (let [shape-id    (:id shape)
+        statements' (conj statements
+                          (validated-node-statement specs/check-shape-node table
+                                                    (shape-node-attrs shape))
+                          (merge-edge-statement table shape-id
+                                                parent-table parent-id position))
+        stats'      (update stats :shapes inc)]
+    (if-let [child-ids (when (container-table? table)
+                         (child-shape-ids shape))]
+      (project-shape-ids objects statements' stats' table shape-id child-ids)
+      [statements' stats'])))
+
+(defn- project-shape-ids
+  [objects statements stats parent-table parent-id child-ids]
+  (reduce
+   (fn [[stmts st] [position shape-id]]
+     (if-let [shape (get objects shape-id)]
+       (if-let [table (shape-table shape)]
+         (project-shape objects stmts st table shape parent-table parent-id position)
+         (do
+           (l/wrn :hint "unsupported shape type for graph slice"
+                  :shape-id (str shape-id)
+                  :type (:type shape))
+           [stmts st]))
+       (do
+         (l/wrn :hint "missing shape in page objects"
+                :shape-id (str shape-id))
+         [stmts st])))
+   [statements stats]
+   (map-indexed vector child-ids)))
+
 (defn- project-page
   [statements stats doc-id page position]
-  (let [page-id       (:id page)
-        objects       (:objects page)
-        root          (get objects root-frame-id)
-        top-level-ids (when root (vec (reverse (:shapes root))))
-        statements'   (conj statements
-                            (validated-node-statement specs/check-page "Page"
-                                                      (page-attrs page position))
-                            (merge-edge-statement "Page" page-id "Document" doc-id position))
-        stats'        (update stats :pages inc)]
-    (if (seq top-level-ids)
-       (reduce
-        (fn [[stmts st] [shape-pos shape-id]]
-          (if-let [shape (get objects shape-id)]
-            (if-let [table (shape-table shape)]
-              [(-> stmts
-                   (conj (validated-node-statement specs/check-shape-node table
-                                                   {:id   (:id shape)
-                                                    :name (:name shape)})
-                         (merge-edge-statement table (:id shape)
-                                               "Page" page-id shape-pos)))
-               (update st :shapes inc)]
-              (do
-                (l/wrn :hint "unsupported shape type for graph slice"
-                       :shape-id (str shape-id)
-                       :type (:type shape))
-                [stmts st]))
-            [stmts st]))
-       [statements' stats']
-       (map-indexed vector top-level-ids))
+  (let [page-id     (:id page)
+        objects     (:objects page)
+        root        (get objects root-frame-id)
+        statements' (conj statements
+                          (validated-node-statement specs/check-page "Page"
+                                                    (page-attrs page position))
+                          (merge-edge-statement "Page" page-id "Document" doc-id position))
+        stats'      (update stats :pages inc)]
+    (if-let [top-level-ids (child-shape-ids root)]
+      (project-shape-ids objects statements' stats' "Page" page-id top-level-ids)
       [statements' stats'])))
 
 (defn projection-statements
