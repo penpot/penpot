@@ -185,7 +185,12 @@
     ;; renderer.
     :wasm-export
     :custom-shortcuts
-    :remote-media-processing})
+    :remote-media-processing
+
+    ;; Enables serving link preview (Open Graph) metadata for shared
+    ;; links; exposes file names and dashboard thumbnails to anyone
+    ;; that knows the file id.
+    :link-preview})
 
 (def all-flags
   (set/union email login varia))
