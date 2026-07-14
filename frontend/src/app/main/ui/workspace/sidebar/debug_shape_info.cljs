@@ -13,7 +13,6 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [debug :as dbg]
    [rumext.v2 :as mf]))
 
@@ -125,10 +124,6 @@
                       (map (d/getf objects)))]
 
     [:div {:class (stl/css :shape-info)}
-     [:> panel-title* {:class (stl/css :shape-info-title)
-                       :text "Debug"
-                       :on-close #(dbg/disable! :shape-panel)}]
-
      (if (empty? selected)
        [:div {:class (stl/css :attrs-container)} "No shapes selected"]
        (for [[idx current] (d/enumerate selected)]

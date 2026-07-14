@@ -4629,7 +4629,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invitar integrantes"
 
 msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr "" 
+msgstr ""
 "Personas de desarrollo, diseño, gestión... todo el mundo es bienvenido. "
 "Podrás invitar a más gente posteriormente."
 
@@ -8550,6 +8550,9 @@ msgstr "Copiar como CSS (capas anidadas)"
 #: src/app/main/ui/workspace/context_menu.cljs:206
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copiar enlace"
+
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copiar id"
 
 #: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-paste-as"
