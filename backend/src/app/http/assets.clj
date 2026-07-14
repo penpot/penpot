@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
@@ -35,6 +36,14 @@
     "file-data-fragment"
     "organization"})
 
+(defn- public-bucket?
+  [bucket]
+  (or (contains? public-buckets bucket)
+      ;; Dashboard file thumbnails become public when link previews
+      ;; are enabled, so link preview crawlers can fetch them.
+      (and (= "file-thumbnail" bucket)
+           (contains? cf/flags :link-preview))))
+
 (defn get-id
   [{:keys [path-params]}]
   (or (some-> path-params :id d/parse-uuid)
@@ -56,7 +65,7 @@
   (let [sig-max-age (or signature-max-age default-signature-max-age)
         cch-max-age (or cache-max-age default-cache-max-age)
         bucket  (-> obj meta :bucket)
-        public? (contains? public-buckets bucket)
+        public? (public-bucket? bucket)
         ;; The disposition is also signed into the presigned url: this
         ;; response is a redirect, so the header below applies to the
         ;; redirect itself and not to the bytes the client then fetches
@@ -84,7 +93,7 @@
         headers (cond-> {"x-accel-redirect" (:path purl)
                          "content-type" (:content-type mdata)
                          "cache-control" (str "max-age=" (inst-ms cch-max-age))}
-                  (not (contains? public-buckets bucket))
+                  (not (public-bucket? bucket))
                   (assoc "content-disposition" "attachment"))]
     {::yres/status 204
      ::yres/headers headers}))
@@ -101,7 +110,7 @@
   "Check if the storage object requires authentication based on its bucket."
   [obj]
   (let [bucket (-> obj meta :bucket)]
-    (not (contains? public-buckets bucket))))
+    (not (public-bucket? bucket))))
 
 (defn- request-profile-id
   "Extract the authenticated profile-id from the request."
