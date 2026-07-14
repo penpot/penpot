@@ -23,10 +23,10 @@
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -58,7 +58,7 @@
       (when profile-id
         [:div {:class (stl/css :go-back-wrapper)}
          [:> icon* {:icon-id i/arrow :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
-     [:div {:class (stl/css :deco-before)} deprecated-icon/logo-error-screen]
+      [:div {:class (stl/css :deco-before)} [:> raw-svg* {:id "logo-error-screen"}]]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
                  :on-click on-nav-root}
@@ -67,10 +67,10 @@
      [:div {:class (stl/css :exception-content)}
       [:div {:class (stl/css :container)} children]]
 
-     [:div {:class (stl/css :deco-after2)}
-      [:span (tr "labels.copyright-period")]
-      deprecated-icon/logo-error-screen
-      [:span (tr "not-found.made-with-love")]]]))
+      [:div {:class (stl/css :deco-after2)}
+       [:span (tr "labels.copyright-period")]
+       [:> raw-svg* {:id "logo-error-screen"}]
+       [:span (tr "not-found.made-with-love")]]]))
 
 (mf/defc invalid-token
   [{:keys [reason]}]
@@ -145,11 +145,12 @@
     [:div {:class (stl/css :overlay)}
      [:div {:class (stl/css :dialog-login)}
       [:div {:class (stl/css :modal-close)}
-       [:button {:class (stl/css :modal-close-button)
-                 :on-click on-nav-root}
-        deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "labels.close")
+                         :on-click on-nav-root
+                         :icon i/close}]]
       [:div {:class (stl/css :login)}
-       [:div {:class (stl/css :logo)} deprecated-icon/logo]
+       [:div {:class (stl/css :logo)} [:> raw-svg* {:id "penpot-logo"}]]
 
        (case @current-section
          :login
@@ -212,17 +213,19 @@
     [:div {:class (stl/css :overlay)}
      [:div {:class (stl/css :dialog)}
       [:div {:class (stl/css :modal-close)}
-       [:button {:class (stl/css :modal-close-button) :on-click on-close}
-        deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "labels.close")
+                         :on-click on-close
+                         :icon i/close}]]
       [:div {:class (stl/css :dialog-title)} title]
       (for [[index content] (d/enumerate content)]
         [:div {:key index} content])
-      [:div {:class (stl/css :sign-info)}
-       (when cancel-text
-         [:button {:class (stl/css :cancel-button)
-                   :on-click on-close}
-          cancel-text])
-       [:button {:on-click on-click} button-text]]]]))
+       [:div {:class (stl/css :sign-info)}
+        (when cancel-text
+          [:button {:class (stl/css :cancel-button)
+                    :on-click on-close}
+           cancel-text])
+        [:> button* {:variant "primary" :on-click on-click} button-text]]]]))
 
 (mf/defc request-access*
   [{:keys [file-id team-id is-default is-workspace profile]}]
@@ -315,7 +318,7 @@
      [:div {:class (stl/css :main-message)} (tr "labels.bad-gateway.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.bad-gateway.desc-message")]
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click handle-retry} (tr "labels.retry")]]]))
+      [:> button* {:variant "primary" :on-click handle-retry} (tr "labels.retry")]]]))
 
 (mf/defc service-unavailable*
   []
@@ -324,7 +327,7 @@
      [:div {:class (stl/css :main-message)} (tr "labels.service-unavailable.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click on-click} (tr "labels.retry")]]]))
+      [:> button* {:variant "primary" :on-click on-click} (tr "labels.retry")]]]))
 
 (mf/defc nitrate-unavailable*
   []
@@ -471,8 +474,8 @@
    (cond
      is-workspace
      [:div {:class (stl/css :workspace)}
-      [:div {:class (stl/css :workspace-left)}
-       deprecated-icon/logo-icon
+       [:div {:class (stl/css :workspace-left)}
+        [:> raw-svg* {:id "penpot-logo-icon"}]
        [:div
         [:div {:class (stl/css :project-name)} (tr "not-found.no-permission.project-name")]
         [:div {:class (stl/css :file-name)} (tr "not-found.no-permission.penpot-file")]]]
