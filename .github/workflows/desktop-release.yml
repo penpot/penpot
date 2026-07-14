@@ -1,0 +1,64 @@
+name: Desktop app
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'desktop-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Set tagged desktop version
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: desktop
+        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#desktop-v}"
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Test desktop launcher
+        working-directory: desktop
+        run: npm test
+
+      - name: Build AppImage and DEB
+        working-directory: desktop
+        run: npm run build
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: penpot-desktop-linux
+          path: |
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+
+      - name: Publish tagged desktop release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            desktop/dist/*.AppImage \
+            desktop/dist/*.deb \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Penpot Desktop ${GITHUB_REF_NAME#desktop-v}" \
+            --generate-notes

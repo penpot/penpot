@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" data-phase="checking">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'" />
+    <title>Penpot Desktop</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <div class="canvas-mark mark-one" aria-hidden="true"></div>
+    <div class="canvas-mark mark-two" aria-hidden="true"></div>
+    <div class="canvas-mark mark-three" aria-hidden="true"></div>
+
+    <header class="app-header">
+      <div class="brand">
+        <img src="../../resources/icon.svg" alt="" />
+        <div>
+          <strong>penpot</strong>
+          <span>desktop</span>
+        </div>
+      </div>
+      <div class="local-badge"><span></span> Local workspace</div>
+    </header>
+
+    <main class="launcher-shell">
+      <section class="launcher-card" aria-live="polite">
+        <div class="card-intro">
+          <div class="status-orbit" aria-hidden="true">
+            <div class="orbit-ring"></div>
+            <div class="orbit-core">
+              <svg viewBox="0 0 48 48" role="presentation">
+                <path d="M14 9.5 9 16.7v4.1l-4 1.9v20.6L22.8 52l1.2.5 1.2-.5L43 43.3V22.7l-4-1.9v-4.1l-5-7.2-5 7.2-5-7.2-5 7.2-5-7.2Zm-5 16 15 7.1v15.9L9 41.4V25.5Zm30 0v15.9l-15 7.1V32.6l15-7.1Z" transform="translate(0 -7)" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="intro-copy">
+            <span class="eyebrow">PENPOT DESKTOP</span>
+            <h1 data-status-title>Preparing Penpot</h1>
+            <p data-status-detail>Checking the local environment…</p>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-meta">
+            <span>Starting local services</span>
+            <span data-progress-label>4%</span>
+          </div>
+          <div class="progress-track"><div class="progress-bar" data-progress-bar></div></div>
+        </div>
+
+        <ol class="startup-steps">
+          <li data-step="checking" data-state="active">
+            <span class="step-marker"><i></i></span>
+            <div><strong>Local service</strong><span>Checking availability</span></div>
+          </li>
+          <li data-step="docker" data-state="pending">
+            <span class="step-marker"><i></i></span>
+            <div><strong>Docker</strong><span>Connecting to engine</span></div>
+          </li>
+          <li data-step="starting,waiting" data-state="pending">
+            <span class="step-marker"><i></i></span>
+            <div><strong>Containers</strong><span>Starting the stack</span></div>
+          </li>
+          <li data-step="ready" data-state="pending">
+            <span class="step-marker"><i></i></span>
+            <div><strong>Workspace</strong><span>Opening the application</span></div>
+          </li>
+        </ol>
+
+        <div class="error-panel" data-error-panel hidden>
+          <div class="error-heading">
+            <span class="warning-icon">!</span>
+            <div><strong>Startup diagnostics</strong><span>Your Penpot data is safe</span></div>
+          </div>
+          <pre data-error-details></pre>
+        </div>
+
+        <div class="launcher-actions">
+          <button class="button button-primary" type="button" data-retry hidden>Try again</button>
+          <button class="button button-secondary" type="button" data-copy hidden>Copy details</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span class="privacy-mark">◆</span>
+      <span>Projects and files remain on this computer</span>
+      <span class="footer-separator"></span>
+      <span>localhost:9001</span>
+    </footer>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
