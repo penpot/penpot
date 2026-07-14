@@ -345,7 +345,8 @@
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})))
+          (assoc :workspace-presence {})
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state stream]

@@ -77,7 +77,8 @@
                     (if (nil? lstate)
                       default-local-state
                       lstate)))
-          (assoc-in [:viewer-local :share-id] share-id)))
+          (assoc-in [:viewer-local :share-id] share-id)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state _]

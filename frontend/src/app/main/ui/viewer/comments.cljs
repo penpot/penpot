@@ -95,6 +95,16 @@
           [:span {:class (stl/css :icon)}
            deprecated-icon/tick])]
 
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (= :mentions cmode))
+             :data-value "mentions"
+             :on-click update-mode}
+        [:span {:class (stl/css :label)} (tr "labels.show-mentions")]
+        (when (= :mentions cmode)
+          [:span {:class (stl/css :icon)}
+           deprecated-icon/tick])]
+
        [:li {:class (stl/css :separator)}]
 
        [:li {:class (stl/css-case
