@@ -37,6 +37,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.clipboard :as clipboard]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.shape-icon :as usi]
@@ -149,7 +150,6 @@
   {::mf/private true}
   [{:keys [shapes]}]
   (let [multiple?         (> (count shapes) 1)
-        layout            (mf/deref refs/workspace-layout)
 
         do-copy           #(st/emit! (dw/copy-selected))
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
@@ -203,7 +203,7 @@
 
     [:*
      (when (and (not multiple?)
-                (contains? layout :debug-panel))
+                (dbg/enabled? :show-ids))
        [:> menu-entry* {:title (tr "workspace.shape.menu.copy-id")
                         :on-click do-copy-id}])
      [:> menu-entry* {:title (tr "workspace.shape.menu.copy")

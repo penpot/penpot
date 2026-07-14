@@ -1143,7 +1143,9 @@
   (ptk/reify ::copy-id-to-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (clipboard/to-clipboard id))))
+      (->> (rx/from (clipboard/to-clipboard id))
+           (rx/map (fn [_]
+                     (ntf/info "The id has been copied to the clipboard")))))))
 
 (defn copy-as-image
   []
