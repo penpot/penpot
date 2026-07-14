@@ -21,6 +21,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
+   [app.graph.ingest :as graph.ingest]
    [app.http.session :as session]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
@@ -33,6 +34,7 @@
    [app.storage.tmp :as tmp]
    [app.util.template :as tmpl]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
    [emoji.core :as emj]
    [integrant.core :as ig]
@@ -326,6 +328,28 @@
                          "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
 
 
+(defn graph-export-handler
+  "Build (or rebuild) the Ladybug graph for a file and stream the `.lbug`
+  database. MVP: synchronous ingest on each request."
+  [cfg {:keys [params]}]
+  (let [file-id (some-> params :file-id parse-uuid)]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments
+                :hint "missing file-id"))
+
+    (let [{:keys [db-path]} (graph.ingest/ingest-file! cfg file-id :skip-stats? true)]
+      (when-not (fs/exists? db-path)
+        (ex/raise :type :internal
+                  :code :graph-file-not-found
+                  :hint "graph database file missing after ingest"
+                  :file-id (str file-id)
+                  :db-path db-path))
+      {::yres/status  200
+       ::yres/body    (io/input-stream db-path)
+       ::yres/headers {"content-type" "application/octet-stream"
+                       "content-disposition" (str "attachment; filename=" file-id ".lbug")}})))
+
 (defn import-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
   (when-not (contains? params :file)
@@ -573,6 +597,7 @@
      ["/handle-team-features"
       {:handler (partial handle-team-features cfg)}]
      ["/file-export" {:handler (partial export-handler cfg)}]
+     ["/graph-export" {:handler (partial graph-export-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
 
