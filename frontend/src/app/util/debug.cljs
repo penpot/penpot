@@ -7,9 +7,10 @@
 (ns app.util.debug
   (:require
    [app.main.store :as st]
+   [app.util.storage :as storage]
    [okulary.core :as l]))
 
-(defonce state (l/atom #{#_:events}))
+(def ^:private storage-key :app.util.debug/enabled-options)
 
 (def options
   #{;; Displays the bounding box for the shapes
@@ -106,6 +107,17 @@
     ;; Event times
     :events-times})
 
+(defn- load-state
+  []
+  (let [stored (get storage/user storage-key #{})]
+    (into #{} (filter options) stored)))
+
+(defonce state (l/atom (load-state)))
+
+(defn- persist-state!
+  [state]
+  (swap! storage/user assoc storage-key state))
+
 (defn handle-change
   []
   (set! st/*debug-events* (contains? @state :events))
@@ -113,7 +125,9 @@
 
 (when *assert*
   (handle-change)
-  (add-watch state :watcher handle-change))
+  (add-watch state :watcher handle-change)
+  (add-watch state :persistence (fn [_ _ _ new-state]
+                                  (persist-state! new-state))))
 
 (defn enable!
   [option]
