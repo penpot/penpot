@@ -40,7 +40,6 @@
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
-   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -284,18 +283,16 @@
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
-
-        dbg-shape-panel? (dbg/enabled? :shape-panel)
+        is-debug?        (= section :debug)
 
         current-section* (mf/use-state :info)
         current-section  (deref current-section*)
 
         can-be-expanded?
-        (or dbg-shape-panel?
-            (and (not is-comments?)
-                 (not is-history?)
-                 is-inspect?
-                 (= current-section :code)))
+        (and (not is-comments?)
+             (not is-history?)
+             is-inspect?
+             (= current-section :code))
 
         {on-pointer-down :on-pointer-down
          on-lost-pointer-capture :on-lost-pointer-capture
@@ -324,15 +321,16 @@
       [:aside
        {:class (stl/css-case :right-settings-bar true
                              :not-expand (not can-be-expanded?)
-                             :expanded (> width right-sidebar-default-width))
+                             :expanded (or is-debug? (> width right-sidebar-default-width)))
 
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
         :on-context-menu dom/prevent-default-context-menu
-        :style {:--right-sidebar-width (if can-be-expanded?
-                                         (dm/str width "px")
-                                         (dm/str right-sidebar-default-width "px"))}}
+        :style {:--right-sidebar-width (cond
+                                         is-debug? (dm/str right-sidebar-default-max-width "px")
+                                         can-be-expanded? (dm/str width "px")
+                                         :else (dm/str right-sidebar-default-width "px"))}}
 
        (when can-be-expanded?
          [:div {:class (stl/css :resize-area)

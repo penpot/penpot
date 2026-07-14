@@ -9,9 +9,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.workspace :as dw]
+   [app.main.store :as st]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private no-reload-options
@@ -35,9 +39,18 @@
            (dom/stop-propagation event)
            (dbg/toggle! option)
            (when-not (contains? no-reload-options option)
-             (js* "app.main.reinit(true)"))))]
+             (js* "app.main.reinit(true)"))))
+
+        handle-close
+        (mf/use-fn
+         (fn []
+           (st/emit! (dw/remove-layout-flag :debug-panel))))]
 
     [:div {:class (dm/str class " " (stl/css :debug-panel))}
+     [:> panel-title* {:class (stl/css :debug-panel-title)
+                       :text (tr "workspace.debug.title")
+                       :on-close handle-close}]
+
      [:div {:class (stl/css :debug-panel-inner)}
       (for [option (sort-by d/name dbg/options)]
         [:div {:key (d/name option) :class (stl/css :checkbox-wrapper)}
