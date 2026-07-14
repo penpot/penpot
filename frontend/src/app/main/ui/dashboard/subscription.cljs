@@ -162,11 +162,11 @@
 
         handle-click
         (mf/use-fn
-         (mf/deps nitrate-license subscription-type)
+         (mf/deps subscription-type)
          (fn []
-           (if (= subscription-type "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+           (st/emit! (dnt/show-nitrate-popup :nitrate-form
+                                             (when (= subscription-type "unlimited")
+                                               {:show-contact-sales-option true})))))
 
         handle-go-to-cc
         (mf/use-fn dnt/go-to-nitrate-ac-create-org)
