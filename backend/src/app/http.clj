@@ -21,6 +21,7 @@
    [app.http.middleware :as mw]
    [app.http.security :as sec]
    [app.http.session :as session]
+   [app.http.unfurl :as-alias unfurl]
    [app.http.websocket :as-alias ws]
    [app.main :as-alias main]
    [app.metrics :as mtx]
@@ -149,6 +150,7 @@
    [::rpc/routes schema:routes]
    [::oidc/routes schema:routes]
    [::assets/routes schema:routes]
+   [::unfurl/routes schema:routes]
    [::debug/routes schema:routes]
    [::mtx/routes schema:routes]
    [::awsns/routes schema:routes]
@@ -177,6 +179,7 @@
 
      (::mtx/routes cfg)
      (::assets/routes cfg)
+     (::unfurl/routes cfg)
      (::debug/routes cfg)
 
      ["/webhooks"

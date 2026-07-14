@@ -65,6 +65,23 @@
 
 ;; --- Navigate (Event)
 
+(defn match->context-params
+  "Extract the params that give sharing context to the current URL.
+
+  They are mirrored on the query string (before the fragment) because
+  the fragment is never sent to the server; this way shared links
+  carry enough context for rendering link preview (unfurl) metadata."
+  [match]
+  (let [path-params  (dm/get-in match [:params :path])
+        query-params (get match :query-params)
+        file-id      (or (get query-params :file-id) (get path-params :file-id))
+        team-id      (or (get query-params :team-id) (get path-params :team-id))
+        project-id   (or (get query-params :project-id) (get path-params :project-id))]
+    (cond
+      (some? file-id)    {:file-id file-id}
+      (some? project-id) {:team-id team-id :project-id project-id}
+      (some? team-id)    {:team-id team-id})))
+
 (defn navigated
   [match send-event-info?]
   (ptk/reify ::navigated
@@ -85,7 +102,16 @@
     (update [_ state]
       (-> state
           (assoc :route match)
-          (dissoc :exception)))))
+          (dissoc :exception)))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (let [query (some-> (match->context-params match)
+                          (u/map->query-string))
+            href  (dm/str (.-pathname globals/location)
+                          (if (some? query) (dm/str "?" query) "")
+                          (.-hash globals/location))]
+        (.replaceState js/history nil "" href)))))
 
 (defn navigate
   [id params & {:keys [::replace ::new-window] :as options}]

@@ -185,7 +185,12 @@
     ;; renderer.
     :wasm-export
     :custom-shortcuts
-    :remote-media-processing})
+    :remote-media-processing
+
+    ;; Enables serving link preview (Open Graph) metadata for shared
+    ;; links; exposes file names and dashboard thumbnails to anyone
+    ;; that knows the file id.
+    :link-unfurl})
 
 (def all-flags
   (set/union email login varia))
@@ -220,7 +225,8 @@
    :enable-available-viewer-wasm
    :enable-background-blur
    :enable-stroke-path
-   :enable-token-combobox])
+   :enable-token-combobox
+   :enable-link-unfurl])
 
 (defn parse
   [& flags]
