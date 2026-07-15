@@ -82,6 +82,13 @@
   min-block-size: $sz-32;
   block-size: $sz-40;
   inline-size: 100%;
+
+  &:disabled {
+    background-color: var(--color-background-quaternary);
+    border: 1px solid var(--color-background-quaternary);
+    color: var(--color-foreground-disabled);
+    cursor: unset;
+  }
 }
 
 .go-back {
@@ -159,6 +166,8 @@
 .submit-btn,
 .register-btn,
 .recover-btn {
+  @include use-typography("headline-small");
+
   background: none;
   cursor: pointer;
   display: flex;
@@ -174,11 +183,15 @@
   color: var(--color-background-secondary);
   border-radius: $br-8;
   min-block-size: $sz-32;
-
-  @include use-typography("headline-small");
-
   block-size: $sz-40;
   inline-size: 100%;
+
+  &:disabled {
+    background-color: var(--color-background-quaternary);
+    border: $b-1 solid var(--color-background-quaternary);
+    color: var(--color-foreground-disabled);
+    cursor: unset;
+  }
 }
 
 .login-btn {
@@ -199,6 +212,13 @@
   &:hover {
     color: var(--color-foreground-primary);
     background-color: var(--color-background-quaternary);
+  }
+
+  &:disabled {
+    background-color: var(--color-background-quaternary);
+    border: 1px solid var(--color-background-quaternary);
+    color: var(--color-foreground-disabled);
+    cursor: unset;
   }
 }
 

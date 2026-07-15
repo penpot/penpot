@@ -4,15 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
 @use "./common";
 
-.accept-terms-and-privacy-wrapper {
-  :global(a) {
-    color: var(--color-foreground-secondary);
-    font-weight: deprecated.$fw700;
-  }
-}
 
 .checkbox-terms-and-privacy,
 .checkbox-newsletter-updates {
@@ -20,76 +17,60 @@
 }
 
 .register-form {
-  gap: deprecated.$s-24;
+  gap: var(--sp-xxl);
 }
 
 .register-success {
-  gap: deprecated.$s-24;
-
-  .auth-title {
-    @include deprecated.med-title-typography;
-  }
+  gap: var(--sp-xxl);
 }
 
-.notification-icon {
-  fill: var(--main-icon-foreground);
-  display: flex;
-  justify-content: center;
-  margin-bottom: deprecated.$s-32;
+.register-success .auth-title {
+  @include use-typography("title-medium");
 
-  svg {
-    width: deprecated.$s-92;
-    height: deprecated.$s-92;
-  }
+  line-height: 1.2;
 }
 
 .notification-text {
-  @include deprecated.body-medium-typography;
+  @include use-typography("body-medium");
 
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .notification-text-email {
-  @include deprecated.med-title-typography;
+  @include use-typography("title-medium");
 
-  font-size: deprecated.$fs-20;
-  color: var(--register-confirmation-color);
-  margin-inline: deprecated.$s-36;
+  line-height: 1.2;
+  color: var(--color-background-success);
+  margin-inline: $sz-36;
 }
 
 .logo-btn {
-  height: deprecated.$s-40;
-
-  svg {
-    width: deprecated.$s-120;
-    height: deprecated.$s-40;
-    fill: var(--main-icon-foreground);
-  }
+  block-size: $sz-40;
 }
 
 .logo-container {
   display: flex;
   justify-content: flex-start;
-  width: deprecated.$s-120;
-  margin-block-end: deprecated.$s-24;
+  inline-size: $sz-120;
+  margin-block-end: var(--sp-xxl);
 }
 
 .terms-register {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
   justify-content: center;
-  width: 100%;
+  inline-size: 100%;
 }
 
 .and-text {
-  border-bottom: deprecated.$s-1 solid transparent;
-  color: var(--title-foreground-color);
+  border-block-end: $b-1 solid transparent;
+  color: var(--color-foreground-secondary);
 }
 
 .auth-link {
-  color: var(--link-foreground-color);
+  color: var(--color-accent-primary);
 
   &:hover {
     text-decoration: underline;
