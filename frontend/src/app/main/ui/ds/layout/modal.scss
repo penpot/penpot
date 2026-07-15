@@ -4,9 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "ds/_borders" as *;
-@use "ds/_utils" as *;
-
 .modal-header {
   display: flex;
   align-items: center;
@@ -41,10 +38,22 @@
 .modal-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: var(--sp-s);
   padding-block: var(--sp-m);
   padding-inline: var(--sp-l);
   flex-shrink: 0;
   inline-size: 100%;
+}
+
+.modal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
 }
