@@ -12,6 +12,7 @@
    [app.common.time :as ct]
    [app.graph.ingest :as graph.ingest]
    [app.graph.ladybug :as ladybug]
+   [app.graph.schema.nodes :as nodes]
    [app.graph.sync :as graph.sync]
    [app.msgbus :as mbus]
    [clojure.string :as str]
@@ -179,6 +180,54 @@
     (ex/raise :type :not-found
               :code :graph-session-not-loaded
               :hint "load a file graph before running queries")))
+
+(def ^:private export-max-rows
+  "Row cap for graph-view export queries; far above expected per-file node
+  and edge counts. `:truncated` in the export signals when it was hit."
+  100000)
+
+(defn- export-nodes
+  [conn]
+  (reduce
+   (fn [acc {:keys [table]}]
+     (let [stmt (str "MATCH (n:" (nodes/match-label table)
+                     ") RETURN n.id AS id, n.name AS name;")
+           {:keys [rows truncated?]}
+           (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
+       (-> acc
+           (update :nodes into
+                   (map (fn [[id label]]
+                          {:id (str id) :label (str label) :table table}))
+                   rows)
+           (update :truncated? #(or % truncated?)))))
+   {:nodes [] :truncated? false}
+   nodes/node-types))
+
+(defn- export-edges
+  [conn]
+  (let [stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
+                  "RETURN a.id AS source, b.id AS target, r.position AS position;")
+        {:keys [rows truncated?]}
+        (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
+    {:edges (mapv (fn [[source target position]]
+                    {:source (str source) :target (str target) :position position})
+                  rows)
+     :truncated? truncated?}))
+
+(defn export-graph-data!
+  "Export the node/edge inventory of the in-memory graph for `profile-id`
+  as plain data for the debug graph view. Returns nil when no session is
+  loaded. Queries the Ladybug database (not the sync index) so the view
+  reflects actual DB state, including drift."
+  [profile-id]
+  (when-let [{:keys [conn file-id index]} (get @sessions (session-key profile-id))]
+    (let [{:keys [nodes] nodes-truncated? :truncated?} (export-nodes conn)
+          {:keys [edges] edges-truncated? :truncated?} (export-edges conn)]
+      {:file-id   (str file-id)
+       :revn      (:revn index)
+       :truncated (boolean (or nodes-truncated? edges-truncated?))
+       :nodes     nodes
+       :edges     edges})))
 
 (defn console-context
   "Build template data for the graph debug console page."
