@@ -48,7 +48,8 @@
                     :register is-register)}
      [:> heading* {:level 1 :typography "title-large" :class (stl/css :logo-container)}
       [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)}
-       [:> raw-svg* {:id raw-svg/penpot-logo}]]]
+       [:> raw-svg* {:id raw-svg/penpot-logo
+                     :class (stl/css :logo)}]]]
      [:div {:class (stl/css :login-illustration)}
       [:img {:src "images/registration-illustration.png"}]]
 
