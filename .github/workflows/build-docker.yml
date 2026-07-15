@@ -16,6 +16,10 @@ on:
         required: true
         default: 'develop'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.gh_ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     name: Build and Push Penpot Docker Images
