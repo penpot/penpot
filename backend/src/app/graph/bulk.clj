@@ -10,7 +10,9 @@
   Node and relationship rows are written to a temporary staging directory
   and loaded with one COPY statement per table (or per rel FROM/TO pair)."
   (:require
+   [app.common.json :as json]
    [app.graph.ladybug :as ladybug]
+   [app.graph.schema.nodes :as nodes]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [datoteka.fs :as fs])
@@ -39,9 +41,14 @@
 (defn- csv-cell
   [v]
   (cond
+    (nil? v)      ""
     (uuid? v)     (str v)
     (string? v)   (csv-escape-string v)
-    (number? v)   (str (long v))
+    (number? v)   (if (== v (long v)) (str (long v)) (str (double v)))
+    (boolean? v)  (str v)
+    (keyword? v)  (csv-escape-string (name v))
+    (map? v)      (csv-escape-string (json/encode v))
+    (coll? v)     (csv-escape-string (json/encode v))
     :else         (csv-escape-string (str v))))
 
 (defn- cypher-file-path
@@ -50,16 +57,9 @@
       (str/replace "\\" "\\\\")
       (str/replace "'" "\\'")))
 
-(defn- node-columns
-  [rows]
-  (let [cols (into #{} (mapcat keys rows))
-        preferred [:id :name :version :revision :index]]
-    (into (vec (filter cols preferred))
-          (sort (remove (set preferred) cols)))))
-
 (defn- write-node-csv!
-  [^File file rows]
-  (let [columns (node-columns rows)]
+  [^File file table rows]
+  (let [columns (nodes/column-keys table)]
     (with-open [w (io/writer file :encoding "UTF-8")]
       (.write w (str (str/join "," (map name columns)) "\n"))
       (doseq [row rows]
@@ -126,7 +126,7 @@
     (doseq [[table rows] (sort-by key nodes)
             :when (seq rows)]
       (let [csv-file (io/file staging-path (str table ".csv"))]
-        (write-node-csv! csv-file rows)
+        (write-node-csv! csv-file table rows)
         (copy-node-table! conn table csv-file)))
     (doseq [[[from-table to-table] group]
             (sort-by identity (group-by (juxt :from-table :to-table) edges))

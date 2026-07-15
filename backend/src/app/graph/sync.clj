@@ -10,36 +10,19 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.graph.ladybug :as ladybug]
-   [app.graph.project.specs :as specs]
+   [app.graph.schema.nodes :as nodes]
    [clojure.string :as str])
   (:import
    com.ladybugdb.Connection))
 
 (set! *warn-on-reflection* true)
 
-(def ^:private shape-type->table
-  {:frame   "Frame"
-   :rect    "Rectangle"
-   :group   "Group"
-   :circle  "Circle"
-   :path    "Path"
-   :text    "Text"
-   :bool    "Boolean"
-   :image   "Image"
-   :svg-raw "SVGRaw"})
-
 (def ^:private supported-change-types
   #{:add-obj :mod-obj :del-obj :add-page :del-page :mod-page :mov-objects})
 
-(defn- node-label
-  [table]
-  (if (#{"Group" "Boolean"} table)
-    (str "`" table "`")
-    table))
-
 (defn- shape-table
   [shape]
-  (get shape-type->table (keyword (:type shape))))
+  (nodes/table-for-type (:type shape)))
 
 (defn- build-parent-map
   [edges]
@@ -139,45 +122,50 @@
      :children children-index}))
 
 
+(defn- format-node-value
+  [table k v]
+  (ladybug/format-typed-value (nodes/column-ladybug-type table k) v))
+
 (defn- create-node-statement
-  [table {:keys [id name version revision index]}]
-  (let [label (node-label table)
-        attrs (cond-> [(str "id: " (ladybug/format-uuid id))
-                       (str "name: " (ladybug/format-string name))]
-                (some? version)  (conj (str "version: " (ladybug/format-int version)))
-                (some? revision) (conj (str "revision: " (ladybug/format-int revision)))
-                (some? index)    (conj (str "index: " (ladybug/format-int index))))]
-    (str "CREATE (:" label " {" (str/join ", " attrs) "});")))
+  [table attrs]
+  (let [label (nodes/match-label table)
+        pairs (for [k (nodes/column-keys table)
+                    :let [v (get attrs k)]
+                    :when (some? v)]
+                (str (nodes/cypher-property-key k) ": "
+                     (format-node-value table k v)))]
+    (str "CREATE (:" label " {" (str/join ", " pairs) "});")))
 
 (defn- delete-node-statement
   [table shape-id]
-  (str "MATCH (n:" (node-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
+  (str "MATCH (n:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
        "DETACH DELETE n;"))
 
 (defn- create-edge-statement
   [{:keys [from-table from-id to-table to-id position]}]
-  (str "MATCH (s:" (node-label from-table) " {id: " (ladybug/format-uuid from-id) "}), "
-       "(p:" (node-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+  (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "}), "
+       "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
        "CREATE (s)-[:IsChildOf {position: " (ladybug/format-int position) "}]->(p);"))
 
 (defn- delete-edge-statement
   [{:keys [from-table from-id to-table to-id]}]
-  (str "MATCH (s:" (node-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
+  (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
        "-[r:IsChildOf]->"
-       "(p:" (node-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+       "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
        "DELETE r;"))
 
 (defn- set-edge-position-statement
   [{:keys [from-table from-id to-table to-id position]}]
-  (str "MATCH (s:" (node-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
+  (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
        "-[r:IsChildOf]->"
-       "(p:" (node-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+       "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
        "SET r.position = " (ladybug/format-int position) ";"))
 
-(defn- set-shape-name-statement
-  [table shape-id name]
-  (str "MATCH (s:" (node-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
-       "SET s.name = " (ladybug/format-string name) ";"))
+(defn- set-node-attr-statement
+  [table shape-id attr value]
+  (str "MATCH (s:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
+       "SET s." (nodes/cypher-property-key attr) " = "
+       (format-node-value table attr value) ";"))
 
 (defn- set-page-name-statement
   [page-id name]
@@ -188,7 +176,7 @@
 (defn- set-document-revision-statement
   [doc-id revn]
   (str "MATCH (d:Document {id: " (ladybug/format-uuid doc-id) "}) "
-       "SET d.revision = " (ladybug/format-int revn) ";"))
+       "SET d.revn = " (ladybug/format-int revn) ";"))
 
 (defn- resolve-parent-for-add
   [index {:keys [parent-id frame-id page-id]}]
@@ -229,9 +217,9 @@
     index))
 
 (defn- index-add-page!
-  [index {:keys [id name index doc-id]}]
+  [index {:keys [id name doc-id] page-index :index}]
   (-> index
-      (assoc-in [:pages id] {:id id :name name :index index})
+      (assoc-in [:pages id] {:id id :name name :index page-index})
       (update :children update doc-id (fnil conj #{}) id)))
 
 (defn- index-move-shape!
@@ -248,13 +236,13 @@
 (defn- mov-object-ids
   [shapes]
   (let [coll (cond
-                (nil? shapes) []
-                (sequential? shapes) shapes
-                (uuid? shapes) [shapes]
-                (map? shapes) (if-let [id (or (:id shapes) (get shapes "id"))]
-                                [id]
-                                [])
-                :else [])]
+               (nil? shapes) []
+               (sequential? shapes) shapes
+               (uuid? shapes) [shapes]
+               (map? shapes) (if-let [id (or (:id shapes) (get shapes "id"))]
+                               [id]
+                               [])
+               :else [])]
     (into []
           (keep (fn [shape]
                   (when shape
@@ -275,9 +263,9 @@
   [index {:keys [shapes page-id] :as change}]
   (let [shape-ids (mov-object-ids shapes)
         parent    (resolve-parent-for-add index
-                                            (assoc change
-                                                   :frame-id (:parent-id change)
-                                                   :page-id page-id))]
+                                          (assoc change
+                                                 :frame-id (:parent-id change)
+                                                 :page-id page-id))]
     (cond
       (empty? shape-ids)
       {:index index :statements [] :applied? true}
@@ -338,32 +326,35 @@
         (update :children update doc-id #(disj (or % #{}) page-id))
         (update :children dissoc page-id))))
 
+(defn- mod-attrs-for-table
+  [table]
+  (disj (set (nodes/column-keys table)) :id))
+
 (defn- apply-add-obj
   [index change]
-  (let [{:keys [id obj page-id parent-id frame-id index]} change
+  (let [{:keys [id obj page-id] pos :index} change
         table (shape-table obj)]
     (if-not table
       {:index index :statements [] :applied? false :reason :unsupported-shape-type}
       (let [parent (resolve-parent-for-add index change)]
         (if-not parent
           {:index index :statements [] :applied? false :reason :missing-parent}
-          (let [position (long (or index (default-position index (:parent-id parent))))
-                attrs    (specs/check-shape-node {:id id :name (:name obj)})
+          (let [position (long (or pos (default-position index (:parent-id parent))))
+                attrs    (nodes/project-attrs table (assoc obj :id id))
                 edge     (merge {:from-table table
                                  :from-id    id
                                  :to-table   (:parent-table parent)
                                  :to-id      (:parent-id parent)
-                                 :position   position}
-                               )]
+                                 :position   position})]
             {:index       (index-add-shape! index
-                                             {:id            id
-                                              :name          (:name attrs)
-                                              :table         table
-                                              :parent-id     (:parent-id parent)
-                                              :parent-table  (:parent-table parent)
-                                              :position      position
-                                              :page-id       (or page-id (when (= (:parent-table parent) "Page")
-                                          (:parent-id parent)))})
+                                            {:id            id
+                                             :name          (:name attrs)
+                                             :table         table
+                                             :parent-id     (:parent-id parent)
+                                             :parent-table  (:parent-table parent)
+                                             :position      position
+                                             :page-id       (or page-id (when (= (:parent-table parent) "Page")
+                                                                          (:parent-id parent)))})
              :statements  [(create-node-statement table attrs)
                            (create-edge-statement edge)]
              :applied?    true}))))))
@@ -371,14 +362,22 @@
 (defn- apply-mod-obj
   [index {:keys [id operations]}]
   (if-let [shape (get-in index [:shapes id])]
-    (let [name-ops (filter #(and (= :set (:type %)) (= :name (:attr %))) operations)]
-      (if (empty? name-ops)
+    (let [table   (:table shape)
+          syncable (mod-attrs-for-table table)
+          set-ops (filter #(and (= :set (:type %))
+                                (contains? syncable (:attr %)))
+                          operations)]
+      (if (empty? set-ops)
         {:index index :statements [] :applied? false :reason :unsupported-operations}
-        (let [name     (:val (last name-ops))
-              table    (:table shape)
-              attrs    (specs/check-shape-node {:id id :name name})]
-          {:index      (assoc-in index [:shapes id :name] (:name attrs))
-           :statements [(set-shape-name-statement table id (:name attrs))]
+        (let [updates    (into {} (map (juxt :attr :val) set-ops))
+              statements (for [[attr value] updates]
+                           (set-node-attr-statement table id attr value))
+              index'     (reduce (fn [idx [attr value]]
+                                   (assoc-in idx [:shapes id attr] value))
+                                 index
+                                 updates)]
+          {:index      index'
+           :statements statements
            :applied?   true})))
     {:index index :statements [] :applied? false :reason :missing-shape}))
 
@@ -391,7 +390,7 @@
 
 (defn- apply-del-obj
   [index {:keys [id]}]
-  (if-let [shape (get-in index [:shapes id])]
+  (if (get-in index [:shapes id])
     (let [to-delete (delete-order-deepest-first (:children index) id)
           statements
           (vec (concat
@@ -416,9 +415,9 @@
   [index {:keys [id name page]}]
   (let [page-id  (or id (:id page))
         page     (or page {:id page-id :name name})
-        page     (specs/check-page {:id page-id
-                                    :name (or (:name page) "Page")
-                                    :index (count (:pages index))})
+        page     (nodes/validate-node "Page" {:id page-id
+                                              :name (or (:name page) "Page")
+                                              :index (count (:pages index))})
         doc-id   (:doc-id index)
         position (count (:pages index))
         edge     {:from-table "Page"
@@ -427,21 +426,21 @@
                   :to-id      doc-id
                   :position   position}]
     {:index      (index-add-page! index
-                                 {:id      page-id
-                                  :name    (:name page)
-                                  :index   (:index page)
-                                  :doc-id  doc-id})
+                                  {:id      page-id
+                                   :name    (:name page)
+                                   :index   (:index page)
+                                   :doc-id  doc-id})
      :statements [(create-node-statement "Page" page)
                   (create-edge-statement edge)]
      :applied?   true}))
 
 (defn- apply-del-page
   [index {:keys [id]}]
-  (if-let [page (get-in index [:pages id])]
+  (if (get-in index [:pages id])
     (let [shape-ids (into #{}
                           (comp (filter #(= id (get-in index [:shapes % :page-id])))
-                                (filter #(= "Page" (get-in index [:shapes % :parent-table])))
-                          (keys (:shapes index))))
+                                (filter #(= "Page" (get-in index [:shapes % :parent-table]))))
+                          (keys (:shapes index)))
           del-shapes
           (reduce (fn [acc shape-id]
                     (let [result (apply-del-obj acc {:type :del-obj :id shape-id})]
