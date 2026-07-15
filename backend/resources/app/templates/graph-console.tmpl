@@ -147,10 +147,10 @@ Graph Console
 
     {% if session %}
     <div id="graph-view-column"
-         style="flex: 1 1 auto; min-width: 0; position: sticky; top: 8px;">
+         style="flex: 1 1 auto; min-width: 0;">
       <fieldset id="graph-view-panel">
         <legend>Graph view
-          <button type="button" id="graph-maximize" style="margin-left: 1em;">Maximize</button>
+          <button type="button" id="graph-maximize" style="margin-left: 1em;">Expand</button>
         </legend>
         <desc>
           Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
@@ -170,13 +170,21 @@ Graph Console
 </main>
 
 <style>
-  #graph-view-panel:fullscreen {
+  #graph-view-column {
+    position: sticky;
+    top: 8px;
+  }
+  #graph-view-column.graph-view-expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
     background: #fff;
     overflow: auto;
     padding: 12px;
+    margin: 0;
   }
-  #graph-view-panel:fullscreen #graph-canvas {
-    height: calc(100vh - 110px) !important;
+  #graph-view-column.graph-view-expanded #graph-canvas {
+    height: calc(100vh - 160px) !important;
   }
   #graph-files-tree summary { cursor: pointer; }
   #graph-files-tree ul { margin: 2px 0 4px 0; padding-left: 2em; }
@@ -605,30 +613,38 @@ Graph Console
     });
   }
 
+  // In-page expand (no Fullscreen API): keeps browser chrome and window
+  // manager splits usable while the graph takes the whole page.
   const maximizeBtn = document.getElementById("graph-maximize");
-  const graphPanel = document.getElementById("graph-view-panel");
-  if (maximizeBtn && graphPanel) {
-    maximizeBtn.addEventListener("click", function () {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        graphPanel.requestFullscreen().catch(function (err) {
-          graphViewStatus.textContent = "fullscreen rejected: " + err;
-        });
+  const graphColumn = document.getElementById("graph-view-column");
+
+  function resizeGraphSoon() {
+    setTimeout(function () {
+      if (g6graph) {
+        const canvas = document.getElementById("graph-canvas");
+        try {
+          g6graph.setSize(canvas.clientWidth, canvas.clientHeight);
+          g6graph.fitView();
+        } catch (_err) { /* autoResize covers most cases */ }
       }
+    }, 120);
+  }
+
+  function setExpanded(expanded) {
+    graphColumn.classList.toggle("graph-view-expanded", expanded);
+    maximizeBtn.textContent = expanded ? "Restore (Esc)" : "Expand";
+    resizeGraphSoon();
+  }
+
+  if (maximizeBtn && graphColumn) {
+    maximizeBtn.addEventListener("click", function () {
+      setExpanded(!graphColumn.classList.contains("graph-view-expanded"));
     });
-    document.addEventListener("fullscreenchange", function () {
-      maximizeBtn.textContent =
-        document.fullscreenElement ? "Exit fullscreen" : "Maximize";
-      setTimeout(function () {
-        if (g6graph) {
-          const canvas = document.getElementById("graph-canvas");
-          try {
-            g6graph.setSize(canvas.clientWidth, canvas.clientHeight);
-            g6graph.fitView();
-          } catch (_err) { /* autoResize covers most cases */ }
-        }
-      }, 120);
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape"
+          && graphColumn.classList.contains("graph-view-expanded")) {
+        setExpanded(false);
+      }
     });
   }
 
