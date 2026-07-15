@@ -184,13 +184,7 @@
                                         {:columns [:id :email :default-team-id]})
         registration-disabled? (not (contains? cf/flags :registration))
 
-        org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
-        ;; Membership only makes sense for a logged-in profile; querying it for
-        ;; an anonymous recipient would call nitrate with a nil profile-id and
-        ;; mask the clean :invalid-token response with a generic error.
-        membership             (when (and profile org-invitation?)
-                                 (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                                        :organization-id organization-id}))]
+        org-invitation?        (and (contains? cf/flags :nitrate) organization-id)]
 
     (if profile
       (do
@@ -201,23 +195,32 @@
                     :reason :email-mismatch
                     :hint "logged-in user does not matches the invitation"))
 
-        (when (:is-member membership)
-          (ex/raise :type :validation
-                    :code :already-an-org-member
-                    :team-id (:default-team-id membership)
-                    :hint "the user is already a member of the organization"))
-
-        (when (and org-invitation? (not (:organization-id membership)))
-          (ex/raise :type :validation
-                    :code :org-not-found
-                    :team-id (:default-team-id profile)
-                    :hint "the organization doesn't exist"))
-
         (when (nil? invitation)
           (ex/raise :type :validation
                     :code (if organization-id :canceled-invitation :invalid-token)
-                    :hint "the invitation has been canceled"))
+                    :hint (if organization-id
+                            "the invitation has been canceled"
+                            "no invitation associated with the token")))
 
+        ;; Membership only makes sense for a logged-in profile with an
+        ;; existing invitation; querying it when the invitation is absent
+        ;; would call nitrate needlessly and could mask the clean
+        ;; :canceled-invitation/:invalid-token response with a generic error.
+        (let [membership (when org-invitation?
+                           (nitrate/call cfg :get-org-membership {:profile-id profile-id
+                                                                  :organization-id organization-id}))]
+
+          (when (:is-member membership)
+            (ex/raise :type :validation
+                      :code :already-an-org-member
+                      :team-id (:default-team-id membership)
+                      :hint "the user is already a member of the organization"))
+
+          (when (and org-invitation? (not (:organization-id membership)))
+            (ex/raise :type :validation
+                      :code :org-not-found
+                      :team-id (:default-team-id profile)
+                      :hint "the organization doesn't exist")))
 
         ;; if we have logged-in user and it matches the invitation we proceed
         ;; with accepting the invitation and joining the current profile to the
@@ -259,7 +262,9 @@
         (when (nil? invitation)
           (ex/raise :type :validation
                     :code (if organization-id :canceled-invitation :invalid-token)
-                    :hint "the invitation has been canceled"))
+                    :hint (if organization-id
+                            "the invitation has been canceled"
+                            "no invitation associated with the token")))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
         ;; redirect user to login, if no member-id is present and  in the invitation
