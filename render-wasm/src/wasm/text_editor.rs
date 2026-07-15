@@ -153,7 +153,9 @@ where
         };
 
         let point = Point::new(x, y);
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             apply(get_text_editor_state(), text_content, &position);
         }
     })
@@ -207,7 +209,9 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
         };
         let point = Point::new(x, y);
         get_text_editor_state().start_pointer_selection();
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().set_caret_from_position(&position);
             get_text_editor_state().update_styles(text_content);
         }
@@ -233,7 +237,9 @@ pub extern "C" fn text_editor_pointer_down_extend(x: f32, y: f32) {
         };
         let point = Point::new(x, y);
         get_text_editor_state().start_pointer_selection();
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().extend_selection_from_position(&position);
             // The click after pointerup would collapse the caret and drop the
             // selection we just extended.
@@ -267,7 +273,9 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             return;
         };
 
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().extend_selection_from_position(&position);
             // We need this flag to prevent handling the click behavior
             // just after a pointerup event.
@@ -296,7 +304,9 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().extend_selection_from_position(&position);
             get_text_editor_state().update_styles(text_content);
         }
@@ -331,7 +341,9 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
             return;
         };
 
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().set_caret_from_position(&position);
         }
     });
@@ -356,9 +368,12 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_screen_coords(
+            &point,
+            &view_matrix,
+            &shape_matrix,
+            shape.vertical_align(),
+        ) {
             get_text_editor_state().set_caret_from_position(&position);
         }
     });
@@ -411,11 +426,16 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
             .get_selection(&get_text_editor_state().selection);
         text_helpers::delete_selection_range(text_content, &selection);
 
-        let cursor = get_text_editor_state().selection.focus;
+        // Insert at the start of the replaced range (the pre-composition
+        // selection or the previous preview), not at a possibly stale
+        // selection focus, and advance the caret past the committed text.
+        let cursor = selection.start();
         if let Some(new_cursor) =
             text_helpers::insert_text_with_newlines(text_content, &cursor, &text)
         {
             get_text_editor_state().selection.set_caret(new_cursor);
+        } else {
+            get_text_editor_state().selection.set_caret(cursor);
         }
 
         text_content.layout.clear();
@@ -466,8 +486,13 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
             .get_selection(&get_text_editor_state().selection);
         text_helpers::delete_selection_range(text_content, &selection);
 
-        let cursor = get_text_editor_state().selection.focus;
-        text_helpers::insert_text_with_newlines(text_content, &cursor, &text);
+        // The preview always starts where the replaced range did; the caret
+        // goes after it, as in a native text field.
+        let cursor = selection.start();
+        get_text_editor_state().composition.start = Some(cursor);
+        let caret =
+            text_helpers::insert_text_with_newlines(text_content, &cursor, &text).unwrap_or(cursor);
+        get_text_editor_state().selection.set_caret(caret);
 
         text_content.layout.clear();
 
@@ -480,6 +505,28 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
 
     crate::mem::free_bytes()?;
     Ok(())
+}
+
+/// Place the caret `offset` characters into the composition preview, where
+/// the IME's own cursor is (clause conversion, cursor moves inside the
+/// preedit). Clamped to the preview; ignored outside a composition.
+#[no_mangle]
+pub extern "C" fn text_editor_set_composition_cursor(offset: u32) {
+    let editor_state = get_text_editor_state();
+    if !editor_state.has_focus || !editor_state.composition.is_composing {
+        return;
+    }
+    let Some(start) = editor_state.composition.start else {
+        return;
+    };
+    let offset = (offset as usize).min(editor_state.composition.current.chars().count());
+    editor_state
+        .selection
+        .set_caret(TextPositionWithAffinity::new_downstream_affinity(
+            start.paragraph,
+            start.offset + offset,
+        ));
+    editor_state.reset_blink();
 }
 
 #[no_mangle]
@@ -661,6 +708,48 @@ pub extern "C" fn text_editor_move_cursor(
 // ============================================================================
 // RENDERING & EXPORT
 // ============================================================================
+
+/// Caret rectangle in page coordinates (the unrotated selrect space of the
+/// text overlay), reported independently of the blink phase. The frontend
+/// keeps the IME capture surface on it.
+#[no_mangle]
+pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
+    with_state!(state, {
+        let editor_state = get_text_editor_state();
+        if !editor_state.has_focus {
+            return std::ptr::null_mut();
+        }
+
+        let Some(shape_id) = editor_state.active_shape_id else {
+            return std::ptr::null_mut();
+        };
+
+        // A preview update clears the layout; rebuild it so the rect is
+        // current right away instead of after the next render.
+        update_text_layout_if_needed(state, shape_id);
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return std::ptr::null_mut();
+        };
+
+        let Type::Text(text_content) = &shape.shape_type else {
+            return std::ptr::null_mut();
+        };
+
+        let Some(rect) = crate::render::text_editor::cursor_rect(editor_state, text_content, shape)
+        else {
+            return std::ptr::null_mut();
+        };
+
+        let selrect = shape.selrect();
+        let mut bytes = vec![0u8; 16];
+        bytes[0..4].copy_from_slice(&(selrect.x() + rect.left()).to_le_bytes());
+        bytes[4..8].copy_from_slice(&(selrect.y() + rect.top()).to_le_bytes());
+        bytes[8..12].copy_from_slice(&rect.width().to_le_bytes());
+        bytes[12..16].copy_from_slice(&rect.height().to_le_bytes());
+        mem::write_bytes(bytes)
+    })
+}
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {

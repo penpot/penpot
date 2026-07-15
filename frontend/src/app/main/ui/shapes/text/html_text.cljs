@@ -10,6 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.text :as legacy.txt]
    [app.main.ui.shapes.text.styles :as sts]
+   [app.util.text.writing-mode :as wm]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc render-text*
@@ -18,9 +20,17 @@
         style (if (= text "")
                 (sts/generate-text-styles shape parent)
                 (sts/generate-text-styles shape node))
-        class (when is-code (:$id node))]
-    [:span.text-node {:style style :class class}
-     (if (= text "") "\u00A0" text)]))
+        class (when is-code (:$id node))
+        ruby  (:ruby node)
+        ruby? (and (not (true? (:ruby-hidden node)))
+                   (string? ruby)
+                   (not (str/blank? ruby)))]
+    (if ruby?
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
+       [:span.text-node {:style style :class class} text]
+       [:rt {:style (sts/generate-ruby-styles shape node)} ruby]]
+      [:span.text-node {:style style :class class}
+       (if (= text "") "\u00A0" text)])))
 
 (mf/defc render-root*
   [{:keys [node children shape is-code]}]
@@ -75,14 +85,19 @@
 
         content (if is-code (legacy.txt/index-content content) content)
 
+        ;; Vertical writing anchors columns to the box edges; the oversized
+        ;; auto-grow box (used to avoid horizontal wrapping) would push content
+        ;; off-position, so use the real selrect size instead.
+        vertical? (wm/vertical-text-content? content)
+
         style
         (when-not is-code
           #js {:position "fixed"
                :left 0
                :top 0
                :background "white"
-               :width  (if (#{:auto-width} grow-type) 100000 width)
-               :height (if (#{:auto-height :auto-width} grow-type) 100000 height)})]
+               :width  (if (and (not vertical?) (#{:auto-width} grow-type)) 100000 width)
+               :height (if (and (not vertical?) (#{:auto-height :auto-width} grow-type)) 100000 height)})]
 
     [:div.text-node-html
      {:id (dm/str "html-text-node-" id)

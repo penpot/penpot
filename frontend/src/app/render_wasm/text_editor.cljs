@@ -14,6 +14,7 @@
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.common.uuid :as uuid]
    [app.main.fonts :as main-fonts]
    ;; Required for side effects: binds the generated enums.
@@ -250,7 +251,7 @@
    caret/selection overlay on top, submitting one atomic frame. Pixel identical
    to the last full render at any zoom, so the blink does not flash."
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_render_caret")))
 
 (defn text-editor-poll-event
@@ -369,6 +370,25 @@
           (mem/free)
           result)))))
 
+(defn text-editor-get-cursor-rect
+  "Read the caret rectangle from the WASM editor.
+
+  Coordinates are in the shape's local selrect space (the same space as the
+  text overlay's foreignObject). Returns a map with :x :y :width :height, or
+  nil when there is no active caret."
+  []
+  (when (wasm/ready?)
+    (let [ptr (h/call wasm/internal-module "_text_editor_get_cursor_rect")]
+      (when (and ptr (not (zero? ptr)))
+        (let [heap-f32 (mem/get-heap-f32)
+              offset   (mem/->offset-32 ptr)
+              x        (aget heap-f32 offset)
+              y        (aget heap-f32 (+ offset 1))
+              width    (aget heap-f32 (+ offset 2))
+              height   (aget heap-f32 (+ offset 3))]
+          (mem/free)
+          {:x x :y y :width width :height height})))))
+
 (defn text-editor-encode-text-pre
   [text]
   (when (and (not (empty? text))
@@ -397,6 +417,12 @@
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_composition_update")
     (text-editor-encode-text-post text)))
+
+(defn text-editor-set-composition-cursor
+  "Place the WASM caret `offset` characters into the composition preview."
+  [offset]
+  (when (wasm/ready?)
+    (h/call wasm/internal-module "_text_editor_set_composition_cursor" offset)))
 
 (defn text-editor-composition-end
   [text]
@@ -667,6 +693,115 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
+(defn- para-char-count
+  [para]
+  (apply + (map (fn [span] (count (:text span))) (:children para))))
+
+(def ^:private japanese-span-style-defaults
+  "Explicit UI defaults for Japanese span attributes. These values must be
+   present in every selection snapshot so moving onto an unstyled span clears
+   the previous span's controls instead of leaving stale values behind."
+  {:text-combine-upright "none"
+   :text-emphasis        "none"
+   :ruby                 ""
+   :ruby-hidden          false
+   :ruby-size            "half"
+   :ruby-align           "space-around"
+   :ruby-overhang        "auto"
+   :ruby-side            "over"
+   :warichu              "none"
+   :font-features        "none"
+   :annotation-clearance "none"})
+
+(defn- span-japanese-styles
+  [span]
+  (reduce-kv
+   (fn [styles attr default]
+     (assoc styles attr (or (get span attr) default)))
+   {}
+   japanese-span-style-defaults))
+
+(defn- merge-selection-styles
+  [result styles]
+  (reduce-kv
+   (fn [result attr value]
+     (update result attr #(if (or (nil? %) (= % value)) value :multiple)))
+   result
+   styles))
+
+(defn- span-at-offset
+  "Return the span used by the WASM editor for a collapsed caret. At a span
+   boundary the preceding span wins, matching find_text_span_at_offset in
+   render-wasm."
+  [paragraph offset]
+  (let [spans (:children paragraph)]
+    (loop [remaining-spans spans
+           accumulated     0]
+      (if-let [span (first remaining-spans)]
+        (let [span-end (+ accumulated (count (:text span)))]
+          (if (<= offset span-end)
+            span
+            (recur (rest remaining-spans) span-end)))
+        (last spans)))))
+
+(defn- selected-spans-in-paragraph
+  [paragraph selection-start selection-end]
+  (loop [spans (:children paragraph)
+         position 0
+         selected []]
+    (if-let [span (first spans)]
+      (let [span-end (+ position (count (:text span)))]
+        (recur (rest spans)
+               span-end
+               (cond-> selected
+                 (< (max position selection-start)
+                    (min span-end selection-end))
+                 (conj span))))
+      selected)))
+
+(defn selection-japanese-styles
+  "Read Japanese span styles for a normalized WASM selection from Penpot's
+   cached content tree. A range spanning different values reports :multiple;
+   a caret reports the style of its current span."
+  [content selection]
+  (when (and content selection)
+    (let [{:keys [start-para start-offset end-para end-offset]}
+          (normalize-selection selection)
+          paragraphs (-> content :children first :children)
+          collapsed? (and (= start-para end-para)
+                          (= start-offset end-offset))
+          selected-spans
+          (if collapsed?
+            (some-> (get paragraphs start-para)
+                    (span-at-offset start-offset)
+                    vector)
+            (mapcat
+             (fn [paragraph-index]
+               (when-let [paragraph (get paragraphs paragraph-index)]
+                 (let [selection-start (if (= paragraph-index start-para)
+                                         start-offset
+                                         0)
+                       selection-end (if (= paragraph-index end-para)
+                                       end-offset
+                                       (para-char-count paragraph))]
+                   (selected-spans-in-paragraph paragraph
+                                                selection-start
+                                                selection-end))))
+             (range start-para (inc end-para))))]
+      (when (seq selected-spans)
+        (reduce (fn [result span]
+                  (merge-selection-styles result (span-japanese-styles span)))
+                {}
+                selected-spans)))))
+
+(defn text-editor-get-current-japanese-styles
+  "Return Japanese span styles for the active WASM editor selection."
+  []
+  (when (wasm/ready?)
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+      (selection-japanese-styles (get-cached-content shape-id) selection))))
+
 (defn apply-attrs-to-paragraph
   "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
   [para sel-start sel-end styles]
@@ -702,10 +837,6 @@
                                 (-> acc
                                     (into (keep identity [before selected after])))))))))]
     (assoc para :children result)))
-
-(defn- para-char-count
-  [para]
-  (apply + (map (fn [span] (count (:text span))) (:children para))))
 
 (defn- paragraph-selected-spans
   "Return the spans of `para` that overlap the [sel-start, sel-end) char range."
@@ -823,26 +954,40 @@
           {:shape-id shape-id
            :content  new-content})))))
 
+(defn apply-paragraph-attrs-to-range
+  "Apply paragraph level attrs to the paragraphs `selection` touches; a
+   collapsed caret means just the one it sits in. Whole-shape attrs (writing
+   mode, orientation) go to every paragraph instead, a nil value removing them."
+  [content selection attrs]
+  (let [{:keys [start-para end-para]} (normalize-selection selection)
+        whole-attrs    (select-keys attrs jl/whole-shape-paragraph-attrs)
+        range-attrs    (apply dissoc attrs jl/whole-shape-paragraph-attrs)
+        apply-whole    (fn [para]
+                         (reduce-kv (fn [para attr value]
+                                      (if (some? value)
+                                        (assoc para attr value)
+                                        (dissoc para attr)))
+                                    para
+                                    whole-attrs))
+        paragraph-set  (first (:children content))
+        new-paragraphs (into []
+                             (map-indexed (fn [idx para]
+                                            (cond-> (apply-whole para)
+                                              (<= start-para idx end-para)
+                                              (merge range-attrs))))
+                             (:children paragraph-set))]
+    (assoc content :children [(assoc paragraph-set :children new-paragraphs)])))
+
 (defn apply-paragraph-attrs-to-selection
-  "Apply paragraph level attrs (text-align, text-direction) to the whole
-   paragraphs the editor selection touches; a collapsed caret means just the one
-   it sits in."
+  "Apply paragraph level attrs to the active editor selection (see
+   `apply-paragraph-attrs-to-range`)."
   [attrs use-shape-fn set-shape-text-content-fn]
   (when (wasm/ready?)
     (let [shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
       (when (and shape-id selection)
         (when-let [content (get-cached-content shape-id)]
-          (let [{:keys [start-para end-para]} (normalize-selection selection)
-                paragraph-set  (first (:children content))
-                new-paragraphs (into []
-                                     (map-indexed (fn [idx para]
-                                                    (if (<= start-para idx end-para)
-                                                      (merge para attrs)
-                                                      para)))
-                                     (:children paragraph-set))
-                new-content    (assoc content :children
-                                      [(assoc paragraph-set :children new-paragraphs)])]
+          (let [new-content (apply-paragraph-attrs-to-range content selection attrs)]
             (update-cached-content! shape-id new-content)
             (use-shape-fn shape-id)
             (set-shape-text-content-fn shape-id new-content)

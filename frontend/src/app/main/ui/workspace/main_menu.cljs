@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -44,6 +45,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.text.writing-mode :as wm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -232,8 +234,13 @@
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
-  (let [renderer (or (-> profile :props :renderer) :svg)
+  [{:keys [japanese-layout-enabled layout profile toggle-flag on-close
+           toggle-theme toggle-render toggle-japanese-layout]}]
+  (let [renderer                    (or (-> profile :props :renderer) :svg)
+        japanese-layout-all-files? (true? (-> profile
+                                              :props
+                                              :japanese-layout-all-files))
+        read-only?                  (mf/use-ctx ctx/workspace-read-only?)
 
         show-nudge-options
         (mf/use-fn
@@ -315,6 +322,21 @@
                               :data-testid "snap-pixel-grid"
                               :id          "file-menu-nudge"}
       [:span {:class (stl/css :item-name)} (tr "modals.nudge-title")]]
+
+     (when (and (not read-only?)
+                (not japanese-layout-all-files?)
+                (wm/vertical-layout-active?))
+       [:> dropdown-menu-item* {:on-click    toggle-japanese-layout
+                                :class       (stl/css :base-menu-item :submenu-item)
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (toggle-japanese-layout event)))
+                                :data-testid "japanese-layout"
+                                :id          "file-menu-japanese-layout"}
+        [:span {:class (stl/css :item-name)}
+         (if japanese-layout-enabled
+           (tr "workspace.header.menu.disable-japanese-layout")
+           (tr "workspace.header.menu.enable-japanese-layout"))]])
 
      [:> dropdown-menu-item* {:on-click    toggle-theme
                               :class       (stl/css :base-menu-item :submenu-item)
@@ -885,6 +907,9 @@
 (mf/defc menu*
   [{:keys [layout file]}]
   (let [profile            (mf/deref refs/profile)
+        file-data          (mf/deref refs/workspace-data)
+        japanese-layout-enabled
+        (ctf/japanese-layout-enabled? file-data)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
@@ -945,6 +970,15 @@
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
+
+        toggle-japanese-layout
+        (mf/use-fn
+         (mf/deps japanese-layout-enabled)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dw/set-japanese-layout (not japanese-layout-enabled)))
+           (reset! show-menu* false)
+           (reset! selected-sub-menu* nil)))
 
         toggle-render
         (mf/use-fn
@@ -1145,10 +1179,12 @@
        :preferences
        [:> preferences-menu* {:layout layout
                               :profile profile
+                              :japanese-layout-enabled japanese-layout-enabled
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
                               :show-shortcuts show-shortcuts
+                              :toggle-japanese-layout toggle-japanese-layout
                               :on-close close-sub-menu}]
 
        :plugins

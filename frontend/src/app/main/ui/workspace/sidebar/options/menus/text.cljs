@@ -30,6 +30,7 @@
    [app.main.ui.ds.controls.shared.searchable-options-dropdown :refer [searchable-options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry*]]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
@@ -52,9 +53,17 @@
   Evaluated once at module load time; cf/flags is immutable after startup."
   (contains? cf/flags :token-typography-row))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Sub-components
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- radio-selected
+  ([value]
+   (radio-selected value ""))
+  ([value default]
+   (cond
+     (= value :multiple) ""
+     (or (nil? value)
+         (and (string? value) (empty? value))) default
+     (keyword? value) (d/name value)
+     (string? value) value
+     :else (str value))))
 
 (mf/defc text-align-options*
   [{:keys [values on-change on-blur]}]
@@ -85,14 +94,14 @@
            (when (some? on-blur) (on-blur))))]
 
     [:div {:class (stl/css :align-options)}
-     [:> radio-buttons* {:selected  (:text-align values)
+     [:> radio-buttons* {:selected  (radio-selected (:text-align values))
                          :on-change handle-change
                          :name      "align-text-options"
                          :options   options}]]))
 
 (mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
-  (let [direction (:text-direction values)
+  (let [direction (radio-selected (:text-direction values))
         options
         (mf/with-memo []
           [{:value "ltr"
@@ -119,7 +128,7 @@
 
 (mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
-  (let [vertical-align (or (:vertical-align values) "top")
+  (let [vertical-align (radio-selected (:vertical-align values) "top")
         options
         (mf/with-memo []
           [{:value "top"
@@ -151,6 +160,7 @@
 (mf/defc grow-options*
   [{:keys [ids values on-blur]}]
   (let [grow-type       (:grow-type values)
+        selected        (radio-selected grow-type)
         editor-instance (mf/deref refs/workspace-editor)
         options
         (mf/with-memo []
@@ -191,14 +201,14 @@
            (when (some? on-blur) (on-blur))))]
 
     [:div {:class (stl/css :grow-options)}
-     [:> radio-buttons* {:selected  (d/name grow-type)
+     [:> radio-buttons* {:selected  selected
                          :on-change handle-change
                          :name      "grow-text-options"
                          :options   options}]]))
 
 (mf/defc text-decoration-options*
   [{:keys [values on-change on-blur token-applied]}]
-  (let [text-decoration (some-> (:text-decoration values) d/name)
+  (let [text-decoration (radio-selected (:text-decoration values))
         options
         (mf/with-memo [token-applied]
           [{:value    "underline"
@@ -222,8 +232,8 @@
 
     [:div {:class (stl/css :text-decoration-options)}
      [:> radio-buttons* {:selected     (if (= text-decoration "none")
-                                         nil
-                                         text-decoration)
+                                         ""
+                                         (radio-selected text-decoration))
                          :on-change    handle-change
                          :name         "text-decoration-options"
                          :disabled     (and token-typography-row-enabled? (some? token-applied))
@@ -246,8 +256,10 @@
        (d/seek #(= (:id %) (uuid/uuid id)))))
 
 (defn- check-props [n-props o-props]
-  (let [o-values (unchecked-get o-props "values")
-        n-values (unchecked-get n-props "values")]
+  (let [o-values      (unchecked-get o-props "values")
+        n-values      (unchecked-get n-props "values")
+        o-ruby-values (unchecked-get o-props "rubyValues")
+        n-ruby-values (unchecked-get n-props "rubyValues")]
     (and (identical? (unchecked-get n-props "ids")
                      (unchecked-get o-props "ids"))
          (identical? (unchecked-get n-props "type")
@@ -258,6 +270,9 @@
                      (unchecked-get o-props "fileId"))
          (identical? (unchecked-get n-props "typographies")
                      (unchecked-get o-props "typographies"))
+         (identical? (unchecked-get n-props "textSelectionActive")
+                     (unchecked-get o-props "textSelectionActive"))
+         (= n-ruby-values o-ruby-values)
          (identical? (get o-values :fills)
                      (get n-values :fills))
          (identical? (get o-values :font-family)
@@ -284,6 +299,32 @@
                      (get n-values :text-decoration))
          (identical? (get o-values :text-direction)
                      (get n-values :text-direction))
+         (identical? (get o-values :writing-mode)
+                     (get n-values :writing-mode))
+         (identical? (get o-values :text-orientation)
+                     (get n-values :text-orientation))
+         (identical? (get o-values :text-combine-upright)
+                     (get n-values :text-combine-upright))
+         (identical? (get o-values :warichu)
+                     (get n-values :warichu))
+         (identical? (get o-values :font-features)
+                     (get n-values :font-features))
+         (identical? (get o-values :annotation-clearance)
+                     (get n-values :annotation-clearance))
+         (identical? (get o-values :text-emphasis)
+                     (get n-values :text-emphasis))
+         (identical? (get o-values :ruby)
+                     (get n-values :ruby))
+         (identical? (get o-values :ruby-hidden)
+                     (get n-values :ruby-hidden))
+         (identical? (get o-values :ruby-size)
+                     (get n-values :ruby-size))
+         (identical? (get o-values :ruby-align)
+                     (get n-values :ruby-align))
+         (identical? (get o-values :ruby-overhang)
+                     (get n-values :ruby-overhang))
+         (identical? (get o-values :ruby-side)
+                     (get n-values :ruby-side))
          (identical? (get o-values :text-transform)
                      (get n-values :text-transform))
          (identical? (get o-values :typography-ref-file)
@@ -299,14 +340,22 @@
 
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values applied-tokens libraries file-id typographies]}]
+  [{:keys [ids type values ruby-values text-selection-active
+           applied-tokens libraries file-id typographies]}]
 
   (let [;; --- UI state
         menu-state*          (mf/use-state {:main-menu true
-                                            :more-options false})
+                                            :more-options false
+                                            :japanese-layout true})
         menu-state           (deref menu-state*)
         main-menu-open?      (:main-menu menu-state)
         more-options-open?   (:more-options menu-state)
+        japanese-layout-open? (:japanese-layout menu-state)
+
+        profile              (mf/deref refs/profile)
+        file-data            (mf/deref refs/workspace-data)
+        japanese-layout-config-enabled?
+        (tjl/japanese-layout-config-enabled? file-data profile)
 
         font-id         (or (:font-id values) (:font-id txt/default-typography))
 
@@ -397,6 +446,10 @@
         (mf/use-fn
          #(swap! menu-state* update :more-options not))
 
+        toggle-japanese-layout
+        (mf/use-fn
+         #(swap! menu-state* update :japanese-layout not))
+
         toggle-token-dropdown
         (mf/use-fn
          #(swap! token-dropdown-open* not))
@@ -426,6 +479,14 @@
          (mf/deps ids emit-update!)
          (fn [attrs]
            (emit-update! ids attrs)))
+
+        on-ruby-presentation-change
+        (mf/use-fn
+         (mf/deps ids on-change text-selection-active)
+         (fn [attrs]
+           (if text-selection-active
+             (on-change attrs)
+             (st/emit! (dwt/update-all-ruby-presentation ids attrs)))))
 
         on-convert-to-typography
         (mf/use-fn
@@ -485,7 +546,17 @@
                        :values      values
                        :on-change   on-change
                        :show-recent true
-                       :on-blur     on-text-blur})]
+                       :on-blur     on-text-blur})
+
+        japanese-layout-props
+        (mf/props
+         {:ids                         ids
+          :values                      values
+          :ruby-values                 ruby-values
+          :text-selection-active       text-selection-active
+          :on-change                   on-change
+          :on-ruby-presentation-change on-ruby-presentation-change
+          :on-blur                     on-text-blur})]
 
     (hooks/use-stream
      expand-stream
@@ -503,97 +574,111 @@
       (when token-dropdown-open?
         (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
 
-    [:section {:class      (stl/css :element-set)
-               ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
-               :data-keep-editing-on-blur true
-               :aria-label (tr "workspace.options.text-options.text-section")}
-     [:div {:class (stl/css :element-title)}
-      [:> title-bar* {:collapsable  true
-                      :collapsed    (not main-menu-open?)
-                      :on-collapsed toggle-main-menu
-                      :title        label
-                      :class        (stl/css :title-spacing-text)}
-       [:*
-        (when (and token-typography-row-enabled? (some? (resolve-delay typography-tokens)) (not typography))
-          [:> icon-button* {:variant           "ghost"
-                            :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
-                            :on-click          toggle-token-dropdown
-                            :tooltip-placement "top-left"
-                            :icon              i/tokens}])
-        (when (and (not typography) (not multiple?) (not applied-token-name))
-          [:> icon-button* {:variant           "ghost"
-                            :aria-label        (if (not font)
-                                                 (tr "workspace.options.font-not-available" (:font-family values))
-                                                 (tr "workspace.options.convert-to-typography"))
-                            :on-click          on-convert-to-typography
-                            :tooltip-placement "top-left"
-                            :disabled          (not font)
-                            :icon              i/add}])]]
-      (when (and token-typography-row-enabled? token-dropdown-open?)
-        [:> searchable-options-dropdown* {:on-click     on-option-click
-                                          :id           listbox-id
-                                          :options      (resolve-delay dropdown-options)
-                                          :selected     selected-token-id
-                                          :align        "right"
-                                          :placeholder  (tr "workspace.tokens.search-by-token")
-                                          :ref          set-option-ref}])]
-
-     (when main-menu-open?
-       [:div {:class (stl/css :element-content)}
-        (cond
-          (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)}
-            (tr "workspace.libraries.text.mixed-tokens-and-assets")]]
-
-          (and token-typography-row-enabled? (= :multiple current-token-name))
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)}
-            (tr "workspace.libraries.text.mixed-tokens")]
-           [:> icon-button* {:variant    "ghost"
-                             :aria-label (tr "workspace.libraries.text.multiple-token-tooltip")
+    [:*
+     [:section {:class      (stl/css :element-set)
+                ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
+                :data-keep-editing-on-blur true
+                :aria-label (tr "workspace.options.text-options.text-section")}
+      [:div {:class (stl/css :element-title)}
+       [:> title-bar* {:collapsable  true
+                       :collapsed    (not main-menu-open?)
+                       :on-collapsed toggle-main-menu
+                       :title        label
+                       :class        (stl/css :title-spacing-text)}
+        [:*
+         (when (and token-typography-row-enabled? (some? (resolve-delay typography-tokens)) (not typography))
+           [:> icon-button* {:variant           "ghost"
+                             :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
+                             :on-click          toggle-token-dropdown
                              :tooltip-placement "top-left"
-                             :on-click   handle-detach-all-tokens
-                             :icon       i/detach}]]
-
-          (and token-typography-row-enabled? current-token-name)
-          [:> token-typography-row* {:token-name    current-token-name
-                                     :detach-token  detach-token
-                                     :active-tokens (resolve-delay typography-tokens)}]
-
-          (= typography-id :multiple)
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)}
-            (tr "workspace.libraries.text.mixed-typography")]
-           [:> icon-button* {:variant    "ghost"
-                             :aria-label (tr "workspace.libraries.text.multiple-assets-tooltip")
-                             :on-click   handle-detach-typography
+                             :icon              i/tokens}])
+         (when (and (not typography) (not multiple?) (not applied-token-name))
+           [:> icon-button* {:variant           "ghost"
+                             :aria-label        (if (not font)
+                                                  (tr "workspace.options.font-not-available" (:font-family values))
+                                                  (tr "workspace.options.convert-to-typography"))
+                             :on-click          on-convert-to-typography
                              :tooltip-placement "top-left"
-                             :icon       i/detach}]]
+                             :disabled          (not font)
+                             :icon              i/add}])]]
+       (when (and token-typography-row-enabled? token-dropdown-open?)
+         [:> searchable-options-dropdown* {:on-click     on-option-click
+                                           :id           listbox-id
+                                           :options      (resolve-delay dropdown-options)
+                                           :selected     selected-token-id
+                                           :align        "right"
+                                           :placeholder  (tr "workspace.tokens.search-by-token")
+                                           :ref          set-option-ref}])]
 
-          typography
-          [:> typography-entry* {:file-id    typography-file-id
-                                 :typography typography
-                                 :is-local   (= typography-file-id file-id)
-                                 :on-detach  handle-detach-typography
-                                 :on-change  handle-change-typography}]
+      (when main-menu-open?
+        [:div {:class (stl/css :element-content)}
+         (cond
+           (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
+           [:div {:class (stl/css :multiple-typography)}
+            [:span {:class (stl/css :multiple-text)}
+             (tr "workspace.libraries.text.mixed-tokens-and-assets")]]
 
+           (and token-typography-row-enabled? (= :multiple current-token-name))
+           [:div {:class (stl/css :multiple-typography)}
+            [:span {:class (stl/css :multiple-text)}
+             (tr "workspace.libraries.text.mixed-tokens")]
+            [:> icon-button* {:variant    "ghost"
+                              :aria-label (tr "workspace.libraries.text.multiple-token-tooltip")
+                              :tooltip-placement "top-left"
+                              :on-click   handle-detach-all-tokens
+                              :icon       i/detach}]]
 
+           (and token-typography-row-enabled? current-token-name)
+           [:> token-typography-row* {:token-name    current-token-name
+                                      :detach-token  detach-token
+                                      :active-tokens (resolve-delay typography-tokens)}]
 
-          :else
-          [:> text-options* common-props])
+           (= typography-id :multiple)
+           [:div {:class (stl/css :multiple-typography)}
+            [:span {:class (stl/css :multiple-text)}
+             (tr "workspace.libraries.text.mixed-typography")]
+            [:> icon-button* {:variant    "ghost"
+                              :aria-label (tr "workspace.libraries.text.multiple-assets-tooltip")
+                              :on-click   handle-detach-typography
+                              :tooltip-placement "top-left"
+                              :icon       i/detach}]]
 
-        [:div {:class (stl/css :text-align-options)}
-         [:> text-align-options* common-props]
-         [:> grow-options* common-props]
-         [:> icon-button* {:variant     "ghost"
-                           :aria-label  (tr "labels.options")
-                           :data-testid "text-align-options-button"
-                           :on-click    toggle-more-options
-                           :icon        i/menu}]]
+           typography
+           [:> typography-entry* {:file-id    typography-file-id
+                                  :typography typography
+                                  :is-local   (= typography-file-id file-id)
+                                  :on-detach  handle-detach-typography
+                                  :on-change  handle-change-typography}]
 
-        (when more-options-open?
-          [:div {:class (stl/css :text-decoration-options)}
-           [:> vertical-align* common-props]
-           [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-           [:> text-direction-options* common-props]])])]))
+           :else
+           [:> text-options* common-props])
+
+         [:div {:class (stl/css :text-align-options)}
+          [:> text-align-options* common-props]
+          [:> grow-options* common-props]
+          [:> icon-button* {:variant     "ghost"
+                            :aria-label  (tr "labels.options")
+                            :data-testid "text-align-options-button"
+                            :on-click    toggle-more-options
+                            :icon        i/menu}]]
+
+         (when more-options-open?
+           [:div {:class (stl/css :text-decoration-options)}
+            [:> vertical-align* common-props]
+            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
+            [:> text-direction-options* common-props]])])]
+
+     (when japanese-layout-config-enabled?
+       [:section {:class      (stl/css :element-set)
+                  ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
+                  :data-keep-editing-on-blur true
+                  :aria-label (tr "workspace.options.text-options.japanese-layout")}
+        [:div {:class (stl/css :element-title)}
+         [:> title-bar* {:collapsable  true
+                         :collapsed    (not japanese-layout-open?)
+                         :on-collapsed toggle-japanese-layout
+                         :title        (tr "workspace.options.text-options.japanese-layout")
+                         :class        (stl/css :title-spacing-text)}]]
+        (when japanese-layout-open?
+          [:div {:class (stl/css :element-content)}
+           [:> tjl/japanese-layout-options* japanese-layout-props]])])]))

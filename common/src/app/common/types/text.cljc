@@ -12,6 +12,7 @@
     [app.common.math :as mth]
     [app.common.types.color :as clr]
     [app.common.types.fills :as types.fills]
+    [app.common.types.text.japanese-layout :as jl]
     [clojure.set :as set]
     [clojure.walk :as walk]
     [cuerdas.core :as str]))
@@ -102,13 +103,21 @@
 (def paragraph-attrs
   (d/concat-vec
    text-align-attrs
-   text-direction-attrs))
+   text-direction-attrs
+   jl/text-writing-mode-attrs
+   jl/text-orientation-attrs))
 
 (def text-node-attrs
   (d/concat-vec
    text-typography-attrs
    text-font-attrs
    text-spacing-attrs
+   jl/text-combine-upright-attrs
+   jl/text-emphasis-attrs
+   jl/text-ruby-attrs
+   jl/text-warichu-attrs
+   jl/text-font-features-attrs
+   jl/text-annotation-clearance-attrs
    text-decoration-attrs
    text-transform-attrs
    text-fills))

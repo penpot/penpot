@@ -16,6 +16,17 @@ impl TextPaths {
     }
 
     pub fn get_paths(&self, vertical_align: VerticalAlign) -> Vec<skia::Path> {
+        if self.0.is_vertical() {
+            return crate::shapes::text_vertical::vertical_text_paths(
+                &self.0,
+                vertical_align,
+                true,
+            )
+            .into_iter()
+            .map(|(path, _)| path)
+            .collect();
+        }
+
         let layout_width = self.0.get_width(self.bounds.width());
         let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
         let mut paragraphs: Vec<SkiaParagraph> = paragraph_builders

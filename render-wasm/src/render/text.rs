@@ -3,18 +3,160 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, vertical_align_offset,
-        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
-        TextContent, TextDecorationSegment,
+        add_horizontal_span, calculate_text_layout_data, set_paint_fill, text_vertical,
+        vertical_align_offset, Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout,
+        Stroke, StrokeKind, TextContent, TextDecorationSegment,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
-    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration},
+    textlayout::{ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics, TextDecoration},
     Canvas, ImageFilter, Paint,
 };
+
+pub fn render_vertical_text(
+    state: &mut RenderState,
+    shape: &Shape,
+    text_content: &TextContent,
+    paragraph_builders: &mut [ParagraphBuilderGroup],
+    fills_surface_id: SurfaceId,
+    strokes_surface_id: SurfaceId,
+    skip_effects: bool,
+) -> Result<()> {
+    let blur_filter = (!skip_effects).then(|| shape.image_filter(1.0)).flatten();
+    let bounds = text_content.bounds();
+    let skip_shadows = skip_effects || state.should_skip_drop_shadows();
+    let mut drop_shadows = if skip_shadows {
+        Vec::new()
+    } else {
+        shape.drop_shadow_paints()
+    };
+    if !skip_shadows {
+        if let Some(inherited_shadows) = state.get_inherited_drop_shadows() {
+            drop_shadows.extend(inherited_shadows);
+        }
+    }
+    let strokes: Vec<Stroke> = shape.visible_strokes().rev().cloned().collect();
+    let layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
+        let max_height = text_vertical::wrap_height(text_content, bounds.height());
+        text_vertical::layout_from_content(text_content, max_height)
+    });
+
+    if let Some(layout) = layout.as_ref().filter(|_| !drop_shadows.is_empty()) {
+        let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+        for shadow in &drop_shadows {
+            text_vertical::paint_drop_shadow(
+                canvas,
+                layout,
+                &bounds,
+                shape.vertical_align(),
+                shadow,
+            );
+        }
+    }
+
+    render(
+        Some(state),
+        None,
+        shape,
+        paragraph_builders,
+        Some(fills_surface_id),
+        None,
+        blur_filter.as_ref(),
+        None,
+        None,
+    )?;
+
+    if let Some(layout) = layout.as_ref().filter(|_| !strokes.is_empty()) {
+        let selrect = shape.selrect();
+        let canvas = state.surfaces.canvas_and_mark_dirty(strokes_surface_id);
+        for stroke in &strokes {
+            text_vertical::paint_stroke(
+                canvas,
+                layout,
+                &bounds,
+                shape.vertical_align(),
+                stroke,
+                &selrect,
+                blur_filter.as_ref(),
+            );
+        }
+    }
+
+    if state.options.is_text_grid_visible() {
+        let owned_layout;
+        let grid_layout = match layout.as_ref() {
+            Some(layout) => layout,
+            None => {
+                let max_height = text_vertical::wrap_height(text_content, bounds.height());
+                owned_layout = text_vertical::layout_from_content(text_content, max_height);
+                &owned_layout
+            }
+        };
+        let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+        text_vertical::paint_grid(canvas, grid_layout, &bounds, shape.vertical_align());
+    }
+
+    Ok(())
+}
+
+/// Paint a viewport-only grid over SkParagraph horizontal text. Blue outlines
+/// show line boxes, green boxes show the per-scalar tight rectangles returned
+/// by SkParagraph, and amber rules show baselines. This mirrors the vertical
+/// text grid while making horizontal annotation anchors inspectable.
+pub fn paint_horizontal_grid(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
+    let mut builders = text_content.paragraph_builder_group_from_text(None);
+    let layout = calculate_text_layout_data(shape, text_content, &mut builders, true);
+
+    let mut line_paint = Paint::default();
+    line_paint.set_anti_alias(true);
+    line_paint.set_style(skia::PaintStyle::Stroke);
+    line_paint.set_stroke_width(1.0);
+    line_paint.set_color(skia::Color::from_argb(0xAA, 0x2F, 0x80, 0xED));
+
+    let mut glyph_paint = Paint::default();
+    glyph_paint.set_anti_alias(true);
+    glyph_paint.set_style(skia::PaintStyle::Stroke);
+    glyph_paint.set_stroke_width(1.0);
+    glyph_paint.set_color(skia::Color::from_argb(0x99, 0x27, 0xAE, 0x60));
+
+    let mut baseline_paint = Paint::default();
+    baseline_paint.set_anti_alias(true);
+    baseline_paint.set_stroke_width(1.0);
+    baseline_paint.set_color(skia::Color::from_argb(0xCC, 0xEB, 0x57, 0x57));
+
+    for paragraph in &layout.paragraphs {
+        for line in paragraph.paragraph.get_line_metrics() {
+            let baseline = line.baseline as f32;
+            let top = paragraph.y + baseline - line.ascent as f32;
+            let left = paragraph.x + line.left as f32;
+            let width = line.width as f32;
+            canvas.draw_rect(
+                Rect::from_xywh(left, top, width, line.height as f32),
+                &line_paint,
+            );
+            canvas.draw_line(
+                (left, paragraph.y + baseline),
+                (left + width, paragraph.y + baseline),
+                &baseline_paint,
+            );
+
+            for offset in line.start_index..line.end_index {
+                for textbox in paragraph.paragraph.get_rects_for_range(
+                    offset..offset + 1,
+                    RectHeightStyle::Tight,
+                    RectWidthStyle::Tight,
+                ) {
+                    let mut rect = textbox.rect;
+                    rect.offset((paragraph.x, paragraph.y));
+                    canvas.draw_rect(rect, &glyph_paint);
+                }
+            }
+        }
+    }
+}
 
 pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,
@@ -32,15 +174,14 @@ pub fn stroke_paragraph_builder_group_from_text(
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for span in paragraph.children().iter() {
+        let (span_texts, _) = paragraph.layout_span_texts();
+        for (span, text) in paragraph.children().iter().zip(span_texts.iter()) {
             let (stroke_paints, stroke_layer_opacity) =
                 get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
 
             if group_layer_opacity.is_none() {
                 group_layer_opacity = stroke_layer_opacity;
             }
-
-            let text: String = span.apply_text_transform();
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
@@ -56,7 +197,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                add_text_with_tabs(builder, &text, span.font_size);
+                add_horizontal_span(builder, span, text, &stroke_style, fonts);
             }
         }
 
@@ -70,7 +211,7 @@ pub fn stroke_paragraph_builder_group_from_text(
     (paragraph_group, group_layer_opacity)
 }
 
-fn get_text_stroke_paints(
+pub(crate) fn get_text_stroke_paints(
     stroke: &Stroke,
     bounds: &Rect,
     remove_stroke_alpha: bool,
@@ -332,6 +473,9 @@ pub fn try_paint_from_layout_cache(
     layout_cache_rotation_only: bool,
 ) -> Result<bool> {
     let text_content = shape.get_text_content();
+    if !text_content.can_paint_from_layout_cache() {
+        return Ok(false);
+    }
     let cache_usable = if layout_cache_rotation_only {
         text_content.layout_cache_versions_match()
     } else {
@@ -523,14 +667,60 @@ fn paint_text_with_emoji_overlay(
     overlay_emoji: bool,
 ) {
     let text_content = shape.get_text_content();
+
+    // Vertical writing renders through the custom vertical pass.
+    // Stored text bounds describe the measured content and can be taller than
+    // a fixed shape. Rebind to the selrect so the shape height remains the
+    // column-wrap budget used by the vertical painter.
+    let vertical_text_content = text_content
+        .is_vertical()
+        .then(|| text_content.new_bounds(shape.selrect()));
+    if vertical_text_content.as_ref().is_some_and(|content| {
+        crate::shapes::text_vertical::paint_text_vertical(canvas, content, shape.vertical_align())
+    }) {
+        return;
+    }
+
     let mut layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
+
+    // Ruby draws only when the fill pass has the standard one-layout-per-
+    // paragraph shape (stroke/shadow silhouette passes never reach here).
+    let ruby_per_paragraph = layout_info.paragraphs.len() == text_content.paragraphs().len();
 
     for para in &mut layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
 
+        if let Some(source_paragraph) = text_content.paragraphs().get(para.source_paragraph) {
+            crate::shapes::paint_horizontal_warichu(
+                canvas,
+                source_paragraph,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
+            crate::shapes::paint_horizontal_emphasis(
+                canvas,
+                source_paragraph,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
+        }
+
         if overlay_emoji {
             paint_emoji_overlay(canvas, para);
+        }
+
+        if ruby_per_paragraph {
+            crate::shapes::text_vertical::paint_horizontal_ruby(
+                canvas,
+                text_content,
+                para.source_paragraph,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
         }
 
         for deco in &para.decorations {

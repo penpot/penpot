@@ -184,6 +184,9 @@
                       (rx/empty)))
          (wrf/with-pending :font ids))))
 
+(def ruby-presentation-attrs
+  [:ruby-hidden :ruby-size :ruby-align :ruby-overhang :ruby-side])
+
 ;; -- Content helpers
 
 ;; Style attrs typed as `::sm/text` in the content schema (see
@@ -435,6 +438,13 @@
   [{:keys [attrs shape]}]
   (shape-current-values shape txt/is-root-node? attrs))
 
+(defn current-ruby-values
+  [{:keys [attrs shape]}]
+  (shape-current-values shape
+                        #(and (txt/is-text-node? %)
+                              (not (str/blank? (:ruby %))))
+                        attrs))
+
 (defn v3-current-text-values
   [{:keys [editor-styles attrs]}]
   (let [result (-> editor-styles
@@ -461,7 +471,8 @@
 (defn current-paragraph-values
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
-    (some? editor-styles) (v3-current-text-values options)
+    (some? editor-styles) (merge (shape-current-values shape txt/is-paragraph-node? attrs)
+                                 (select-keys editor-styles attrs))
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
@@ -498,7 +509,6 @@
      (+ (apply + (map count-node-chars (:children node))) (if last? 0 1))
 
      (count (:text node)))))
-
 
 (defn decorate-range-info
   "Adds information about ranges inside the metadata of the text nodes"
@@ -622,30 +632,32 @@
 
 (defn update-paragraph-attrs
   [{:keys [id attrs]}]
-  (let [attrs (d/without-nils attrs)]
-    (ptk/reify ::update-paragraph-attrs
-      ptk/UpdateEvent
-      (update [_ state]
-        (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
+  (ptk/reify ::update-paragraph-attrs
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
 
-      ptk/WatchEvent
-      (watch [_ state _]
-        (when-not (some? (get-in state [:workspace-editor-state id]))
-          (let [objects   (dsh/lookup-page-objects state)
-                shape     (get objects id)
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-not (some? (get-in state [:workspace-editor-state id]))
+        (let [objects   (dsh/lookup-page-objects state)
+              shape     (get objects id)
 
-                merge-fn  (fn [node attrs]
-                            (reduce-kv
-                             (fn [node k v] (assoc node k v))
-                             node
-                             attrs))
+              merge-fn  (fn [node attrs]
+                          (reduce-kv
+                           (fn [node k v]
+                             (if (nil? v)
+                               (dissoc node k)
+                               (assoc node k v)))
+                           node
+                           attrs))
 
-                update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
-                shape-ids (cond
-                            (cfh/text-shape? shape)  [id]
-                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
+              update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
+              shape-ids (cond
+                          (cfh/text-shape? shape)  [id]
+                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-            (rx/of (dwsh/update-shapes shape-ids update-fn))))))))
+          (rx/of (dwsh/update-shapes shape-ids update-fn)))))))
 
 (defn update-text-attrs
   [{:keys [id attrs]}]
@@ -676,6 +688,51 @@
                     (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
                   updated-shape))]
           (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
+
+(defn update-ruby-presentation-attrs
+  [shape attrs]
+  (txt/update-text-content
+   shape
+   #(and (txt/is-text-node? %)
+         (not (str/blank? (:ruby %))))
+   d/txt-merge
+   attrs))
+
+(defn update-ruby-presentation
+  [id attrs]
+  (ptk/reify ::update-ruby-presentation
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects   (dsh/lookup-page-objects state)
+            shape     (get objects id)
+            wasm?     (features/active-feature? state "render-wasm/v1")
+            shape-ids (cond
+                        (cfh/text-shape? shape)  [id]
+                        (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+            update-fn (fn [shape]
+                        (let [updated-shape (update-ruby-presentation-attrs shape attrs)]
+                          (when (and wasm? (cfh/text-shape? updated-shape))
+                            (wasm.text-editor/cache-shape-text-content!
+                             (:id updated-shape)
+                             (:content updated-shape)))
+                          updated-shape))]
+        (rx/concat
+         (rx/of (dwsh/update-shapes shape-ids update-fn))
+         (if wasm?
+           (rx/of (dwwt/resize-wasm-text-all shape-ids))
+           (rx/empty)))))))
+
+(defn update-all-ruby-presentation
+  [ids attrs]
+  (ptk/reify ::update-all-ruby-presentation
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from ids)
+              (rx/map #(update-ruby-presentation % attrs)))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn migrate-node
   [node]

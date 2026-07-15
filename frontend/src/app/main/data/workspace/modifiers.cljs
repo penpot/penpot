@@ -35,6 +35,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.shape :as wasm.shape]
+   [app.util.text.writing-mode :as wm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -1126,21 +1127,32 @@
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
 
+(defn vertical-text-shape?
+  [shape]
+  (wm/vertical-text-content? (get shape :content)))
+
 ;; Pure function to determine next grow-type for text layers
 (defn next-grow-type
-  [current-grow-type scalev]
-  (cond
-    (= current-grow-type :fixed)
-    :fixed
+  ([current-grow-type scalev]
+   (next-grow-type current-grow-type scalev false))
 
-    (and (not (mth/close? (:y scalev) 1.0))
-         (or (= current-grow-type :auto-width)
-             (= current-grow-type :auto-height)))
-    :fixed
+  ([current-grow-type scalev vertical?]
+   ;; Reuse the horizontal state machine with swapped vertical axes.
+   (let [scalev (if vertical?
+                  (gpt/point (:y scalev) (:x scalev))
+                  scalev)]
+     (cond
+       (= current-grow-type :fixed)
+       :fixed
 
-    (and (not (mth/close? (:x scalev) 1.0))
-         (= current-grow-type :auto-width))
-    :auto-height
+       (and (not (mth/close? (:y scalev) 1.0))
+            (or (= current-grow-type :auto-width)
+                (= current-grow-type :auto-height)))
+       :fixed
 
-    :else
-    current-grow-type))
+       (and (not (mth/close? (:x scalev) 1.0))
+            (= current-grow-type :auto-width))
+       :auto-height
+
+       :else
+       current-grow-type))))

@@ -3,7 +3,8 @@ use skia_safe::{self as skia, Canvas, Paint, RRect};
 use crate::error::Result;
 use crate::shapes::{
     circle_segments_local, merge_fills, radius_to_sigma, rect_segments_local, stroke_to_path,
-    BlurType, Fill, Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, Type,
+    BlurType, Fill, Frame, ParagraphBuilderGroup, Path, Rect, Shape, Stroke, StrokeKind,
+    StrokeStyle, TextContent, Type,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -55,6 +56,62 @@ impl<'a> VectorRenderer<'a> {
             return None;
         }
         shape.image_filter(1.)
+    }
+
+    fn draw_vertical_text(
+        &mut self,
+        shape: &Shape,
+        text_content: &TextContent,
+        paragraph_builders: &mut [ParagraphBuilderGroup],
+        blur_filter: Option<&skia::ImageFilter>,
+    ) -> Result<()> {
+        use crate::shapes::text_vertical;
+
+        let bounds = text_content.bounds();
+        let drop_shadows = shape.drop_shadow_paints();
+        let strokes: Vec<&Stroke> = shape.visible_strokes().rev().collect();
+        let layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
+            let max_height = text_vertical::wrap_height(text_content, bounds.height());
+            text_vertical::layout_from_content(text_content, max_height)
+        });
+
+        if let Some(layout) = &layout {
+            for shadow in &drop_shadows {
+                text_vertical::paint_drop_shadow(
+                    self.canvas,
+                    layout,
+                    &bounds,
+                    shape.vertical_align(),
+                    shadow,
+                );
+            }
+        }
+
+        text::render_overlay_emoji(
+            self.canvas,
+            shape,
+            paragraph_builders,
+            None,
+            blur_filter,
+            None,
+            None,
+        )?;
+
+        if let Some(layout) = &layout {
+            let selrect = shape.selrect();
+            for stroke in strokes {
+                text_vertical::paint_stroke(
+                    self.canvas,
+                    layout,
+                    &bounds,
+                    shape.vertical_align(),
+                    stroke,
+                    &selrect,
+                    blur_filter,
+                );
+            }
+        }
+        Ok(())
     }
 }
 
@@ -183,6 +240,15 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let text_content = text_content.new_bounds(shape.selrect());
         let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
         let blur_filter = self.layer_blur_filter(shape);
+
+        if text_content.is_vertical() {
+            return self.draw_vertical_text(
+                shape,
+                &text_content,
+                &mut paragraph_builders,
+                blur_filter.as_ref(),
+            );
+        }
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).

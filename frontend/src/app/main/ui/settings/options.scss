@@ -21,9 +21,9 @@
   }
 }
 
-/* Copied from profile.scss .form-container, but without included nested
-   rules, since we want custom styles for it */
-.webgl-container {
+/* Settings sections with standalone controls. */
+.webgl-container,
+.japanese-layout-container {
   display: grid;
   grid-auto-rows: auto;
   gap: var(--sp-s);
@@ -32,6 +32,10 @@
   margin: var(--sp-xxxl) $sz-120; /* FIXME: this should be a proper token */
   border-block-start: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-primary);
+}
+
+.japanese-layout-form {
+  padding-block-start: var(--sp-xs);
 }
 
 .webgl-header {

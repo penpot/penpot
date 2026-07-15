@@ -281,6 +281,9 @@ pub struct TextComposition {
     pub previous: String,
     pub current: String,
     pub is_composing: bool,
+    /// Where the preview text starts; the preview replaced by each update is
+    /// `[start, start + previous]`, independent of where the caret is.
+    pub start: Option<TextPositionWithAffinity>,
 }
 
 impl TextComposition {
@@ -289,6 +292,7 @@ impl TextComposition {
             previous: String::new(),
             current: String::new(),
             is_composing: false,
+            start: None,
         }
     }
 
@@ -299,6 +303,7 @@ impl TextComposition {
         self.is_composing = true;
         self.previous = String::new();
         self.current = String::new();
+        self.start = None;
         true
     }
 
@@ -316,22 +321,26 @@ impl TextComposition {
             return false;
         }
         self.is_composing = false;
+        self.start = None;
         true
     }
 
+    /// Range the next preview replaces: the previous preview, or `selection`
+    /// (the pre-composition selection) when there is none yet.
     pub fn get_selection(&self, selection: &TextSelection) -> TextSelection {
-        if self.previous.is_empty() {
+        let Some(start) = self.start.filter(|_| !self.previous.is_empty()) else {
             return *selection;
-        }
+        };
 
-        let focus = selection.focus;
-        let previous_len = self.previous.chars().count();
         let anchor = TextPositionWithAffinity::new_downstream_affinity(
-            focus.paragraph,
-            focus.offset + previous_len,
+            start.paragraph,
+            start.offset + self.previous.chars().count(),
         );
 
-        TextSelection { anchor, focus }
+        TextSelection {
+            anchor,
+            focus: start,
+        }
     }
 }
 
@@ -889,8 +898,24 @@ impl TextEditorState {
             TextDirection::LTR
         };
 
+        // In vertical-rl the physical arrow keys map onto logical navigation
+        // differently: Up/Down walk characters along the column, and Left/Right
+        // cross columns (columns advance right-to-left).
+        let is_vertical = text_content.is_vertical();
+        let direction = if is_vertical {
+            match direction {
+                CursorDirection::Backward => CursorDirection::LineAfter, // Left -> next column
+                CursorDirection::Forward => CursorDirection::LineBefore, // Right -> prev column
+                CursorDirection::LineBefore => CursorDirection::Backward, // Up -> prev char
+                CursorDirection::LineAfter => CursorDirection::Forward,  // Down -> next char
+                other => other,
+            }
+        } else {
+            direction
+        };
+
         // For horizontal navigation, swap Backward/Forward when in RTL text
-        let adjusted_direction = if text_span_text_direction == TextDirection::RTL {
+        let adjusted_direction = if !is_vertical && text_span_text_direction == TextDirection::RTL {
             match direction {
                 CursorDirection::Backward => CursorDirection::Forward,
                 CursorDirection::Forward => CursorDirection::Backward,
@@ -939,4 +964,36 @@ impl Default for TextEditorState {
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn caret(paragraph: usize, offset: usize) -> TextSelection {
+        TextSelection::from_position_with_affinity(
+            TextPositionWithAffinity::new_downstream_affinity(paragraph, offset),
+        )
+    }
+
+    #[test]
+    fn composition_replaces_the_previous_preview_wherever_the_caret_is() {
+        let mut composition = TextComposition::new();
+        composition.start();
+
+        // First update: the pre-composition caret is the replaced range.
+        composition.update("に");
+        let replaced = composition.get_selection(&caret(0, 2));
+        assert_eq!((replaced.start().offset, replaced.end().offset), (2, 2));
+        composition.start = Some(replaced.start());
+
+        // The caret now sits after the preview; the next update still
+        // replaces the preview itself.
+        composition.update("にほ");
+        let replaced = composition.get_selection(&caret(0, 3));
+        assert_eq!((replaced.start().offset, replaced.end().offset), (2, 3));
+
+        composition.end();
+        assert!(composition.start.is_none());
+    }
 }

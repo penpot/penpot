@@ -31,6 +31,7 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.object :as obj]
+   [app.util.text.writing-mode :as wm]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -563,23 +564,32 @@
              (dom/stop-propagation event)
              (let [target   (dom/get-current-target event)
                    position (-> (dom/get-data target "position")
-                                (keyword))]
+                                (keyword))
+                   horizontal-resize? (contains? #{:right :left} position)
+                   vertical-resize?   (contains? #{:top :bottom} position)
+                   vertical-text?     (wm/vertical-text-content? (get shape :content))
+                   wrap-axis-resize?  (if vertical-text?
+                                        vertical-resize?
+                                        horizontal-resize?)
+                   resize-direction   (if horizontal-resize? :horizontal :vertical)]
                (cond
-                 ;; If text and in auto-width and the resize is horizontal, switch to auto-height and mark direction
+                 ;; Resizing auto-width on the wrap axis switches to auto-height.
+                 ;; The physical wrap axis is horizontal normally and vertical
+                 ;; under vertical writing.
                  (and (= shape-type :text)
                       (= grow-type :auto-width)
-                      (or (= position :right) (= position :left)))
-                 (st/emit! (dwsh/update-shapes [shape-id] #(-> % (assoc :grow-type :auto-height) (assoc :last-resize-direction :horizontal))))
-                 ;; If text and in auto-height and the resize is horizontal, mark direction but do not change grow-type
+                      wrap-axis-resize?)
+                 (st/emit! (dwsh/update-shapes [shape-id]
+                                               #(assoc %
+                                                       :grow-type :auto-height
+                                                       :last-resize-direction resize-direction)))
+
                  (and (= shape-type :text)
                       (= grow-type :auto-height)
-                      (or (= position :right) (= position :left)))
-                 (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :last-resize-direction :horizontal)))
-                 ;; If text and in auto-height and the resize is vertical, mark direction
-                 (and (= shape-type :text)
-                      (= grow-type :auto-height)
-                      (or (= position :top) (= position :bottom)))
-                 (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :last-resize-direction :vertical)))
+                      (or horizontal-resize? vertical-resize?))
+                 (st/emit! (dwsh/update-shapes [shape-id]
+                                               #(assoc % :last-resize-direction resize-direction)))
+
                  :else
                  nil)
                (st/emit! (dw/start-resize position #{shape-id} shape))))))

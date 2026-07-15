@@ -1728,7 +1728,9 @@ impl RenderState {
 
                 // Plain fill (no strokes / parent shadows): reuse cached layout
                 // paragraphs when valid. Skip builder rebuild + Skia layout.
-                let can_use_layout_cache = !shape.has_visible_strokes()
+                // The developer text grid is painted by the full text pass.
+                let can_use_layout_cache = !self.options.is_text_grid_visible()
+                    && !shape.has_visible_strokes()
                     && parent_shadows.is_none()
                     && (skip_effects
                         || (shape.blur.is_none()
@@ -1769,7 +1771,17 @@ impl RenderState {
                             )
                         })
                         .unzip();
-                    if skip_effects {
+                    if text_content.is_vertical() {
+                        text::render_vertical_text(
+                            self,
+                            &shape,
+                            text_content,
+                            &mut paragraph_builders,
+                            fills_surface_id,
+                            strokes_surface_id,
+                            skip_effects,
+                        )?;
+                    } else if skip_effects {
                         // Fast path: render fills and strokes only (skip shadows/blur).
                         text::render(
                             Some(self),
@@ -2050,6 +2062,11 @@ impl RenderState {
                                 }
                             }
                         }
+                    }
+
+                    if !text_content.is_vertical() && self.options.is_text_grid_visible() {
+                        let canvas = self.surfaces.canvas_and_mark_dirty(fills_surface_id);
+                        text::paint_horizontal_grid(canvas, &shape, text_content);
                     }
                 } // end layout-cache miss fallback
             }

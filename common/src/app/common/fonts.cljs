@@ -163,7 +163,14 @@
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
-   :chinese     #"[\u4E00-\u9FFF\u3400-\u4DBF]"
+   ;; Han ideographs are shared by Japanese/Chinese/Korean (Han
+   ;; unification) and cannot identify a language by themselves; they
+   ;; are resolved to a concrete language by `resolve-ambiguous-cjk`.
+   :han         #"[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]"
+   ;; CJK symbols/punctuation (U+3000-303F) and half/full-width forms
+   ;; (U+FF01-FF65, U+FFE0-FFEE) are likewise shared across
+   ;; Japanese/Chinese/Korean; resolved by `resolve-ambiguous-cjk`.
+   :cjk-punctuation #"[\u3000-\u303F\uFF01-\uFF65\uFFE0-\uFFEE]"
    :korean      #"[\uAC00-\uD7AF]"
    :arabic      #"[\u0600-\u06FF\u0750-\u077F\u0870-\u089F\u08A0-\u08FF]"
    :cyrillic    #"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F]"
@@ -235,6 +242,33 @@
                  result))
              used
              unicode-ranges))
+
+(defn- locale->cjk-language
+  "CJK language implied by an app locale string, or nil."
+  [locale]
+  (let [locale (str/lower (str locale))]
+    (cond
+      (str/starts-with? locale "ja") :japanese
+      (str/starts-with? locale "ko") :korean
+      (str/starts-with? locale "zh") :chinese
+      :else nil)))
+
+(defn resolve-ambiguous-cjk
+  "Resolves the ambiguous CJK classes (:han, :cjk-punctuation) to a
+   concrete language: an unambiguous script in the same content wins
+   (kana implies Japanese, hangul implies Korean), then the `locale`
+   (nil when the host has none); Chinese is the final default."
+  [langs locale]
+  (if (or (contains? langs :han)
+          (contains? langs :cjk-punctuation))
+    (let [resolved (cond
+                     (contains? langs :japanese) :japanese
+                     (contains? langs :korean)   :korean
+                     :else (or (locale->cjk-language locale) :chinese))]
+      (-> langs
+          (disj :han :cjk-punctuation)
+          (conj resolved)))
+    langs))
 
 (defn add-emoji-font
   [fonts]

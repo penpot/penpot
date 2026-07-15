@@ -189,6 +189,11 @@
    ["TextRangeProxy.fontSize"       #(set! (.-fontSize range) "16")]
    ["TextRangeProxy.lineHeight"     #(set! (.-lineHeight range) "1.2")]
    ["TextRangeProxy.letterSpacing"  #(set! (.-letterSpacing range) "1")]
+   ["TextRangeProxy.ruby"           #(set! (.-ruby range) "にち")]
+   ["TextRangeProxy.rubySize"       #(set! (.-rubySize range) "third")]
+   ["TextRangeProxy.rubyAlign"      #(set! (.-rubyAlign range) "center")]
+   ["TextRangeProxy.rubyOverhang"   #(set! (.-rubyOverhang range) "none")]
+   ["TextRangeProxy.rubySide"       #(set! (.-rubySide range) "under")]
    ["TextRangeProxy.fills"          #(set! (.-fills range) #js [#js {:fillColor "#fabada" :fillOpacity 1}])]
 
    ;; ---- RulerGuideProxy ----
@@ -315,4 +320,3 @@
                  ["borderRadiusBottomRight" #(set! (.-borderRadiusBottomRight rect) 2.5)]
                  ["borderRadiusBottomLeft"  #(set! (.-borderRadiusBottomLeft rect) 2.5)]]]
           (t/is (not (throws? thunk)) (str label " must accept a fractional value")))))))
-

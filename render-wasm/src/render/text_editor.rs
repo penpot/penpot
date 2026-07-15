@@ -1,4 +1,5 @@
 use crate::render::options::RenderOptions;
+use crate::shapes::text_vertical;
 use crate::shapes::{vertical_align_offset, Shape, TextContent, Type};
 use crate::state::{TextEditorState, TextSelection};
 use crate::view::Viewbox;
@@ -51,17 +52,33 @@ fn render_cursor(
         return;
     };
 
+    // In vertical writing the caret is a thin horizontal bar across the
+    // column; in horizontal writing a thin vertical bar.
+    let thin = editor_state.theme.cursor_width / zoom * dpr;
     let mut cursor_rect = Rect::new_empty();
-    cursor_rect.set_xywh(
-        rect.x(),
-        rect.y(),
-        if editor_state.is_overtype_mode {
-            rect.width()
-        } else {
-            editor_state.theme.cursor_width / zoom * dpr
-        },
-        rect.height(),
-    );
+    if text_content.is_vertical() {
+        cursor_rect.set_xywh(
+            rect.x(),
+            rect.y(),
+            rect.width(),
+            if editor_state.is_overtype_mode && rect.height() > 0.0 {
+                rect.height()
+            } else {
+                thin
+            },
+        );
+    } else {
+        cursor_rect.set_xywh(
+            rect.x(),
+            rect.y(),
+            if editor_state.is_overtype_mode {
+                rect.width()
+            } else {
+                thin
+            },
+            rect.height(),
+        );
+    }
 
     let mut paint = Paint::default();
     paint.set_anti_alias(false);
@@ -124,6 +141,87 @@ fn paragraphs_vertical_offset(
     )
 }
 
+fn vertical_layout_for_shape(
+    text_content: &TextContent,
+    shape: &Shape,
+) -> (text_vertical::VerticalLayout, f32) {
+    let selrect = shape.selrect();
+    let max_height = text_vertical::wrap_height(text_content, selrect.height());
+    let layout = text_vertical::layout_from_content(text_content, max_height);
+    let origin_x =
+        text_vertical::block_axis_offset(selrect.width(), layout.width, shape.vertical_align());
+    (layout, origin_x)
+}
+
+fn calculate_vertical_cursor_rect(
+    text_content: &TextContent,
+    shape: &Shape,
+    paragraph: usize,
+    offset: usize,
+) -> Option<Rect> {
+    let (layout, origin_x) = vertical_layout_for_shape(text_content, shape);
+    let rect = text_vertical::caret_rect(&layout, paragraph, offset)?;
+    Some(Rect::from_xywh(
+        origin_x + rect.x(),
+        rect.y(),
+        rect.width(),
+        rect.height(),
+    ))
+}
+
+fn calculate_vertical_selection_rects(
+    selection: &TextSelection,
+    text_content: &TextContent,
+    shape: &Shape,
+) -> Vec<Rect> {
+    let start = selection.start();
+    let end = selection.end();
+    let paragraphs = text_content.paragraphs();
+    let (layout, origin_x) = vertical_layout_for_shape(text_content, shape);
+    let mut rects = Vec::new();
+
+    for (para_idx, paragraph) in paragraphs
+        .iter()
+        .enumerate()
+        .take(end.paragraph + 1)
+        .skip(start.paragraph)
+    {
+        let para_char_count: usize = paragraph
+            .children()
+            .iter()
+            .map(|span| span.text.chars().count())
+            .sum();
+        let range_start = if para_idx == start.paragraph {
+            start.offset
+        } else {
+            0
+        };
+        let range_end = if para_idx == end.paragraph {
+            end.offset
+        } else {
+            para_char_count
+        };
+        for rect in text_vertical::range_rects(&layout, para_idx, range_start, range_end) {
+            rects.push(Rect::from_xywh(
+                origin_x + rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+            ));
+        }
+    }
+    rects
+}
+
+/// Caret rectangle relative to the shape's top-left corner.
+pub(crate) fn cursor_rect(
+    editor_state: &TextEditorState,
+    text_content: &TextContent,
+    shape: &Shape,
+) -> Option<Rect> {
+    calculate_cursor_rect(editor_state, text_content, shape)
+}
+
 fn calculate_cursor_rect(
     editor_state: &TextEditorState,
     text_content: &TextContent,
@@ -133,6 +231,15 @@ fn calculate_cursor_rect(
     let paragraphs = text_content.paragraphs();
     if cursor.paragraph >= paragraphs.len() {
         return None;
+    }
+
+    if text_content.is_vertical() {
+        return calculate_vertical_cursor_rect(
+            text_content,
+            shape,
+            cursor.paragraph,
+            cursor.offset,
+        );
     }
 
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
@@ -150,19 +257,30 @@ fn calculate_cursor_rect(
             // - At start of paragraph: use position 0
             // - At end of paragraph: use last position
             let para = &paragraphs[cursor.paragraph];
+            if let Some(rect) =
+                crate::shapes::horizontal_warichu_caret_rect(para, laid_out_para, char_pos)
+            {
+                return Some(Rect::from_xywh(
+                    rect.x(),
+                    y_offset + rect.y(),
+                    rect.width(),
+                    rect.height(),
+                ));
+            }
             let para_char_count: usize = para
                 .children()
                 .iter()
                 .map(|span| span.text.chars().count())
                 .sum();
 
-            // Skia ranges are UTF-16 code units, not characters.
+            // Cursor offsets count source characters; the laid-out paragraph
+            // indexes the transformed, kinsoku-shifted builder text.
             let (cursor_x, cursor_y, cursor_width, cursor_height) = if para_char_count == 0 {
                 // Empty paragraph - use default height
                 (0.0, 0.0, 1.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
-                    0..para.char_utf16_len_at(0),
+                    0..crate::shapes::horizontal_source_to_builder(para, 1),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -173,10 +291,13 @@ fn calculate_cursor_rect(
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else if char_pos >= para_char_count {
-                let last_char = para_char_count.saturating_sub(1);
-                let last_start = para.char_offset_to_utf16(last_char);
+                let last_start = crate::shapes::horizontal_source_to_builder(
+                    para,
+                    para_char_count.saturating_sub(1),
+                );
+                let last_end = crate::shapes::horizontal_source_to_builder(para, para_char_count);
                 let rects = laid_out_para.get_rects_for_range(
-                    last_start..last_start + para.char_utf16_len_at(last_char),
+                    last_start..last_end,
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -194,9 +315,10 @@ fn calculate_cursor_rect(
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else {
-                let utf16_pos = para.char_offset_to_utf16(char_pos);
+                let start = crate::shapes::horizontal_source_to_builder(para, char_pos);
+                let end = crate::shapes::horizontal_source_to_builder(para, char_pos + 1);
                 let rects = laid_out_para.get_rects_for_range(
-                    utf16_pos..utf16_pos + para.char_utf16_len_at(char_pos),
+                    start..end,
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -228,12 +350,17 @@ fn calculate_selection_rects(
     text_content: &TextContent,
     shape: &Shape,
 ) -> Vec<Rect> {
-    let mut rects = Vec::new();
-
     let start = selection.start();
     let end = selection.end();
 
     let paragraphs = text_content.paragraphs();
+
+    if text_content.is_vertical() {
+        return calculate_vertical_selection_rects(selection, text_content, shape);
+    }
+
+    let mut rects = Vec::new();
+
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
     let mut y_offset = paragraphs_vertical_offset(shape, &layout_paragraphs);
@@ -268,21 +395,39 @@ fn calculate_selection_rects(
         };
 
         if range_start < range_end {
-            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            let text_boxes = laid_out_para.get_rects_for_range(
-                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
-                RectHeightStyle::Max,
-                RectWidthStyle::Tight,
+            // Selection offsets live in original text space; the
+            // laid-out paragraph indexes the kinsoku-shifted text.
+            let warichu_rects = crate::shapes::horizontal_warichu_range_rects(
+                para,
+                laid_out_para,
+                range_start,
+                range_end,
             );
-
-            for text_box in text_boxes {
-                let r = text_box.rect;
+            for r in warichu_rects {
                 rects.push(Rect::from_xywh(
                     r.left(),
                     y_offset + r.top(),
                     r.width(),
                     r.height(),
                 ));
+            }
+            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
+            for builder_range in
+                crate::shapes::horizontal_normal_selection_ranges(para, range_start, range_end)
+            {
+                for text_box in laid_out_para.get_rects_for_range(
+                    builder_range,
+                    RectHeightStyle::Max,
+                    RectWidthStyle::Tight,
+                ) {
+                    let r = text_box.rect;
+                    rects.push(Rect::from_xywh(
+                        r.left(),
+                        y_offset + r.top(),
+                        r.width(),
+                        r.height(),
+                    ));
+                }
             }
         }
 

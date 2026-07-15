@@ -777,6 +777,18 @@ msgstr "メンバーを招待"
 msgid "dashboard.invite-profile-disabled"
 msgstr "このチームにユーザーを招待する権限がありません"
 
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.description"
+msgstr "すべてのファイルで日本語組版コントロールを利用できるようにします。"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.enable-all-files"
+msgstr "すべてのファイルで日本語組版を有効にする"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.title"
+msgstr "日本語組版"
+
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
 msgid "dashboard.leave-organization"
 msgstr "組織から退出"
@@ -6168,6 +6180,10 @@ msgstr "放射状グラデーション"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "動的整列を無効化"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-japanese-layout"
+msgstr "日本語組版を無効にする"
+
 #: src/app/main/ui/workspace/main_menu.cljs:254
 msgid "workspace.header.menu.disable-scale-content"
 msgstr "比率を保った拡大縮小を無効化"
@@ -6191,6 +6207,10 @@ msgstr "WebGL レンダリングを無効化（ベータ）"
 #: src/app/main/ui/workspace/main_menu.cljs:294
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "動的整列を有効化"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-japanese-layout"
+msgstr "日本語組版を有効にする"
 
 #: src/app/main/ui/workspace/main_menu.cljs:255
 msgid "workspace.header.menu.enable-scale-content"
@@ -7688,6 +7708,18 @@ msgstr "上下中央揃え"
 msgid "workspace.options.text-options.align-top"
 msgstr "上揃え"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance"
+msgstr "注釈の間隔"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance-auto"
+msgstr "自動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance-none"
+msgstr "行送りを使用"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:100
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
@@ -7695,6 +7727,22 @@ msgstr "LTR"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:104
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features"
+msgstr "プロポーショナルメトリクス"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-none"
+msgstr "なし"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-palt"
+msgstr "横組み（palt）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-vpal"
+msgstr "縦組み（vpal）"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:167
 msgid "workspace.options.text-options.grow-auto-height"
@@ -7708,6 +7756,10 @@ msgstr "幅の自動調整"
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "固定"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.japanese-layout"
+msgstr "日本語組版"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:688
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "文字間隔"
@@ -7715,6 +7767,82 @@ msgstr "文字間隔"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:669
 msgid "workspace.options.text-options.line-height"
 msgstr "行の高さ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby"
+msgstr "ルビ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-advanced-options"
+msgstr "ふりがなの詳細設定"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align"
+msgstr "ルビの配置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-center"
+msgstr "中央"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-space-around"
+msgstr "均等割り"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-space-between"
+msgstr "両端揃え"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-start"
+msgstr "先頭"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.ruby-hidden"
+msgstr "ふりがなを非表示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang"
+msgstr "ルビのはみ出し"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang-auto"
+msgstr "自動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang-none"
+msgstr "なし"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-placeholder"
+msgstr "ふりがな"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side"
+msgstr "ルビの側"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side-over"
+msgstr "上／右"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side-under"
+msgstr "下／左"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size"
+msgstr "ルビの大きさ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-half"
+msgstr "二分"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-quarter"
+msgstr "四分"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-third"
+msgstr "三分"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
@@ -7736,6 +7864,74 @@ msgstr "左揃え"
 msgid "workspace.options.text-options.text-align-right"
 msgstr "右揃え"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-all"
+msgstr "縦中横"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits"
+msgstr "数字のみ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-2"
+msgstr "2桁まで"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-3"
+msgstr "3桁まで"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-4"
+msgstr "4桁まで"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-count"
+msgstr "桁数"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-none"
+msgstr "通常"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis"
+msgstr "圏点"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-circle"
+msgstr "黒丸（大）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-dot"
+msgstr "黒丸"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-sesame"
+msgstr "ゴマ点（黒）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-none"
+msgstr "なし"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-circle"
+msgstr "白丸（大）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-dot"
+msgstr "白丸"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-sesame"
+msgstr "ゴマ点（白）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-orientation-mixed"
+msgstr "混在"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-orientation-upright"
+msgstr "正立"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:509
 msgid "workspace.options.text-options.text-section"
 msgstr "テキストセクション"
@@ -7755,6 +7951,22 @@ msgstr "選択範囲のテキスト"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:207
 msgid "workspace.options.text-options.underline"
 msgstr "下線（%s）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.warichu"
+msgstr "割注"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.warichu-none"
+msgstr "通常"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.writing-mode-horizontal"
+msgstr "横書き"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.writing-mode-vertical"
+msgstr "縦書き（右から左）"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"

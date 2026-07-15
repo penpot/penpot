@@ -10,14 +10,17 @@
   Each test guards against a concrete bug found in the CSS/HTML generation
   of layout children and text shapes."
   (:require
+   ["react-dom/server" :as rds]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.uuid :as uuid]
+   [app.main.ui.shapes.text.fo-text :as fo-text]
    [app.util.code-gen.markup-html :as html]
    [app.util.code-gen.style-css :as css]
    [cljs.test :refer [deftest is testing] :include-macros true]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
 
 ;; --- Builders ------------------------------------------------------------
 
@@ -180,6 +183,29 @@
                            :children [{:text "Hello"
                                        :fills [{:fill-color "#000000" :fill-opacity 1}]}]}]}]})
 
+(def ^:private ruby-text-content
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :writing-mode "vertical-rl"
+                           :text-orientation "upright"
+                           :children [{:text "漢字"
+                                       :ruby "かんじ"
+                                       :font-size "20"
+                                       :fill-color "#000000"
+                                       :fill-opacity 1}]}]}]})
+
+(defn- text-shape
+  [content]
+  (let [tid (uuid/next)]
+    {:id tid :name "Text" :type :text
+     :parent-id uuid/zero :frame-id uuid/zero
+     :x 0 :y 0 :width 100 :height 40
+     :selrect (grc/make-rect 0 0 100 40)
+     :points (pts 0 0 100 40)
+     :grow-type :fixed
+     :content content}))
+
 (deftest text-markup-emits-node-id-classes
   (testing "generated text markup carries the $id classes the CSS rules target"
     (let [tid  (uuid/next)
@@ -194,3 +220,90 @@
       (is (str/includes? markup "root-0")
           "the text nodes must expose their $id as a class for the CSS to apply")
       (is (str/includes? markup "root-0-paragraph-set-0-paragraph-0")))))
+
+(def ^:private warichu-text-content
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :writing-mode "vertical-rl"
+                           :text-orientation "upright"
+                           :children [{:text "割注入り"
+                                       :warichu "warichu"
+                                       :font-size "20"
+                                       :fill-color "#000000"
+                                       :fill-opacity 1}]}]}]})
+
+(def ^:private palt-text-content
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :children [{:text "かな"
+                                       :font-features "palt"
+                                       :font-size "20"
+                                       :fill-color "#000000"
+                                       :fill-opacity 1}]}]}]})
+
+(deftest foreign-object-text-emits-warichu-styles
+  (testing "browser/foreignObject render folds a warichu span into two half-size lines"
+    (let [text   (text-shape warichu-text-content)
+          markup (rds/renderToStaticMarkup
+                  (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]
+      (is (str/includes? markup "割注入り"))
+      (is (str/includes? markup "display:inline-block"))
+      (is (str/includes? markup "font-size:10px"))
+      (is (str/includes? markup "inline-size:2em")))))
+
+(deftest foreign-object-warichu-sizes-by-unicode-code-points
+  (testing "non-BMP characters count as one slot when sizing warichu lines"
+    (let [content (assoc-in warichu-text-content
+                            [:children 0 :children 0 :children 0 :text]
+                            "割𠀀注😀")
+          text    (text-shape content)
+          markup  (rds/renderToStaticMarkup
+                   (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]
+      (is (str/includes? markup "割𠀀注😀"))
+      (is (str/includes? markup "inline-size:2em")))))
+
+(def ^:private tcy-digits2-text-content
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :writing-mode "vertical-rl"
+                           :children [{:text "平成31年"
+                                       :text-combine-upright "digits2"
+                                       :font-size "20"
+                                       :fill-color "#000000"
+                                       :fill-opacity 1}]}]}]})
+
+(deftest foreign-object-text-emits-counted-digits-css
+  (testing "the counted digits variants serialize as CSS `digits <n>`"
+    (let [text   (text-shape tcy-digits2-text-content)
+          markup (rds/renderToStaticMarkup
+                  (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]
+      (is (str/includes? markup "text-combine-upright:digits 2")))))
+
+(deftest foreign-object-text-emits-font-feature-settings
+  (testing "browser/foreignObject render emits palt/vpal as OpenType features"
+    (let [text   (text-shape palt-text-content)
+          markup (rds/renderToStaticMarkup
+                  (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]
+      (is (str/includes? markup "font-feature-settings:&quot;palt&quot;")))))
+
+(deftest text-markup-emits-ruby-annotations
+  (testing "generated text markup keeps ruby annotations beside the base text"
+    (let [text   (text-shape ruby-text-content)
+          markup (html/generate-markup (objects text) [text])]
+      (is (str/includes? markup "<ruby"))
+      (is (str/includes? markup "<rt"))
+      (is (str/includes? markup "漢字"))
+      (is (str/includes? markup "かんじ")))))
+
+(deftest foreign-object-text-emits-ruby-annotations
+  (testing "browser/foreignObject text render keeps ruby annotations"
+    (let [text   (text-shape ruby-text-content)
+          markup (rds/renderToStaticMarkup
+                  (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]
+      (is (str/includes? markup "<ruby"))
+      (is (str/includes? markup "<rt"))
+      (is (str/includes? markup "漢字"))
+      (is (str/includes? markup "かんじ")))))
