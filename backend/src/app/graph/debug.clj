@@ -66,8 +66,9 @@
     (some-> (get @sessions (session-key profile-id))
             (as-> current
                   (when (= file-id (:file-id current))
-                    (let [result (graph.sync/apply-changes!
-                                  conn (:index current) changes revn)
+                    (let [result (locking (:lock current)
+                                   (graph.sync/apply-changes!
+                                    conn (:index current) changes revn))
                           sync-at (ct/now)]
                       (swap! sessions assoc-in [(session-key profile-id) :index]
                              (:index result))
@@ -152,8 +153,12 @@
                                                       :skip-validation? true)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
             session
+            ;; :lock serializes access to the shared Connection between the
+            ;; msgbus sync loop (writes) and HTTP handlers (reads); the Java
+            ;; binding gives no thread-safety guarantee for one Connection.
             (-> {:db db
                  :conn conn
+                 :lock (Object.)
                  :file-id file-id
                  :meta meta
                  :index index
@@ -174,9 +179,10 @@
     (ex/raise :type :validation
               :code :missing-query
               :hint "cypher query is required"))
-  (if-let [{:keys [conn]} (get @sessions (session-key profile-id))]
-    (-> (ladybug/query-on-connection! conn statement)
-        format-query-result)
+  (if-let [{:keys [conn lock]} (get @sessions (session-key profile-id))]
+    (locking (or lock ::no-lock)
+      (-> (ladybug/query-on-connection! conn statement)
+          format-query-result))
     (ex/raise :type :not-found
               :code :graph-session-not-loaded
               :hint "load a file graph before running queries")))
@@ -220,14 +226,15 @@
   loaded. Queries the Ladybug database (not the sync index) so the view
   reflects actual DB state, including drift."
   [profile-id]
-  (when-let [{:keys [conn file-id index]} (get @sessions (session-key profile-id))]
-    (let [{:keys [nodes] nodes-truncated? :truncated?} (export-nodes conn)
-          {:keys [edges] edges-truncated? :truncated?} (export-edges conn)]
-      {:file-id   (str file-id)
-       :revn      (:revn index)
-       :truncated (boolean (or nodes-truncated? edges-truncated?))
-       :nodes     nodes
-       :edges     edges})))
+  (when-let [{:keys [conn lock file-id index]} (get @sessions (session-key profile-id))]
+    (locking (or lock ::no-lock)
+      (let [{:keys [nodes] nodes-truncated? :truncated?} (export-nodes conn)
+            {:keys [edges] edges-truncated? :truncated?} (export-edges conn)]
+        {:file-id   (str file-id)
+         :revn      (:revn index)
+         :truncated (boolean (or nodes-truncated? edges-truncated?))
+         :nodes     nodes
+         :edges     edges}))))
 
 (defn console-context
   "Build template data for the graph debug console page."
