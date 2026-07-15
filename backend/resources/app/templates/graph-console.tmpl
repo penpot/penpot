@@ -151,18 +151,24 @@ Graph Console
       <fieldset id="graph-view-panel">
         <legend>Graph view
           <button type="button" id="graph-maximize" style="margin-left: 1em;">Expand</button>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            <input type="checkbox" id="graph-fold-toggle" /> fold containers
+          </label>
         </legend>
         <desc>
           Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
           and glyph encode the node table; edges are <code>IsChildOf</code>
-          (arrow points to parent). Containers render as foldable boxes:
-          double-click a box to collapse or expand it. Redraws automatically
-          after live changes (fold state survives redraws).
+          (arrow points to parent). With "fold containers" on, anything with
+          children (except the root) renders as a foldable box: double-click
+          to collapse or expand. Redraws automatically after live changes
+          (fold state survives redraws). Very large graphs need an explicit
+          "Render anyway".
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
         <div id="graph-canvas"
              style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff;"></div>
         <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+        <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
       </fieldset>
     </div>
     {% endif %}
@@ -294,16 +300,17 @@ Graph Console
     "Image":     { color: "#eda100", glyph: "star",     size: 14 }
   };
   const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
-  // Containers become foldable G6 combos (Document excluded: folding the
-  // whole graph is useless). A combo holds the container node itself plus
-  // its direct children; nesting mirrors the IsChildOf tree.
-  const CONTAINER_TABLES = {
-    "Page": true, "Frame": true, "Group": true, "Boolean": true, "SVGRaw": true
-  };
+  // Above this many nodes the view is not rendered automatically; the
+  // "Render anyway" button forces it (~1.5 s per 2k nodes, measured).
+  const RENDER_GUARD_NODES = 4000;
+  const LAYOUT_XS = 40;   // horizontal leaf slot spacing
+  const LAYOUT_YS = 70;   // vertical rank (depth) spacing
 
   const graphViewStatus = document.getElementById("graph-view-status");
   let g6graph = null;
   let refetchTimer = null;
+  let lastGraphData = null;
+  let renderForced = false;
 
   function nodeStyle(table) {
     return NODE_STYLES[table] || FALLBACK_STYLE;
@@ -313,22 +320,57 @@ Graph Console
     return "combo:" + nodeId;
   }
 
-  function toG6Data(data, collapsedIds) {
+  function foldEnabled() {
+    return localStorage.getItem("graph-fold-containers") !== "0";
+  }
+
+  // IsChildOf is a tree, so an O(n) tidy layout replaces a generic DAG
+  // layout: depth = rank (y), post-order leaf slots = x, parents centered
+  // over their children. antv-dagre needed ~7 s at 1700 nodes; this is free.
+  function treePositions(nodes, parentOf, childrenOf) {
+    const pos = {};
+    let slot = 0;
+    function place(id, depth) {
+      const kids = childrenOf[id] || [];
+      if (!kids.length) {
+        pos[id] = { x: slot * LAYOUT_XS, y: depth * LAYOUT_YS };
+        slot += 1;
+        return;
+      }
+      kids.forEach(function (k) { place(k, depth + 1); });
+      const xs = kids.map(function (k) { return pos[k].x; });
+      pos[id] = { x: (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2,
+                  y: depth * LAYOUT_YS };
+      slot += 1; // breathing room between adjacent subtrees
+    }
+    nodes.forEach(function (n) {
+      if (!parentOf[n.id]) place(n.id, 0);
+    });
+    return pos;
+  }
+
+  function toG6Data(data, collapsedIds, withCombos) {
     const nodes = data.nodes || [];
     const edges = (data.edges || [])
       .slice()
       .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
     const parentOf = {};
-    const childCount = {};
+    const childrenOf = {};
     edges.forEach(function (e) {
       parentOf[e.source] = e.target;
-      childCount[e.target] = (childCount[e.target] || 0) + 1;
+      (childrenOf[e.target] = childrenOf[e.target] || []).push(e.source);
     });
-    // Only containers with children get a combo: empty boxes are clutter.
+    const pos = treePositions(nodes, parentOf, childrenOf);
+    // Foldable = has children and has a parent: the IsChildOf root of the
+    // loaded graph (today a Document, later maybe a Project or Team) is
+    // never a combo — folding the whole graph is useless. Empty containers
+    // stay plain nodes.
     const hasCombo = {};
-    nodes.forEach(function (n) {
-      if (CONTAINER_TABLES[n.table] && childCount[n.id]) hasCombo[n.id] = true;
-    });
+    if (withCombos) {
+      nodes.forEach(function (n) {
+        if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
+      });
+    }
     const combos = [];
     nodes.forEach(function (n) {
       if (!hasCombo[n.id]) return;
@@ -339,7 +381,10 @@ Graph Console
       combos.push(combo);
     });
     const g6nodes = nodes.map(function (n) {
-      const out = { id: n.id, data: { label: n.label, table: n.table } };
+      const p = pos[n.id] || { x: 0, y: 0 };
+      const out = { id: n.id,
+                    data: { label: n.label, table: n.table },
+                    style: { x: p.x, y: p.y } };
       if (hasCombo[n.id]) {
         out.combo = comboIdFor(n.id);
       } else if (parentOf[n.id] && hasCombo[parentOf[n.id]]) {
@@ -374,8 +419,10 @@ Graph Console
       data: g6data,
       autoFit: "view",
       autoResize: true,
+      // Entrance/update animation is the performance killer: 1700 nodes
+      // took >2 min animated vs ~1.5 s without (measured, headless).
+      animation: false,
       padding: 20,
-      layout: { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
       node: {
         type: function (d) { return nodeStyle(d.data.table).glyph; },
         style: {
@@ -422,6 +469,27 @@ Graph Console
     }).join("");
   }
 
+  function graphStatusText(data) {
+    return data.nodes.length + " nodes, " + data.edges.length + " edges"
+      + " (graph revn " + data.revn + ")"
+      + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
+  }
+
+  function renderCurrent() {
+    if (!lastGraphData) return;
+    const data = lastGraphData;
+    const anywayBtn = document.getElementById("graph-render-anyway");
+    if (data.nodes.length > RENDER_GUARD_NODES && !renderForced) {
+      graphViewStatus.textContent =
+        graphStatusText(data) + " — too large to render automatically";
+      if (anywayBtn) anywayBtn.style.display = "inline";
+      return;
+    }
+    if (anywayBtn) anywayBtn.style.display = "none";
+    graphViewStatus.textContent = graphStatusText(data);
+    renderGraph(toG6Data(data, collapsedComboIds(), foldEnabled()));
+  }
+
   function refetchGraph() {
     if (typeof G6 === "undefined") {
       graphViewStatus.textContent = "G6 failed to load (CDN unreachable)";
@@ -433,11 +501,8 @@ Graph Console
         return resp.json();
       })
       .then(function (data) {
-        graphViewStatus.textContent =
-          data.nodes.length + " nodes, " + data.edges.length + " edges"
-          + " (graph revn " + data.revn + ")"
-          + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
-        return renderGraph(toG6Data(data, collapsedComboIds()));
+        lastGraphData = data;
+        renderCurrent();
       })
       .catch(function (err) {
         graphViewStatus.textContent = "graph view error: " + err;
@@ -707,6 +772,23 @@ Graph Console
           && graphColumn.classList.contains("graph-view-expanded")) {
         setExpanded(false);
       }
+    });
+  }
+
+  const foldToggle = document.getElementById("graph-fold-toggle");
+  if (foldToggle) {
+    foldToggle.checked = foldEnabled();
+    foldToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-fold-containers", foldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const renderAnywayBtn = document.getElementById("graph-render-anyway");
+  if (renderAnywayBtn) {
+    renderAnywayBtn.addEventListener("click", function () {
+      renderForced = true;
+      renderCurrent();
     });
   }
 
