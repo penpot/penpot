@@ -4,17 +4,19 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 @use "./common";
 
 .fields-row {
-  margin-bottom: deprecated.$s-8;
+  margin-block-end: var(--sp-s);
 }
 
 .notification-text-email {
-  @include deprecated.med-title-typography;
+  @include use-typography("title-medium");
 
-  font-size: deprecated.$fs-20;
-  color: var(--register-confirmation-color);
-  margin-inline: deprecated.$s-36;
+  line-height: 1.2;
+  color: var(--color-background-success);
+  margin-inline: $sz-36;
 }
