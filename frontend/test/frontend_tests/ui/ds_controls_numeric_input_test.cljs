@@ -6,8 +6,42 @@
 
 (ns frontend-tests.ui.ds-controls-numeric-input-test
   (:require
+   [app.common.data :as d]
    [app.main.ui.ds.controls.numeric-input :refer [next-focus-index]]
+   [app.main.ui.formats :as fmt]
    [cljs.test :as t :include-macros true]))
+
+;; ── format-number / parse-double roundtrip ──
+;; These tests guard against the contamination chain that caused issue #10638:
+;;   format-number returns string → last-value* contaminated → mth/finite? on
+;;   CLJS accepts strings via js/isFinite → backend Malli rejects → 500.
+
+(t/deftest test-format-number-returns-string
+  (t/testing "format-number returns a string, not a number"
+    (let [result (fmt/format-number 16)]
+      (t/is (string? result))
+      (t/is (not (number? result))))))
+
+(t/deftest test-parse-double-roundtrip
+  (t/testing "parse-double of a formatted number returns a number"
+    (let [formatted (fmt/format-number 16)
+          reparsed  (d/parse-double formatted)]
+      (t/is (number? reparsed))
+      (t/is (= 16 reparsed))))
+
+  (t/testing "parse-double of empty string returns nil"
+    (t/is (nil? (d/parse-double ""))))
+
+  (t/testing "parse-double of nil returns nil"
+    (t/is (nil? (d/parse-double nil))))
+
+  (t/testing "parse-double of non-numeric string returns nil"
+    (t/is (nil? (d/parse-double "abc"))))
+
+  (t/testing "parse-double is idempotent for numbers"
+    (let [result (d/parse-double (d/parse-double (fmt/format-number 42)))]
+      (t/is (number? result))
+      (t/is (= 42 result)))))
 
 (def ^:private sample-options
   [{:id "a" :type :item :name "Alpha"}

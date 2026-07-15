@@ -317,12 +317,12 @@
 
                  (let [fallback-value (or (mf/ref-val last-value*) default)]
                    (mf/set-ref-val! raw-value* fallback-value)
-                   (mf/set-ref-val!  last-value* fallback-value)
+                   (mf/set-ref-val!  last-value* (d/parse-double fallback-value))
                    (reset! token-applied-name* nil)
                    (update-input (fmt/format-number fallback-value))
 
                    (when (and (fn? on-change) (not= fallback-value (str value)))
-                     (on-change fallback-value))))))))
+                     (on-change (or (d/parse-double fallback-value) fallback-value)))))))))
 
         apply-token
         (mf/use-fn
@@ -785,7 +785,7 @@
                      :else
                      (fmt/format-number (d/parse-double value default)))]
         (mf/set-ref-val! raw-value* value')
-        (mf/set-ref-val! last-value* value')
+        (mf/set-ref-val! last-value* (d/parse-double value'))
 
         ;; Only sync token state if not in the middle of a selection
         ;; This prevents race condition between blur and token selection
