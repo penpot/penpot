@@ -85,9 +85,18 @@
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))
 
+(defn- with-nitrate-licence
+  [profile cfg]
+  (if (contains? cf/flags :nitrate)
+    (nitrate/add-nitrate-licence-to-profile cfg profile)
+    profile))
+
 (defmethod process-token :auth
   [{:keys [::db/conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/get-profile conn profile-id)]
+  (let [profile (-> (profile/get-profile conn profile-id)
+                    (profile/strip-private-attrs)
+                    (update :props profile/filter-props)
+                    (with-nitrate-licence cfg))]
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
