@@ -13,7 +13,7 @@ import { setStyles } from "./Style.js";
 export const TAG = "DIV";
 export const TYPE = "root";
 export const QUERY = `[data-itype="${TYPE}"]`;
-export const STYLES = [["--vertical-align"]];
+export const STYLES = [["--vertical-align"], ["writing-mode"]];
 
 /**
  * Returns true if passed node is a root.

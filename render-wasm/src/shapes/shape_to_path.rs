@@ -254,7 +254,12 @@ impl ToPath for Shape {
             Type::SVGRaw(_) => Path::default(),
 
             Type::Text(ref text) => {
-                let text_paths = TextPaths::new(text.clone());
+                let text = if text.is_vertical() {
+                    text.new_bounds(self.selrect)
+                } else {
+                    text.clone()
+                };
+                let text_paths = TextPaths::new(text, self.vertical_align());
                 let mut result = Path::default();
                 for (path, _) in text_paths.get_paths(true) {
                     result = join_paths(result, Path::from_skia_path(path));

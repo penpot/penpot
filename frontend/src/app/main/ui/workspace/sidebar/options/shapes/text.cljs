@@ -27,7 +27,29 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
+
+(defn- dom-text-range-selected?
+  [editor]
+  (when editor
+    (let [selection (.getSelection js/window)
+          element   (.-element editor)
+          anchor    (some-> selection .-anchorNode)
+          focus     (some-> selection .-focusNode)]
+      (and selection
+           (not (.-isCollapsed selection))
+           element
+           anchor
+           focus
+           (.contains element anchor)
+           (.contains element focus)))))
+
+(defn- draft-text-range-selected?
+  [editor-state]
+  (when editor-state
+    (let [selection (.getSelection editor-state)]
+      (and selection (not (.isCollapsed selection))))))
 
 (mf/defc options*
   [{:keys [shape libraries file-id page-id]}]
@@ -117,6 +139,19 @@
         (when text-editor-v2?
           editor)
 
+        text-selection-active
+        (boolean
+         (cond
+           text-editor-wasm?
+           (and (= id (wasm.api/text-editor-get-active-shape-id))
+                (wasm.api/text-editor-has-selection?))
+
+           text-editor-v2?
+           (dom-text-range-selected? editor-instance)
+
+           :else
+           (draft-text-range-selected? editor-state)))
+
         fill-values
         (dwt/current-text-values
          {:editor-styles editor-styles
@@ -143,7 +178,14 @@
            :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
-           :attrs txt/text-node-attrs}))]
+           :attrs txt/text-node-attrs}))
+
+        ruby-values
+        (if text-selection-active
+          (select-keys text-values dwt/ruby-presentation-attrs)
+          (dwt/current-ruby-values
+           {:shape shape
+            :attrs dwt/ruby-presentation-attrs}))]
 
     [:*
      [:> layer-menu* {:ids ids
@@ -191,6 +233,8 @@
        :type type
        :applied-tokens applied-tokens
        :values text-values
+       :ruby-values ruby-values
+       :text-selection-active text-selection-active
        :libraries libraries
        :file-id file-id
        :typographies typographies}]
@@ -226,4 +270,3 @@
                         :values (select-keys shape exports-attrs)
                         :page-id page-id
                         :file-id file-id}]]))
-

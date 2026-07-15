@@ -41,6 +41,8 @@
 (def ^:dynamic *wrap-with-objects-map-fn* identity)
 (def ^:dynamic *wrap-with-pointer-map-fn* identity)
 
+;; CHANGEME: The name of text-vertical/v1 is not clear for the feature, change for japanese-layout/v1
+
 ;; A set of supported features
 (def supported-features
   #{"fdata/objects-map"
@@ -56,6 +58,7 @@
     "text-editor/v2-html-paste"
     "text-editor/v2"
     "text-editor-wasm/v1"
+    "text-vertical/v1"
     "render-wasm/v1"
     "variants/v1"})
 
@@ -81,6 +84,7 @@
     "text-editor/v2-html-paste"
     "text-editor/v2"
     "text-editor-wasm/v1"
+    "text-vertical/v1"
     "tokens/numeric-input"
     "render-wasm/v1"})
 
@@ -131,6 +135,7 @@
     :feature-text-editor-v2 "text-editor/v2"
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-text-editor-wasm "text-editor-wasm/v1"
+    :feature-text-vertical "text-vertical/v1"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"

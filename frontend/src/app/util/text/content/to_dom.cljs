@@ -90,7 +90,14 @@
 
 (defn get-root-styles
   [root]
-  (get-styles-from-attrs root txt/root-attrs txt/default-text-attrs))
+  (let [styles (get-styles-from-attrs root txt/root-attrs txt/default-text-attrs)
+        ;; CHANGEME: simplify this comment
+        ;; Mirroring the shape's writing mode on the root makes paragraph
+        ;; blocks stack right-to-left in the DOM editor. It is not read
+        ;; back from the root (root-attrs does not include it).
+        writing-mode (txt/content-writing-mode root)]
+    (cond-> styles
+      (some? writing-mode) (assoc :writing-mode writing-mode))))
 
 (defn get-text-span-styles
   [inline paragraph]

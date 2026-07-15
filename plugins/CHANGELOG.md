@@ -3,6 +3,14 @@
 ### 🚀 Features
 
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
+- **plugin-types**: Added `writingMode` and `textOrientation` properties for text shapes (vertical writing)
+- **plugin-types:** Added `textCombineUpright` property for text shapes (Tate-chu-yoko)
+- **plugin-types:** Added `ruby` property for text shapes (furigana annotation)
+- **plugin-types:** Added `textEmphasis` property for text shapes (emphasis marks / bouten)
+- **plugin-types:** Added `warichu` property for text shapes (inline two-line notes)
+- **plugin-types:** `textCombineUpright` now accepts `digits` (combine 2-4 digit runs)
+- **plugin-types:** Added `fontFeatures` (`none`, `palt`, or `vpal`) to text shapes and text ranges.
+- **plugin-types:** Added `annotationClearance` (`none` or `auto`) to text shapes.
 
 ### 🩹 Fixes
 

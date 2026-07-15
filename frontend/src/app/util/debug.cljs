@@ -101,6 +101,9 @@
     ;; Show viewbox.
     :wasm-viewbox
 
+    ;; Draw the jlreq-style character-frame grid over Japanese vertical text.
+    :wasm-text-grid
+
     ;; Makes the GL context to fail on initialization.
     :wasm-gl-context-init-error
 

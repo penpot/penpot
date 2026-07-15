@@ -811,6 +811,8 @@ pub fn split_paragraph_at_cursor(
     let text_direction = para.text_direction();
     let text_decoration = para.text_decoration();
     let text_transform = para.text_transform();
+    let writing_mode = para.writing_mode();
+    let text_orientation = para.text_orientation();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
 
@@ -826,7 +828,7 @@ pub fn split_paragraph_at_cursor(
         span.set_text(new_text);
     }
 
-    let new_para = crate::shapes::Paragraph::new(
+    let mut new_para = crate::shapes::Paragraph::new(
         text_align,
         text_direction,
         text_decoration,
@@ -835,6 +837,8 @@ pub fn split_paragraph_at_cursor(
         letter_spacing,
         new_para_children,
     );
+    new_para.set_writing_mode(writing_mode);
+    new_para.set_text_orientation(text_orientation);
 
     paragraphs.insert(cursor.paragraph + 1, new_para);
 

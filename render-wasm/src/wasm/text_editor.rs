@@ -5,6 +5,7 @@ use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
+use crate::shapes::text_vertical;
 use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
 use crate::state::{TextEditorEvent, TextSelection};
 use crate::utils::uuid_from_u32_quartet;
@@ -147,7 +148,9 @@ pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
         };
 
         let point = Point::new(x, y);
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().select_word_boundary(text_content, &position);
         }
     })
@@ -179,7 +182,9 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
         };
         let point = Point::new(x, y);
         get_text_editor_state().start_pointer_selection();
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().set_caret_from_position(&position);
             get_text_editor_state().update_styles(text_content);
         }
@@ -210,7 +215,9 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             return;
         };
 
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().extend_selection_from_position(&position);
             // We need this flag to prevent handling the click behavior
             // just after a pointerup event.
@@ -239,7 +246,9 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().extend_selection_from_position(&position);
             get_text_editor_state().update_styles(text_content);
         }
@@ -274,7 +283,9 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
             return;
         };
 
-        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+        if let Some(position) =
+            text_content.get_caret_position_from_shape_coords(&point, shape.vertical_align())
+        {
             get_text_editor_state().set_caret_from_position(&position);
         }
     });
@@ -299,9 +310,12 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_screen_coords(
+            &point,
+            &view_matrix,
+            &shape_matrix,
+            shape.vertical_align(),
+        ) {
             get_text_editor_state().set_caret_from_position(&position);
         }
     });
@@ -1035,6 +1049,24 @@ fn get_cursor_rect(
         return None;
     }
 
+    // Vertical writing: the caret is a thin horizontal bar across the
+    // column, computed from the vertical cells.
+    if text_content.is_vertical() {
+        let selrect = shape.selrect();
+        let max_height = text_vertical::wrap_height(text_content, selrect.height());
+        let layout = text_vertical::layout_from_content(text_content, max_height);
+        let (origin_x, origin_y) = layout.origin(&selrect, shape.vertical_align());
+        let rect = text_vertical::caret_rect(&layout, cursor.paragraph, cursor.offset)?;
+        // The rect height is the extent of the character at the cursor,
+        // matching the line height reported by the horizontal path.
+        return Some(Rect::from_xywh(
+            origin_x + rect.x(),
+            origin_y + rect.y(),
+            rect.width(),
+            rect.height().max(1.0),
+        ));
+    }
+
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
     let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
@@ -1047,7 +1079,10 @@ fn get_cursor_rect(
     let mut y_offset = valign_offset;
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.offset;
+            // Cursor offsets live in original text space; the laid-out
+            // paragraph indexes the kinsoku-shifted builder text.
+            let (_, offset_map) = paragraphs[cursor.paragraph].layout_span_texts();
+            let char_pos = offset_map.to_shifted(cursor.offset);
 
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let rects = laid_out_para.get_rects_for_range(
@@ -1088,6 +1123,46 @@ fn get_selection_rects(
     let end = selection.end();
 
     let paragraphs = text_content.paragraphs();
+
+    // Vertical writing: selection rectangles come from the vertical cells.
+    if text_content.is_vertical() {
+        let selrect = shape.selrect();
+        let max_height = text_vertical::wrap_height(text_content, selrect.height());
+        let layout = text_vertical::layout_from_content(text_content, max_height);
+        let (origin_x, origin_y) = layout.origin(&selrect, shape.vertical_align());
+        for (para_idx, paragraph) in paragraphs
+            .iter()
+            .enumerate()
+            .take(end.paragraph + 1)
+            .skip(start.paragraph)
+        {
+            let para_char_count: usize = paragraph
+                .children()
+                .iter()
+                .map(|span| span.text.chars().count())
+                .sum();
+            let range_start = if para_idx == start.paragraph {
+                start.offset
+            } else {
+                0
+            };
+            let range_end = if para_idx == end.paragraph {
+                end.offset
+            } else {
+                para_char_count
+            };
+            for rect in text_vertical::range_rects(&layout, para_idx, range_start, range_end) {
+                rects.push(Rect::from_xywh(
+                    origin_x + rect.x(),
+                    origin_y + rect.y(),
+                    rect.width(),
+                    rect.height(),
+                ));
+            }
+        }
+        return rects;
+    }
+
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
     let selrect = shape.selrect();
@@ -1133,6 +1208,12 @@ fn get_selection_rects(
         };
 
         if range_start < range_end {
+            // Selection offsets live in original text space; the
+            // laid-out paragraph indexes the kinsoku-shifted text.
+            let (_, offset_map) = para.layout_span_texts();
+            let range_start = offset_map.to_shifted(range_start);
+            let range_end = offset_map.to_shifted(range_end);
+
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
                 range_start..range_end,

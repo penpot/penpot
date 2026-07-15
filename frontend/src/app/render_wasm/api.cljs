@@ -439,7 +439,9 @@
             (case ev
               ;; StylesChanged Event
               TEXT_EDITOR_EVENT_STYLES_CHANGED
-              (let [current-styles (text-editor/text-editor-get-current-styles)
+              (let [current-styles (merge
+                                    (text-editor/text-editor-get-current-styles)
+                                    (text-editor/text-editor-get-current-japanese-styles))
                     shape-id (text-editor/text-editor-get-active-shape-id)]
                 (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles)))
 
@@ -1268,9 +1270,10 @@
                    emoji?
                    langs)
 
-            (let [text   (apply str (map :text spans))
-                  emoji? (if emoji? emoji? (t/contains-emoji? text))
-                  langs  (t/collect-used-languages langs text)]
+            (let [text          (apply str (map :text spans))
+                  fallback-text (apply str (map #(str (:text %) (:ruby %)) spans))
+                  emoji?        (if emoji? emoji? (t/contains-emoji? fallback-text))
+                  langs         (t/collect-used-languages langs fallback-text)]
 
               ;; FIXME: this should probably be somewhere else
               (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
@@ -1282,7 +1285,7 @@
         (let [updated-fonts
               (-> #{}
                   (cond-> ^boolean emoji? (f/add-emoji-font))
-                  (f/add-noto-fonts langs))
+                  (f/add-noto-fonts (t/resolve-ambiguous-cjk langs)))
               fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))
@@ -2064,7 +2067,9 @@
     (text-editor-wasm?)
     (bit-or 2r00000000000000000000000000000100)
     (contains? cf/flags :render-wasm-info)
-    (bit-or 2r00000000000000000000000000001000)))
+    (bit-or 2r00000000000000000000000000001000)
+    (dbg/enabled? :wasm-text-grid)
+    (bit-or 2r00000000000000000000000000010000)))
 
 (defn set-render-options!
   "Updates WASM render options with a new DPR value."
@@ -2520,6 +2525,56 @@
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
 
+(defn- ruby-font-scale
+  [ruby-size]
+  (case ruby-size
+    "third" (/ 1 3)
+    "quarter" 0.25
+    0.5))
+
+(defn- horizontal-ruby-slice
+  "Returns the whole-span ruby annotation for a horizontal base strip."
+  [element _start-pos _end-pos]
+  (let [text (:text element)
+        ruby (:ruby element)]
+    (when (and (string? text) (seq text) (string? ruby) (seq ruby))
+      ruby)))
+
+(defn- ruby-strip-entry
+  "Position-data entry for a ruby annotation strip (direction 3): the
+   offsets index the span's ruby string and the geometry is the exact
+   gutter placement the canvas paints."
+  [element {:keys [start-pos end-pos x y width height]}]
+  (let [ruby (get element :ruby)]
+    (when (string? ruby)
+      (let [text (subs ruby
+                       (min start-pos (count ruby))
+                       (min end-pos (count ruby)))
+            font-size (js/parseFloat (get element :font-size))]
+        (when (seq text)
+          (d/patch-object
+           txt/default-text-attrs
+           (d/without-nils
+            {:x x
+             :y (+ y height)
+             :width width
+             :height height
+             :direction "ltr"
+             :writing-mode "vertical-rl"
+             :text-orientation "upright"
+             :font-id (get element :font-id)
+             :font-family (get element :font-family)
+             :font-size (when-not (js/isNaN font-size)
+                          (dm/str (* (ruby-font-scale (:ruby-size element)) font-size) "px"))
+             :font-weight (get element :font-weight)
+             :font-style (get element :font-style)
+             :ruby-size (get element :ruby-size)
+             :ruby-align (get element :ruby-align)
+             :ruby-overhang (get element :ruby-overhang)
+             :ruby-side (get element :ruby-side)
+             :fills (get element :fills)
+             :text text})))))))
+
 (defn calculate-position-data
   [shape]
   (when (initialized?)
@@ -2547,35 +2602,79 @@
 
       (into []
             (keep
-             (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
-               (let [element (-> content :children
-                                 (get 0) :children ;; paragraph-set
-                                 (get paragraph) :children ;; paragraph
+             (fn [{:keys [paragraph span start-pos end-pos direction x y width height] :as entry}]
+               (let [paragraph-node (-> content :children
+                                        (get 0) :children ;; paragraph-set
+                                        (get paragraph))
+                     element (-> paragraph-node :children ;; paragraph
                                  (get span))
                      element-text (:text element)]
+                 (if (= direction 3)
+                   (ruby-strip-entry element entry)
+                   ;; Glyph orientation of a vertical strip; stored on the
+                   ;; span or its paragraph. Empty reads normalize to nil
+                   ;; (the SVG renderer then defaults to "mixed").
+                   (let [text-orientation
+                         (when (= direction 2)
+                           (let [orientation (or (get element :text-orientation)
+                                                 (get paragraph-node :text-orientation))]
+                             (when (seq orientation) orientation)))]
 
-                 ;; Add comprehensive nil-safety checks
-                 ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
-                 (when (and element element-text)
-                   (let [text (subs element-text start-pos end-pos)]
-                     (d/patch-object
-                      txt/default-text-attrs
-                      (d/without-nils
-                       {:x x
-                        :y (+ y height)
-                        :width width
-                        :height height
-                        :direction       (dr/translate-direction direction)
-                        :font-id         (get element :font-id)
-                        :font-family     (get element :font-family)
-                        :font-size       (dm/str (get element :font-size) "px")
-                        :font-weight     (get element :font-weight)
-                        :text-transform  (get element :text-transform)
-                        :text-decoration (get element :text-decoration)
-                        :letter-spacing  (dm/str (get element :letter-spacing) "px")
-                        :font-style      (get element :font-style)
-                        :fills           (get element :fills)
-                        :text            text})))))))
+                     ;; Add comprehensive nil-safety checks
+                     ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
+                     (when (and element element-text)
+                       (let [text (subs element-text start-pos end-pos)]
+                         (d/patch-object
+                          txt/default-text-attrs
+                          (d/without-nils
+                           {:x x
+                            :y (+ y height)
+                            :width width
+                            :height height
+                            :direction       (dr/translate-direction direction)
+                            ;; Direction 2 marks a vertical-rl column strip;
+                            ;; the SVG renderer draws it with CSS writing-mode.
+                            :writing-mode    (when (= direction 2) "vertical-rl")
+                            :text-orientation text-orientation
+                            :font-id         (get element :font-id)
+                            :font-family     (get element :font-family)
+                            :font-size       (dm/str (get element :font-size) "px")
+                            :font-weight     (get element :font-weight)
+                            :text-transform  (get element :text-transform)
+                            :text-decoration (get element :text-decoration)
+                            :text-combine-upright (get element :text-combine-upright)
+                            ;; Emphasis marks (圏点) are drawn by the static SVG
+                            ;; renderer; "none" carries no information.
+                            :text-emphasis   (let [emphasis (get element :text-emphasis)]
+                                               (when (and (string? emphasis)
+                                                          (seq emphasis)
+                                                          (not= "none" emphasis))
+                                                 emphasis))
+                            :annotation-clearance
+                            (let [clearance (get element :annotation-clearance)]
+                              (when (= "auto" clearance) clearance))
+                            :annotation-has-ruby
+                            (let [ruby (get element :ruby)]
+                              (when (and (string? ruby) (seq ruby)) true))
+                            ;; Horizontal position data has no separate ruby
+                            ;; strip, so carry the annotation on the base entry
+                            ;; for static SVG export. Vertical ruby has its own
+                            ;; direction-3 position entry.
+                            :ruby (when (not= direction 2)
+                                    (horizontal-ruby-slice
+                                     element start-pos end-pos))
+                            :ruby-size (get element :ruby-size)
+                            :ruby-align (get element :ruby-align)
+                            :ruby-overhang (get element :ruby-overhang)
+                            :ruby-side (get element :ruby-side)
+                            ;; Warichu spans render as two half-size sub-columns
+                            ;; in the static SVG; "none" carries no information.
+                            :warichu         (let [warichu (get element :warichu)]
+                                               (when (= "warichu" warichu) warichu))
+                            :letter-spacing  (dm/str (get element :letter-spacing) "px")
+                            :font-style      (get element :font-style)
+                            :fills           (get element :fills)
+                            :text            text})))))))))
             result))))
 
 (defn apply-canvas-blur
@@ -2679,5 +2778,3 @@
    viewport mount. Idempotent: the `delay` caches its in-flight promise."
   []
   @module)
-
-

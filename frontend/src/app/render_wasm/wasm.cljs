@@ -73,6 +73,17 @@
        :fill-data shared/RawFillData
        :text-align shared/RawTextAlign
        :text-direction shared/RawTextDirection
+       :writing-mode shared/RawWritingMode
+       :text-orientation shared/RawTextOrientation
+       :text-combine-upright shared/RawTextCombineUpright
+       :text-emphasis shared/RawTextEmphasis
+       :warichu shared/RawWarichu
+       :font-features shared/RawFontFeatures
+       :annotation-clearance shared/RawAnnotationClearance
+       :ruby-size shared/RawRubySize
+       :ruby-align shared/RawRubyAlign
+       :ruby-overhang shared/RawRubyOverhang
+       :ruby-side shared/RawRubySide
        :text-decoration shared/RawTextDecoration
        :text-transform shared/RawTextTransform
        :multiple-state shared/MultipleState
@@ -81,4 +92,3 @@
        :stroke-linecap shared/RawStrokeLineCap
        :stroke-linejoin shared/RawStrokeLineJoin
        :fill-rule shared/RawFillRule})
-

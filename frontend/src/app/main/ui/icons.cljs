@@ -242,6 +242,9 @@
 (def ^:icon text-auto-height (icon-xref :text-auto-height))
 (def ^:icon text-auto-width (icon-xref :text-auto-width))
 (def ^:icon text-bottom (icon-xref :text-bottom))
+(def ^:icon text-combine-upright-all (icon-xref :text-combine-upright-all))
+(def ^:icon text-combine-upright-digits (icon-xref :text-combine-upright-digits))
+(def ^:icon text-combine-upright-none (icon-xref :text-combine-upright-none))
 (def ^:icon text-fixed (icon-xref :text-fixed))
 (def ^:icon text-font-family (icon-xref :text-font-family))
 (def ^:icon text-font-size (icon-xref :text-font-size))
@@ -253,6 +256,8 @@
 (def ^:icon text-ltr (icon-xref :text-ltr))
 (def ^:icon text-middle (icon-xref :text-middle))
 (def ^:icon text-mixed (icon-xref :text-mixed))
+(def ^:icon text-orientation-mixed (icon-xref :text-orientation-mixed))
+(def ^:icon text-orientation-upright (icon-xref :text-orientation-upright))
 (def ^:icon text-palette (icon-xref :text-palette))
 (def ^:icon text-paragraph (icon-xref :text-paragraph))
 (def ^:icon text-rtl (icon-xref :text-rtl))
@@ -279,7 +284,11 @@
 (def ^:icon vertical-align-items-start (icon-xref :vertical-align-items-start))
 (def ^:icon view-as-icons (icon-xref :view-as-icons))
 (def ^:icon view-as-list (icon-xref :view-as-list))
+(def ^:icon warichu (icon-xref :warichu))
+(def ^:icon warichu-none (icon-xref :warichu-none))
 (def ^:icon wrap (icon-xref :wrap))
+(def ^:icon writing-mode-horizontal (icon-xref :writing-mode-horizontal))
+(def ^:icon writing-mode-vertical (icon-xref :writing-mode-vertical))
 
 (def default
   "A collection of all icons"

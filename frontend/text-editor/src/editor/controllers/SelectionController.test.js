@@ -9,7 +9,7 @@ import { createLineBreak } from "../content/dom/LineBreak.js";
 import { TextEditorMock } from "../../test/TextEditorMock.js";
 import { SelectionController } from "./SelectionController.js";
 import { SelectionDirection } from "./SelectionDirection.js";
-import StyleDeclaration from './StyleDeclaration.js';
+import StyleDeclaration from "./StyleDeclaration.js";
 
 /* @vitest-environment jsdom */
 
@@ -340,15 +340,15 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
       Text,
     );
-    expect(textEditorMock.root.firstChild.children.item(0).firstChild.nodeValue).toBe(
-      "Lorem ",
-    );
+    expect(
+      textEditorMock.root.firstChild.children.item(0).firstChild.nodeValue,
+    ).toBe("Lorem ");
     expect(
       textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue,
     ).toBe("ipsum ");
-    expect(textEditorMock.root.firstChild.children.item(2).firstChild.nodeValue).toBe(
-      "dolor",
-    );
+    expect(
+      textEditorMock.root.firstChild.children.item(2).firstChild.nodeValue,
+    ).toBe("dolor");
   });
 
   test("`insertPaste` should insert a text span from a pasted fragment (at end)", () => {
@@ -606,25 +606,29 @@ describe("SelectionController", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockEmpty();
     const root = textEditorMock.root;
     const selection = document.getSelection();
-    const selectionController = new SelectionController(textEditorMock, selection);
-    focus(
-      selection,
+    const selectionController = new SelectionController(
       textEditorMock,
-      root.firstChild.firstChild.firstChild,
-      0,
+      selection,
     );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, 0);
     selectionController.insertParagraph();
     expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
     expect(textEditorMock.root.dataset.itype).toBe("root");
     expect(textEditorMock.root.children.length).toBe(2);
     expect(textEditorMock.root.children.item(0)).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.children.item(0).dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.children.item(0).dataset.itype).toBe(
+      "paragraph",
+    );
     expect(textEditorMock.root.children.item(0).firstChild).toBeInstanceOf(
       HTMLSpanElement,
     );
-    expect(textEditorMock.root.children.item(0).firstChild.dataset.itype).toBe("span");
+    expect(textEditorMock.root.children.item(0).firstChild.dataset.itype).toBe(
+      "span",
+    );
     expect(textEditorMock.root.children.item(1)).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.children.item(1).dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.children.item(1).dataset.itype).toBe(
+      "paragraph",
+    );
     expect(textEditorMock.root.children.item(1).firstChild).toBeInstanceOf(
       HTMLSpanElement,
     );
@@ -636,7 +640,7 @@ describe("SelectionController", () => {
 
   test("`insertParagraph` should insert a new paragraph after a text", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWith([
-      ["Hello, World!"]
+      ["Hello, World!"],
     ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
@@ -648,7 +652,7 @@ describe("SelectionController", () => {
       selection,
       textEditorMock,
       root.firstChild.firstChild.firstChild,
-      "Hello, World!".length
+      "Hello, World!".length,
     );
     selectionController.insertParagraph();
     expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
@@ -677,9 +681,9 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.children.item(1).firstChild.dataset.itype).toBe(
       "span",
     );
-    expect(textEditorMock.root.children.item(1).firstChild.firstChild).toBeInstanceOf(
-      HTMLBRElement,
-    );
+    expect(
+      textEditorMock.root.children.item(1).firstChild.firstChild,
+    ).toBeInstanceOf(HTMLBRElement);
     expect(textEditorMock.root.textContent).toBe("Hello, World!");
   });
 
@@ -693,12 +697,7 @@ describe("SelectionController", () => {
       textEditorMock,
       selection,
     );
-    focus(
-      selection,
-      textEditorMock,
-      root.firstChild.firstChild.firstChild,
-      0,
-    );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, 0);
     selectionController.insertParagraph();
     expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
     expect(textEditorMock.root.dataset.itype).toBe("root");
@@ -713,9 +712,9 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.children.item(0).firstChild.dataset.itype).toBe(
       "span",
     );
-    expect(textEditorMock.root.children.item(0).firstChild.firstChild).toBeInstanceOf(
-      HTMLBRElement,
-    );
+    expect(
+      textEditorMock.root.children.item(0).firstChild.firstChild,
+    ).toBeInstanceOf(HTMLBRElement);
     expect(textEditorMock.root.children.item(1)).toBeInstanceOf(HTMLDivElement);
     expect(textEditorMock.root.children.item(1).dataset.itype).toBe(
       "paragraph",
@@ -954,10 +953,9 @@ describe("SelectionController", () => {
   });
 
   test("`replaceTextSpans` should replace the selected text in multiple text spans (2 completely selected)", () => {
-    const textEditorMock = TextEditorMock.createTextEditorMockWith([[
-      "Hello, ",
-      "World!",
-    ]]);
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["Hello, ", "World!"],
+    ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
     const selectionController = new SelectionController(
@@ -995,10 +993,9 @@ describe("SelectionController", () => {
   });
 
   test("`replaceTextSpans` should replace the selected text in multiple text spans (2 partially selected)", () => {
-    const textEditorMock = TextEditorMock.createTextEditorMockWith([[
-      "Hello, ",
-      "World!",
-    ]]);
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["Hello, ", "World!"],
+    ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
     const selectionController = new SelectionController(
@@ -1041,10 +1038,9 @@ describe("SelectionController", () => {
   });
 
   test("`replaceTextSpans` should replace the selected text in multiple text spans (1 partially selected, 1 completely selected)", () => {
-    const textEditorMock = TextEditorMock.createTextEditorMockWith([[
-      "Hello, ",
-      "World!",
-    ]]);
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["Hello, ", "World!"],
+    ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
     const selectionController = new SelectionController(
@@ -1162,10 +1158,9 @@ describe("SelectionController", () => {
   });
 
   test("`removeSelected` multiple text spans", () => {
-    const textEditorMock = TextEditorMock.createTextEditorMockWith([[
-      "Hello, ",
-      "World!",
-    ]]);
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["Hello, ", "World!"],
+    ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
     const selectionController = new SelectionController(
@@ -1604,6 +1599,46 @@ describe("SelectionController", () => {
     );
   });
 
+  test("`applyStyles` keeps font features on the selected text span", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText("日本語");
+    const root = textEditorMock.root;
+    const textNode = root.firstChild.firstChild.firstChild;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, textNode, 0, textNode, 3);
+
+    selectionController.applyStyles({ "--font-features": "palt" });
+
+    const selectedSpan = root.firstChild.firstChild;
+    expect(selectedSpan.style.getPropertyValue("--font-features")).toBe("palt");
+    expect(selectedSpan.getAttribute("style")).toContain(
+      "--font-features: palt",
+    );
+  });
+
+  test("`applyStyles` keeps annotation clearance on the selected text span", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("漢字");
+    const root = textEditorMock.root;
+    const textNode = root.firstChild.firstChild.firstChild;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, textNode, 0, textNode, 2);
+
+    selectionController.applyStyles({ "--annotation-clearance": "auto" });
+
+    const selectedSpan = root.firstChild.firstChild;
+    expect(selectedSpan.style.getPropertyValue("--annotation-clearance")).toBe(
+      "auto",
+    );
+  });
+
   test("`applyStyles` to paragraphs", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
       createParagraphWith(["Hello, "], {
@@ -1695,11 +1730,14 @@ describe("SelectionController", () => {
     ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
-    const selectionController = new SelectionController(textEditorMock, selection);
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
     textEditorMock.element.focus();
     selectionController.selectAll();
     expect(selectionController.anchorNode).toBe(
-      root.firstChild.firstChild.firstChild
+      root.firstChild.firstChild.firstChild,
     );
     expect(selectionController.focusNode).toBe(
       root.lastChild.firstChild.firstChild,
@@ -1717,12 +1755,17 @@ describe("SelectionController", () => {
     ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
-    const selectionController = new SelectionController(textEditorMock, selection);
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
     textEditorMock.element.focus();
     selectionController.cursorToEnd();
-    expect(selectionController.focusNode).toBe(root.lastChild.firstChild.firstChild);
+    expect(selectionController.focusNode).toBe(
+      root.lastChild.firstChild.firstChild,
+    );
     expect(selectionController.focusAtEnd).toBeTruthy();
-  })
+  });
 
   test("`currentStyle` ignores empty text nodes when merging span styles (no false mixed font-size)", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
@@ -1772,6 +1815,65 @@ describe("SelectionController", () => {
     );
   });
 
+  test("`currentStyle` reports every differing Japanese span style as mixed", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
+      createParagraph([
+        createTextSpan(new Text("平成"), {
+          "text-combine-upright": "digits 2",
+          "--text-emphasis": "filled-dot",
+          "--ruby": "へいせい",
+          "--ruby-size": "third",
+          "--ruby-align": "center",
+          "--ruby-overhang": "none",
+          "--ruby-side": "under",
+          "--warichu": "none",
+          "--font-features": "palt",
+          "--annotation-clearance": "auto",
+        }),
+        createTextSpan(new Text("年"), {
+          "text-combine-upright": "none",
+          "--text-emphasis": "none",
+          "--ruby": "",
+          "--ruby-size": "half",
+          "--ruby-align": "space-around",
+          "--ruby-overhang": "auto",
+          "--ruby-side": "over",
+          "--warichu": "warichu",
+          "--font-features": "none",
+          "--annotation-clearance": "none",
+        }),
+      ]),
+    ]);
+    const paragraph = textEditorMock.root.firstChild;
+    const firstTextNode = paragraph.firstChild.firstChild;
+    const lastTextNode = paragraph.lastChild.firstChild;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    textEditorMock.element.focus();
+    selection.setBaseAndExtent(firstTextNode, 0, lastTextNode, 1);
+    document.dispatchEvent(new Event("selectionchange"));
+
+    for (const property of [
+      "text-combine-upright",
+      "--text-emphasis",
+      "--ruby",
+      "--ruby-size",
+      "--ruby-align",
+      "--ruby-overhang",
+      "--ruby-side",
+      "--warichu",
+      "--font-features",
+      "--annotation-clearance",
+    ]) {
+      expect(selectionController.currentStyle.getPropertyValue(property)).toBe(
+        "mixed",
+      );
+    }
+  });
+
   test("`currentStyle` uses text span font-size when anchor is paragraph (Firefox-style word selection)", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
       createParagraph([
@@ -1807,13 +1909,11 @@ describe("SelectionController", () => {
     ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
-    const selectionController = new SelectionController(textEditorMock, selection);
-    focus(
-      selection,
+    const selectionController = new SelectionController(
       textEditorMock,
-      root.firstChild.firstChild.firstChild,
-      0
+      selection,
     );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, 0);
     selectionController.dispose();
     expect(selectionController.selection).toBe(null);
     expect(selectionController.currentStyle).toBe(null);

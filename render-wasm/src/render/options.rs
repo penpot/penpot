@@ -3,6 +3,7 @@ const DEBUG_VISIBLE: u32 = 0x01;
 const PROFILE_REBUILD_TILES: u32 = 0x02;
 const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
+const TEXT_GRID_VISIBLE: u32 = 0x10;
 
 // Render performance options
 // This is the extra area used for tile rendering (tiles beyond viewport).
@@ -111,6 +112,12 @@ impl RenderOptions {
 
     pub fn show_wasm_info(&self) -> bool {
         self.flags & SHOW_WASM_INFO == SHOW_WASM_INFO
+    }
+
+    /// jlreq-style character-frame grid overlay for Japanese vertical
+    /// text: a developer aid, never part of exported output.
+    pub fn is_text_grid_visible(&self) -> bool {
+        self.flags & TEXT_GRID_VISIBLE == TEXT_GRID_VISIBLE
     }
 
     pub fn set_antialias_threshold(&mut self, value: f32) -> bool {

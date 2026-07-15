@@ -43,6 +43,47 @@ describe("TextEditor", () => {
     expect(textEditor.numParagraphs).toBe(4);
   });
 
+  test("applyStylesToAllParagraphs styles every paragraph and the root", () => {
+    const textEditor = new TextEditor(document.createElement("div"));
+    textEditor.root = textEditor.createRoot([
+      textEditor.createParagraph([
+        textEditor.createTextSpanFromString("Hello, World!"),
+      ]),
+      textEditor.createParagraph([
+        textEditor.createTextSpanFromString("¡Hola, Mundo!"),
+      ]),
+    ]);
+    textEditor.applyStylesToAllParagraphs({ "writing-mode": "vertical-rl" });
+    expect(textEditor.root.style.getPropertyValue("writing-mode")).toBe(
+      "vertical-rl",
+    );
+    for (const paragraph of textEditor.root.children) {
+      expect(paragraph.style.getPropertyValue("writing-mode")).toBe(
+        "vertical-rl",
+      );
+    }
+  });
+
+  test("applyStylesToAllParagraphs removes a style when its value is null", () => {
+    const textEditor = new TextEditor(document.createElement("div"));
+    textEditor.root = textEditor.createRoot([
+      textEditor.createParagraph([
+        textEditor.createTextSpanFromString("Hello, World!"),
+      ]),
+      textEditor.createParagraph([
+        textEditor.createTextSpanFromString("¡Hola, Mundo!"),
+      ]),
+    ]);
+    textEditor.applyStylesToAllParagraphs({ "writing-mode": "vertical-rl" });
+
+    textEditor.applyStylesToAllParagraphs({ "writing-mode": null });
+
+    expect(textEditor.root.style.getPropertyValue("writing-mode")).toBe("");
+    for (const paragraph of textEditor.root.children) {
+      expect(paragraph.style.getPropertyValue("writing-mode")).toBe("");
+    }
+  });
+
   test("Disposing a TextEditor nullifies everything", () => {
     const textEditor = new TextEditor(document.createElement("div"));
     expect(textEditor).toBeInstanceOf(TextEditor);

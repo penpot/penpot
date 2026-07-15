@@ -296,7 +296,7 @@
         (dom/set-style! container-node "--text-editor-caret-color" text-color)))
 
     [:div
-     {:class (dm/str (cur/get-dynamic "text" (:rotation shape))
+     {:class (dm/str (cur/get-text (:rotation shape) (txt/vertical-text-content? content))
                      " "
                      (stl/css :text-editor-container))
       :ref container-ref
@@ -396,27 +396,24 @@
 
         [{:keys [x y width height selrect-width selrect-height]} transform]
         (if render-wasm?
-          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+          (let [{content-x :x
+                 content-y :y
+                 content-width :width
+                 content-height :height} (wasm.api/get-text-dimensions shape-id)
                 selrect-transform (mf/deref refs/workspace-selrect)
                 [selrect transform] (dsh/get-selrect selrect-transform shape)
                 selrect-height (:height selrect)
                 selrect-width (:width selrect)
-                max-width (max width selrect-width)
-                max-height (max height selrect-height)
+                max-width (max content-width selrect-width)
+                max-height (max content-height selrect-height)
                 ;; During auto-width editing we keep the shape width trimmed, but the caret
                 ;; must be able to move after trailing spaces. Expand only the editor
                 ;; overlay up to one viewport width to avoid clipping caret rendering.
                 viewport-width (or (:width vbox) 0)
                 overlay-width (if (= (:grow-type shape) :auto-width)
                                 (+ max-width viewport-width)
-                                max-width)
-                valign (-> shape :content :vertical-align)
-                y (:y selrect)
-                y (case valign
-                    "bottom" (+ y (- selrect-height height))
-                    "center" (+ y (/ (- selrect-height height) 2))
-                    y)]
-            [(assoc selrect :y y :width overlay-width :height max-height
+                                max-width)]
+            [(assoc selrect :x content-x :y content-y :width overlay-width :height max-height
                     :selrect-width selrect-width :selrect-height selrect-height) transform])
 
           (let [bounds (gst/shape->rect shape)

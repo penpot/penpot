@@ -863,8 +863,24 @@ impl TextEditorState {
             TextDirection::LTR
         };
 
+        // In vertical-rl the physical arrow keys map onto logical navigation
+        // differently: Up/Down walk characters along the column, and Left/Right
+        // cross columns (columns advance right-to-left).
+        let is_vertical = text_content.is_vertical();
+        let direction = if is_vertical {
+            match direction {
+                CursorDirection::Backward => CursorDirection::LineAfter, // Left -> next column
+                CursorDirection::Forward => CursorDirection::LineBefore, // Right -> prev column
+                CursorDirection::LineBefore => CursorDirection::Backward, // Up -> prev char
+                CursorDirection::LineAfter => CursorDirection::Forward,  // Down -> next char
+                other => other,
+            }
+        } else {
+            direction
+        };
+
         // For horizontal navigation, swap Backward/Forward when in RTL text
-        let adjusted_direction = if text_span_text_direction == TextDirection::RTL {
+        let adjusted_direction = if !is_vertical && text_span_text_direction == TextDirection::RTL {
             match direction {
                 CursorDirection::Backward => CursorDirection::Forward,
                 CursorDirection::Forward => CursorDirection::Backward,

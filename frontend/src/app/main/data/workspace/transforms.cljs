@@ -226,7 +226,9 @@
                   ;; Calculate new grow-type for text layers
                   new-grow-type
                   (when (cfh/text-shape? shape)
-                    (dwm/next-grow-type (dm/get-prop shape :grow-type) scalev))
+                    (dwm/next-grow-type (dm/get-prop shape :grow-type)
+                                        scalev
+                                        (dwm/vertical-text-shape? shape)))
 
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
@@ -415,7 +417,9 @@
                          new-height (if (= attr :height) value sr-height)
                          scalev (gpt/point (/ new-width sr-width) (/ new-height sr-height))
                          current-grow-type (dm/get-prop shape :grow-type)
-                         new-grow-type (dwm/next-grow-type current-grow-type scalev)]
+                         new-grow-type (dwm/next-grow-type current-grow-type
+                                                           scalev
+                                                           (dwm/vertical-text-shape? shape))]
                      (cond-> modifiers
                        (not= new-grow-type current-grow-type)
                        (ctm/change-property :grow-type new-grow-type)))

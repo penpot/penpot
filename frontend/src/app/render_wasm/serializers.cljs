@@ -256,6 +256,78 @@
         default (unchecked-get values "ltr")]
     (d/nilv (unchecked-get values (d/name text-direction)) default)))
 
+(defn translate-writing-mode
+  [writing-mode]
+  (let [values (unchecked-get wasm/serializers "writing-mode")
+        default (unchecked-get values "horizontal-tb")]
+    (d/nilv (unchecked-get values (d/name writing-mode)) default)))
+
+(defn translate-text-orientation
+  [text-orientation]
+  (let [values (unchecked-get wasm/serializers "text-orientation")
+        default (unchecked-get values "mixed")]
+    (d/nilv (unchecked-get values (d/name text-orientation)) default)))
+
+(defn translate-text-combine-upright
+  [text-combine-upright]
+  (let [values (unchecked-get wasm/serializers "text-combine-upright")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name text-combine-upright)) default)))
+
+(defn translate-text-emphasis
+  [text-emphasis]
+  (let [values (unchecked-get wasm/serializers "text-emphasis")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name text-emphasis)) default)))
+
+(defn translate-warichu
+  [warichu]
+  (let [values (unchecked-get wasm/serializers "warichu")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name warichu)) default)))
+
+(defn translate-font-features
+  [font-features]
+  (if-let [values (unchecked-get wasm/serializers "font-features")]
+    (let [default (unchecked-get values "none")]
+      (d/nilv (unchecked-get values (d/name font-features)) default))
+    0))
+
+(defn translate-annotation-clearance
+  [annotation-clearance]
+  (if-let [values (unchecked-get wasm/serializers "annotation-clearance")]
+    (let [default (unchecked-get values "none")]
+      (d/nilv (unchecked-get values (d/name annotation-clearance)) default))
+    0))
+
+(defn translate-ruby-size
+  [value]
+  (if-let [values (unchecked-get wasm/serializers "ruby-size")]
+    (let [default (unchecked-get values "half")]
+      (d/nilv (unchecked-get values (d/name value)) default))
+    0))
+
+(defn translate-ruby-align
+  [value]
+  (if-let [values (unchecked-get wasm/serializers "ruby-align")]
+    (let [default (unchecked-get values "space-around")]
+      (d/nilv (unchecked-get values (d/name value)) default))
+    0))
+
+(defn translate-ruby-overhang
+  [value]
+  (if-let [values (unchecked-get wasm/serializers "ruby-overhang")]
+    (let [default (unchecked-get values "auto")]
+      (d/nilv (unchecked-get values (d/name value)) default))
+    0))
+
+(defn translate-ruby-side
+  [value]
+  (if-let [values (unchecked-get wasm/serializers "ruby-side")]
+    (let [default (unchecked-get values "over")]
+      (d/nilv (unchecked-get values (d/name value)) default))
+    0))
+
 
 (defn translate-font-style
   [font-style]

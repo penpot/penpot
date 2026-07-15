@@ -1,5 +1,8 @@
 import { createRoot } from "../editor/content/dom/Root.js";
-import { createParagraph, createParagraphWith } from "../editor/content/dom/Paragraph.js";
+import {
+  createParagraph,
+  createParagraphWith,
+} from "../editor/content/dom/Paragraph.js";
 import {
   createEmptyTextSpan,
   createTextSpan,
@@ -116,7 +119,9 @@ export class TextEditorMock extends EventTarget {
    * @returns {TextEditorMock}
    */
   static createTextEditorMockWith(paragraphs) {
-    const root = createRoot(paragraphs.map((paragraph) => createParagraphWith(paragraph)));
+    const root = createRoot(
+      paragraphs.map((paragraph) => createParagraphWith(paragraph)),
+    );
     return this.createTextEditorMockWithRoot(root);
   }
 

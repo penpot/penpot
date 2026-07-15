@@ -1,0 +1,235 @@
+{
+  "description": "Japanese typography fixture corpus (Phase 0). Each fixture is a paragraph-level test text plus the behaviors it exercises. Used to compare rendering across editor, WASM viewport, PNG, SVG and PDF exports, and later as regression fixtures for kinsoku/vertical/ruby/TCY work.",
+  "fixtures": [
+    {
+      "id": "horizontal-basic",
+      "title": "Basic horizontal Japanese",
+      "text": "吾輩は猫である。名前はまだ無い。",
+      "exercises": ["kanji+kana rendering", "CJK punctuation 。", "font fallback"]
+    },
+    {
+      "id": "horizontal-mixed",
+      "title": "Mixed kanji/kana/Latin/numbers/symbols",
+      "text": "Penpot UIは2024年にWASM rendererを導入した。価格は¥1,500（税込）です！",
+      "exercises": [
+        "quarter-em CJK↔Latin boundaries",
+        "one-third-em Western word spaces",
+        "full-width ！（）",
+        "half-width digits",
+        "currency sign"
+      ]
+    },
+    {
+      "id": "kinsoku-line-start",
+      "title": "Forbidden line-start characters",
+      "text": "これは長い文章です、句読点や閉じ括弧」が行頭に来てはいけません。小さい「ゃゅょっ」も同様です。",
+      "exercises": ["kinsoku: 、。」not at line start", "small kana not at line start"]
+    },
+    {
+      "id": "kinsoku-line-end",
+      "title": "Forbidden line-end characters",
+      "text": "開き括弧「や『それに（と［や【は行末に置けないので、次の行に送り込まれます。",
+      "exercises": ["kinsoku: 「『（［【 not at line end"]
+    },
+    {
+      "id": "prolonged-sound",
+      "title": "Prolonged sound mark and iteration marks",
+      "text": "コーヒーとケーキ、サーバーとルーター。人々の時々の心。",
+      "exercises": ["ー not at line start", "iteration mark 々", "katakana runs"]
+    },
+    {
+      "id": "vertical-basic",
+      "title": "Basic vertical Japanese",
+      "text": "春はあけぼの。やうやう白くなりゆく山際、少し明かりて。",
+      "writing_mode": "vertical-rl",
+      "exercises": ["column flow top→bottom right→left", "vertical forms of 、。"]
+    },
+    {
+      "id": "vertical-punctuation",
+      "title": "Vertical punctuation and brackets",
+      "text": "「こんにちは」と彼は言った。『吾輩は猫である』（夏目漱石）［注釈］【重要】！？",
+      "writing_mode": "vertical-rl",
+      "exercises": ["vert/vrt2 forms of 「」『』（）［］【】", "full-width ！？ upright"]
+    },
+    {
+      "id": "vertical-prolonged",
+      "title": "Prolonged sound mark in vertical",
+      "text": "コンピューターゲームのニュース。データベースサーバー。",
+      "writing_mode": "vertical-rl",
+      "exercises": ["ー must rotate to vertical form", "katakana column flow"]
+    },
+    {
+      "id": "vertical-mixed-latin",
+      "title": "Latin and digits inside vertical text",
+      "text": "私はPenpot UIを使って2024年からWASM rendererを設計しています。",
+      "writing_mode": "vertical-rl",
+      "exercises": [
+        "rotated Latin runs",
+        "quarter-em mixed orientation boundaries",
+        "one-third-em Western word spaces",
+        "digit runs (TCY candidates)"
+      ]
+    },
+    {
+      "id": "tcy-candidates",
+      "title": "Tate-chu-yoko candidate runs",
+      "text": "第2章では、平成31年4月1日と12月25日。甲」20「乙、20。甲「20」乙。",
+      "writing_mode": "vertical-rl",
+      "exercises": [
+        "1–2 digit runs for TCY",
+        "cl-30 half-em after closing punctuation and before opening brackets",
+        "cl-30 solid after opening and before closing punctuation",
+        "explicit all and digit TCY modes"
+      ]
+    },
+    {
+      "id": "ruby-simple",
+      "title": "Simple ruby (annotation) examples",
+      "text": "漢字にふりがなを振る。振り仮名は難しい。",
+      "ruby": [
+        { "base": "漢字", "ruby": "かんじ" },
+        { "base": "振り仮名", "ruby": "ふりがな" }
+      ],
+      "exercises": ["whole-span base/annotation alignment", "line-height inflation"]
+    },
+    {
+      "id": "horizontal-annotation-clearance-none",
+      "title": "Horizontal ruby and emphasis with line-height-only clearance",
+      "text": "漢字\n熟語",
+      "line_height": 1,
+      "ruby": [
+        { "base": "漢字", "ruby": "かんじ" },
+        { "base": "熟語", "ruby": "じゅくご" }
+      ],
+      "text_emphasis": "filled-dot",
+      "annotation_clearance": "none",
+      "exercises": ["legacy horizontal annotation collision", "explicit line-height compatibility"]
+    },
+    {
+      "id": "horizontal-annotation-clearance-auto",
+      "title": "Horizontal ruby and emphasis with automatic clearance",
+      "text": "漢字\n熟語",
+      "line_height": 1,
+      "ruby": [
+        { "base": "漢字", "ruby": "かんじ" },
+        { "base": "熟語", "ruby": "じゅくご" }
+      ],
+      "text_emphasis": "filled-dot",
+      "annotation_clearance": "auto",
+      "exercises": ["automatic horizontal line-gap reservation", "ruby nearest and emphasis outside"]
+    },
+    {
+      "id": "vertical-annotation-clearance-none",
+      "title": "Vertical ruby and emphasis with line-height-only clearance",
+      "text": "漢字\n熟語",
+      "writing_mode": "vertical-rl",
+      "line_height": 1,
+      "ruby": [
+        { "base": "漢字", "ruby": "かんじ" },
+        { "base": "熟語", "ruby": "じゅくご" }
+      ],
+      "text_emphasis": "filled-dot",
+      "annotation_clearance": "none",
+      "exercises": ["legacy vertical annotation collision", "explicit column-gap compatibility"]
+    },
+    {
+      "id": "vertical-annotation-clearance-auto",
+      "title": "Vertical ruby and emphasis with automatic clearance",
+      "text": "漢字\n熟語",
+      "writing_mode": "vertical-rl",
+      "line_height": 1,
+      "ruby": [
+        { "base": "漢字", "ruby": "かんじ" },
+        { "base": "熟語", "ruby": "じゅくご" }
+      ],
+      "text_emphasis": "filled-dot",
+      "annotation_clearance": "auto",
+      "exercises": ["automatic vertical column-gap reservation", "ruby nearest and emphasis outside"]
+    },
+    {
+      "id": "horizontal-ruby-customization",
+      "title": "Horizontal ruby size, alignment, overhang, and side",
+      "text": "標準 三分 中央 下側",
+      "ruby": [
+        { "base": "標準", "ruby": "ひょうじゅん", "size": "half", "align": "space-around", "overhang": "auto", "side": "over" },
+        { "base": "三分", "ruby": "さんぶん", "size": "third", "align": "start", "overhang": "none", "side": "over" },
+        { "base": "中央", "ruby": "ちゅうおう", "size": "quarter", "align": "center", "overhang": "auto", "side": "over" },
+        { "base": "下側", "ruby": "したがわ", "size": "half", "align": "space-between", "overhang": "none", "side": "under" }
+      ],
+      "exercises": [
+        "half, third, and quarter ruby sizes",
+        "space-around, start, center, and space-between alignment",
+        "automatic and prohibited overhang",
+        "over and under annotation sides"
+      ]
+    },
+    {
+      "id": "vertical-ruby-customization",
+      "title": "Vertical ruby size, alignment, overhang, and side",
+      "text": "標準 三分 中央 左側",
+      "writing_mode": "vertical-rl",
+      "ruby": [
+        { "base": "標準", "ruby": "ひょうじゅん", "size": "half", "align": "space-around", "overhang": "auto", "side": "over" },
+        { "base": "三分", "ruby": "さんぶん", "size": "third", "align": "start", "overhang": "none", "side": "over" },
+        { "base": "中央", "ruby": "ちゅうおう", "size": "quarter", "align": "center", "overhang": "auto", "side": "over" },
+        { "base": "左側", "ruby": "ひだりがわ", "size": "half", "align": "space-between", "overhang": "none", "side": "under" }
+      ],
+      "exercises": [
+        "configured ruby gutter widths",
+        "vertical flow-axis annotation distribution",
+        "over/right and under/left annotation sides",
+        "viewport and export parity"
+      ]
+    },
+    {
+      "id": "small-kana-sokuon",
+      "title": "Small kana and sokuon clusters",
+      "text": "ちょっと待ってください。キャッシュとクッキーをチェックする。",
+      "exercises": ["small kana ょっゃュッ", "kinsoku: small kana not at line start"]
+    },
+    {
+      "id": "cjk-punct-spacing",
+      "title": "CJK punctuation spacing and full-width space",
+      "text": "これは、テスト。『「括弧」』。」「次」・「項」！？　全角スペースの後。",
+      "writing_mode": "vertical-rl",
+      "exercises": [
+        "preferred half-em punctuation aki",
+        "solid consecutive opening and closing punctuation",
+        "half-em closing-to-opening spacing",
+        "quarter-em middle-dot adjacency",
+        "question/exclamation and full-width space"
+      ]
+    },
+    {
+      "id": "jlreq-character-classes",
+      "title": "Representative JLREQ character classes",
+      "text": "「始」〜！？・。、…々ーっ￥100％　あア漢A㎏",
+      "exercises": [
+        "cl-01 through cl-19 scalar classification",
+        "cl-24 grouped numerals",
+        "cl-25 unit symbols",
+        "cl-26 Western word space",
+        "cl-27 Western characters"
+      ]
+    },
+    {
+      "id": "han-unification",
+      "title": "Kanji-only text (Han unification trap)",
+      "text": "東京都渋谷区神南一丁目",
+      "exercises": ["kanji-only classifies as :chinese today → falls back to Noto Sans SC not JP", "JP-vs-CN disambiguation policy"]
+    },
+    {
+      "id": "long-paragraph-wrap",
+      "title": "Long paragraph exercising many line breaks",
+      "text": "国境の長いトンネルを抜けると雪国であった。夜の底が白くなった。信号所に汽車が止まった。向側の座席から娘が立って来て、島村の前のガラス窓を落した。雪の冷気が流れこんだ。",
+      "writing_mode": "vertical-rl",
+      "text_align": "justify",
+      "exercises": [
+        "many break opportunities",
+        "ordered oikomi before oidashi",
+        "priority-based justified expansion",
+        "kinsoku and burasage integration"
+      ]
+    }
+  ]
+}

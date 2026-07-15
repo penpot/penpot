@@ -243,8 +243,7 @@ export function normalizeStyles(
  * @returns {HTMLElement}
  */
 export function setStyle(element, styleName, styleValue, styleUnit) {
-  if (styleValue === "mixed")
-    return element;
+  if (styleValue === "mixed") return element;
 
   if (
     styleName.startsWith("--") &&
@@ -342,6 +341,10 @@ export function setStylesFromObject(element, allowedStyles, styleObject) {
     }
 
     let styleValue = styleObject[styleName];
+    if (styleValue == null) {
+      element.style.removeProperty(styleName);
+      continue;
+    }
     if (!styleValue) {
       continue;
     }

@@ -59,6 +59,9 @@
 (declare v2-update-text-editor-styles)
 (declare v2-sync-wasm-text-layout)
 
+(def ruby-presentation-attrs
+  [:ruby-size :ruby-align :ruby-overhang :ruby-side])
+
 ;; -- Content helpers
 
 (defn- v2-content-has-text?
@@ -264,6 +267,13 @@
   [{:keys [attrs shape]}]
   (shape-current-values shape txt/is-root-node? attrs))
 
+(defn current-ruby-values
+  [{:keys [attrs shape]}]
+  (shape-current-values shape
+                        #(and (txt/is-text-node? %)
+                              (not (str/blank? (:ruby %))))
+                        attrs))
+
 (defn v3-current-text-values
   [{:keys [editor-styles attrs]}]
   (let [result (-> editor-styles
@@ -290,7 +300,9 @@
 (defn current-paragraph-values
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
-    (some? editor-styles) (v3-current-text-values options)
+    ;; CHANGEME: is this correct? the v3-current-text-values is not here
+    (some? editor-styles) (merge (shape-current-values shape txt/is-paragraph-node? attrs)
+                                 (select-keys editor-styles attrs))
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
@@ -436,30 +448,45 @@
 
 (defn update-paragraph-attrs
   [{:keys [id attrs]}]
-  (let [attrs (d/without-nils attrs)]
-    (ptk/reify ::update-paragraph-attrs
-      ptk/UpdateEvent
-      (update [_ state]
-        (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
+  (ptk/reify ::update-paragraph-attrs
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; CHANGEME: check if the without nils is necesary here
+      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
 
-      ptk/WatchEvent
-      (watch [_ state _]
-        (when-not (some? (get-in state [:workspace-editor-state id]))
-          (let [objects   (dsh/lookup-page-objects state)
-                shape     (get objects id)
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-not (some? (get-in state [:workspace-editor-state id]))
+        (let [objects   (dsh/lookup-page-objects state)
+              shape     (get objects id)
 
-                merge-fn  (fn [node attrs]
-                            (reduce-kv
-                             (fn [node k v] (assoc node k v))
-                             node
-                             attrs))
+              merge-fn  (fn [node attrs]
+                          (reduce-kv
+                           (fn [node k v]
+                             (if (nil? v)
+                               (dissoc node k)
+                               (assoc node k v)))
+                           node
+                           attrs))
 
-                update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
-                shape-ids (cond
-                            (cfh/text-shape? shape)  [id]
-                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
+              update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
+              shape-ids (cond
+                          (cfh/text-shape? shape)  [id]
+                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-            (rx/of (dwsh/update-shapes shape-ids update-fn))))))))
+          (rx/of (dwsh/update-shapes shape-ids update-fn)))))))
+
+(defn- whole-shape-attrs->editor-styles
+  "Map whole-shape paragraph attrs to DOM editor styles while preserving nil
+  as a removal instruction. The generic attrs->styles intentionally drops nil."
+  [attrs]
+  (clj->js
+   (into {}
+         (map (fn [[key value]]
+                [(styles/attr->style-key key)
+                 (when (some? value)
+                   (styles/attr->style-value key value))]))
+         attrs)))
 
 (defn update-text-attrs
   [{:keys [id attrs]}]
@@ -490,6 +517,51 @@
                     (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
                   updated-shape))]
           (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
+
+(defn update-ruby-presentation-attrs
+  [shape attrs]
+  (txt/update-text-content
+   shape
+   #(and (txt/is-text-node? %)
+         (not (str/blank? (:ruby %))))
+   d/txt-merge
+   attrs))
+
+(defn update-ruby-presentation
+  [id attrs]
+  (ptk/reify ::update-ruby-presentation
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects   (dsh/lookup-page-objects state)
+            shape     (get objects id)
+            wasm?     (features/active-feature? state "render-wasm/v1")
+            shape-ids (cond
+                        (cfh/text-shape? shape)  [id]
+                        (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+            update-fn (fn [shape]
+                        (let [updated-shape (update-ruby-presentation-attrs shape attrs)]
+                          (when (and wasm? (cfh/text-shape? updated-shape))
+                            (wasm.text-editor/cache-shape-text-content!
+                             (:id updated-shape)
+                             (:content updated-shape)))
+                          updated-shape))]
+        (rx/concat
+         (rx/of (dwsh/update-shapes shape-ids update-fn))
+         (if wasm?
+           (rx/of (dwwt/resize-wasm-text-all shape-ids))
+           (rx/empty)))))))
+
+(defn update-all-ruby-presentation
+  [ids attrs]
+  (ptk/reify ::update-all-ruby-presentation
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from ids)
+              (rx/map #(update-ruby-presentation % attrs)))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn migrate-node
   [node]
@@ -815,12 +887,21 @@
      (= :font-loaded (ptk/type event))
      (= (:font-id (deref event)) font-id))))
 
+(defn globally-update-text-node-attrs?
+  "Whole-shape text-node updates must be skipped while the WASM editor owns an
+  active range; its selection-scoped content result is the source of truth."
+  [render-wasm? wasm-selection?]
+  (not (and render-wasm? wasm-selection?)))
+
 (defn update-attrs
   [id attrs]
   (ptk/reify ::update-attrs
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [text-editor-instance (:workspace-editor state)]
+      (let [text-editor-instance (:workspace-editor state)
+            render-wasm?        (features/active-feature? state "render-wasm/v1")
+            wasm-selection?     (and render-wasm?
+                                     (wasm.api/text-editor-has-selection?))]
         (if (and (features/active-feature? state "text-editor/v2")
                  (some? text-editor-instance))
           (rx/empty)
@@ -836,7 +917,8 @@
                (rx/empty)))
 
            (let [attrs (select-keys attrs txt/text-node-attrs)]
-             (if-not (empty? attrs)
+             (if (and (not (empty? attrs))
+                      (globally-update-text-node-attrs? render-wasm? wasm-selection?))
                (rx/of (update-text-attrs {:id id :attrs attrs}))
                (rx/empty)))
 
@@ -844,18 +926,17 @@
                       (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
 
-           (when (features/active-feature? state "render-wasm/v1")
+           (when render-wasm?
              (rx/concat
               ;; Apply style to selected spans and sync content
-              (let [has-selection? (wasm.api/text-editor-has-selection?)]
-                (when has-selection?
-                  (let [span-attrs (select-keys attrs txt/text-node-attrs)]
-                    (when (not (empty? span-attrs))
-                      (let [result (wasm.api/apply-styles-to-selection span-attrs)]
-                        (when result
-                          (rx/of (v2-update-text-shape-content
-                                  (:shape-id result) (:content result)
-                                  :update-name? true))))))))
+              (when wasm-selection?
+                (let [span-attrs (select-keys attrs txt/text-node-attrs)]
+                  (when (not (empty? span-attrs))
+                    (let [result (wasm.api/apply-styles-to-selection span-attrs)]
+                      (when result
+                        (rx/of (v2-update-text-shape-content
+                                (:shape-id result) (:content result)
+                                :update-name? true)))))))
               ;; Resize (with delay for font-id changes)
               (if (contains? attrs :font-id)
                 (->> stream
@@ -874,8 +955,19 @@
             ;; it with sidebar `attrs` and applying to the whole selection collapses mixed
             ;; fills/fonts when the user only changes one property (e.g. line-height).
             ;; Apply only the explicit attributes from this action.
-            (let [styles (styles/attrs->styles attrs)]
-              (editor.v2/applyStylesToSelection instance styles))))))))
+            (let [;; Writing mode and orientation are whole-shape properties:
+                  ;; apply them to every paragraph so they cannot diverge
+                  ;; from the first paragraph (which decides the flow).
+                  whole-shape-attrs
+                  (select-keys attrs (d/concat-vec txt/text-writing-mode-attrs
+                                                   txt/text-orientation-attrs))
+
+                  selection-attrs
+                  (apply dissoc attrs (keys whole-shape-attrs))]
+              (when (seq whole-shape-attrs)
+                (editor.v2/applyStylesToAllParagraphs instance (whole-shape-attrs->editor-styles whole-shape-attrs)))
+              (when (seq selection-attrs)
+                (editor.v2/applyStylesToSelection instance (styles/attrs->styles selection-attrs))))))))))
 
 (defn update-all-attrs
   [ids attrs]

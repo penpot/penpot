@@ -626,6 +626,125 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
+(defn- text-char-count
+  [text]
+  (alength (js/Array.from text)))
+
+(defn- text-char-subs
+  [text start end]
+  (->> (js/Array.from text)
+       (drop start)
+       (take (- end start))
+       (apply str)))
+
+(defn- para-char-count
+  [para]
+  (apply + (map (comp text-char-count :text) (:children para))))
+
+(def ^:private japanese-span-style-defaults
+  "Explicit UI defaults for Japanese span attributes. These values must be
+   present in every selection snapshot so moving onto an unstyled span clears
+   the previous span's controls instead of leaving stale values behind."
+  {:text-combine-upright "none"
+   :text-emphasis        "none"
+   :ruby                 ""
+   :ruby-size            "half"
+   :ruby-align           "space-around"
+   :ruby-overhang        "auto"
+   :ruby-side            "over"
+   :warichu              "none"
+   :font-features        "none"
+   :annotation-clearance "none"})
+
+(defn- span-japanese-styles
+  [span]
+  (reduce-kv
+   (fn [styles attr default]
+     (assoc styles attr (or (get span attr) default)))
+   {}
+   japanese-span-style-defaults))
+
+(defn- merge-selection-styles
+  [result styles]
+  (reduce-kv
+   (fn [result attr value]
+     (update result attr #(if (or (nil? %) (= % value)) value :multiple)))
+   result
+   styles))
+
+(defn- span-at-offset
+  "Return the span used by the WASM editor for a collapsed caret. At a span
+   boundary the preceding span wins, matching find_text_span_at_offset in
+   render-wasm."
+  [paragraph offset]
+  (let [spans (:children paragraph)]
+    (loop [remaining-spans spans
+           accumulated     0]
+      (if-let [span (first remaining-spans)]
+        (let [span-end (+ accumulated (text-char-count (:text span)))]
+          (if (<= offset span-end)
+            span
+            (recur (rest remaining-spans) span-end)))
+        (last spans)))))
+
+(defn- selected-spans-in-paragraph
+  [paragraph selection-start selection-end]
+  (loop [spans (:children paragraph)
+         position 0
+         selected []]
+    (if-let [span (first spans)]
+      (let [span-end (+ position (text-char-count (:text span)))]
+        (recur (rest spans)
+               span-end
+               (cond-> selected
+                 (< (max position selection-start)
+                    (min span-end selection-end))
+                 (conj span))))
+      selected)))
+
+(defn selection-japanese-styles
+  "Read Japanese span styles for a normalized WASM selection from Penpot's
+   cached content tree. A range spanning different values reports :multiple;
+   a caret reports the style of its current span."
+  [content selection]
+  (when (and content selection)
+    (let [{:keys [start-para start-offset end-para end-offset]}
+          (normalize-selection selection)
+          paragraphs (-> content :children first :children)
+          collapsed? (and (= start-para end-para)
+                          (= start-offset end-offset))
+          selected-spans
+          (if collapsed?
+            (some-> (get paragraphs start-para)
+                    (span-at-offset start-offset)
+                    vector)
+            (mapcat
+             (fn [paragraph-index]
+               (when-let [paragraph (get paragraphs paragraph-index)]
+                 (let [selection-start (if (= paragraph-index start-para)
+                                         start-offset
+                                         0)
+                       selection-end (if (= paragraph-index end-para)
+                                       end-offset
+                                       (para-char-count paragraph))]
+                   (selected-spans-in-paragraph paragraph
+                                                selection-start
+                                                selection-end))))
+             (range start-para (inc end-para))))]
+      (when (seq selected-spans)
+        (reduce (fn [result span]
+                  (merge-selection-styles result (span-japanese-styles span)))
+                {}
+                selected-spans)))))
+
+(defn text-editor-get-current-japanese-styles
+  "Return Japanese span styles for the active WASM editor selection."
+  []
+  (when wasm/context-initialized?
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+      (selection-japanese-styles (get-cached-content shape-id) selection))))
+
 (defn- apply-attrs-to-paragraph
   "Apply attrs to spans within [sel-start, sel-end) char range of a single paragraph.
    Splits spans at boundaries as needed."
@@ -639,7 +758,7 @@
                    acc
                    (let [span      (first spans)
                          text      (:text span)
-                         span-len  (count text)
+                         span-len  (text-char-count text)
                          span-end  (+ pos span-len)
                          ol-start  (max pos sel-start)
                          ol-end    (min span-end sel-end)
@@ -647,19 +766,15 @@
                      (if (not has-overlap?)
                        (recur (rest spans) span-end (conj acc span))
                        (let [before   (when (> ol-start pos)
-                                        (assoc span :text (subs text 0 (- ol-start pos))))
+                                        (assoc span :text (text-char-subs text 0 (- ol-start pos))))
                              selected (merge span attrs
-                                             {:text (subs text (- ol-start pos) (- ol-end pos))})
+                                             {:text (text-char-subs text (- ol-start pos) (- ol-end pos))})
                              after    (when (< ol-end span-end)
-                                        (assoc span :text (subs text (- ol-end pos))))]
+                                        (assoc span :text (text-char-subs text (- ol-end pos) span-len)))]
                          (recur (rest spans) span-end
                                 (-> acc
                                     (into (keep identity [before selected after])))))))))]
     (assoc para :children result)))
-
-(defn- para-char-count
-  [para]
-  (apply + (map (fn [span] (count (:text span))) (:children para))))
 
 (defn apply-styles-to-selection
   [attrs use-shape-fn set-shape-text-content-fn]

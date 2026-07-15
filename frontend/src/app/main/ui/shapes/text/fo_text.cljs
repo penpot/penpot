@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as cc]
+   [app.common.types.text :as txt]
    [app.main.ui.shapes.text.styles :as sts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -19,9 +20,15 @@
   (let [text  (:text node)
         style (if (= text "")
                 (sts/generate-text-styles shape parent)
-                (sts/generate-text-styles shape node))]
-    [:span.text-node {:style style}
-     (if (= text "") "\u00A0" text)]))
+                (sts/generate-text-styles shape node))
+        ruby  (:ruby node)
+        ruby? (and (string? ruby) (not (str/blank? ruby)))]
+    (if ruby?
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
+       [:span.text-node {:style style} text]
+       [:rt {:style (sts/generate-ruby-styles shape node)} ruby]]
+      [:span.text-node {:style style}
+       (if (= text "") "\u00A0" text)])))
 
 (mf/defc render-root*
   [{:keys [node children shape]}]
@@ -160,6 +167,11 @@
         height    (dm/get-prop shape :height)
         content   (get shape :content)
 
+        ;; Vertical writing anchors columns to the box edges, so the oversized
+        ;; auto-grow box used to avoid horizontal wrapping/clipping would push
+        ;; the content off-position. Use the real selrect size instead.
+        vertical? (txt/vertical-text-content? content)
+
         [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 
     [:foreignObject
@@ -169,8 +181,8 @@
       :data-colors (str/join "," colors)
       :data-mapping (-> color-mapping-inverse clj->js js/JSON.stringify)
       :transform transform
-      :width  (if (#{:auto-width} grow-type) 100000 width)
-      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
+      :width  (if (and (not vertical?) (#{:auto-width} grow-type)) 100000 width)
+      :height (if (and (not vertical?) (#{:auto-height :auto-width} grow-type)) 100000 height)
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`

@@ -4,7 +4,9 @@ use super::{fills::RawFillData, fonts::RawFontStyle};
 
 use crate::mem::{self, SerializableResult};
 use crate::shapes::{
-    self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
+    self, AnnotationClearance, FontFeatures, GrowType, RubyAlign, RubyOverhang, RubySide, RubySize,
+    Shape, TextAlign, TextCombineUpright, TextDecoration, TextDirection, TextEmphasis,
+    TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{with_current_shape, with_current_shape_mut, with_state};
@@ -17,6 +19,8 @@ const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
 
 const MAX_TEXT_FILLS: usize = 8;
+
+// CHANGEME: Move all the types from japanes text layout to its own module
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
@@ -50,6 +54,214 @@ impl From<RawTextDirection> for TextDirection {
         match value {
             RawTextDirection::Ltr => TextDirection::LTR,
             RawTextDirection::Rtl => TextDirection::RTL,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawWritingMode {
+    HorizontalTb = 0,
+    VerticalRl = 1,
+}
+
+impl From<RawWritingMode> for shapes::WritingMode {
+    fn from(value: RawWritingMode) -> Self {
+        match value {
+            RawWritingMode::HorizontalTb => shapes::WritingMode::HorizontalTb,
+            RawWritingMode::VerticalRl => shapes::WritingMode::VerticalRl,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawTextOrientation {
+    Mixed = 0,
+    Upright = 1,
+}
+
+impl From<RawTextOrientation> for shapes::TextOrientation {
+    fn from(value: RawTextOrientation) -> Self {
+        match value {
+            RawTextOrientation::Mixed => shapes::TextOrientation::Mixed,
+            RawTextOrientation::Upright => shapes::TextOrientation::Upright,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawTextCombineUpright {
+    None = 0,
+    All = 1,
+    Digits = 2,
+    Digits2 = 3,
+    Digits3 = 4,
+}
+
+impl From<RawTextCombineUpright> for TextCombineUpright {
+    fn from(value: RawTextCombineUpright) -> Self {
+        match value {
+            RawTextCombineUpright::None => TextCombineUpright::None,
+            RawTextCombineUpright::All => TextCombineUpright::All,
+            RawTextCombineUpright::Digits => TextCombineUpright::Digits,
+            RawTextCombineUpright::Digits2 => TextCombineUpright::Digits2,
+            RawTextCombineUpright::Digits3 => TextCombineUpright::Digits3,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawTextEmphasis {
+    None = 0,
+    FilledDot = 1,
+    OpenDot = 2,
+    FilledCircle = 3,
+    OpenCircle = 4,
+    FilledSesame = 5,
+    OpenSesame = 6,
+}
+
+impl From<RawTextEmphasis> for TextEmphasis {
+    fn from(value: RawTextEmphasis) -> Self {
+        match value {
+            RawTextEmphasis::None => TextEmphasis::None,
+            RawTextEmphasis::FilledDot => TextEmphasis::FilledDot,
+            RawTextEmphasis::OpenDot => TextEmphasis::OpenDot,
+            RawTextEmphasis::FilledCircle => TextEmphasis::FilledCircle,
+            RawTextEmphasis::OpenCircle => TextEmphasis::OpenCircle,
+            RawTextEmphasis::FilledSesame => TextEmphasis::FilledSesame,
+            RawTextEmphasis::OpenSesame => TextEmphasis::OpenSesame,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawWarichu {
+    None = 0,
+    Warichu = 1,
+}
+
+impl From<RawWarichu> for bool {
+    fn from(value: RawWarichu) -> Self {
+        value == RawWarichu::Warichu
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawFontFeatures {
+    None = 0,
+    Palt = 1,
+    Vpal = 2,
+}
+
+impl From<RawFontFeatures> for FontFeatures {
+    fn from(value: RawFontFeatures) -> Self {
+        match value {
+            RawFontFeatures::None => FontFeatures::None,
+            RawFontFeatures::Palt => FontFeatures::Palt,
+            RawFontFeatures::Vpal => FontFeatures::Vpal,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawAnnotationClearance {
+    None = 0,
+    Auto = 1,
+}
+
+impl From<RawAnnotationClearance> for AnnotationClearance {
+    fn from(value: RawAnnotationClearance) -> Self {
+        match value {
+            RawAnnotationClearance::None => AnnotationClearance::None,
+            RawAnnotationClearance::Auto => AnnotationClearance::Auto,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawRubySize {
+    Half = 0,
+    Third = 1,
+    Quarter = 2,
+}
+
+impl From<RawRubySize> for RubySize {
+    fn from(value: RawRubySize) -> Self {
+        match value {
+            RawRubySize::Half => RubySize::Half,
+            RawRubySize::Third => RubySize::Third,
+            RawRubySize::Quarter => RubySize::Quarter,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawRubyAlign {
+    SpaceAround = 0,
+    Center = 1,
+    Start = 2,
+    SpaceBetween = 3,
+}
+
+impl From<RawRubyAlign> for RubyAlign {
+    fn from(value: RawRubyAlign) -> Self {
+        match value {
+            RawRubyAlign::SpaceAround => RubyAlign::SpaceAround,
+            RawRubyAlign::Center => RubyAlign::Center,
+            RawRubyAlign::Start => RubyAlign::Start,
+            RawRubyAlign::SpaceBetween => RubyAlign::SpaceBetween,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawRubyOverhang {
+    Auto = 0,
+    None = 1,
+}
+
+impl From<RawRubyOverhang> for RubyOverhang {
+    fn from(value: RawRubyOverhang) -> Self {
+        match value {
+            RawRubyOverhang::Auto => RubyOverhang::Auto,
+            RawRubyOverhang::None => RubyOverhang::None,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawRubySide {
+    Over = 0,
+    Under = 1,
+}
+
+impl From<RawRubySide> for RubySide {
+    fn from(value: RawRubySide) -> Self {
+        match value {
+            RawRubySide::Over => RubySide::Over,
+            RawRubySide::Under => RubySide::Under,
         }
     }
 }
@@ -103,6 +315,11 @@ pub struct RawParagraphData {
     text_direction: RawTextDirection,
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
+    writing_mode: RawWritingMode,
+    text_orientation: RawTextOrientation,
+    // Explicit padding so the CLJS writer and this struct agree on a
+    // 4-byte-aligned layout; always written as zero.
+    _padding: [u8; 2],
     line_height: f32,
     letter_spacing: f32,
 }
@@ -131,6 +348,19 @@ pub struct RawTextSpan {
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
     text_direction: RawTextDirection,
+    text_orientation: RawTextOrientation,
+    text_combine_upright: RawTextCombineUpright,
+    text_emphasis: RawTextEmphasis,
+    warichu: RawWarichu,
+    font_features: RawFontFeatures,
+    annotation_clearance: RawAnnotationClearance,
+    ruby_size: RawRubySize,
+    ruby_align: RawRubyAlign,
+    ruby_overhang: RawRubyOverhang,
+    ruby_side: RawRubySide,
+    // Explicit padding so the CLJS writer and this struct agree on a
+    // 4-byte-aligned layout; always written as zero.
+    _padding: [u8; 2],
     font_size: f32,
     line_height: f32,
     letter_spacing: f32,
@@ -139,6 +369,7 @@ pub struct RawTextSpan {
     font_family: [u8; 4],
     font_variant_id: [u32; 4], // TODO: maybe add RawUUID type
     text_length: u32,
+    ruby_length: u32,
     fill_count: u32,
     fills: [RawFillData; MAX_TEXT_FILLS],
 }
@@ -177,7 +408,7 @@ impl From<RawTextSpan> for shapes::TextSpan {
             .map(|fill| fill.into())
             .collect();
 
-        Self::new(
+        let mut span = Self::new(
             text,
             font_family,
             value.font_size,
@@ -189,7 +420,18 @@ impl From<RawTextSpan> for shapes::TextSpan {
             value.font_weight,
             uuid_from_u32(value.font_variant_id),
             fills,
-        )
+        );
+        span.set_text_orientation(value.text_orientation.into());
+        span.set_text_combine_upright(value.text_combine_upright.into());
+        span.set_text_emphasis(value.text_emphasis.into());
+        span.set_warichu(value.warichu.into());
+        span.set_font_features(value.font_features.into());
+        span.set_annotation_clearance(value.annotation_clearance.into());
+        span.set_ruby_size(value.ruby_size.into());
+        span.set_ruby_align(value.ruby_align.into());
+        span.set_ruby_overhang(value.ruby_overhang.into());
+        span.set_ruby_side(value.ruby_side.into());
+        span
     }
 }
 
@@ -230,21 +472,31 @@ impl From<RawParagraph> for shapes::Paragraph {
     fn from(value: RawParagraph) -> Self {
         let mut spans = vec![];
 
+        // Layout: [<all span texts> <all span ruby texts>]. Annotation blobs
+        // begin after all base text.
         let mut offset = 0;
+        let mut ruby_offset: usize = value.spans.iter().map(|s| s.text_length as usize).sum();
         for raw_span in value.spans.into_iter() {
             let delta = raw_span.text_length as usize;
-            let text_buffer = &value.text_buffer[offset..offset + delta];
-
+            let text_buffer = value.text_buffer.get(offset..offset + delta).unwrap_or(&[]);
+            let ruby_delta = raw_span.ruby_length as usize;
+            let ruby_buffer = value
+                .text_buffer
+                .get(ruby_offset..ruby_offset + ruby_delta)
+                .unwrap_or(&[]);
             let mut span = shapes::TextSpan::from(raw_span);
             if !text_buffer.is_empty() {
                 span.set_text(String::from_utf8_lossy(text_buffer).to_string());
             }
-
+            if !ruby_buffer.is_empty() {
+                span.set_ruby(String::from_utf8_lossy(ruby_buffer).to_string());
+            }
             spans.push(span);
             offset += delta;
+            ruby_offset += ruby_delta;
         }
 
-        shapes::Paragraph::new(
+        let mut paragraph = shapes::Paragraph::new(
             value.attrs.text_align.into(),
             value.attrs.text_direction.into(),
             value.attrs.text_decoration.into(),
@@ -252,7 +504,10 @@ impl From<RawParagraph> for shapes::Paragraph {
             value.attrs.line_height,
             value.attrs.letter_spacing,
             spans,
-        )
+        );
+        paragraph.set_writing_mode(value.attrs.writing_mode.into());
+        paragraph.set_text_orientation(value.attrs.text_orientation.into());
+        paragraph
     }
 }
 
@@ -443,4 +698,79 @@ pub extern "C" fn calculate_position_data() -> *mut u8 {
         }
     });
     mem::write_vec(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The CLJS writer (texts.cljs) writes PARAGRAPH-ATTR-U8-SIZE (16)
+    /// attr bytes after the u32 span count, and SPAN-ATTR-U8-SIZE (80)
+    /// attr bytes before the fills block. These sizes must move in
+    /// lockstep with the struct layouts.
+    #[test]
+    fn raw_struct_sizes_match_cljs_writer() {
+        const PARAGRAPH_ATTR_U8_SIZE: usize = 16;
+        const SPAN_ATTR_U8_SIZE: usize = 80;
+        assert_eq!(RAW_PARAGRAPH_DATA_SIZE, 4 + PARAGRAPH_ATTR_U8_SIZE);
+        assert_eq!(
+            RAW_SPAN_DATA_SIZE,
+            SPAN_ATTR_U8_SIZE + MAX_TEXT_FILLS * std::mem::size_of::<RawFillData>()
+        );
+    }
+
+    #[test]
+    fn raw_text_combine_upright_counts_deserialize() {
+        // Byte 5 of the span attr block; the counted digits variants map
+        // onto their max run length.
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[5] = RawTextCombineUpright::Digits2 as u8;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(span.text_combine_upright.digits_max(), Some(2));
+
+        bytes[5] = RawTextCombineUpright::Digits3 as u8;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(span.text_combine_upright.digits_max(), Some(3));
+
+        bytes[5] = RawTextCombineUpright::Digits as u8;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(span.text_combine_upright.digits_max(), Some(4));
+    }
+
+    #[test]
+    fn raw_font_features_deserializes_from_reserved_span_byte() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[8] = RawFontFeatures::Vpal as u8;
+
+        let raw = RawTextSpan::from(bytes);
+        let span = shapes::TextSpan::from(raw);
+
+        assert_eq!(span.font_features, FontFeatures::Vpal);
+    }
+
+    #[test]
+    fn raw_annotation_clearance_deserializes_from_reserved_span_byte() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[9] = RawAnnotationClearance::Auto as u8;
+
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+
+        assert_eq!(span.annotation_clearance, AnnotationClearance::Auto);
+    }
+
+    #[test]
+    fn raw_ruby_customization_deserializes_from_span_bytes() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[10] = RawRubySize::Quarter as u8;
+        bytes[11] = RawRubyAlign::SpaceBetween as u8;
+        bytes[12] = RawRubyOverhang::None as u8;
+        bytes[13] = RawRubySide::Under as u8;
+
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+
+        assert_eq!(span.ruby_size, RubySize::Quarter);
+        assert_eq!(span.ruby_align, RubyAlign::SpaceBetween);
+        assert_eq!(span.ruby_overhang, RubyOverhang::None);
+        assert_eq!(span.ruby_side, RubySide::Under);
+    }
 }

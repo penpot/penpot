@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout, Stroke,
-        StrokeKind, TextContent,
+        add_horizontal_span, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
+        ParagraphLayout, Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -31,15 +31,14 @@ pub fn stroke_paragraph_builder_group_from_text(
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for span in paragraph.children().iter() {
+        let (span_texts, _) = paragraph.layout_span_texts();
+        for (span, text) in paragraph.children().iter().zip(span_texts.iter()) {
             let (stroke_paints, stroke_layer_opacity) =
                 get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
 
             if group_layer_opacity.is_none() {
                 group_layer_opacity = stroke_layer_opacity;
             }
-
-            let text: String = span.apply_text_transform();
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
@@ -55,7 +54,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                builder.add_text(&text);
+                add_horizontal_span(builder, span, text, &stroke_style, fonts);
             }
         }
 
@@ -69,7 +68,7 @@ pub fn stroke_paragraph_builder_group_from_text(
     (paragraph_group, group_layer_opacity)
 }
 
-fn get_text_stroke_paints(
+pub(crate) fn get_text_stroke_paints(
     stroke: &Stroke,
     bounds: &Rect,
     remove_stroke_alpha: bool,
@@ -403,14 +402,60 @@ fn paint_text_with_emoji_overlay(
     overlay_emoji: bool,
 ) {
     let text_content = shape.get_text_content();
+
+    // Vertical writing renders through the custom vertical pass.
+    // Stored text bounds describe the measured content and can be taller than
+    // a fixed shape. Rebind to the selrect so the shape height remains the
+    // column-wrap budget used by the vertical painter.
+    let vertical_text_content = text_content
+        .is_vertical()
+        .then(|| text_content.new_bounds(shape.selrect()));
+    if vertical_text_content.as_ref().is_some_and(|content| {
+        crate::shapes::text_vertical::paint_text_vertical(canvas, content, shape.vertical_align())
+    }) {
+        return;
+    }
+
     let mut layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
+
+    // Ruby draws only when the fill pass has the standard one-layout-per-
+    // paragraph shape (stroke/shadow silhouette passes never reach here).
+    let ruby_per_paragraph = layout_info.paragraphs.len() == text_content.paragraphs().len();
 
     for para in &mut layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
 
+        if let Some(source_paragraph) = text_content.paragraphs().get(para.source_paragraph) {
+            crate::shapes::paint_horizontal_warichu(
+                canvas,
+                source_paragraph,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
+            crate::shapes::paint_horizontal_emphasis(
+                canvas,
+                source_paragraph,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
+        }
+
         if overlay_emoji {
             paint_emoji_overlay(canvas, para);
+        }
+
+        if ruby_per_paragraph {
+            crate::shapes::text_vertical::paint_horizontal_ruby(
+                canvas,
+                text_content,
+                para.source_paragraph,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
         }
 
         for deco in &para.decorations {

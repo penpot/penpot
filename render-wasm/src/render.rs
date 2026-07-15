@@ -1453,7 +1453,102 @@ impl RenderState {
                         )
                     })
                     .unzip();
-                if skip_effects {
+                // CHANGEME: Extract all this code to its own function
+                if text_content.is_vertical() {
+                    // Vertical writing paints through the custom vertical pass:
+                    // drop shadows and strokes derive from the same laid-out cells
+                    // as the fills (decorations are painted with the fill pass).
+                    use crate::shapes::text_vertical;
+                    let blur_filter = (!skip_effects).then(|| shape.image_filter(1.)).flatten();
+
+                    // The shadow/stroke passes share one layout, computed only
+                    // when at least one of them has something to paint (the
+                    // fill pass lays out on its own inside text::render).
+                    let v_bounds = text_content.bounds();
+                    let mut drop_shadows = if skip_effects {
+                        Vec::new()
+                    } else {
+                        shape.drop_shadow_paints()
+                    };
+                    if !skip_effects {
+                        if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
+                            drop_shadows.extend(inherited_shadows);
+                        }
+                    }
+                    let strokes: Vec<Stroke> = shape.visible_strokes().rev().cloned().collect();
+                    let v_layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
+                        let v_max_height =
+                            text_vertical::wrap_height(text_content, v_bounds.height());
+                        text_vertical::layout_from_content(text_content, v_max_height)
+                    });
+
+                    // 1. Drop shadows (silhouettes behind the fills, on the same
+                    // fills surface so they composite under the glyphs).
+                    if let Some(v_layout) = v_layout.as_ref().filter(|_| !drop_shadows.is_empty()) {
+                        let canvas = self.surfaces.canvas_and_mark_dirty(fills_surface_id);
+                        for shadow in &drop_shadows {
+                            text_vertical::paint_drop_shadow(
+                                canvas,
+                                v_layout,
+                                &v_bounds,
+                                shape.vertical_align(),
+                                shadow,
+                            );
+                        }
+                    }
+
+                    // 2. Fills + decorations.
+                    text::render(
+                        Some(self),
+                        None,
+                        &shape,
+                        &mut paragraph_builders,
+                        Some(fills_surface_id),
+                        None,
+                        blur_filter.as_ref(),
+                        None,
+                        None,
+                    )?;
+
+                    // 3. Strokes masked to the vertical cells.
+                    if let Some(v_layout) = v_layout.as_ref().filter(|_| !strokes.is_empty()) {
+                        let selrect = shape.selrect();
+                        let canvas = self.surfaces.canvas_and_mark_dirty(strokes_surface_id);
+                        for stroke in &strokes {
+                            text_vertical::paint_stroke(
+                                canvas,
+                                v_layout,
+                                &v_bounds,
+                                shape.vertical_align(),
+                                stroke,
+                                &selrect,
+                                blur_filter.as_ref(),
+                            );
+                        }
+                    }
+
+                    // 4. Developer overlay: jlreq-style character-frame grid.
+                    if self.options.is_text_grid_visible() {
+                        let owned_layout;
+                        let grid_layout = match v_layout.as_ref() {
+                            Some(layout) => layout,
+                            None => {
+                                let v_max_height =
+                                    text_vertical::wrap_height(text_content, v_bounds.height());
+                                owned_layout =
+                                    text_vertical::layout_from_content(text_content, v_max_height);
+                                &owned_layout
+                            }
+                        };
+                        let canvas = self.surfaces.canvas_and_mark_dirty(fills_surface_id);
+                        text_vertical::paint_grid(
+                            canvas,
+                            grid_layout,
+                            &v_bounds,
+                            shape.vertical_align(),
+                        );
+                    }
+                } else if skip_effects {
                     // Fast path: render fills and strokes only (skip shadows/blur).
                     text::render(
                         Some(self),

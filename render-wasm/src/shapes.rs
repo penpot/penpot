@@ -15,7 +15,10 @@ mod corners;
 mod fills;
 mod fonts;
 mod frames;
+mod gpos_vpal;
 mod groups;
+pub mod japanese;
+pub mod kinsoku;
 mod layouts;
 pub mod modifiers;
 mod paths;
@@ -28,6 +31,7 @@ mod svg_attrs;
 mod svgraw;
 mod text;
 pub mod text_paths;
+pub mod text_vertical;
 mod transform;
 
 pub use blend::*;
@@ -428,6 +432,7 @@ impl Shape {
 
     pub fn set_vertical_align(&mut self, align: VerticalAlign) {
         self.vertical_align = align;
+        self.invalidate_extrect();
     }
 
     pub fn vertical_align(&self) -> VerticalAlign {

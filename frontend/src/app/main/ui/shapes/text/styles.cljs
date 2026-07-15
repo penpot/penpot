@@ -21,6 +21,9 @@
    (generate-root-styles props node false))
   ([{:keys [width height]} node code?]
    (let [valign (:vertical-align node "top")
+         ;; Mirroring the shape's writing mode on the root makes paragraph
+         ;; blocks stack right-to-left.
+         writing-mode (txt/content-writing-mode node)
          base   #js {:height (when-not code? (fmt/format-pixels height))
                      :width  (when-not code? (fmt/format-pixels width))
                      :display "flex"
@@ -28,7 +31,8 @@
      (cond-> base
        (= valign "top")     (obj/set! "alignItems" "flex-start")
        (= valign "center")  (obj/set! "alignItems" "center")
-       (= valign "bottom")  (obj/set! "alignItems" "flex-end")))))
+       (= valign "bottom")  (obj/set! "alignItems" "flex-end")
+       (some? writing-mode) (obj/set! "writingMode" writing-mode)))))
 
 (defn generate-paragraph-set-styles
   [{:keys [grow-type] :as shape}]
@@ -56,6 +60,8 @@
           (:line-height txt/default-typography))
 
         text-align  (:text-align data "start")
+        writing-mode (:writing-mode data)
+        text-orientation (:text-orientation data)
         base        #js {;; Fix a problem when exporting HTML
                          :fontSize 0
                          :lineHeight line-height
@@ -63,7 +69,21 @@
 
     (cond-> base
       (some? line-height)       (obj/set! "lineHeight" line-height)
-      (some? text-align)        (obj/set! "textAlign" text-align))))
+      (some? text-align)        (obj/set! "textAlign" text-align)
+      (some? writing-mode)      (obj/set! "writingMode" writing-mode)
+      (some? writing-mode)      (obj/set! "textSpacingTrim" "normal")
+      (= writing-mode "vertical-rl") (obj/set! "textAutospace" "normal")
+      (some? text-orientation)  (obj/set! "textOrientation" text-orientation))))
+
+(defn css-text-combine-upright
+  "CSS value for a persisted text-combine-upright: the digits variants
+   serialize with their max run length per the CSS `digits <n>` syntax."
+  [value]
+  (case value
+    "digits"  "digits 4"
+    "digits2" "digits 2"
+    "digits3" "digits 3"
+    value))
 
 (defn generate-text-styles
   ([shape data]
@@ -71,6 +91,24 @@
 
   ([{:keys [grow-type] :as shape} data {:keys [show-text?] :or {show-text? true}}]
    (let [letter-spacing  (:letter-spacing data 0)
+         text-combine-upright (:text-combine-upright data)
+         text-emphasis   (:text-emphasis data)
+         font-features   (:font-features data)
+         annotation-clearance (:annotation-clearance data)
+         annotation-layers (if (= "auto" annotation-clearance)
+                             (+ (if (and (string? (:ruby data))
+                                         (seq (:ruby data))) 1 0)
+                                (if (and (string? text-emphasis)
+                                         (not= "none" text-emphasis)) 1 0))
+                             0)
+         line-height-num (js/parseFloat (or (:line-height data)
+                                            (:line-height txt/default-typography)))
+         auto-line-height (when (and (pos? annotation-layers)
+                                     (not (js/isNaN line-height-num)))
+                            (+ line-height-num (* annotation-layers 0.5)))
+         warichu?        (and (= "warichu" (:warichu data))
+                              (string? (:text data))
+                              (>= (count (:text data)) 2))
          text-decoration (:text-decoration data)
          text-transform  (:text-transform data)
 
@@ -145,6 +183,26 @@
        (and (string? letter-spacing) (pos? (alength letter-spacing)))
        (obj/set! "letterSpacing" (str letter-spacing "px"))
 
+       (and (string? text-combine-upright) (pos? (alength text-combine-upright)))
+       (obj/set! "textCombineUpright" (css-text-combine-upright text-combine-upright))
+
+       ;; Emphasis marks map to CSS text-emphasis-style: our kebab values
+       ;; ("filled-dot") become the CSS "<fill> <shape>" pair ("filled dot").
+       (and (string? text-emphasis) (pos? (alength text-emphasis))
+            (not= "none" text-emphasis))
+       (obj/set! "textEmphasis" (str/replace text-emphasis "-" " "))
+
+       (and (string? font-features) (pos? (alength font-features))
+            (not= "none" font-features))
+       (obj/set! "fontFeatureSettings" (str/format "\"%s\"" font-features))
+
+       (and (string? annotation-clearance)
+            (pos? (alength annotation-clearance)))
+       (obj/set! "--annotation-clearance" annotation-clearance)
+
+       (some? auto-line-height)
+       (obj/set! "lineHeight" auto-line-height)
+
        (and (string? font-size) (pos? (alength font-size)))
        (obj/set! "fontSize" (str font-size "px"))
 
@@ -154,4 +212,38 @@
            (obj/set! "fontWeight" font-weight))
 
        (= grow-type :auto-width)
-       (obj/set! "whiteSpace" "pre")))))
+       (obj/set! "whiteSpace" "pre")
+
+       ;; Warichu (割注) CSS emulation: an inline-block at half size whose
+       ;; inline-size fits half the characters, so the browser wraps it into
+       ;; two half-size sub-lines within one inline position in either writing
+       ;; mode.
+       warichu?
+       (-> (obj/set! "display" "inline-block")
+           (obj/set! "fontSize" (if (and (string? font-size) (pos? (alength font-size)))
+                                  (str (/ (js/parseFloat font-size) 2) "px")
+                                  "50%"))
+           (obj/set! "lineHeight" "1")
+           (obj/set! "inlineSize"
+                     (str (js/Math.ceil (/ (alength (js/Array.from (:text data))) 2)) "em")))))))
+
+(defn generate-ruby-styles
+  [shape data]
+  (-> (generate-text-styles shape data)
+      (obj/set! "fontSize" (case (:ruby-size data)
+                             "third" "33.333333%"
+                             "quarter" "25%"
+                             "50%"))
+      (obj/set! "lineHeight" "1")
+      (obj/set! "textDecoration" "none")
+      (obj/unset! "textCombineUpright")))
+
+(defn generate-ruby-container-styles
+  [data]
+  #js {:rubyPosition (if (= "under" (:ruby-side data)) "under" "over")
+       :rubyAlign (case (:ruby-align data)
+                    "center" "center"
+                    "start" "start"
+                    "space-between" "space-between"
+                    "space-around")
+       :rubyOverhang (if (= "none" (:ruby-overhang data)) "none" "auto")})

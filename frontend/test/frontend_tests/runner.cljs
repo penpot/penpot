@@ -46,6 +46,7 @@
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
+   [frontend-tests.render-wasm.texts-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -56,9 +57,11 @@
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
+   [frontend-tests.ui.css-cursors-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
+   [frontend-tests.ui.text-options-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
@@ -120,6 +123,7 @@
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.render-wasm.texts-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
@@ -130,9 +134,11 @@
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
+   'frontend-tests.ui.css-cursors-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
+   'frontend-tests.ui.text-options-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test

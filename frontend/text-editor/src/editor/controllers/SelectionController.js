@@ -55,6 +55,19 @@ import { SafeGuard } from "./SafeGuard.js";
 import { sanitizeFontFamily } from "../content/dom/Style.js";
 import StyleDeclaration from "./StyleDeclaration.js";
 
+const JAPANESE_SPAN_STYLE_DEFAULTS = {
+  "text-combine-upright": "none",
+  "--text-emphasis": "none",
+  "--ruby": "",
+  "--ruby-size": "half",
+  "--ruby-align": "space-around",
+  "--ruby-overhang": "auto",
+  "--ruby-side": "over",
+  "--warichu": "none",
+  "--font-features": "none",
+  "--annotation-clearance": "none",
+};
+
 /**
  * Supported options for the SelectionController.
  *
@@ -228,6 +241,13 @@ export class SelectionController extends EventTarget {
    * @param {HTMLElement} element
    */
   #applyStylesFromElementToCurrentStyle(element) {
+    if (isTextSpan(element)) {
+      for (const [styleName, defaultValue] of Object.entries(
+        JAPANESE_SPAN_STYLE_DEFAULTS,
+      )) {
+        this.#currentStyle.setProperty(styleName, defaultValue);
+      }
+    }
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
       // Only merge fill styles from text spans.
@@ -256,6 +276,15 @@ export class SelectionController extends EventTarget {
         styleValue = sanitizeFontFamily(styleValue);
       }
       this.#currentStyle.mergeProperty(styleName, styleValue);
+    }
+    if (isTextSpan(element)) {
+      for (const [styleName, defaultValue] of Object.entries(
+        JAPANESE_SPAN_STYLE_DEFAULTS,
+      )) {
+        if (!element.style.getPropertyValue(styleName)) {
+          this.#currentStyle.mergeProperty(styleName, defaultValue);
+        }
+      }
     }
   }
 

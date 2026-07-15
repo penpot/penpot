@@ -4298,6 +4298,88 @@ export interface Text extends ShapeBase {
   verticalAlign: 'top' | 'center' | 'bottom' | null;
 
   /**
+   * The writing mode of the text shape. `horizontal-tb` lays text out in
+   * horizontal lines; `vertical-rl` in vertical columns advancing right-to-left.
+   * Returns 'mixed' if paragraphs use different modes.
+   */
+  writingMode: 'horizontal-tb' | 'vertical-rl' | 'mixed' | null;
+
+  /**
+   * The orientation of characters in vertical writing. `mixed` rotates
+   * non-CJK runs sideways; `upright` keeps every character upright.
+   * Returns 'mixed' if paragraphs use different orientations.
+   */
+  textOrientation: 'mixed' | 'upright' | null;
+
+  /**
+   * Combines the text shape upright in vertical writing. `all` draws the text
+   * as one upright composite; `digits` combines runs of 2-4 consecutive
+   * digits (`digits2`/`digits3` cap the run length at 2/3); `none` uses the
+   * normal vertical layout.
+   * Returns 'mixed' if text spans use different values.
+   */
+  textCombineUpright:
+    'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed' | null;
+
+  /**
+   * Emphasis marks (圏点 / bouten) drawn beside each base character, mirroring
+   * CSS `text-emphasis-style`. `none` removes them.
+   * Returns 'mixed' if text spans use different values.
+   */
+  textEmphasis:
+    | 'none'
+    | 'filled-dot'
+    | 'open-dot'
+    | 'filled-circle'
+    | 'open-circle'
+    | 'filled-sesame'
+    | 'open-sesame'
+    | 'mixed'
+    | null;
+
+  /**
+   * Warichu (割注): renders the span as two half-size lines stacked inline
+   * within one column position of the vertical flow. `none` disables it.
+   * Returns 'mixed' if text spans use different values.
+   */
+  warichu: 'none' | 'warichu' | 'mixed' | null;
+
+  /**
+   * OpenType proportional alternate metrics for Japanese text. `palt` applies
+   * proportional alternate widths in horizontal writing; `vpal` applies
+   * proportional alternate widths in vertical writing. `none` disables them.
+   * Returns 'mixed' if text spans use different values.
+   */
+  fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed' | null;
+
+  /**
+   * Controls annotation collision handling. `none` preserves the explicit
+   * line gap; `auto` reserves separate half-em layers for ruby and emphasis.
+   * Returns 'mixed' if text spans use different values.
+   */
+  annotationClearance: 'none' | 'auto' | 'mixed' | null;
+
+  /**
+   * Ruby (furigana) annotation shown over the base text in vertical writing.
+   * Set a string to annotate the selected span(s), or `null` to remove it.
+   * Returns 'mixed' if text spans carry different ruby values.
+   */
+  ruby: string | null;
+
+  /** Ruby annotation size relative to its base text. */
+  rubySize: 'half' | 'third' | 'quarter' | 'mixed' | null;
+
+  /** Distribution of ruby glyphs across the corresponding base text. */
+  rubyAlign:
+    'space-around' | 'center' | 'start' | 'space-between' | 'mixed' | null;
+
+  /** Whether ruby may extend beyond the corresponding base text. */
+  rubyOverhang: 'auto' | 'none' | 'mixed' | null;
+
+  /** Annotation side: above/right (`over`) or below/left (`under`). */
+  rubySide: 'over' | 'under' | 'mixed' | null;
+
+  /**
    * Return the bounding box for the text as a (x, y, width, height) rectangle
    * This is the box that covers the text even if it overflows its selection rectangle.
    */
@@ -4396,6 +4478,62 @@ export interface TextRange {
    * The text decoration applied to the text range. It can be a specific text decoration or 'mixed' if multiple text decorations are used.
    */
   textDecoration: 'underline' | 'line-through' | 'none' | 'mixed' | null;
+
+  /**
+   * Combines the range upright in vertical writing. Returns 'mixed' when the
+   * range contains different span values.
+   */
+  textCombineUpright:
+    'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed' | null;
+
+  /**
+   * Emphasis marks (圏点 / bouten) applied to the range. Returns 'mixed' when
+   * the range contains different span values.
+   */
+  textEmphasis:
+    | 'none'
+    | 'filled-dot'
+    | 'open-dot'
+    | 'filled-circle'
+    | 'open-circle'
+    | 'filled-sesame'
+    | 'open-sesame'
+    | 'mixed'
+    | null;
+
+  /** Warichu applied to the range, or 'mixed' for different span values. */
+  warichu: 'none' | 'warichu' | 'mixed' | null;
+
+  /**
+   * OpenType proportional alternate metrics for Japanese text. It can be a
+   * specific feature or 'mixed' if multiple text spans are used.
+   */
+  fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed' | null;
+
+  /**
+   * Annotation collision handling for the range, or 'mixed' for different
+   * span values.
+   */
+  annotationClearance: 'none' | 'auto' | 'mixed' | null;
+
+  /**
+   * Ruby (furigana) annotation for the text range. Set `null` to remove it.
+   * Returns 'mixed' if the range contains different ruby values.
+   */
+  ruby: string | 'mixed' | null;
+
+  /** Ruby annotation size relative to its base text. */
+  rubySize: 'half' | 'third' | 'quarter' | 'mixed' | null;
+
+  /** Distribution of ruby glyphs across the corresponding base text. */
+  rubyAlign:
+    'space-around' | 'center' | 'start' | 'space-between' | 'mixed' | null;
+
+  /** Whether ruby may extend beyond the corresponding base text. */
+  rubyOverhang: 'auto' | 'none' | 'mixed' | null;
+
+  /** Annotation side: above/right (`over`) or below/left (`under`). */
+  rubySide: 'over' | 'under' | 'mixed' | null;
 
   /**
    * The text direction for the text range. It can be a specific direction or 'mixed' if multiple directions are used.

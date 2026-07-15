@@ -13,10 +13,12 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]))
+   [app.render-wasm.wasm :as wasm]
+   [app.util.i18n :as i18n]
+   [cuerdas.core :as str]))
 
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
-(def ^:const SPAN-ATTR-U8-SIZE 64)
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 16)
+(def ^:const SPAN-ATTR-U8-SIZE 80)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
 (defn- encode-text
@@ -51,18 +53,25 @@
 
 (defn- write-paragraph
   [offset dview paragraph]
-  (let [text-align      (sr/translate-text-align (get paragraph :text-align))
-        text-direction  (sr/translate-text-direction (get paragraph :text-direction))
-        text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
-        text-transform  (sr/translate-text-transform (get paragraph :text-transform))
-        line-height     (f/serialize-line-height (get paragraph :line-height))
-        letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))]
+  (let [text-align       (sr/translate-text-align (get paragraph :text-align))
+        text-direction   (sr/translate-text-direction (get paragraph :text-direction))
+        text-decoration  (sr/translate-text-decoration (get paragraph :text-decoration))
+        text-transform   (sr/translate-text-transform (get paragraph :text-transform))
+        writing-mode     (sr/translate-writing-mode (get paragraph :writing-mode))
+        text-orientation (sr/translate-text-orientation (get paragraph :text-orientation))
+        line-height      (f/serialize-line-height (get paragraph :line-height))
+        letter-spacing   (f/serialize-letter-spacing (get paragraph :letter-spacing))]
 
     (-> offset
         (mem/write-u8 dview text-align)
         (mem/write-u8 dview text-direction)
         (mem/write-u8 dview text-decoration)
         (mem/write-u8 dview text-transform)
+        (mem/write-u8 dview writing-mode)
+        (mem/write-u8 dview text-orientation)
+        ;; Alignment padding; must match RawParagraphData in Rust.
+        (mem/write-u8 dview 0)
+        (mem/write-u8 dview 0)
 
         (mem/write-f32 dview line-height)
         (mem/write-f32 dview letter-spacing)
@@ -90,6 +99,10 @@
 
                     text-buffer (encode-text (get span :text ""))
                     text-length (mem/size text-buffer)
+
+                    ruby-buffer (encode-text (get span :ruby ""))
+                    ruby-length (mem/size ruby-buffer)
+
                     fills       (take MAX-TEXT-FILLS (get span :fills []))
 
                     font-variant-id
@@ -113,13 +126,51 @@
                     text-direction
                     (or (sr/translate-text-direction (:text-direction span))
                         (sr/translate-text-direction (:text-direction paragraph))
-                        (sr/translate-text-direction "ltr"))]
+                        (sr/translate-text-direction "ltr"))
+
+                    text-orientation
+                    (sr/translate-text-orientation
+                     (get span :text-orientation (get paragraph :text-orientation)))
+
+                    text-combine-upright
+                    (sr/translate-text-combine-upright (get span :text-combine-upright))
+
+                    text-emphasis
+                    (sr/translate-text-emphasis (get span :text-emphasis))
+
+                    warichu
+                    (sr/translate-warichu (get span :warichu))
+
+                    font-features
+                    (sr/translate-font-features (get span :font-features))
+
+                    annotation-clearance
+                    (sr/translate-annotation-clearance
+                     (get span :annotation-clearance))
+
+                    ruby-size (sr/translate-ruby-size (get span :ruby-size))
+                    ruby-align (sr/translate-ruby-align (get span :ruby-align))
+                    ruby-overhang (sr/translate-ruby-overhang (get span :ruby-overhang))
+                    ruby-side (sr/translate-ruby-side (get span :ruby-side))]
 
                 (-> offset
                     (mem/write-u8 dview font-style)
                     (mem/write-u8 dview text-decoration)
                     (mem/write-u8 dview text-transform)
                     (mem/write-u8 dview text-direction)
+                    (mem/write-u8 dview text-orientation)
+                    (mem/write-u8 dview text-combine-upright)
+                    (mem/write-u8 dview text-emphasis)
+                    (mem/write-u8 dview warichu)
+                    (mem/write-u8 dview font-features)
+                    (mem/write-u8 dview annotation-clearance)
+                    (mem/write-u8 dview ruby-size)
+                    (mem/write-u8 dview ruby-align)
+                    (mem/write-u8 dview ruby-overhang)
+                    (mem/write-u8 dview ruby-side)
+                    ;; Alignment padding; must match RawTextSpan in Rust.
+                    (mem/write-u8 dview 0)
+                    (mem/write-u8 dview 0)
 
                     (mem/write-f32 dview font-size)
                     (mem/write-f32 dview line-height)
@@ -131,6 +182,7 @@
                     (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
 
                     (mem/write-i32 dview text-length)
+                    (mem/write-i32 dview ruby-length)
                     (mem/write-i32 dview (count fills))
                     (mem/assert-written offset SPAN-ATTR-U8-SIZE)
 
@@ -140,7 +192,9 @@
 
 (defn write-shape-text
   ;; buffer has the following format:
-  ;; [<num-spans> <paragraph_attributes> <spans_attributes> <text>]
+  ;; [<num-spans> <paragraph_attributes> <spans_attributes> <text> <ruby-text>]
+  ;; Ruby annotations are concatenated per span, in span order, after the base
+  ;; text. The reader splits them using the per-span byte lengths.
   [spans paragraph text]
   (let [normalized-paragraph (f/normalize-paragraph-font paragraph)
         normalized-spans (map #(f/normalize-span-font % normalized-paragraph) spans)
@@ -152,7 +206,11 @@
         text-buffer   (encode-text text)
         text-size     (mem/size text-buffer)
 
-        total-size    (+ 4 metadata-size text-size)
+        ruby-text     (apply str (map #(get % :ruby "") normalized-spans))
+        ruby-buffer   (encode-text ruby-text)
+        ruby-size     (mem/size ruby-buffer)
+
+        total-size    (+ 4 metadata-size text-size ruby-size)
         heapu8        (mem/get-heap-u8)
         dview         (mem/get-data-view)
         offset        (mem/alloc total-size)]
@@ -161,7 +219,8 @@
         (mem/write-u32 dview num-spans)
         (write-paragraph dview normalized-paragraph)
         (write-spans dview normalized-spans normalized-paragraph)
-        (mem/write-buffer heapu8 text-buffer))
+        (mem/write-buffer heapu8 text-buffer)
+        (mem/write-buffer heapu8 ruby-buffer))
 
     (h/call wasm/internal-module "_set_shape_text_content")))
 
@@ -170,7 +229,14 @@
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
-   :chinese     #"[\u4E00-\u9FFF\u3400-\u4DBF]"
+   ;; Han ideographs are shared by Japanese/Chinese/Korean (Han
+   ;; unification) and cannot identify a language by themselves; they
+   ;; are resolved to a concrete language by `resolve-ambiguous-cjk`.
+   :han         #"[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]"
+   ;; CJK symbols/punctuation (U+3000-303F) and half/full-width forms
+   ;; (U+FF01-FF65, U+FFE0-FFEE) are likewise shared across
+   ;; Japanese/Chinese/Korean; resolved by `resolve-ambiguous-cjk`.
+   :cjk-punctuation #"[\u3000-\u303F\uFF01-\uFF65\uFFE0-\uFFEE]"
    :korean      #"[\uAC00-\uD7AF]"
    :arabic      #"[\u0600-\u06FF\u0750-\u077F\u0870-\u089F\u08A0-\u08FF]"
    :cyrillic    #"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F]"
@@ -243,3 +309,31 @@
              used
              unicode-ranges))
 
+(defn- locale->cjk-language
+  "CJK language implied by an app locale string, or nil."
+  [locale]
+  (let [locale (str/lower (str locale))]
+    (cond
+      (str/starts-with? locale "ja") :japanese
+      (str/starts-with? locale "ko") :korean
+      (str/starts-with? locale "zh") :chinese
+      :else nil)))
+
+(defn resolve-ambiguous-cjk
+  "Resolves the ambiguous CJK classes (:han, :cjk-punctuation) to a
+   concrete language: an unambiguous script in the same content wins
+   (kana implies Japanese, hangul implies Korean), then the user
+   locale; Chinese is the final default."
+  ([langs]
+   (resolve-ambiguous-cjk langs @i18n/locale))
+  ([langs locale]
+   (if (or (contains? langs :han)
+           (contains? langs :cjk-punctuation))
+     (let [resolved (cond
+                      (contains? langs :japanese) :japanese
+                      (contains? langs :korean)   :korean
+                      :else (or (locale->cjk-language locale) :chinese))]
+       (-> langs
+           (disj :han :cjk-punctuation)
+           (conj resolved)))
+     langs)))

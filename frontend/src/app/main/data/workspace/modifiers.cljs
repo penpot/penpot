@@ -23,6 +23,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -1010,21 +1011,34 @@
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
 
+(defn vertical-text-shape?
+  [shape]
+  (txt/vertical-text-content? (get shape :content)))
+
 ;; Pure function to determine next grow-type for text layers
 (defn next-grow-type
-  [current-grow-type scalev]
-  (cond
-    (= current-grow-type :fixed)
-    :fixed
+  ([current-grow-type scalev]
+   (next-grow-type current-grow-type scalev false))
 
-    (and (not (mth/close? (:y scalev) 1.0))
-         (or (= current-grow-type :auto-width)
-             (= current-grow-type :auto-height)))
-    :fixed
+  ([current-grow-type scalev vertical?]
+   ;; CHANGEME: Simplify this comment
+   ;; Grow and wrap axes swap under vertical writing. Normalizing the scale
+   ;; vector lets the existing horizontal state machine remain authoritative.
+   (let [scalev (if vertical?
+                  (gpt/point (:y scalev) (:x scalev))
+                  scalev)]
+     (cond
+       (= current-grow-type :fixed)
+       :fixed
 
-    (and (not (mth/close? (:x scalev) 1.0))
-         (= current-grow-type :auto-width))
-    :auto-height
+       (and (not (mth/close? (:y scalev) 1.0))
+            (or (= current-grow-type :auto-width)
+                (= current-grow-type :auto-height)))
+       :fixed
 
-    :else
-    current-grow-type))
+       (and (not (mth/close? (:x scalev) 1.0))
+            (= current-grow-type :auto-width))
+       :auto-height
+
+       :else
+       current-grow-type))))

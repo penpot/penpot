@@ -211,15 +211,34 @@ fn propagate_transform(
             );
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
+                    let width_before = text_content.size.width;
                     let height_before = text_content.size.height;
-                    let new_height = if width_changed {
+                    let (new_width, new_height) = if text_content.is_vertical() {
+                        // Vertical auto-height fixes the physical height (the
+                        // column wrap axis) and grows width as columns are added.
+                        if height_changed {
+                            let mut clone = text_content.clone();
+                            clone.update_layout(resized_selrect);
+                            (clone.size.width, shape_bounds_after.height())
+                        } else {
+                            (width_before, shape_bounds_after.height())
+                        }
+                    } else if width_changed {
                         let mut clone = text_content.clone();
                         clone.update_layout(resized_selrect);
-                        clone.size.height
+                        (shape_bounds_after.width(), clone.size.height)
                     } else {
-                        height_before
+                        (shape_bounds_after.width(), height_before)
                     };
-                    if !is_close_to(height_before, new_height) && reflowed_shapes.insert(shape.id) {
+                    // Reflow only when the grow axis (the WASM-computed
+                    // dimension) changes; the wrap axis is driven by the
+                    // resize itself.
+                    let grow_axis_changed = if text_content.is_vertical() {
+                        !is_close_to(width_before, new_width)
+                    } else {
+                        !is_close_to(height_before, new_height)
+                    };
+                    if grow_axis_changed && reflowed_shapes.insert(shape.id) {
                         entries.push_back(Modifier::reflow(shape.id, false));
 
                         if let Some(parent_id) = shape.parent_id {
@@ -233,7 +252,7 @@ fn propagate_transform(
                     let resize_transform = math::resize_matrix(
                         &shape_bounds_after,
                         &shape_bounds_after,
-                        shape_bounds_after.width(),
+                        new_width,
                         new_height,
                     );
                     shape_bounds_after = shape_bounds_after.transform(&resize_transform);

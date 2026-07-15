@@ -8514,6 +8514,194 @@ msgstr "Title case"
 msgid "workspace.options.text-options.underline"
 msgstr "Underline (%s)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-none"
+msgstr "Normal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.japanese-layout"
+msgstr "Japanese text layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-all"
+msgstr "Tate-chu-yoko"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits"
+msgstr "Digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-count"
+msgstr "Digit count"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-2"
+msgstr "Up to 2 digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-3"
+msgstr "Up to 3 digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-combine-upright-digits-4"
+msgstr "Up to 4 digits"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.warichu-none"
+msgstr "Normal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.warichu"
+msgstr "Warichu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features"
+msgstr "Prop. metrics"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-palt"
+msgstr "Horizontal (palt)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.font-features-vpal"
+msgstr "Vertical (vpal)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance"
+msgstr "Ann. clearance"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance-none"
+msgstr "Use line height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.annotation-clearance-auto"
+msgstr "Automatic"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis"
+msgstr "Emphasis marks"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-dot"
+msgstr "Filled dot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-dot"
+msgstr "Open dot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-circle"
+msgstr "Filled circle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-circle"
+msgstr "Open circle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-filled-sesame"
+msgstr "Filled sesame"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-emphasis-open-sesame"
+msgstr "Open sesame"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby"
+msgstr "Ruby"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-placeholder"
+msgstr "Furigana"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-advanced-options"
+msgstr "Advanced furigana options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size"
+msgstr "Ruby size"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-half"
+msgstr "Half"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-third"
+msgstr "Third"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-size-quarter"
+msgstr "Quarter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align"
+msgstr "Ruby alignment"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-space-around"
+msgstr "Space around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-start"
+msgstr "Start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-align-space-between"
+msgstr "Space between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang"
+msgstr "Ruby overhang"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang-auto"
+msgstr "Auto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-overhang-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side"
+msgstr "Ruby side"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side-over"
+msgstr "Over / right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.ruby-side-under"
+msgstr "Under / left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-orientation-mixed"
+msgstr "Mixed"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-orientation-upright"
+msgstr "Upright"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.writing-mode-horizontal"
+msgstr "Horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.writing-mode-vertical"
+msgstr "Vertical (right to left)"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.options.text-options.uppercase"
@@ -9765,6 +9953,11 @@ msgstr "Create board. Click and drag to define its size. (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:116, src/app/main/ui/workspace/top_toolbar.cljs:117
 msgid "workspace.toolbar.image"
 msgstr "Image (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:339
+#, fuzzy
+msgid "workspace.toolbar.label"
+msgstr ""
 
 msgid "workspace.toolbar.line"
 msgstr "Line (%s)"

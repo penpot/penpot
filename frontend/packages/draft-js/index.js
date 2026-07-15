@@ -32,6 +32,10 @@ function mergeBlockData(block, newData) {
   let data = block.getData();
 
   for (let key of Object.keys(newData)) {
+    if (newData[key] == null) {
+      data = data.delete(key);
+      continue;
+    }
     const oldVal = data.get(key);
     if (oldVal === newData[key]) {
       data = data.delete(key);

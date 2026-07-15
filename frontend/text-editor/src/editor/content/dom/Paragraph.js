@@ -46,6 +46,8 @@ export const STYLES = [
   ["text-transform"],
   ["text-align"],
   ["direction"],
+  ["writing-mode"],
+  ["text-orientation"],
 ];
 
 /**
@@ -146,18 +148,20 @@ export function createParagraphWith(text, styles, attrs) {
     if (text === "" || text === "\n") {
       return createEmptyParagraph(styles, attrs);
     }
-    return createParagraph([
-      createTextSpan(new Text(text))
-    ], styles, attrs);
+    return createParagraph([createTextSpan(new Text(text))], styles, attrs);
   } else if (Array.isArray(text)) {
     return createParagraph(
       text.map((text) => {
         if (text === "" || text === "\n") return createEmptyTextSpan(styles);
         return createTextSpan(new Text(text), styles);
-      })
-    , styles, attrs);
+      }),
+      styles,
+      attrs,
+    );
   } else {
-    throw new TypeError("Invalid text, it should be an array of strings or a string");
+    throw new TypeError(
+      "Invalid text, it should be an array of strings or a string",
+    );
   }
 }
 

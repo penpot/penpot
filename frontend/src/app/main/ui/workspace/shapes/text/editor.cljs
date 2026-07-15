@@ -14,6 +14,7 @@
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
    [app.common.text :as legacy.txt]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -235,7 +236,7 @@
               :opacity (when @blurred 0)}
       :on-pointer-down on-pointer-down
       :class (dom/classnames
-              (cur/get-dynamic "text" (:rotation shape)) true
+              (cur/get-text (:rotation shape) (txt/vertical-text-content? content)) true
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
               :align-bottom (= (:vertical-align content) "bottom"))}

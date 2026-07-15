@@ -22,11 +22,36 @@
 
 (def mapping
   {:fills [encode decode]
+   :ruby [identity #(when-not (= "" %) %)]
+   :ruby-size [identity #(when-not (= "" %) %)]
+   :ruby-align [identity #(when-not (= "" %) %)]
+   :ruby-overhang [identity #(when-not (= "" %) %)]
+   :ruby-side [identity #(when-not (= "" %) %)]
+   :text-emphasis [identity #(when-not (= "" %) %)]
+   :warichu [identity #(when-not (= "" %) %)]
+   :font-features [identity #(when-not (= "" %) %)]
+   :annotation-clearance [identity #(when-not (= "" %) %)]
    :typography-ref-id [encode decode]
    :typography-ref-file [encode decode]
    :font-id [identity identity]
    :font-variant-id [identity identity]
    :vertical-align [identity identity]})
+
+(defn- text-combine-upright->css
+  [value]
+  (case value
+    "digits2" "digits 2"
+    "digits3" "digits 3"
+    "digits" "digits 4"
+    value))
+
+(defn- css->text-combine-upright
+  [value]
+  (case value
+    "digits 2" "digits2"
+    "digits 3" "digits3"
+    "digits 4" "digits"
+    value))
 
 (defn normalize-style-value
   "This function adds units to style values"
@@ -114,14 +139,21 @@
   ([key value]
    (attr->style-value key value false))
   ([key value normalize?]
-   (if (attr-needs-mapping? key)
+   (cond
+     (= key :text-combine-upright)
+     (text-combine-upright->css value)
+
+     (attr-needs-mapping? key)
      (let [[encoder] (get mapping key)]
        (if normalize?
          (normalize-style-value key (encoder value))
          (encoder value)))
-     (if normalize?
-       (normalize-style-value key value)
-       value))))
+
+     normalize?
+     (normalize-style-value key value)
+
+     :else
+     value)))
 
 (defn attr->style
   [[key value]]
@@ -151,12 +183,18 @@
   ([name value]
    (style->attr-value name value false))
   ([name value normalize?]
-   (if (style-needs-mapping? name)
+   (cond
+     (= name "text-combine-upright")
+     (css->text-combine-upright value)
+
+     (style-needs-mapping? name)
      (let [key (get-attr-keyword-from-css-variable name)
            [_ decoder] (get mapping key)]
        (if normalize?
          (normalize-attr-value key (decoder value))
          (decoder value)))
+
+     :else
      (let [key (get-attr-keyword name)]
        (if normalize?
          (normalize-attr-value key value)
@@ -205,7 +243,10 @@
            (assoc acc k (style-decode style-value))
            acc))
        (let [style-name (get-style-name k)
-             style-value (normalize-attr-value k (.getPropertyValue style-declaration style-name))]
+             style-value (.getPropertyValue style-declaration style-name)
+             style-value (if (= k :text-combine-upright)
+                           (css->text-combine-upright style-value)
+                           (normalize-attr-value k style-value))]
          (if (or (not removed-mixed) (not (contains? mixed-values style-value)))
            (assoc acc k style-value)
            acc)))) {} txt/text-style-attrs))

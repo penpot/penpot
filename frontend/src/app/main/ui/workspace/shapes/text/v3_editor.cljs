@@ -405,7 +405,7 @@
          :on-focus on-focus
          :on-blur on-blur
          :id "text-editor-wasm-input"
-         :class (dm/str (cur/get-dynamic "text" (:rotation shape))
+         :class (dm/str (cur/get-text (:rotation shape) (txt/vertical-text-content? (:content shape)))
                         " "
                         (stl/css :text-editor-container))
          :data-testid "text-editor-container"}]]]]))

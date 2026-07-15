@@ -16,8 +16,15 @@ import {
   mapContentFragmentFromString,
 } from "./content/dom/Content.js";
 import { resetInertElement } from "./content/dom/Style.js";
-import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
-import { createParagraph } from "./content/dom/Paragraph.js";
+import {
+  createRoot,
+  createEmptyRoot,
+  setRootStyles,
+} from "./content/dom/Root.js";
+import {
+  createParagraph,
+  setParagraphStyles,
+} from "./content/dom/Paragraph.js";
 import { createEmptyTextSpan, createTextSpan } from "./content/dom/TextSpan.js";
 import { isLineBreak } from "./content/dom/LineBreak.js";
 import LayoutType from "./layout/LayoutType.js";
@@ -385,8 +392,7 @@ export class TextEditor extends EventTarget {
    * @param {InputEvent} e
    */
   #onBeforeInput = (e) => {
-    if (e.inputType === "historyUndo"
-     || e.inputType === "historyRedo") {
+    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
       return;
     }
 
@@ -416,8 +422,7 @@ export class TextEditor extends EventTarget {
    * @param {InputEvent} e
    */
   #onInput = (e) => {
-    if (e.inputType === "historyUndo"
-     || e.inputType === "historyRedo") {
+    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
       return;
     }
 
@@ -629,6 +634,25 @@ export class TextEditor extends EventTarget {
   }
 
   /**
+   * Applies paragraph-level styles to the root and to every paragraph,
+   * regardless of the current selection. Used for properties that are
+   * whole-shape in the model (e.g. writing-mode) so paragraphs cannot
+   * diverge.
+   *
+   * @param {Object.<string, *>} styles
+   * @returns {TextEditor}
+   */
+  applyStylesToAllParagraphs(styles) {
+    setRootStyles(this.#root, styles);
+    for (const paragraph of this.#root.children) {
+      setParagraphStyles(paragraph, styles);
+    }
+    this.#notifyLayout(LayoutType.FULL);
+    this.#changeController.notifyImmediately();
+    return this;
+  }
+
+  /**
    * Selects all content.
    *
    * @returns {TextEditor}
@@ -705,7 +729,7 @@ export function isEmpty(instance) {
   if (isTextEditor(instance)) {
     return instance.isEmpty;
   }
-  throw new TypeError('Instance is not a TextEditor');
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -759,7 +783,7 @@ export function getCurrentStyle(instance) {
   if (isTextEditor(instance)) {
     return instance.currentStyle;
   }
-  throw new TypeError('Instance is not a TextEditor');
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -774,7 +798,22 @@ export function applyStylesToSelection(instance, styles) {
   if (isTextEditor(instance)) {
     return instance.applyStylesToSelection(styles);
   }
-  throw new TypeError('Instance is not a TextEditor');
+  throw new TypeError("Instance is not a TextEditor");
+}
+
+/**
+ * Applies the specified paragraph-level styles to every paragraph of the
+ * TextEditor passed, regardless of the selection.
+ *
+ * @param {TextEditor} instance
+ * @param {Object.<string, *>} styles
+ * @returns {TextEditor|null}
+ */
+export function applyStylesToAllParagraphs(instance, styles) {
+  if (isTextEditor(instance)) {
+    return instance.applyStylesToAllParagraphs(styles);
+  }
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -788,7 +827,7 @@ export function dispose(instance) {
   if (isTextEditor(instance)) {
     return instance.dispose();
   }
-  throw new TypeError('Instance is not a TextEditor');
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 export default TextEditor;

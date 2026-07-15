@@ -1,24 +1,37 @@
 use crate::get_render_state;
 use crate::shapes::text::TextContent;
+use crate::shapes::VerticalAlign;
 use skia_safe::{
     self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
 };
 use std::ops::Deref;
 
-pub struct TextPaths(TextContent);
+pub struct TextPaths {
+    text_content: TextContent,
+    vertical_align: VerticalAlign,
+}
 
-// Note: This class is not being currently used.
-// It's an example of how to convert texts to paths
 #[allow(dead_code)]
 impl TextPaths {
-    pub fn new(text_content: TextContent) -> Self {
-        Self(text_content)
+    pub fn new(text_content: TextContent, vertical_align: VerticalAlign) -> Self {
+        Self {
+            text_content,
+            vertical_align,
+        }
     }
 
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
+        if self.text_content.is_vertical() {
+            return crate::shapes::text_vertical::vertical_text_paths(
+                &self.text_content,
+                self.vertical_align,
+                antialias,
+            );
+        }
+
         let mut paths = Vec::new();
         let mut offset_y = self.bounds.y();
-        let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
+        let mut paragraph_builders = self.text_content.paragraph_builder_group_from_text(None);
 
         for paragraphs in paragraph_builders.iter_mut() {
             for paragraph_builder in paragraphs.iter_mut() {
@@ -192,6 +205,6 @@ impl Deref for TextPaths {
     type Target = TextContent;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.text_content
     }
 }

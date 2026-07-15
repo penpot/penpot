@@ -114,7 +114,7 @@ fn render_init(width: i32, height: i32) {
 }
 
 /// Initializes DesignState.
-fn design_init() {
+pub(crate) fn design_init() {
     unsafe {
         let design_state = State::new();
         DESIGN_STATE = Box::into_raw(Box::new(design_state));

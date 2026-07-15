@@ -269,6 +269,9 @@
 (def ^:icon-id text-auto-height "text-auto-height")
 (def ^:icon-id text-auto-width "text-auto-width")
 (def ^:icon-id text-bottom "text-bottom")
+(def ^:icon-id text-combine-upright-all "text-combine-upright-all")
+(def ^:icon-id text-combine-upright-digits "text-combine-upright-digits")
+(def ^:icon-id text-combine-upright-none "text-combine-upright-none")
 (def ^:icon-id text-fixed "text-fixed")
 (def ^:icon-id text-font-family "text-font-family")
 (def ^:icon-id text-font-size "text-font-size")
@@ -280,6 +283,8 @@
 (def ^:icon-id text-ltr "text-ltr")
 (def ^:icon-id text-middle "text-middle")
 (def ^:icon-id text-mixed "text-mixed")
+(def ^:icon-id text-orientation-mixed "text-orientation-mixed")
+(def ^:icon-id text-orientation-upright "text-orientation-upright")
 (def ^:icon-id text-palette "text-palette")
 (def ^:icon-id text-paragraph "text-paragraph")
 (def ^:icon-id text-rtl "text-rtl")
@@ -302,7 +307,11 @@
 (def ^:icon-id vertical-align-items-start "vertical-align-items-start")
 (def ^:icon-id view-as-icons "view-as-icons")
 (def ^:icon-id view-as-list "view-as-list")
+(def ^:icon-id warichu "warichu")
+(def ^:icon-id warichu-none "warichu-none")
 (def ^:icon-id wrap "wrap")
+(def ^:icon-id writing-mode-horizontal "writing-mode-horizontal")
+(def ^:icon-id writing-mode-vertical "writing-mode-vertical")
 
 (def icon-list
   "A collection of all icons"

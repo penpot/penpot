@@ -6,16 +6,90 @@
 
 (ns frontend-tests.data.workspace-texts-test
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
+   [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.ui.shapes.text.styles :as text.styles]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
+
+(defn- text-content
+  [writing-mode]
+  {:children [{:children [{:writing-mode writing-mode}]}]})
+
+(t/deftest vertical-auto-height-grows-width
+  (let [selrect   {:width 100 :height 200}
+        dimension {:width 240 :height 360}
+        content   (text-content "vertical-rl")]
+    (t/is (= {:width 240 :height 200}
+             (dwwt/resolve-text-size selrect :auto-height content dimension)))))
+
+(t/deftest horizontal-auto-height-grows-height
+  (let [selrect   {:width 100 :height 200}
+        dimension {:width 240 :height 360}
+        content   (text-content "horizontal-tb")]
+    (t/is (= {:width 100 :height 360}
+             (dwwt/resolve-text-size selrect :auto-height content dimension)))))
+
+(t/deftest vertical-grow-type-resize-axes-are-remapped
+  (t/is (= :auto-height
+           (dwm/next-grow-type :auto-width (gpt/point 1 2) true)))
+  (t/is (= :fixed
+           (dwm/next-grow-type :auto-height (gpt/point 2 1) true)))
+  (t/is (= :auto-height
+           (dwm/next-grow-type :auto-height (gpt/point 1 2) true))))
+
+(t/deftest vertical-export-styles-enable-inter-script-spacing
+  (let [vertical   (text.styles/generate-paragraph-styles
+                    nil
+                    {:writing-mode "vertical-rl"
+                     :text-orientation "upright"})
+        horizontal (text.styles/generate-paragraph-styles
+                    nil
+                    {:writing-mode "horizontal-tb"})]
+    (t/is (= "vertical-rl" (aget vertical "writingMode")))
+    (t/is (= "upright" (aget vertical "textOrientation")))
+    (t/is (= "normal" (aget vertical "textAutospace")))
+    (t/is (nil? (aget horizontal "textAutospace")))))
+
+(t/deftest text-export-styles-emit-font-features
+  (let [palt (text.styles/generate-text-styles
+              {:grow-type :fixed}
+              {:font-features "palt"
+               :font-size "20"
+               :fills [{:fill-color "#000000" :fill-opacity 1}]})
+        none (text.styles/generate-text-styles
+              {:grow-type :fixed}
+              {:font-features "none"
+               :font-size "20"
+               :fills [{:fill-color "#000000" :fill-opacity 1}]})]
+    (t/is (= "\"palt\"" (aget palt "fontFeatureSettings")))
+    (t/is (nil? (aget none "fontFeatureSettings")))))
+
+(t/deftest text-export-styles-emit-annotation-clearance
+  (let [style (text.styles/generate-text-styles
+               {:grow-type :fixed}
+               {:annotation-clearance "auto"
+                :line-height "1.2"
+                :ruby "かんじ"
+                :text-emphasis "filled-dot"
+                :font-size "20"
+                :fills [{:fill-color "#000000" :fill-opacity 1}]})]
+    (t/is (= "auto" (aget style "--annotation-clearance")))
+    (t/is (= 2.2 (aget style "lineHeight")))))
+
+(t/deftest wasm-selection-skips-whole-shape-text-node-updates
+  (t/is (false? (dwt/globally-update-text-node-attrs? true true)))
+  (t/is (true? (dwt/globally-update-text-node-attrs? true false)))
+  (t/is (true? (dwt/globally-update-text-node-attrs? false true))))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers

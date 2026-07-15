@@ -154,6 +154,62 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
         let blur_filter = shape.image_filter(1.);
 
+        // Vertical writing paints through the custom vertical pass: drop
+        // shadows, fills+decorations and strokes all derive from the same
+        // laid-out cells, drawn back-to-front onto the single vector canvas.
+        // CHANGEME: extract to function
+        if text_content.is_vertical() {
+            use crate::shapes::text_vertical;
+            let v_bounds = text_content.bounds();
+            // The shadow/stroke passes share one layout, computed only when
+            // at least one of them has something to paint (the fill pass
+            // lays out on its own inside render_overlay_emoji).
+            let drop_shadows = shape.drop_shadow_paints();
+            let strokes: Vec<&Stroke> = shape.visible_strokes().rev().collect();
+            let v_layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
+                let v_max_height = text_vertical::wrap_height(&text_content, v_bounds.height());
+                text_vertical::layout_from_content(&text_content, v_max_height)
+            });
+
+            if let Some(v_layout) = &v_layout {
+                for shadow in &drop_shadows {
+                    text_vertical::paint_drop_shadow(
+                        self.canvas,
+                        v_layout,
+                        &v_bounds,
+                        shape.vertical_align(),
+                        shadow,
+                    );
+                }
+            }
+
+            text::render_overlay_emoji(
+                self.canvas,
+                shape,
+                &mut paragraph_builders,
+                None,
+                blur_filter.as_ref(),
+                None,
+                None,
+            )?;
+
+            if let Some(v_layout) = &v_layout {
+                let selrect = shape.selrect();
+                for stroke in strokes {
+                    text_vertical::paint_stroke(
+                        self.canvas,
+                        v_layout,
+                        &v_bounds,
+                        shape.vertical_align(),
+                        stroke,
+                        &selrect,
+                        blur_filter.as_ref(),
+                    );
+                }
+            }
+            return Ok(());
+        }
+
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).
         let drop_shadows = shape.drop_shadow_paints();
