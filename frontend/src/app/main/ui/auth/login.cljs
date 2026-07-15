@@ -19,7 +19,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.layout.modal :refer [modal* modal-body* modal-header* modal-content* modal-footer*]]
+   [app.main.ui.ds.layout.modal :refer [modal* modal-body* modal-header* modal-content* modal-footer* modal-footer-left* modal-footer-right*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -307,9 +307,14 @@
        [:> modal-content* {}
         [:> :p {} "Hello from the Modal! This is rendered with react-aria-components."]]
        [:> modal-footer* {}
-        [:> button* {:variant "secondary"
-                     :on-click #(reset! modal-open* false)}
-         "Close"]
-        [:> button* {:variant "primary"
-                     :on-click #(reset! modal-open* false)}
-         "Accept"]]]]]))
+        [:> modal-footer-left* {}
+         [:> button* {:variant "destructive"
+                      :on-click #(reset! modal-open* false)}
+          "Destroy"]]
+        [:> modal-footer-right* {}
+         [:> button* {:variant "secondary"
+                      :on-click #(reset! modal-open* false)}
+          "Close"]
+         [:> button* {:variant "primary"
+                      :on-click #(reset! modal-open* false)}
+          "Accept"]]]]]]))

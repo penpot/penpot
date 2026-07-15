@@ -70,6 +70,30 @@
     [:> :div props
      children]))
 
+(def ^:private schema:modal-footer-left
+  [:map
+   [:class {:optional true} [:maybe :string]]])
+
+(mf/defc modal-footer-left*
+  {::mf/schema schema:modal-footer-left}
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props
+                               {:class [class (stl/css :modal-footer-left)]})]
+    [:> :div props
+     children]))
+
+(def ^:private schema:modal-footer-right
+  [:map
+   [:class {:optional true} [:maybe :string]]])
+
+(mf/defc modal-footer-right*
+  {::mf/schema schema:modal-footer-right}
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props
+                               {:class [class (stl/css :modal-footer-right)]})]
+    [:> :div props
+     children]))
+
 (def ^:private schema:modal
   [:map
    [:class {:optional true} [:maybe :string]]

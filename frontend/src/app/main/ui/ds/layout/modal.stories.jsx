@@ -7,8 +7,16 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const { Modal, ModalHeader, ModalContent, ModalFooter, Button, IconButton } =
-  Components;
+const {
+  Modal,
+  ModalHeader,
+  ModalContent,
+  ModalFooter,
+  ModalFooterLeft,
+  ModalFooterRight,
+  Button,
+  IconButton,
+} = Components;
 
 const ModalWrapper = ({ children, ...props }) => {
   const [open, setOpen] = React.useState(props.isOpen ?? false);
@@ -65,6 +73,7 @@ export const Default = {};
 
 export const WithoutTitle = {
   args: {
+    hideClose: true,
     children: (
       <ModalContent>
         <p>This modal has no header or footer.</p>
@@ -101,6 +110,28 @@ export const Large = {
           <p>This is the default modal content.</p>
           <p>You can put any React content inside.</p>
         </ModalContent>
+      </>
+    ),
+  },
+};
+
+export const DestructiveFooter = {
+  args: {
+    children: (
+      <>
+        <ModalHeader title="Delete item" />
+        <ModalContent>
+          <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+        </ModalContent>
+        <ModalFooter>
+          <ModalFooterLeft>
+            <Button variant="destructive">Delete</Button>
+          </ModalFooterLeft>
+          <ModalFooterRight>
+            <Button variant="secondary">Cancel</Button>
+            <Button variant="primary">Accept</Button>
+          </ModalFooterRight>
+        </ModalFooter>
       </>
     ),
   },
