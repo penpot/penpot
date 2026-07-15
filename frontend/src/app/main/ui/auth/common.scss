@@ -4,91 +4,113 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
 
 .auth-form-wrapper {
-  width: 100%;
+  inline-size: 100%;
   padding-block-end: 0;
   display: grid;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
 
+  // Native <form> inside auth-form-wrapper — no class available
   form {
     display: flex;
     flex-direction: column;
-    gap: deprecated.$s-12;
-    margin-top: deprecated.$s-12;
+    gap: var(--sp-m);
+    margin-block-start: var(--sp-m);
   }
 }
 
 .auth-title-wrapper {
-  width: 100%;
+  inline-size: 100%;
   padding-block-end: 0;
   display: grid;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .separator {
-  border-color: var(--modal-separator-background-color);
+  border-color: var(--color-background-quaternary);
   margin: 0;
 }
 
 .auth-title {
-  @include deprecated.big-title-typography;
+  @include use-typography("title-large");
 
-  color: var(--title-foreground-color-hover);
+  line-height: 1.2;
+  color: var(--color-foreground-primary);
 }
 
 .auth-subtitle {
-  @include deprecated.small-title-typography;
+  @include use-typography("title-small");
 
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .auth-tagline {
-  @include deprecated.small-title-typography;
+  @include use-typography("title-small");
 
   margin: 0;
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .form-field {
   --input-width: 100%;
-  --input-height: #{deprecated.$s-40};
+  --input-height: #{$sz-40};
   --input-min-width: 100%;
 }
 
 .buttons-stack {
   display: grid;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .login-button,
 .login-ldap-button {
-  @extend %button-primary;
-  @include deprecated.uppercase-title-typography;
+  @include use-typography("headline-small");
 
-  height: deprecated.$s-40;
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  background-color: var(--color-accent-primary);
+  border: $b-1 solid var(--color-accent-primary);
+  color: var(--color-background-secondary);
+  border-radius: $br-8;
+  min-block-size: $sz-32;
+  block-size: $sz-40;
+  inline-size: 100%;
 }
 
 .go-back {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
   padding: 0;
   border-block-start: none;
 }
 
 .go-back-link {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
 
-  height: deprecated.$s-40;
+  @include use-typography("headline-small");
+
+  block-size: $sz-40;
 }
 
 .links {
   display: grid;
-  gap: deprecated.$s-24;
+  gap: var(--sp-xxl);
 }
 
 .register,
@@ -97,7 +119,7 @@
 .demo-account {
   display: flex;
   justify-content: center;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
   padding: 0;
 }
 
@@ -105,10 +127,10 @@
 .account-text,
 .recovery-text,
 .demo-account-text {
-  @include deprecated.small-title-typography;
+  @include use-typography("title-small");
 
   text-align: right;
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .register-link,
@@ -116,13 +138,13 @@
 .recovery-link,
 .forgot-pass-link,
 .demo-account-link {
-  @include deprecated.small-title-typography;
+  @include use-typography("title-small");
 
   text-align: left;
   background-color: transparent;
   border: none;
   display: inline;
-  color: var(--link-foreground-color);
+  color: var(--color-accent-primary);
 
   &:hover {
     text-decoration: underline;
@@ -137,35 +159,50 @@
 .submit-btn,
 .register-btn,
 .recover-btn {
-  @extend %button-primary;
-  @include deprecated.uppercase-title-typography;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-weight: 500;
+  background-color: var(--color-accent-primary);
+  border: $b-1 solid var(--color-accent-primary);
+  color: var(--color-background-secondary);
+  border-radius: $br-8;
+  min-block-size: $sz-32;
 
-  height: deprecated.$s-40;
-  width: 100%;
+  @include use-typography("headline-small");
+
+  block-size: $sz-40;
+  inline-size: 100%;
 }
 
 .login-btn {
-  @include deprecated.small-title-typography;
+  @include use-typography("title-small");
 
   display: flex;
   align-items: center;
-  gap: deprecated.$s-6;
-  width: 100%;
-  border-radius: deprecated.$br-8;
-  background-color: var(--button-secondary-background-color-rest);
-  color: var(--button-foreground-color-focus);
+  gap: px2rem(6);
+  inline-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 
   span {
-    padding-block-start: deprecated.$s-2;
+    padding-block-start: var(--sp-xxs);
   }
 
   &:hover {
-    color: var(--button-foreground-color-focus);
-    background-color: var(--button-secondary-background-color-hover);
+    color: var(--color-foreground-primary);
+    background-color: var(--color-background-quaternary);
   }
 }
 
 .auth-buttons {
   display: flex;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
