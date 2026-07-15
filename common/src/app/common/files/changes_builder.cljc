@@ -1148,6 +1148,11 @@
         (->> ids
              (map (d/getf objects))
              (filter ctl/grid-layout?)
+             ;; The structure of component copies is owned by the component
+             ;; sync engine: a local cell-driven reorder of a copy's children
+             ;; would break the positional matching between the copy's
+             ;; children and the main's children (referential integrity).
+             (remove ctk/in-component-copy?)
              (reduce reorder-grid changes))]
 
     changes))
