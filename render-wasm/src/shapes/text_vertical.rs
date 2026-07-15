@@ -30,8 +30,8 @@
 // Upright CJK <-> rotated alphanumeric boundaries additionally receive the
 // conventional quarter-em inter-script gap.
 //
-// Deferred to a later phase (documented in the phase handoff): emoji
-// overlays, inner shadows and block-axis vertical-align.
+// Deferred to a later phase (documented in the phase handoff): PDF/vector
+// emoji overlays, inner shadows and block-axis vertical-align.
 
 use skia_safe::{
     self as skia,
@@ -47,6 +47,7 @@ use skia_safe::{
 
 use crate::get_render_state;
 use crate::math::Rect;
+use crate::render::DEFAULT_EMOJI_FONT;
 use crate::shapes::japanese::{classify, pair_rule, JapaneseClass};
 use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
 use crate::shapes::{
@@ -56,11 +57,33 @@ use crate::shapes::{
 };
 use crate::utils::get_fallback_fonts;
 
+/// Emoji ranges recognized by the frontend font-loader. Emoji use their
+/// intrinsic upright presentation in vertical flow instead of rotating like
+/// Latin text under `text-orientation: mixed`.
+fn is_emoji_char(c: char) -> bool {
+    matches!(u32::from(c),
+        0x2300..=0x23FF
+        | 0x2600..=0x27BF
+        | 0x2B00..=0x2BFF
+        | 0x1F000..=0x1FAFF
+    )
+}
+
+fn span_font_families(span: &TextSpan, fallback_families: &[String]) -> Vec<String> {
+    let mut families = vec![
+        format!("{}", span.font_family),
+        DEFAULT_EMOJI_FONT.to_string(),
+    ];
+    families.extend(fallback_families.iter().cloned());
+    families
+}
+
 /// Characters that stay upright in vertical flow: kana, kanji, CJK
-/// punctuation and full-width forms. Everything else rotates sideways
+/// punctuation, full-width forms and emoji. Everything else rotates sideways
 /// under `text-orientation: mixed`.
 pub fn is_upright_char(c: char) -> bool {
-    matches!(u32::from(c),
+    is_emoji_char(c)
+        || matches!(u32::from(c),
         0x2E80..=0x2FDF   // CJK radicals, Kangxi radicals
         | 0x3000..=0x303F // CJK symbols and punctuation
         | 0x3040..=0x30FF // hiragana, katakana
@@ -75,7 +98,7 @@ pub fn is_upright_char(c: char) -> bool {
         | 0xFF00..=0xFF60 // full-width forms
         | 0xFFE0..=0xFFE6 // full-width signs
         | 0x20000..=0x2FA1F // CJK extensions B..F
-    )
+        )
 }
 
 /// Characters whose horizontal glyph needs a vertical alternate. `vert` /
@@ -139,8 +162,18 @@ pub fn segment_by_orientation(text: &str, orientation: TextOrientation) -> Vec<S
     let mut utf16_offset = 0;
     for c in text.chars() {
         let upright = orientation == TextOrientation::Upright || is_upright_char(c);
+        let emoji = is_emoji_char(c);
+        // CJK and emoji are both upright, but keep a shaping boundary between
+        // them so the segment probe can explicitly select the emoji family.
+        // The provider's generic fallback iterator does not reliably switch
+        // from a registered CJK face to a registered color-emoji face.
         match segments.last_mut() {
-            Some(last) if last.upright == upright => last.text.push(c),
+            Some(last)
+                if last.upright == upright
+                    && last.text.chars().next_back().is_some_and(is_emoji_char) == emoji =>
+            {
+                last.text.push(c)
+            }
             _ => segments.push(Segment {
                 text: c.to_string(),
                 utf16_start: utf16_offset,
@@ -1681,8 +1714,7 @@ pub fn layout_vertical(
             // provider does no per-character fallback, so pick the first
             // family that covers the whole segment (falling back to one that
             // covers its first character).
-            let mut families = vec![format!("{}", span.font_family)];
-            families.extend(fallback_families.iter().cloned());
+            let families = span_font_families(span, fallback_families);
 
             let orientation = span.text_orientation;
             let letter_spacing = span.letter_spacing;
@@ -2360,8 +2392,7 @@ pub fn layout_vertical(
 
             let ruby_font_size = span.font_size * span.ruby_size.scale();
             let probe = ruby_text.chars().next().unwrap_or(' ');
-            let mut families = vec![format!("{}", span.font_family)];
-            families.extend(fallback_families.iter().cloned());
+            let families = span_font_families(span, fallback_families);
             let typeface = families
                 .iter()
                 .filter_map(|family| {
@@ -2487,8 +2518,7 @@ pub fn layout_vertical(
                 continue;
             };
             let mark_font_size = span.font_size * EMPHASIS_FONT_SCALE;
-            let mut families = vec![format!("{}", span.font_family)];
-            families.extend(fallback_families.iter().cloned());
+            let families = span_font_families(span, fallback_families);
             let typeface = families
                 .iter()
                 .filter_map(|family| {
@@ -3113,8 +3143,7 @@ pub fn paint_horizontal_ruby(
             continue;
         }
         let ruby_font_size = span.font_size * span.ruby_size.scale();
-        let mut families = vec![format!("{}", span.font_family)];
-        families.extend(fallback_families.iter().cloned());
+        let families = span_font_families(span, &fallback_families);
         let paint = merge_fills(&span.fills, bounds);
         let shifted_range = span_range;
         let rects = laid_out.get_rects_for_range(
@@ -4128,6 +4157,22 @@ mod tests {
         assert!(!is_upright_char('1'));
         assert!(!is_upright_char(' '));
         assert!(!is_upright_char('.'));
+    }
+
+    #[test]
+    fn emoji_stay_upright_in_vertical_text() {
+        for emoji in ['😆', '💦', '🙇'] {
+            assert!(is_upright_char(emoji));
+        }
+
+        let segments = segment_by_orientation("久😆元💦🙇", TextOrientation::Mixed);
+        assert_eq!(segments.len(), 4);
+        assert!(segments.iter().all(|segment| segment.upright));
+        assert_eq!(segments[1].text, "😆");
+        assert_eq!(segments[3].text, "💦🙇");
+
+        let families = span_font_families(&make_span("😆"), &[]);
+        assert_eq!(families[1], DEFAULT_EMOJI_FONT);
     }
 
     #[test]
