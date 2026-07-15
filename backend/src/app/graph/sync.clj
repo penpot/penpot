@@ -29,7 +29,7 @@
    :svg-raw "SVGRaw"})
 
 (def ^:private supported-change-types
-  #{:add-obj :mod-obj :del-obj :add-page :del-page :mod-page})
+  #{:add-obj :mod-obj :del-obj :add-page :del-page :mod-page :mov-objects})
 
 (defn- node-label
   [table]
@@ -167,6 +167,13 @@
        "(p:" (node-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
        "DELETE r;"))
 
+(defn- set-edge-position-statement
+  [{:keys [from-table from-id to-table to-id position]}]
+  (str "MATCH (s:" (node-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
+       "-[r:IsChildOf]->"
+       "(p:" (node-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+       "SET r.position = " (ladybug/format-int position) ";"))
+
 (defn- set-shape-name-statement
   [table shape-id name]
   (str "MATCH (s:" (node-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
@@ -226,6 +233,102 @@
   (-> index
       (assoc-in [:pages id] {:id id :name name :index index})
       (update :children update doc-id (fnil conj #{}) id)))
+
+(defn- index-move-shape!
+  [index shape-id {:keys [parent-id parent-table position page-id]}]
+  (let [old-parent (get-in index [:shapes shape-id :parent-id])]
+    (-> index
+        (assoc-in [:shapes shape-id :parent-id] parent-id)
+        (assoc-in [:shapes shape-id :parent-table] parent-table)
+        (assoc-in [:shapes shape-id :position] position)
+        (cond-> page-id (assoc-in [:shapes shape-id :page-id] page-id))
+        (update :children update old-parent #(disj (or % #{}) shape-id))
+        (update :children update parent-id (fnil conj #{}) shape-id))))
+
+(defn- mov-object-ids
+  [shapes]
+  (let [coll (cond
+                (nil? shapes) []
+                (sequential? shapes) shapes
+                (uuid? shapes) [shapes]
+                (map? shapes) (if-let [id (or (:id shapes) (get shapes "id"))]
+                                [id]
+                                [])
+                :else [])]
+    (into []
+          (keep (fn [shape]
+                  (when shape
+                    (if (uuid? shape) shape (:id shape)))))
+          coll)))
+
+(defn- mov-position
+  [idx parent-id {:keys [index after-shape]}]
+  (cond
+    (some? index) (long index)
+    after-shape (let [after-pos (get-in idx [:shapes after-shape :position])]
+                  (if (some? after-pos)
+                    (inc (long after-pos))
+                    (default-position idx parent-id)))
+    :else (default-position idx parent-id)))
+
+(defn- apply-mov-objects
+  [index {:keys [shapes page-id] :as change}]
+  (let [shape-ids (mov-object-ids shapes)
+        parent    (resolve-parent-for-add index
+                                            (assoc change
+                                                   :frame-id (:parent-id change)
+                                                   :page-id page-id))]
+    (cond
+      (empty? shape-ids)
+      {:index index :statements [] :applied? true}
+
+      (not parent)
+      {:index index :statements [] :applied? false :reason :missing-parent}
+
+      :else
+      (let [base-position (mov-position index (:parent-id parent) change)
+            parent-id     (:parent-id parent)
+            parent-table  (:parent-table parent)
+            page-id'      (or page-id
+                              (when (= parent-table "Page") parent-id)
+                              (get-in index [:shapes (first shape-ids) :page-id]))]
+        (loop [index       index
+               statements  []
+               shape-ids   (map-indexed vector shape-ids)]
+          (if-let [[offset shape-id] (first shape-ids)]
+            (if-let [shape (get-in index [:shapes shape-id])]
+              (let [position   (+ base-position (long offset))
+                    same-edge? (and (= parent-id (:parent-id shape))
+                                    (= parent-table (:parent-table shape))
+                                    (= position (:position shape)))
+                    edge       {:from-table   (:table shape)
+                                :from-id      shape-id
+                                :to-table     parent-table
+                                :to-id        parent-id
+                                :position     position}
+                    statements (if same-edge?
+                                 statements
+                                 (into statements
+                                       (if (= parent-id (:parent-id shape))
+                                         [(set-edge-position-statement edge)]
+                                         [(delete-edge-statement
+                                           {:from-table   (:table shape)
+                                            :from-id      shape-id
+                                            :to-table     (:parent-table shape)
+                                            :to-id        (:parent-id shape)})
+                                          (create-edge-statement edge)])))
+                    index      (if same-edge?
+                                 index
+                                 (index-move-shape! index shape-id
+                                                    {:parent-id    parent-id
+                                                     :parent-table parent-table
+                                                     :position     position
+                                                     :page-id      page-id'}))]
+                (recur index statements (rest shape-ids)))
+              (recur index statements (rest shape-ids)))
+            {:index      index
+             :statements statements
+             :applied?   true}))))))
 
 (defn- index-remove-page!
   [index page-id]
@@ -376,6 +479,7 @@
     :add-page (apply-add-page index change)
     :del-page (apply-del-page index change)
     :mod-page (apply-mod-page index change)
+    :mov-objects (apply-mov-objects index change)
     {:index index :statements [] :applied? false :reason :unsupported-type}))
 
 (defn apply-changes!
@@ -399,7 +503,7 @@
         (recur index
                (cond-> applied applied? (conj (:type change)))
                (cond-> skipped (not applied?) (conj {:type (:type change) :reason reason}))
-               (into stmts statements)
+               (cond-> stmts applied? (into statements))
                (rest changes)))
       (let [final-stmts (cond-> stmts
                           (and (seq applied) (:doc-id index))
