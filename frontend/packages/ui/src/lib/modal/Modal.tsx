@@ -23,7 +23,7 @@ interface ModalProps {
   children: ReactNode;
   trigger?: ReactNode;
   isDismissable?: boolean;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'xlarge';
   className?: string;
 }
 
@@ -36,7 +36,14 @@ export function Modal({
   size = 'medium',
   className,
 }: ModalProps) {
-  const sizeClass = size === 'small' ? styles.modalSmall : size === 'large' ? styles.modalLarge : styles.modalMedium;
+  const sizeClass =
+    size === 'small'
+      ? styles.modalSmall
+      : size === 'large'
+        ? styles.modalLarge
+        : size === 'xlarge'
+          ? styles.modalXlarge
+          : styles.modalMedium;
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
