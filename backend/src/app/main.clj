@@ -284,6 +284,7 @@
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
     ::session/manager (ig/ref ::session/manager)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)
     ::sto/storage     (ig/ref ::sto/storage)
     ::setup/props     (ig/ref ::setup/props)}
 

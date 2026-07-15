@@ -393,6 +393,16 @@
               :code :graph-session-not-loaded
               :hint "load a file graph before reloading")))
 
+(defn graph-sync-status-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (if-let [status (graph.debug/sync-status profile-id)]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (t/encode-str status {:type :json-verbose})}
+    {::yres/status  404
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (t/encode-str {:error "no-session"} {:type :json-verbose})}))
+
 (defn graph-query-handler
   [_cfg {:keys [params ::session/profile-id]}]
   (let [query (:query params)]
@@ -662,6 +672,7 @@
      ["/graph-query" {:handler (partial graph-query-handler cfg)}]
      ["/graph-unload" {:handler (partial graph-unload-handler cfg)}]
      ["/graph-reload" {:handler (partial graph-reload-handler cfg)}]
+     ["/graph-sync-status" {:handler (partial graph-sync-status-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
 

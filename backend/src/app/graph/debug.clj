@@ -8,10 +8,14 @@
   "In-memory Ladybug sessions for the debug graph console."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.graph.ingest :as graph.ingest]
    [app.graph.ladybug :as ladybug]
-   [clojure.string :as str])
+   [app.graph.sync :as graph.sync]
+   [app.msgbus :as mbus]
+   [clojure.string :as str]
+   [promesa.exec.csp :as sp])
   (:import
    com.ladybugdb.Connection
    com.ladybugdb.Database))
@@ -29,7 +33,11 @@
   (str profile-id))
 
 (defn- destroy-session!
-  [{:keys [conn db]}]
+  [{:keys [conn db sync-ch msgbus]}]
+  (when sync-ch
+    (sp/close! sync-ch)
+    (when msgbus
+      (mbus/purge! msgbus [sync-ch])))
   (when conn
     (ex/ignoring (.close ^Connection conn)))
   (when db
@@ -51,16 +59,73 @@
    :truncated? truncated?
    :row-count (count rows)})
 
+(defn- apply-file-change!
+  [conn profile-id {:keys [changes revn file-id]}]
+  (try
+    (some-> (get @sessions (session-key profile-id))
+            (as-> current
+                  (when (= file-id (:file-id current))
+                    (let [result (graph.sync/apply-changes!
+                                  conn (:index current) changes revn)
+                          sync-at (ct/now)]
+                      (swap! sessions assoc-in [(session-key profile-id) :index]
+                             (:index result))
+                      (swap! sessions update-in [(session-key profile-id) :meta]
+                             (fn [meta]
+                               (cond-> (-> meta
+                                          (assoc-in [:sync :last-at] sync-at)
+                                          (assoc-in [:sync :last-applied] (:applied result))
+                                          (assoc-in [:sync :last-skipped] (:skipped result)))
+                                 (seq (:applied result))
+                                 (assoc :revn (:revn result)))))
+                      (when (seq (:skipped result))
+                        (l/dbg :hint "graph sync skipped changes"
+                               :file-id (str file-id)
+                               :revn revn
+                               :skipped (:skipped result)))))))
+    (catch Throwable cause
+      (l/wrn :hint "graph sync failed"
+             :file-id (str file-id)
+             :cause cause)
+      (swap! sessions assoc-in [(session-key profile-id) :meta :sync :error]
+             (ex-message cause)))))
+
+(defn- start-sync-loop!
+  [{:keys [conn profile-id file-id] :as session}]
+  (if-let [msgbus (:msgbus session)]
+    (let [sync-ch (sp/chan :buf (sp/dropping-buffer 64))]
+      (mbus/sub! msgbus :topic file-id :chan sync-ch)
+      (sp/go-loop []
+        (when-let [message (sp/take! sync-ch)]
+          (when (= :file-change (:type message))
+            (apply-file-change! conn profile-id message)))
+        (recur))
+      (assoc session :sync-ch sync-ch))
+    session))
+
 (defn session-info
   "Return a public view of the current session for `profile-id`, if any."
   [profile-id]
-  (when-let [{:keys [file-id meta loaded-at]} (get @sessions (session-key profile-id))]
+  (when-let [{:keys [file-id meta loaded-at index]} (get @sessions (session-key profile-id))]
     {:file-id        file-id
      :name           (:name meta)
      :revn           (:revn meta)
+     :graph-revn     (:revn index)
      :schema-version (:schema-version meta)
      :projection     (:projection meta)
+     :sync           (:sync meta)
      :loaded-at      (ct/format-inst loaded-at :iso)}))
+
+(defn sync-status
+  "Return incremental sync status for the active session."
+  [profile-id]
+  (when-let [session (get @sessions (session-key profile-id))]
+    (let [{:keys [file-id meta index loaded-at]} session]
+      {:file-id    file-id
+       :revn       (:revn meta)
+       :graph-revn (:revn index)
+       :sync       (:sync meta)
+       :loaded-at  (ct/format-inst loaded-at :iso)})))
 
 (defn unload-session!
   "Close and discard the in-memory graph for `profile-id`."
@@ -74,22 +139,29 @@
   [cfg profile-id file-id]
   (unload-session! profile-id)
   (let [^Database db (Database.)
-        ^Connection conn (Connection. db)]
+        ^Connection conn (Connection. db)
+        msgbus     (::mbus/msgbus cfg)]
     (.setQueryTimeout conn 0)
     (try
-      (let [meta (graph.ingest/ingest-on-connection! cfg conn file-id
-                                                     :db-path ":memory:"
-                                                     :skip-stats? true
-                                                     :skip-validation? true)]
-        (swap! sessions assoc (session-key profile-id)
-               {:db db
-                :conn conn
-                :file-id file-id
-                :meta meta
-                :loaded-at (ct/now)})
+      (let [meta  (graph.ingest/ingest-on-connection! cfg conn file-id
+                                                      :db-path ":memory:"
+                                                      :skip-stats? true
+                                                      :skip-validation? true)
+            index (graph.sync/build-index file-id (:revn meta) (:projection meta))
+            session
+            (-> {:db db
+                 :conn conn
+                 :file-id file-id
+                 :meta meta
+                 :index index
+                 :msgbus msgbus
+                 :profile-id profile-id
+                 :loaded-at (ct/now)}
+                start-sync-loop!)]
+        (swap! sessions assoc (session-key profile-id) session)
         meta)
       (catch Throwable cause
-        (destroy-session! {:conn conn :db db})
+        (destroy-session! {:conn conn :db db :msgbus msgbus})
         (throw cause)))))
 
 (defn query-session!
