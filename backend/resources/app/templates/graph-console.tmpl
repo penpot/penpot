@@ -172,6 +172,7 @@ Graph Console
              style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff;"></div>
         <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
         <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
+        <button type="button" id="graph-filter-reset" style="display: none;">Show full graph</button>
       </fieldset>
     </div>
     {% endif %}
@@ -306,6 +307,10 @@ Graph Console
   // Above this many nodes the view is not rendered automatically; the
   // "Render anyway" button forces it (~1.5 s per 2k nodes, measured).
   const RENDER_GUARD_NODES = 4000;
+  // G6's entrance/update animation is nice didactics on small graphs but
+  // the performance killer at scale (>2 min at 1700 nodes vs ~1.5 s off);
+  // keep it only below this node count.
+  const ANIMATE_MAX_NODES = 100;
   const LAYOUT_XS = 40;   // horizontal leaf slot spacing
   const LAYOUT_YS = 70;   // vertical rank (depth) spacing
 
@@ -338,9 +343,11 @@ Graph Console
   const graphViewStatus = document.getElementById("graph-view-status");
   let g6graph = null;
   let g6graphLayout = null;
+  let g6graphAnimated = null;
   let refetchTimer = null;
   let lastGraphData = null;
   let renderForced = false;
+  let graphFilterIds = null;
 
   function currentLayoutName() {
     const stored = localStorage.getItem("graph-layout");
@@ -446,9 +453,10 @@ Graph Console
 
   function renderGraph(g6data) {
     const layoutName = currentLayoutName();
-    if (g6graph && g6graphLayout !== layoutName) {
-      // Layout switch: recreate the graph (cheap with animation off);
-      // preset-tree <-> real-layout cannot be swapped on a live instance.
+    const animate = g6data.nodes.length <= ANIMATE_MAX_NODES;
+    if (g6graph && (g6graphLayout !== layoutName || g6graphAnimated !== animate)) {
+      // Layout or animation-mode switch: recreate the graph (cheap);
+      // neither is swappable on a live instance.
       try { g6graph.destroy(); } catch (_err) {}
       g6graph = null;
     }
@@ -459,15 +467,14 @@ Graph Console
       });
     }
     g6graphLayout = layoutName;
+    g6graphAnimated = animate;
     const layoutCfg = LAYOUTS[layoutName];
     const opts = {
       container: "graph-canvas",
       data: g6data,
       autoFit: "view",
       autoResize: true,
-      // Entrance/update animation is the performance killer: 1700 nodes
-      // took >2 min animated vs ~1.5 s without (measured, headless).
-      animation: false,
+      animation: animate,
       padding: 20,
       node: {
         type: function (d) { return nodeStyle(d.data.table).glyph; },
@@ -525,18 +532,53 @@ Graph Console
       + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
   }
 
+  // Query filter: induced subgraph of the already-exported graph, selected
+  // by node ids found in the last Cypher result. No reconstruction from the
+  // query result is needed — ids are enough to slice the cached export.
+  function filteredGraphData() {
+    if (!graphFilterIds) return lastGraphData;
+    const keep = {};
+    const nodes = lastGraphData.nodes.filter(function (n) {
+      if (graphFilterIds.has(n.id)) { keep[n.id] = true; return true; }
+      return false;
+    });
+    const edges = lastGraphData.edges.filter(function (e) {
+      return keep[e.source] && keep[e.target];
+    });
+    return { nodes: nodes, edges: edges,
+             revn: lastGraphData.revn, truncated: lastGraphData.truncated };
+  }
+
+  function applyQueryFilter(ids) {
+    if (!lastGraphData) return;
+    const present = new Set();
+    lastGraphData.nodes.forEach(function (n) { if (ids.has(n.id)) present.add(n.id); });
+    if (!present.size) {
+      graphViewStatus.textContent = "query result matches no nodes in the loaded graph";
+      return;
+    }
+    graphFilterIds = present;
+    renderCurrent();
+  }
+
   function renderCurrent() {
     if (!lastGraphData) return;
-    const data = lastGraphData;
+    const data = filteredGraphData();
     const anywayBtn = document.getElementById("graph-render-anyway");
+    const filterBtn = document.getElementById("graph-filter-reset");
+    if (filterBtn) filterBtn.style.display = graphFilterIds ? "inline" : "none";
+    const filterNote = graphFilterIds
+      ? " — query filter: " + data.nodes.length + " of "
+        + lastGraphData.nodes.length + " nodes"
+      : "";
     if (data.nodes.length > RENDER_GUARD_NODES && !renderForced) {
       graphViewStatus.textContent =
-        graphStatusText(data) + " — too large to render automatically";
+        graphStatusText(data) + filterNote + " — too large to render automatically";
       if (anywayBtn) anywayBtn.style.display = "inline";
       return;
     }
     if (anywayBtn) anywayBtn.style.display = "none";
-    graphViewStatus.textContent = graphStatusText(data);
+    graphViewStatus.textContent = graphStatusText(data) + filterNote;
     renderGraph(toG6Data(data, collapsedComboIds(), foldEnabled()));
   }
 
@@ -547,6 +589,9 @@ Graph Console
     }
     fetch("/dbg/actions/graph-data")
       .then(function (resp) {
+        if (resp.status === 404) {
+          throw new Error("no graph session (backend restarted?) — reload a file");
+        }
         if (!resp.ok) throw new Error("graph-data HTTP " + resp.status);
         return resp.json();
       })
@@ -697,6 +742,17 @@ Graph Console
     }
   }
 
+  let wsClosing = false;
+  let wsReconnectTimer = null;
+
+  function scheduleReconnect() {
+    if (wsClosing || wsReconnectTimer) return;
+    wsReconnectTimer = setTimeout(function () {
+      wsReconnectTimer = null;
+      connect();
+    }, 3000);
+  }
+
   function connect() {
     ws = new WebSocket(wsUrl);
     wsStatus.textContent = "connecting…";
@@ -704,6 +760,9 @@ Graph Console
     ws.addEventListener("open", function () {
       wsStatus.textContent = "subscribed";
       subscribe();
+      // catch up on anything missed while disconnected
+      refreshSyncStatus();
+      scheduleGraphRefetch();
     });
 
     ws.addEventListener("message", function (event) {
@@ -711,7 +770,8 @@ Graph Console
     });
 
     ws.addEventListener("close", function () {
-      wsStatus.textContent = "disconnected";
+      wsStatus.textContent = wsClosing ? "disconnected" : "disconnected — retrying…";
+      scheduleReconnect();
     });
 
     ws.addEventListener("error", function () {
@@ -768,6 +828,24 @@ Graph Console
 
     html += "</tbody></table></fieldset>";
     output.innerHTML = html;
+
+    // Offer to view the result as an induced subgraph: any UUID appearing
+    // in any result cell selects that node in the loaded graph.
+    const uuidRe = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+    const ids = new Set();
+    (result.rows || []).forEach(function (row) {
+      row.forEach(function (cell) {
+        const found = String(cell).match(uuidRe);
+        if (found) found.forEach(function (m) { ids.add(m.toLowerCase()); });
+      });
+    });
+    if (ids.size) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Show result in graph view (" + ids.size + " ids)";
+      btn.addEventListener("click", function () { applyQueryFilter(ids); });
+      output.appendChild(btn);
+    }
   }
 
   const queryForm = document.getElementById("graph-query-form");
@@ -857,12 +935,21 @@ Graph Console
     });
   }
 
+  const filterResetBtn = document.getElementById("graph-filter-reset");
+  if (filterResetBtn) {
+    filterResetBtn.addEventListener("click", function () {
+      graphFilterIds = null;
+      renderCurrent();
+    });
+  }
+
   connect();
   refreshSyncStatus();
   renderGraphLegend();
   refetchGraph();
 
   window.addEventListener("beforeunload", function () {
+    wsClosing = true;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(encodeUnsubscribe(fileId));
       ws.close();
