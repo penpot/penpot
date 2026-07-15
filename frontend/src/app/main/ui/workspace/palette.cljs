@@ -170,7 +170,7 @@
               :class (dm/str size-classname " " (stl/css-case :palettes true
                                                               :wide any-palette?
                                                               :hidden-bts hide-palettes?))
-              :style #js {"--height" (dm/str size "px")}}
+              :style #js {"--height" (dm/str "calc(" size "px * var(--ui-scale))")}}
 
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-pointer-down

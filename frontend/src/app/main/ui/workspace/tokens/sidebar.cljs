@@ -69,7 +69,7 @@
      [:> token-set-context-menu*]
      [:section {:data-testid "token-management-sidebar"
                 :class (stl/css :token-management-section-wrapper)
-                :style {"--resize-height" (str resize-height "px")}}
+                :style {"--resize-height" (str "calc(" resize-height "px * var(--ui-scale))")}}
       [:> themes-header*]
       [:div {:class (stl/css :sidebar-header)}
        [:> title-bar* {:title (tr "labels.sets")}
