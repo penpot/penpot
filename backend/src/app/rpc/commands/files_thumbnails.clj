@@ -374,61 +374,6 @@
 
 ;; --- MUTATION COMMAND: create-file-thumbnail
 
-(defn- create-file-thumbnail
-  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [file-id revn props media] :as params}]
-  (media/validate-media-type! media)
-  (media/validate-media-size! media)
-
-  (let [file  (bfc/get-file cfg file-id
-                            :include-deleted? true
-                            :load-data? false)
-
-        props (db/tjson (or props {}))
-        path  (:path media)
-        mtype (:mtype media)
-        hash  (sto/calculate-hash path)
-        data  (-> (sto/content path)
-                  (sto/wrap-with-hash hash))
-        tnow  (ct/now)
-
-        media (sto/put-object! storage
-                               {::sto/content data
-                                ::sto/deduplicate? true
-                                ::sto/touched-at tnow
-                                :content-type mtype
-                                :bucket "file-thumbnail"})
-
-        thumb (db/get* conn :file-thumbnail
-                       {:file-id file-id
-                        :revn revn}
-                       {::db/remove-deleted false
-                        ::sql/for-update true})]
-
-    (if (some? thumb)
-      (do
-        ;; We mark the old media id as touched if it does not match
-        (when (not= (:id media) (:media-id thumb))
-          (sto/touch-object! storage (:media-id thumb)))
-
-        (db/update! conn :file-thumbnail
-                    {:media-id (:id media)
-                     :deleted-at (:deleted-at file)
-                     :updated-at tnow
-                     :props props}
-                    {:file-id file-id
-                     :revn revn}))
-
-      (db/insert! conn :file-thumbnail
-                  {:file-id file-id
-                   :revn revn
-                   :created-at tnow
-                   :updated-at tnow
-                   :deleted-at (:deleted-at file)
-                   :props props
-                   :media-id (:id media)}))
-
-    media))
-
 (def ^:private
   schema:create-file-thumbnail
   [:map {:title "create-file-thumbnail"}
@@ -448,12 +393,57 @@
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-file-thumbnail}
 
-  ;; FIXME: do not run the thumbnail upload inside a transaction
-
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (files/check-edition-permissions! conn profile-id file-id)
-                    (when-not (db/read-only? conn)
-                      (let [media (create-file-thumbnail cfg params)]
-                        {:uri (files/resolve-public-uri (:id media))
-                         :id (:id media)})))))
+  (media/validate-media-type! (:media params))
+  (media/validate-media-size! (:media params))
+
+  (db/run! cfg files/check-edition-permissions! profile-id file-id)
+
+  (let [storage (::sto/storage cfg)
+        file    (bfc/get-file cfg file-id :include-deleted? true :load-data? false)
+        props   (db/tjson (or (:props params) {}))
+        {:keys [path mtype]} (:media params)
+        hash    (sto/calculate-hash path)
+        data    (-> (sto/content path)
+                    (sto/wrap-with-hash hash))
+        tnow    (ct/now)
+
+        media   (sto/put-object! storage
+                                 {::sto/content data
+                                  ::sto/deduplicate? true
+                                  ::sto/touched-at tnow
+                                  :content-type mtype
+                                  :bucket "file-thumbnail"})
+
+        revn    (:revn params)
+
+        result  (db/tx-run! cfg
+                            (fn [{:keys [::db/conn]}]
+                              (when-not (db/read-only? conn)
+                                (let [thumb (db/get* conn :file-thumbnail
+                                                     {:file-id file-id :revn revn}
+                                                     {::db/remove-deleted false
+                                                      ::sql/for-update true})]
+                                  (if (some? thumb)
+                                    (do
+                                      (when (not= (:id media) (:media-id thumb))
+                                        (sto/touch-object! storage (:media-id thumb)))
+                                      (db/update! conn :file-thumbnail
+                                                  {:media-id (:id media)
+                                                   :deleted-at (:deleted-at file)
+                                                   :updated-at tnow
+                                                   :props props}
+                                                  {:file-id file-id :revn revn}))
+                                    (db/insert! conn :file-thumbnail
+                                                {:file-id file-id
+                                                 :revn revn
+                                                 :created-at tnow
+                                                 :updated-at tnow
+                                                 :deleted-at (:deleted-at file)
+                                                 :props props
+                                                 :media-id (:id media)}))
+                                  media))))]
+
+    (when result
+      {:uri (files/resolve-public-uri (:id result))
+       :id (:id result)})))
