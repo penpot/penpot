@@ -24,6 +24,12 @@ Variant masters are main instances and component roots. Their descendants may th
 
 Masters are not normally touched through `set-shape-attr`, but touched flags can appear on master shapes through cloning/duplication paths. `add-touched-from-ref-chain` in `app.common.logic.variants` unions touched flags from ancestors into the copy being processed, so upstream/master touched state can affect downstream switch behavior.
 
+## Swap slots and positional matching
+
+- A swap slot (stored via `ctk/set-swap-slot`, a `:touched` group `swap-slot-<uuid>`) marks a copy sub-head that was SWAPPED to another component; `compare-children` then pairs it to the main child by slot instead of by `shape-ref`.
+- Copy sub-heads without a slot are paired to main children by `shape-ref` (seek, not index). `find-near-match` (positional) is only a validator/repair heuristic; validity requires membership of the ref among the near-main parent's children, not index equality (`mem:common/file-change-validation-migration-subtleties`).
+- Copy child ORDER converges to the main's via the async sync (`moved` branch of `compare-children`); local code must never reorder copy children directly (guards in `:mov-objects`/`:reorder-children`).
+
 ## Cloning paths
 
 `make-component-instance` in `app.common.types.container` produces a clean component copy through `update-new-shape`, dissociating attrs such as `:touched`, `:variant-id`, and `:variant-name` on cloned shapes.
