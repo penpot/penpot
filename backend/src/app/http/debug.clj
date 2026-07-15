@@ -21,6 +21,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
+   [app.graph.debug :as graph.debug]
+   [app.graph.ingest :as graph.ingest]
    [app.http.session :as session]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
@@ -33,6 +35,7 @@
    [app.storage.tmp :as tmp]
    [app.util.template :as tmpl]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
    [emoji.core :as emj]
    [integrant.core :as ig]
@@ -326,6 +329,113 @@
                          "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
 
 
+(defn graph-export-handler
+  "Build (or rebuild) the Ladybug graph for a file and stream the `.lbug`
+  database. MVP: synchronous ingest on each request."
+  [cfg {:keys [params]}]
+  (let [file-id (some-> params :file-id parse-uuid)]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments
+                :hint "missing file-id"))
+
+    (let [{:keys [db-path]} (graph.ingest/ingest-file! cfg file-id :skip-stats? true)]
+      (when-not (fs/exists? db-path)
+        (ex/raise :type :internal
+                  :code :graph-file-not-found
+                  :hint "graph database file missing after ingest"
+                  :file-id (str file-id)
+                  :db-path db-path))
+      {::yres/status  200
+       ::yres/body    (io/input-stream db-path)
+       ::yres/headers {"content-type" "application/octet-stream"
+                       "content-disposition" (str "attachment; filename=" file-id ".lbug")}})))
+
+(defn- graph-console-response
+  [profile-id data]
+  {::yres/status  200
+   ::yres/headers {"content-type" "text/html; charset=utf-8"
+                   "x-robots-tag" "noindex"}
+   ::yres/body    (-> (io/resource "app/templates/graph-console.tmpl")
+                      (tmpl/render (assoc data :version (:full cf/version))))})
+
+(defn graph-console-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (graph-console-response profile-id
+                          (graph.debug/console-context profile-id)))
+
+(defn graph-load-handler
+  [cfg {:keys [params ::session/profile-id]}]
+  (let [file-id (some-> (:file-id params) parse-uuid)]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments
+                :hint "missing file-id"))
+    (graph.debug/load-session! cfg profile-id file-id)
+    {::yres/status  302
+     ::yres/headers {"location" "/dbg/graph"}}))
+
+(defn graph-unload-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (graph.debug/unload-session! profile-id)
+  {::yres/status  302
+   ::yres/headers {"location" "/dbg/graph"}})
+
+(defn graph-reload-handler
+  "Re-ingest the currently loaded file into the in-memory graph session."
+  [cfg {:keys [::session/profile-id]}]
+  (if-let [file-id (some-> (graph.debug/session-info profile-id) :file-id)]
+    (do
+      (graph.debug/load-session! cfg profile-id file-id)
+      {::yres/status  302
+       ::yres/headers {"location" "/dbg/graph"}})
+    (ex/raise :type :not-found
+              :code :graph-session-not-loaded
+              :hint "load a file graph before reloading")))
+
+(defn graph-sync-status-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (if-let [status (graph.debug/sync-status profile-id)]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (t/encode-str status {:type :json-verbose})}
+    {::yres/status  404
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (t/encode-str {:error "no-session"} {:type :json-verbose})}))
+
+(defn- json-request?
+  [request]
+  (some-> request
+          (yreq/get-header "accept")
+          (str/includes? "application/json")))
+
+(defn graph-query-handler
+  [_cfg {:keys [params ::session/profile-id] :as request}]
+  (let [query (:query params)]
+    (try
+      (let [result (graph.debug/query-session! profile-id query)]
+        (if (json-request? request)
+          {::yres/status  200
+           ::yres/headers {"content-type" "application/json; charset=utf-8"}
+           ::yres/body    (t/encode-str {:query         query
+                                         :query-result result}
+                                        {:type :json-verbose})}
+          (graph-console-response profile-id
+                                  (graph.debug/console-context profile-id
+                                                               :query query
+                                                               :query-result result))))
+      (catch Throwable e
+        (let [error (or (:hint (ex-data e)) (ex-message e))]
+          (if (json-request? request)
+            {::yres/status  200
+             ::yres/headers {"content-type" "application/json; charset=utf-8"}
+             ::yres/body    (t/encode-str {:query query :error error}
+                                          {:type :json-verbose})}
+            (graph-console-response profile-id
+                                    (graph.debug/console-context profile-id
+                                                                 :query query
+                                                                 :error error))))))))
+
 (defn import-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
   (when-not (contains? params :file)
@@ -563,6 +673,7 @@
     ["" {:handler (partial index-handler cfg)}]
     ["/health" {:handler (partial health-handler cfg)}]
     ["/changelog" {:handler (partial changelog-handler cfg)}]
+    ["/graph" {:handler (partial graph-console-handler cfg)}]
     ["/error/:id" {:handler (partial error-handler cfg)}]
     ["/error" {:handler (partial error-list-handler cfg)}]
     ["/actions" {:middleware [[errors]]}
@@ -573,6 +684,12 @@
      ["/handle-team-features"
       {:handler (partial handle-team-features cfg)}]
      ["/file-export" {:handler (partial export-handler cfg)}]
+     ["/graph-export" {:handler (partial graph-export-handler cfg)}]
+     ["/graph-load" {:handler (partial graph-load-handler cfg)}]
+     ["/graph-query" {:handler (partial graph-query-handler cfg)}]
+     ["/graph-unload" {:handler (partial graph-unload-handler cfg)}]
+     ["/graph-reload" {:handler (partial graph-reload-handler cfg)}]
+     ["/graph-sync-status" {:handler (partial graph-sync-status-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
 

@@ -1,0 +1,390 @@
+{% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+Graph Console
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div class="title">
+    <h1>GRAPH CONSOLE (VERSION: {{version}})</h1>
+  </div>
+</nav>
+<main class="dashboard">
+  <section class="widget">
+    <p><a href="/dbg">&larr; Back to debug</a></p>
+
+    <fieldset>
+      <legend>Load graph in memory</legend>
+      <desc>
+        Projects the Penpot file into an in-memory Ladybug database for this
+        admin session. Loading a new file replaces the previous one.
+      </desc>
+      <form method="post" action="/dbg/actions/graph-load">
+        <div class="row">
+          <input type="text" style="width:420px" name="file-id"
+                 placeholder="file-id"
+                 value="{% if session %}{{session.file-id}}{% endif %}" />
+        </div>
+        <div class="row">                 
+          <input type="submit" value="Load" />
+        </div>
+      </form>
+      {% if session %}
+      <form method="post" action="/dbg/actions/graph-unload">
+        <div class="row">
+          <input type="submit" value="Unload" />
+        </div>
+      </form>
+      {% endif %}
+    </fieldset>
+
+    {% if session %}
+    <fieldset>
+      <legend>Loaded session</legend>
+      <desc>
+        <p>
+          File: <b>{{session.name}}</b> ({{session.file-id}})<br />
+          Loaded at revision: <b>{{session.revn}}</b><br />
+          Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
+          Schema: <b>{{session.schema-version}}</b><br />
+          Loaded at: <b>{{session.loaded-at}}</b>
+        </p>
+        <p id="graph-sync-status">
+          Feed: <b id="graph-ws-status">connecting…</b>
+          <span id="graph-sync-error" style="display:none; margin-left: 1em; color: #b91c1c;"></span>
+        </p>
+        <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload">
+          <input type="submit" value="Full reload (fallback)" />
+        </form>
+        {% if session.projection.stats %}
+        <p>
+          Projection:
+          documents={{session.projection.stats.documents}},
+          pages={{session.projection.stats.pages}},
+          shapes={{session.projection.stats.shapes}}
+        </p>
+        {% endif %}
+      </desc>
+    </fieldset>
+
+    <fieldset>
+      <legend>File changes (live)</legend>
+      <desc>
+        Subscribes to the workspace WebSocket feed for visibility. The backend
+        applies supported changes incrementally to the in-memory Ladybug graph
+        via msgbus (<code>:file-change</code>).
+      </desc>
+      <div id="graph-changelog-empty" style="color: #666;">Waiting for changes…</div>
+      <table id="graph-changelog" border="1" cellpadding="4" cellspacing="0"
+             style="border-collapse: collapse; width: 100%; display: none;">
+        <thead>
+          <tr>
+            <th>revn</th>
+            <th>changes</th>
+          </tr>
+        </thead>
+        <tbody id="graph-changelog-body"></tbody>
+      </table>
+    </fieldset>
+
+    <fieldset>
+      <legend>Cypher query</legend>
+      <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
+        <div class="row">
+          <textarea name="query" rows="8" style="width:100%; font-family: monospace;">{{query}}</textarea>
+        </div>
+        <div class="row">
+          <input type="submit" value="Run query" />
+        </div>
+      </form>
+    </fieldset>
+
+    <div id="graph-query-output">
+      {% if error %}
+      <fieldset>
+        <legend>Error</legend>
+        <pre>{{error}}</pre>
+      </fieldset>
+      {% endif %}
+
+      {% if query-result %}
+      <fieldset>
+        <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
+        <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+          <thead>
+            <tr>
+              {% for column in query-result.columns %}
+              <th>{{column}}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in query-result.rows %}
+            <tr>
+              {% for cell in row %}
+              <td><code>{{cell}}</code></td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </fieldset>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+</main>
+
+{% if session %}
+<script>
+(function () {
+  const fileId = "{{session.file-id}}";
+  const sessionId = crypto.randomUUID();
+  const wsScheme = location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = wsScheme + "//" + location.host
+    + "/ws/notifications?session-id=" + sessionId;
+
+  const wsStatus = document.getElementById("graph-ws-status");
+  const syncRevnEl = document.getElementById("graph-sync-revn");
+  const syncErrorEl = document.getElementById("graph-sync-error");
+  const changelog = document.getElementById("graph-changelog");
+  const changelogBody = document.getElementById("graph-changelog-body");
+  const changelogEmpty = document.getElementById("graph-changelog-empty");
+
+  let ws = null;
+
+  function encodeTransitUuid(uuid) {
+    return "~u" + uuid;
+  }
+
+  function encodeSubscribe(fileId) {
+    return JSON.stringify({
+      "~:type": "~:subscribe-file",
+      "~:file-id": encodeTransitUuid(fileId)
+    });
+  }
+
+  function encodeUnsubscribe(fileId) {
+    return JSON.stringify({
+      "~:type": "~:unsubscribe-file",
+      "~:file-id": encodeTransitUuid(fileId)
+    });
+  }
+
+  function parseTransitValue(value) {
+    if (typeof value === "string") {
+      if (value.startsWith("~:")) return value.slice(2);
+      if (value.startsWith("~u")) return value.slice(2);
+    }
+    if (Array.isArray(value)) return value.map(parseTransitValue);
+    if (value && typeof value === "object") return parseTransitMap(value);
+    return value;
+  }
+
+  function parseTransitMap(obj) {
+    const out = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const name = key.startsWith("~:") ? key.slice(2) : key;
+      out[name] = parseTransitValue(value);
+    }
+    return out;
+  }
+
+  function summarizeChange(change) {
+    const parts = [change.type];
+    if (change.id) parts.push("id=" + change.id);
+    if (change.obj && change.obj.type) parts.push("shape=" + change.obj.type);
+    if (change.operations && change.operations.length) {
+      const attrs = change.operations
+        .map(function (op) { return op.attr; })
+        .filter(Boolean);
+      if (attrs.length) parts.push("attrs=" + attrs.join(","));
+    }
+    return parts.join(" ");
+  }
+
+  function summarizeChanges(changes) {
+    if (!changes || !changes.length) return "(empty)";
+    return changes.map(summarizeChange).join("; ");
+  }
+
+  function summarizeSkipped(skipped) {
+    if (!skipped) return "";
+    const items = Array.isArray(skipped) ? skipped : [skipped];
+    return items.map(function (item) {
+      if (!item || typeof item !== "object") return String(item);
+      const type = item.type || "unknown";
+      const reason = item.reason ? " (" + item.reason + ")" : "";
+      return String(type) + reason;
+    }).join("; ");
+  }
+
+  function refreshSyncStatus() {
+    fetch("/dbg/actions/graph-sync-status")
+      .then(function (resp) { return resp.text(); })
+      .then(function (text) {
+        const status = parseTransitMap(JSON.parse(text));
+        if (status["graph-revn"] !== undefined) {
+          syncRevnEl.textContent = String(status["graph-revn"]);
+        }
+        if (status.sync && status.sync.error) {
+          syncErrorEl.style.display = "inline";
+          syncErrorEl.textContent = "sync error: " + status.sync.error;
+        } else if (status.sync && status.sync["last-skipped"]
+                   && summarizeSkipped(status.sync["last-skipped"])) {
+          syncErrorEl.style.display = "inline";
+          syncErrorEl.textContent =
+            "some changes skipped: "
+            + summarizeSkipped(status.sync["last-skipped"])
+            + " (use full reload if needed)";
+        } else {
+          syncErrorEl.style.display = "none";
+          syncErrorEl.textContent = "";
+        }
+      })
+      .catch(function () {});
+  }
+
+  function appendChange(revn, summary) {
+    changelogEmpty.style.display = "none";
+    changelog.style.display = "table";
+
+    const row = document.createElement("tr");
+    const revnCell = document.createElement("td");
+    const changesCell = document.createElement("td");
+
+    revnCell.textContent = String(revn);
+    changesCell.textContent = summary;
+    row.appendChild(revnCell);
+    row.appendChild(changesCell);
+    changelogBody.appendChild(row);
+    row.scrollIntoView({ block: "nearest" });
+  }
+
+  function handleMessage(raw) {
+    let msg;
+    try {
+      msg = parseTransitMap(JSON.parse(raw));
+    } catch (_err) {
+      return;
+    }
+
+    if (msg.type !== "file-change" || msg["file-id"] !== fileId) return;
+
+    appendChange(msg.revn, summarizeChanges(msg.changes));
+    setTimeout(refreshSyncStatus, 150);
+  }
+
+  function subscribe() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(encodeSubscribe(fileId));
+    }
+  }
+
+  function connect() {
+    ws = new WebSocket(wsUrl);
+    wsStatus.textContent = "connecting…";
+
+    ws.addEventListener("open", function () {
+      wsStatus.textContent = "subscribed";
+      subscribe();
+    });
+
+    ws.addEventListener("message", function (event) {
+      handleMessage(event.data);
+    });
+
+    ws.addEventListener("close", function () {
+      wsStatus.textContent = "disconnected";
+    });
+
+    ws.addEventListener("error", function () {
+      wsStatus.textContent = "error";
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderQueryOutput(data) {
+    const output = document.getElementById("graph-query-output");
+    if (!output) return;
+
+    if (data.error) {
+      output.innerHTML =
+        "<fieldset><legend>Error</legend>"
+        + "<pre>" + escapeHtml(data.error) + "</pre></fieldset>";
+      return;
+    }
+
+    const result = data["query-result"];
+    if (!result) {
+      output.innerHTML = "";
+      return;
+    }
+
+    const truncated = result["truncated?"] ? ", truncated" : "";
+    let html =
+      "<fieldset><legend>Results ("
+      + escapeHtml(String(result["row-count"]))
+      + " rows" + truncated + ")</legend>"
+      + "<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\""
+      + " style=\"border-collapse: collapse; width: 100%;\">"
+      + "<thead><tr>";
+
+    (result.columns || []).forEach(function (column) {
+      html += "<th>" + escapeHtml(column) + "</th>";
+    });
+    html += "</tr></thead><tbody>";
+
+    (result.rows || []).forEach(function (row) {
+      html += "<tr>";
+      row.forEach(function (cell) {
+        html += "<td><code>" + escapeHtml(cell) + "</code></td>";
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody></table></fieldset>";
+    output.innerHTML = html;
+  }
+
+  const queryForm = document.getElementById("graph-query-form");
+  if (queryForm) {
+    queryForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const formData = new FormData(queryForm);
+      fetch("/dbg/actions/graph-query", {
+        method: "POST",
+        headers: { "Accept": "application/json" },
+        body: formData
+      })
+        .then(function (resp) { return resp.text(); })
+        .then(function (text) {
+          renderQueryOutput(parseTransitMap(JSON.parse(text)));
+        })
+        .catch(function (err) {
+          renderQueryOutput({ error: String(err) });
+        });
+    });
+  }
+
+  connect();
+  refreshSyncStatus();
+
+  window.addEventListener("beforeunload", function () {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(encodeUnsubscribe(fileId));
+      ws.close();
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
