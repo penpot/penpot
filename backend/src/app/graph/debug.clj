@@ -73,6 +73,7 @@
                       (swap! sessions update-in [(session-key profile-id) :meta]
                              (fn [meta]
                                (cond-> (-> meta
+                                          (update :sync dissoc :error)
                                           (assoc-in [:sync :last-at] sync-at)
                                           (assoc-in [:sync :last-applied] (:applied result))
                                           (assoc-in [:sync :last-skipped] (:skipped result)))
