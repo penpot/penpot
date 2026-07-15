@@ -53,6 +53,7 @@ export PENPOT_FLAGS="\
        enable-file-validation \
        enable-file-schema-validation \
        enable-redis-cache \
+       enable-link-unfurl \
        enable-subscriptions";
 
 # Uncomment for nexus integration testing
