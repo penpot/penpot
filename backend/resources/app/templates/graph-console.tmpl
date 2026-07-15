@@ -207,6 +207,17 @@ Graph Console
     return changes.map(summarizeChange).join("; ");
   }
 
+  function summarizeSkipped(skipped) {
+    if (!skipped) return "";
+    const items = Array.isArray(skipped) ? skipped : [skipped];
+    return items.map(function (item) {
+      if (!item || typeof item !== "object") return String(item);
+      const type = item.type || "unknown";
+      const reason = item.reason ? " (" + item.reason + ")" : "";
+      return String(type) + reason;
+    }).join("; ");
+  }
+
   function refreshSyncStatus() {
     fetch("/dbg/actions/graph-sync-status")
       .then(function (resp) { return resp.text(); })
@@ -219,9 +230,12 @@ Graph Console
           syncErrorEl.style.display = "inline";
           syncErrorEl.textContent = "sync error: " + status.sync.error;
         } else if (status.sync && status.sync["last-skipped"]
-                   && status.sync["last-skipped"].length) {
+                   && summarizeSkipped(status.sync["last-skipped"])) {
           syncErrorEl.style.display = "inline";
-          syncErrorEl.textContent = "some changes skipped (use full reload if needed)";
+          syncErrorEl.textContent =
+            "some changes skipped: "
+            + summarizeSkipped(status.sync["last-skipped"])
+            + " (use full reload if needed)";
         } else {
           syncErrorEl.style.display = "none";
           syncErrorEl.textContent = "";
