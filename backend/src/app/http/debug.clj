@@ -352,7 +352,7 @@
                        "content-disposition" (str "attachment; filename=" file-id ".lbug")}})))
 
 (defn- graph-console-response
-  [profile-id data]
+  [data]
   {::yres/status  200
    ::yres/headers {"content-type" "text/html; charset=utf-8"
                    "x-robots-tag" "noindex"}
@@ -361,8 +361,7 @@
 
 (defn graph-console-handler
   [_cfg {:keys [::session/profile-id]}]
-  (graph-console-response profile-id
-                          (graph.debug/console-context profile-id)))
+  (graph-console-response (graph.debug/console-context profile-id)))
 
 (defn graph-load-handler
   [cfg {:keys [params ::session/profile-id]}]
@@ -420,8 +419,7 @@
            ::yres/body    (t/encode-str {:query         query
                                          :query-result result}
                                         {:type :json-verbose})}
-          (graph-console-response profile-id
-                                  (graph.debug/console-context profile-id
+          (graph-console-response (graph.debug/console-context profile-id
                                                                :query query
                                                                :query-result result))))
       (catch Throwable e
@@ -431,8 +429,7 @@
              ::yres/headers {"content-type" "application/json; charset=utf-8"}
              ::yres/body    (t/encode-str {:query query :error error}
                                           {:type :json-verbose})}
-            (graph-console-response profile-id
-                                    (graph.debug/console-context profile-id
+            (graph-console-response (graph.debug/console-context profile-id
                                                                  :query query
                                                                  :error error))))))))
 
@@ -645,7 +642,12 @@
   (letfn [(handle-error [cause]
             (when-let [data (ex-data cause)]
               (when (= :validation (:type data))
-                (str "Error: " (or (:hint data) (ex-message cause)) "\n"))))]
+                (let [hint (or (:hint data) (ex-message cause))
+                      explain (ex/explain data)]
+                  (str "Error: " hint
+                       (when (and explain (not (str/includes? hint explain)))
+                         (str "\n" explain))
+                       "\n")))))]
     {:name ::errors
      :compile
      (fn [& _params]

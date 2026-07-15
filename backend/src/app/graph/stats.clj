@@ -7,13 +7,7 @@
 (ns app.graph.stats
   (:require
    [app.graph.ladybug :as ladybug]
-   [app.graph.schema :as schema]))
-
-(defn- node-label-for-match
-  [table]
-  (if (#{"Group" "Boolean"} table)
-    (str "`" table "`")
-    table))
+   [app.graph.schema.nodes :as nodes]))
 
 (defn- count-on-connection
   [conn statement]
@@ -23,12 +17,12 @@
   "Return node/edge counts using an open Ladybug connection."
   [conn]
   {:nodes (into {}
-                (map (fn [{:keys [name]}]
-                       [name (count-on-connection
-                              conn
-                              (str "MATCH (n:" (node-label-for-match name) ") "
-                                   "RETURN count(n) AS " name "_c;"))])
-                     schema/node-tables))
+                (map (fn [table]
+                       [table (count-on-connection
+                               conn
+                               (str "MATCH (n:" (nodes/match-label table) ") "
+                                    "RETURN count(n) AS " table "_c;"))])
+                     (map :table nodes/node-types)))
    :edges {:IsChildOf (count-on-connection
                        conn
                        "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")}})

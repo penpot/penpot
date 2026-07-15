@@ -73,10 +73,10 @@
                       (swap! sessions update-in [(session-key profile-id) :meta]
                              (fn [meta]
                                (cond-> (-> meta
-                                          (update :sync dissoc :error)
-                                          (assoc-in [:sync :last-at] sync-at)
-                                          (assoc-in [:sync :last-applied] (:applied result))
-                                          (assoc-in [:sync :last-skipped] (:skipped result)))
+                                           (update :sync dissoc :error)
+                                           (assoc-in [:sync :last-at] sync-at)
+                                           (assoc-in [:sync :last-applied] (:applied result))
+                                           (assoc-in [:sync :last-skipped] (:skipped result)))
                                  (seq (:applied result))
                                  (assoc :revn (:revn result)))))
                       (when (seq (:skipped result))
@@ -143,6 +143,7 @@
         ^Connection conn (Connection. db)
         msgbus     (::mbus/msgbus cfg)]
     (.setQueryTimeout conn 0)
+    (ladybug/ensure-extensions! conn)
     (try
       (let [meta  (graph.ingest/ingest-on-connection! cfg conn file-id
                                                       :db-path ":memory:"

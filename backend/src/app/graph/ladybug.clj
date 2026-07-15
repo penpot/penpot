@@ -10,6 +10,7 @@
   Uses the embedded Java API (`com.ladybugdb/lbug`)."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [clojure.string :as str]
    [datoteka.fs :as fs])
   (:import
@@ -57,15 +58,36 @@
   [n]
   (str (long n)))
 
+(defn format-number
+  [n]
+  (if (== n (long n))
+    (format-int n)
+    (str (double n))))
+
+(defn format-json
+  [v]
+  (str "json('" (escape-cypher-string (json/encode v)) "')"))
+
 (defn format-value
   [v]
   (cond
     (nil? v)     "NULL"
     (uuid? v)    (format-uuid v)
     (string? v)  (format-string v)
-    (number? v)  (format-int v)
+    (number? v)  (format-number v)
     (boolean? v) (if v "true" "false")
+    (keyword? v) (format-string (name v))
+    (map? v)     (format-json v)
+    (coll? v)    (format-json v)
     :else        (format-string (str v))))
+
+(defn format-typed-value
+  [ladybug-type v]
+  (cond
+    (= ladybug-type "JSON") (format-json v)
+    (and (string? ladybug-type)
+         (str/ends-with? ladybug-type "[]")) (format-json v)
+    :else (format-value v)))
 
 (defn- ensure-semicolon
   [statement]
@@ -146,6 +168,27 @@
           (with-open [^Value value (.getValue tuple 0)]
             (value->clj value)))))))
 
+(defn- extension-statement-ok?
+  [err-msg]
+  (let [err (str/lower-case (or err-msg ""))]
+    (or (str/includes? err "already loaded")
+        (str/includes? err "already installed"))))
+
+(defn- run-extension-statement!
+  [^Connection conn statement]
+  (let [cypher (ensure-semicolon statement)]
+    (with-open [^QueryResult result (.query conn cypher)]
+      (when-not (.isSuccess result)
+        (let [err (.getErrorMessage result)]
+          (when-not (extension-statement-ok? err)
+            (check-success! result cypher)))))))
+
+(defn ensure-extensions!
+  "Install and load Ladybug extensions required by graph ingest and sync."
+  [^Connection conn]
+  (run-extension-statement! conn "INSTALL json;")
+  (run-extension-statement! conn "LOAD json;"))
+
 (defn- run-statements!
   [^Connection conn statements]
   (doseq [statement statements]
@@ -176,6 +219,7 @@
       (let [^Connection conn (Connection. db)]
         (try
           (.setQueryTimeout conn (long query-timeout-ms))
+          (ensure-extensions! conn)
           (f conn)
           (finally
             (.close conn))))

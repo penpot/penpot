@@ -12,48 +12,34 @@
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
-   [app.graph.project.specs :as specs]
-   [app.graph.schema :as graph.schema]))
+   [app.graph.schema.nodes :as nodes]))
 
 (def root-frame-id
   uuid/zero)
 
-(def ^:private shape-type->table
-  {:frame   "Frame"
-   :rect    "Rectangle"
-   :group   "Group"
-   :circle  "Circle"
-   :path    "Path"
-   :text    "Text"
-   :bool    "Boolean"
-   :image   "Image"
-   :svg-raw "SVGRaw"})
-
 (defn- document-attrs
   [file data]
-  {:id       (or (:id data) (:id file))
-   :name     (or (:name data) (:name file) "Untitled")
-   :version  (long (or (:version data) 67))
-   :revision (long (or (:revn file) 0))})
+  (-> file
+      (assoc :id (or (:id data) (:id file)))
+      (dissoc :data)))
 
 (defn- page-attrs
   [page index]
-  (cond-> {:id   (:id page)
-           :name (:name page)}
-    (some? index) (assoc :index (long index))))
+  (-> page
+      (dissoc :objects)
+      (cond-> (some? index) (assoc :index (long index)))))
 
 (defn- shape-table
   [shape]
-  (get shape-type->table (keyword (:type shape))))
+  (nodes/table-for-type (:type shape)))
 
 (defn- shape-node-attrs
-  [shape]
-  (specs/check-shape-node {:id   (:id shape)
-                           :name (:name shape)}))
+  [table shape]
+  (nodes/project-attrs table shape))
 
 (defn- container-table?
   [table]
-  (contains? graph.schema/container-node-tables table))
+  (contains? nodes/container-tables table))
 
 (defn- child-shape-ids
   "Child ids in Penpot z-order (reversed from the stored :shapes list)."
@@ -73,7 +59,7 @@
   [objects acc table shape parent-table parent-id position]
   (let [shape-id (:id shape)
         acc'     (-> acc
-                     (update-in [:nodes table] (fnil conj []) (shape-node-attrs shape))
+                     (update-in [:nodes table] (fnil conj []) (shape-node-attrs table shape))
                      (update :edges conj {:from-table table
                                           :from-id    shape-id
                                           :to-table   parent-table
@@ -109,7 +95,7 @@
   (let [page-id     (:id page)
         objects     (:objects page)
         root        (get objects root-frame-id)
-        page-node   (specs/check-page (page-attrs page position))
+        page-node   (nodes/project-attrs "Page" (page-attrs page position))
         acc'        (-> acc
                         (update-in [:nodes "Page"] (fnil conj []) page-node)
                         (update :edges conj {:from-table "Page"
@@ -128,7 +114,7 @@
   Returns `{:nodes {table [attrs ...]} :edges [...] :stats {...}}`."
   [data file]
   (let [doc-id  (or (:id data) (:id file))
-        doc-node (specs/check-document (document-attrs file data))
+        doc-node (nodes/project-attrs "Document" (document-attrs file data))
         pages   (seq (reverse (:pages data)))
         acc0    (-> (initial-acc)
                     (update-in [:nodes "Document"] (fnil conj []) doc-node)
