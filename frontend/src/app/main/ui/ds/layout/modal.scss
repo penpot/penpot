@@ -19,8 +19,10 @@
   color: var(--color-foreground-primary);
 }
 
-.modal-header-close {
-  margin-inline-start: auto;
+.modal-close {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-s);
 }
 
 .modal-content {
