@@ -20,6 +20,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
@@ -300,7 +301,6 @@
 (defn current-paragraph-values
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
-    ;; CHANGEME: is this correct? the v3-current-text-values is not here
     (some? editor-styles) (merge (shape-current-values shape txt/is-paragraph-node? attrs)
                                  (select-keys editor-styles attrs))
     (some? editor-instance) (v2-current-text-values options)
@@ -451,7 +451,6 @@
   (ptk/reify ::update-paragraph-attrs
     ptk/UpdateEvent
     (update [_ state]
-      ;; CHANGEME: check if the without nils is necesary here
       (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
 
     ptk/WatchEvent
@@ -959,8 +958,8 @@
                   ;; apply them to every paragraph so they cannot diverge
                   ;; from the first paragraph (which decides the flow).
                   whole-shape-attrs
-                  (select-keys attrs (d/concat-vec txt/text-writing-mode-attrs
-                                                   txt/text-orientation-attrs))
+                  (select-keys attrs (d/concat-vec jl/text-writing-mode-attrs
+                                                   jl/text-orientation-attrs))
 
                   selection-attrs
                   (apply dissoc attrs (keys whole-shape-attrs))]

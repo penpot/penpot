@@ -30,6 +30,7 @@ mod strokes;
 mod svg_attrs;
 mod svgraw;
 mod text;
+mod text_japanese;
 pub mod text_paths;
 pub mod text_vertical;
 mod transform;
@@ -53,6 +54,7 @@ pub use strokes::*;
 pub use svg_attrs::*;
 pub use svgraw::*;
 pub use text::*;
+pub use text_japanese::*;
 pub use transform::*;
 
 use crate::math::{self, Bounds, Matrix, Point};

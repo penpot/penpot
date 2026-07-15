@@ -398,7 +398,6 @@
          :else
          (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
 
-    ;; CHANGEME: All these new method need to be added to the plugin-api-test-suite
     :fontFeatures
     {:this true
      :get

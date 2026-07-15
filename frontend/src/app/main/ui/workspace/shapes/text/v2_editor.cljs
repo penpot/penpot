@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.types.color :as color]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
@@ -296,7 +297,7 @@
         (dom/set-style! container-node "--text-editor-caret-color" text-color)))
 
     [:div
-     {:class (dm/str (cur/get-text (:rotation shape) (txt/vertical-text-content? content))
+     {:class (dm/str (cur/get-text (:rotation shape) (jl/vertical-text-content? content))
                      " "
                      (stl/css :text-editor-container))
       :ref container-ref

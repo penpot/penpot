@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.util.dom :as dom]
    [app.util.text.content.styles :as styles]))
 
@@ -91,11 +92,8 @@
 (defn get-root-styles
   [root]
   (let [styles (get-styles-from-attrs root txt/root-attrs txt/default-text-attrs)
-        ;; CHANGEME: simplify this comment
-        ;; Mirroring the shape's writing mode on the root makes paragraph
-        ;; blocks stack right-to-left in the DOM editor. It is not read
-        ;; back from the root (root-attrs does not include it).
-        writing-mode (txt/content-writing-mode root)]
+        ;; Stack vertical paragraphs right-to-left in the DOM editor.
+        writing-mode (jl/content-writing-mode root)]
     (cond-> styles
       (some? writing-mode) (assoc :writing-mode writing-mode))))
 

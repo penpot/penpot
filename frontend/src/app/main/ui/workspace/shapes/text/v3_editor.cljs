@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -405,7 +406,7 @@
          :on-focus on-focus
          :on-blur on-blur
          :id "text-editor-wasm-input"
-         :class (dm/str (cur/get-text (:rotation shape) (txt/vertical-text-content? (:content shape)))
+         :class (dm/str (cur/get-text (:rotation shape) (jl/vertical-text-content? (:content shape)))
                         " "
                         (stl/css :text-editor-container))
          :data-testid "text-editor-container"}]]]]))

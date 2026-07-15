@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as cc]
-   [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.ui.shapes.text.styles :as sts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -170,7 +170,7 @@
         ;; Vertical writing anchors columns to the box edges, so the oversized
         ;; auto-grow box used to avoid horizontal wrapping/clipping would push
         ;; the content off-position. Use the real selrect size instead.
-        vertical? (txt/vertical-text-content? content)
+        vertical? (jl/vertical-text-content? content)
 
         [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 

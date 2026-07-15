@@ -11,6 +11,7 @@
     [app.common.flags :as flags]
     [app.common.types.color :as clr]
     [app.common.types.fills :as types.fills]
+    [app.common.types.text.japanese-layout :as jl]
     [clojure.set :as set]
     [clojure.walk :as walk]
     [cuerdas.core :as str]))
@@ -42,56 +43,6 @@
 (def text-direction-attrs
   [:text-direction])
 
-;; CHANGEME: All these new attributes can be moved to a new namespace in app.common.types.text.japanese-layout
-
-;; Vertical writing (tategaki). Absent values behave as "horizontal-tb"
-;; and "mixed", so plain horizontal text never stores these attrs.
-(def text-writing-mode-attrs
-  [:writing-mode])
-
-(def text-orientation-attrs
-  [:text-orientation])
-
-(def text-combine-upright-attrs
-  [:text-combine-upright])
-
-;; Emphasis mark (圏点 / bouten) applied per span; absent means no emphasis.
-(def text-emphasis-attrs
-  [:text-emphasis])
-
-;; Ruby (furigana) annotation text and customization carried per span.
-(def text-ruby-attrs
-  [:ruby
-   :ruby-size
-   :ruby-align
-   :ruby-overhang
-   :ruby-side])
-
-;; Warichu (割注): the span renders as two half-size lines stacked inline
-;; within one column position. Values "warichu" / "none"; absent means off.
-(def text-warichu-attrs
-  [:warichu])
-
-(def text-font-features-attrs
-  [:font-features])
-
-;; Annotation collision policy. "none" preserves the explicit line height;
-;; "auto" reserves an additional half-em layer for ruby and emphasis.
-(def text-annotation-clearance-attrs
-  [:annotation-clearance])
-
-(defn content-writing-mode
-  "Writing mode of a text content. Stored per paragraph but treated as a
-   whole-shape property: the first paragraph decides the flow (mirrors
-   TextContent::is_vertical in wasm)."
-  [content]
-  (dm/get-in content [:children 0 :children 0 :writing-mode]))
-
-(defn vertical-text-content?
-  "True when the text content flows vertically (vertical-rl)."
-  [content]
-  (= "vertical-rl" (content-writing-mode content)))
-
 (def text-spacing-attrs
   [:line-height
    :letter-spacing])
@@ -118,20 +69,20 @@
   (d/concat-vec
    text-align-attrs
    text-direction-attrs
-   text-writing-mode-attrs
-   text-orientation-attrs))
+   jl/text-writing-mode-attrs
+   jl/text-orientation-attrs))
 
 (def text-node-attrs
   (d/concat-vec
    text-typography-attrs
    text-font-attrs
    text-spacing-attrs
-   text-combine-upright-attrs
-   text-emphasis-attrs
-   text-ruby-attrs
-   text-warichu-attrs
-   text-font-features-attrs
-   text-annotation-clearance-attrs
+   jl/text-combine-upright-attrs
+   jl/text-emphasis-attrs
+   jl/text-ruby-attrs
+   jl/text-warichu-attrs
+   jl/text-font-features-attrs
+   jl/text-annotation-clearance-attrs
    text-decoration-attrs
    text-transform-attrs
    text-fills))

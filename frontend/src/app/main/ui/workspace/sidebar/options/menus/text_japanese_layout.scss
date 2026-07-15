@@ -1,0 +1,87 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+
+.writing-mode-options,
+.text-orientation-options,
+.text-combine-upright-options,
+.warichu-options {
+  block-size: $sz-32;
+}
+
+.ruby-advanced-options {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.ruby-options {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-xs);
+}
+
+.ruby-input {
+  flex: 1;
+}
+
+.ruby-advanced-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-xs);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+}
+
+.text-emphasis-options,
+.font-features-options,
+.annotation-clearance-options {
+  inline-size: 100%;
+}
+
+.japanese-layout-options,
+.japanese-layout-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.japanese-layout-options {
+  padding-block-start: var(--sp-xs);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}
+
+.japanese-layout-toggle {
+  display: flex;
+  align-items: center;
+  min-block-size: $sz-32;
+}
+
+.japanese-icon-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.japanese-select-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+}
+
+.japanese-option-label {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}

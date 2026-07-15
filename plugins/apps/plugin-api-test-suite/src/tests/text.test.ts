@@ -81,6 +81,38 @@ describe('Text', () => {
     expect(t.direction).toBe('rtl');
   });
 
+  test('Japanese paragraph layout properties round-trip', (ctx) => {
+    const t = text(ctx, '日本語');
+    t.writingMode = 'vertical-rl';
+    t.textOrientation = 'upright';
+    expect(t.writingMode).toBe('vertical-rl');
+    expect(t.textOrientation).toBe('upright');
+  });
+
+  test('Japanese span layout properties round-trip', (ctx) => {
+    const t = text(ctx, '日本語');
+    t.textCombineUpright = 'digits2';
+    t.textEmphasis = 'filled-dot';
+    t.warichu = 'warichu';
+    t.fontFeatures = 'vpal';
+    t.annotationClearance = 'auto';
+    t.ruby = 'にほんご';
+    t.rubySize = 'third';
+    t.rubyAlign = 'center';
+    t.rubyOverhang = 'none';
+    t.rubySide = 'under';
+    expect(t.textCombineUpright).toBe('digits2');
+    expect(t.textEmphasis).toBe('filled-dot');
+    expect(t.warichu).toBe('warichu');
+    expect(t.fontFeatures).toBe('vpal');
+    expect(t.annotationClearance).toBe('auto');
+    expect(t.ruby).toBe('にほんご');
+    expect(t.rubySize).toBe('third');
+    expect(t.rubyAlign).toBe('center');
+    expect(t.rubyOverhang).toBe('none');
+    expect(t.rubySide).toBe('under');
+  });
+
   test('font identity and variant setters accept a real font/variant', (ctx) => {
     const t = text(ctx);
     const font = ctx.penpot.fonts.all[0];
@@ -170,6 +202,31 @@ describe('Text', () => {
       range.textDecoration = 'line-through';
       expect(range.textTransform).toBe('lowercase');
       expect(range.textDecoration).toBe('line-through');
+    });
+
+    test('range Japanese layout properties round-trip', (ctx) => {
+      const t = text(ctx, '日本語');
+      const range = t.getRange(0, 3);
+      range.textCombineUpright = 'all';
+      range.textEmphasis = 'open-circle';
+      range.warichu = 'warichu';
+      range.fontFeatures = 'palt';
+      range.annotationClearance = 'auto';
+      range.ruby = 'にほんご';
+      range.rubySize = 'quarter';
+      range.rubyAlign = 'space-between';
+      range.rubyOverhang = 'none';
+      range.rubySide = 'under';
+      expect(range.textCombineUpright).toBe('all');
+      expect(range.textEmphasis).toBe('open-circle');
+      expect(range.warichu).toBe('warichu');
+      expect(range.fontFeatures).toBe('palt');
+      expect(range.annotationClearance).toBe('auto');
+      expect(range.ruby).toBe('にほんご');
+      expect(range.rubySize).toBe('quarter');
+      expect(range.rubyAlign).toBe('space-between');
+      expect(range.rubyOverhang).toBe('none');
+      expect(range.rubySide).toBe('under');
     });
 
     test('range fills round-trip', (ctx) => {

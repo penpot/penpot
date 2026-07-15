@@ -15,7 +15,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
-   [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
@@ -501,7 +501,7 @@
                                 (keyword))
                    horizontal-resize? (contains? #{:right :left} position)
                    vertical-resize?   (contains? #{:top :bottom} position)
-                   vertical-text?     (txt/vertical-text-content? (get shape :content))
+                   vertical-text?     (jl/vertical-text-content? (get shape :content))
                    wrap-axis-resize?  (if vertical-text?
                                         vertical-resize?
                                         horizontal-resize?)

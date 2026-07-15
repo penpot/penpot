@@ -2578,11 +2578,11 @@ pub fn layout_vertical(
 }
 
 /// Emphasis-mark (圏点) font size relative to the base em.
-const EMPHASIS_FONT_SCALE: f32 = super::text::EMPHASIS_FONT_SCALE;
+const EMPHASIS_FONT_SCALE: f32 = super::text_japanese::EMPHASIS_FONT_SCALE;
 
 /// Warichu (割注) sub-line font size relative to the base em; two half-size
 /// sub-columns side by side fill the base em width.
-const WARICHU_FONT_SCALE: f32 = super::text::WARICHU_FONT_SCALE;
+const WARICHU_FONT_SCALE: f32 = super::text_japanese::WARICHU_FONT_SCALE;
 
 /// Char index where a warichu run splits into its two sub-lines: the
 /// balanced midpoint (first line longer), nudged so the second sub-line
@@ -2622,7 +2622,7 @@ fn utf16_range_allows_emphasis(text: &str, start: usize, end: usize) -> bool {
             break;
         }
         let len = c.len_utf16();
-        if offset + len > start && super::text::emphasis_char_allowed(c) {
+        if offset + len > start && super::text_japanese::emphasis_char_allowed(c) {
             return true;
         }
         offset += len;

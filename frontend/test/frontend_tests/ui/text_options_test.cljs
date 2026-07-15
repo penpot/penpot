@@ -10,7 +10,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.ds.controls.select :as select]
    [app.main.ui.shapes.text.styles :as text-styles]
-   [app.main.ui.workspace.sidebar.options.menus.text :as text-menu]
+   [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.util.text.content.styles :as content-styles]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
@@ -28,29 +28,29 @@
    :font-features
    :annotation-clearance])
 
-(def ^:private radio-selected @#'text-menu/radio-selected)
-(def ^:private span-input-value @#'text-menu/span-input-value)
-(def ^:private span-select-value @#'text-menu/span-select-value)
-(def ^:private with-mixed-span-option @#'text-menu/with-mixed-span-option)
-(def ^:private ruby-common-props @#'text-menu/ruby-common-props)
+(def ^:private radio-selected @#'tjl/radio-selected)
+(def ^:private span-input-value @#'tjl/span-input-value)
+(def ^:private span-select-value @#'tjl/span-select-value)
+(def ^:private with-mixed-span-option @#'tjl/with-mixed-span-option)
+(def ^:private ruby-common-props @#'tjl/ruby-common-props)
 
 (t/deftest text-emphasis-select-reports-and-restores-canonical-values
-  (let [options     (text-menu/text-emphasis-options identity)
+  (let [options     (tjl/text-emphasis-options identity)
         reported-id (:id (select/get-option options "filled-dot"))]
     (t/is (= "filled-dot" reported-id))
     (t/is (= "filled-dot"
              (:id (select/get-option options reported-id))))))
 
 (t/deftest annotation-clearance-select-reports-canonical-values
-  (let [options (text-menu/annotation-clearance-options identity)]
+  (let [options (tjl/annotation-clearance-options identity)]
     (t/is (= ["none" "auto"] (mapv :id options)))
     (t/is (= "auto" (:id (select/get-option options "auto"))))))
 
 (t/deftest unrestricted-tcy-is-only-offered-for-a-text-selection
   (t/is (= ["none" "digits"]
-           (mapv :value (text-menu/text-combine-upright-options false identity))))
+           (mapv :value (tjl/text-combine-upright-options false identity))))
   (t/is (= ["none" "all" "digits"]
-           (mapv :value (text-menu/text-combine-upright-options true identity)))))
+           (mapv :value (tjl/text-combine-upright-options true identity)))))
 
 (t/deftest ruby-container-styles-preserve-customization
   (let [style (text-styles/generate-ruby-container-styles
@@ -63,7 +63,7 @@
 
 (t/deftest advanced-furigana-options-are-collapsed-by-default
   (let [markup (rds/renderToStaticMarkup
-                (mf/element text-menu/ruby-presentation-options*
+                (mf/element tjl/ruby-presentation-options*
                             #js {:values {}
                                  :on-change identity
                                  :on-blur identity}))]
@@ -102,7 +102,7 @@
 
 (t/deftest mixed-japanese-span-values-have-distinct-control-states
   (let [options (with-mixed-span-option
-                  (text-menu/text-emphasis-options identity)
+                  (tjl/text-emphasis-options identity)
                   :multiple)]
     (t/is (= "mixed" (span-select-value :multiple "none")))
     (t/is (= "mixed" (span-input-value :multiple)))
@@ -177,31 +177,31 @@
             {"text-combine-upright" "digits 3"}))))
 
 (t/deftest japanese-layout-is-explicitly-enabled-by-writing-mode
-  (t/is (false? (text-menu/japanese-layout-enabled? {})))
-  (t/is (false? (text-menu/japanese-layout-enabled? {:writing-mode nil})))
-  (t/is (true? (text-menu/japanese-layout-enabled? {:writing-mode "horizontal-tb"})))
-  (t/is (true? (text-menu/japanese-layout-enabled? {:writing-mode "vertical-rl"})))
-  (t/is (nil? (text-menu/japanese-layout-enabled? {:writing-mode :multiple}))))
+  (t/is (false? (tjl/japanese-layout-enabled? {})))
+  (t/is (false? (tjl/japanese-layout-enabled? {:writing-mode nil})))
+  (t/is (true? (tjl/japanese-layout-enabled? {:writing-mode "horizontal-tb"})))
+  (t/is (true? (tjl/japanese-layout-enabled? {:writing-mode "vertical-rl"})))
+  (t/is (nil? (tjl/japanese-layout-enabled? {:writing-mode :multiple}))))
 
 (t/deftest japanese-layout-toggle-emits-a-persisted-writing-mode
   (t/is (= {:writing-mode "horizontal-tb"}
-           (text-menu/japanese-layout-toggle-attrs true)))
+           (tjl/japanese-layout-toggle-attrs true)))
   (t/is (= {:writing-mode nil}
-           (text-menu/japanese-layout-toggle-attrs false))))
+           (tjl/japanese-layout-toggle-attrs false))))
 
 (t/deftest japanese-layout-state-survives-transient-selection-styles
-  (t/is (true? (text-menu/reconcile-japanese-layout-state true {} false)))
-  (t/is (true? (text-menu/reconcile-japanese-layout-state false
-                                                          {:writing-mode "vertical-rl"}
-                                                          false)))
-  (t/is (false? (text-menu/reconcile-japanese-layout-state true {} true))))
+  (t/is (true? (tjl/reconcile-japanese-layout-state true {} false)))
+  (t/is (true? (tjl/reconcile-japanese-layout-state false
+                                                    {:writing-mode "vertical-rl"}
+                                                    false)))
+  (t/is (false? (tjl/reconcile-japanese-layout-state true {} true))))
 
 (t/deftest japanese-controls-distinguish-horizontal-and-vertical-modes
-  (t/is (false? (text-menu/vertical-japanese-layout?
+  (t/is (false? (tjl/vertical-japanese-layout?
                  {:writing-mode "horizontal-tb"})))
-  (t/is (true? (text-menu/vertical-japanese-layout?
+  (t/is (true? (tjl/vertical-japanese-layout?
                 {:writing-mode "vertical-rl"})))
   (t/is (= "palt"
-           (text-menu/proportional-metrics-feature "horizontal-tb")))
+           (tjl/proportional-metrics-feature "horizontal-tb")))
   (t/is (= "vpal"
-           (text-menu/proportional-metrics-feature "vertical-rl"))))
+           (tjl/proportional-metrics-feature "vertical-rl"))))

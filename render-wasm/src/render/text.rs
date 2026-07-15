@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_horizontal_span, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
-        ParagraphLayout, Stroke, StrokeKind, TextContent,
+        add_horizontal_span, calculate_text_layout_data, set_paint_fill, text_vertical,
+        ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -14,6 +14,91 @@ use skia_safe::{
     textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration, TextStyle},
     Canvas, ImageFilter, Paint,
 };
+
+pub fn render_vertical_text(
+    state: &mut RenderState,
+    shape: &Shape,
+    text_content: &TextContent,
+    paragraph_builders: &mut [ParagraphBuilderGroup],
+    fills_surface_id: SurfaceId,
+    strokes_surface_id: SurfaceId,
+    skip_effects: bool,
+) -> Result<()> {
+    let blur_filter = (!skip_effects).then(|| shape.image_filter(1.0)).flatten();
+    let bounds = text_content.bounds();
+    let mut drop_shadows = if skip_effects {
+        Vec::new()
+    } else {
+        shape.drop_shadow_paints()
+    };
+    if !skip_effects {
+        if let Some(inherited_shadows) = state.get_inherited_drop_shadows() {
+            drop_shadows.extend(inherited_shadows);
+        }
+    }
+    let strokes: Vec<Stroke> = shape.visible_strokes().rev().cloned().collect();
+    let layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
+        let max_height = text_vertical::wrap_height(text_content, bounds.height());
+        text_vertical::layout_from_content(text_content, max_height)
+    });
+
+    if let Some(layout) = layout.as_ref().filter(|_| !drop_shadows.is_empty()) {
+        let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+        for shadow in &drop_shadows {
+            text_vertical::paint_drop_shadow(
+                canvas,
+                layout,
+                &bounds,
+                shape.vertical_align(),
+                shadow,
+            );
+        }
+    }
+
+    render(
+        Some(state),
+        None,
+        shape,
+        paragraph_builders,
+        Some(fills_surface_id),
+        None,
+        blur_filter.as_ref(),
+        None,
+        None,
+    )?;
+
+    if let Some(layout) = layout.as_ref().filter(|_| !strokes.is_empty()) {
+        let selrect = shape.selrect();
+        let canvas = state.surfaces.canvas_and_mark_dirty(strokes_surface_id);
+        for stroke in &strokes {
+            text_vertical::paint_stroke(
+                canvas,
+                layout,
+                &bounds,
+                shape.vertical_align(),
+                stroke,
+                &selrect,
+                blur_filter.as_ref(),
+            );
+        }
+    }
+
+    if state.options.is_text_grid_visible() {
+        let owned_layout;
+        let grid_layout = match layout.as_ref() {
+            Some(layout) => layout,
+            None => {
+                let max_height = text_vertical::wrap_height(text_content, bounds.height());
+                owned_layout = text_vertical::layout_from_content(text_content, max_height);
+                &owned_layout
+            }
+        };
+        let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+        text_vertical::paint_grid(canvas, grid_layout, &bounds, shape.vertical_align());
+    }
+
+    Ok(())
+}
 
 pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,

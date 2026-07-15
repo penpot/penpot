@@ -275,8 +275,7 @@
   (t/is (= #{:japanese :cyrillic}
            (texts/resolve-ambiguous-cjk #{:han :cyrillic} "ja"))))
 
-(t/deftest resolve-han-unification-fixture
-  ;; Acceptance case from render-wasm/fixtures/japanese-typography.json:
-  ;; a kanji-only Japanese address resolves to Japanese under a ja locale.
+(t/deftest resolve-han-unification
+  ;; A kanji-only Japanese address resolves to Japanese under a ja locale.
   (t/is (= #{:japanese}
            (texts/resolve-ambiguous-cjk (langs "東京都渋谷区神南一丁目") "ja"))))

@@ -23,7 +23,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -1013,7 +1013,7 @@
 
 (defn vertical-text-shape?
   [shape]
-  (txt/vertical-text-content? (get shape :content)))
+  (jl/vertical-text-content? (get shape :content)))
 
 ;; Pure function to determine next grow-type for text layers
 (defn next-grow-type
@@ -1021,9 +1021,7 @@
    (next-grow-type current-grow-type scalev false))
 
   ([current-grow-type scalev vertical?]
-   ;; CHANGEME: Simplify this comment
-   ;; Grow and wrap axes swap under vertical writing. Normalizing the scale
-   ;; vector lets the existing horizontal state machine remain authoritative.
+   ;; Reuse the horizontal state machine with swapped vertical axes.
    (let [scalev (if vertical?
                   (gpt/point (:y scalev) (:x scalev))
                   scalev)]

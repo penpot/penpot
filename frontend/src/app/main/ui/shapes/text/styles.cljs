@@ -10,6 +10,7 @@
    [app.common.transit :as transit]
    [app.common.types.color :as cc]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.fonts :as fonts]
    [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
@@ -23,7 +24,7 @@
    (let [valign (:vertical-align node "top")
          ;; Mirroring the shape's writing mode on the root makes paragraph
          ;; blocks stack right-to-left.
-         writing-mode (txt/content-writing-mode node)
+         writing-mode (jl/content-writing-mode node)
          base   #js {:height (when-not code? (fmt/format-pixels height))
                      :width  (when-not code? (fmt/format-pixels width))
                      :display "flex"

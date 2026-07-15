@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as legacy.txt]
-   [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.ui.shapes.text.styles :as sts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -86,7 +86,7 @@
         ;; Vertical writing anchors columns to the box edges; the oversized
         ;; auto-grow box (used to avoid horizontal wrapping) would push content
         ;; off-position, so use the real selrect size instead.
-        vertical? (txt/vertical-text-content? content)
+        vertical? (jl/vertical-text-content? content)
 
         style
         (when-not is-code

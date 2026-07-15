@@ -15,7 +15,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shapes :as dwsh]
@@ -32,7 +32,7 @@
   auto-height keeps the physical height as its wrap budget and grows width."
   [selrect grow-type content dimension]
   (when (or (= :fixed grow-type) (some? dimension))
-    (let [vertical? (txt/vertical-text-content? content)]
+    (let [vertical? (jl/vertical-text-content? content)]
       {:width  (cond
                  (= :fixed grow-type)
                  (:width selrect)

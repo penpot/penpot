@@ -133,6 +133,78 @@ fn vertical_align_offset(
     }
 }
 
+fn vertical_layout_for_shape(
+    text_content: &TextContent,
+    shape: &Shape,
+) -> (text_vertical::VerticalLayout, f32) {
+    let selrect = shape.selrect();
+    let max_height = text_vertical::wrap_height(text_content, selrect.height());
+    let layout = text_vertical::layout_from_content(text_content, max_height);
+    let origin_x =
+        text_vertical::block_axis_offset(selrect.width(), layout.width, shape.vertical_align());
+    (layout, origin_x)
+}
+
+fn calculate_vertical_cursor_rect(
+    text_content: &TextContent,
+    shape: &Shape,
+    paragraph: usize,
+    offset: usize,
+) -> Option<Rect> {
+    let (layout, origin_x) = vertical_layout_for_shape(text_content, shape);
+    let rect = text_vertical::caret_rect(&layout, paragraph, offset)?;
+    Some(Rect::from_xywh(
+        origin_x + rect.x(),
+        rect.y(),
+        rect.width(),
+        rect.height(),
+    ))
+}
+
+fn calculate_vertical_selection_rects(
+    selection: &TextSelection,
+    text_content: &TextContent,
+    shape: &Shape,
+) -> Vec<Rect> {
+    let start = selection.start();
+    let end = selection.end();
+    let paragraphs = text_content.paragraphs();
+    let (layout, origin_x) = vertical_layout_for_shape(text_content, shape);
+    let mut rects = Vec::new();
+
+    for (para_idx, paragraph) in paragraphs
+        .iter()
+        .enumerate()
+        .take(end.paragraph + 1)
+        .skip(start.paragraph)
+    {
+        let para_char_count: usize = paragraph
+            .children()
+            .iter()
+            .map(|span| span.text.chars().count())
+            .sum();
+        let range_start = if para_idx == start.paragraph {
+            start.offset
+        } else {
+            0
+        };
+        let range_end = if para_idx == end.paragraph {
+            end.offset
+        } else {
+            para_char_count
+        };
+        for rect in text_vertical::range_rects(&layout, para_idx, range_start, range_end) {
+            rects.push(Rect::from_xywh(
+                origin_x + rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+            ));
+        }
+    }
+    rects
+}
+
 fn calculate_cursor_rect(
     editor_state: &TextEditorState,
     text_content: &TextContent,
@@ -144,24 +216,13 @@ fn calculate_cursor_rect(
         return None;
     }
 
-    // Vertical writing: selrect-local caret bar from the vertical cells.
-    // CHANGEME: extract to function
     if text_content.is_vertical() {
-        let selrect = shape.selrect();
-        let max_height = text_vertical::wrap_height(text_content, selrect.height());
-        let layout = text_vertical::layout_from_content(text_content, max_height);
-        let origin_x =
-            text_vertical::block_axis_offset(selrect.width(), layout.width, shape.vertical_align());
-        let rect = text_vertical::caret_rect(&layout, cursor.paragraph, cursor.offset)?;
-        // The rect height is the character extent (zero after the last
-        // character); the renderer picks it for overtype carets and draws a
-        // thin bar otherwise.
-        return Some(Rect::from_xywh(
-            origin_x + rect.x(),
-            rect.y(),
-            rect.width(),
-            rect.height(),
-        ));
+        return calculate_vertical_cursor_rect(
+            text_content,
+            shape,
+            cursor.paragraph,
+            cursor.offset,
+        );
     }
 
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
@@ -268,53 +329,16 @@ fn calculate_selection_rects(
     text_content: &TextContent,
     shape: &Shape,
 ) -> Vec<Rect> {
-    let mut rects = Vec::new();
-
     let start = selection.start();
     let end = selection.end();
 
     let paragraphs = text_content.paragraphs();
 
-    // Vertical writing: selrect-local selection strips from the cells.
-    // CHANGEME: extract to function
     if text_content.is_vertical() {
-        let selrect = shape.selrect();
-        let max_height = text_vertical::wrap_height(text_content, selrect.height());
-        let layout = text_vertical::layout_from_content(text_content, max_height);
-        let origin_x =
-            text_vertical::block_axis_offset(selrect.width(), layout.width, shape.vertical_align());
-        for (para_idx, paragraph) in paragraphs
-            .iter()
-            .enumerate()
-            .take(end.paragraph + 1)
-            .skip(start.paragraph)
-        {
-            let para_char_count: usize = paragraph
-                .children()
-                .iter()
-                .map(|span| span.text.chars().count())
-                .sum();
-            let range_start = if para_idx == start.paragraph {
-                start.offset
-            } else {
-                0
-            };
-            let range_end = if para_idx == end.paragraph {
-                end.offset
-            } else {
-                para_char_count
-            };
-            for rect in text_vertical::range_rects(&layout, para_idx, range_start, range_end) {
-                rects.push(Rect::from_xywh(
-                    origin_x + rect.x(),
-                    rect.y(),
-                    rect.width(),
-                    rect.height(),
-                ));
-            }
-        }
-        return rects;
+        return calculate_vertical_selection_rects(selection, text_content, shape);
     }
+
+    let mut rects = Vec::new();
 
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
