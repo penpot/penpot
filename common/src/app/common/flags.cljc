@@ -145,6 +145,8 @@
     ;; Show WASM renderer info label (hidden by default).
     :render-wasm-info
     :render-switch
+    ;; Enables the UI scale setting (PoC: 1x / 1.25x)
+    :ui-scale
     :hide-release-modal
     :subscriptions
     :subscriptions-old

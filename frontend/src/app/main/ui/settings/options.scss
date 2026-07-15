@@ -23,7 +23,7 @@
 
 /* Copied from profile.scss .form-container, but without included nested
    rules, since we want custom styles for it */
-.webgl-container {
+.webgl-container, .ui-scale-container {
   display: grid;
   grid-auto-rows: auto;
   gap: var(--sp-s);
@@ -34,11 +34,15 @@
   color: var(--color-foreground-primary);
 }
 
-.webgl-header {
+.webgl-header, .ui-scale-header {
   display: flex;
   flex-direction: row;
   align-items: baseline;
   gap: var(--sp-m);
+}
+
+.ui-scale-container {
+  padding-block-end: var(--sp-xxxl);
 }
 
 .description {

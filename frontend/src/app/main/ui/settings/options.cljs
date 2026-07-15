@@ -15,6 +15,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.typography :as t]
@@ -115,10 +116,32 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
+(mf/defc ui-scale-settings*
+  [{:keys [ui-scale]}]
+  (let [selected (if (= ui-scale 1.15) "1.15" "1")
+        handle-scale-change
+        (mf/use-fn
+         (fn [value]
+           (let [scale (if (= value "1.15") 1.15 1.0)]
+             (st/emit! (ev/event {::ev/name "change-ui-scale"
+                                  ::ev/origin "settings"
+                                  :scale scale})
+                       (du/update-profile-props {:ui-scale scale})
+                       (ntf/success (tr "dashboard.ui-scale.updated"))))))]
+    [:section {:class (stl/css :ui-scale-container)}
+     [:header {:class (stl/css :ui-scale-header)}
+      [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.ui-scale.title")]]
+     [:> text* {:class (stl/css :description) :typography t/body-medium} (tr "dashboard.ui-scale.description")]
+     [:> select* {:default-selected selected
+                  :options [{:id "1" :label (tr "dashboard.ui-scale.1x")}
+                            {:id "1.15" :label (tr "dashboard.ui-scale.115x")}]
+                  :on-change handle-scale-change}]]))
+
 (mf/defc options-page*
   []
-  (let [profile (mf/deref refs/profile)
-        renderer (or (-> profile :props :renderer) :svg)]
+  (let [profile  (mf/deref refs/profile)
+        renderer (or (-> profile :props :renderer) :svg)
+        ui-scale (or (-> profile :props :ui-scale) 1.0)]
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 
@@ -128,4 +151,6 @@
        [:h2 (tr "labels.settings")]
        [:> options-form*]]
       (when (contains? cf/flags :render-switch)
-        [:> webgl-settings* {:renderer renderer}])]]))
+        [:> webgl-settings* {:renderer renderer}])
+      (when (contains? cf/flags :ui-scale)
+        [:> ui-scale-settings* {:ui-scale ui-scale}])]]))

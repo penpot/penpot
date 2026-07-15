@@ -1328,6 +1328,26 @@ msgstr "No limits on creativity"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
+#: src/app/main/ui/settings/options.cljs:135
+msgid "dashboard.ui-scale.115x"
+msgstr "1.15x (Medium)"
+
+#: src/app/main/ui/settings/options.cljs:135
+msgid "dashboard.ui-scale.1x"
+msgstr "1x (Default)"
+
+#: src/app/main/ui/settings/options.cljs:133
+msgid "dashboard.ui-scale.description"
+msgstr "Scale the Penpot interface. This does not affect the design canvas."
+
+#: src/app/main/ui/settings/options.cljs:132
+msgid "dashboard.ui-scale.title"
+msgstr "UI scale"
+
+#: src/app/main/ui/settings/options.cljs:129
+msgid "dashboard.ui-scale.updated"
+msgstr "UI scale was updated"
+
 #, unused
 msgid "dashboard.user-no-longer-belong-org"
 msgstr "You are no longer a member of the organization %s"
