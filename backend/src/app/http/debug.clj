@@ -16,6 +16,7 @@
    [app.common.files.changes :as cfc]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.time :as ct]
@@ -410,6 +411,18 @@
      ::yres/headers {"content-type" "application/json; charset=utf-8"}
      ::yres/body    (t/encode-str {:error "no-session"} {:type :json-verbose})}))
 
+(defn graph-data-handler
+  "Export the in-memory session graph as plain JSON (not transit) for the
+  G6 graph view embedded in the console page."
+  [_cfg {:keys [::session/profile-id]}]
+  (if-let [data (graph.debug/export-graph-data! profile-id)]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (json/encode data)}
+    {::yres/status  404
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (json/encode {:error "no-session"})}))
+
 (defn- json-request?
   [request]
   (some-> request
@@ -783,6 +796,7 @@
      ["/graph-unload" {:handler (partial graph-unload-handler cfg)}]
      ["/graph-reload" {:handler (partial graph-reload-handler cfg)}]
      ["/graph-sync-status" {:handler (partial graph-sync-status-handler cfg)}]
+     ["/graph-data" {:handler (partial graph-data-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]
      ["/file-validate" {:handler (partial validate-file cfg)}]

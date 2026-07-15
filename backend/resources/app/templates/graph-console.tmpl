@@ -89,6 +89,19 @@ Graph Console
     </fieldset>
 
     <fieldset>
+      <legend>Graph view</legend>
+      <desc>
+        Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
+        and glyph encode the node table; edges are <code>IsChildOf</code>
+        (arrow points to parent). Redraws automatically after live changes.
+      </desc>
+      <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
+      <div id="graph-canvas"
+           style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff;"></div>
+      <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+    </fieldset>
+
+    <fieldset>
       <legend>Cypher query</legend>
       <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
         <div class="row">
@@ -137,6 +150,7 @@ Graph Console
 </main>
 
 {% if session %}
+<script src="https://cdn.jsdelivr.net/npm/@antv/g6@5/dist/g6.min.js"></script>
 <script>
 (function () {
   const fileId = "{{session.file-id}}";
@@ -153,6 +167,122 @@ Graph Console
   const changelogEmpty = document.getElementById("graph-changelog-empty");
 
   let ws = null;
+
+  // --- G6 graph view -------------------------------------------------
+  // Color+glyph per node table. Colors from the validated categorical
+  // palette; within-glyph pairs are the only ones color must separate
+  // alone (every node also carries a direct name label + legend).
+  const NODE_STYLES = {
+    "Document":  { color: "#0b0b0b", glyph: "diamond",  size: 28 },
+    "Page":      { color: "#2a78d6", glyph: "rect",     size: 22 },
+    "Frame":     { color: "#008300", glyph: "hexagon",  size: 18 },
+    "Group":     { color: "#4a3aa7", glyph: "hexagon",  size: 18 },
+    "Boolean":   { color: "#eda100", glyph: "hexagon",  size: 18 },
+    "SVGRaw":    { color: "#767470", glyph: "hexagon",  size: 18 },
+    "Rectangle": { color: "#eb6834", glyph: "rect",     size: 14 },
+    "Circle":    { color: "#1baf7a", glyph: "circle",   size: 14 },
+    "Path":      { color: "#e34948", glyph: "triangle", size: 14 },
+    "Text":      { color: "#e87ba4", glyph: "circle",   size: 14 },
+    "Image":     { color: "#eda100", glyph: "star",     size: 14 }
+  };
+  const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
+
+  const graphViewStatus = document.getElementById("graph-view-status");
+  let g6graph = null;
+  let refetchTimer = null;
+
+  function nodeStyle(table) {
+    return NODE_STYLES[table] || FALLBACK_STYLE;
+  }
+
+  function toG6Data(data) {
+    return {
+      nodes: (data.nodes || []).map(function (n) {
+        return { id: n.id, data: { label: n.label, table: n.table } };
+      }),
+      edges: (data.edges || [])
+        .slice()
+        .sort(function (a, b) { return (a.position || 0) - (b.position || 0); })
+        .map(function (e) {
+          return { source: e.source, target: e.target, data: { position: e.position } };
+        })
+    };
+  }
+
+  function renderGraph(g6data) {
+    if (g6graph) {
+      g6graph.setData(g6data);
+      return g6graph.render();
+    }
+    g6graph = new G6.Graph({
+      container: "graph-canvas",
+      data: g6data,
+      autoFit: "view",
+      padding: 20,
+      layout: { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40 },
+      node: {
+        type: function (d) { return nodeStyle(d.data.table).glyph; },
+        style: {
+          size: function (d) { return nodeStyle(d.data.table).size; },
+          fill: function (d) { return nodeStyle(d.data.table).color; },
+          stroke: "#52514e",
+          lineWidth: 0.5,
+          labelText: function (d) { return d.data.label; },
+          labelFontSize: 9,
+          labelFill: "#0b0b0b",
+          labelPlacement: "bottom"
+        }
+      },
+      edge: {
+        style: { stroke: "#b3b0a8", endArrow: true, endArrowSize: 6 }
+      },
+      behaviors: ["zoom-canvas", "drag-canvas", "drag-element"]
+    });
+    return g6graph.render();
+  }
+
+  function renderGraphLegend() {
+    const el = document.getElementById("graph-legend");
+    el.innerHTML = Object.keys(NODE_STYLES).map(function (table) {
+      const s = NODE_STYLES[table];
+      return '<span style="margin-right: 1em;">'
+        + '<i style="display: inline-block; width: 10px; height: 10px;'
+        + ' margin-right: 3px; border: 1px solid #52514e;'
+        + ' background: ' + s.color + ';"></i>'
+        + escapeHtml(table) + " (" + s.glyph + ")</span>";
+    }).join("");
+  }
+
+  function refetchGraph() {
+    if (typeof G6 === "undefined") {
+      graphViewStatus.textContent = "G6 failed to load (CDN unreachable)";
+      return;
+    }
+    fetch("/dbg/actions/graph-data")
+      .then(function (resp) {
+        if (!resp.ok) throw new Error("graph-data HTTP " + resp.status);
+        return resp.json();
+      })
+      .then(function (data) {
+        graphViewStatus.textContent =
+          data.nodes.length + " nodes, " + data.edges.length + " edges"
+          + " (graph revn " + data.revn + ")"
+          + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
+        return renderGraph(toG6Data(data));
+      })
+      .catch(function (err) {
+        graphViewStatus.textContent = "graph view error: " + err;
+      });
+  }
+
+  function scheduleGraphRefetch() {
+    if (refetchTimer) clearTimeout(refetchTimer);
+    refetchTimer = setTimeout(function () {
+      refetchTimer = null;
+      refetchGraph();
+    }, 400);
+  }
+  // --- end G6 graph view ---------------------------------------------
 
   function encodeTransitUuid(uuid) {
     return "~u" + uuid;
@@ -274,6 +404,7 @@ Graph Console
 
     appendChange(msg.revn, summarizeChanges(msg.changes));
     setTimeout(refreshSyncStatus, 150);
+    scheduleGraphRefetch();
   }
 
   function subscribe() {
@@ -377,6 +508,8 @@ Graph Console
 
   connect();
   refreshSyncStatus();
+  renderGraphLegend();
+  refetchGraph();
 
   window.addEventListener("beforeunload", function () {
     if (ws && ws.readyState === WebSocket.OPEN) {
