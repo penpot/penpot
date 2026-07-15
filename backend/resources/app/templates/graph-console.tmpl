@@ -155,7 +155,9 @@ Graph Console
         <desc>
           Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
           and glyph encode the node table; edges are <code>IsChildOf</code>
-          (arrow points to parent). Redraws automatically after live changes.
+          (arrow points to parent). Containers render as foldable boxes:
+          double-click a box to collapse or expand it. Redraws automatically
+          after live changes (fold state survives redraws).
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
         <div id="graph-canvas"
@@ -292,6 +294,12 @@ Graph Console
     "Image":     { color: "#eda100", glyph: "star",     size: 14 }
   };
   const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
+  // Containers become foldable G6 combos (Document excluded: folding the
+  // whole graph is useless). A combo holds the container node itself plus
+  // its direct children; nesting mirrors the IsChildOf tree.
+  const CONTAINER_TABLES = {
+    "Page": true, "Frame": true, "Group": true, "Boolean": true, "SVGRaw": true
+  };
 
   const graphViewStatus = document.getElementById("graph-view-status");
   let g6graph = null;
@@ -301,18 +309,59 @@ Graph Console
     return NODE_STYLES[table] || FALLBACK_STYLE;
   }
 
-  function toG6Data(data) {
-    return {
-      nodes: (data.nodes || []).map(function (n) {
-        return { id: n.id, data: { label: n.label, table: n.table } };
-      }),
-      edges: (data.edges || [])
-        .slice()
-        .sort(function (a, b) { return (a.position || 0) - (b.position || 0); })
-        .map(function (e) {
-          return { source: e.source, target: e.target, data: { position: e.position } };
-        })
-    };
+  function comboIdFor(nodeId) {
+    return "combo:" + nodeId;
+  }
+
+  function toG6Data(data, collapsedIds) {
+    const nodes = data.nodes || [];
+    const edges = (data.edges || [])
+      .slice()
+      .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    const parentOf = {};
+    const childCount = {};
+    edges.forEach(function (e) {
+      parentOf[e.source] = e.target;
+      childCount[e.target] = (childCount[e.target] || 0) + 1;
+    });
+    // Only containers with children get a combo: empty boxes are clutter.
+    const hasCombo = {};
+    nodes.forEach(function (n) {
+      if (CONTAINER_TABLES[n.table] && childCount[n.id]) hasCombo[n.id] = true;
+    });
+    const combos = [];
+    nodes.forEach(function (n) {
+      if (!hasCombo[n.id]) return;
+      const combo = { id: comboIdFor(n.id), data: { label: n.label, table: n.table } };
+      const p = parentOf[n.id];
+      if (p && hasCombo[p]) combo.combo = comboIdFor(p);
+      if (collapsedIds && collapsedIds.has(combo.id)) combo.style = { collapsed: true };
+      combos.push(combo);
+    });
+    const g6nodes = nodes.map(function (n) {
+      const out = { id: n.id, data: { label: n.label, table: n.table } };
+      if (hasCombo[n.id]) {
+        out.combo = comboIdFor(n.id);
+      } else if (parentOf[n.id] && hasCombo[parentOf[n.id]]) {
+        out.combo = comboIdFor(parentOf[n.id]);
+      }
+      return out;
+    });
+    const g6edges = edges.map(function (e) {
+      return { source: e.source, target: e.target, data: { position: e.position } };
+    });
+    return { nodes: g6nodes, edges: g6edges, combos: combos };
+  }
+
+  function collapsedComboIds() {
+    if (!g6graph) return new Set();
+    try {
+      return new Set(g6graph.getComboData()
+        .filter(function (c) { return c.style && c.style.collapsed; })
+        .map(function (c) { return c.id; }));
+    } catch (_err) {
+      return new Set();
+    }
   }
 
   function renderGraph(g6data) {
@@ -326,7 +375,7 @@ Graph Console
       autoFit: "view",
       autoResize: true,
       padding: 20,
-      layout: { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40 },
+      layout: { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
       node: {
         type: function (d) { return nodeStyle(d.data.table).glyph; },
         style: {
@@ -343,7 +392,20 @@ Graph Console
       edge: {
         style: { stroke: "#b3b0a8", endArrow: true, endArrowSize: 6 }
       },
-      behaviors: ["zoom-canvas", "drag-canvas", "drag-element"]
+      combo: {
+        type: "rect",
+        style: {
+          labelText: function (d) { return d.data.label; },
+          labelFontSize: 9,
+          labelFill: "#52514e",
+          labelPlacement: "top",
+          stroke: function (d) { return nodeStyle(d.data.table).color; },
+          lineWidth: 1,
+          fillOpacity: 0.03,
+          radius: 4
+        }
+      },
+      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand"]
     });
     return g6graph.render();
   }
@@ -375,7 +437,7 @@ Graph Console
           data.nodes.length + " nodes, " + data.edges.length + " edges"
           + " (graph revn " + data.revn + ")"
           + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
-        return renderGraph(toG6Data(data));
+        return renderGraph(toG6Data(data, collapsedComboIds()));
       })
       .catch(function (err) {
         graphViewStatus.textContent = "graph view error: " + err;
