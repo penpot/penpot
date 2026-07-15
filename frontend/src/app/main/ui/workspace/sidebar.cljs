@@ -182,7 +182,7 @@
               :data-width (str width)
               :class aside-class
               :on-context-menu dom/prevent-default-context-menu
-              :style {:--left-sidebar-width (dm/str "calc(" width "px * var(--ui-scale))")}}
+              :style {:--left-sidebar-width (dm/str "round(" width "px * var(--ui-scale), 1px)")}}
 
       [:> left-header* {:file file
                         :layout layout
@@ -328,12 +328,15 @@
         :data-size (str width)
         :on-context-menu dom/prevent-default-context-menu
         :style {:--right-sidebar-width
-                (dm/str "calc("
+                ;; round() keeps the scaled width on whole pixels so the
+                ;; viewport/sidebar boundary doesn't leave a sub-pixel seam
+                ;; against the SVG ruler frame.
+                (dm/str "round("
                         (cond
                           is-debug? right-sidebar-default-max-width
                           can-be-expanded? width
                           :else right-sidebar-default-width)
-                        "px * var(--ui-scale))")}}
+                        "px * var(--ui-scale), 1px)")}}
 
        (when can-be-expanded?
          [:div {:class (stl/css :resize-area)
