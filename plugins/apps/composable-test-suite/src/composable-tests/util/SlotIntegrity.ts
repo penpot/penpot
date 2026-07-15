@@ -2,24 +2,19 @@ import { Board, Shape } from "@penpot/plugin-types";
 import { Assert } from "./Assert";
 
 /**
- * Checks the positional swap-slot invariant that Penpot's file validator enforces
- * for component copies.
+ * Checks the positional slot alignment between a component copy and its main.
  *
- * Background: in a copy of a component, each nested sub-instance head must, by
+ * Background: in a copy of a component, each nested sub-instance head should, by
  * position, reference (its `shape-ref`) the child at the SAME index in the
- * component's main. Penpot finds the "near match" purely by position
- * (`find-near-match` in `common/.../types/file.cljc`) and then requires a swap
- * slot whenever a sub-head's `shape-ref` is not that positional near match
- * (`check-required-swap-slot` in `common/.../files/validate.cljc`, error
- * `:missing-slot` — "Shape has been swapped, should have swap slot").
- *
- * When the copy's child order diverges from the main's (e.g. after deleting one
- * sub-head, which shifts the rest) while their shape-refs still point to their
- * original slots, the invariant breaks and — with no swap slot recorded — the file
- * fails referential-integrity validation, crashing the project.
- *
- * This helper replicates that positional check through the Plugin API so a test
- * can assert the invariant holds.
+ * component's main. Penpot's validator (`check-required-swap-slot` in
+ * `common/.../files/validate.cljc`) requires a swap slot only when a sub-head's
+ * `shape-ref` is no longer a child of the near main parent at all (a real swap;
+ * error `:missing-slot`); a pure positional mismatch is a reorder that the
+ * component sync realigns. Still, in the steady state (after propagation has
+ * settled) a copy that was never swapped must be POSITIONALLY aligned with its
+ * main — this helper asserts that stronger invariant through the Plugin API, so
+ * a test catches any operation that knocks a copy's child order out of sync
+ * with its main.
  */
 export class SlotIntegrity {
     /**
