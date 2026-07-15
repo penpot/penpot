@@ -78,12 +78,16 @@
           :file (sort-by #(str/lower (:name %)) (vals file-typographies))
           (sort-by #(str/lower (:name %)) (vals (get-in libraries [selected :data :typographies]))))
         state (mf/use-state {:offset 0})
-        offset-step 144
-        buttons-size (cond
-                       (<= size 64) 164
-                       (<= size 72) 164
-                       (<= size 80) 132
-                       :else 132)
+        ;; Real (rendered) pixels: item step and reserved button space are
+        ;; multiplied by `ui-scale` to stay coupled with the measured `width`.
+        ui-scale     (mf/deref refs/ui-scale)
+        offset-step (* ui-scale 144)
+        buttons-size (* ui-scale
+                        (cond
+                          (<= size 64) 164
+                          (<= size 72) 164
+                          (<= size 80) 132
+                          :else 132))
         width          (- width buttons-size)
         visible        (int (/ width offset-step))
         show-arrows?   (> (count current-typographies) visible)
@@ -140,7 +144,7 @@
         (swap! state assoc :offset 0)))
 
     [:div {:class (stl/css :text-palette)
-           :style #js {"--height" (str size "px")}}
+           :style #js {"--height" (str (* ui-scale size) "px")}}
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)

@@ -32,6 +32,15 @@
 (def profile
   (l/derived (l/key :profile) st/state))
 
+(def ui-scale
+  "Effective UI scale factor, gated by the `:ui-scale` flag. Returns 1.0 when the
+   flag is disabled or the profile prop has never been set."
+  (l/derived (fn [state]
+               (if (contains? cf/flags :ui-scale)
+                 (or (get-in state [:profile :props :ui-scale]) 1.0)
+                 1.0))
+             st/state))
+
 (def current-page-id
   (l/derived (l/key :current-page-id) st/state))
 

@@ -373,9 +373,7 @@
   (let [route    (mf/deref refs/route)
         edata    (mf/deref refs/exception)
         profile  (mf/deref refs/profile)
-        ui-scale (if (contains? cf/flags :ui-scale)
-                   (or (-> profile :props :ui-scale) 1.0)
-                   1.0)]
+        ui-scale (mf/deref refs/ui-scale)]
 
     ;; initialize themes
     (theme/use-initialize profile)

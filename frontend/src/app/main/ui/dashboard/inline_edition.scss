@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .edit-wrapper {
   border-radius: deprecated.$br-4;
@@ -40,7 +41,7 @@ input.element-title {
   svg {
     fill: var(--color-foreground-secondary);
     height: deprecated.$s-16;
-    transform: rotate(45deg) translateY(7px);
+    transform: rotate(45deg) translateY(px2rem(7));
     width: deprecated.$s-16;
     margin: 0;
   }

@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .slider-selector {
   --gradient-direction: 90deg;
@@ -91,14 +92,14 @@
     height: calc(deprecated.$s-24 + deprecated.$s-1);
     border-radius: deprecated.$br-4;
     z-index: deprecated.$z-index-1;
-    transform: translate(-4px, -3px);
+    transform: translate(px2rem(-4), px2rem(-3));
     background-color: var(--colorpicker-handlers-color);
   }
 
   &.vertical .handler {
     height: calc(deprecated.$s-8 + deprecated.$s-2);
     width: calc(deprecated.$s-24 + deprecated.$s-1);
-    transform: translate(-12px, 5px);
+    transform: translate(px2rem(-12), px2rem(5));
   }
 }
 

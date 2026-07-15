@@ -50,8 +50,10 @@
         ;; viewport (not scaled), so only the sidebar portions are multiplied.
         fixed-left             (+ rulers-width left-padding 1)]
 
-    #js {"paddingLeft" (dm/str "calc(" sidebar-width "px * var(--ui-scale) + " fixed-left "px)")
-         "paddingRight" (dm/str "calc(" right-sidebar-default-width "px * var(--ui-scale) + 4px)")}))
+    ;; round() matches the sidebars, which snap their scaled width to whole
+    ;; pixels — so the palette clears them without a sub-pixel gap/overlap.
+    #js {"paddingLeft" (dm/str "calc(round(" sidebar-width "px * var(--ui-scale), 1px) + " fixed-left "px)")
+         "paddingRight" (dm/str "calc(round(" right-sidebar-default-width "px * var(--ui-scale), 1px) + 4px)")}))
 
 (mf/defc palette*
   [{:keys [layout on-change-size]}]
