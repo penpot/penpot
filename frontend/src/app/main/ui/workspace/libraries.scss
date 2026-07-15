@@ -111,6 +111,10 @@
 
 .item-content {
   height: fit-content;
+  // Allow this 1fr grid track to shrink below its content's min-content so the
+  // item name can ellipsis instead of overflowing the column (which otherwise
+  // triggers a horizontal scrollbar, more visible under UI scaling).
+  min-width: 0;
 }
 
 .close-btn {
