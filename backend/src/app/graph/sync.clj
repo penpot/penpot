@@ -408,7 +408,9 @@
       {:index      (reduce index-remove-shape! index to-delete)
        :statements statements
        :applied?   true})
-    {:index index :statements [] :applied? false :reason :missing-shape}))
+    ;; Penpot emits one :del-obj per selected shape; an earlier change in the
+    ;; same batch may have already removed this node (e.g. parent + child).
+    {:index index :statements [] :applied? true}))
 
 (defn- apply-add-page
   [index {:keys [id name page]}]
