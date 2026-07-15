@@ -403,21 +403,38 @@
      ::yres/headers {"content-type" "application/json; charset=utf-8"}
      ::yres/body    (t/encode-str {:error "no-session"} {:type :json-verbose})}))
 
+(defn- json-request?
+  [request]
+  (some-> request
+          (yreq/get-header "accept")
+          (str/includes? "application/json")))
+
 (defn graph-query-handler
-  [_cfg {:keys [params ::session/profile-id]}]
+  [_cfg {:keys [params ::session/profile-id] :as request}]
   (let [query (:query params)]
     (try
       (let [result (graph.debug/query-session! profile-id query)]
-        (graph-console-response profile-id
-                                (graph.debug/console-context profile-id
-                                                             :query query
-                                                             :query-result result)))
+        (if (json-request? request)
+          {::yres/status  200
+           ::yres/headers {"content-type" "application/json; charset=utf-8"}
+           ::yres/body    (t/encode-str {:query         query
+                                         :query-result result}
+                                        {:type :json-verbose})}
+          (graph-console-response profile-id
+                                  (graph.debug/console-context profile-id
+                                                               :query query
+                                                               :query-result result))))
       (catch Throwable e
-        (graph-console-response profile-id
-                                (graph.debug/console-context profile-id
-                                                             :query query
-                                                             :error (or (:hint (ex-data e))
-                                                                        (ex-message e))))))))
+        (let [error (or (:hint (ex-data e)) (ex-message e))]
+          (if (json-request? request)
+            {::yres/status  200
+             ::yres/headers {"content-type" "application/json; charset=utf-8"}
+             ::yres/body    (t/encode-str {:query query :error error}
+                                          {:type :json-verbose})}
+            (graph-console-response profile-id
+                                    (graph.debug/console-context profile-id
+                                                                 :query query
+                                                                 :error error))))))))
 
 (defn import-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]

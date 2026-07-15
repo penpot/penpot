@@ -90,7 +90,7 @@ Graph Console
 
     <fieldset>
       <legend>Cypher query</legend>
-      <form method="post" action="/dbg/actions/graph-query">
+      <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
         <div class="row">
           <textarea name="query" rows="8" style="width:100%; font-family: monospace;">{{query}}</textarea>
         </div>
@@ -99,37 +99,39 @@ Graph Console
         </div>
       </form>
     </fieldset>
-    {% endif %}
 
-    {% if error %}
-    <fieldset>
-      <legend>Error</legend>
-      <pre>{{error}}</pre>
-    </fieldset>
-    {% endif %}
+    <div id="graph-query-output">
+      {% if error %}
+      <fieldset>
+        <legend>Error</legend>
+        <pre>{{error}}</pre>
+      </fieldset>
+      {% endif %}
 
-    {% if query-result %}
-    <fieldset>
-      <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
-      <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <thead>
-          <tr>
-            {% for column in query-result.columns %}
-            <th>{{column}}</th>
+      {% if query-result %}
+      <fieldset>
+        <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
+        <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+          <thead>
+            <tr>
+              {% for column in query-result.columns %}
+              <th>{{column}}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in query-result.rows %}
+            <tr>
+              {% for cell in row %}
+              <td><code>{{cell}}</code></td>
+              {% endfor %}
+            </tr>
             {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in query-result.rows %}
-          <tr>
-            {% for cell in row %}
-            <td><code>{{cell}}</code></td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </fieldset>
+          </tbody>
+        </table>
+      </fieldset>
+      {% endif %}
+    </div>
     {% endif %}
   </section>
 </main>
@@ -299,6 +301,77 @@ Graph Console
 
     ws.addEventListener("error", function () {
       wsStatus.textContent = "error";
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderQueryOutput(data) {
+    const output = document.getElementById("graph-query-output");
+    if (!output) return;
+
+    if (data.error) {
+      output.innerHTML =
+        "<fieldset><legend>Error</legend>"
+        + "<pre>" + escapeHtml(data.error) + "</pre></fieldset>";
+      return;
+    }
+
+    const result = data["query-result"];
+    if (!result) {
+      output.innerHTML = "";
+      return;
+    }
+
+    const truncated = result["truncated?"] ? ", truncated" : "";
+    let html =
+      "<fieldset><legend>Results ("
+      + escapeHtml(String(result["row-count"]))
+      + " rows" + truncated + ")</legend>"
+      + "<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\""
+      + " style=\"border-collapse: collapse; width: 100%;\">"
+      + "<thead><tr>";
+
+    (result.columns || []).forEach(function (column) {
+      html += "<th>" + escapeHtml(column) + "</th>";
+    });
+    html += "</tr></thead><tbody>";
+
+    (result.rows || []).forEach(function (row) {
+      html += "<tr>";
+      row.forEach(function (cell) {
+        html += "<td><code>" + escapeHtml(cell) + "</code></td>";
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody></table></fieldset>";
+    output.innerHTML = html;
+  }
+
+  const queryForm = document.getElementById("graph-query-form");
+  if (queryForm) {
+    queryForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const formData = new FormData(queryForm);
+      fetch("/dbg/actions/graph-query", {
+        method: "POST",
+        headers: { "Accept": "application/json" },
+        body: formData
+      })
+        .then(function (resp) { return resp.text(); })
+        .then(function (text) {
+          renderQueryOutput(parseTransitMap(JSON.parse(text)));
+        })
+        .catch(function (err) {
+          renderQueryOutput({ error: String(err) });
+        });
     });
   }
 
