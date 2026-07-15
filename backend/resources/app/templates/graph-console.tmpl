@@ -154,6 +154,9 @@ Graph Console
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             <input type="checkbox" id="graph-fold-toggle" /> fold containers
           </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            layout: <select id="graph-layout-select"></select>
+          </label>
         </legend>
         <desc>
           Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
@@ -306,11 +309,43 @@ Graph Console
   const LAYOUT_XS = 40;   // horizontal leaf slot spacing
   const LAYOUT_YS = 70;   // vertical rank (depth) spacing
 
+  // Layout dropdown source of truth: name -> G6 layout config, or null for
+  // the built-in O(n) tree layout (preset positions from treePositions,
+  // fastest, exploits IsChildOf being a tree). The <select> is populated
+  // from these keys; add/remove/tune entries here. All 13 G6 configs below
+  // were smoke-tested against combo data on this UMD build (2026-07-15).
+  // Note: iterative layouts (force*, fruchterman) are slow on 1000+ nodes;
+  // combo-combined is the only combo-aware one; the rest just get bounding
+  // boxes drawn around wherever they put the member nodes.
+  const LAYOUTS = {
+    "tree":          null,
+    "antv-dagre":    { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
+    "dagre":         { type: "dagre", rankdir: "BT" },
+    "circular":      { type: "circular" },
+    "concentric":    { type: "concentric" },
+    "radial":        { type: "radial" },
+    "grid":          { type: "grid" },
+    "force":         { type: "force" },
+    "d3-force":      { type: "d3-force" },
+    "force-atlas2":  { type: "force-atlas2" },
+    "fruchterman":   { type: "fruchterman" },
+    "mds":           { type: "mds" },
+    "combo-combined": { type: "combo-combined" },
+    "random":        { type: "random" }
+  };
+  const DEFAULT_LAYOUT = "tree";
+
   const graphViewStatus = document.getElementById("graph-view-status");
   let g6graph = null;
+  let g6graphLayout = null;
   let refetchTimer = null;
   let lastGraphData = null;
   let renderForced = false;
+
+  function currentLayoutName() {
+    const stored = localStorage.getItem("graph-layout");
+    return Object.prototype.hasOwnProperty.call(LAYOUTS, stored) ? stored : DEFAULT_LAYOUT;
+  }
 
   function nodeStyle(table) {
     return NODE_STYLES[table] || FALLBACK_STYLE;
@@ -410,11 +445,22 @@ Graph Console
   }
 
   function renderGraph(g6data) {
+    const layoutName = currentLayoutName();
+    if (g6graph && g6graphLayout !== layoutName) {
+      // Layout switch: recreate the graph (cheap with animation off);
+      // preset-tree <-> real-layout cannot be swapped on a live instance.
+      try { g6graph.destroy(); } catch (_err) {}
+      g6graph = null;
+    }
     if (g6graph) {
       g6graph.setData(g6data);
-      return g6graph.render();
+      return g6graph.render().catch(function (_err) {
+        /* instance may be destroyed mid-render on rapid toggle/layout switches */
+      });
     }
-    g6graph = new G6.Graph({
+    g6graphLayout = layoutName;
+    const layoutCfg = LAYOUTS[layoutName];
+    const opts = {
       container: "graph-canvas",
       data: g6data,
       autoFit: "view",
@@ -453,8 +499,12 @@ Graph Console
         }
       },
       behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand"]
+    };
+    if (layoutCfg) opts.layout = layoutCfg;
+    g6graph = new G6.Graph(opts);
+    return g6graph.render().catch(function (_err) {
+      /* see above */
     });
-    return g6graph.render();
   }
 
   function renderGraphLegend() {
@@ -780,6 +830,21 @@ Graph Console
     foldToggle.checked = foldEnabled();
     foldToggle.addEventListener("change", function () {
       localStorage.setItem("graph-fold-containers", foldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const layoutSelect = document.getElementById("graph-layout-select");
+  if (layoutSelect) {
+    Object.keys(LAYOUTS).forEach(function (name) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      layoutSelect.appendChild(opt);
+    });
+    layoutSelect.value = currentLayoutName();
+    layoutSelect.addEventListener("change", function () {
+      localStorage.setItem("graph-layout", layoutSelect.value);
       renderCurrent();
     });
   }
