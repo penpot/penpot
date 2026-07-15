@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "ds/mixins" as *;
+
 .modal-header {
   display: flex;
   align-items: center;
-  padding-block: var(--sp-m);
-  padding-inline: var(--sp-l);
   flex-shrink: 0;
 }
 
@@ -23,16 +23,19 @@
 }
 
 .modal-content {
+  @include custom-scrollbar;
+
   padding: var(--sp-l);
   overflow-block: auto;
   color: var(--color-foreground-primary);
 }
 
 .modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-s);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--sp-xxxl);
   min-block-size: 0;
+  padding: var(--sp-xxxl);
 }
 
 .modal-footer {
@@ -40,10 +43,16 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-s);
-  padding-block: var(--sp-m);
-  padding-inline: var(--sp-l);
   flex-shrink: 0;
   inline-size: 100%;
+}
+
+.modal-footer-base {
+  justify-content: flex-end;
+}
+
+.modal-footer-split {
+  justify-content: space-between;
 }
 
 .modal-footer-left {

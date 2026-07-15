@@ -53,10 +53,17 @@
   max-inline-size: px2rem(640);
 }
 
+.modalXlarge {
+  max-inline-size: px2rem(960);
+}
+
 .dialog {
+  position: relative;
   outline: none;
   display: flex;
   flex-direction: column;
+  min-block-size: 0;
+  overflow: hidden;
   max-block-size: inherit;
 }
 

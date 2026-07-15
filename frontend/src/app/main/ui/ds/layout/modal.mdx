@@ -3,112 +3,161 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
   Copyright (c) KALEIDOS INC Sucursal en España SL */ }
-
-import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
 import * as Modal from "./modal.stories";
 
-
-<Meta title= "Layout/Modal" />
+<Meta title="Layout/Modal" />
 
 # Modal
 
-Modals are overlays that require the user's attention, 
-displaying critical information or actions while blocking interaction with the rest of the page.
+A modal interrupts the current workflow to display critical information or require a user decision. While open, interaction with the rest of the interface is blocked.
 
-## Variants
+## Example
 
-**Default**, a modal with header, content, and footer.
+### Default
+
 <Canvas of={Modal.Default} />
 
-**Without title**, a modal with no header or footer.
-<Canvas of={Modal.WithoutTitle} />
+---
 
-**Small**, used for confirmations and simple actions.
-<Canvas of={Modal.Small} />
+# Usage
 
-**Large**, used for forms or content-heavy dialogs.
-<Canvas of={Modal.Large} />
-
-**Non dismissable**, the user must interact with the modal to close it.
-<Canvas of={Modal.NonDismissable} />
-
-## Technical notes
-
-### Composition
-
-The Modal provides three named slots: `header`, `content`, `footer`.
-Use the CLJS sub-components or pass custom content to each slot:
+The modal is composed of optional layout components.
 
 ```clojure
-;; Using the :heading shortcut (string → renders heading* + close button)
-[:> modal* {:is-open open?
-            :on-open-change #(reset! open* %)
-            :heading "Dialog Title"}
-  [:> modal-content* {}
-    [:> :p {} "Content"]]
-  [:> modal-footer* {}
-    [:> button* {:variant "primary"} "Save"]]]
+[:> modal*
+ {:is-open open?
+  :on-open-change #(reset! open* %)}
+
+ [:> modal-header*
+  {:title "Dialog title"}]
+
+ [:> modal-content* {}
+  [:> :p {} "Content"]]
+
+ [:> modal-footer* {}
+  [:> button* {:variant "secondary"} "Cancel"]
+  [:> button* {:variant "primary"} "Save"]]]
 ```
+
+The header, content and footer are optional. Use only the sections your dialog requires.
+
+---
+
+## Footer layouts
+
+### Simple
+
+Use when all actions belong together.
 
 ```clojure
-;; Full control via explicit slots
-[:> modal* {:is-open open?
-            :on-open-change #(reset! open* %)
-            :header [:> modal-header* {:title "Dialog Title"}]
-            :content [:> modal-content* {} [:> :p {} "Content"]]
-            :footer [:> modal-footer* {}
-                      [:> button* {:variant "secondary"} "Cancel"]
-                      [:> button* {:variant "primary"} "Save"]]}]
+[:> modal-footer* {}
+ [:> button* {:variant "secondary"} "Cancel"]
+ [:> button* {:variant "primary"} "Save"]]
 ```
 
-### Slot components
+Result:
 
-| Component | Description |
-|-----------|-------------|
-| `modal-header*` | Renders `heading*` + `CloseButton` in a flex container |
-| `modal-content*` | Scrollable body container |
-| `modal-footer*` | Actions container with gap and flex-end alignment |
+```
+.                Cancel   Save
+```
 
-### Props
+### Split actions
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `is-open` | boolean | — | Controls modal visibility |
-| `on-open-change` | fn | — | Called when modal opens/closes |
-| `heading` | string \| element | — | Shortcut for header slot (string → heading* component with close button) |
-| `header` | element | — | Custom header content |
-| `content` | element | — | Custom content (defaults to children wrapped in modal-content*) |
-| `footer` | element | — | Custom footer content |
-| `trigger` | element | — | Element that opens the modal |
-| `is-dismissable` | boolean | `true` | Close on backdrop click or Escape |
-| `size` | `"small" \| "medium" \| "large"` | `"medium"` | Modal width |
+Use when a destructive or secondary action should be visually separated from the primary actions.
 
-### Accessibility
+```clojure
+[:> modal-footer*
+ {:variant "split"
+  :start
+  (mf/html
+    [:> button* {:variant "destructive"} "Delete"])
 
-The modal uses `react-aria-components` under the hood, providing:
-- Focus trapping within the modal
-- Escape key to dismiss
-- ARIA `dialog` role and `aria-modal`
-- Focus restoration on close
-- Backdrop click dismiss (configurable)
+  :end
+  (mf/html
+  [:*
+    [:> button* {:variant "secondary"} "Cancel"]
+    [:> button* {:variant "primary"} "Save"]])}]
+```
 
-## Usage guidelines (design)
+Result:
 
-### Where to use
+```
+Delete                 Cancel   Save
+```
 
-When you need to interrupt the user's current task with critical information,
-a required decision, or a focused workflow that must be completed before returning
-to the main interface.
+---
 
-### When to use
+# Modal props
+## is-open
 
-- Confirmations before destructive actions
-- Forms that require immediate completion
+Controls whether the modal is open.
+
+Type: boolean
+
+## on-open-change
+
+Callback invoked whenever the open state changes.
+
+Type: function
+
+## trigger
+
+Element that opens the modal.
+
+Type: React element
+
+## is-dismissable
+
+Whether the modal can be closed by pressing Escape or clicking the backdrop.
+
+Default: true
+
+## hide-close
+
+Hides the default close button.
+
+Default: false
+
+## size
+
+Controls the modal width.
+
+Options
+
+"small"
+"medium" (default)
+"large"
+"xlarge"
+
+## class
+
+Additional CSS class applied to the modal.
+
+# Accessibility
+
+The modal automatically provides:
+
+- Accessible `dialog` semantics
+- Focus trapping
+- Focus restoration when closed
+- Keyboard support
+- Optional dismissal with **Escape** and backdrop click
+
+---
+
+# Best practices
+
+Use a modal for:
+
+- Confirming destructive actions
+- Collecting short forms
 - Displaying critical information
-- Wizards or multi-step flows within a single context
+- Requesting a decision before continuing
 
-### When not to use
+Avoid using a modal for:
 
-- For non-critical information that can be dismissed (use a toast or notification instead)
-- For complex navigation (use a new page or a panel)
-- When the content is too long (consider a slide-over or dedicated page)
+- Long forms
+- Large amounts of content
+- Complex navigation
+- Non-critical information

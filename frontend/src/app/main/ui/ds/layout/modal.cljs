@@ -46,53 +46,34 @@
     [:> :div props
      children]))
 
-(def ^:private schema:modal-body
-  [:map
-   [:class {:optional true} [:maybe :string]]])
-
-(mf/defc modal-body*
-  {::mf/schema schema:modal-body}
-  [{:keys [class children] :rest props}]
-  (let [props (mf/spread-props props
-                               {:class [class (stl/css :modal-body)]})]
-    [:> :div props
-     children]))
-
 (def ^:private schema:modal-footer
   [:map
-   [:class {:optional true} [:maybe :string]]])
+   [:class {:optional true} [:maybe :string]]
+   [:start {:optional true} [:maybe :any]]
+   [:end {:optional true} [:maybe :any]]
+   [:variant {:optional true} [:maybe [:enum "split" "base"]]]])
 
 (mf/defc modal-footer*
   {::mf/schema schema:modal-footer}
-  [{:keys [class children] :rest props}]
-  (let [props (mf/spread-props props
-                               {:class [class (stl/css :modal-footer)]})]
-    [:> :div props
-     children]))
+  [{:keys [class variant children start end] :rest props}]
+  (let [variant (d/nilv variant "base")
+        variant-class
+        (case variant
+          "split"  (stl/css :modal-footer-split)
+          "base" (stl/css :modal-footer-base)
+          nil)
+        props (mf/spread-props props
+                               {:class [class (stl/css :modal-footer) variant-class]})]
+    (if (= variant "split")
+      [:> :div props
+       [:> :div {:class (stl/css :modal-footer-left)}
+        start]
+       [:> :div {:class (stl/css :modal-footer-right)}
+        end]]
+      [:> :div props
+       children])))
 
-(def ^:private schema:modal-footer-left
-  [:map
-   [:class {:optional true} [:maybe :string]]])
 
-(mf/defc modal-footer-left*
-  {::mf/schema schema:modal-footer-left}
-  [{:keys [class children] :rest props}]
-  (let [props (mf/spread-props props
-                               {:class [class (stl/css :modal-footer-left)]})]
-    [:> :div props
-     children]))
-
-(def ^:private schema:modal-footer-right
-  [:map
-   [:class {:optional true} [:maybe :string]]])
-
-(mf/defc modal-footer-right*
-  {::mf/schema schema:modal-footer-right}
-  [{:keys [class children] :rest props}]
-  (let [props (mf/spread-props props
-                               {:class [class (stl/css :modal-footer-right)]})]
-    [:> :div props
-     children]))
 
 (def ^:private schema:modal
   [:map
@@ -101,16 +82,27 @@
    [:on-open-change {:optional true} [:maybe fn?]]
    [:trigger {:optional true} [:maybe :any]]
    [:is-dismissable {:optional true} [:maybe :boolean]]
-   [:size {:optional true} [:maybe [:enum "small" "medium" "large"]]]
-   [:hide-close {:optional true} [:maybe :boolean]]])
+   [:size {:optional true} [:maybe [:enum "small" "medium" "large" "xlarge"]]]
+   [:hide-close {:optional true} [:maybe :boolean]]
+   [:show-body {:optional true} [:maybe :boolean]]])
+
+(mf/defc modal-close-button*
+  []
+  (let [close (ui/useModalClose)]
+    (when close
+      [:div {:class (stl/css :modal-close)}
+       [:> icon-button* {:icon "close"
+                         :variant "ghost"
+                         :aria-label (tr "labels.close")
+                         :on-click close}]])))
 
 (mf/defc modal*
   {::mf/schema schema:modal}
-  [{:keys [class is-open on-open-change trigger is-dismissable size hide-close children] :rest props}]
+  [{:keys [class is-open on-open-change trigger is-dismissable size hide-close show-body children] :rest props}]
   (let [hide-close     (d/nilv hide-close false)
         is-dismissable (d/nilv is-dismissable true)
         size           (d/nilv size "medium")
-        close          (ui/useModalClose)
+        show-body      (d/nilv show-body true)
         props
         (mf/spread-props props
                          {:class class
@@ -120,11 +112,9 @@
                           :is-dismissable is-dismissable
                           :size size})]
     [:> ui/Modal props
-     [:div {:style {:position "relative"}}
-      (when-not hide-close
-        [:div {:class (stl/css :modal-close)}
-         [:> icon-button* {:icon "close"
-                           :variant "ghost"
-                           :aria-label (tr "labels.close")
-                           :on-click #(when close (close))}]])
-      children]]))
+     (when-not hide-close
+       [:> modal-close-button*])
+     (if show-body
+       [:div {:class [class (stl/css :modal-body)]}
+        children]
+       children)]))

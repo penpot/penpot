@@ -7,16 +7,8 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const {
-  Modal,
-  ModalHeader,
-  ModalContent,
-  ModalFooter,
-  ModalFooterLeft,
-  ModalFooterRight,
-  Button,
-  IconButton,
-} = Components;
+const { Modal, ModalHeader, ModalContent, ModalFooter, Button, IconButton } =
+  Components;
 
 const ModalWrapper = ({ children, ...props }) => {
   const [open, setOpen] = React.useState(props.isOpen ?? false);
@@ -59,7 +51,7 @@ export default {
   argTypes: {
     size: {
       control: "select",
-      options: ["small", "medium", "large"],
+      options: ["small", "medium", "large", "xlarge"],
     },
     isDismissable: { control: "boolean" },
   },
@@ -82,55 +74,50 @@ export const WithoutTitle = {
   },
 };
 
-export const Small = {
-  args: {
-    size: "small",
-    children: (
-      <>
-        <ModalHeader title="Confirm" />
-        <ModalContent>
-          <p>Are you sure you want to proceed?</p>
-        </ModalContent>
-        <ModalFooter>
-          <Button variant="secondary">Cancel</Button>
-          <Button variant="primary">Confirm</Button>
-        </ModalFooter>
-      </>
-    ),
-  },
-};
-
-export const Large = {
-  args: {
-    size: "large",
-    children: (
-      <>
-        <ModalHeader title="Settings" />
-        <ModalContent>
-          <p>This is the default modal content.</p>
-          <p>You can put any React content inside.</p>
-        </ModalContent>
-      </>
-    ),
-  },
-};
-
 export const DestructiveFooter = {
   args: {
     children: (
       <>
         <ModalHeader title="Delete item" />
         <ModalContent>
-          <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+          <p>
+            Are you sure you want to delete this item? This action cannot be
+            undone.
+          </p>
+        </ModalContent>
+        <ModalFooter
+          variant="split"
+          start={<Button variant="destructive">Delete</Button>}
+          end={
+            <>
+              <Button variant="secondary">Cancel</Button>
+              <Button variant="primary">Accept</Button>
+            </>
+          }
+        />
+      </>
+    ),
+  },
+};
+
+export const ScrollableContent = {
+  args: {
+    children: (
+      <>
+        <ModalHeader title="Terms and Conditions" />
+        <ModalContent>
+          {Array.from({ length: 20 }, (_, i) => (
+            <p key={i}>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat.
+            </p>
+          ))}
         </ModalContent>
         <ModalFooter>
-          <ModalFooterLeft>
-            <Button variant="destructive">Delete</Button>
-          </ModalFooterLeft>
-          <ModalFooterRight>
-            <Button variant="secondary">Cancel</Button>
-            <Button variant="primary">Accept</Button>
-          </ModalFooterRight>
+          <Button variant="secondary">Cancel</Button>
+          <Button variant="primary">Accept</Button>
         </ModalFooter>
       </>
     ),
