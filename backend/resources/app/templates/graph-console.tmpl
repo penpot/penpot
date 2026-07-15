@@ -45,18 +45,17 @@ Graph Console
       <desc>
         <p>
           File: <b>{{session.name}}</b> ({{session.file-id}})<br />
-          Revision: <b id="graph-session-revn">{{session.revn}}</b><br />
+          Loaded at revision: <b>{{session.revn}}</b><br />
+          Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
           Schema: <b>{{session.schema-version}}</b><br />
           Loaded at: <b>{{session.loaded-at}}</b>
         </p>
         <p id="graph-sync-status">
-          Sync: <b id="graph-ws-status">connecting…</b>
-          <span id="graph-stale-badge" style="display:none; margin-left: 1em; color: #b45309;">
-            graph stale (file revn <b id="graph-current-revn"></b>)
-          </span>
+          Feed: <b id="graph-ws-status">connecting…</b>
+          <span id="graph-sync-error" style="display:none; margin-left: 1em; color: #b91c1c;"></span>
         </p>
-        <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload" style="display:none;">
-          <input type="submit" value="Reload graph" />
+        <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload">
+          <input type="submit" value="Full reload (fallback)" />
         </form>
         {% if session.projection.stats %}
         <p>
@@ -72,10 +71,9 @@ Graph Console
     <fieldset>
       <legend>File changes (live)</legend>
       <desc>
-        Subscribes to the same WebSocket channel the workspace uses
-        (<code>:subscribe-file</code> → <code>:file-change</code> via msgbus).
-        Edits from other tabs or users appear here; the in-memory graph stays at
-        the loaded revision until you reload it.
+        Subscribes to the workspace WebSocket feed for visibility. The backend
+        applies supported changes incrementally to the in-memory Ladybug graph
+        via msgbus (<code>:file-change</code>).
       </desc>
       <div id="graph-changelog-empty" style="color: #666;">Waiting for changes…</div>
       <table id="graph-changelog" border="1" cellpadding="4" cellspacing="0"
@@ -140,21 +138,18 @@ Graph Console
 <script>
 (function () {
   const fileId = "{{session.file-id}}";
-  const sessionRevn = {{session.revn}};
   const sessionId = crypto.randomUUID();
   const wsScheme = location.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = wsScheme + "//" + location.host
     + "/ws/notifications?session-id=" + sessionId;
 
   const wsStatus = document.getElementById("graph-ws-status");
-  const staleBadge = document.getElementById("graph-stale-badge");
-  const currentRevnEl = document.getElementById("graph-current-revn");
-  const reloadForm = document.getElementById("graph-reload-form");
+  const syncRevnEl = document.getElementById("graph-sync-revn");
+  const syncErrorEl = document.getElementById("graph-sync-error");
   const changelog = document.getElementById("graph-changelog");
   const changelogBody = document.getElementById("graph-changelog-body");
   const changelogEmpty = document.getElementById("graph-changelog-empty");
 
-  let latestRevn = sessionRevn;
   let ws = null;
 
   function encodeTransitUuid(uuid) {
@@ -212,11 +207,27 @@ Graph Console
     return changes.map(summarizeChange).join("; ");
   }
 
-  function updateStaleUi() {
-    const stale = latestRevn > sessionRevn;
-    staleBadge.style.display = stale ? "inline" : "none";
-    reloadForm.style.display = stale ? "block" : "none";
-    currentRevnEl.textContent = String(latestRevn);
+  function refreshSyncStatus() {
+    fetch("/dbg/actions/graph-sync-status")
+      .then(function (resp) { return resp.text(); })
+      .then(function (text) {
+        const status = parseTransitMap(JSON.parse(text));
+        if (status["graph-revn"] !== undefined) {
+          syncRevnEl.textContent = String(status["graph-revn"]);
+        }
+        if (status.sync && status.sync.error) {
+          syncErrorEl.style.display = "inline";
+          syncErrorEl.textContent = "sync error: " + status.sync.error;
+        } else if (status.sync && status.sync["last-skipped"]
+                   && status.sync["last-skipped"].length) {
+          syncErrorEl.style.display = "inline";
+          syncErrorEl.textContent = "some changes skipped (use full reload if needed)";
+        } else {
+          syncErrorEl.style.display = "none";
+          syncErrorEl.textContent = "";
+        }
+      })
+      .catch(function () {});
   }
 
   function appendChange(revn, summary) {
@@ -245,9 +256,8 @@ Graph Console
 
     if (msg.type !== "file-change" || msg["file-id"] !== fileId) return;
 
-    latestRevn = Math.max(latestRevn, msg.revn || latestRevn);
-    updateStaleUi();
     appendChange(msg.revn, summarizeChanges(msg.changes));
+    setTimeout(refreshSyncStatus, 150);
   }
 
   function subscribe() {
@@ -278,8 +288,8 @@ Graph Console
     });
   }
 
-  updateStaleUi();
   connect();
+  refreshSyncStatus();
 
   window.addEventListener("beforeunload", function () {
     if (ws && ws.readyState === WebSocket.OPEN) {
