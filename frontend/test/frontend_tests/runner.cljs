@@ -60,6 +60,7 @@
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
    [frontend-tests.util-webapi-test]
+   [frontend-tests.util-zip-test]
    [frontend-tests.worker-snap-test]
    [goog.object :as gobj]))
 
@@ -134,6 +135,7 @@
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
    'frontend-tests.util-webapi-test
+   'frontend-tests.util-zip-test
    'frontend-tests.worker-snap-test])
 
 (assert (every? find-ns-obj test-namespaces)
