@@ -438,19 +438,27 @@
                   shape file page)))
 
 (defn- check-required-swap-slot
-  "Validate that the shape has swap-slot if it's a subinstance head and the ref shape is not the
-   matching shape by position in the near main."
+  "Validate that the shape has a swap slot if it's a subinstance head that has been
+   swapped: its ref shape is no longer a child of the near main parent. A ref shape
+   that is still a child at another position is a reorder, not a swap, and needs no
+   slot (the component sync realigns positions asynchronously)."
   [shape file page libraries]
   ;; Guard first: if the shape already has a swap slot the invariant is satisfied
-  ;; and we can avoid the expensive `find-near-match` call entirely.
+  ;; and we can avoid the ref-shape lookups entirely.
   (when (nil? (ctk/get-swap-slot shape))
-    (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
-      (when (and (some? near-match)
-                 (not= (:shape-ref shape) (:id near-match)))
-        (report-error :missing-slot
-                      "Shape has been swapped, should have swap slot"
-                      shape file page
-                      :swap-slot (or (ctk/get-swap-slot near-match) (:id near-match)))))))
+    (let [parent-shape     (ctst/get-shape page (:parent-id shape))
+          parent-ref-shape (when parent-shape
+                             (find-ref-shape* file page libraries parent-shape))
+          swapped?         (and (some? parent-ref-shape)
+                                (not-any? #(= % (:shape-ref shape))
+                                          (:shapes parent-ref-shape)))]
+      (when swapped?
+        (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
+          (when (some? near-match)
+            (report-error :missing-slot
+                          "Shape has been swapped, should have swap slot"
+                          shape file page
+                          :swap-slot (or (ctk/get-swap-slot near-match) (:id near-match)))))))))
 
 (defn- check-valid-touched
   "Validate that the text touched flags are coherent."
