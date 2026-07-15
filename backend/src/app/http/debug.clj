@@ -415,6 +415,49 @@
      ::yres/headers {"content-type" "application/json; charset=utf-8"}
      ::yres/body    (json/encode {:error "no-session"})}))
 
+(def ^:private sql:graph-files
+  "select t.id   as team_id,    t.name as team_name,
+          p.id   as project_id, p.name as project_name,
+          f.id   as file_id,    f.name as file_name
+     from team as t
+     join team_profile_rel as tpr on (tpr.team_id = t.id)
+     join project as p on (p.team_id = t.id)
+     join file as f on (f.project_id = p.id)
+    where tpr.profile_id = ?
+      and t.deleted_at is null
+      and p.deleted_at is null
+      and f.deleted_at is null
+    order by t.name, p.name, f.name
+    limit 500")
+
+(defn- graph-files-tree
+  [rows]
+  (->> (group-by (juxt :team-id :team-name) rows)
+       (mapv (fn [[[team-id team-name] team-rows]]
+               {:id   (str team-id)
+                :name team-name
+                :projects
+                (->> (group-by (juxt :project-id :project-name) team-rows)
+                     (mapv (fn [[[project-id project-name] project-rows]]
+                             {:id    (str project-id)
+                              :name  project-name
+                              :files (mapv (fn [{:keys [file-id file-name]}]
+                                             {:id (str file-id) :name file-name})
+                                           project-rows)}))
+                     (sort-by :name)
+                     (vec))}))
+       (sort-by :name)
+       (vec)))
+
+(defn graph-files-handler
+  "List teams -> projects -> files reachable by the current profile, as
+  plain JSON for the graph console file tree."
+  [{:keys [::db/pool]} {:keys [::session/profile-id]}]
+  (let [rows (db/exec! pool [sql:graph-files profile-id])]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (json/encode {:teams (graph-files-tree rows)})}))
+
 (defn- json-request?
   [request]
   (some-> request
@@ -706,6 +749,7 @@
      ["/graph-reload" {:handler (partial graph-reload-handler cfg)}]
      ["/graph-sync-status" {:handler (partial graph-sync-status-handler cfg)}]
      ["/graph-data" {:handler (partial graph-data-handler cfg)}]
+     ["/graph-files" {:handler (partial graph-files-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
      ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
 

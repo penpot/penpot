@@ -11,8 +11,11 @@ Graph Console
   </div>
 </nav>
 <main class="dashboard">
-  <section class="widget">
+  <section class="widget" style="max-width: none;">
     <p><a href="/dbg">&larr; Back to debug</a></p>
+
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+    <div style="flex: 0 0 440px; min-width: 360px;">
 
     <fieldset>
       <legend>Load graph in memory</legend>
@@ -20,7 +23,7 @@ Graph Console
         Projects the Penpot file into an in-memory Ladybug database for this
         admin session. Loading a new file replaces the previous one.
       </desc>
-      <form method="post" action="/dbg/actions/graph-load">
+      <form id="graph-load-form" method="post" action="/dbg/actions/graph-load">
         <div class="row">
           <input type="text" style="width:420px" name="file-id"
                  placeholder="file-id"
@@ -37,6 +40,12 @@ Graph Console
         </div>
       </form>
       {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <legend>Files</legend>
+      <desc>Teams &rarr; projects &rarr; files. Click a file to load it.</desc>
+      <div id="graph-files-tree" style="font-size: 13px;">Loading&hellip;</div>
     </fieldset>
 
     {% if session %}
@@ -89,19 +98,6 @@ Graph Console
     </fieldset>
 
     <fieldset>
-      <legend>Graph view</legend>
-      <desc>
-        Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
-        and glyph encode the node table; edges are <code>IsChildOf</code>
-        (arrow points to parent). Redraws automatically after live changes.
-      </desc>
-      <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
-      <div id="graph-canvas"
-           style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff;"></div>
-      <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
-    </fieldset>
-
-    <fieldset>
       <legend>Cypher query</legend>
       <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
         <div class="row">
@@ -146,8 +142,110 @@ Graph Console
       {% endif %}
     </div>
     {% endif %}
+
+    </div><!-- left column -->
+
+    {% if session %}
+    <div id="graph-view-column"
+         style="flex: 1 1 auto; min-width: 0; position: sticky; top: 8px;">
+      <fieldset id="graph-view-panel">
+        <legend>Graph view
+          <button type="button" id="graph-maximize" style="margin-left: 1em;">Maximize</button>
+        </legend>
+        <desc>
+          Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
+          and glyph encode the node table; edges are <code>IsChildOf</code>
+          (arrow points to parent). Redraws automatically after live changes.
+        </desc>
+        <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
+        <div id="graph-canvas"
+             style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff;"></div>
+        <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+      </fieldset>
+    </div>
+    {% endif %}
+
+    </div><!-- flex row -->
   </section>
 </main>
+
+<style>
+  #graph-view-panel:fullscreen {
+    background: #fff;
+    overflow: auto;
+    padding: 12px;
+  }
+  #graph-view-panel:fullscreen #graph-canvas {
+    height: calc(100vh - 110px) !important;
+  }
+  #graph-files-tree summary { cursor: pointer; }
+  #graph-files-tree ul { margin: 2px 0 4px 0; padding-left: 2em; }
+  #graph-files-tree a { text-decoration: none; }
+  #graph-files-tree a:hover { text-decoration: underline; }
+</style>
+
+<script>
+(function () {
+  const tree = document.getElementById("graph-files-tree");
+  const loadForm = document.getElementById("graph-load-form");
+  const loadInput = loadForm ? loadForm.querySelector("input[name=file-id]") : null;
+  if (!tree) return;
+
+  function fileLink(file) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = file.name;
+    a.title = file.id;
+    a.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      if (loadInput) {
+        loadInput.value = file.id;
+        loadForm.submit();
+      }
+    });
+    li.appendChild(a);
+    return li;
+  }
+
+  fetch("/dbg/actions/graph-files")
+    .then(function (resp) {
+      if (!resp.ok) throw new Error("graph-files HTTP " + resp.status);
+      return resp.json();
+    })
+    .then(function (data) {
+      tree.textContent = "";
+      const teams = data.teams || [];
+      if (!teams.length) {
+        tree.textContent = "No files found.";
+        return;
+      }
+      teams.forEach(function (team) {
+        const teamEl = document.createElement("details");
+        const teamSummary = document.createElement("summary");
+        teamSummary.textContent = team.name;
+        teamEl.appendChild(teamSummary);
+        (team.projects || []).forEach(function (project) {
+          const projEl = document.createElement("details");
+          projEl.style.marginLeft = "1em";
+          const projSummary = document.createElement("summary");
+          projSummary.textContent = project.name;
+          projEl.appendChild(projSummary);
+          const list = document.createElement("ul");
+          (project.files || []).forEach(function (file) {
+            list.appendChild(fileLink(file));
+          });
+          projEl.appendChild(list);
+          teamEl.appendChild(projEl);
+        });
+        tree.appendChild(teamEl);
+      });
+    })
+    .catch(function (err) {
+      tree.textContent = "Failed to load file tree: " + err;
+    });
+})();
+</script>
 
 {% if session %}
 <script src="https://cdn.jsdelivr.net/npm/@antv/g6@5/dist/g6.min.js"></script>
@@ -218,6 +316,7 @@ Graph Console
       container: "graph-canvas",
       data: g6data,
       autoFit: "view",
+      autoResize: true,
       padding: 20,
       layout: { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40 },
       node: {
@@ -503,6 +602,33 @@ Graph Console
         .catch(function (err) {
           renderQueryOutput({ error: String(err) });
         });
+    });
+  }
+
+  const maximizeBtn = document.getElementById("graph-maximize");
+  const graphPanel = document.getElementById("graph-view-panel");
+  if (maximizeBtn && graphPanel) {
+    maximizeBtn.addEventListener("click", function () {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        graphPanel.requestFullscreen().catch(function (err) {
+          graphViewStatus.textContent = "fullscreen rejected: " + err;
+        });
+      }
+    });
+    document.addEventListener("fullscreenchange", function () {
+      maximizeBtn.textContent =
+        document.fullscreenElement ? "Exit fullscreen" : "Maximize";
+      setTimeout(function () {
+        if (g6graph) {
+          const canvas = document.getElementById("graph-canvas");
+          try {
+            g6graph.setSize(canvas.clientWidth, canvas.clientHeight);
+            g6graph.fitView();
+          } catch (_err) { /* autoResize covers most cases */ }
+        }
+      }, 120);
     });
   }
 
