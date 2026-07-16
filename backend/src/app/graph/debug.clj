@@ -223,14 +223,23 @@
 
 (defn- export-edges
   [conn]
-  (let [stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
-                  "RETURN a.id AS source, b.id AS target, r.position AS position;")
-        {:keys [rows truncated?]}
-        (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
-    {:edges (mapv (fn [[source target position]]
-                    {:source (str source) :target (str target) :position position})
-                  rows)
-     :truncated? truncated?}))
+  (let [child-stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
+                        "RETURN a.id AS source, b.id AS target, r.position AS position, "
+                        "'IsChildOf' AS rel;")
+        inst-stmt  (str "MATCH (a)-[r:IsInstanceOf]->(b) "
+                        "RETURN a.id AS source, b.id AS target, NULL AS position, "
+                        "'IsInstanceOf' AS rel;")
+        child      (ladybug/query-on-connection! conn child-stmt :max-rows export-max-rows)
+        inst       (ladybug/query-on-connection! conn inst-stmt :max-rows export-max-rows)
+        ->edge     (fn [[source target position rel]]
+                     (cond-> {:source (str source)
+                              :target (str target)
+                              :rel    (str rel)}
+                       (some? position) (assoc :position position)))]
+    {:edges (into (mapv ->edge (:rows child))
+                  (map ->edge)
+                  (:rows inst))
+     :truncated? (boolean (or (:truncated? child) (:truncated? inst)))}))
 
 (defn export-graph-data!
   "Export the node/edge inventory of the in-memory graph for `profile-id`

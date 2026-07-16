@@ -81,13 +81,50 @@
     (coll? v)    (format-json v)
     :else        (format-string (str v))))
 
+(defn- format-list-element
+  "Format one element of a Cypher LIST literal for typed `elem-type`."
+  [elem-type v]
+  (case elem-type
+    "UUID"    (format-uuid v)
+    "STRING"  (format-string (str v))
+    "JSON"    (format-json v)
+    "INT64"   (format-int v)
+    "DOUBLE"  (format-number v)
+    "BOOLEAN" (if v "true" "false")
+    (format-value v)))
+
+(defn- format-list
+  "Cypher LIST literal for Ladybug LIST columns (`UUID[]`, `STRING[]`, …).
+
+  Must not use `json(...)`: assigning a JSON value to `UUID[]` yields
+  `Conversion exception: Invalid UUID` (e.g. Frame.`shapes` on component
+  instantiate via sync)."
+  [ladybug-type v]
+  (let [elem-type (subs ladybug-type 0 (- (count ladybug-type) 2))
+        elems     (if (coll? v) (seq v) [v])]
+    (str "["
+         (str/join ", " (map #(format-list-element elem-type %) elems))
+         "]")))
+
 (defn format-typed-value
   [ladybug-type v]
   (cond
-    (= ladybug-type "JSON") (format-json v)
+    (nil? v)
+    "NULL"
+
+    (= ladybug-type "JSON")
+    (format-json v)
+
+    ;; Coerce string ids from transit edge-cases into UUID literals.
+    (= ladybug-type "UUID")
+    (format-uuid v)
+
     (and (string? ladybug-type)
-         (str/ends-with? ladybug-type "[]")) (format-json v)
-    :else (format-value v)))
+         (str/ends-with? ladybug-type "[]"))
+    (format-list ladybug-type v)
+
+    :else
+    (format-value v)))
 
 (defn- ensure-semicolon
   [statement]
