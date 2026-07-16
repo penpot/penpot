@@ -1023,6 +1023,9 @@
                 (rx/concat
                  (rx/merge
                   (->> modif-stream
+                       ;; Sample at a fixed cadence to cap re-renders, mirroring the
+                       ;; drag/resize/rotation paths throttled in #10560.
+                       (rx/sample mconst/move-sample-time)
                        (rx/map #(dwm/set-wasm-modifiers % {:ignore-snap-pixel true})))
 
                   (->> modif-stream
@@ -1031,17 +1034,28 @@
                   (rx/of (nudge-selected-shapes direction shift?)))
                  (rx/of (finish-transform))))
 
-              (rx/concat
-               (rx/merge
-                (->> move-events
-                     (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                     (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
-                     (rx/map #(dwm/set-modifiers % false true))
-                     (rx/take-until stopper))
-                (rx/of (nudge-selected-shapes direction shift?)))
+              (let [modif-stream
+                    (->> move-events
+                         (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
+                         (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
+                         (rx/take-until stopper))]
+                (rx/concat
+                 (rx/merge
+                  (->> modif-stream
+                       ;; Sample at a fixed cadence to cap re-renders, mirroring the
+                       ;; drag/resize/rotation paths throttled in #10560.
+                       (rx/sample mconst/move-sample-time)
+                       (rx/map #(dwm/set-modifiers % false true)))
+                  ;; Un-sampled final write ensures the modifiers atom holds the
+                  ;; exact cumulative position before `apply-modifiers` commits,
+                  ;; even if `sample` drops the tail value on completion.
+                  (->> modif-stream
+                       (rx/last)
+                       (rx/map #(dwm/set-modifiers % false true)))
+                  (rx/of (nudge-selected-shapes direction shift?)))
 
-               (rx/of (dwm/apply-modifiers)
-                      (finish-transform)))))
+                 (rx/of (dwm/apply-modifiers)
+                        (finish-transform))))))
           (rx/empty))))))
 
 (defn move-selected
