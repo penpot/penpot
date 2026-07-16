@@ -59,6 +59,7 @@ Graph Console
                       target="_blank">{{session.name}}</a></b> ({{session.file-id}})<br />
           Loaded at revision: <b>{{session.revn}}</b><br />
           Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
+          Graph size: <b id="graph-size">…</b><br />
           Schema: <b>{{session.schema-version}}</b><br />
           Loaded at: <b>{{session.loaded-at}}</b>
         </p>
@@ -125,6 +126,7 @@ Graph Console
       {% if query-result %}
       <fieldset>
         <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
+        <div style="max-height: 45vh; overflow: auto;">
         <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
           <thead>
             <tr>
@@ -143,6 +145,7 @@ Graph Console
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </fieldset>
       {% endif %}
     </div>
@@ -374,9 +377,12 @@ Graph Console
   // rel label rendered mid-edge (abacus viewer EDGE_SYM convention) —
   // dash variants alone cannot carry the growing rel roster. IsChildOf
   // is the unlabeled default (the background tree structure).
+  // `sym` may be a full rel name: no compact glyph reads as "derived from
+  // a template" (∈ wrongly connotes membership), so IsInstanceOf spells
+  // itself out; the legend falls back to the dash-arrow for long syms.
   const EDGE_STYLES = {
     "IsChildOf":    { stroke: "#b3b0a8" },
-    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3], sym: "∈" }
+    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3], sym: "IsInstanceOf" }
   };
   const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
   // --- graph diff: add/remove marks with step fade --------------------
@@ -918,9 +924,10 @@ Graph Console
     });
     Object.keys(rels).sort().forEach(function (rel) {
       const s = edgeStyle(rel);
+      const glyph = (s.sym && s.sym.length <= 2) ? s.sym : (s.lineDash ? "⇢" : "→");
       items.push('<span style="margin-right: 1em; white-space: nowrap;">'
         + '<span style="color: ' + s.stroke + '; font-size: 14px;">'
-        + escapeHtml(s.sym || (s.lineDash ? "⇢" : "→")) + '</span> '
+        + escapeHtml(glyph) + '</span> '
         + escapeHtml(rel) + "</span>");
     });
     if (anyLiveMarks()) {
@@ -1009,6 +1016,13 @@ Graph Console
         return resp.json();
       })
       .then(function (data) {
+        // Session-fieldset size line stays live even through skipped
+        // repaints (unlike the status line under the canvas).
+        const sizeEl = document.getElementById("graph-size");
+        if (sizeEl) {
+          sizeEl.textContent = data.nodes.length + " nodes, "
+            + data.edges.length + " edges";
+        }
         // Skip the repaint when the display projection is unchanged: a
         // change burst that only touches non-projected attrs (e.g. moving
         // shapes around) bumps revn but not the picture.
@@ -1304,10 +1318,15 @@ Graph Console
     }
 
     const truncated = result["truncated?"] ? ", truncated" : "";
+    // Actions bar sits above the table so a long result cannot push the
+    // "Show result in graph view" button out of sight; the table itself
+    // scrolls inside a capped container.
     let html =
       "<fieldset><legend>Results ("
       + escapeHtml(String(result["row-count"]))
       + " rows" + truncated + ")</legend>"
+      + "<div id=\"graph-result-actions\" style=\"margin-bottom: 4px;\"></div>"
+      + "<div style=\"max-height: 45vh; overflow: auto;\">"
       + "<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\""
       + " style=\"border-collapse: collapse; width: 100%;\">"
       + "<thead><tr>";
@@ -1332,7 +1351,7 @@ Graph Console
       html += "</tr>";
     });
 
-    html += "</tbody></table></fieldset>";
+    html += "</tbody></table></div></fieldset>";
     output.innerHTML = html;
 
     // Offer to view the result as an induced subgraph: any UUID appearing
@@ -1350,7 +1369,7 @@ Graph Console
       btn.type = "button";
       btn.textContent = "Show result in graph view (" + ids.size + " ids)";
       btn.addEventListener("click", function () { applyQueryFilter(ids); });
-      output.appendChild(btn);
+      document.getElementById("graph-result-actions").appendChild(btn);
     }
   }
 
