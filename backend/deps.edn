@@ -66,13 +66,16 @@
   software.amazon.awssdk/s3 {:mvn/version "2.46.18"}
   software.amazon.awssdk/sts {:mvn/version "2.46.18"}
 
-  com.ladybugdb/lbug {:mvn/version "0.18.0"}}
+  com.ladybugdb/lbug {:mvn/version "0.18.0"}
+  ;; Required by Arrow RootAllocator (lbug only pulls arrow-memory-core).
+  org.apache.arrow/arrow-memory-netty {:mvn/version "18.2.0"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
  {:dev
   {:jvm-opts ["--sun-misc-unsafe-memory-access=allow"
-              "--enable-native-access=ALL-UNNAMED"]
+              "--enable-native-access=ALL-UNNAMED"
+              "--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED"]
    :extra-deps
    {com.bhauman/rebel-readline {:mvn/version "0.1.11"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
