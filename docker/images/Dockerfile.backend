@@ -1,4 +1,4 @@
-FROM ubuntu:26.04 AS build
+FROM dhi.io/debian-base:trixie-debian13-dev AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -47,7 +47,8 @@ RUN set -eux; \
        --add-modules java.base,jdk.net,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported,jdk.jfr,jdk.jcmd \
        --output /opt/jre;
 
-FROM ubuntu:26.04 AS image
+
+FROM dhi.io/debian-base:trixie-debian13-dev AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -55,11 +56,13 @@ ENV LANG='C.UTF-8' \
     JAVA_HOME="/opt/jre" \
     PATH=/opt/jre/bin:/opt/imagick/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
-    TZ=Etc/UTC
+    TZ=Etc/UTC \
+    LD_LIBRARY_PATH=/opt/imagick/lib/deps
 
 RUN set -ex; \
-    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install passwd; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
@@ -71,7 +74,7 @@ RUN set -ex; \
         libglib2.0-0 \
         libgomp1 \
         libheif1 \
-        libjpeg-turbo8 \
+        libjpeg62-turbo \
         liblcms2-2 \
         libopenexr-3-1-30 \
         libopenjp2-7 \
@@ -81,7 +84,7 @@ RUN set -ex; \
         libwebp7 \
         libwebpdemux2 \
         libwebpmux3 \
-        libxml2-16 \
+        libxml2 \
         libzip5 \
         libzstd1 \
         python3 \
@@ -100,7 +103,7 @@ RUN set -ex; \
     chown -R penpot:penpot /opt/data;
 
 COPY --from=build /opt/jre /opt/jre
-COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
 
 COPY files/imagemagick-policy.xml /opt/imagick/etc/ImageMagick-7/policy.xml
 
