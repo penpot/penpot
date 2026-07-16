@@ -24,7 +24,12 @@
 (set! *warn-on-reflection* true)
 
 (def default-query
-  "MATCH (n:Document) RETURN n.id AS id, n.name AS name;")
+  "Default console query. The `filter_*` columns carry node ids for the
+  graph-view result filter; the results table hides them (see
+  `hide-filter-columns` and the template's `renderQueryOutput`)."
+  (str "MATCH (s)-[r]->(t) "
+       "RETURN s.name, label(s) AS src, label(r) AS rel, t.name, label(t) AS tgt, "
+       "s.id AS filter_src_id, t.id AS filter_tgt_id;"))
 
 (defonce ^:private sessions
   (atom {}))
@@ -236,12 +241,26 @@
          :nodes     nodes
          :edges     edges}))))
 
+(defn- hide-filter-columns
+  "Drop `filter_*` columns from a query result before HTML table render;
+  they exist to feed node ids to the graph-view filter, not for reading.
+  The JSON response path keeps the full result."
+  [{:keys [columns rows] :as result}]
+  (let [idxs (vec (keep-indexed
+                   (fn [i c] (when-not (str/starts-with? (str c) "filter_") i))
+                   columns))]
+    (if (or (empty? idxs) (= (count idxs) (count columns)))
+      result
+      (assoc result
+             :columns (mapv (vec columns) idxs)
+             :rows    (mapv (fn [row] (mapv (vec row) idxs)) rows)))))
+
 (defn console-context
   "Build template data for the graph debug console page."
   [profile-id & {:keys [query query-result error message]}]
   {:session       (session-info profile-id)
    :query         (or query default-query)
-   :query-result  query-result
+   :query-result  (some-> query-result hide-filter-columns)
    :error         error
    :message       message
    :default-query default-query})
