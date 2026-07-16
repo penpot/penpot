@@ -992,10 +992,6 @@ msgstr "通常"
 msgid "workspace.options.text-options.japanese-layout"
 msgstr "日本語組版"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
-msgid "workspace.options.text-options.japanese-layout-enable-for-text"
-msgstr "このテキストで有効にする"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-combine-upright-all"
 msgstr "縦中横"

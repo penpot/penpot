@@ -61,37 +61,12 @@
            :disabled true
            :dimmed   true})))
 
-(defn japanese-layout-enabled?
-  "Japanese layout is opt-in. An explicit supported writing mode is the
-  persisted marker; absent, mixed, or reset values remain ordinary text."
-  [values]
-  (let [writing-mode (:writing-mode values)]
-    (cond
-      (= writing-mode :multiple) nil
-      (#{"horizontal-tb" "vertical-rl"} writing-mode) true
-      :else false)))
-
 (defn japanese-layout-config-enabled?
   "Japanese layout controls are available when enabled for the current file or
   globally in the user's profile."
   [file-data profile]
   (or (ctf/japanese-layout-enabled? file-data)
       (true? (get-in profile [:props :japanese-layout-all-files]))))
-
-(defn japanese-layout-toggle-attrs
-  "Attrs emitted by the Japanese layout switch. A nil writing mode removes the
-  persisted paragraph attribute, restoring the normal horizontal default."
-  [enabled?]
-  {:writing-mode (when enabled? "horizontal-tb")})
-
-(defn reconcile-japanese-layout-state
-  "Keep the current opt-in state when a same-selection style snapshot omits
-  writing-mode. A new selection resets from its persisted paragraph value."
-  [current values selection-changed?]
-  (cond
-    selection-changed? (japanese-layout-enabled? values)
-    (#{"horizontal-tb" "vertical-rl"} (:writing-mode values)) true
-    :else current))
 
 (defn vertical-japanese-layout?
   "True when the Japanese layout controls are editing vertical text."
@@ -124,27 +99,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sub-components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(mf/defc japanese-layout-toggle*
-  [{:keys [values enabled on-change on-toggle on-blur]}]
-  (let [handle-change
-        (mf/use-fn
-         (mf/deps on-change on-toggle on-blur)
-         (fn [checked?]
-           (on-toggle checked?)
-           (on-change (japanese-layout-toggle-attrs checked?))
-           (when (some? on-blur) (on-blur))))]
-
-    ;; Repair the invalid reset sentinel emitted by the previous implementation
-    ;; so an already-open document can recover without a reload or manual edit.
-    (mf/with-effect [(:writing-mode values) on-change]
-      (when (= "" (:writing-mode values))
-        (on-change {:writing-mode nil})))
-
-    [:div {:class (stl/css :japanese-layout-toggle)}
-     [:> switch* {:default-checked enabled
-                  :label           (tr "workspace.options.text-options.japanese-layout-enable-for-text")
-                  :on-change       handle-change}]]))
 
 (mf/defc writing-mode-options*
   [{:keys [values on-change on-blur]}]
@@ -559,56 +513,36 @@
                   :on-change handle-change}]]))
 
 (mf/defc japanese-layout-options*
-  [{:keys [ids values ruby-values text-selection-active
+  [{:keys [values ruby-values text-selection-active
            on-change on-ruby-presentation-change on-blur]}]
-  (let [selection-key             (hash ids)
-        previous-selection-key-ref (mf/use-ref selection-key)
-        active*                    (mf/use-state #(japanese-layout-enabled? values))
-        active?                    (deref active*)
-        vertical?                  (vertical-japanese-layout? values)
-        toggle                     (mf/use-fn #(reset! active* %))
-        common-props               (mf/props
-                                    {:values    values
-                                     :on-change on-change
-                                     :on-blur   on-blur})
-        ruby-presentation-props    (mf/props
-                                    {:values    ruby-values
-                                     :on-change on-ruby-presentation-change
-                                     :on-blur   on-blur})
-        toggle-props               (mf/spread-props
-                                    common-props
-                                    {:enabled   active?
-                                     :on-toggle toggle})]
-
-    (mf/with-effect [selection-key (:writing-mode values)]
-      (let [selection-changed?
-            (not= selection-key (mf/ref-val previous-selection-key-ref))]
-        (reset! active*
-                (reconcile-japanese-layout-state active?
-                                                 values
-                                                 selection-changed?))
-        (mf/set-ref-val! previous-selection-key-ref selection-key)))
+  (let [vertical?               (vertical-japanese-layout? values)
+        common-props            (mf/props
+                                 {:values    values
+                                  :on-change on-change
+                                  :on-blur   on-blur})
+        ruby-presentation-props (mf/props
+                                 {:values    ruby-values
+                                  :on-change on-ruby-presentation-change
+                                  :on-blur   on-blur})]
 
     [:div {:class (stl/css :japanese-layout-options)}
-     [:> japanese-layout-toggle* toggle-props]
-     (when ^boolean active?
-       [:div {:class (stl/css :japanese-layout-controls)}
-        [:div {:class (stl/css :japanese-icon-options)}
-         [:> writing-mode-options* common-props]
-         (when ^boolean vertical?
-           [:*
-            [:> text-orientation-options* common-props]
-            [:> text-combine-upright-options*
-             (mf/spread-props common-props
-                              {:text-selection-active text-selection-active})]])
-         (when ^boolean text-selection-active
-           [:> warichu-options* common-props])]
-        (when ^boolean vertical?
-          [:> text-combine-upright-count-options* common-props])
-        [:> font-features-options* common-props]
-        (when ^boolean text-selection-active
-          [:> text-emphasis-options* common-props])
-        [:> annotation-clearance-options* common-props]
-        (if text-selection-active
-          [:> ruby-advanced-options* common-props]
-          [:> ruby-presentation-options* ruby-presentation-props])])]))
+     [:div {:class (stl/css :japanese-layout-controls)}
+      [:div {:class (stl/css :japanese-icon-options)}
+       [:> writing-mode-options* common-props]
+       (when ^boolean vertical?
+         [:*
+          [:> text-orientation-options* common-props]
+          [:> text-combine-upright-options*
+           (mf/spread-props common-props
+                            {:text-selection-active text-selection-active})]])
+       (when ^boolean text-selection-active
+         [:> warichu-options* common-props])]
+      (when ^boolean vertical?
+        [:> text-combine-upright-count-options* common-props])
+      [:> font-features-options* common-props]
+      (when ^boolean text-selection-active
+        [:> text-emphasis-options* common-props])
+      [:> annotation-clearance-options* common-props]
+      (if text-selection-active
+        [:> ruby-advanced-options* common-props]
+        [:> ruby-presentation-options* ruby-presentation-props])]]))

@@ -229,32 +229,15 @@
   (t/is (= {:ruby-hidden nil}
            (content-styles/styles->attrs {"--ruby-hidden" ""}))))
 
-(t/deftest japanese-layout-is-explicitly-enabled-by-writing-mode
-  (t/is (false? (tjl/japanese-layout-enabled? {})))
-  (t/is (false? (tjl/japanese-layout-enabled? {:writing-mode nil})))
-  (t/is (true? (tjl/japanese-layout-enabled? {:writing-mode "horizontal-tb"})))
-  (t/is (true? (tjl/japanese-layout-enabled? {:writing-mode "vertical-rl"})))
-  (t/is (nil? (tjl/japanese-layout-enabled? {:writing-mode :multiple}))))
-
-(t/deftest japanese-layout-toggle-emits-a-persisted-writing-mode
-  (t/is (= {:writing-mode "horizontal-tb"}
-           (tjl/japanese-layout-toggle-attrs true)))
-  (t/is (= {:writing-mode nil}
-           (tjl/japanese-layout-toggle-attrs false))))
-
-(t/deftest japanese-layout-state-survives-transient-selection-styles
-  (t/is (true? (tjl/reconcile-japanese-layout-state true {} false)))
-  (t/is (true? (tjl/reconcile-japanese-layout-state false
-                                                    {:writing-mode "vertical-rl"}
-                                                    false)))
-  (t/is (false? (tjl/reconcile-japanese-layout-state true {} true))))
-
 (t/deftest japanese-controls-distinguish-horizontal-and-vertical-modes
+  (t/is (false? (tjl/vertical-japanese-layout? {})))
   (t/is (false? (tjl/vertical-japanese-layout?
                  {:writing-mode "horizontal-tb"})))
   (t/is (true? (tjl/vertical-japanese-layout?
                 {:writing-mode "vertical-rl"})))
   (t/is (= "palt"
            (tjl/proportional-metrics-feature "horizontal-tb")))
+  (t/is (= "palt"
+           (tjl/proportional-metrics-feature nil)))
   (t/is (= "vpal"
            (tjl/proportional-metrics-feature "vertical-rl"))))

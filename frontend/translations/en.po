@@ -8542,10 +8542,6 @@ msgstr "Normal"
 msgid "workspace.options.text-options.japanese-layout"
 msgstr "Japanese text layout"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
-msgid "workspace.options.text-options.japanese-layout-enable-for-text"
-msgstr "Enable for this text"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-combine-upright-all"
 msgstr "Tate-chu-yoko"
