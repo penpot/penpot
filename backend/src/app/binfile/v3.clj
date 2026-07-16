@@ -316,7 +316,6 @@
 
         (doseq [[shape-id shape] objects]
           (let [path  (str "files/" file-id "/pages/" page-id "/" shape-id ".json")
-                shape (assoc shape :page-id page-id)
                 shape (encode-shape shape)]
             (write-entry! output path shape)))))
 
