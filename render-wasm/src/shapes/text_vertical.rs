@@ -720,8 +720,38 @@ fn capped_equal_allocations(capacities: &[(usize, f32)], amount: f32) -> Vec<(us
     allocations
 }
 
-fn spacing_owner(_before: JapaneseClass, after: JapaneseClass, boundary: usize) -> (usize, bool) {
-    if matches!(
+fn explicit_pair_spacing_em(before: JapaneseClass, after: JapaneseClass) -> f32 {
+    if matches!(before, JapaneseClass::DividingPunctuation) {
+        pair_rule(before, after).preferred_em
+    } else {
+        0.0
+    }
+}
+
+fn materialize_explicit_pair_spacing(
+    cells: &mut [VerticalCell],
+    items: &mut [FlowItem],
+    classes: &[Option<JapaneseClass>],
+) {
+    for boundary in 0..cells.len().saturating_sub(1) {
+        let (Some(before), Some(after)) = (classes[boundary], classes[boundary + 1]) else {
+            continue;
+        };
+        let spacing_em = explicit_pair_spacing_em(before, after);
+        if spacing_em <= 0.0 {
+            continue;
+        }
+        let em = cells[boundary].font_size.min(cells[boundary + 1].font_size);
+        let spacing = spacing_em * em;
+        cells[boundary].extent += spacing;
+        items[boundary].extent += spacing;
+    }
+}
+
+fn spacing_owner(before: JapaneseClass, after: JapaneseClass, boundary: usize) -> (usize, bool) {
+    if explicit_pair_spacing_em(before, after) > 0.0 {
+        (boundary, false)
+    } else if matches!(
         after,
         JapaneseClass::OpeningBracket | JapaneseClass::MiddleDot
     ) {
@@ -731,6 +761,36 @@ fn spacing_owner(_before: JapaneseClass, after: JapaneseClass, boundary: usize) 
     } else {
         (boundary, false)
     }
+}
+
+fn discard_explicit_spacing_at_column_edges(
+    cells: &mut [VerticalCell],
+    items: &mut [FlowItem],
+    classes: &[Option<JapaneseClass>],
+    pair_spacing_em: &mut [f32],
+    placements: &[(usize, f32)],
+) -> bool {
+    let mut changed = false;
+    for boundary in 0..cells.len().saturating_sub(1) {
+        if placements[boundary].0 == placements[boundary + 1].0 {
+            continue;
+        }
+        let (Some(before), Some(after)) = (classes[boundary], classes[boundary + 1]) else {
+            continue;
+        };
+        if explicit_pair_spacing_em(before, after) <= 0.0 {
+            continue;
+        }
+        let em = cells[boundary].font_size.min(cells[boundary + 1].font_size);
+        let spacing = pair_spacing_em[boundary] * em;
+        if spacing <= 0.0 {
+            continue;
+        }
+        reduce_cell_spacing(cells, items, boundary, spacing, false);
+        pair_spacing_em[boundary] = 0.0;
+        changed = true;
+    }
+    changed
 }
 
 fn reduce_cell_spacing(
@@ -2197,6 +2257,12 @@ pub fn layout_vertical(
             items[i].extent = target;
         }
 
+        // cl-04 question/exclamation marks carry an explicit one-em space
+        // after their character frame. Unlike bracket/comma/full-stop aki,
+        // this space is not embedded in the font's full-width advance, so it
+        // must exist in the flow extent before oikomi is allowed to reduce it.
+        materialize_explicit_pair_spacing(&mut para_cells, &mut items, &flow_classes);
+
         // Long ruby with no slack: grow the base span's flow extent *before*
         // column planning so the wrap itself makes room (forced spreading).
         // The growth becomes inter-character gaps, so only the cells before
@@ -2255,6 +2321,18 @@ pub fn layout_vertical(
         // the preceding column. The loop is bounded and each iteration can
         // only shrink a previously untrimmed item.
         let mut placements = plan_columns(&items, max_height);
+        for _ in 0..para_cells.len() {
+            if !discard_explicit_spacing_at_column_edges(
+                &mut para_cells,
+                &mut items,
+                &flow_classes,
+                &mut pair_spacing_em,
+                &placements,
+            ) {
+                break;
+            }
+            placements = plan_columns(&items, max_height);
+        }
         for _ in 0..para_cells.len() {
             let mut changed = false;
             for i in 0..para_cells.len() {
@@ -5548,10 +5626,18 @@ mod tests {
     }
 
     fn layout_with(provider: &TypefaceFontProvider, content: &TextContent) -> VerticalLayout {
+        layout_with_height(provider, content, 1000.0)
+    }
+
+    fn layout_with_height(
+        provider: &TypefaceFontProvider,
+        content: &TextContent,
+        max_height: f32,
+    ) -> VerticalLayout {
         let fallback_mgr = FontMgr::from(provider.clone());
         layout_vertical(
             content,
-            1000.0,
+            max_height,
             provider,
             fallback_mgr,
             &[],
@@ -5819,6 +5905,69 @@ mod tests {
         assert_eq!(
             layout.cells[2].glyph_flow_shift, 0.0,
             "the unshed opening bracket is not shifted"
+        );
+    }
+
+    #[test]
+    fn dividing_punctuation_materializes_trailing_aki() {
+        let provider = vmtx_provider();
+        let terminal = layout_with(&provider, &make_content(&["！"], 1000.0));
+        let before_ideograph = layout_with(&provider, &make_content(&["！く"], 1000.0));
+        let before_dividing = layout_with(&provider, &make_content(&["！？"], 1000.0));
+        let before_closing = layout_with(&provider, &make_content(&["！」"], 1000.0));
+        let em = 20.0;
+        let natural_extent = terminal.cells[0].extent;
+
+        assert!(
+            (before_ideograph.cells[0].extent - natural_extent - em).abs() < 0.01,
+            "！ before ordinary text adds one em, got {} over natural {natural_extent}",
+            before_ideograph.cells[0].extent
+        );
+        assert!(
+            (before_dividing.cells[0].extent - natural_extent - em).abs() < 0.01,
+            "！ before ？ adds one em, got {} over natural {natural_extent}",
+            before_dividing.cells[0].extent
+        );
+        assert!(
+            (before_closing.cells[0].extent - natural_extent).abs() < 0.01,
+            "！ before a closing bracket adds no aki, got {} over natural {natural_extent}",
+            before_closing.cells[0].extent
+        );
+    }
+
+    #[test]
+    fn dividing_punctuation_oikomi_never_compresses_glyph_frames() {
+        let provider = vmtx_provider();
+        let terminal_exclamation = layout_with(&provider, &make_content(&["！"], 1000.0));
+        let terminal_question = layout_with(&provider, &make_content(&["？"], 1000.0));
+        let layout = layout_with_height(&provider, &make_content(&["く！？く"], 60.0), 60.0);
+
+        assert!(
+            layout.cells[1].extent + 0.01 >= terminal_exclamation.cells[0].extent,
+            "oikomi compressed the ！ glyph frame from {} to {}",
+            terminal_exclamation.cells[0].extent,
+            layout.cells[1].extent
+        );
+        assert!(
+            layout.cells[2].extent + 0.01 >= terminal_question.cells[0].extent,
+            "oikomi compressed the ？ glyph frame from {} to {}",
+            terminal_question.cells[0].extent,
+            layout.cells[2].extent
+        );
+    }
+
+    #[test]
+    fn dividing_punctuation_discards_trailing_aki_at_column_edge() {
+        let provider = vmtx_provider();
+        let terminal = layout_with(&provider, &make_content(&["！"], 1000.0));
+        let layout = layout_with_height(&provider, &make_content(&["！く"], 20.0), 20.0);
+
+        assert_ne!(layout.cells[0].column, layout.cells[1].column);
+        assert!(
+            (layout.cells[0].extent - terminal.cells[0].extent).abs() < 0.01,
+            "column-end ！ should discard its trailing aki, got {} over natural {}",
+            layout.cells[0].extent,
+            terminal.cells[0].extent
         );
     }
 
