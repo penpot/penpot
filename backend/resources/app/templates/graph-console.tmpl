@@ -905,7 +905,7 @@ Graph Console
         // empty canvas clears. Runs alongside the node:click inspector.
         { type: "click-select", degree: 1,
           state: "selected", neighborState: "active", unselectedState: "inactive" }],
-      plugins: [{
+      plugins: [{key: "edge-bundling", type: "edge-bundling"},{
         key: "toolbar",
         type: "toolbar",
         position: "top-left",
