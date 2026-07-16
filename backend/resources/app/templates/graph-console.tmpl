@@ -573,28 +573,30 @@ Graph Console
   // Layout dropdown source of truth: name -> G6 layout config, or null for
   // the built-in O(n) tree layout (preset positions from treePositions,
   // fastest, exploits IsChildOf being a tree). The <select> is populated
-  // from these keys; add/remove/tune entries here. All 13 G6 configs below
-  // were smoke-tested against combo data on this UMD build (2026-07-15).
-  // Note: iterative layouts (force*, fruchterman) are slow on 1000+ nodes;
-  // combo-combined is the only combo-aware one; the rest just get bounding
-  // boxes drawn around wherever they put the member nodes.
+  // from these keys; add/remove/tune entries here. Pruned 2026-07-16:
+  // grid/random/force/fruchterman/force-atlas2 added nothing over this
+  // set. combo-combined is the only combo-aware layout: it lays out each
+  // combo's members internally, then treats every combo as one super-node
+  // in an outer force pass. Non-hierarchical layouts carry overlap
+  // parameters (preventOverlap ignores label extents — see
+  // DENSE_LABEL_LAYOUTS).
   const LAYOUTS = {
     "tree":          null,
     "antv-dagre":    { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
     "dagre":         { type: "dagre", rankdir: "BT" },
     "circular":      { type: "circular" },
-    "concentric":    { type: "concentric" },
-    "radial":        { type: "radial" },
-    "grid":          { type: "grid" },
-    "force":         { type: "force" },
-    "d3-force":      { type: "d3-force" },
-    "force-atlas2":  { type: "force-atlas2" },
-    "fruchterman":   { type: "fruchterman" },
-    "mds":           { type: "mds" },
-    "combo-combined": { type: "combo-combined" },
-    "random":        { type: "random" }
+    "concentric":    { type: "concentric", preventOverlap: true, nodeSize: 32, nodeSpacing: 12 },
+    "radial":        { type: "radial", preventOverlap: true, nodeSize: 32, unitRadius: 90 },
+    "d3-force":      { type: "d3-force", collide: { radius: 26 } },
+    "combo-combined": { type: "combo-combined" }
   };
   const DEFAULT_LAYOUT = "tree";
+  // Always-on labels are the residual overlap driver on ring/stress
+  // layouts (their collision handling ignores label extents), so these
+  // get smaller labels; the hover tooltip carries full identity anywhere.
+  const DENSE_LABEL_LAYOUTS = {
+    "concentric": true, "radial": true, "d3-force": true
+  };
 
   const graphViewStatus = document.getElementById("graph-view-status");
   let g6graph = null;
@@ -795,7 +797,9 @@ Graph Console
             return m && m.kind === "removed" ? [3, 3] : 0;
           },
           labelText: function (d) { return d.data.label; },
-          labelFontSize: 9,
+          labelFontSize: function () {
+            return DENSE_LABEL_LAYOUTS[currentLayoutName()] ? 7 : 9;
+          },
           labelFill: "#0b0b0b",
           labelPlacement: "bottom",
           halo: function (d) { return !!nodeMark(d.id); },
