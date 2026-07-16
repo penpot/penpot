@@ -18,7 +18,7 @@ Graph Console
     <p><a href="/dbg">&larr; Back to debug</a></p>
 
     <div style="display: flex; gap: 16px; align-items: flex-start;">
-    <div style="flex: 0 0 330px; min-width: 300px;">
+    <div style="flex: 0 0 350px; min-width: 300px;">
 
     <fieldset>
       <legend>Load graph from Penpot</legend>
@@ -51,9 +51,12 @@ Graph Console
     <fieldset>
       <legend>Loaded session (<span id="graph-loaded-at">{{session.loaded-at}}</span>)</legend>
       <desc>
-        <p>
-          File: <b><a id="graph-penpot-link" data-file-id="{{session.file-id}}"
-                      target="_blank">{{session.name}}</a></b><br />
+        <p style="margin: 0 0 4px;">
+          File: <span id="graph-file-crumbs"></span><b><a id="graph-penpot-link"
+                      data-file-id="{{session.file-id}}"
+                      target="_blank">{{session.name}}</a></b>
+          <span id="graph-bm" style="color: #666;"
+                title="resident memory of the session's in-memory DB (buffer manager)"></span><br />
           <span title="The file's revision when it was ingested vs the revision of the last live change applied to the graph. They start equal; a graph value behind the workspace means missed changes — use Reload.">
             Revisions: ingested at <b>{{session.revn}}</b> · graph now
             <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b>
@@ -61,7 +64,7 @@ Graph Console
           Graph size: <b id="graph-size">…</b><br />
           Schema: <b>{{session.schema-version}}</b>
         </p>
-        <p id="graph-sync-status">
+        <p id="graph-sync-status" style="margin: 0;">
           Feed: <b id="graph-ws-status">connecting…</b>
           <span id="graph-sync-error" style="display:none; margin-left: 1em; color: #b91c1c;"></span>
         </p>
@@ -254,6 +257,8 @@ Graph Console
           if (file.id === fileId) {
             penpotLink.href = "/#/workspace/" + project.id + "/" + file.id;
             penpotLink.title = "Open in Penpot";
+            const crumbs = document.getElementById("graph-file-crumbs");
+            if (crumbs) crumbs.textContent = team.name + " › " + project.name + " › ";
           }
         });
       });
@@ -1096,14 +1101,18 @@ Graph Console
         // Session-fieldset size line stays live even through skipped
         // repaints (unlike the status line under the canvas); hover
         // shows per-table counts.
+        // bm-bytes = the session DB's buffer-manager usage (CALL
+        // bm_info()), i.e. actual resident memory; shown next to the
+        // file name. Floor-dominated: the wide slice-3 schema costs
+        // ~115 MiB before any data.
+        const bmEl = document.getElementById("graph-bm");
+        if (bmEl && data["bm-bytes"]) {
+          bmEl.textContent = "(" + (data["bm-bytes"] / 1048576).toFixed(1) + " MiB)";
+        }
         const sizeEl = document.getElementById("graph-size");
         if (sizeEl) {
-          // bm-bytes = the session DB's buffer-manager usage (CALL
-          // bm_info()), i.e. actual resident memory, not an estimate.
-          const bm = data["bm-bytes"];
           sizeEl.textContent = data.nodes.length + " nodes, "
-            + data.edges.length + " edges"
-            + (bm ? " (" + (bm / 1048576).toFixed(1) + " MiB)" : "");
+            + data.edges.length + " edges";
           const counts = {};
           data.nodes.forEach(function (n) {
             counts[n.table] = (counts[n.table] || 0) + 1;
@@ -1328,7 +1337,12 @@ Graph Console
     const changesCell = document.createElement("td");
 
     revnCell.textContent = String(revn);
-    changesCell.textContent = summary;
+    // add-obj / del-obj wear the diff-mark colors of the canvas.
+    changesCell.innerHTML = escapeHtml(summary)
+      .replace(/\badd-obj\b/g,
+               '<span style="color: ' + DIFF_ADDED_COLOR + ';">add-obj</span>')
+      .replace(/\bdel-obj\b/g,
+               '<span style="color: ' + DIFF_REMOVED_COLOR + ';">del-obj</span>');
     row.appendChild(revnCell);
     row.appendChild(changesCell);
     changelogBody.appendChild(row);
