@@ -5,6 +5,15 @@ export DEVENV_IMGNAME="$ORGANIZATION/devenv";
 export DEVENV_NETWORK="penpot_shared";
 export DEVENV_DEFAULTS_FILE="docker/devenv/defaults.env";
 
+# Tag used for the devenv image across pull/build/run/build-bundle. Defaults to
+# 'latest'; override by exporting DEVENV_TAG in the shell before invoking
+# manage.sh (e.g. `export DEVENV_TAG=mytest`), or per-call via
+# `build-devenv --tag mytest`. Note --tag only affects that one build-devenv
+# call -- for run-devenv/build/pull-devenv to pick up the same custom tag,
+# DEVENV_TAG must be exported in the shell for those invocations too, since
+# each `./manage.sh ...` is a separate process.
+export DEVENV_TAG="${DEVENV_TAG:-latest}";
+
 # Load instance configuration (project name, container names, ports, runtime
 # config). Single source of truth for the devenv; consumed by both docker
 # compose (via --env-file) and the shell logic below. Hard dependency — abort
@@ -138,21 +147,46 @@ function setup-buildx {
 function build-devenv {
     set +e;
 
+    local tag="$DEVENV_TAG"
+    local do_push=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --tag)
+                tag="$2"; shift 2;;
+            --push)
+                do_push=true; shift;;
+            --local)
+                # Kept for backward compatibility -- local-only is now the
+                # default behaviour, so this flag is a no-op.
+                shift;;
+            *)
+                echo "build-devenv: unknown argument '$1'" >&2
+                return 1;;
+        esac
+    done
+
+    # Propagate to the rest of this invocation (e.g. if build-devenv is
+    # called from another function later). Does NOT persist to a separate
+    # `./manage.sh run-devenv` call -- export DEVENV_TAG in the shell for that.
+    export DEVENV_TAG="$tag"
+
     pushd docker/devenv;
 
-    if [ "$1" = "--local" ]; then
-        echo "Build local only $DEVENV_IMGNAME:latest image";
-        docker build -t $DEVENV_IMGNAME:latest .;
-    else
-        echo "Build and push $DEVENV_IMGNAME:latest image";
+    if [[ "$do_push" == "true" ]]; then
+        echo "Build and push $DEVENV_IMGNAME:$tag image";
         setup-buildx;
 
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --output type=registry \
-          -t $DEVENV_IMGNAME:latest .;
+          --provenance=mode=max --sbom=true \
+          -t "$DEVENV_IMGNAME:$tag" .;
 
-        docker pull $DEVENV_IMGNAME:latest;
+        docker pull "$DEVENV_IMGNAME:$tag";
+    else
+        echo "Build local only $DEVENV_IMGNAME:$tag image";
+        docker build -t "$DEVENV_IMGNAME:$tag" .;
     fi
 
     popd;
@@ -160,11 +194,11 @@ function build-devenv {
 
 function pull-devenv {
     set -ex
-    docker pull $DEVENV_IMGNAME:latest
+    docker pull "$DEVENV_IMGNAME:$DEVENV_TAG"
 }
 
 function pull-devenv-if-not-exists {
-    if [[ ! $(docker images $DEVENV_IMGNAME:latest -q) ]]; then
+    if [[ ! $(docker images "$DEVENV_IMGNAME:$DEVENV_TAG" -q) ]]; then
         pull-devenv $@
     fi
 }
@@ -214,6 +248,7 @@ function instance-compose {
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         CURRENT_USER_ID="${CURRENT_USER_ID:-$(id -u)}" \
         PENPOT_SOURCE_PATH="$source_path" \
+        DEVENV_TAG="$DEVENV_TAG" \
         "${overrides[@]}" \
         docker compose -p "penpotdev-${instance}" \
             --env-file "$DEVENV_DEFAULTS_FILE" \
@@ -1022,16 +1057,54 @@ function start-coding-agent {
 
 function build-imagemagick-docker-image {
     set +e;
-    echo "Building image penpotapp/imagemagick:$IMAGEMAGICK_VERSION"
+
+    local custom_tag=""
+    local do_push=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --tag)
+                custom_tag="$2"; shift 2;;
+            --push)
+                do_push=true; shift;;
+            --local)
+                # Kept for backward compatibility -- local-only is now the
+                # default behaviour, so this flag is a no-op.
+                shift;;
+            *)
+                echo "build-imagemagick-docker-image: unknown argument '$1'" >&2
+                return 1;;
+        esac
+    done
 
     pushd docker/imagemagick;
 
-    output_option="type=registry";
-    platform="linux/amd64,linux/arm64";
+    # Without --tag, keep the historical behaviour of tagging both ':latest'
+    # and the pinned IMAGEMAGICK_VERSION. With --tag, tag ONLY the custom
+    # value -- it's meant to be an isolated/test tag, not a stand-in for latest.
+    local -a tag_args=()
+    if [[ -n "$custom_tag" ]]; then
+        tag_args=(-t "penpotapp/imagemagick:$custom_tag")
+        echo "Building image penpotapp/imagemagick:$custom_tag"
+    else
+        tag_args=(-t "penpotapp/imagemagick:latest" -t "penpotapp/imagemagick:$IMAGEMAGICK_VERSION")
+        echo "Building image penpotapp/imagemagick:$IMAGEMAGICK_VERSION"
+    fi
 
-    if [ "$1" = "--local" ]; then
-        output_option="type=docker";
-        platform="linux/$ARCH"
+    local output_option="type=docker";
+    local platform="linux/$ARCH";
+    local -a attestation_args=();
+
+    if [[ "$do_push" == "true" ]]; then
+        output_option="type=registry";
+        platform="linux/amd64,linux/arm64";
+        # Attestations (SBOM/provenance) only work when pushing to a
+        # registry -- the local image store doesn't support loading images
+        # with attestations, so these are only added on this branch.
+        attestation_args=(--provenance=mode=max --sbom=true);
+        echo "Will push to registry"
+    else
+        echo "Local build only (pass --push to publish to the registry)"
     fi
 
     setup-buildx;
@@ -1040,8 +1113,8 @@ function build-imagemagick-docker-image {
       --build-arg IMAGEMAGICK_VERSION=$IMAGEMAGICK_VERSION \
       --platform $platform \
       --output $output_option \
-      -t penpotapp/imagemagick:latest \
-      -t penpotapp/imagemagick:$IMAGEMAGICK_VERSION .;
+      "${attestation_args[@]}" \
+      "${tag_args[@]}" .;
 
     popd;
 }
@@ -1062,7 +1135,7 @@ function build {
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/$script $version
+           $DEVENV_IMGNAME:$DEVENV_TAG sudo -EH -u penpot ./scripts/$script $version
 
     echo ">> build end: $1"
 }
@@ -1175,54 +1248,59 @@ function build-docs-bundle {
     echo ">> bundle docs end";
 }
 
-function build-frontend-docker-image {
-    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
+# Shared helper for the release-image builds below (frontend/backend/exporter/
+# mcp/storybook). Parses --tag; without it, tags with both $CURRENT_BRANCH and
+# 'latest' (historical default, unchanged). With --tag, tags ONLY that custom
+# value -- same convention as build-devenv/build-imagemagick-docker-image: a
+# custom tag is for an isolated/test build, not a stand-in for latest.
+function _build-release-docker-image {
+    local image="$1" bundle_dir="$2" dockerfile="$3"; shift 3
+    local custom_tag=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --tag)
+                custom_tag="$2"; shift 2;;
+            *)
+                echo "build-${image}-docker-image: unknown argument '$1'" >&2
+                return 1;;
+        esac
+    done
+
+    local -a tag_args=()
+    if [[ -n "$custom_tag" ]]; then
+        tag_args=(-t "penpotapp/${image}:$custom_tag")
+    else
+        tag_args=(-t "penpotapp/${image}:$CURRENT_BRANCH" -t "penpotapp/${image}:latest")
+    fi
+
+    rsync -avr --delete "./bundles/${image}/" "./docker/images/${bundle_dir}/";
     pushd ./docker/images;
     docker build \
-        -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest \
-        --build-arg BUNDLE_PATH="./bundle-frontend/" \
-        -f Dockerfile.frontend .;
+        "${tag_args[@]}" \
+        --build-arg BUNDLE_PATH="./${bundle_dir}/" \
+        -f "$dockerfile" .;
     popd;
+}
+
+function build-frontend-docker-image {
+    _build-release-docker-image frontend bundle-frontend Dockerfile.frontend "$@"
 }
 
 function build-backend-docker-image {
-    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
-    pushd ./docker/images;
-    docker build \
-        -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest \
-        --build-arg BUNDLE_PATH="./bundle-backend/" \
-        -f Dockerfile.backend .;
-    popd;
+    _build-release-docker-image backend bundle-backend Dockerfile.backend "$@"
 }
 
 function build-exporter-docker-image {
-    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
-    pushd ./docker/images;
-    docker build \
-        -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest \
-        --build-arg BUNDLE_PATH="./bundle-exporter/" \
-        -f Dockerfile.exporter .;
-    popd;
+    _build-release-docker-image exporter bundle-exporter Dockerfile.exporter "$@"
 }
 
 function build-mcp-docker-image {
-    rsync -avr --delete ./bundles/mcp/ ./docker/images/bundle-mcp/;
-    pushd ./docker/images;
-    docker build \
-        -t penpotapp/mcp:$CURRENT_BRANCH -t penpotapp/mcp:latest \
-        --build-arg BUNDLE_PATH="./bundle-mcp/" \
-        -f Dockerfile.mcp .;
-    popd;
+    _build-release-docker-image mcp bundle-mcp Dockerfile.mcp "$@"
 }
 
 function build-storybook-docker-image {
-    rsync -avr --delete ./bundles/storybook/ ./docker/images/bundle-storybook/;
-    pushd ./docker/images;
-    docker build \
-        -t penpotapp/storybook:$CURRENT_BRANCH -t penpotapp/storybook:latest \
-        --build-arg BUNDLE_PATH="./bundle-storybook/" \
-        -f Dockerfile.storybook .;
-    popd;
+    _build-release-docker-image storybook bundle-storybook Dockerfile.storybook "$@"
 }
 
 function usage {
@@ -1236,9 +1314,18 @@ function usage {
     echo "clones). Use --ws N to target a specific workspace; the default is 0."
     echo "Full guide: docs/technical-guide/developer/{devenv,agentic-devenv}.md."
     echo ""
+    echo "Image tag: all devenv commands use \$DEVENV_TAG (default: latest). To work"
+    echo "against a custom tag end-to-end (build, then run), export it before both"
+    echo "calls: 'export DEVENV_TAG=mytest; ./manage.sh build-devenv; ./manage.sh run-devenv'."
+    echo "'build-devenv --tag mytest' only affects that single build call otherwise."
+    echo ""
     echo "Image lifecycle"
     echo "- pull-devenv                      Pull the devenv docker image from the registry."
-    echo "- build-devenv [--local]           Build the devenv docker image (--local skips the registry push)."
+    echo "- build-devenv [--tag TAG] [--push]"
+    echo "                                   Build the devenv docker image. Local-only by default (single-"
+    echo "                                   platform, 'docker build'); pass --push to build multi-platform"
+    echo "                                   (amd64+arm64) and push to the registry instead. --tag TAG overrides"
+    echo "                                   the image tag (default: latest)."
     echo ""
     echo "Bring a devenv up / down"
     echo "- run-devenv                       Bring one workspace up, start its tmux session in the background,"
@@ -1288,13 +1375,20 @@ function usage {
     echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
-    echo "- build-docker-images              Build all docker images (frontend, backend, exporter, mcp and storybook)."
-    echo "- build-frontend-docker-image      Build frontend docker images."
-    echo "- build-backend-docker-image       Build backend docker images."
-    echo "- build-exporter-docker-image      Build exporter docker images."
-    echo "- build-mcp-docker-image           Build exporter docker images."
-    echo "- build-storybook-docker-image     Build storybook docker images."
-    echo "- build-imagemagick-docker-image   Build imagemagic docker images."
+    echo "- build-docker-images [--tag TAG]  Build all docker images (frontend, backend, exporter, mcp and storybook)."
+    echo "                                   Without --tag, each image is tagged with both the current git branch"
+    echo "                                   and 'latest' (unchanged default). With --tag, ONLY that custom tag"
+    echo "                                   is applied, to all five images."
+    echo "- build-frontend-docker-image [--tag TAG]   Build frontend docker image."
+    echo "- build-backend-docker-image [--tag TAG]    Build backend docker image."
+    echo "- build-exporter-docker-image [--tag TAG]   Build exporter docker image."
+    echo "- build-mcp-docker-image [--tag TAG]         Build mcp docker image."
+    echo "- build-storybook-docker-image [--tag TAG]  Build storybook docker image."
+    echo "- build-imagemagick-docker-image [--tag TAG] [--push]"
+    echo "                                   Build the imagemagick docker image. Local-only by default (single-"
+    echo "                                   platform); pass --push to build multi-platform (amd64+arm64) and"
+    echo "                                   push to the registry instead. --tag TAG builds ONLY that tag"
+    echo "                                   (default without --tag: both 'latest' and \$IMAGEMAGICK_VERSION)."
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -1374,31 +1468,31 @@ case $1 in
         ;;
 
     build-docker-images)
-        build-frontend-docker-image
-        build-backend-docker-image
-        build-exporter-docker-image
-        build-mcp-docker-image
-        build-storybook-docker-image
+        build-frontend-docker-image "${@:2}"
+        build-backend-docker-image "${@:2}"
+        build-exporter-docker-image "${@:2}"
+        build-mcp-docker-image "${@:2}"
+        build-storybook-docker-image "${@:2}"
         ;;
 
     build-frontend-docker-image)
-        build-frontend-docker-image
+        build-frontend-docker-image "${@:2}"
         ;;
 
     build-backend-docker-image)
-        build-backend-docker-image
+        build-backend-docker-image "${@:2}"
         ;;
 
     build-exporter-docker-image)
-        build-exporter-docker-image
+        build-exporter-docker-image "${@:2}"
         ;;
 
     build-mcp-docker-image)
-        build-mcp-docker-image
+        build-mcp-docker-image "${@:2}"
         ;;
 
     build-storybook-docker-image)
-        build-storybook-docker-image
+        build-storybook-docker-image "${@:2}"
         ;;
 
     build-imagemagick-docker-image)
