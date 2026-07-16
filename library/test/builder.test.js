@@ -3,6 +3,7 @@ import test from "node:test";
 import * as fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { BlobReader, ZipReader, TextWriter } from "@zip.js/zip.js";
 
 import * as penpot  from "#self";
 
@@ -217,4 +218,98 @@ test("create context with tokens lib as obj", () => {
 
   assert.ok(file.data);
   assert.ok(file.data.tokensLib)
+});
+
+test("export compact format produces page-level objects", async () => {
+  const context = penpot.createBuildContext();
+  const fileId = context.addFile({name: "test file"});
+  const pageId = context.addPage({name: "test page"});
+
+  context.addRect({name: "rect1", x: 100, y: 200, width: 50, height: 30});
+
+  const blob = await penpot.exportAsBlob(context, {format: "compact"});
+
+  const zipReader = new ZipReader(new BlobReader(new Blob([blob])));
+  const entries = await zipReader.getEntries();
+
+  const manifestEntry = entries.find(e => e.filename === "manifest.json");
+  assert.ok(manifestEntry, "manifest should exist");
+
+  const manifest = JSON.parse(await manifestEntry.getData(new TextWriter()));
+  assert.equal(manifest.version, 2);
+
+  const pageEntry = entries.find(e =>
+    e.filename === `files/${fileId}/pages/${pageId}.json`);
+  assert.ok(pageEntry, "page entry should exist");
+
+  const pageData = JSON.parse(await pageEntry.getData(new TextWriter()));
+  assert.ok(pageData.objects, "page should contain objects");
+  assert.ok(Object.keys(pageData.objects).length > 0,
+            "objects should not be empty");
+
+  const shapeEntries = entries.filter(e =>
+    e.filename.startsWith(`files/${fileId}/pages/${pageId}/`) &&
+    e.filename !== `files/${fileId}/pages/${pageId}.json`);
+  assert.equal(shapeEntries.length, 0, "should not have per-shape entries");
+
+  await zipReader.close();
+});
+
+test("export legacy format produces per-shape entries", async () => {
+  const context = penpot.createBuildContext();
+  const fileId = context.addFile({name: "test file"});
+  const pageId = context.addPage({name: "test page"});
+
+  context.addRect({name: "rect1", x: 100, y: 200, width: 50, height: 30});
+
+  const blob = await penpot.exportAsBlob(context, {format: "legacy"});
+
+  const zipReader = new ZipReader(new BlobReader(new Blob([blob])));
+  const entries = await zipReader.getEntries();
+
+  const manifestEntry = entries.find(e => e.filename === "manifest.json");
+  assert.ok(manifestEntry, "manifest should exist");
+
+  const manifest = JSON.parse(await manifestEntry.getData(new TextWriter()));
+  assert.equal(manifest.version, 1);
+
+  const pageEntry = entries.find(e =>
+    e.filename === `files/${fileId}/pages/${pageId}.json`);
+  assert.ok(pageEntry, "page entry should exist");
+
+  const pageData = JSON.parse(await pageEntry.getData(new TextWriter()));
+  assert.ok(!pageData.objects, "legacy page should not contain objects");
+
+  const shapeEntries = entries.filter(e =>
+    e.filename.startsWith(`files/${fileId}/pages/${pageId}/`) &&
+    e.filename !== `files/${fileId}/pages/${pageId}.json`);
+  assert.ok(shapeEntries.length > 0, "should have per-shape entries");
+
+  await zipReader.close();
+});
+
+test("export default format produces per-shape entries", async () => {
+  const context = penpot.createBuildContext();
+  const fileId = context.addFile({name: "test file"});
+  const pageId = context.addPage({name: "test page"});
+
+  context.addRect({name: "rect1", x: 100, y: 200, width: 50, height: 30});
+
+  const blob = await penpot.exportAsBlob(context);
+
+  const zipReader = new ZipReader(new BlobReader(new Blob([blob])));
+  const entries = await zipReader.getEntries();
+
+  const manifest = JSON.parse(
+    await entries.find(e => e.filename === "manifest.json")
+                   .getData(new TextWriter()));
+  assert.equal(manifest.version, 1);
+
+  const shapeEntries = entries.filter(e =>
+    e.filename.startsWith(`files/${fileId}/pages/${pageId}/`) &&
+    e.filename !== `files/${fileId}/pages/${pageId}.json`);
+  assert.ok(shapeEntries.length > 0,
+            "default (legacy) should have per-shape entries");
+
+  await zipReader.close();
 });
