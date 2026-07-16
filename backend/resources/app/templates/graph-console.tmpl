@@ -165,6 +165,11 @@ Graph Console
                  title="collapse every container that holds no changed elements">
             <input type="checkbox" id="graph-diff-fold" /> fold unchanged
           </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="overview mode: collapse every container at or beyond this depth from the root (root = 0; empty = off)">
+            fold ≥ depth: <input type="number" id="graph-depth-fold" min="0" max="99"
+                                 style="width: 3em;" />
+          </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             layout: <select id="graph-layout-select"></select>
           </label>
@@ -511,6 +516,15 @@ Graph Console
     return localStorage.getItem("graph-diff-fold") === "1";
   }
 
+  // Overview mode: null = off, else collapse containers at depth ≥ value
+  // (root = depth 0, so e.g. 2 folds the containers hanging from a Page).
+  function depthFoldValue() {
+    const raw = localStorage.getItem("graph-depth-fold");
+    if (raw == null || raw === "") return null;
+    const v = parseInt(raw, 10);
+    return Number.isFinite(v) && v >= 0 ? v : null;
+  }
+
   // One-shot pulse rings on age-0 marks, placed ~post-render (positions
   // are sampled once; pulses don't track pan/zoom during their ~1.2 s).
   function pulseAt(canvasPoint, color, sizePx) {
@@ -688,21 +702,36 @@ Graph Console
         if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
       });
     }
-    // Diff-fold: derive fold state from the live marks instead of the
-    // instance — every combo collapses except those on an ancestor path
-    // of (or being) a changed element, so changes stand out of the
-    // unchanged mass. Manual double-click fold state is ignored while on.
-    if (diffFold && withCombos) {
+    // Derived fold state (overrides manual double-click folds while on):
+    // overview mode collapses every combo at depth ≥ the limit (all of
+    // them when only diff-fold is on), then diff-fold re-opens the
+    // ancestor paths of changed elements — combined, that reads as
+    // "overview, with changes drilled open".
+    const depthLimit = depthFoldValue();
+    if (withCombos && (diffFold || depthLimit != null)) {
+      const depthOf = {};
+      const depth = function (id) {
+        if (depthOf[id] != null) return depthOf[id];
+        const p = parentOf[id];
+        depthOf[id] = p ? depth(p) + 1 : 0;
+        return depthOf[id];
+      };
       collapsedIds = new Set();
-      Object.keys(hasCombo).forEach(function (id) { collapsedIds.add(comboIdFor(id)); });
-      liveMarkedNodeIds().forEach(function (id) {
-        if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
-        let p = parentOf[id];
-        while (p) {
-          if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
-          p = parentOf[p];
+      Object.keys(hasCombo).forEach(function (id) {
+        if (depthLimit == null || depth(id) >= depthLimit) {
+          collapsedIds.add(comboIdFor(id));
         }
       });
+      if (diffFold) {
+        liveMarkedNodeIds().forEach(function (id) {
+          if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
+          let p = parentOf[id];
+          while (p) {
+            if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
+            p = parentOf[p];
+          }
+        });
+      }
     }
     const combos = [];
     nodes.forEach(function (n) {
@@ -1041,7 +1070,8 @@ Graph Console
     }
     if (anywayBtn) anywayBtn.style.display = "none";
     graphViewStatus.textContent = graphStatusText(data) + filterNote;
-    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled() || diffFoldEnabled(),
+    renderGraph(toG6Data(shown, collapsedComboIds(),
+                         foldEnabled() || diffFoldEnabled() || depthFoldValue() != null,
                          LAYOUTS[currentLayoutName()] == null, diffFoldEnabled()));
   }
 
@@ -1548,6 +1578,16 @@ Graph Console
     diffFoldToggle.checked = diffFoldEnabled();
     diffFoldToggle.addEventListener("change", function () {
       localStorage.setItem("graph-diff-fold", diffFoldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const depthFoldInput = document.getElementById("graph-depth-fold");
+  if (depthFoldInput) {
+    const v = depthFoldValue();
+    depthFoldInput.value = v == null ? "" : String(v);
+    depthFoldInput.addEventListener("change", function () {
+      localStorage.setItem("graph-depth-fold", depthFoldInput.value);
       renderCurrent();
     });
   }
