@@ -57,7 +57,6 @@
   [:map {:title "Manifest"}
    [:version ::sm/int]
    [:type :string]
-   [:format {:optional true} [:enum "compact" "legacy"]]
    [:referer {:optional true} :string]
    [:generated-by {:optional true} :string]
 
@@ -66,8 +65,7 @@
      [:map
       [:id ::sm/uuid]
       [:name :string]
-      [:features ::cfeat/features]
-      [:format {:optional true} [:enum "compact" "legacy"]]]]]
+      [:features ::cfeat/features]]]]
 
    [:relations {:optional true}
     [:vector
@@ -300,8 +298,7 @@
     (vswap! bfc/*state* update :files assoc file-id
             {:id file-id
              :name (:name file)
-             :features (:features file)
-             :format (if (contains? cf/flags :binfile-v3-compact) "compact" "legacy")})
+             :features (:features file)})
 
     (let [file (cond-> (select-keys file bfc/file-attrs)
                  (:options data)
@@ -413,7 +410,6 @@
     (let [files  (:files @bfc/*state*)
           params {:type "penpot/export-files"
                   :version (if compact? 2 1)
-                  :format  (if compact? "compact" "legacy")
                   :generated-by (str "penpot/" (:full cf/version))
                   :refer "penpot"
                   :files (vec (vals files))
