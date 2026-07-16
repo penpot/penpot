@@ -147,6 +147,30 @@
        "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
        "CREATE (s)-[:IsChildOf {position: " (ladybug/format-int position) "}]->(p);"))
 
+(defn- create-instance-of-statement
+  "Link a Frame instance head to its Component (beadpot `IsInstanceOf`).
+
+  No-op when the Component is absent (e.g. library component not ingested)."
+  [frame-id component-id]
+  (str "MATCH (f:Frame {id: " (ladybug/format-uuid frame-id) "}), "
+       "(c:Component {id: " (ladybug/format-uuid component-id) "}) "
+       "WHERE NOT COALESCE(c.deleted, false) "
+       "MERGE (f)-[:IsInstanceOf]->(c);"))
+
+(defn- delete-instance-of-statement
+  [frame-id]
+  (str "MATCH (f:Frame {id: " (ladybug/format-uuid frame-id) "})"
+       "-[r:IsInstanceOf]->(:Component) "
+       "DELETE r;"))
+
+(defn- instance-of-statements
+  "Cypher to (re)link `IsInstanceOf` after add/mod of a Frame's component-id."
+  [table shape-id component-id]
+  (when (= table "Frame")
+    (cond-> [(delete-instance-of-statement shape-id)]
+      (some? component-id)
+      (conj (create-instance-of-statement shape-id component-id)))))
+
 (defn- delete-edge-statement
   [{:keys [from-table from-id to-table to-id]}]
   (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
@@ -345,7 +369,10 @@
                                  :from-id    id
                                  :to-table   (:parent-table parent)
                                  :to-id      (:parent-id parent)
-                                 :position   position})]
+                                 :position   position})
+                stmts    (into [(create-node-statement table attrs)
+                                (create-edge-statement edge)]
+                               (instance-of-statements table id (:component-id attrs)))]
             {:index       (index-add-shape! index
                                             {:id            id
                                              :name          (:name attrs)
@@ -355,27 +382,30 @@
                                              :position      position
                                              :page-id       (or page-id (when (= (:parent-table parent) "Page")
                                                                           (:parent-id parent)))})
-             :statements  [(create-node-statement table attrs)
-                           (create-edge-statement edge)]
+             :statements  stmts
              :applied?    true}))))))
 
 (defn- apply-mod-obj
   [index {:keys [id operations]}]
   (if-let [shape (get-in index [:shapes id])]
-    (let [table   (:table shape)
+    (let [table    (:table shape)
           syncable (mod-attrs-for-table table)
-          set-ops (filter #(and (= :set (:type %))
-                                (contains? syncable (:attr %)))
-                          operations)]
+          set-ops  (filter #(and (= :set (:type %))
+                                 (contains? syncable (:attr %)))
+                           operations)]
       (if (empty? set-ops)
         {:index index :statements [] :applied? false :reason :unsupported-operations}
-        (let [updates    (into {} (map (juxt :attr :val) set-ops))
-              statements (for [[attr value] updates]
-                           (set-node-attr-statement table id attr value))
-              index'     (reduce (fn [idx [attr value]]
-                                   (assoc-in idx [:shapes id attr] value))
-                                 index
-                                 updates)]
+        (let [updates (into {} (map (juxt :attr :val) set-ops))
+              statements
+              (into (vec (for [[attr value] updates]
+                           (set-node-attr-statement table id attr value)))
+                    ;; Relink when component-id is among the synced attrs.
+                    (when (contains? updates :component-id)
+                      (instance-of-statements table id (:component-id updates))))
+              index' (reduce (fn [idx [attr value]]
+                               (assoc-in idx [:shapes id attr] value))
+                             index
+                             updates)]
           {:index      index'
            :statements statements
            :applied?   true})))
