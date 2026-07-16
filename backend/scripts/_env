@@ -85,7 +85,7 @@ export JAVA_OPTS="\
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
        --enable-native-access=ALL-UNNAMED \
-       --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED";
+       --add-opens=java.base/java.nio=ALL-UNNAMED";
 
 function setup_minio() {
     if [ "${PENPOT_OBJECTS_STORAGE_BACKEND}" != "s3" ]; then

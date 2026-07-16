@@ -38,18 +38,102 @@
   [s]
   (str "\"" (str/replace (csv-normalize-string s) "\"" "\"\"") "\""))
 
+(defn- number-string
+  [v]
+  (if (== v (long v)) (str (long v)) (str (double v))))
+
+(defn- list-base-type
+  [lbug-type]
+  (when (and lbug-type (str/ends-with? lbug-type "[]"))
+    (subs lbug-type 0 (- (count lbug-type) 2))))
+
+(defn- list-item-string
+  [base-type item]
+  (case base-type
+    "UUID"   (str item)
+    "STRING" (str "\"" (str/replace (csv-normalize-string (str item)) "\"" "\"\"") "\"")
+    (#{"DOUBLE" "INT64"} base-type)
+    (number-string item)
+
+    (if (string? item)
+      (str "\"" (csv-normalize-string item) "\"")
+      (str item))))
+
+(defn- list-cell
+  [lbug-type v]
+  (when (some? v)
+    (let [base-type (list-base-type lbug-type)]
+      (if (empty? v)
+        "[]"
+        (str "[" (str/join ", " (map #(list-item-string base-type %) v)) "]")))))
+
+(defn- csv-cell*
+  "Raw COPY cell value before CSV quoting."
+  [table col v]
+  (let [lbug-type (nodes/column-ladybug-type table col)]
+    (cond
+      (#{"DOUBLE" "INT64"} lbug-type)
+      (when (number? v) (number-string v))
+
+      (= lbug-type "BOOLEAN")
+      (when (boolean? v) (str v))
+
+      (= lbug-type "UUID")
+      (when (some? v) (str v))
+
+      (= lbug-type "TIMESTAMP")
+      (when (some? v) (str v))
+
+      (list-base-type lbug-type)
+      (list-cell lbug-type v)
+
+      (nil? v)
+      ""
+
+      (= lbug-type "JSON")
+      (json/encode v)
+
+      (string? v)
+      (csv-normalize-string v)
+
+      (keyword? v)
+      (name v)
+
+      (uuid? v)
+      (str v)
+
+      (number? v)
+      (number-string v)
+
+      (boolean? v)
+      (str v)
+
+      (map? v)
+      (json/encode v)
+
+      (coll? v)
+      (json/encode v)
+
+      :else
+      (str v))))
+
 (defn- csv-cell
+  [table col v]
+  (let [cell (csv-cell* table col v)]
+    (cond
+      (nil? cell) ""
+      (string? cell) (csv-escape-string cell)
+      :else (csv-escape-string (str cell)))))
+
+(defn- csv-scalar-cell
   [v]
   (cond
-    (nil? v)      ""
-    (uuid? v)     (str v)
-    (string? v)   (csv-escape-string v)
-    (number? v)   (if (== v (long v)) (str (long v)) (str (double v)))
-    (boolean? v)  (str v)
-    (keyword? v)  (csv-escape-string (name v))
-    (map? v)      (csv-escape-string (json/encode v))
-    (coll? v)     (csv-escape-string (json/encode v))
-    :else         (csv-escape-string (str v))))
+    (nil? v)     ""
+    (uuid? v)    (csv-escape-string (str v))
+    (string? v)  (csv-escape-string v)
+    (number? v)  (csv-escape-string (number-string v))
+    (boolean? v) (csv-escape-string (str v))
+    :else        (csv-escape-string (str v))))
 
 (defn- cypher-file-path
   [^File file]
@@ -63,7 +147,7 @@
     (with-open [w (io/writer file :encoding "UTF-8")]
       (.write w (str (str/join "," (map name columns)) "\n"))
       (doseq [row rows]
-        (.write w (str (str/join "," (map #(csv-cell (get row %)) columns))
+        (.write w (str (str/join "," (map #(csv-cell table % (get row %)) columns))
                        "\n"))))))
 
 (defn- write-edge-csv!
@@ -71,9 +155,9 @@
   (with-open [w (io/writer file :encoding "UTF-8")]
     (.write w "from,to,position\n")
     (doseq [{:keys [from-id to-id position]} edges]
-      (.write w (str (csv-cell from-id) ","
-                     (csv-cell to-id) ","
-                     (csv-cell position) "\n")))))
+      (.write w (str (csv-scalar-cell from-id) ","
+                     (csv-scalar-cell to-id) ","
+                     (csv-scalar-cell position) "\n")))))
 
 (defn- delete-tree!
   [path]

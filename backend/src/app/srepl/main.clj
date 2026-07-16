@@ -425,12 +425,14 @@
   "Project a Penpot file into a per-file Ladybug database.
 
   Loads and realizes the file from the database, ensures the slice schema,
-  projects Document/Page/shape nodes, and returns graph stats.
+  projects Document/Page/shape nodes, and prints a short summary.
 
   Options:
   - `:db-path` path or `:memory:`
   - `:reset-db?` delete any existing db first (default true)
-  - `:skip-stats?` skip post-ingest MATCH count queries (default false)"
+  - `:skip-stats?` skip post-ingest MATCH count queries (default true)
+  - `:use-arrow?` Arrow bulk load (default true)
+  - `:keep-projection?` keep full `:nodes`/`:edges` in the return value (default false)"
   [file-id & opts]
   (let [result (apply graph.ingest/ingest-file! main/system file-id opts)]
     (graph.report/print-ingest! result)

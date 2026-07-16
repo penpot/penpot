@@ -2,8 +2,12 @@
 ;; Run inside devenv from backend/:
 ;;   clojure -M:dev -m graph-arrow-spike
 ;;
-;; Requires --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED
+;; Requires --add-opens=java.base/java.nio=ALL-UNNAMED
 ;; (configured in deps.edn :dev :jvm-opts).
+;;
+;; FINDING: Arrow tables created with createArrowTable are NOT available as direct
+;; identifiers in COPY statements, but ARE available as nodes in MATCH queries.
+;; SOLUTION: Use "COPY table FROM (MATCH (n:arrow_table) RETURN ...)" pattern.
 
 (ns graph-arrow-spike
   (:gen-class)
@@ -65,25 +69,23 @@
     (println "=== 2) createArrowTable staging ===")
     (let [root2 (page-root alloc)
           batches (doto (ArrayList.) (.add root2))]
-      (with-open [r (.createArrowTable conn "_stg_Page" ^List batches alloc)]
+      (with-open [r (.createArrowTable conn "stg_Page" ^List batches alloc)]
         (check! r "createArrowTable"))
 
       (println "=== 3) query staging ===")
-      (try-query! conn "MATCH (n:_stg_Page) RETURN n.id, n.name;" "stg")
+      (try-query! conn "MATCH (n:stg_Page) RETURN n.id, n.name;" "stg")
 
-      (println "=== 4) COPY Page FROM _stg_Page ===")
-      (when-not (try-query! conn "COPY Page FROM _stg_Page;" "copy-ident")
-        (println "=== 4b) COPY via MATCH subquery ===")
-        (try-query! conn
-                    "COPY Page FROM (MATCH (n:_stg_Page) RETURN n.id AS id, n.name AS name);"
-                    "copy-subq"))
+      (println "=== 4) COPY Page FROM Arrow table via MATCH subquery ===")
+      (try-query! conn
+                  "COPY Page FROM (MATCH (n:stg_Page) RETURN n.id AS id, n.name AS name);"
+                  "copy-via-match")
 
       (println "=== 5) query native Page ===")
       (try-query! conn "MATCH (n:Page) RETURN n.id, n.name;" "page")
 
       (println "=== 6) dropArrowTable ===")
-      (with-open [r (.dropArrowTable conn "_stg_Page")]
+      (with-open [r (.dropArrowTable conn "stg_Page")]
         (println "drop success?" (.isSuccess r) "err" (.getErrorMessage r)))
 
-      (.close root2)
-      (println "DONE"))))
+      (.close root2))
+    (println "DONE")))

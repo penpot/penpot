@@ -75,7 +75,8 @@
  {:dev
   {:jvm-opts ["--sun-misc-unsafe-memory-access=allow"
               "--enable-native-access=ALL-UNNAMED"
-              "--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED"]
+              ;; Arrow jars are on the classpath (unnamed module), not module-path.
+              "--add-opens=java.base/java.nio=ALL-UNNAMED"]
    :extra-deps
    {com.bhauman/rebel-readline {:mvn/version "0.1.11"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
