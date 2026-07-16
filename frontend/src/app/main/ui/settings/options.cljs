@@ -123,7 +123,9 @@
 (mf/defc ui-scale-settings*
   [{:keys [ui-scale]}]
   (let [initial (mf/with-memo [ui-scale]
-                  {:ui-scale (if (= ui-scale 1.15) "comfortable" "compact")})
+                  {:ui-scale (if (= ui-scale refs/ui-scale-comfortable)
+                               "comfortable"
+                               "compact")})
 
         ;; The form only holds the radio group state: there is no submit step,
         ;; the change is applied (and persisted) as soon as an option is picked.
@@ -133,7 +135,9 @@
         handle-scale-change
         (mf/use-fn
          (fn [_ value]
-           (let [scale (if (= value "comfortable") 1.15 1.0)]
+           (let [scale (if (= value "comfortable")
+                         refs/ui-scale-comfortable
+                         refs/ui-scale-compact)]
              (st/emit! (ev/event {::ev/name "change-ui-scale"
                                   ::ev/origin "settings"
                                   :scale scale})

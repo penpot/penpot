@@ -228,8 +228,9 @@
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
+  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render toggle-ui-scale]}]
   (let [renderer (or (-> profile :props :renderer) :svg)
+        ui-scale (or (-> profile :props :ui-scale) refs/ui-scale-compact)
 
         show-nudge-options
         (mf/use-fn
@@ -326,6 +327,20 @@
          "system" (tr "workspace.header.menu.toggle-dark-theme")
          (tr "workspace.header.menu.toggle-light-theme"))]
       [:> shortcuts* {:id :toggle-theme}]]
+
+     (when (contains? cf/flags :ui-scale)
+       [:> dropdown-menu-item* {:on-click    toggle-ui-scale
+                                :class       (stl/css :base-menu-item :submenu-item)
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (toggle-ui-scale event)))
+                                :data-testid "toggle-ui-scale"
+                                :id          "file-menu-toggle-ui-scale"}
+        [:span {:class (stl/css :item-name)}
+         (if (= ui-scale refs/ui-scale-comfortable)
+           (tr "workspace.header.menu.ui-scale-compact")
+           (tr "workspace.header.menu.ui-scale-comfortable"))]])
+
      (when (contains? cf/flags :render-switch)
        [:> dropdown-menu-item* {:on-click    toggle-render
                                 :class       (stl/css :base-menu-item :submenu-item)
@@ -949,6 +964,19 @@
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
 
+        toggle-ui-scale
+        (mf/use-fn
+         (mf/deps profile)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [scale (if (= (-> profile :props :ui-scale) refs/ui-scale-comfortable)
+                         refs/ui-scale-compact
+                         refs/ui-scale-comfortable)]
+             (st/emit! (ev/event {::ev/name "change-ui-scale"
+                                  ::ev/origin "workspace:menu"
+                                  :scale scale})
+                       (du/update-profile-props {:ui-scale scale})))))
+
         toggle-render
         (mf/use-fn
          (mf/deps profile)
@@ -1148,6 +1176,7 @@
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
+                              :toggle-ui-scale toggle-ui-scale
                               :on-close close-sub-menu}]
 
        :plugins

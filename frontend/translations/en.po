@@ -6910,6 +6910,14 @@ msgstr "Switch to light theme"
 msgid "workspace.header.menu.toggle-system-theme"
 msgstr "Switch to system theme"
 
+#: src/app/main/ui/workspace/main_menu.cljs:342
+msgid "workspace.header.menu.ui-scale-comfortable"
+msgstr "Switch to comfortable UI scale"
+
+#: src/app/main/ui/workspace/main_menu.cljs:341
+msgid "workspace.header.menu.ui-scale-compact"
+msgstr "Switch to compact UI scale"
+
 #: src/app/main/ui/workspace/main_menu.cljs:548
 msgid "workspace.header.menu.undo"
 msgstr "Undo"
