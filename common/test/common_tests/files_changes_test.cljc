@@ -964,16 +964,21 @@
               "the broken content is left untouched (geometry-only mod-obj)")))
 
     (t/testing "content-affecting mod-obj on a broken text shape still throws"
+      ;; `process-changes` only runs `validate-shape` on the JVM
+      ;; backend (see the original comment in `changes.cljc`); in
+      ;; ClojureScript the validation branch is empty by design. We
+      ;; only assert the throw in Clojure.
       (let [chg  {:type :mod-obj
                   :page-id page-id
                   :id id-b
                   :operations [{:type :set :attr :content
                                 :val {:type "root" :children []}}]}]
-        (t/is (thrown-with-msg?
-               #?(:cljs js/Error :clj Exception)
-               #"invalid shape found"
-               (ch/process-changes data [chg]))
-              "validation still runs when the mod-obj touches :content")))
+        #?(:clj
+           (t/is (thrown-with-msg?
+                  Exception
+                  #"invalid shape found"
+                  (ch/process-changes data [chg]))
+                 "validation still runs when the mod-obj touches :content"))))
 
     (t/testing "geometry-only mod-obj on a healthy shape succeeds"
       (let [chg  {:type :mod-obj
