@@ -366,11 +366,14 @@ Graph Console
   };
   const FALLBACK_STYLE = { color: "#5b7089", glyph: "circle", size: 14 };
   // Edge style keyed on rel (wire field since slice-3); future edge
-  // attributes can feed styling the same way. Both rels stay grey —
-  // dash alone separates them, keeping all chroma for diff marks.
+  // attributes can feed styling the same way. All rels stay grey (chroma
+  // belongs to diff marks); identity comes from `sym`, a compact unicode
+  // rel label rendered mid-edge (abacus viewer EDGE_SYM convention) —
+  // dash variants alone cannot carry the growing rel roster. IsChildOf
+  // is the unlabeled default (the background tree structure).
   const EDGE_STYLES = {
     "IsChildOf":    { stroke: "#b3b0a8" },
-    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3] }
+    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3], sym: "∈" }
   };
   const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
   // --- graph diff: add/remove marks with step fade --------------------
@@ -828,6 +831,12 @@ Graph Console
             const m = edgeMark(d);
             return m ? Math.max(diffFade(m), 0.15) : 1;
           },
+          labelText: function (d) { return edgeStyle(d.data.rel).sym || ""; },
+          labelFontSize: 9,
+          labelFill: "#52514e",
+          labelBackground: true,
+          labelBackgroundFill: "#ffffff",
+          labelBackgroundOpacity: 0.75,
           endArrow: true,
           endArrowSize: 6
         }
@@ -902,7 +911,7 @@ Graph Console
       const s = edgeStyle(rel);
       items.push('<span style="margin-right: 1em; white-space: nowrap;">'
         + '<span style="color: ' + s.stroke + '; font-size: 14px;">'
-        + (s.lineDash ? "⇢" : "→") + '</span> '
+        + escapeHtml(s.sym || (s.lineDash ? "⇢" : "→")) + '</span> '
         + escapeHtml(rel) + "</span>");
     });
     if (anyLiveMarks()) {
