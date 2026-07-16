@@ -522,6 +522,18 @@ pub(crate) fn horizontal_span_style(
     })
 }
 
+/// Top of the horizontal base em inside SkParagraph's typographic rectangle.
+/// Its tight rect can include substantial ascender-side padding; anchoring an
+/// over annotation to that rect's top therefore leaves a visible gap above CJK
+/// ink. The em is bottom-aligned to the rect, matching the baseline model used
+/// by the horizontal painter. The ruby showcase needs a 12 px clearance at
+/// 56 px: the original 6 px adjustment still left it 6 px too close to the
+/// kanji. Keep the 3/14-em value proportional at other text sizes.
+pub(crate) fn horizontal_annotation_over_top(rect: skia::Rect, font_size: f32) -> f32 {
+    let font_size = font_size.max(0.0);
+    rect.top.max(rect.bottom - font_size) - font_size * (3.0 / 14.0)
+}
+
 /// Paint horizontal emphasis marks (圏点 / bouten) above their base glyphs.
 /// The base paragraph retains its normal metrics; interlinear collision and
 /// automatic line-gap expansion remain a separate layout policy.
@@ -549,8 +561,26 @@ pub(crate) fn paint_horizontal_emphasis(
         style.set_height_override(true);
         style.set_letter_spacing(0.0);
         let mark_paragraph = warichu_mini_paragraph(&mark.to_string(), &style, f32::MAX);
-        let mark_width = mark_paragraph.longest_line();
-        let mark_height = mark_paragraph.height();
+        let mark_ink = mark_paragraph
+            .get_rects_for_range(
+                0..mark.len_utf16(),
+                RectHeightStyle::Tight,
+                RectWidthStyle::Tight,
+            )
+            .into_iter()
+            .map(|textbox| textbox.rect)
+            .reduce(|mut rect, next| {
+                rect.join(next);
+                rect
+            });
+        let mark_width = mark_ink
+            .as_ref()
+            .map(|rect| rect.width())
+            .unwrap_or_else(|| mark_paragraph.longest_line());
+        let mark_ink_bottom = mark_ink
+            .as_ref()
+            .map(|rect| rect.bottom())
+            .unwrap_or_else(|| mark_paragraph.height());
         for placement in placements
             .iter()
             .filter(|placement| placement.span == range.span && placement.mark == mark)
@@ -564,7 +594,9 @@ pub(crate) fn paint_horizontal_emphasis(
             } else {
                 0.0
             };
-            let mark_y = y + placement.rect.top() - mark_height - ruby_offset;
+            let mark_y = y + horizontal_annotation_over_top(placement.rect, span.font_size)
+                - mark_ink_bottom
+                - ruby_offset;
             mark_paragraph.paint(canvas, (mark_x, mark_y));
         }
     }

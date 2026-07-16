@@ -11,7 +11,9 @@ use crate::{
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
-    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration, TextStyle},
+    textlayout::{
+        ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics, TextDecoration, TextStyle,
+    },
     Canvas, ImageFilter, Paint,
 };
 
@@ -98,6 +100,62 @@ pub fn render_vertical_text(
     }
 
     Ok(())
+}
+
+/// Paint a viewport-only grid over SkParagraph horizontal text. Blue outlines
+/// show line boxes, green boxes show the per-scalar tight rectangles returned
+/// by SkParagraph, and amber rules show baselines. This mirrors the vertical
+/// text grid while making horizontal annotation anchors inspectable.
+pub fn paint_horizontal_grid(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
+    let mut builders = text_content.paragraph_builder_group_from_text(None);
+    let layout = calculate_text_layout_data(shape, text_content, &mut builders, true);
+
+    let mut line_paint = Paint::default();
+    line_paint.set_anti_alias(true);
+    line_paint.set_style(skia::PaintStyle::Stroke);
+    line_paint.set_stroke_width(1.0);
+    line_paint.set_color(skia::Color::from_argb(0xAA, 0x2F, 0x80, 0xED));
+
+    let mut glyph_paint = Paint::default();
+    glyph_paint.set_anti_alias(true);
+    glyph_paint.set_style(skia::PaintStyle::Stroke);
+    glyph_paint.set_stroke_width(1.0);
+    glyph_paint.set_color(skia::Color::from_argb(0x99, 0x27, 0xAE, 0x60));
+
+    let mut baseline_paint = Paint::default();
+    baseline_paint.set_anti_alias(true);
+    baseline_paint.set_stroke_width(1.0);
+    baseline_paint.set_color(skia::Color::from_argb(0xCC, 0xEB, 0x57, 0x57));
+
+    for paragraph in &layout.paragraphs {
+        for line in paragraph.paragraph.get_line_metrics() {
+            let baseline = line.baseline as f32;
+            let top = paragraph.y + baseline - line.ascent as f32;
+            let left = paragraph.x + line.left as f32;
+            let width = line.width as f32;
+            canvas.draw_rect(
+                Rect::from_xywh(left, top, width, line.height as f32),
+                &line_paint,
+            );
+            canvas.draw_line(
+                (left, paragraph.y + baseline),
+                (left + width, paragraph.y + baseline),
+                &baseline_paint,
+            );
+
+            for offset in line.start_index..line.end_index {
+                for textbox in paragraph.paragraph.get_rects_for_range(
+                    offset..offset + 1,
+                    RectHeightStyle::Tight,
+                    RectWidthStyle::Tight,
+                ) {
+                    let mut rect = textbox.rect;
+                    rect.offset((paragraph.x, paragraph.y));
+                    canvas.draw_rect(rect, &glyph_paint);
+                }
+            }
+        }
+    }
 }
 
 pub fn stroke_paragraph_builder_group_from_text(

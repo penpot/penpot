@@ -3103,6 +3103,24 @@ fn next_horizontal_ruby_range(
     offset_map.to_shifted(start)..offset_map.to_shifted(*utf16_cursor)
 }
 
+/// Baseline adjustment that attaches a glyph's visible ink edge to its base
+/// strip. Font-wide ascender/descender metrics include leading which makes
+/// horizontal ruby visibly detached for many Japanese faces.
+fn horizontal_ruby_ink_edge(font: &Font, glyph: GlyphId, fallback: f32, over: bool) -> f32 {
+    let mut bounds = [skia::Rect::default()];
+    font.get_bounds(&[glyph], &mut bounds, None);
+    let bound = bounds[0];
+    if bound.right > bound.left && bound.bottom > bound.top {
+        if over {
+            bound.bottom
+        } else {
+            bound.top
+        }
+    } else {
+        fallback
+    }
+}
+
 /// Paint ruby annotations for one horizontally laid-out paragraph. Draw-only:
 /// base rects come from the already laid-out skparagraph
 /// (`get_rects_for_range`), the annotation is shaped at half the span size
@@ -3220,8 +3238,26 @@ pub fn paint_horizontal_ruby(
                 let run = &shaped[*run_index];
                 let (_, metrics) = run.font.metrics();
                 let baseline = match span.ruby_side {
-                    RubySide::Over => y + rect_box.rect.top() - metrics.descent,
-                    RubySide::Under => y + rect_box.rect.bottom() - metrics.ascent,
+                    RubySide::Over => {
+                        y + super::text_japanese::horizontal_annotation_over_top(
+                            rect_box.rect,
+                            span.font_size,
+                        ) - horizontal_ruby_ink_edge(
+                            &run.font,
+                            run.glyphs[*glyph],
+                            metrics.descent,
+                            true,
+                        )
+                    }
+                    RubySide::Under => {
+                        y + rect_box.rect.bottom()
+                            - horizontal_ruby_ink_edge(
+                                &run.font,
+                                run.glyphs[*glyph],
+                                metrics.ascent,
+                                false,
+                            )
+                    }
                 };
                 let mut builder = TextBlobBuilder::new();
                 let (out_glyphs, points) = builder.alloc_run_pos(&run.font, 1, None);
@@ -6549,6 +6585,27 @@ mod tests {
         let (_, metrics) = run.font.metrics();
         let metrics_shift = rotated_baseline_shift(metrics.ascent, metrics.descent);
         assert!((shift - metrics_shift).abs() > 0.1);
+    }
+
+    #[test]
+    fn horizontal_ruby_attaches_to_visible_glyph_ink() {
+        let layout = layout_content(&make_content(&["a"], 1000.0), 1000.0);
+        let CellKind::Rotated { run } = layout.cells[0].kind else {
+            panic!("expected a rotated run");
+        };
+        let run = &layout.runs[run];
+        let mut bounds = [skia::Rect::default()];
+        run.font.get_bounds(&[run.glyphs[0]], &mut bounds, None);
+
+        assert!(
+            (horizontal_ruby_ink_edge(&run.font, run.glyphs[0], 0.0, true) - bounds[0].bottom)
+                .abs()
+                < f32::EPSILON
+        );
+        assert!(
+            (horizontal_ruby_ink_edge(&run.font, run.glyphs[0], 0.0, false) - bounds[0].top).abs()
+                < f32::EPSILON
+        );
     }
 
     #[test]

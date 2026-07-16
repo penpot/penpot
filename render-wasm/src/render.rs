@@ -1727,6 +1727,11 @@ impl RenderState {
                         }
                     }
                 }
+
+                if !text_content.is_vertical() && self.options.is_text_grid_visible() {
+                    let canvas = self.surfaces.canvas_and_mark_dirty(fills_surface_id);
+                    text::paint_horizontal_grid(canvas, &shape, text_content);
+                }
             }
             _ => {
                 self.surfaces.apply_mut(surface_ids, |s| {

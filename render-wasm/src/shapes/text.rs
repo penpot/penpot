@@ -2191,6 +2191,16 @@ mod tests {
     }
 
     #[test]
+    fn horizontal_annotation_uses_the_base_em_not_typographic_leading() {
+        let rect = skia::Rect::from_xywh(0.0, 66.0, 56.0, 90.0);
+
+        assert_eq!(
+            crate::shapes::text_japanese::horizontal_annotation_over_top(rect, 56.0),
+            88.0
+        );
+    }
+
+    #[test]
     fn horizontal_warichu_collapses_to_one_builder_position() {
         init_state();
         let mut warichu = make_span("割注入り", 0.0);
