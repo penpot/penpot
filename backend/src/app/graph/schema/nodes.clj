@@ -13,6 +13,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.graph.schema.projection :as projection]
@@ -20,7 +21,7 @@
    [clojure.string :as str]))
 
 (def schema-version
-  "penpot-graph-slice-2")
+  "penpot-graph-slice-3")
 
 ;; beadpot/graph/schemas.py drop_fields
 (def ^:private document-projection
@@ -30,6 +31,14 @@
 (def ^:private page-projection
   {:source ctp/schema:page
    :drop   [:objects]})
+
+(def ^:private component-projection
+  {:source ctk/schema:component
+   :drop   [:objects]
+   ;; Soft-delete flag used at runtime; not in schema:component.
+   :extra  [:map
+            [:deleted {:optional true} :boolean]
+            [:annotation {:optional true} :string]]})
 
 (def ^:private shape-projection
   {:drop [:type]})
@@ -77,7 +86,11 @@
          {:table "Page"
           :pk    :id
           :projection page-projection
-          :schema (resolve-schema page-projection)}]
+          :schema (resolve-schema page-projection)}
+         {:table "Component"
+          :pk    :id
+          :projection component-projection
+          :schema (resolve-schema component-projection)}]
         (map shape-node-entry shape-node-types)))
 
 (def ^:private by-table
@@ -216,6 +229,7 @@
   []
   (str "CREATE REL TABLE `IsChildOf` ("
        "FROM `Page` TO `Document`, "
+       "FROM `Component` TO `Document`, "
        (str/join ", "
                  (concat
                   (map (fn [shape]
@@ -226,7 +240,13 @@
                     (str "FROM `" shape "` TO `" container "`"))))
        ", `position` INT64);"))
 
+(defn is-instance-of-ddl
+  "Frame instance heads → Component (beadpot `IsInstanceOf`)."
+  []
+  "CREATE REL TABLE `IsInstanceOf` (FROM `Frame` TO `Component`);")
+
 (defn ddl-statements
   []
   (conj (mapv create-node-table-ddl node-types)
-        (is-child-of-ddl)))
+        (is-child-of-ddl)
+        (is-instance-of-ddl)))

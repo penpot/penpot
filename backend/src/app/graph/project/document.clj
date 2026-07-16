@@ -7,8 +7,8 @@
 (ns app.graph.project.document
   "Project a Penpot file-data map into Ladybug nodes and structural edges.
 
-  Projects Document, Page, the full shape tree (skipping the root frame),
-  and `IsChildOf` edges from shapes to their page or container parent."
+  Projects Document, Page, Component, the full shape tree (skipping the root
+  frame), and `IsChildOf` edges from shapes/pages/components to their parent."
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
@@ -28,6 +28,13 @@
   (-> page
       (dissoc :objects)
       (cond-> (some? index) (assoc :index (long index)))))
+
+(defn- component-attrs
+  [component]
+  (-> component
+      (dissoc :objects)
+      ;; schema:component requires :path; some legacy rows omit it
+      (update :path #(or % ""))))
 
 (defn- shape-table
   [shape]
@@ -51,7 +58,7 @@
   []
   {:nodes {}
    :edges []
-   :stats {:documents 0 :pages 0 :shapes 0}})
+   :stats {:documents 0 :pages 0 :components 0 :shapes 0}})
 
 (declare project-shape-ids)
 
@@ -108,26 +115,52 @@
       (project-shape-ids objects acc' "Page" page-id top-level-ids)
       acc')))
 
+(defn- project-component
+  [acc doc-id component position]
+  (if (:deleted component)
+    acc
+    (let [comp-id (:id component)
+          node    (nodes/project-attrs "Component" (component-attrs component))]
+      (-> acc
+          (update-in [:nodes "Component"] (fnil conj []) node)
+          (update :edges conj {:from-table "Component"
+                               :from-id    comp-id
+                               :to-table   "Document"
+                               :to-id      doc-id
+                               :position   position})
+          (update-in [:stats :components] inc)))))
+
+(defn- project-components
+  [acc doc-id components]
+  (reduce (fn [acc [position [_id component]]]
+            (project-component acc doc-id component position))
+          acc
+          (map-indexed vector components)))
+
 (defn projection-data
   "Build node/edge rows for projecting `data` into Ladybug.
 
   Returns `{:nodes {table [attrs ...]} :edges [...] :stats {...}}`."
   [data file]
-  (let [doc-id  (or (:id data) (:id file))
+  (let [doc-id   (or (:id data) (:id file))
         doc-node (nodes/project-attrs "Document" (document-attrs file data))
-        pages   (seq (reverse (:pages data)))
-        acc0    (-> (initial-acc)
-                    (update-in [:nodes "Document"] (fnil conj []) doc-node)
-                    (assoc-in [:stats :documents] 1))
-        acc     (if (empty? pages)
-                  acc0
-                  (reduce (fn [acc [position page-id]]
-                            (if-let [page (get-in data [:pages-index page-id])]
-                              (project-page acc doc-id page position)
-                              (do
-                                (l/wrn :hint "missing page in pages-index"
-                                       :page-id (str page-id))
-                                acc)))
-                          acc0
-                          (map-indexed vector pages)))]
+        pages    (seq (reverse (:pages data)))
+        comps    (seq (:components data))
+        acc0     (-> (initial-acc)
+                     (update-in [:nodes "Document"] (fnil conj []) doc-node)
+                     (assoc-in [:stats :documents] 1))
+        acc      (cond-> acc0
+                   (seq comps)
+                   (project-components doc-id comps))
+        acc      (if (empty? pages)
+                   acc
+                   (reduce (fn [acc [position page-id]]
+                             (if-let [page (get-in data [:pages-index page-id])]
+                               (project-page acc doc-id page position)
+                               (do
+                                 (l/wrn :hint "missing page in pages-index"
+                                        :page-id (str page-id))
+                                 acc)))
+                           acc
+                           (map-indexed vector pages)))]
     (select-keys acc [:nodes :edges :stats])))
