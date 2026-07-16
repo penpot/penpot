@@ -161,6 +161,11 @@ Graph Console
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             <input type="checkbox" id="graph-animate-toggle" /> animate
           </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="added/removed marks fade out over this many display steps (0 = off)">
+            fade: <input type="number" id="graph-diff-steps" min="0" max="20"
+                         style="width: 3.5em;" /> steps
+          </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             layout: <select id="graph-layout-select"></select>
           </label>
@@ -345,6 +350,113 @@ Graph Console
     "IsInstanceOf": { stroke: "#8250df", lineDash: [4, 3] }
   };
   const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
+  // --- graph diff: add/remove marks with step fade --------------------
+  // A "step" is a display-changing refetch (no-op skips age nothing).
+  // Added elements get a green halo; removed ones stay in the display as
+  // ghosts with a dashed crimson halo and fading opacity (dash + fade
+  // carry the added/removed distinction for red-green CVD; the pair
+  // validates at deutan ΔE 17.4). Marks fade linearly with age and drop
+  // after N steps; N comes from the "fade" box (0 disables the feature).
+  // The diff is vs the previous display step, not between arbitrary
+  // revisions — true version-to-version diffs await server deltas / the
+  // graph-based-VCS work.
+  const DIFF_ADDED_COLOR = "#40c057";
+  const DIFF_REMOVED_COLOR = "#c2255c";
+  let diffMarks = { nodes: {}, edges: {} };
+
+  function diffSteps() {
+    const v = parseInt(localStorage.getItem("graph-diff-steps"), 10);
+    return Number.isFinite(v) && v >= 0 && v <= 20 ? v : 3;
+  }
+
+  function diffEdgeKey(source, rel, target) {
+    return source + "|" + (rel || "IsChildOf") + "|" + target;
+  }
+
+  function liveMark(marks, key) {
+    const m = marks[key];
+    return m && m.age < diffSteps() ? m : null;
+  }
+
+  // 1.0 at age 0 down to 1/N at age N-1; the mark drops at age N.
+  function diffFade(mark) {
+    return 1 - mark.age / diffSteps();
+  }
+
+  function markDiff(prev, next) {
+    if (!diffSteps() || !prev) {
+      diffMarks = { nodes: {}, edges: {} };
+      return;
+    }
+    [diffMarks.nodes, diffMarks.edges].forEach(function (marks) {
+      Object.keys(marks).forEach(function (k) {
+        marks[k].age += 1;
+        if (marks[k].age >= diffSteps()) delete marks[k];
+      });
+    });
+    const prevNodes = {};
+    prev.nodes.forEach(function (n) { prevNodes[n.id] = n; });
+    const nextNodes = {};
+    next.nodes.forEach(function (n) { nextNodes[n.id] = n; });
+    next.nodes.forEach(function (n) {
+      if (!prevNodes[n.id]) diffMarks.nodes[n.id] = { kind: "added", age: 0 };
+    });
+    prev.nodes.forEach(function (n) {
+      if (!nextNodes[n.id]) diffMarks.nodes[n.id] = { kind: "removed", age: 0, node: n };
+    });
+    const prevEdges = {};
+    prev.edges.forEach(function (e) { prevEdges[diffEdgeKey(e.source, e.rel, e.target)] = e; });
+    const nextEdges = {};
+    next.edges.forEach(function (e) { nextEdges[diffEdgeKey(e.source, e.rel, e.target)] = e; });
+    Object.keys(nextEdges).forEach(function (k) {
+      if (!prevEdges[k]) diffMarks.edges[k] = { kind: "added", age: 0 };
+    });
+    Object.keys(prevEdges).forEach(function (k) {
+      if (!nextEdges[k]) diffMarks.edges[k] = { kind: "removed", age: 0, edge: prevEdges[k] };
+    });
+  }
+
+  // Removed elements stay displayed as fading ghosts until their mark
+  // expires. Ghosts respect the query filter and re-enter layout and
+  // combo derivation through their ghost IsChildOf edges, so they keep
+  // their old place in the tree while fading.
+  function withGhosts(data) {
+    const nodes = data.nodes.slice();
+    const present = {};
+    nodes.forEach(function (n) { present[n.id] = true; });
+    Object.keys(diffMarks.nodes).forEach(function (id) {
+      const m = liveMark(diffMarks.nodes, id);
+      if (m && m.kind === "removed" && m.node && !present[id]
+          && (!graphFilterIds || graphFilterIds.has(id))) {
+        nodes.push(m.node);
+        present[id] = true;
+      }
+    });
+    const edges = data.edges.slice();
+    const have = {};
+    edges.forEach(function (e) { have[diffEdgeKey(e.source, e.rel, e.target)] = true; });
+    Object.keys(diffMarks.edges).forEach(function (k) {
+      const m = liveMark(diffMarks.edges, k);
+      if (m && m.kind === "removed" && m.edge && !have[k]
+          && present[m.edge.source] && present[m.edge.target]) {
+        edges.push(m.edge);
+      }
+    });
+    return { nodes: nodes, edges: edges, revn: data.revn, truncated: data.truncated };
+  }
+
+  function nodeMark(id) {
+    return liveMark(diffMarks.nodes, id);
+  }
+
+  function edgeMark(d) {
+    return liveMark(diffMarks.edges, diffEdgeKey(d.source, d.data.rel, d.target));
+  }
+
+  function diffColor(m) {
+    return m.kind === "added" ? DIFF_ADDED_COLOR : DIFF_REMOVED_COLOR;
+  }
+  // --- end graph diff --------------------------------------------------
   // Legend glyph characters mirroring the G6 node types above.
   const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
                         circle: "●", triangle: "▲", star: "★" };
@@ -549,13 +661,46 @@ Graph Console
           labelText: function (d) { return d.data.label; },
           labelFontSize: 9,
           labelFill: "#0b0b0b",
-          labelPlacement: "bottom"
+          labelPlacement: "bottom",
+          halo: function (d) { return !!nodeMark(d.id); },
+          haloStroke: function (d) {
+            const m = nodeMark(d.id);
+            return m ? diffColor(m) : "#ffffff";
+          },
+          haloLineWidth: 8,
+          haloLineDash: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? [3, 3] : 0;
+          },
+          haloStrokeOpacity: function (d) {
+            const m = nodeMark(d.id);
+            return m ? 0.9 * diffFade(m) : 0;
+          },
+          opacity: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? diffFade(m) : 1;
+          },
+          labelOpacity: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? diffFade(m) : 1;
+          }
         }
       },
       edge: {
         style: {
-          stroke: function (d) { return edgeStyle(d.data.rel).stroke; },
+          stroke: function (d) {
+            const m = edgeMark(d);
+            return m ? diffColor(m) : edgeStyle(d.data.rel).stroke;
+          },
           lineDash: function (d) { return edgeStyle(d.data.rel).lineDash; },
+          lineWidth: function (d) {
+            const m = edgeMark(d);
+            return m ? (m.kind === "removed" ? 2.5 : 2) : 1;
+          },
+          strokeOpacity: function (d) {
+            const m = edgeMark(d);
+            return m ? Math.max(diffFade(m), 0.15) : 1;
+          },
           endArrow: true,
           endArrowSize: 6
         }
@@ -676,7 +821,8 @@ Graph Console
   function renderCurrent() {
     if (!lastGraphData) return;
     const data = filteredGraphData();
-    renderGraphLegend(data);
+    const shown = withGhosts(data);
+    renderGraphLegend(shown);
     const anywayBtn = document.getElementById("graph-render-anyway");
     const filterBtn = document.getElementById("graph-filter-reset");
     if (filterBtn) filterBtn.style.display = graphFilterIds ? "inline" : "none";
@@ -684,7 +830,7 @@ Graph Console
       ? " — query filter: " + data.nodes.length + " of "
         + lastGraphData.nodes.length + " nodes"
       : "";
-    if (data.nodes.length > RENDER_GUARD_NODES && !renderForced) {
+    if (shown.nodes.length > RENDER_GUARD_NODES && !renderForced) {
       graphViewStatus.textContent =
         graphStatusText(data) + filterNote + " — too large to render automatically";
       if (anywayBtn) anywayBtn.style.display = "inline";
@@ -692,7 +838,7 @@ Graph Console
     }
     if (anywayBtn) anywayBtn.style.display = "none";
     graphViewStatus.textContent = graphStatusText(data) + filterNote;
-    renderGraph(toG6Data(data, collapsedComboIds(), foldEnabled(),
+    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled(),
                          LAYOUTS[currentLayoutName()] == null));
   }
 
@@ -714,8 +860,12 @@ Graph Console
         // change burst that only touches non-projected attrs (e.g. moving
         // shapes around) bumps revn but not the picture.
         const sig = JSON.stringify([data.nodes, data.edges, data.truncated]);
+        if (sig === lastGraphSig) {
+          lastGraphData = data;
+          return;
+        }
+        markDiff(lastGraphData, data);
         lastGraphData = data;
-        if (sig === lastGraphSig) return;
         lastGraphSig = sig;
         renderCurrent();
       })
@@ -1078,6 +1228,15 @@ Graph Console
     animateToggle.checked = animateEnabled();
     animateToggle.addEventListener("change", function () {
       localStorage.setItem("graph-animate", animateToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const diffStepsInput = document.getElementById("graph-diff-steps");
+  if (diffStepsInput) {
+    diffStepsInput.value = String(diffSteps());
+    diffStepsInput.addEventListener("change", function () {
+      localStorage.setItem("graph-diff-steps", diffStepsInput.value);
       renderCurrent();
     });
   }
