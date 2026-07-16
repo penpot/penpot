@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
@@ -40,6 +41,28 @@
 
 ;; Longest wait for the pending changes of the downloaded files to be saved.
 (def save-wait-timeout-ms 10000)
+
+(defn- export-variant
+  "The layout of the package the backend writes, or nil for the default one.
+  `:compact` and `:compact-zstd` are behind flags because a package in those
+  layouts only opens in an importer that reads them; the zstd layout wins when
+  both flags are on."
+  []
+  (cond
+    (contains? cf/flags :binfile-v3-compact-zstd) :compact-zstd
+    (contains? cf/flags :binfile-v3-compact)      :compact))
+
+(defn- export-params
+  "The params of one export job. The variant is only sent when a flag asks for
+  another layout: the default is the backend's own, and the params schema of an
+  older deployment is closed and does not know the key, so sending it always
+  would break every export with the flags off during a mixed deployment."
+  [type file]
+  (let [variant (export-variant)]
+    (cond-> {:file-ids    #{(:id file)}
+             :export-type type}
+      (some? variant)
+      (assoc :variant variant))))
 
 (defn- show-export-dialog
   "Opens the download dialog, flagging whether the files have changes not
@@ -94,8 +117,7 @@
   cancel it while it runs."
   [ws-conn type file on-job]
   (->> (rp/cmd! :create-export-binfile-job
-                {:params {:file-ids    #{(:id file)}
-                          :export-type type}})
+                {:params (export-params type file)})
        (rx/mapcat (fn [{job-id :id}]
                     (when (fn? on-job)
                       (on-job {:job-id job-id :file-id (:id file)}))

@@ -20,6 +20,7 @@
    [common-tests.colors-test]
    [common-tests.data-macros-test]
    [common-tests.data-test]
+   [common-tests.data.object-diff-test]
    [common-tests.exceptions-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
@@ -34,6 +35,8 @@
    [common-tests.files-migrations-0039-test]
    [common-tests.files-migrations-test]
    [common-tests.files.changes-builder-test]
+   [common-tests.files-page-chunks-test]
+   [common-tests.files-shape-compact-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
    [common-tests.files.page-diff-test]
@@ -106,6 +109,7 @@
    [common-tests.svg-path-test]
    [common-tests.svg-test]
    [common-tests.text-test]
+   [common-tests.thumbnails-test]
    [common-tests.time-test]
    [common-tests.token-test]
    [common-tests.transit-test]
@@ -146,6 +150,7 @@
    'common-tests.colors-test
    'common-tests.data-macros-test
    'common-tests.data-test
+   'common-tests.data.object-diff-test
    'common-tests.exceptions-test
    'common-tests.files-builder-test
    #?(:cljs 'common-tests.fonts-test)
@@ -164,6 +169,8 @@
    'common-tests.files.changes-builder-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
+   'common-tests.files-page-chunks-test
+   'common-tests.files-shape-compact-test
    'common-tests.files.page-diff-test
    'common-tests.files.repair-test
    'common-tests.files.shapes-builder-test
@@ -234,6 +241,7 @@
    'common-tests.svg-path-test
    'common-tests.svg-test
    'common-tests.text-test
+   'common-tests.thumbnails-test
    'common-tests.time-test
    'common-tests.token-test
    'common-tests.transit-test

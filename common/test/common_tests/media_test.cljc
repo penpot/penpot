@@ -16,6 +16,19 @@
     (t/is (contains? media/storage-object-types "image/svg+xml"))
     (t/is (contains? media/storage-object-types "application/octet-stream"))))
 
+(t/deftest test-compressed-mtype
+  (t/testing "the already-compressed formats the system stores"
+    (doseq [mtype ["image/png" "image/jpeg" "image/gif" "image/webp"
+                   "font/woff" "font/woff2"]]
+      (t/is (media/compressed-mtype? mtype) mtype)))
+
+  (t/testing "the formats deflate still shrinks stay out"
+    (doseq [mtype ["image/svg+xml" "font/ttf" "font/otf" "application/pdf"]]
+      (t/is (not (media/compressed-mtype? mtype)) mtype)))
+
+  (t/testing "every compressed type is a stored type"
+    (t/is (every? media/storage-object-types media/compressed-mtypes))))
+
 (t/deftest test-parse-font-weight
   (t/testing "matches weight tokens with proper boundaries"
     (t/is (= 700 (media/parse-font-weight "Roboto-Bold")))

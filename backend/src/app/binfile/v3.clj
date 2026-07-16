@@ -16,6 +16,8 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.migrations :as-alias fmg]
+   [app.common.files.page-chunks :as pc]
+   [app.common.files.shape-compact :as fsc]
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.logging :as l]
@@ -44,11 +46,15 @@
    [datoteka.fs :as fs]
    [datoteka.io :as io])
   (:import
+   com.github.luben.zstd.ZstdCompressCtx
+   com.github.luben.zstd.ZstdInputStream
    java.io.File
    java.io.FilterInputStream
    java.io.InputStream
    java.io.OutputStreamWriter
    java.lang.AutoCloseable
+   java.nio.charset.StandardCharsets
+   java.util.zip.CRC32
    java.util.zip.ZipEntry
    java.util.zip.ZipFile
    java.util.zip.ZipOutputStream))
@@ -198,12 +204,6 @@
 (def validate-file
   (sm/check-fn ctf/schema:file))
 
-(def validate-page
-  (sm/check-fn ctp/schema:page))
-
-(def validate-shape
-  (sm/check-fn cts/schema:shape))
-
 (def validate-media
   (sm/check-fn ctf/schema:media))
 
@@ -267,6 +267,258 @@
     (.flush writer))
   (.closeEntry output))
 
+(defn- write-entry-bytes!
+  [^ZipOutputStream output ^String path ^bytes bytes]
+  (.putNextEntry output (ZipEntry. path))
+  (.write output bytes 0 (alength bytes))
+  (.closeEntry output))
+
+(defn- write-compact-entry!
+  [^ZipOutputStream output ^String path data]
+  (let [sw (java.io.StringWriter.)]
+    (json/write sw data :indent false :key-fn json/write-camel-key)
+    (.flush sw)
+    (write-entry-bytes! output path (.getBytes ^String (str sw) StandardCharsets/UTF_8))))
+
+(defn- serialize-entry
+  "The JSONL line of one chunk entry: a `[key value]` pair written by the json
+  writer, so the key is escaped by it and never quoted by hand."
+  [encode-fn key value]
+  (let [sw (java.io.StringWriter.)]
+    (json/write sw [(str key) (encode-fn value)]
+                :indent false :key-fn json/write-camel-key)
+    (.flush sw)
+    (str sw)))
+
+(defn- serialize-shape
+  "The JSONL line of one shape of a compact page."
+  [key shape]
+  (serialize-entry encode-shape key shape))
+
+(def ^:private zstd-level
+  "Compression level of the `:compact-zstd` variant. Level 12 with the wider
+  window compresses the measured page payload to half the deflate size at
+  about the same CPU cost."
+  12)
+
+(def ^:private zstd-window-log
+  "Window log of the `:compact-zstd` variant: 2^25 bytes, 32 MiB, enough to
+  cover a compressed chunk. Level 12 alone uses an 8 MiB window and misses the
+  head of the chunk."
+  25)
+
+(defn- zstd-compress-ctx
+  ^ZstdCompressCtx []
+  ;; setLevel resets the compression parameters, so the window goes after it.
+  (doto (ZstdCompressCtx.)
+    (.setLevel (int zstd-level))
+    (.setWindowLog (int zstd-window-log))))
+
+(defn- zstd-input-stream
+  "Decompresses a zstd frame read from a zip entry. The window is capped to
+  the one the writer uses, so a frame that declares a larger window is
+  rejected instead of allocating it."
+  ^InputStream
+  [^InputStream input]
+  (doto (ZstdInputStream. input)
+    (.setLongMax (int zstd-window-log))))
+
+(def ^:private codecs
+  "The codecs a compact layout may use. The key names the variant
+  (`:compact-<codec>`) and the entry suffix (`.json.<codec>`); the suffix is
+  the name, and `:decompress` wraps an entry stream. Adding a codec is adding
+  an entry here and in the writer; the manifest version does not change."
+  {:zstd {:decompress zstd-input-stream}})
+
+(defn- codec-suffix
+  [codec]
+  (str "." (name codec)))
+
+(defn- codec-of-variant
+  "The codec of a `:compact-<codec>` variant, or nil when the variant does
+  not name one."
+  [variant]
+  (when (and (keyword? variant) (str/starts-with? (name variant) "compact-"))
+    (keyword (subs (name variant) (count "compact-")))))
+
+(defn- raise-unsupported-codec
+  "Raises for a codec nobody registered. `context` names where it came from:
+  the `:path` of the entry on the read side, the `:variant` on the write side,
+  so the operator does not have to search the package for the entry."
+  [context codec]
+  (ex/raise :type :validation
+            :code :unsupported-binfile-codec
+            :hint "unknown binfile codec"
+            :codec codec
+            :path (:path context)
+            :variant (:variant context)))
+
+(defn- variant->codec
+  "The codec of a variant, nil when it writes plain json. An absent variant
+  is the default layout. Raises for a compact variant whose codec is not
+  registered."
+  [variant]
+  (if (contains? #{nil :verbose :compact} variant)
+    nil
+    (let [codec (codec-of-variant variant)]
+      (if (contains? codecs codec)
+        codec
+        (raise-unsupported-codec {:variant variant} codec)))))
+
+(defn- variant->version
+  "The manifest version the variant writes: 1 for the verbose layout (the
+  default one), 2 for the compact one with plain json, 3 for any compact
+  layout with a codec."
+  [variant]
+  (cond
+    (contains? #{nil :verbose} variant) 1
+    (= variant :compact) 2
+    (some? (variant->codec variant)) 3))
+
+(defn- variant->layout
+  "What a variant writes: its `:codec` (nil for plain json), whether it packs
+  the objects of the file (`:compact?`) and the `:budget` of a chunk. The
+  three travel together because the entry the reader accepts is decided by
+  them at once."
+  [variant]
+  (let [codec (variant->codec variant)]
+    {:codec    codec
+     :compact? (or (= :compact variant) (some? codec))
+     :budget   (if codec pc/compressed-chunk-size pc/default-chunk-size)}))
+
+(defn- with-codec-ctx
+  "Runs `f` with a zstd compressor when the variant writes a codec, or with
+  nil for the plain layouts. The compressor is reused across the entries of
+  one file."
+  [cfg f]
+  (if (variant->codec (::bfc/variant cfg))
+    (with-open [ctx (zstd-compress-ctx)]
+      (f cfg ctx))
+    (f cfg nil)))
+
+(defn- split-json-entry-name
+  "Splits a zip entry name into `[base codec]`, where `base` is the path
+  without its `.json` suffix. A plain json name answers a nil codec; a name
+  that is not json answers nil. A name with a `.json.<codec>` suffix whose
+  codec is not registered raises `:unsupported-binfile-codec` instead of
+  being ignored, because ignoring it would silently drop the entry."
+  [^String name]
+  (when name
+    (cond
+      (str/ends-with? name ".json")
+      [(subs name 0 (- (count name) 5)) nil]
+
+      :else
+      (when-let [[_ base codec] (re-matches #"(.*)\.json\.([^/]+)$" name)]
+        (let [codec (keyword codec)]
+          (if (contains? codecs codec)
+            [base codec]
+            (raise-unsupported-codec {:path name} codec)))))))
+
+(defn- write-zstd-entry!
+  "Writes one chunk as a zstd frame inside a STORED zip entry. The compressor
+  is reused across the chunks of a file; the entry declares the frame size and
+  the CRC of the frame, which is what the zip stores."
+  [^ZipOutputStream output ^ZstdCompressCtx ctx ^String path ^bytes data]
+  (let [payload (.compress ctx data)
+        crc     (doto (CRC32.) (.update payload))]
+    (.putNextEntry output (doto (ZipEntry. path)
+                            (.setMethod ZipEntry/STORED)
+                            (.setSize (alength payload))
+                            (.setCompressedSize (alength payload))
+                            (.setCrc (.getValue crc))))
+    (.write output payload 0 (alength payload))
+    (.closeEntry output)))
+
+(defn- write-json-bytes!
+  "Writes the serialized bytes of one json entry, as a zstd frame when the
+  codec is not nil and as a deflated entry otherwise."
+  [^ZipOutputStream output ^ZstdCompressCtx ctx codec ^String path ^bytes bytes]
+  (if codec
+    (write-zstd-entry! output ctx path bytes)
+    (write-entry-bytes! output path bytes)))
+
+(defn- write-object-chunks!
+  "Writes `objects` as chunks of `budget` and returns how many it wrote; zero
+  means there is nothing to write.
+
+  Each line is a `[key value]` pair produced by `serialize`, appended to the
+  chunk in course with its newline; the chunk is written and a new one started
+  when the next line would pass the budget, so the peak is one chunk plus one
+  line instead of the whole collection. The budget bounds the whole chunk entry
+  and is decided by `pc/chunk-full?` with the line's own UTF-8 size. A line that
+  alone passes the budget travels in a chunk of its own, because the writer
+  cannot split a value.
+
+  `serialize` receives the key and the value and answers the pair's json.
+  `write-chunk!` receives the chunk index, its path and the serialized bytes."
+  [objects budget chunk-path write-chunk! serialize]
+  (let [finish! (fn [index ^StringBuilder sb]
+                  (write-chunk! index
+                                (chunk-path index)
+                                (.getBytes (.toString sb) StandardCharsets/UTF_8)))]
+    (loop [entries (seq objects)
+           index   0
+           written 0
+           size    0
+           sb      (StringBuilder.)]
+      (if-let [[id value] (first entries)]
+        (let [line   (serialize id value)
+              nbytes (inc (pc/utf8-byte-size line))]
+          (if (and (pos? written) (pc/chunk-full? size nbytes budget))
+            (do
+              (finish! index sb)
+              (recur (next entries) (inc index) 1 nbytes
+                     (doto (StringBuilder.) (.append line) (.append "\n"))))
+            (recur (next entries) index (inc written) (+ size nbytes)
+                   (doto sb (.append line) (.append "\n")))))
+        (if (pos? written)
+          (do (finish! index sb) (inc index))
+          index)))))
+
+(defn- write-page-chunks!
+  "Writes the objects of a page as JSONL chunks of `budget` and returns how many
+  it wrote; zero means the page has no objects. Each line is a `[id, shape]`
+  pair, the same format a packed family chunk uses, and each shape is serialized
+  once.
+
+  The shape is compacted line by line with `fsc/compact-object`, so the writer
+  never materializes a compacted copy of the page: the peak is one shape plus
+  the chunk in course."
+  [file-id page-id objects budget chunk-path write-chunk!]
+  (write-object-chunks! objects budget
+                        (fn [index] (chunk-path file-id page-id index))
+                        write-chunk!
+                        (fn [id shape]
+                          (serialize-shape id (fsc/compact-object id shape)))))
+
+(defn- write-packed-collection!
+  "Writes a family of objects as a `{:chunks n}` header plus one JSONL chunk per
+  part.
+
+  A chunk is a stream of `[key value]` lines, the same format a page chunk uses.
+  The header stays plain json because it only carries the count; the chunks take
+  the codec suffix of the variant. The header is written at the end, after the
+  chunks: the zip order is irrelevant and the count is only known then. A family
+  with no objects writes no entry, because the empty family has nothing to
+  name.
+
+  `on-chunk` is called with the index of every chunk, for progress reporting.
+  Returns the number of chunks."
+  [^ZipOutputStream output ^ZstdCompressCtx ctx codec ^String path
+   objects budget encode-fn on-chunk]
+  (let [chunk-path   (fn [index]
+                       (str (subs path 0 (- (count path) 5))
+                            "/chunks/" index ".json"
+                            (when codec (codec-suffix codec))))
+        write-chunk! (fn [index ^String cpath ^bytes bytes]
+                       (write-json-bytes! output ctx codec cpath bytes)
+                       (on-chunk index))
+        n            (write-object-chunks! objects budget chunk-path write-chunk!
+                                           (fn [id value] (serialize-entry encode-fn id value)))]
+    (when (pos? n)
+      (write-entry! output path {:chunks n}))
+    n))
 
 (defn- get-file
   [{:keys [::bfc/export-type] :as cfg} file-id]
@@ -293,38 +545,188 @@
                         :always
                         (bfc/clean-file-features))))))
 
+(defn- storage-object-data
+  "The metadata entry of one storage object, the object itself and the
+  extension of its binary."
+  [sobject]
+  (let [smeta  (meta sobject)
+        ext    (cmedia/mtype->extension (:content-type smeta))
+        params (-> smeta
+                   (assoc :id (:id sobject))
+                   (assoc :size (:size sobject))
+                   (encode-storage-object))]
+    [sobject params ext]))
+
+(defn- get-storage-object!
+  "The storage object of `id` from the prefetched map. A file that references
+  an object that no longer exists is corrupt, not a reason to write a broken
+  entry."
+  [objects id]
+  (or (get objects id)
+      (ex/raise :type :validation
+                :code :inconsistent-penpot-file
+                :hint "a storage object of the file is gone"
+                :id (str id))))
+
+(def ^:private max-buffered-binary-size
+  "Binaries up to this size are read once into memory to write them as STORED
+  entries; bigger ones keep streaming as DEFLATED so the export does not hold
+  them whole. Mirrors `:media-max-file-size` in `app.config` (30 MiB)."
+  (* 30 1024 1024))
+
+(defn- write-stored-entry!
+  "Writes one zip entry with the STORED method, which needs the size and the
+  CRC of the payload before the header."
+  [^ZipOutputStream output ^String path ^bytes bytes]
+  (let [crc (doto (CRC32.) (.update bytes))]
+    (.putNextEntry output (doto (ZipEntry. path)
+                            (.setMethod ZipEntry/STORED)
+                            (.setSize (alength bytes))
+                            (.setCompressedSize (alength bytes))
+                            (.setCrc (.getValue crc))))
+    (.write output bytes 0 (alength bytes))
+    (.closeEntry output)))
+
+(defn- write-storage-binary!
+  "Writes one storage object binary. A content type that is already compressed
+  (png, jpeg, gif, webp, woff) gains nothing from deflate, so it is written as
+  STORED; everything else streams as DEFLATED, which is also the fallback for
+  a binary over the buffer threshold."
+  [^ZipOutputStream output storage id sobject ext]
+  (let [path ^String (str "objects/" id ext)]
+    (if (and (cmedia/compressed-mtype? (:content-type (meta sobject)))
+             (<= (:size sobject) max-buffered-binary-size))
+      (write-stored-entry! output path (sto/get-object-bytes storage sobject))
+      (with-open [input (sto/get-object-data storage sobject)]
+        (.putNextEntry output (ZipEntry. path))
+        (io/copy input output :size (:size sobject))
+        (.closeEntry output)))))
+
+(defn- export-storage-objects*
+  [{:keys [::output] :as cfg} ^ZstdCompressCtx ctx]
+  (let [{:keys [codec compact? budget]} (variant->layout (::bfc/variant cfg))
+        storage  (sto/resolve cfg)
+        ids      (-> bfc/*state* deref :storage-objects not-empty)
+        objects  (if ids (sto/get-objects storage ids) {})
+        total    (count ids)]
+
+    (if compact?
+      ;; The binaries are streamed while the metadata is collected, and the
+      ;; packed entry is written after them: the zip order is irrelevant and
+      ;; this keeps one fetch of every storage object. The binaries are the
+      ;; units of the stage, so they are the only taps: a tap for a metadata
+      ;; chunk would restart the counter of the stage from one without a
+      ;; total, and the metadata is small.
+      (let [params (reduce (fn [acc id]
+                             (let [[sobject params ext] (storage-object-data (get-storage-object! objects id))]
+                               (write-storage-binary! output storage id sobject ext)
+                               (tap-progress cfg {:section :storage-object :id id
+                                                  :current (inc (count acc)) :total total})
+                               (assoc acc id params)))
+                           (d/ordered-map)
+                           ids)]
+        (write-packed-collection! output ctx codec "objects.json" params budget
+                                  identity
+                                  (fn [_index] nil)))
+      (doseq [[index id] (d/enumerate ids)]
+        (let [[sobject params ext] (storage-object-data (get-storage-object! objects id))]
+          (write-entry! output (str "objects/" id ".json") params)
+          (tap-progress cfg {:section :storage-object :id id
+                             :current (inc index) :total total})
+          (write-storage-binary! output storage id sobject ext))))))
+
 (defn- export-storage-objects
-  [{:keys [::output] :as cfg}]
-  (let [storage (sto/resolve cfg)
-        ids     (-> bfc/*state* deref :storage-objects not-empty)
-        total   (count ids)]
-    (doseq [[index id] (d/enumerate ids)]
-      (let [sobject (sto/get-object storage id)
-            smeta   (meta sobject)
-            ext     (cmedia/mtype->extension (:content-type smeta))
-            path    (str "objects/" id ".json")
-            params  (-> (meta sobject)
-                        (assoc :id (:id sobject))
-                        (assoc :size (:size sobject))
-                        (encode-storage-object))]
+  [cfg]
+  (with-codec-ctx cfg export-storage-objects*))
 
-        (write-entry! output path params)
-
-        (tap-progress cfg {:section :storage-object :id id
+(defn- export-page
+  "Writes the entry of one page. `ctx` is the zstd compressor reused across
+  the entries of the file and is only used by the layouts with a codec."
+  [cfg ^ZipOutputStream output ^ZstdCompressCtx ctx file-id pages-index index page-id total]
+  (let [{:keys [codec compact? budget]} (variant->layout (::bfc/variant cfg))
+        page     (get pages-index page-id)
+        objects  (:objects page)]
+    (if compact?
+      (let [chunk-path   (fn [file-id page-id index]
+                           (pc/codec-chunk-path file-id page-id index codec))
+            write-chunk! (fn [_index path bytes]
+                           (write-json-bytes! output ctx codec path bytes))
+            path         (str "files/" file-id "/pages/" page-id ".json")
+            chunks       (write-page-chunks! file-id page-id objects
+                                             budget chunk-path write-chunk!)]
+        (tap-progress cfg {:section :page :id page-id :name (:name page) :file-id file-id
                            :current (inc index) :total total})
+        (write-compact-entry! output path (-> page
+                                              (dissoc :objects :options)
+                                              (assoc :index index :chunks chunks))))
+      (let [path (str "files/" file-id "/pages/" page-id ".json")
+            page (-> page
+                     (dissoc :objects)
+                     (assoc :index index))
+            page (encode-page page)]
+        (write-entry! output path page)
+        (tap-progress cfg {:section :page :id page-id :name (:name page) :file-id file-id
+                           :current (inc index) :total total})
+        (doseq [[shape-id shape] objects]
+          (let [path  (str "files/" file-id "/pages/" page-id "/" shape-id ".json")
+                shape (encode-shape shape)]
+            (write-entry! output path shape)))))))
 
-        (with-open [input (sto/get-object-data storage sobject)]
-          (.putNextEntry ^ZipOutputStream output (ZipEntry. (str "objects/" id ext)))
-          (io/copy input output :size (:size sobject))
-          (.closeEntry ^ZipOutputStream output))))))
+(defn- prepare-color
+  "The color as it goes into the package: encoded, without the file id and
+  without an empty path."
+  [color]
+  (let [color (-> (encode-color color)
+                  (dissoc :file-id))]
+    (cond-> color
+      (and (contains? color :path)
+           (str/empty? (:path color)))
+      (dissoc :path))))
 
-(defn- export-file
-  [{:keys [::file-id ::output] :as cfg}]
-  (let [file          (get-file cfg file-id)
+(defn- export-collection
+  "Writes one family of objects: packed into a single entry (chunked only
+  when it does not fit `budget`) for the compact layouts, or one entry per
+  object for the verbose one.
+
+  `objects` is keyed by the id the package writes, `entry-path` builds the
+  per-object path from that key, and `on-progress` receives the index, the id
+  (nil when packed) and the total (nil when packed)."
+  [^ZipOutputStream output ^ZstdCompressCtx ctx codec compact? budget
+   ^String packed-path entry-path objects encode-fn on-progress]
+  (if compact?
+    (write-packed-collection! output ctx codec packed-path objects budget encode-fn
+                              (fn [index] (on-progress index nil nil)))
+    (let [total (count objects)]
+      (doseq [[index [id value]] (d/enumerate objects)]
+        (write-entry! output (entry-path id) (encode-fn value))
+        (on-progress index id total)))))
+
+(defn- parse-thumbnail
+  "Return the thumbnail row as the package stores it, or nil when its object id
+   is not the `file/page/frame/tag` shape this exporter writes. Rows created
+   before the writer validated the id carry any string, and one of those would
+   produce an entry path that the importer reads as the packed family."
+  [thumbnail]
+  (when-let [parsed (cth/parse-object-id-strict (:object-id thumbnail))]
+    (assoc parsed :media-id (:media-id thumbnail))))
+
+(defn- export-file*
+  [{:keys [::file-id ::output] :as cfg} ^ZstdCompressCtx ctx]
+  (let [{:keys [codec compact? budget]} (variant->layout (::bfc/variant cfg))
+        progress      (fn [section]
+                        (fn [index id total]
+                          (tap-progress cfg (cond-> {:section section
+                                                     :file-id file-id
+                                                     :current (inc index)}
+                                              id (assoc :id id)
+                                              total (assoc :total total)))))
+
+        file          (get-file cfg file-id)
 
         media         (->> (bfc/get-file-media cfg file)
                            (map (fn [media]
                                   (dissoc media :file-id))))
+        media         (into (d/ordered-map) (map (juxt :id identity)) media)
 
         data          (:data file)
         typographies  (:typographies data)
@@ -337,7 +739,15 @@
         pages         (:pages data)
         pages-index   (:pages-index data)
 
-        thumbnails    (bfc/get-file-object-thumbnails cfg file-id)]
+        thumbnails    (into []
+                            (keep parse-thumbnail)
+                            (bfc/get-file-object-thumbnails cfg file-id))
+        thumbnail-rows (into (d/ordered-map)
+                             (map (fn [thumbnail]
+                                    (let [key (str (:tag thumbnail) "/" (:page-id thumbnail)
+                                                   "/" (:frame-id thumbnail))]
+                                      [key (encode-file-thumbnail thumbnail)])))
+                             thumbnails)]
 
     (tap-progress cfg {:section :file :id file-id :name (:name file)})
 
@@ -361,74 +771,52 @@
           path (str "files/" file-id ".json")]
       (write-entry! output path file))
 
-    (doseq [[index page-id] (d/enumerate pages)]
+    (let [total (count pages)]
+      (doseq [[index page-id] (d/enumerate pages)]
+        (export-page cfg output ctx file-id pages-index index page-id total)))
 
-      (let [path    (str "files/" file-id "/pages/" page-id ".json")
-            page    (get pages-index page-id)
-            objects (:objects page)
-            page    (-> page
-                        (dissoc :objects)
-                        (assoc :index index))
-            page    (encode-page page)]
-
-        (write-entry! output path page)
-
-        (tap-progress cfg {:section :page :id page-id :name (:name page) :file-id file-id
-                           :current (inc index) :total (count pages)})
-
-        (doseq [[shape-id shape] objects]
-          (let [path  (str "files/" file-id "/pages/" page-id "/" shape-id ".json")
-                shape (assoc shape :page-id page-id)
-                shape (encode-shape shape)]
-            (write-entry! output path shape)))))
-
-    (vswap! bfc/*state* bfc/collect-storage-objects media)
+    (vswap! bfc/*state* bfc/collect-storage-objects (vals media))
     (vswap! bfc/*state* bfc/collect-storage-objects thumbnails)
 
-    (doseq [[index {:keys [id] :as item}] (d/enumerate media)]
-      (let [path    (str "files/" file-id "/media/" id ".json")
-            encoded (encode-media item)]
+    (export-collection
+     output ctx codec compact? budget
+     (str "files/" file-id "/media.json")
+     (fn [id] (str "files/" file-id "/media/" id ".json"))
+     media
+     encode-media
+     (progress :media))
 
-        (tap-progress cfg {:section :media :id id :file-id file-id
-                           :current (inc index) :total (count media)})
-        (write-entry! output path encoded)))
+    (export-collection
+     output ctx codec compact? budget
+     (str "files/" file-id "/thumbnails.json")
+     (fn [key] (str "files/" file-id "/thumbnails/" key ".json"))
+     thumbnail-rows
+     identity
+     (progress :thumbnails))
 
-    (doseq [[index thumbnail] (d/enumerate thumbnails)]
-      (let [data (cth/parse-object-id (:object-id thumbnail))
-            path (str "files/" file-id "/thumbnails/" (:tag data) "/" (:page-id data)
-                      "/" (:frame-id data) ".json")
-            data (-> data
-                     (assoc :media-id (:media-id thumbnail))
-                     (encode-file-thumbnail))]
-        (tap-progress cfg {:section :thumbnails :id (:object-id thumbnail) :file-id file-id
-                           :current (inc index) :total (count thumbnails)})
-        (write-entry! output path data)))
+    (export-collection
+     output ctx codec compact? budget
+     (str "files/" file-id "/components.json")
+     (fn [id] (str "files/" file-id "/components/" id ".json"))
+     components
+     encode-component
+     (progress :component))
 
-    (doseq [[index [id component]] (d/enumerate components)]
-      (let [path      (str "files/" file-id "/components/" id ".json")
-            component (encode-component component)]
-        (tap-progress cfg {:section :component :id id :file-id file-id
-                           :current (inc index) :total (count components)})
-        (write-entry! output path component)))
+    (export-collection
+     output ctx codec compact? budget
+     (str "files/" file-id "/colors.json")
+     (fn [id] (str "files/" file-id "/colors/" id ".json"))
+     colors
+     prepare-color
+     (progress :color))
 
-    (doseq [[index [id color]] (d/enumerate colors)]
-      (let [path  (str "files/" file-id "/colors/" id ".json")
-            color (-> (encode-color color)
-                      (dissoc :file-id))
-            color (cond-> color
-                    (and (contains? color :path)
-                         (str/empty? (:path color)))
-                    (dissoc :path))]
-        (tap-progress cfg {:section :color :id id :file-id file-id
-                           :current (inc index) :total (count colors)})
-        (write-entry! output path color)))
-
-    (doseq [[index [id object]] (d/enumerate typographies)]
-      (let [path       (str "files/" file-id "/typographies/" id ".json")
-            typography (encode-typography object)]
-        (tap-progress cfg {:section :typography :id id :file-id file-id
-                           :current (inc index) :total (count typographies)})
-        (write-entry! output path typography)))
+    (export-collection
+     output ctx codec compact? budget
+     (str "files/" file-id "/typographies.json")
+     (fn [id] (str "files/" file-id "/typographies/" id ".json"))
+     typographies
+     encode-typography
+     (progress :typography))
 
     (when (and tokens-lib
                (not (ctob/empty-lib? tokens-lib)))
@@ -453,6 +841,10 @@
         (tap-progress cfg {:section :tokens-status :file-id file-id})
         (write-entry! output path encoded-status)))))
 
+(defn- export-file
+  [cfg]
+  (with-codec-ctx cfg export-file*))
+
 (defn- export-files
   [{:keys [::bfc/file-ids ::bfc/export-type ::output] :as cfg}]
 
@@ -463,6 +855,7 @@
                        (->> (bfc/get-files-rels cfg file-ids)
                             (mapv (juxt :file-id :library-file-id)))
                        [])
+        version      (variant->version (::bfc/variant cfg))
 
         ;; Compute external libraries: referenced by original files but
         ;; not included in the export set. Only relevant for :link-later.
@@ -484,6 +877,7 @@
                                                 (mapv :file-id))}))))
                      (filterv some?))))))]
 
+
     (vswap! bfc/*state* assoc :files (d/ordered-map))
 
     ;; Write all the exporting files
@@ -497,7 +891,7 @@
     ;; Write manifest file
     (let [files  (:files @bfc/*state*)
           params (cond-> {:type "penpot/export-files"
-                          :version 1
+                          :version version
                           :generated-by (str "penpot/" (:full cf/version))
                           :referer "penpot"
                           :files (vec (vals files))
@@ -598,9 +992,15 @@
   accounting the same bytes against the shared job-wide budget.
   A cheap pre-check on the entry-declared size rejects obvious bombs without
   opening the stream; the streaming counters remain the authoritative guard
-  because the declared size is attacker-controlled metadata."
+  because the declared size is attacker-controlled metadata.
+
+  The codec of the entry comes from its `.json.<codec>` suffix, never from
+  the manifest version: a name with a registered codec is decompressed before
+  both size limits, so the caps count the decompressed json, and a name with
+  an unregistered codec raises instead of being read as json."
   [cfg ^ZipFile input ^ZipEntry entry]
   (let [entry-name (zip-entry-name entry)
+        codec      (second (split-json-entry-name entry-name))
         declared   (get-zip-entry-size entry)
         max-size   (::max-text-entry-size cfg)]
     (when (and (not (neg? declared)) (> declared (long max-size)))
@@ -610,7 +1010,8 @@
                 :path entry-name
                 :max max-size
                 :found declared))
-    (-> (zip-entry-stream input entry)
+    (-> (cond-> (zip-entry-stream input entry)
+          codec ((get-in codecs [codec :decompress])))
         (size-limiting-stream max-size (atom 0) entry-name)
         (size-limiting-stream (::max-text-total-size cfg) (::accumulated-total-text-size cfg) entry-name)
         (io/reader :encoding "UTF-8"))))
@@ -656,84 +1057,146 @@
   `files/<file-id>/<category>/<object-id>.json` shape."
   #{"media" "colors" "components" "typographies"})
 
+(def ^:private collection-categories
+  "Zip path segments of a family that the compact layouts pack into one
+  entry: `files/<file-id>/<category>.json` plus its chunks."
+  #{"media" "colors" "components" "typographies" "thumbnails"})
+
+(defn- packed-collection-key
+  [category]
+  (keyword (str category "-packed")))
+
+(defn- collection-chunks-key
+  [category]
+  (keyword (str category "-chunks")))
+
 (defn- index-entry-name
-  "Classify a single zip entry by the raw shape of its path and
-  accumulate it on the index.
+  "Classify one zip entry by the raw shape of its path and accumulate it on
+  the index. `base` is the entry name without its `.json[.<codec>]` suffix,
+  already split by `index-entries`, which also refuses a duplicated base path
+  in the same pass.
 
-  It replaces the per-file regex matchers with a single
-  classification pass over all entries. The `.json` suffix is matched
-  literally: the previous regexes left the dot unescaped, so crafted
-  paths like `files/<file-id>/tokensXjson` or `objects/x-json` matched
-  by accident; requiring the literal suffix ignores them (legitimate
-  exports always write a literal `.json` suffix). Unknown paths are
-  ignored."
-  [index ^String name entry]
-  (if-not (and name (str/ends-with? name ".json"))
-    index
-    (let [base  (subs name 0 (- (count name) 5))
-          segs  (str/split base "/")
-          seg-n (count segs)
-          seg-1 (nth segs 0 nil)
-          seg-2 (nth segs 1 nil)
-          seg-3 (nth segs 2 nil)]
+  The suffix is matched literally: the previous regexes left the dot
+  unescaped, so crafted paths like `files/<file-id>/tokensXjson` or
+  `objects/x-json` matched by accident; requiring the literal suffix ignores
+  them (legitimate exports always write a literal `.json` suffix). The codec,
+  when there is one, was taken by the split, so any json entry may carry it,
+  not only the page chunks. Unknown paths are ignored."
+  [index ^String base entry]
+  (let [segs   (str/split base "/")
+        seg-n  (count segs)
+        seg-1  (nth segs 0 nil)
+        seg-2  (nth segs 1 nil)
+        seg-3  (nth segs 2 nil)
+        seg-4  (nth segs 3 nil)
+        seg-5  (nth segs 4 nil)
+        chunk? (and (= seg-n 6) (= seg-1 "files") (= seg-3 "pages")
+                    (= seg-5 "chunks"))]
 
-      (if-not (and (pos? seg-n) (every? #(pos? (count %)) segs))
-        index
-        (cond
-          ;; objects/<object-id>.json
-          (and (= seg-n 2) (= seg-1 "objects"))
-          (update index :objects bfc/conj-vec
-                  {:entry entry :id (parse-uuid seg-2)})
+    (if-not (and (pos? seg-n) (every? #(pos? (count %)) segs))
+      index
+      (cond
+        ;; objects.json
+        (and (= seg-n 1) (= seg-1 "objects"))
+        (assoc index :objects-packed {:entry entry})
 
-          ;; files/<file-id>/tokens.json
-          (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens"))
-          (update-in index [:tokens seg-2] bfc/conj-vec {:entry entry})
+        ;; objects/chunks/<n>.json(.zstd)
+        (and (= seg-n 3) (= seg-1 "objects") (= seg-2 "chunks"))
+        (if-let [n (parse-long seg-3)]
+          (update index :objects-chunks bfc/conj-vec {:entry entry :index n})
+          index)
 
-          ;; files/<file-id>/tokens-status.json
-          (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens-status"))
-          (update-in index [:tokens-status seg-2] bfc/conj-vec {:entry entry})
+        ;; objects/<object-id>.json
+        (and (= seg-n 2) (= seg-1 "objects"))
+        (update index :objects bfc/conj-vec
+                {:entry entry :id (parse-uuid seg-2)})
 
-          ;; files/<file-id>/thumbnails/<tag>/<page-id>/<frame-id>.json
-          (and (= seg-n 6) (= seg-1 "files") (= seg-3 "thumbnails"))
-          (update-in index [:thumbnails seg-2] bfc/conj-vec
-                     {:entry entry
-                      :tag (nth segs 3)
-                      :page-id (parse-uuid (nth segs 4))
-                      :frame-id (parse-uuid (nth segs 5))
-                      :file-id seg-2})
+        ;; files/<file-id>/<category>.json (packed family)
+        (and (= seg-n 3) (= seg-1 "files")
+             (contains? collection-categories seg-3))
+        (assoc-in index [(packed-collection-key seg-3) seg-2] {:entry entry})
 
-          ;; files/<file-id>/pages/<page-id>.json
-          (and (= seg-n 4) (= seg-1 "files") (= seg-3 "pages"))
-          (update-in index [:pages seg-2] bfc/conj-vec
-                     {:entry entry :id (parse-uuid (nth segs 3))})
+        ;; files/<file-id>/<category>/chunks/<n>.json(.zstd)
+        (and (= seg-n 5) (= seg-1 "files")
+             (contains? collection-categories seg-3)
+             (= seg-4 "chunks"))
+        (if-let [n (parse-long seg-5)]
+          (update-in index [(collection-chunks-key seg-3) seg-2] bfc/conj-vec
+                     {:entry entry :index n})
+          index)
 
-          ;; files/<file-id>/pages/<page-id>/<shape-id>.json
-          (and (= seg-n 5) (= seg-1 "files") (= seg-3 "pages"))
-          (update-in index [:shapes seg-2 (nth segs 3)] bfc/conj-vec
-                     {:entry entry
-                      :page-id (nth segs 3)
-                      :id (parse-uuid (nth segs 4))})
+        ;; files/<file-id>/tokens.json
+        (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens"))
+        (update-in index [:tokens seg-2] bfc/conj-vec {:entry entry})
 
-          ;; files/<file-id>/<category>/<object-id>.json
-          (and (= seg-n 4)
-               (= seg-1 "files")
-               (contains? file-object-entry-categories seg-3))
-          (update-in index [(keyword seg-3) seg-2] bfc/conj-vec
-                     {:entry entry :id (parse-uuid (nth segs 3))})
+        ;; files/<file-id>/tokens-status.json
+        (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens-status"))
+        (update-in index [:tokens-status seg-2] bfc/conj-vec {:entry entry})
 
-          :else
-          index)))))
+        ;; files/<file-id>/thumbnails/<tag>/<page-id>/<frame-id>.json
+        (and (= seg-n 6) (= seg-1 "files") (= seg-3 "thumbnails"))
+        (update-in index [:thumbnails seg-2] bfc/conj-vec
+                   {:entry entry
+                    :tag (nth segs 3)
+                    :page-id (parse-uuid (nth segs 4))
+                    :frame-id (parse-uuid (nth segs 5))
+                    :file-id seg-2})
+
+        ;; files/<file-id>/pages/<page-id>.json
+        (and (= seg-n 4) (= seg-1 "files") (= seg-3 "pages"))
+        (update-in index [:pages seg-2] bfc/conj-vec
+                   {:entry entry :id (parse-uuid (nth segs 3))})
+
+        ;; files/<file-id>/pages/<page-id>/<shape-id>.json
+        (and (= seg-n 5) (= seg-1 "files") (= seg-3 "pages"))
+        (update-in index [:shapes seg-2 (nth segs 3)] bfc/conj-vec
+                   {:entry entry
+                    :page-id (nth segs 3)
+                    :id (parse-uuid (nth segs 4))})
+
+        ;; files/<file-id>/pages/<page-id>/chunks/<n>.json(.zstd)
+        chunk?
+        (if-let [n (parse-long (nth segs 5))]
+          (update-in index [:page-chunks seg-2 (nth segs 3)] bfc/conj-vec
+                     {:entry entry :index n})
+          index)
+
+        ;; files/<file-id>/<category>/<object-id>.json
+        (and (= seg-n 4)
+             (= seg-1 "files")
+             (contains? file-object-entry-categories seg-3))
+        (update-in index [(keyword seg-3) seg-2] bfc/conj-vec
+                   {:entry entry :id (parse-uuid (nth segs 3))})
+
+        :else
+        index))))
 
 (defn- index-entries
   "Classify all the provided zip entries in a single pass and group
   them by their path shape, so import consumers can lookup their
   entries per file (and per page) instead of rescanning the whole
-  entry collection for every file and page."
+  entry collection for every file and page.
+
+  A base path may appear only once in the package, in any codec: two
+  entries for the same object would make the readers keep an arbitrary one,
+  so they fail here instead. The name is split once, and the seen base paths
+  live in this same pass."
   [entries]
-  (reduce (fn [index entry]
-            (index-entry-name index (zip-entry-name entry) entry))
-          {}
-          entries))
+  (let [seen (volatile! {})]
+    (reduce (fn [index entry]
+              (let [name (zip-entry-name entry)]
+                (if-let [[base _codec] (split-json-entry-name name)]
+                  (do
+                    (when-let [other (get @seen base)]
+                      (ex/raise :type :validation
+                                :code :inconsistent-penpot-file
+                                :hint "duplicated entry in the package"
+                                :paths (vec (sort [other name]))))
+                    (vswap! seen assoc base name)
+                    (index-entry-name index base entry))
+                  index)))
+            {}
+            entries)))
 
 (defn- read-entry
   ([cfg ^ZipFile input entry]
@@ -741,6 +1204,20 @@
   ([cfg ^ZipFile input entry key-fn]
    (with-open [^AutoCloseable reader (zip-entry-reader cfg input entry)]
      (json/read reader :key-fn key-fn))))
+
+(defn- check-entry-id
+  "Fails when the id stored in a per-entry object does not match the one in
+  its path. The packed readers refuse the same contradiction; a disagreement
+  means the package is corrupt and keeping either side would hide it."
+  [expected object entry]
+  (when-not (= expected (:id object))
+    (ex/raise :type :validation
+              :code :inconsistent-penpot-file
+              :hint "the id stored in an entry does not match its path"
+              :path (zip-entry-name entry)
+              :path-id (str expected)
+              :id (str (:id object))))
+  object)
 
 (defn- read-file
   [{:keys [::bfc/input ::bfc/timestamp] :as cfg} file-id]
@@ -762,41 +1239,249 @@
           (decode-plugin-data)
           (validate-plugin-data)))))
 
+(defn- packed-key-text
+  "The text of a packed collection key. The json reader answers a keyword when
+  the key has no slash, and the string itself otherwise."
+  [k]
+  (if (keyword? k) (name k) (str k)))
+
+(defn- packed-key-id
+  "The uuid of a packed collection key."
+  [k]
+  (parse-uuid (packed-key-text k)))
+
+(defn- read-chunk-entries
+  "Reads one JSONL chunk into a map of key → value, refusing a line that is not
+  a `[key value]` pair or a key repeated inside the chunk. The key goes through
+  `json/read-kebab-key`, so the in-memory keys keep the types the map layout
+  used: a uuid becomes a keyword and a `tag/page-id/frame-id` stays a string."
+  [{:keys [::bfc/input] :as cfg} entry]
+  (let [path (zip-entry-name entry)]
+    (try
+      (with-open [reader (java.io.PushbackReader.
+                          ^java.io.Reader (zip-entry-reader cfg input entry)
+                          4096)]
+        (loop [result {}]
+          (let [value (json/read reader
+                                 :key-fn json/read-kebab-key
+                                 :eof-error? false
+                                 :eof-value ::eof)]
+            (if (= ::eof value)
+              result
+              (if (and (vector? value) (= 2 (count value)))
+                (let [[k v] value
+                      k     (json/read-kebab-key k)]
+                  (when (contains? result k)
+                    (ex/raise :type :validation
+                              :code :inconsistent-penpot-file
+                              :hint "a key is repeated inside a chunk"
+                              :path path
+                              :key (packed-key-text k)))
+                  (recur (assoc result k v)))
+                (ex/raise :type :validation
+                          :code :inconsistent-penpot-file
+                          :hint "a chunk line is not a [key value] pair"
+                          :path path))))))
+      (catch clojure.lang.ExceptionInfo cause
+        (throw cause))
+      (catch Exception cause
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "a chunk is not a stream of [key value] lines"
+                  :path path
+                  :cause cause)))))
+
+(defn- read-indexed-chunks
+  "Reads the `n` chunks named by the header at `header-path` and answers their
+  maps in index order.
+
+  A package must carry exactly the chunks its header names, once each, inside
+  `0..n-1`, and no chunk may be empty: the writer never produces one, so an
+  empty chunk means the package lost data."
+  [{:as cfg} header-path chunk-entries n]
+  (let [by-idx (reduce (fn [acc {:keys [index] :as entry}]
+                         (update acc index (fnil conj []) entry))
+                       {}
+                       chunk-entries)]
+    (doseq [[index found] by-idx]
+      (when (> (count found) 1)
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "duplicated chunk on an entry"
+                  :path (or (some-> (:entry (first found)) zip-entry-name)
+                            header-path)
+                  :index index))
+      (when-not (<= 0 index (dec n))
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "a chunk index is outside the count of the entry"
+                  :path (or (some-> (:entry (first found)) zip-entry-name)
+                            header-path)
+                  :index index
+                  :chunks n)))
+    (when-not (and (= n (count by-idx))
+                   (every? #(contains? by-idx %) (range n)))
+      (ex/raise :type :validation
+                :code :inconsistent-penpot-file
+                :hint "some chunks referenced on an entry not found"
+                :path header-path
+                :chunks n))
+    (mapv (fn [index]
+            (let [entry (get-in by-idx [index 0])
+                  chunk (read-chunk-entries cfg (:entry entry))]
+              (when (empty? chunk)
+                (ex/raise :type :validation
+                          :code :inconsistent-penpot-file
+                          :hint "a chunk is empty"
+                          :path (zip-entry-name (:entry entry))))
+              chunk))
+          (range n))))
+
+(defn- check-single-layout
+  "Fails when a family arrives both packed and per entry: the two layouts
+  would carry different objects under the same ids."
+  [label packed per-entry]
+  (when (and (some? packed) (seq per-entry))
+    (ex/raise :type :validation
+              :code :inconsistent-penpot-file
+              :hint "the package carries the family packed and per entry"
+              :family label)))
+
+(defn- read-packed-collection
+  "Reads a packed family from its main entry and its chunks and answers the
+  map of objects.
+
+  Chunks present means the main entry is a `{:chunks n}` header; without
+  chunks the main entry is the map itself. A family exists because its main
+  entry exists: chunk entries without it are ignored, like any other path the
+  importer does not manage. A header without its chunks, a missing index or
+  an invalid count is a broken package and fails instead of merging what it
+  finds, and so does a header that carries members next to the count: the
+  reader would drop them."
+  [{:keys [::bfc/input ::max-zip-entries] :as cfg} packed chunk-entries]
+  (cond
+    (and (some? packed) (seq chunk-entries))
+    (let [path   (zip-entry-name (:entry packed))
+          header (read-entry cfg input (:entry packed))]
+      (when-not (and (map? header)
+                     (int? (:chunks header))
+                     (<= 0 (:chunks header) max-zip-entries))
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "invalid chunk count on a collection entry"
+                  :path path
+                  :chunks (:chunks header)))
+      (let [members (dissoc header :chunks)]
+        (when (seq members)
+          (ex/raise :type :validation
+                    :code :inconsistent-penpot-file
+                    :hint "a chunked collection header carries more than its chunk count"
+                    :path path
+                    :keys (vec (keys members)))))
+      (reduce (fn [acc chunk]
+                (when-let [dup (first (filter #(contains? acc %) (keys chunk)))]
+                  (ex/raise :type :validation
+                            :code :inconsistent-penpot-file
+                            :hint "an object is repeated across the chunks of a collection"
+                            :path path
+                            :key (packed-key-text dup)))
+                (merge acc chunk))
+              {}
+              (read-indexed-chunks cfg path chunk-entries (:chunks header))))
+
+    (some? packed)
+    (let [payload (read-entry cfg input (:entry packed))]
+      (when-not (map? payload)
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "a packed collection is not a map"
+                  :path (zip-entry-name (:entry packed))))
+      (when (contains? payload :chunks)
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "a chunked collection declares chunks but carries none"
+                  :path (zip-entry-name (:entry packed))
+                  :chunks (:chunks payload)))
+      payload)
+
+    :else nil))
+
+(defn- read-packed-objects
+  "Reads a packed family of objects keyed by id, applies `prepare` to every
+  value and answers the map keyed by id.
+
+  The key and the `:id` of the object must agree: the family readers index
+  their result by id, so a disagreement means the package is corrupt, and
+  dropping either side would hide it."
+  [cfg packed chunk-entries prepare]
+  (when-let [objects (read-packed-collection cfg packed chunk-entries)]
+    (->> objects
+         (reduce-kv (fn [acc k value]
+                      (let [object (prepare value)
+                            id     (packed-key-id k)]
+                        (when-not (and (some? id) (= id (:id object)))
+                          (ex/raise :type :validation
+                                    :code :inconsistent-penpot-file
+                                    :hint "the key of a packed object does not match its id"
+                                    :key (packed-key-text k)
+                                    :id (str (:id object))))
+                        (assoc acc id object)))
+                    {})
+         (not-empty))))
+
 (defn- read-file-media
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
-  (->> (get-in entries-index [:media (str file-id)])
-       (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry cfg input entry)
-                                   (decode-media)
-                                   (validate-media))
-                       object (-> object
-                                  (assoc :file-id file-id)
-                                  (update :created-at default-now)
-                                  ;; FIXME: this is set default to true for
-                                  ;; setting a value, this prop is no longer
-                                  ;; relevant;
-                                  (assoc :is-local true))]
-                   (if (= id (:id object))
-                     (conj result object)
-                     result)))
-               [])
-       (not-empty)))
+  (let [prepare (fn [object]
+                  (-> object
+                      (decode-media)
+                      (validate-media)
+                      (assoc :file-id file-id)
+                      (update :created-at default-now)
+                      ;; FIXME: this is set default to true for setting a
+                      ;; value, this prop is no longer relevant;
+                      (assoc :is-local true)))
+        packed  (get-in entries-index [:media-packed (str file-id)])
+        chunks  (get-in entries-index [:media-chunks (str file-id)])
+        entries (get-in entries-index [:media (str file-id)])]
+    (check-single-layout :media packed entries)
+    (if packed
+      (let [media (->> (read-packed-objects cfg packed chunks prepare)
+                       vals
+                       vec
+                       not-empty)]
+        (tap-progress cfg {:section :media :file-id file-id
+                           :current (count media) :total (count media)})
+        media)
+      (->> entries
+           (reduce (fn [result {:keys [id entry]}]
+                     (let [object (-> (read-entry cfg input entry) prepare)]
+                       (check-entry-id id object entry)
+                       (conj result object)))
+                   [])
+           (not-empty)))))
 
 (defn- read-file-colors
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
-  (let [entries (get-in entries-index [:colors (str file-id)])]
-    (->> (d/enumerate entries)
-         (reduce (fn [result [index {:keys [id entry]}]]
-                   (let [object (->> (read-entry cfg input entry)
-                                     (decode-color)
-                                     (validate-color))]
-                     (tap-progress cfg {:section :color :id id :file-id file-id
-                                        :current (inc index) :total (count entries)})
-                     (if (= id (:id object))
-                       (assoc result id object)
-                       result)))
-                 {})
-         (not-empty))))
+  (let [prepare (fn [object]
+                  (-> object (decode-color) (validate-color)))
+        packed  (get-in entries-index [:colors-packed (str file-id)])
+        chunks  (get-in entries-index [:colors-chunks (str file-id)])
+        entries (get-in entries-index [:colors (str file-id)])]
+    (check-single-layout :colors packed entries)
+    (if packed
+      (let [colors (read-packed-objects cfg packed chunks prepare)]
+        (tap-progress cfg {:section :color :file-id file-id
+                           :current (count colors) :total (count colors)})
+        colors)
+      (->> (d/enumerate entries)
+           (reduce (fn [result [index {:keys [id entry]}]]
+                     (let [object (-> (read-entry cfg input entry) prepare)]
+                       (tap-progress cfg {:section :color :id id :file-id file-id
+                                          :current (inc index) :total (count entries)})
+                       (check-entry-id id object entry)
+                       (assoc result id object)))
+                   {})
+           (not-empty)))))
 
 (defn- read-file-components
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
@@ -816,38 +1501,54 @@
                                         (assoc objects id (bfl/clean-shape-pre-decode shape)))
                                       objects
                                       objects))))
-        entries
-        (get-in entries-index [:components (str file-id)])]
+        prepare (fn [component]
+                  (-> component
+                      (clean-component-pre-decode)
+                      (decode-component)
+                      (clean-component-post-decode)
+                      (validate-component)))
+        packed  (get-in entries-index [:components-packed (str file-id)])
+        chunks  (get-in entries-index [:components-chunks (str file-id)])
+        entries (get-in entries-index [:components (str file-id)])]
 
-    (->> (d/enumerate entries)
-         (reduce (fn [result [index {:keys [id entry]}]]
-                   (let [object (->> (read-entry cfg input entry)
-                                     (clean-component-pre-decode)
-                                     (decode-component)
-                                     (clean-component-post-decode))]
-                     (tap-progress cfg {:section :component :id id :file-id file-id
-                                        :current (inc index) :total (count entries)})
-                     (if (= id (:id object))
-                       (assoc result id object)
-                       result)))
-                 {})
-         (not-empty))))
+    (check-single-layout :components packed entries)
+    (if packed
+      (let [components (read-packed-objects cfg packed chunks prepare)]
+        (tap-progress cfg {:section :component :file-id file-id
+                           :current (count components) :total (count components)})
+        components)
+      (->> (d/enumerate entries)
+           (reduce (fn [result [index {:keys [id entry]}]]
+                     (let [object (-> (read-entry cfg input entry) prepare)]
+                       (tap-progress cfg {:section :component :id id :file-id file-id
+                                          :current (inc index) :total (count entries)})
+                       (check-entry-id id object entry)
+                       (assoc result id object)))
+                   {})
+           (not-empty)))))
 
 (defn- read-file-typographies
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
-  (let [entries (get-in entries-index [:typographies (str file-id)])]
-    (->> (d/enumerate entries)
-         (reduce (fn [result [index {:keys [id entry]}]]
-                   (let [object (->> (read-entry cfg input entry)
-                                     (decode-typography)
-                                     (validate-typography))]
-                     (tap-progress cfg {:section :typography :id id :file-id file-id
-                                        :current (inc index) :total (count entries)})
-                     (if (= id (:id object))
-                       (assoc result id object)
-                       result)))
-                 {})
-         (not-empty))))
+  (let [prepare (fn [object]
+                  (-> object (decode-typography) (validate-typography)))
+        packed  (get-in entries-index [:typographies-packed (str file-id)])
+        chunks  (get-in entries-index [:typographies-chunks (str file-id)])
+        entries (get-in entries-index [:typographies (str file-id)])]
+    (check-single-layout :typographies packed entries)
+    (if packed
+      (let [typographies (read-packed-objects cfg packed chunks prepare)]
+        (tap-progress cfg {:section :typography :file-id file-id
+                           :current (count typographies) :total (count typographies)})
+        typographies)
+      (->> (d/enumerate entries)
+           (reduce (fn [result [index {:keys [id entry]}]]
+                     (let [object (-> (read-entry cfg input entry) prepare)]
+                       (tap-progress cfg {:section :typography :id id :file-id file-id
+                                          :current (inc index) :total (count entries)})
+                       (check-entry-id id object entry)
+                       (assoc result id object)))
+                   {})
+           (not-empty)))))
 
 (defn- read-file-tokens-lib*
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
@@ -887,45 +1588,155 @@
                                    (bfl/clean-shape-pre-decode)
                                    (decode-shape)
                                    (bfl/clean-shape-post-decode))]
-                   (if (= id (:id object))
-                     (assoc result id object)
-                     result)))
+                   (check-entry-id id object entry)
+                   (assoc result id object)))
                {})
        (not-empty)))
 
+(defn- read-page-chunks
+  "Reads the chunked objects of a compact page, in chunk order, and merges them.
+
+  The entry of the page names its chunks by count: a chunk it names but the
+  package does not carry, a chunk index outside that count, an empty chunk and
+  a shape repeated across chunks are broken packages, and the read fails loudly
+  instead of merging nothing."
+  [{:keys [::entries-index ::max-zip-entries] :as cfg} file-id page-id chunks]
+  (when-not (and (int? chunks) (<= 0 chunks max-zip-entries))
+    (ex/raise :type :validation
+              :code :inconsistent-penpot-file
+              :hint "invalid chunk count on a page entry"
+              :file-id file-id
+              :page-id page-id
+              :chunks chunks))
+  (let [header-path (str "files/" file-id "/pages/" page-id ".json")
+        entries     (get-in entries-index [:page-chunks (str file-id) (str page-id)])]
+    (reduce (fn [objects chunk]
+              (when-let [dup (first (filter #(contains? objects %) (keys chunk)))]
+                (ex/raise :type :validation
+                          :code :inconsistent-penpot-file
+                          :hint "a shape is repeated across the chunks of a page"
+                          :path header-path
+                          :key (packed-key-text dup)))
+              (merge objects chunk))
+            {}
+            (read-indexed-chunks cfg header-path entries chunks))))
+
 (defn- read-file-pages
-  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  [{:keys [::bfc/input ::entries-index ::compact?] :as cfg} file-id]
   (let [entries (get-in entries-index [:pages (str file-id)])]
     (->> (d/enumerate entries)
          (keep (fn [[index {:keys [id entry]}]]
-                 (let [page (->> (read-entry cfg input entry)
-                                 (decode-page))
-                       page (dissoc page :options)]
-                   (tap-progress cfg {:section :page :id id :file-id file-id
-                                      :current (inc index) :total (count entries)})
-                   (when (= id (:id page))
-                     (let [objects (read-file-shapes cfg file-id id)]
-                       (assoc page :objects objects))))))
+                 (let [page        (read-entry cfg input entry)
+                       chunks      (:chunks page)
+                       page-chunks (get-in entries-index [:page-chunks (str file-id) (str id)])]
+                   (when (and compact? (some? chunks) (contains? page :objects))
+                     (ex/raise :type :validation
+                               :code :inconsistent-penpot-file
+                               :hint "the page carries its shapes inline and in chunks"
+                               :path (zip-entry-name entry)
+                               :chunks chunks))
+                   ;; The page entry is what declares its chunks. A package that
+                   ;; carries them without the count would lose every one of
+                   ;; them in silence, whatever layout it claims.
+                   (when (and (nil? chunks) (seq page-chunks))
+                     (ex/raise :type :validation
+                               :code :inconsistent-penpot-file
+                               :hint "the page carries chunks but declares no count"
+                               :path (zip-entry-name entry)
+                               :chunks (count page-chunks)))
+                   (let [page (cond-> page
+                                (and compact? (some? chunks))
+                                (assoc :objects (read-page-chunks cfg file-id id chunks)))
+                         page (-> page
+                                  (decode-page)
+                                  (dissoc :options :chunks))]
+                     (tap-progress cfg {:section :page :id id :file-id file-id
+                                        :current (inc index) :total (count entries)})
+                     (check-entry-id id page entry)
+                     (if compact?
+                       (let [page (-> page
+                                      (update :objects
+                                              (fn [objects]
+                                                (d/update-vals objects
+                                                               (fn [shape]
+                                                                 (-> shape
+                                                                     (bfl/clean-shape-pre-decode)
+                                                                     (decode-shape))))))
+                                      (fsc/expand-page))]
+                         (update page :objects
+                                 (fn [objects]
+                                   (d/update-vals objects bfl/clean-shape-post-decode))))
+                       (let [objects (read-file-shapes cfg file-id id)]
+                         (assoc page :objects objects)))))))
          (sort-by :index)
          (reduce (fn [result {:keys [id] :as page}]
                    (assoc result id (dissoc page :index)))
                  (d/ordered-map)))))
 
+(defn- thumbnail-key-parts
+  "The `[tag page-id frame-id]` of a packed thumbnail key, failing when the
+  key is not that shape: the reader compares the parts against the object, so
+  a malformed key must not turn into a silent drop."
+  [k]
+  (let [text (packed-key-text k)
+        segs (str/split text "/")]
+    (if (and (= 3 (count segs))
+             (not (str/blank? (nth segs 0)))
+             (some? (parse-uuid (nth segs 1)))
+             (some? (parse-uuid (nth segs 2))))
+      segs
+      (ex/raise :type :validation
+                :code :inconsistent-penpot-file
+                :hint "a packed thumbnail key is not tag/page-id/frame-id"
+                :key text))))
+
 (defn- read-file-thumbnails
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
-  (->> (get-in entries-index [:thumbnails (str file-id)])
-       (reduce (fn [result {:keys [page-id frame-id tag entry]}]
-                 (let [object (->> (read-entry cfg input entry)
-                                   (decode-file-thumbnail)
-                                   (validate-file-thumbnail))]
-
-                   (if (and (= frame-id (:frame-id object))
-                            (= page-id (:page-id object))
-                            (= tag (:tag object)))
-                     (conj result object)
-                     result)))
-               [])
-       (not-empty)))
+  (let [prepare (fn [object]
+                  (-> object
+                      (decode-file-thumbnail)
+                      (validate-file-thumbnail)))
+        packed  (get-in entries-index [:thumbnails-packed (str file-id)])
+        chunks  (get-in entries-index [:thumbnails-chunks (str file-id)])
+        entries (get-in entries-index [:thumbnails (str file-id)])]
+    (check-single-layout :thumbnails packed entries)
+    (if packed
+      (let [thumbnails (->> (read-packed-collection cfg packed chunks)
+                            (reduce-kv (fn [result k value]
+                                         (let [object (prepare value)
+                                               [tag page-id frame-id] (thumbnail-key-parts k)]
+                                           (when-not (and (= tag (:tag object))
+                                                          (= (parse-uuid page-id) (:page-id object))
+                                                          (= (parse-uuid frame-id) (:frame-id object)))
+                                             (ex/raise :type :validation
+                                                       :code :inconsistent-penpot-file
+                                                       :hint "the key of a packed thumbnail does not match the object"
+                                                       :key (packed-key-text k)
+                                                       :tag (str (:tag object))
+                                                       :page-id (str (:page-id object))
+                                                       :frame-id (str (:frame-id object))))
+                                           (conj result object)))
+                                       [])
+                            (not-empty))]
+        (tap-progress cfg {:section :thumbnails :file-id file-id
+                           :current (count thumbnails) :total (count thumbnails)})
+        thumbnails)
+      (->> entries
+           (reduce (fn [result {:keys [page-id frame-id tag entry]}]
+                     (let [object (-> (read-entry cfg input entry) prepare)]
+                       (when-not (and (= frame-id (:frame-id object))
+                                      (= page-id (:page-id object))
+                                      (= tag (:tag object)))
+                         (ex/raise :type :validation
+                                   :code :inconsistent-penpot-file
+                                   :hint "the key of a per-entry thumbnail does not match the object"
+                                   :path (zip-entry-name entry)
+                                   :tag (str (:tag object))
+                                   :page-id (str (:page-id object))
+                                   :frame-id (str (:frame-id object))))
+                       (conj result object)))
+                   [])
+           (not-empty)))))
 
 (defn- read-file-data
   [cfg file-id tokens-source]
@@ -1093,20 +1904,31 @@
   ;; we will lose all registry of the pending to reconcile blobs
   ;; what the storage subsystem registers in other parallel
   ;; transaction
-  (let [storage (sto/resolve cfg)
+  (let [prepare (fn [object]
+                  (-> object
+                      (decode-storage-object)
+                      (d/update-when :content-type bfc/normalize-content-type)
+                      (update :bucket d/nilv sto/default-bucket)
+                      (validate-storage-object)))
+        packed  (:objects-packed entries-index)
+        chunks  (:objects-chunks entries-index)
         entries (:objects entries-index)
-        total   (count entries)]
+        _       (check-single-layout :objects packed entries)
+        objects (if packed
+                  (read-packed-objects cfg packed chunks prepare)
+                  (reduce (fn [acc {:keys [id entry]}]
+                            (let [object (prepare (read-entry cfg input entry))]
+                              (check-entry-id id object entry)
+                              (assoc acc id object)))
+                          (d/ordered-map)
+                          entries))
+        storage (sto/resolve cfg)
+        total   (count objects)]
 
-    (doseq [[index {:keys [id entry]}] (d/enumerate entries)]
+    (doseq [[index [id object]] (d/enumerate objects)]
       (tap-progress cfg {:section :storage-objects
                          :current (inc index) :total total})
-      (let [object  (-> (read-entry cfg input entry)
-                        (decode-storage-object)
-                        (d/update-when :content-type bfc/normalize-content-type)
-                        (update :bucket d/nilv sto/default-bucket)
-                        (validate-storage-object))
-
-            ext     (cmedia/mtype->extension (:content-type object))
+      (let [ext     (cmedia/mtype->extension (:content-type object))
             path    (str "objects/" id ext)
             content (zip-entry-storage-content input
                                                (get-zip-entry input path)
@@ -1317,6 +2139,14 @@
   (let [cfg      (setup-limits cfg)
         manifest (-> (read-manifest cfg input)
                      (validate-manifest))
+        version  (:version manifest)
+        compact? (case version
+                   1 false
+                   (2 3) true
+                   (ex/raise :type :validation
+                             :code :invalid-binfile-v3-manifest
+                             :hint "unsupported manifest version"
+                             :version version))
         entries  (read-zip-entries input)
 
         max      (::max-zip-entries cfg)
@@ -1330,6 +2160,7 @@
         cfg      (-> cfg
                      (assoc ::entries-index (index-entries entries))
                      (assoc ::manifest manifest)
+                     (assoc ::compact? compact?)
                      (assoc ::bfc/timestamp timestamp))]
 
     (when-not (= "penpot/export-files" (:type manifest))
@@ -1362,13 +2193,27 @@
   "Do the exportation of a specified file in custom penpot binary
   format. The cfg carries what `bfc/export-cfg` froze: `::bfc/file-ids`
   (the files to export), `::bfc/export-type` (how linked libraries are
-  handled) and `::bfc/output` (where the package is written).
+  handled), `::bfc/variant` (the layout of the pages) and
+  `::bfc/output` (where the package is written).
 
   `::bfc/export-type` determines how linked libraries are handled.
   Valid values: `:include-libraries` (include linked libraries),
   `:merge-libraries` (embed library assets in the file),
   `:detach-libraries` (treat assets as basic objects),
-  `:link-later` (preserve component metadata for relinking on import)."
+  `:link-later` (preserve component metadata for relinking on import).
+
+  `::bfc/variant` determines the layout of the package: `:verbose`
+  writes one JSON entry per shape and is the default; `:compact` embeds
+  every shape of a page in chunked entries, packs the components,
+  colors, typographies, media descriptors, thumbnails and storage
+  objects of a file into one entry per family, and marks the manifest
+  with version 2, which is what the frontend asks for while the
+  `binfile-v3-compact` flag is on; `:compact-<codec>` (today
+  `:compact-zstd`) does the same but writes the chunks and the packed
+  families as frames of that codec, and marks the manifest with version
+  3. The importer reads all of them and detects the codec of each entry
+  by its `.json.<codec>` suffix, so the choice is about the size of the
+  package, not about what can be opened."
 
   [{:keys [::bfc/file-ids ::bfc/output] :as cfg}]
 

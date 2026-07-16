@@ -11,6 +11,7 @@
   still not saved)."
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dps]
@@ -97,7 +98,8 @@
            (t/is (= :create-export-binfile-job (:cmd (first @calls))))
            (t/is (= {:params {:file-ids    #{(:id target)}
                               :export-type :detach-libraries}}
-                    (:params (first @calls)))))
+                    (:params (first @calls)))
+                 "without a flag the request leaves the layout out and the backend uses its default"))
 
          (t/testing "the milestone of the job is reported while it runs"
            (rx/push! ws-stream
@@ -128,6 +130,84 @@
                      :filename "My file"
                      :size     120}
                     (last @seen)))))))))
+
+(t/deftest ^:async the-compact-layout-is-behind-a-flag
+  (let [ws-stream (rx/subject)
+        calls     (atom [])
+        rows      (atom {})
+        target    (file "My file")]
+
+    (await
+     (mock/with-mocks*
+       {st/state (atom {:ws-conn ws-stream})
+        cf/flags (conj cf/flags :binfile-v3-compact)
+        rp/cmd! (fake-server calls rows)
+        ws/get-rcv-stream (mock/stub (fn [_] ws-stream))}
+
+       (let [done   (hva/observe (fexp/export-files :files [target] :type :detach-libraries)
+                                 {:on-next (constantly nil)})
+             job-id (:job-id (first @calls))]
+
+         (t/testing "the flag asks the backend for the compact layout"
+           (t/is (= :compact (get-in (first @calls) [:params :params :variant]))))
+
+         (t/testing "and the run still answers when the job is over"
+           (swap! rows assoc job-id
+                  (job job-id "completed" :result {:resource-uri "http://assets/export"}))
+           (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
+           (await done)))))))
+
+(t/deftest ^:async the-zstd-compact-layout-is-behind-a-flag
+  (let [ws-stream (rx/subject)
+        calls     (atom [])
+        rows      (atom {})
+        target    (file "My file")]
+
+    (await
+     (mock/with-mocks*
+       {st/state (atom {:ws-conn ws-stream})
+        cf/flags (conj cf/flags :binfile-v3-compact-zstd)
+        rp/cmd! (fake-server calls rows)
+        ws/get-rcv-stream (mock/stub (fn [_] ws-stream))}
+
+       (let [done   (hva/observe (fexp/export-files :files [target] :type :detach-libraries)
+                                 {:on-next (constantly nil)})
+             job-id (:job-id (first @calls))]
+
+         (t/testing "the zstd flag asks for the compressed compact layout"
+           (t/is (= :compact-zstd (get-in (first @calls) [:params :params :variant]))))
+
+         (swap! rows assoc job-id
+                (job job-id "completed" :result {:resource-uri "http://assets/export"}))
+         (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
+         (await done))))))
+
+(t/deftest ^:async the-zstd-layout-wins-over-the-plain-compact
+  (let [ws-stream (rx/subject)
+        calls     (atom [])
+        rows      (atom {})
+        target    (file "My file")]
+
+    (await
+     (mock/with-mocks*
+       {st/state (atom {:ws-conn ws-stream})
+        cf/flags (-> cf/flags
+                     (conj :binfile-v3-compact)
+                     (conj :binfile-v3-compact-zstd))
+        rp/cmd! (fake-server calls rows)
+        ws/get-rcv-stream (mock/stub (fn [_] ws-stream))}
+
+       (let [done   (hva/observe (fexp/export-files :files [target] :type :detach-libraries)
+                                 {:on-next (constantly nil)})
+             job-id (:job-id (first @calls))]
+
+         (t/is (= :compact-zstd (get-in (first @calls) [:params :params :variant]))
+               "with both flags on, the zstd layout wins")
+
+         (swap! rows assoc job-id
+                (job job-id "completed" :result {:resource-uri "http://assets/export"}))
+         (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
+         (await done))))))
 
 (t/deftest ^:async a-failure-fails-only-its-own-file
   (let [ws-stream (rx/subject)

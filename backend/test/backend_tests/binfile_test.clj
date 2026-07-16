@@ -13,9 +13,16 @@
    [app.common.data :as d]
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.page-chunks :as pc]
+   [app.common.files.shape-compact :as fsc]
    [app.common.files.tokens :as cfo]
    [app.common.files.validate :as cfv]
    [app.common.geom.matrix :as gmt]
+   ;; app.common.json (not clojure.data.json below): provides `read` with
+   ;; `read-kebab-key`, used by the compact page-structure test.
+   [app.common.json :as cjson]
+   [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
@@ -29,14 +36,18 @@
    [app.rpc.commands.binfile :as binfile]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
+   [app.tasks.export-binfile :as export-job]
+   [app.util.events :as events]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :as stt]
    [clojure.data.json :as json]
+   [clojure.java.io :as jio]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io])
   (:import
+   com.github.luben.zstd.ZstdInputStream
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
    java.io.DataInputStream
@@ -46,6 +57,7 @@
    java.util.zip.Deflater
    java.util.zip.ZipEntry
    java.util.zip.ZipFile
+   java.util.zip.ZipInputStream
    java.util.zip.ZipOutputStream))
 
 (t/use-fixtures :once th/state-init)
@@ -544,6 +556,51 @@
     (t/is (= (:svg-defs shape-1) (:svg-defs shape-2))
           "svg-defs are a fixed point")))
 
+(defn- prepare-simple-file-with-ids
+  [profile]
+  (let [page-id-1 (uuid/custom 1 1)
+        page-id-2 (uuid/custom 1 2)
+        shape-id  (uuid/custom 2 1)
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})]
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-page
+       :name "test 1"
+       :id page-id-1}
+      {:type :add-page
+       :name "test 2"
+       :id page-id-2}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id page-id-1
+       :id shape-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id shape-id
+              :name "image"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :rect})}])
+
+    {:file-id (:id file)
+     :page-id-1 page-id-1
+     :page-id-2 page-id-2
+     :shape-id shape-id}))
+
 (t/deftest export-binfile-v3
   (let [profile (th/create-profile* 1)
         file    (prepare-simple-file profile)
@@ -669,6 +726,34 @@
   [path]
   (with-open [zin (ZipFile. (fs/file path))]
     (into #{} (map #(.getName ^ZipEntry %)) (iterator-seq (.entries zin)))))
+
+(defn- read-lines
+  "Reads a JSONL stream into a vector of `[key value]` pairs, with the key
+  normalized the way the reader does it: a uuid becomes a keyword and a
+  `tag/page-id/frame-id` stays a string."
+  [^java.io.Reader in]
+  (with-open [reader (java.io.PushbackReader. in 4096)]
+    (loop [acc []]
+      (let [value (cjson/read reader
+                              :key-fn cjson/read-kebab-key
+                              :eof-error? false
+                              :eof-value ::eof)]
+        (if (= ::eof value)
+          acc
+          (recur (conj acc (if (and (vector? value) (= 2 (count value)))
+                             [(cjson/read-kebab-key (first value)) (second value)]
+                             value))))))))
+
+(defn- read-zip-lines
+  [^ZipFile zip path]
+  (read-lines (io/reader (.getInputStream zip (.getEntry zip path)))))
+
+(defn- read-zstd-zip-lines
+  [^ZipFile zip path]
+  (read-lines (java.io.InputStreamReader.
+               (ZstdInputStream. (.getInputStream zip (.getEntry zip path)))
+               java.nio.charset.StandardCharsets/UTF_8)))
+
 
 (t/deftest export-detach-libraries-removes-tokens-library-although-keeps-applied-tokens
   (let [profile (th/create-profile* 1)
@@ -2675,6 +2760,40 @@
 
     (dissoc file :data)))
 
+(def ^:private png-bytes
+  "A 1x1 transparent PNG, already compressed and small enough to buffer."
+  (.decode (java.util.Base64/getDecoder)
+           "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))
+
+(defn- prepare-file-with-png-media
+  "Like `prepare-file-with-media`, with a png storage object, whose payload is
+  already compressed."
+  [profile]
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (stt/configure-storage-backend))
+
+        sobject (sto/put-object! storage {::sto/content (sto/content png-bytes)
+                                          :content-type "image/png"
+                                          :bucket "file-media-object"})
+
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        mobj    (th/create-file-media-object* {:file-id (:id file)
+                                               :is-local true
+                                               :media-id (:id sobject)})]
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-media
+       :object mobj}])
+
+    {:file (dissoc file :data) :media-id (:id sobject)}))
+
 (t/deftest import-rejects-oversized-object
   ;; import must reject storage objects exceeding default-max-binary-entry-size
   (let [profile (th/create-profile* 1)
@@ -2952,6 +3071,10 @@
                 (str "files/" f ".json")
                 (str "files/" f "/plugin-data.json")
                 (str "files/" f "/tokens.json")
+                (str "files/" f "/media.json")
+                (str "files/" f "/media/chunks/1.json.zstd")
+                "objects.json"
+                "objects/chunks/2.json"
                 "objects/11111111-1111-1111-1111-111111111111.json"
                 (str "files/" f "/media/33333333-3333-3333-3333-333333333333.json")
                 (str "files/" f "/colors/not-a-uuid.json")
@@ -2959,10 +3082,21 @@
                 (str "files/" f "/typographies/t.json")
                 (str "files/" f "/pages/" page ".json")
                 (str "files/" f "/pages/" page "/shape.json")
+                (str "files/" f "/pages/" page "/chunks/0.json.zstd")
                 (str "files/" f "/thumbnails/medium/" page "/frame.json")])]
 
     (t/is (= [(parse-uuid "11111111-1111-1111-1111-111111111111")]
              (mapv :id (:objects index))))
+
+    (t/is (some? (:objects-packed index))
+          "objects.json is indexed as the packed metadata of the storage objects")
+    (t/is (= 2 (:index (first (:objects-chunks index))))
+          "objects/chunks/<n>.json is indexed by its index")
+
+    (t/is (some? (get-in index [:media-packed (str f)]))
+          "media.json is indexed as the packed family of the file")
+    (t/is (= 1 (:index (first (get-in index [:media-chunks (str f)]))))
+          "media/chunks/<n>.json.zstd is indexed by its index")
 
     (t/is (= #{f} (set (keys (:media index)))))
     (t/is (= [(parse-uuid "33333333-3333-3333-3333-333333333333")]
@@ -2977,6 +3111,9 @@
 
     (t/is (= #{f} (set (keys (:pages index)))))
     (t/is (= [(parse-uuid page)] (mapv :id (get (:pages index) f))))
+
+    (t/is (= 0 (:index (first (get-in index [:page-chunks f page]))))
+          "a .json.zstd chunk is indexed by its index")
 
     (t/is (= #{f} (set (keys (:shapes index)))))
     (t/is (= #{page} (set (keys (get (:shapes index) f)))))
@@ -3002,6 +3139,18 @@
   (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/media/a.txt")])))
   (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/unknown/a.json")])))
   (t/is (empty? (index-entries-of [(str "files//media/a.json")]))))
+
+(t/deftest index-entries-rejects-an-unregistered-codec
+  (let [path  (str "files/" index-test-file-id "/media/"
+                   "44444444-4444-4444-4444-444444444444.json.lz4")
+        cause (try
+                (index-entries-of [path])
+                nil
+                (catch clojure.lang.ExceptionInfo cause cause))]
+    (t/is (= :unsupported-binfile-codec (:code (ex-data cause)))
+          "an entry with a codec nobody registered fails instead of being ignored")
+    (t/is (= path (:path (ex-data cause)))
+          "and the error names the entry, so it can be found in the package")))
 
 (t/deftest index-entries-requires-literal-json-suffix
   ;; deliberate tightening vs today's regexes: the dot is unescaped in
@@ -3679,3 +3828,2446 @@
         (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
         (undelete :team (:id team))
         (t/is (perms?))))))
+
+(t/deftest export-binfile-v3-compact
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id-1 shape-id]} (prepare-simple-file-with-ids profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :variant     :compact
+                      :output      (io/output-stream output)}))
+
+    ;; Verify manifest version
+    (let [manifest (v3/get-manifest th/*system* output)]
+      (t/is (= 2 (:version manifest))))
+
+    (let [result (-> th/*system*
+                     (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
+                     (assoc ::bfc/input output)
+                     (v3/import-files!))]
+      (t/is (= 1 (count (:file-ids result))))
+      (t/is (every? uuid? (:file-ids result)))
+
+      ;; Verify imported data has correct shapes with preserved geometry
+      (let [imported-id  (first (:file-ids result))
+            imported-data (-> (bfc/get-file th/*system* imported-id {:realize? true})
+                              :data)
+            pages-index   (get imported-data :pages-index)
+            page          (get pages-index page-id-1)
+            shape         (get-in page [:objects shape-id])]
+        (t/is page "page should exist after import")
+        (t/is shape "shape should exist after import")
+        (t/is (= :rect (:type shape)))
+        (t/is (mth/close? (:x shape) 0))
+        (t/is (mth/close? (:y shape) 0))
+        (t/is (mth/close? (:width shape) 0.01))
+        (t/is (mth/close? (:height shape) 0.01))))))
+
+(t/deftest export-binfile-v3-compact-round-trip
+  (let [profile    (th/create-profile* 1)
+        {:keys [file-id page-id-1 shape-id]} (prepare-simple-file-with-ids profile)
+        output1    (tmp/tempfile :suffix ".zip")
+        output2    (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :variant     :compact
+                      :output      (io/output-stream output1)}))
+
+    ;; Verify compact manifest
+    (let [manifest (v3/get-manifest th/*system* output1)]
+      (t/is (= 2 (:version manifest))))
+
+    (let [result      (-> th/*system*
+                          (assoc ::bfc/project-id (:default-project-id profile))
+                          (assoc ::bfc/profile-id (:id profile))
+                          (assoc ::bfc/team-id (:default-team-id profile))
+                          (assoc ::bfc/input output1)
+                          (v3/import-files!))
+          imported-id (first (:file-ids result))]
+
+      ;; Re-export as normal (no variant) and verify
+      (v3/export-files!
+       (bfc/export-cfg th/*system*
+                       {:file-ids    #{imported-id}
+                        :export-type :detach-libraries
+                        :output      (io/output-stream output2)}))
+
+      (let [manifest2 (v3/get-manifest th/*system* output2)
+            result2   (-> th/*system*
+                          (assoc ::bfc/project-id (:default-project-id profile))
+                          (assoc ::bfc/profile-id (:id profile))
+                          (assoc ::bfc/team-id (:default-team-id profile))
+                          (assoc ::bfc/input output2)
+                          (v3/import-files!))]
+        (t/is (= 1 (:version manifest2)) "a re-export without variant is normal")
+        (t/is (= 1 (count (:file-ids result2))))
+        (t/is (every? uuid? (:file-ids result2)))
+
+        ;; Verify shapes survive the compact -> import -> legacy re-export round-trip
+        (let [reimported-id   (first (:file-ids result2))
+              reimported-data (-> (bfc/get-file th/*system* reimported-id {:realize? true})
+                                  :data)
+              pages-index     (get reimported-data :pages-index)
+              page            (get pages-index page-id-1)
+              shape           (get-in page [:objects shape-id])]
+          (t/is page "page should exist after round-trip")
+          (t/is shape "shape should exist after round-trip")
+          (t/is (= :rect (:type shape)))
+          (t/is (mth/close? (:x shape) 0))
+          (t/is (mth/close? (:y shape) 0))
+          (t/is (mth/close? (:width shape) 0.01))
+          (t/is (mth/close? (:height shape) 0.01)))))))
+
+(t/deftest export-binfile-v3-compact-page-structure
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id-1 shape-id]} (prepare-simple-file-with-ids profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :variant     :compact
+                      :output      (io/output-stream output)}))
+
+    (with-open [^ZipFile zip (ZipFile. (fs/file output))]
+      (let [entries     (iterator-seq (.entries zip))
+            page-path   (str "files/" file-id "/pages/" page-id-1 ".json")
+            chunk-path  (str "files/" file-id "/pages/" page-id-1 "/chunks/0.json")
+            page-entry  (.getEntry zip page-path)
+            chunk-entry (.getEntry zip chunk-path)]
+
+        (t/is page-entry "compact page entry should exist")
+        (t/is chunk-entry "the page should have its chunk")
+        (t/is (= ZipEntry/DEFLATED (.getMethod chunk-entry))
+              "the compact layout keeps writing deflated json chunks")
+
+        ;; Per-shape entries should NOT exist in compact format
+        (doseq [^java.util.zip.ZipEntry entry entries]
+          (let [name (.getName entry)]
+            (t/is (or (= name chunk-path)
+                      (not (.startsWith name (str "files/" file-id "/pages/" page-id-1 "/"))))
+                  (str "should not have per-shape entries: " name))))
+
+        (t/testing "the page entry names its chunks and carries no shapes"
+          (with-open [reader (io/reader (.getInputStream zip page-entry))]
+            (let [page-data (cjson/read reader :key-fn cjson/read-kebab-key)]
+              (t/is (= 1 (:chunks page-data)))
+              (t/is (not (contains? page-data :objects))))))
+
+        (t/testing "the chunk carries the shapes as JSONL"
+          (with-open [in (.getInputStream zip chunk-entry)]
+            (let [chunk-data (into {} (read-lines (io/reader in)))]
+              (t/is (> (count chunk-data) 0)
+                    "the chunk should not be empty")
+              (t/is (contains? chunk-data (keyword (str shape-id)))
+                    "the chunk should contain the shape"))))))))
+
+(t/deftest export-binfile-v3-compact-round-trip-tree
+  (let [profile  (th/create-profile* 1)
+        file     (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        group-id (uuid/next)
+        rect-id  (uuid/next)
+        output   (tmp/tempfile :suffix ".zip")]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-page :name "tree" :id page-id}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id page-id
+       :id frame-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id frame-id :name "Board" :type :frame
+              :x 0 :y 0 :width 400 :height 300
+              :parent-id uuid/zero :frame-id uuid/zero})}
+      {:type :add-obj
+       :page-id page-id
+       :id group-id
+       :parent-id frame-id
+       :frame-id frame-id
+       :components-v2 true
+       :obj (-> (cts/setup-shape
+                 {:id group-id :name "Group" :type :group
+                  :x 10 :y 10 :width 100 :height 80
+                  :parent-id frame-id :frame-id frame-id})
+                (assoc :opacity 1
+                       :blend-mode :normal
+                       :layout-item-h-sizing :fix
+                       :layout-item-v-sizing :fix
+                       :layout-item-absolute false
+                       :touched #{}
+                       :constraints-h :left
+                       :constraints-v :top))}
+      {:type :add-obj
+       :page-id page-id
+       :id rect-id
+       :parent-id group-id
+       :frame-id frame-id
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id rect-id :name "Rect" :type :rect
+              :x 20 :y 20 :width 40 :height 30
+              :parent-id group-id :frame-id frame-id})}])
+
+    (let [source (-> (bfc/get-file th/*system* (:id file) {:realize? true})
+                     :data :pages-index (get page-id))]
+      (v3/export-files!
+       (bfc/export-cfg th/*system*
+                       {:file-ids    #{(:id file)}
+                        :export-type :detach-libraries
+                        :variant     :compact
+                        :output      (io/output-stream output)}))
+
+      ;; The stored shapes carry no id that the key or the tree rebuilds
+      (with-open [^ZipFile zip (ZipFile. (fs/file output))]
+        (let [page-path  (str "files/" (:id file) "/pages/" page-id ".json")
+              chunk-path (str "files/" (:id file) "/pages/" page-id "/chunks/0.json")
+              page-entry (.getEntry zip page-path)
+              chunk      (.getEntry zip chunk-path)]
+          (t/is (some? page-entry) "compact page entry should exist")
+
+          (with-open [reader (io/reader (.getInputStream zip page-entry))]
+            (let [page-data (cjson/read reader :key-fn cjson/read-kebab-key)]
+              (t/is (= 1 (:chunks page-data)) "the page entry names its chunk")
+              (t/is (not (contains? page-data :objects))
+                    "the shapes do not travel in the page entry")))
+
+          (t/is (some? chunk) "the page should have its chunk")
+          (with-open [in (.getInputStream zip chunk)]
+            (let [stored-objects (into {} (read-lines (io/reader in)))]
+              (doseq [id [frame-id group-id rect-id]]
+                (let [stored (get stored-objects (keyword (str id)))]
+                  (t/is (some? stored) (str "stored shape " id))
+                  (t/is (not (contains? stored :id)) (str "no :id on " id))
+                  (t/is (contains? stored :parent-id)
+                        (str "the parent stays as data on " id))
+                  (t/is (contains? stored :frame-id)
+                        (str "the frame stays as data on " id))))
+
+              ;; The group carried only default values, an empty set and the
+              ;; two sizing keys, which are kept on purpose
+              (let [stored (get stored-objects (keyword (str group-id)))]
+                (doseq [k [:opacity :blend-mode :layout-item-absolute :touched
+                           :constraints-h :constraints-v]]
+                  (t/is (not (contains? stored k)) (str "no " k " on the group")))
+                (doseq [k [:layout-item-h-sizing :layout-item-v-sizing]]
+                  (t/is (contains? stored k) (str k " stays on the group"))))))))
+
+      ;; And the import rebuilds them
+      (let [result      (-> th/*system*
+                            (assoc ::bfc/project-id (:default-project-id profile))
+                            (assoc ::bfc/profile-id (:id profile))
+                            (assoc ::bfc/team-id (:default-team-id profile))
+                            (assoc ::bfc/input output)
+                            (v3/import-files!))
+            imported-id (first (:file-ids result))
+            imported    (-> (bfc/get-file th/*system* imported-id {:realize? true})
+                            :data :pages-index (get page-id))]
+
+        (t/is (some? imported) "page should exist after import")
+
+        (doseq [id [frame-id group-id rect-id]]
+          (doseq [k [:id :parent-id :frame-id :x :y :width :height]]
+            (t/is (= (get-in source [:objects id k])
+                     (get-in imported [:objects id k]))
+                  (str k " of " id " reads back unchanged"))))
+
+        (let [group (get-in imported [:objects group-id])
+              rect  (get-in imported [:objects rect-id])]
+          (t/is (= 1 (:opacity group)) "a default value comes back")
+          (t/is (= :normal (:blend-mode group)))
+          (t/is (false? (:layout-item-absolute group)))
+          (t/is (= :fix (:layout-item-h-sizing group))
+                "the sizing survives verbatim")
+          (t/is (= :left (:constraints-h group)))
+          (t/is (= :top (:constraints-v group)))
+          (t/is (not (contains? group :touched))
+                "an empty set reads back as absent")
+          (t/is (= :scale (:constraints-h rect)) "the derived constraint comes back")
+          (t/is (= :scale (:constraints-v rect))))
+
+        (t/is (= uuid/zero (:frame-id (get-in imported [:objects frame-id])))
+              "a top-level frame keeps the zero frame")
+        (t/is (= frame-id (:parent-id (get-in imported [:objects group-id])))
+              "a group inside a frame keeps its parent")
+        (t/is (= frame-id (:frame-id (get-in imported [:objects rect-id])))
+              "a shape inside a group keeps the frame of the group")))))
+
+(t/deftest import-binfile-v3-compact-keeps-the-stored-ids
+  ;; A version 2 package written before the pruning carries `:id` inside every
+  ;; object (any writer that still does). The reader fills only what is absent,
+  ;; so a stored id remains untouched.
+  (let [profile    (th/create-profile* 1)
+        {:keys [file-id page-id-1 shape-id]} (prepare-simple-file-with-ids profile)
+        output     (tmp/tempfile :suffix ".zip")
+        output2    (tmp/tempfile :suffix ".zip")
+        injected   (uuid/next)
+        chunk-path (str "files/" file-id "/pages/" page-id-1 "/chunks/0.json")]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :variant     :compact
+                      :output      (io/output-stream output)}))
+
+    ;; Rewrite only the chunk entry, injecting an id that differs from the key
+    (with-open [in  (ZipInputStream. (io/input-stream output))
+                out (ZipOutputStream. (io/output-stream output2))]
+      (loop []
+        (when-let [^ZipEntry entry (.getNextEntry in)]
+          (let [path (.getName entry)]
+            (.putNextEntry out (ZipEntry. path))
+            (if (= path chunk-path)
+              (let [lines  (read-lines
+                            (java.io.InputStreamReader.
+                             (java.io.ByteArrayInputStream. (.readAllBytes in))
+                             java.nio.charset.StandardCharsets/UTF_8))
+                    writer (io/writer out)]
+                (doseq [[k value] lines]
+                  (cjson/write writer
+                               [(if (keyword? k) (name k) (str k))
+                                (cond-> value
+                                  (= (keyword (str shape-id)) k)
+                                  (assoc :id (str injected)))]
+                               :key-fn cjson/write-camel-key)
+                  (.write writer "\n"))
+                (.flush writer))
+              (.transferTo ^java.io.InputStream in out))
+            (.closeEntry out)
+            (recur)))))
+
+    (let [result   (-> th/*system*
+                       (assoc ::bfc/project-id (:default-project-id profile))
+                       (assoc ::bfc/profile-id (:id profile))
+                       (assoc ::bfc/team-id (:default-team-id profile))
+                       (assoc ::bfc/input output2)
+                       (v3/import-files!))
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id-1))]
+      (t/is (some? imported) "page should exist after import")
+      (t/is (= injected (get-in imported [:objects shape-id :id]))
+            "the stored id is not overwritten by the key"))))
+
+;; --- CHUNKED PAGES
+
+(defn- add-page-with-rects
+  "A file with one page that holds `shapes` rects and nothing else, for the
+  tests that need a page with several shapes."
+  [profile shapes]
+  (let [file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (uuid/next)
+        rect-ids (vec (repeatedly shapes uuid/next))]
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     (into [{:type :add-page :name "chunks" :id page-id}]
+           (map (fn [id]
+                  {:type :add-obj
+                   :page-id page-id
+                   :id id
+                   :parent-id uuid/zero
+                   :frame-id uuid/zero
+                   :components-v2 true
+                   :obj (cts/setup-shape
+                         {:id id
+                          :name (str "rect " id)
+                          :type :rect
+                          :x 10 :y 20 :width 30 :height 40
+                          :parent-id uuid/zero
+                          :frame-id uuid/zero})}))
+           rect-ids))
+    {:file-id (:id file) :page-id page-id :rect-ids rect-ids}))
+
+(defn- export-compact!
+  "Exports `file-id` with the compact layout. A `budget` overrides the chunk
+  size, so a test can force several chunks without a page of megabytes."
+  [file-id output budget]
+  (with-redefs-fn (cond-> {} (some? budget) (assoc #'pc/default-chunk-size budget))
+    (fn []
+      (v3/export-files!
+       (bfc/export-cfg th/*system*
+                       {:file-ids    #{file-id}
+                        :export-type :detach-libraries
+                        :variant     :compact
+                        :output      (io/output-stream output)})))))
+
+(t/deftest export-binfile-v3-compact-page-compacts-each-shape-in-the-chunk
+  ;; The page writer compacts one shape at a time inside the chunk serializer,
+  ;; with the same helper the page pass uses, so it never builds a compacted
+  ;; copy of the page. The emitted line is exactly what that helper produces.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        source  (-> (bfc/get-file th/*system* file-id {:realize? true})
+                    :data :pages-index (get page-id))]
+
+    (export-compact! file-id output nil)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [path     (pc/chunk-path file-id page-id 0)
+            lines    (-> (.getInputStream zip (.getEntry zip path))
+                         (io/reader)
+                         (slurp)
+                         (.split "\n")
+                         (vec))
+            expected (set (map (fn [id]
+                                 (#'v3/serialize-shape
+                                  id (fsc/compact-object id (get-in source [:objects id]))))
+                               (keys (:objects source))))]
+        (t/is (= (count (:objects source)) (count lines))
+              "one line per shape of the page, the root frame included")
+        (t/is (= expected (set lines))
+              "every line is the compact-object of its shape")))))
+
+(defn- export-compact-zstd!
+  "Exports `file-id` with the zstd compact layout. A `budget` overrides the
+  chunk size, so a test can force several chunks without a page of megabytes."
+  [file-id output budget]
+  (with-redefs-fn (cond-> {} (some? budget) (assoc #'pc/compressed-chunk-size budget))
+    (fn []
+      (v3/export-files!
+       (bfc/export-cfg th/*system*
+                       {:file-ids    #{file-id}
+                        :export-type :detach-libraries
+                        :variant     :compact-zstd
+                        :output      (io/output-stream output)})))))
+
+(defn- read-zip-json
+  [^ZipFile zip path]
+  (with-open [reader (io/reader (.getInputStream zip (.getEntry zip path)))]
+    (cjson/read reader :key-fn cjson/read-kebab-key)))
+
+(defn- read-zstd-zip-json
+  [^ZipFile zip path]
+  (with-open [in     (ZstdInputStream. (.getInputStream zip (.getEntry zip path)))
+              reader (java.io.InputStreamReader. in java.nio.charset.StandardCharsets/UTF_8)]
+    (cjson/read reader :key-fn cjson/read-kebab-key)))
+
+(defn- import-package
+  ([profile input] (import-package profile input nil))
+  ([profile input extra]
+   (-> th/*system*
+       (merge extra)
+       (assoc ::bfc/project-id (:default-project-id profile))
+       (assoc ::bfc/profile-id (:id profile))
+       (assoc ::bfc/team-id (:default-team-id profile))
+       (assoc ::bfc/input input)
+       (v3/import-files!))))
+
+(t/deftest export-binfile-v3-compact-round-trip-align-self
+  ;; Absence means automatic alignment and the sidebar clears the override with
+  ;; nil, so the value is data: the compact layout writes an explicit
+  ;; `:stretch`/`:center` and never invents the key on a shape that has none.
+  (let [profile    (th/create-profile* 1)
+        file       (th/create-file* 2 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)
+                                       :is-shared false})
+        page-id    (uuid/next)
+        frame-id   (uuid/next)
+        auto-id    (uuid/next)
+        stretch-id (uuid/next)
+        center-id  (uuid/next)
+        output     (tmp/tempfile :suffix ".zip")
+        child      (fn [id name x align-self]
+                     {:type        :add-obj
+                      :page-id     page-id
+                      :id          id
+                      :parent-id   frame-id
+                      :frame-id    frame-id
+                      :components-v2 true
+                      :obj (cond-> (cts/setup-shape
+                                    {:id id :name name :type :rect
+                                     :x x :y 0 :width 40 :height 20
+                                     :parent-id frame-id :frame-id frame-id})
+                             (some? align-self)
+                             (assoc :layout-item-align-self align-self))})]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-page :name "flex" :id page-id}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type        :add-obj
+       :page-id     page-id
+       :id          frame-id
+       :parent-id   uuid/zero
+       :frame-id    uuid/zero
+       :components-v2 true
+       :obj (-> (cts/setup-shape
+                 {:id frame-id :name "Flex" :type :frame
+                  :x 0 :y 0 :width 400 :height 200
+                  :parent-id uuid/zero :frame-id uuid/zero})
+                (assoc :layout-flex-dir :row))}
+      (child auto-id "Auto" 0 nil)
+      (child stretch-id "Stretch" 40 :stretch)
+      (child center-id "Center" 80 :center)])
+
+    (export-compact! (:id file) output nil)
+
+    (t/testing "the chunk stores the value and never invents it"
+      (with-open [^ZipFile zip (ZipFile. (fs/file output))]
+        (let [chunk-path (str "files/" (:id file) "/pages/" page-id "/chunks/0.json")
+              stored     (into {} (read-lines
+                                   (io/reader (.getInputStream zip (.getEntry zip chunk-path)))))]
+          (t/is (not (contains? (get stored (keyword (str auto-id)))
+                                :layout-item-align-self))
+                "an absent alignment stays absent")
+          (t/is (= "stretch" (:layout-item-align-self
+                              (get stored (keyword (str stretch-id)))))
+                "an explicit stretch is written")
+          (t/is (= "center" (:layout-item-align-self
+                             (get stored (keyword (str center-id)))))
+                "an explicit center is written"))))
+
+    (t/testing "and the import reads the three states back"
+      (let [result   (import-package profile output)
+            imported (-> (bfc/get-file th/*system* (first (:file-ids result))
+                                       {:realize? true})
+                         :data :pages-index (get page-id))]
+        (t/is (not (contains? (get-in imported [:objects auto-id])
+                              :layout-item-align-self))
+              "the key is not materialized on the absent child")
+        (t/is (= :stretch (get-in imported [:objects stretch-id
+                                            :layout-item-align-self])))
+        (t/is (= :center (get-in imported [:objects center-id
+                                           :layout-item-align-self])))))))
+
+(t/deftest export-binfile-stores-the-already-compressed-media
+  (let [profile (th/create-profile* 1)
+        {:keys [file media-id]} (prepare-file-with-png-media profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (export-compact! (:id file) output nil)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (t/is (= ZipEntry/STORED
+               (.getMethod (.getEntry zip (str "objects/" media-id ".png"))))
+            "an already-compressed binary does not go through deflate"))
+
+    (let [result (import-package profile output)]
+      (t/is (= 1 (count (db/query th/*system* :file-media-object
+                                  {:file-id (first (:file-ids result))})))
+            "and the import restores it from the STORED entry"))))
+
+(t/deftest export-binfile-deflates-a-binary-that-is-not-compressed
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-media profile)
+        media-id (:media-id (th/db-get :file-media-object {:file-id (:id file)}))
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (export-compact! (:id file) output nil)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (t/is (= ZipEntry/DEFLATED
+               (.getMethod (.getEntry zip (str "objects/" media-id ".svg"))))
+            "svg is text and deflate still shrinks it"))))
+
+(t/deftest export-binfile-streams-a-binary-over-the-buffer-threshold
+  (let [profile (th/create-profile* 1)
+        {:keys [file media-id]} (prepare-file-with-png-media profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (with-redefs-fn {#'v3/max-buffered-binary-size 0}
+      #(export-compact! (:id file) output nil))
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (t/is (= ZipEntry/DEFLATED
+               (.getMethod (.getEntry zip (str "objects/" media-id ".png"))))
+            "a binary over the threshold falls back to the streaming path"))))
+
+
+(t/deftest the-chunk-budget-stays-a-quarter-of-the-entry-cap
+  (t/is (< pc/default-chunk-size bfc/default-max-text-entry-size))
+  (t/is (>= (quot bfc/default-max-text-entry-size pc/default-chunk-size) 4)))
+
+(t/deftest export-binfile-v3-compact-splits-a-page-in-chunks
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 3)
+        output  (tmp/tempfile :suffix ".zip")
+        shapes  (-> (bfc/get-file th/*system* file-id {:realize? true})
+                    :data :pages-index (get page-id) :objects
+                    count)]
+
+    ;; A budget smaller than any shape puts one shape per chunk
+    (export-compact! file-id output 1)
+
+    (let [names (zip-entry-names output)
+          page  (with-open [zip (ZipFile. (fs/file output))]
+                  (read-zip-json zip (str "files/" file-id "/pages/" page-id ".json")))]
+
+      (t/testing "the page entry names its chunks and carries no shapes"
+        (t/is (= shapes (:chunks page)))
+        (t/is (not (contains? page :objects))))
+
+      (t/testing "one entry per chunk, each one with a single shape"
+        (doseq [index (range shapes)]
+          (let [path (pc/chunk-path file-id page-id index)]
+            (t/is (contains? names path))
+            (with-open [zip (ZipFile. (fs/file output))]
+              (t/is (= 1 (count (read-zip-lines zip path)))))))
+        (t/is (not (contains? names (pc/chunk-path file-id page-id shapes)))
+              "no chunk past the count of the page")))))
+
+(t/deftest export-binfile-v3-compact-round-trip-chunks
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 3)
+        output  (tmp/tempfile :suffix ".zip")
+        source  (-> (bfc/get-file th/*system* file-id {:realize? true})
+                    :data :pages-index (get page-id) :objects)]
+
+    (export-compact! file-id output 1)
+
+    (let [result   (import-package profile output)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+
+      (t/testing "every shape comes back from the chunk that carried it"
+        (doseq [id rect-ids]
+          (doseq [k [:id :x :y :width :height :parent-id :frame-id]]
+            (t/is (= (get-in source [id k])
+                     (get-in imported [:objects id k]))
+                  (str k " of " id " reads back unchanged"))))))))
+
+(t/deftest import-binfile-v3-compact-reads-a-page-written-with-objects
+  ;; A version 2 package written before the chunks carries the shapes in the
+  ;; entry of the page. The reader still accepts that layout.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")
+        shapes  (-> (bfc/get-file th/*system* file-id {:realize? true})
+                    :data :pages-index (get page-id) :objects
+                    count)]
+
+    (export-compact! file-id output 1)
+
+    (let [page   (with-open [zip (ZipFile. (fs/file output))]
+                   (read-zip-json zip path))
+          chunks (with-open [zip (ZipFile. (fs/file output))]
+                   (mapv #(read-zip-lines zip (pc/chunk-path file-id page-id %))
+                         (range (:chunks page))))
+          page   (-> page
+                     (assoc :objects (into {} cat chunks))
+                     (dissoc :chunks))]
+
+      (with-open [in  (ZipInputStream. (io/input-stream output))
+                  out (ZipOutputStream. (io/output-stream output2))]
+        (loop []
+          (when-let [^ZipEntry entry (.getNextEntry in)]
+            (let [name (.getName entry)]
+              (cond
+                (str/includes? name (str "/pages/" page-id "/chunks/"))
+                nil
+
+                (= name path)
+                (do (.putNextEntry out (ZipEntry. name))
+                    (let [writer (io/writer out)]
+                      (cjson/write writer page)
+                      (.flush writer))
+                    (.closeEntry out))
+
+                :else
+                (do (.putNextEntry out (ZipEntry. name))
+                    (.transferTo ^java.io.InputStream in out)
+                    (.closeEntry out))))
+            (recur)))))
+
+    (let [result   (import-package profile output2)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+
+      (t/is (= shapes (count (:objects imported)))
+            "the page keeps every shape it carried in its objects")
+      (doseq [id rect-ids]
+        (t/is (= (str id) (str (:id (get-in imported [:objects id])))))))))
+
+(t/deftest import-binfile-v3-compact-rejects-a-missing-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 3)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        missing (pc/chunk-path file-id page-id 1)
+        cause   (atom nil)]
+
+    (export-compact! file-id output 1)
+
+    ;; Copy the package without the chunk that the page names
+    (with-open [in  (ZipInputStream. (io/input-stream output))
+                out (ZipOutputStream. (io/output-stream output2))]
+      (loop []
+        (when-let [^ZipEntry entry (.getNextEntry in)]
+          (when-not (= missing (.getName entry))
+            (.putNextEntry out (ZipEntry. (.getName entry)))
+            (.transferTo ^java.io.InputStream in out)
+            (.closeEntry out))
+          (recur))))
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses a page without its chunks")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= (str "files/" file-id "/pages/" page-id ".json")
+             (:path (ex-data @cause)))
+          "and names the page whose count does not match")))
+
+(t/deftest import-binfile-v3-compact-rejects-an-invalid-chunk-count
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")
+        cause   (atom nil)]
+
+    (export-compact! file-id output 1)
+
+    ;; Rewrite the page entry with a count no package can carry
+    (with-open [in  (ZipInputStream. (io/input-stream output))
+                out (ZipOutputStream. (io/output-stream output2))]
+      (loop []
+        (when-let [^ZipEntry entry (.getNextEntry in)]
+          (.putNextEntry out (ZipEntry. (.getName entry)))
+          (if (= path (.getName entry))
+            (let [page   (cjson/read (io/reader in) :key-fn cjson/read-kebab-key)
+                  writer (io/writer out)]
+              (cjson/write writer (assoc page :chunks -1))
+              (.flush writer))
+            (.transferTo ^java.io.InputStream in out))
+          (.closeEntry out)
+          (recur))))
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses an absurd chunk count")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= -1 (:chunks (ex-data @cause))))))
+
+(defn- rewrite-json-entry
+  "Copies `input` to `output` replacing the json entry at `path` with the
+  result of applying `f` to the decoded entry."
+  [input output path f]
+  (with-open [in  (ZipInputStream. (io/input-stream input))
+              out (ZipOutputStream. (io/output-stream output))]
+    (loop []
+      (when-let [^ZipEntry entry (.getNextEntry in)]
+        (let [name (.getName entry)]
+          (.putNextEntry out (ZipEntry. name))
+          (if (= name path)
+            (let [writer (io/writer out)]
+              (cjson/write writer (f (cjson/read (io/reader in) :key-fn cjson/read-kebab-key)))
+              (.flush writer))
+            (.transferTo ^java.io.InputStream in out))
+          (.closeEntry out))
+        (recur)))))
+
+(defn- rewrite-zip
+  "Copies `input` to `output` dropping `drop-paths` and adding `entries`, a map
+  of path to json data. `add-json-entry` only appends, and rebuilding the
+  per-entry layout of a family needs both halves."
+  [input output drop-paths entries]
+  (with-open [in  (ZipInputStream. (io/input-stream input))
+              out (ZipOutputStream. (io/output-stream output))]
+    (loop []
+      (when-let [^ZipEntry entry (.getNextEntry in)]
+        (let [name (.getName entry)]
+          (when-not (contains? drop-paths name)
+            (.putNextEntry out (ZipEntry. name))
+            (.transferTo ^java.io.InputStream in out)
+            (.closeEntry out)))
+        (recur)))
+    (doseq [[path data] entries]
+      (.putNextEntry out (ZipEntry. path))
+      (let [writer (io/writer out)]
+        (cjson/write writer data :key-fn cjson/write-camel-key)
+        (.flush writer))
+      (.closeEntry out))))
+
+(defn- add-json-entry
+  "Copies `input` to `output` and appends a json entry at `path`."
+  [input output path data]
+  (with-open [in  (ZipInputStream. (io/input-stream input))
+              out (ZipOutputStream. (io/output-stream output))]
+    (loop []
+      (when-let [^ZipEntry entry (.getNextEntry in)]
+        (.putNextEntry out (ZipEntry. (.getName entry)))
+        (.transferTo ^java.io.InputStream in out)
+        (.closeEntry out)
+        (recur)))
+    (.putNextEntry out (ZipEntry. path))
+    (let [writer (io/writer out)]
+      (cjson/write writer data)
+      (.flush writer))
+    (.closeEntry out)))
+
+(defn- zip-entry-bytes
+  [path entry-name]
+  (with-open [zip (ZipFile. (fs/file path))
+              in  (.getInputStream zip (.getEntry zip entry-name))]
+    (.readAllBytes in)))
+
+(defn- lines-bytes
+  "Serializes `pairs` as JSONL bytes, one `[key value]` per line."
+  [pairs]
+  (let [sw (java.io.StringWriter.)]
+    (doseq [[k v] pairs]
+      (cjson/write sw [k v] :key-fn cjson/write-camel-key)
+      (.write sw "\n"))
+    (.getBytes (str sw) java.nio.charset.StandardCharsets/UTF_8)))
+
+(defn- rewrite-entry
+  "Copies `input` to `output`, replacing the entry at `path` with `new-path`
+  and `bytes`. Unlike `rewrite-json-entry` the payload is raw, so a chunk can
+  change its codec suffix."
+  [input output path new-path bytes]
+  (with-open [in  (ZipInputStream. (io/input-stream input))
+              out (ZipOutputStream. (io/output-stream output))]
+    (loop []
+      (when-let [^ZipEntry entry (.getNextEntry in)]
+        (if (= path (.getName entry))
+          (do
+            (.putNextEntry out (ZipEntry. new-path))
+            (.write out ^bytes bytes 0 (alength ^bytes bytes))
+            (.closeEntry out))
+          (do
+            (.putNextEntry out (ZipEntry. (.getName entry)))
+            (.transferTo ^java.io.InputStream in out)
+            (.closeEntry out)))
+        (recur)))))
+
+(defn- unzstd
+  [^bytes bytes]
+  (with-open [in (ZstdInputStream. (java.io.ByteArrayInputStream. bytes))]
+    (.readAllBytes in)))
+
+(defn- chunk-sizes
+  [^ZipFile zip file-id page-id chunks]
+  (mapv (fn [index]
+          (.getSize ^ZipEntry (.getEntry zip (pc/chunk-path file-id page-id index))))
+        (range chunks)))
+
+(t/deftest read-page-chunks-rejects-a-duplicated-chunk
+  ;; A zip cannot carry two entries with the same name (`ZipOutputStream`
+  ;; refuses them), so the case goes straight to the function: the duplicate
+  ;; check runs before any entry is read.
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        cfg     {::bfc/input nil
+                 ::v3/max-zip-entries 10
+                 ::v3/entries-index
+                 {:page-chunks
+                  {(str file-id) {(str page-id) [{:entry nil :index 0}
+                                                 {:entry nil :index 0}]}}}}
+        cause   (try
+                  (@#'v3/read-page-chunks cfg file-id page-id 1)
+                  nil
+                  (catch Throwable cause cause))]
+
+    (t/is (some? cause) "a duplicated chunk is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+    (t/is (= (str "files/" file-id "/pages/" page-id ".json")
+             (:path (ex-data cause))))
+    (t/is (= 0 (:index (ex-data cause))))))
+
+(t/deftest import-binfile-v3-compact-rejects-a-non-integer-chunk-count
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")]
+
+    (export-compact! file-id output 1)
+
+    (doseq [chunks ["2" 2.0]]
+      (let [cause (atom nil)]
+        (rewrite-json-entry output output2 path #(assoc % :chunks chunks))
+        (try
+          (import-package profile output2)
+          (catch Throwable error
+            (reset! cause error)))
+
+        (t/is (some? @cause) (str "a chunk count of " (pr-str chunks) " is refused"))
+        (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+        (t/is (= chunks (:chunks (ex-data @cause))))))))
+
+(t/deftest import-binfile-v3-compact-rejects-a-chunk-count-above-the-cap
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")
+        chunks  (inc bfc/default-max-zip-entries)
+        cause   (atom nil)]
+
+    (export-compact! file-id output 1)
+    (rewrite-json-entry output output2 path #(assoc % :chunks chunks))
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a chunk count above the zip entry cap is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= chunks (:chunks (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-compact-rejects-a-chunk-that-is-not-a-map-of-shapes
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (pc/chunk-path file-id page-id 0)]
+
+    (export-compact! file-id output 1)
+
+    (doseq [replacement [{} nil []]]
+      (let [cause (atom nil)]
+        (rewrite-json-entry output output2 path (constantly replacement))
+        (try
+          (import-package profile output2)
+          (catch Throwable error
+            (reset! cause error)))
+
+        (t/is (some? @cause)
+              (str "a chunk with " (pr-str replacement) " is refused"))
+        (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+        (t/is (= path (:path (ex-data @cause))))))))
+
+(t/deftest import-binfile-v3-compact-ignores-a-non-numeric-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        stray   (str "files/" file-id "/pages/" page-id "/chunks/abc.json")]
+
+    (export-compact! file-id output 1)
+    (add-json-entry output output2 stray {:objects {}})
+
+    (let [result   (import-package profile output2)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+      (t/is (every? #(contains? (:objects imported) %) rect-ids)
+            "the stray entry is ignored and the page keeps its shapes"))))
+
+(t/deftest import-binfile-v3-compact-reads-a-page-with-no-chunks
+  ;; A page that names no chunks carries no shapes either; the reader takes it
+  ;; as an empty page instead of failing.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        output3 (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")]
+
+    (export-compact! file-id output 1)
+
+    ;; Forge a page that declares no chunks: rewrite the count and drop the
+    ;; chunk entries, so the package is coherent.
+    (let [n (with-open [zip (ZipFile. (fs/file output))]
+              (:chunks (read-zip-json zip path)))]
+      (rewrite-json-entry output output2 path #(assoc % :chunks 0))
+      (rewrite-zip output2 output3
+                   (into #{} (map #(pc/chunk-path file-id page-id %)) (range n))
+                   {}))
+
+    (let [result   (import-package profile output3)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+      (t/is (= {} (:objects imported))
+            "a page that names no chunks reads as an empty page"))))
+
+(t/deftest export-binfile-v3-compact-bounds-every-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 3)
+        page-path (str "files/" file-id "/pages/" page-id ".json")
+        single    (tmp/tempfile :suffix ".zip")]
+
+    ;; One entry per chunk, to know what each entry weighs on its own
+    (export-compact! file-id single 1)
+
+    (let [entries (with-open [zip (ZipFile. (fs/file single))]
+                    (chunk-sizes zip file-id page-id
+                                 (:chunks (read-zip-json zip page-path))))
+          biggest (apply max entries)
+          ;; Room for any two entries, never for three
+          budget  (* 2 biggest)
+          output  (tmp/tempfile :suffix ".zip")]
+
+      (export-compact! file-id output budget)
+
+      (with-open [zip (ZipFile. (fs/file output))]
+        (let [page  (read-zip-json zip page-path)
+              sizes (chunk-sizes zip file-id page-id (:chunks page))]
+
+          (t/is (< (:chunks page) (count entries))
+                "some chunk carries more than one shape")
+          (t/is (every? #(<= % budget) sizes)
+                "every chunk stays within the budget when no shape alone passes it")
+          (t/is (every? pos? sizes) "no chunk is empty"))))))
+
+(t/deftest export-binfile-takes-an-optional-variant
+  (let [schema @#'binfile/schema:export-binfile
+        job-schema @#'export-job/schema:params]
+    (t/is (sm/validate schema {:file-id (uuid/next) :variant :verbose})
+          "the synchronous command accepts the verbose layout")
+    (t/is (sm/validate schema {:file-id (uuid/next) :variant :compact})
+          "the synchronous command accepts the compact layout")
+    (t/is (sm/validate schema {:file-id (uuid/next) :variant :compact-zstd})
+          "the synchronous command accepts the zstd compact layout")
+    (t/is (sm/validate job-schema {:file-ids #{}
+                                   :export-type :detach-libraries
+                                   :variant :compact-zstd})
+          "the export job accepts the zstd compact layout")
+    (t/is (sm/validate schema {:file-id (uuid/next)})
+          "and keeps working without it")
+    (t/is (not (sm/validate schema {:file-id (uuid/next) :variant :normal}))
+          "the old normal name is not accepted")
+    (t/is (not (sm/validate schema {:file-id (uuid/next) :variant :bogus}))
+          "an unknown variant is refused before the export runs"))
+
+  (t/is (= :compact (::bfc/variant (bfc/export-cfg th/*system* {:variant :compact}))))
+  (t/is (= :compact-zstd (::bfc/variant (bfc/export-cfg th/*system* {:variant :compact-zstd}))))
+  (t/is (= :verbose (::bfc/variant (bfc/export-cfg th/*system* {})))
+        "the default is the verbose layout"))
+
+;; --- COMPRESSED CHUNKS
+
+(defn- rewrite-entry-bytes
+  "Copies `input` to `output` replacing the entry at `path` with raw bytes."
+  [input output path bytes]
+  (with-open [in  (ZipInputStream. (io/input-stream input))
+              out (ZipOutputStream. (io/output-stream output))]
+    (loop []
+      (when-let [^ZipEntry entry (.getNextEntry in)]
+        (.putNextEntry out (ZipEntry. (.getName entry)))
+        (if (= path (.getName entry))
+          (.write out ^bytes bytes 0 (alength ^bytes bytes))
+          (.transferTo ^java.io.InputStream in out))
+        (.closeEntry out)
+        (recur)))))
+
+(t/deftest the-compressed-chunk-budget-leaves-room-under-the-entry-cap
+  (t/is (< pc/compressed-chunk-size bfc/default-max-text-entry-size))
+  (t/is (>= (- bfc/default-max-text-entry-size pc/compressed-chunk-size)
+            (* 2 1024 1024))
+        "the budget leaves 2 MiB of margin under the per-entry cap"))
+
+(t/deftest export-binfile-v3-compact-zstd-writes-stored-zstd-chunks
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 3)
+        output    (tmp/tempfile :suffix ".zip")
+        page-path (str "files/" file-id "/pages/" page-id ".json")]
+
+    (export-compact-zstd! file-id output 1)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [manifest (read-zip-json zip "manifest.json")
+            page     (read-zip-json zip page-path)]
+
+        (t/is (= 3 (:version manifest))
+              "the compressed layout marks the manifest with version 3")
+        (t/is (> (:chunks page) 1)
+              "a budget of one byte puts one shape per chunk")
+        (t/is (not (contains? page :objects)))
+        (t/is (some? (.getEntry zip (pc/compressed-chunk-path file-id page-id 0))))
+        (t/is (nil? (.getEntry zip (pc/chunk-path file-id page-id 0)))
+              "the compressed chunk does not carry the plain json name")
+
+        (doseq [index (range (:chunks page))]
+          (let [^ZipEntry entry (.getEntry zip (pc/compressed-chunk-path file-id page-id index))]
+            (t/is (= ZipEntry/STORED (.getMethod entry))
+                  "the chunk is stored, not deflated")
+            (with-open [in (.getInputStream zip entry)]
+              (let [magic (byte-array 4)]
+                (.read in magic)
+                (t/is (= [0x28 0xB5 0x2F 0xFD]
+                         (mapv #(bit-and (long %) 0xff) magic))
+                      "the payload starts with the zstd magic")))))
+
+        (let [chunks  (mapv #(read-zstd-zip-lines zip (pc/compressed-chunk-path file-id page-id %))
+                            (range (:chunks page)))
+              objects (into {} cat chunks)]
+          (t/is (every? #(contains? objects (keyword (str %))) rect-ids)
+                "every shape is inside a decompressed chunk"))))))
+
+(t/deftest export-binfile-v3-compact-zstd-round-trip
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 3)
+        output  (tmp/tempfile :suffix ".zip")
+        source  (-> (bfc/get-file th/*system* file-id {:realize? true})
+                    :data :pages-index (get page-id) :objects)]
+
+    (export-compact-zstd! file-id output 1)
+
+    (let [result   (import-package profile output)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+
+      (doseq [id rect-ids
+              k  [:id :x :y :width :height :parent-id :frame-id]]
+        (t/is (= (get-in source [id k])
+                 (get-in imported [:objects id k]))
+              (str k " of " id " reads back unchanged"))))))
+
+(t/deftest import-binfile-v3-compact-zstd-rejects-a-corrupt-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        path    (pc/compressed-chunk-path file-id page-id 0)
+        cause   (atom nil)]
+
+    (export-compact-zstd! file-id output 1)
+    (rewrite-entry-bytes output output2 path
+                         (.getBytes "not a zstd frame" "UTF-8"))
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses a chunk it cannot decompress")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-compact-zstd-caps-the-decompressed-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 20)
+        output  (tmp/tempfile :suffix ".zip")
+        path    (pc/compressed-chunk-path file-id page-id 0)]
+
+    ;; One chunk with every shape: the json is much larger than its frame.
+    (export-compact-zstd! file-id output (* 1024 1024))
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [^ZipEntry entry (.getEntry zip path)
+            declared        (.getSize entry)
+            cfg             {::v3/max-text-entry-size (inc declared)
+                             ::v3/max-text-total-size (* 64 1024 1024)
+                             ::v3/accumulated-total-text-size (atom 0)}
+            cause           (try
+                              (with-open [reader (@#'v3/zip-entry-reader cfg zip entry)]
+                                (slurp reader))
+                              nil
+                              (catch Throwable cause cause))]
+        (t/is (some? cause)
+              "a chunk that decompresses past the cap is refused")
+        (t/is (= :max-file-size-reached (:code (ex-data cause))))))))
+
+(t/deftest import-binfile-v3-rejects-an-unknown-manifest-version
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id]} (add-page-with-rects profile 1)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        cause   (atom nil)]
+
+    (export-compact! file-id output 1024)
+    (rewrite-json-entry output output2 "manifest.json" #(assoc % :version 4))
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "an unknown manifest version is refused")
+    (t/is (= :invalid-binfile-v3-manifest (:code (ex-data @cause))))
+    (t/is (= 4 (:version (ex-data @cause))))))
+
+
+;; --- PACKED COLLECTIONS AND CODEC DETECTION
+
+(defn- add-library-content!
+  "Adds a color, a typography and two components to `file`, which must be a
+  `prepare-simple-file` one: the components point to its page and shapes."
+  [profile file]
+  (let [color-id      (uuid/custom 5 1)
+        typography-id (uuid/custom 5 2)
+        component-id  (uuid/custom 5 3)
+        other-id      (uuid/custom 5 4)]
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id (uuid/custom 1 1)
+       :id (uuid/custom 2 2)
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id (uuid/custom 2 2)
+              :name "other"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :rect})}
+      {:type :add-color
+       :color {:id color-id :name "packed-color" :color "#00FF00"}}
+      {:type :add-typography
+       :typography {:id typography-id
+                    :name "packed-typography"
+                    :font-id "sourcesanspro"
+                    :font-family "Source Sans Pro"
+                    :font-variant-id "regular"
+                    :font-size "14"
+                    :font-weight "400"
+                    :font-style "normal"
+                    :line-height "1.2"
+                    :letter-spacing "0"
+                    :text-transform "none"}}
+      {:type :add-component
+       :id component-id
+       :name "packed-component"
+       :path ""
+       :main-instance-id (uuid/custom 2 1)
+       :main-instance-page (uuid/custom 1 1)}
+      {:type :add-component
+       :id other-id
+       :name "other-component"
+       :path ""
+       :main-instance-id (uuid/custom 2 2)
+       :main-instance-page (uuid/custom 1 1)}])
+    {:color-id color-id
+     :typography-id typography-id
+     :component-id component-id
+     :other-component-id other-id}))
+
+(t/deftest export-binfile-v3-compact-packs-the-object-families
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        ids     (add-library-content! profile file)
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    (export-compact! (:id file) output nil)
+
+    (let [names (zip-entry-names output)]
+      (t/is (contains? names (str "files/" f "/components.json"))
+            "the components are one packed entry")
+      (t/is (contains? names (str "files/" f "/colors.json"))
+            "the colors are one packed entry")
+      (t/is (contains? names (str "files/" f "/typographies.json"))
+            "the typographies are one packed entry")
+      (t/is (contains? names (str "files/" f "/components/chunks/0.json"))
+            "the family travels in chunks")
+      (t/is (contains? names (str "files/" f "/colors/chunks/0.json")))
+      (t/is (contains? names (str "files/" f "/typographies/chunks/0.json")))
+      (doseq [category ["components" "colors" "typographies"]]
+        (t/is (not-any? #(and (str/starts-with? % (str "files/" f "/" category "/"))
+                              (not (str/starts-with? % (str "files/" f "/" category "/chunks/"))))
+                        names)
+              (str "the compact layout writes no per-" category " entry"))))
+
+    (let [result   (import-package profile output)
+          imported (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})]
+      (t/is (contains? (get-in imported [:data :components]) (:component-id ids)))
+      (t/is (contains? (get-in imported [:data :components]) (:other-component-id ids)))
+      (t/is (contains? (get-in imported [:data :colors]) (:color-id ids)))
+      (t/is (contains? (get-in imported [:data :typographies]) (:typography-id ids))))))
+
+(t/deftest export-binfile-v3-compact-zstd-writes-the-families-as-zstd-entries
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        ids     (add-library-content! profile file)
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    (export-compact-zstd! (:id file) output nil)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [components-header (read-zip-json zip (str "files/" f "/components.json"))
+            colors-header     (read-zip-json zip (str "files/" f "/colors.json"))
+            components        (read-zstd-zip-lines zip (str "files/" f "/components/chunks/0.json.zstd"))
+            colors            (read-zstd-zip-lines zip (str "files/" f "/colors/chunks/0.json.zstd"))]
+        (t/is (= 1 (:chunks components-header)))
+        (t/is (= 1 (:chunks colors-header)))
+        (t/is (contains? (into {} components) (keyword (str (:component-id ids)))))
+        (t/is (contains? (into {} colors) (keyword (str (:color-id ids)))))
+        (t/is (nil? (.getEntry zip (str "files/" f "/components.json.zstd")))
+              "the header stays plain json")))
+
+    (let [result   (import-package profile output)
+          imported (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})]
+      (t/is (contains? (get-in imported [:data :components]) (:component-id ids)))
+      (t/is (contains? (get-in imported [:data :colors]) (:color-id ids)))
+      (t/is (contains? (get-in imported [:data :typographies]) (:typography-id ids))))))
+
+(t/deftest export-binfile-v3-compact-chunks-a-family-that-does-not-fit
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        ids     (add-library-content! profile file)
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    ;; A one-byte budget puts one component per chunk.
+    (export-compact! (:id file) output 1)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [header (read-zip-json zip (str "files/" f "/components.json"))]
+        (t/is (= 2 (:chunks header))
+              "the header names the number of chunks")
+        (t/is (some? (.getEntry zip (str "files/" f "/components/chunks/0.json"))))
+        (t/is (some? (.getEntry zip (str "files/" f "/components/chunks/1.json"))))))
+
+    (let [result   (import-package profile output)
+          imported (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})]
+      (t/is (contains? (get-in imported [:data :components]) (:component-id ids)))
+      (t/is (contains? (get-in imported [:data :components]) (:other-component-id ids))))))
+
+(t/deftest export-binfile-v3-compact-packs-the-objects-and-media
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-media profile)
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    (export-compact! (:id file) output nil)
+
+    (let [names (zip-entry-names output)]
+      (t/is (contains? names "objects.json")
+            "the storage object metadata is one packed entry")
+      (t/is (contains? names "objects/chunks/0.json"))
+      (t/is (contains? names (str "files/" f "/media.json"))
+            "the media descriptors are one packed entry")
+      (t/is (contains? names (str "files/" f "/media/chunks/0.json")))
+      (t/is (not-any? #(re-matches #"objects/[0-9a-f-]+\.json" %) names)
+            "no per-object metadata entry is written")
+      (t/is (not-any? #(and (str/starts-with? % (str "files/" f "/media/"))
+                            (not (str/starts-with? % (str "files/" f "/media/chunks/"))))
+                      names)
+            "no per-media descriptor entry is written"))
+
+    (let [result (import-package profile output)
+          mobjs  (db/query th/*system* :file-media-object
+                           {:file-id (first (:file-ids result))})]
+      (t/is (= 1 (count mobjs)))
+      (t/is (every? some? (map :media-id mobjs))))))
+
+(t/deftest import-binfile-v3-reads-a-version-3-package-with-plain-chunks
+  ;; The codec comes from the entry name, not from the manifest: a version 3
+  ;; package whose chunks are plain json still imports.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 3)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")]
+
+    (export-compact! file-id output 1)
+    (rewrite-json-entry output output2 "manifest.json" #(assoc % :version 3))
+
+    (let [result   (import-package profile output2)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+      (t/is (every? #(contains? (:objects imported) %) rect-ids)
+            "every shape comes back from a plain chunk of a version 3 package"))))
+
+(t/deftest import-binfile-v3-reads-a-page-with-mixed-chunk-codecs
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id rect-ids]} (add-page-with-rects profile 3)
+        output    (tmp/tempfile :suffix ".zip")
+        output2   (tmp/tempfile :suffix ".zip")
+        zstd-path (pc/compressed-chunk-path file-id page-id 0)
+        json-path (pc/chunk-path file-id page-id 0)]
+
+    ;; One shape per chunk, so chunk 0 is a whole frame of its own.
+    (export-compact-zstd! file-id output 1)
+    (rewrite-entry output output2 zstd-path json-path
+                   (unzstd (zip-entry-bytes output zstd-path)))
+
+    (let [result   (import-package profile output2)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+      (t/is (every? #(contains? (:objects imported) %) rect-ids)
+            "a plain chunk and a zstd chunk of the same page both read"))))
+
+(t/deftest import-binfile-v3-refuses-a-family-packed-and-per-entry
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        ids     (add-library-content! profile file)
+        compact (tmp/tempfile :suffix ".zip")
+        verbose (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components/" (:component-id ids) ".json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) compact nil)
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{(:id file)}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream verbose)}))
+
+    (let [data (with-open [zip (ZipFile. (fs/file verbose))]
+                 (read-zip-json zip path))]
+      (add-json-entry compact output path data))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the two layouts of the same family are refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))))
+
+;; --- PACKED FAMILIES: GUARDS, COVERAGE AND DOCUMENTED LIMITS
+
+(defn- key-text
+  "The text of a packed collection key. The json reader answers a keyword when
+  the key has no slash and the string itself otherwise."
+  [k]
+  (if (keyword? k) (name k) (str k)))
+
+
+(defn- prepare-file-with-all-families
+  "A file with two objects of every packed family: two components, two colors
+  and two typographies (the second of each added here), two media descriptors
+  backed by real storage objects, and two thumbnail rows pointing at them, so
+  a one-byte chunk budget leaves every family in chunks."
+  [profile]
+  (let [file    (prepare-simple-file profile)
+        _       (add-library-content! profile file)
+        storage (-> (:app.storage/storage th/*system*)
+                    (stt/configure-storage-backend))
+        media!  (fn []
+                  (let [sobject (sto/put-object! storage
+                                                 {::sto/content (sto/content "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
+                                                  :content-type "image/svg+xml"
+                                                  :bucket "file-media-object"})
+                        mobj    (th/create-file-media-object* {:file-id (:id file)
+                                                               :is-local true
+                                                               :media-id (:id sobject)})]
+                    (update-file!
+                     :file-id (:id file)
+                     :profile-id (:id profile)
+                     :revn 0
+                     :vern 0
+                     :changes [{:type :add-media :object mobj}])
+                    (:media-id mobj)))
+        media-ids [(media!) (media!)]
+        tag       "medium"
+        pages     [(uuid/custom 1 1) (uuid/custom 1 2)]
+        frames    [(uuid/custom 6 1) (uuid/custom 6 2)]]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-color
+       :color {:id (uuid/custom 5 5) :name "second-color" :color "#0000FF"}}
+      {:type :add-typography
+       :typography {:id (uuid/custom 5 6)
+                    :name "second-typography"
+                    :font-id "sourcesanspro"
+                    :font-family "Source Sans Pro"
+                    :font-variant-id "regular"
+                    :font-size "16"
+                    :font-weight "400"
+                    :font-style "normal"
+                    :line-height "1.4"
+                    :letter-spacing "0"
+                    :text-transform "none"}}])
+
+    (doseq [[page-id frame-id media-id] (map vector pages frames media-ids)]
+      (db/insert! th/*system* :file-tagged-object-thumbnail
+                  {:file-id (:id file)
+                   :tag tag
+                   :object-id (thc/fmt-object-id {:file-id (:id file)
+                                                  :page-id page-id
+                                                  :frame-id frame-id
+                                                  :tag tag})
+                   :media-id media-id}))
+
+    file))
+
+(t/deftest export-binfile-v3-compact-taps-the-storage-binaries
+  ;; The binaries are the units of the stage. The packed metadata reported
+  ;; every chunk as a new unit without a total, which restarted the counter of
+  ;; the job at the end of the export; it writes no tap now.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        output  (tmp/tempfile :suffix ".zip")
+        taps    (atom [])]
+
+    (binding [events/*sink* (fn [[_type data]] (swap! taps conj data))]
+      (export-compact! (:id file) output nil))
+
+    (let [storage-taps (filterv #(= :storage-object (:section %)) @taps)]
+      (t/is (= 2 (count storage-taps)) "one tap per binary and none for the metadata")
+      (t/is (= [1 2] (mapv :current storage-taps)) "the counter only grows")
+      (t/is (= [2 2] (mapv :total storage-taps)) "and keeps its denominator"))))
+
+(t/deftest export-binfile-skips-a-thumbnail-row-with-an-unparseable-object-id
+  ;; A file can carry a thumbnail row written before the creation command
+  ;; validated the object id. Its object id does not split into the four
+  ;; segments the exporter needs, and the entry it used to produce looked like
+  ;; the packed family on import, which made the whole package unreadable,
+  ;; version 1 included. The export drops the row and the derived cache, and
+  ;; the package reads back.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        f       (str (:id file))
+        storage (-> (:app.storage/storage th/*system*)
+                    (stt/configure-storage-backend))
+        sobject (sto/put-object! storage
+                                 {::sto/content (sto/content "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
+                                  :content-type "image/svg+xml"
+                                  :bucket "file-media-object"})]
+
+    ;; A media nobody else references: a package that carried the broken row
+    ;; would also carry an orphan binary for it.
+    (db/insert! th/*system* :file-tagged-object-thumbnail
+                {:file-id (:id file)
+                 :tag "frame"
+                 :object-id "test-key-1"
+                 :media-id (:id sobject)})
+
+    (doseq [variant [:verbose :compact]]
+      (let [output (tmp/tempfile :suffix ".zip")]
+        (v3/export-files!
+         (bfc/export-cfg th/*system*
+                         {:file-ids    #{(:id file)}
+                          :export-type :detach-libraries
+                          :variant     variant
+                          :output      (io/output-stream output)}))
+        (let [names (zip-entry-names output)]
+          (t/is (not (contains? names (str "files/" f "/thumbnails///.json")))
+                (str variant ": the row produces no entry"))
+          (t/is (not-any? #(str/starts-with? % (str "objects/" (:id sobject))) names)
+                (str variant ": and no orphan binary")))
+
+        (let [result   (import-package profile output)
+              imported (first (:file-ids result))
+              thumbs   (db/query th/*system* :file-tagged-object-thumbnail
+                                 {:file-id imported})]
+          (t/is (some? imported) (str variant ": the package imports"))
+          (t/is (= 2 (count thumbs))
+                (str variant ": the two valid rows read back and the broken one is gone")))))))
+
+(t/deftest import-binfile-v3-validates-a-component-when-it-reads-it
+  ;; Every family validates on read, and components were the only one the
+  ;; reader trusted until the end of the import, where `check-file` repeats
+  ;; the work with a path relative to the whole file. The failure points at
+  ;; the component itself (`[:name]`), which is what the family check sees.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{(:id file)}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream packed)}))
+
+    (let [path (->> (zip-entry-names packed)
+                    (filter #(str/starts-with? % (str "files/" f "/components/")))
+                    sort
+                    first)]
+      (t/is (some? path) "the verbose export writes one entry per component")
+
+      (rewrite-json-entry packed output path #(assoc % :name 42))
+
+      (try
+        (import-package profile output)
+        (catch Throwable error
+          (reset! cause error)))
+
+      (t/is (some? @cause) "a component that does not satisfy its schema is refused")
+      (t/is (= :data-validation (:code (ex-data @cause))))
+      (t/is (some #(= [:name] (:in %))
+                  (-> @cause ex-data ::sm/explain :errors))
+            "the failure names the component, not the whole file"))))
+
+(t/deftest import-binfile-v3-refuses-a-packed-object-with-a-foreign-id
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components/chunks/0.json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed nil)
+
+    (let [pairs (with-open [zip (ZipFile. (fs/file packed))]
+                  (read-zip-lines zip path))]
+      (t/is (seq pairs) "the family travels in chunks")
+      (rewrite-entry-bytes
+       packed output path
+       (lines-bytes (map (fn [[k value]]
+                           [(key-text k) (assoc value :id (str (uuid/next)))])
+                         pairs))))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a component whose id contradicts its key is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (some? (:key (ex-data @cause))))
+    (t/is (not= (:key (ex-data @cause)) (:id (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-refuses-a-packed-thumbnail-with-a-bad-key
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/thumbnails/chunks/0.json")
+        segs    (fn [k] (str/split k "/"))]
+
+    (export-compact! (:id file) packed nil)
+
+    (doseq [[label bad-key]
+            [["a key without the frame"
+              (fn [k] (let [[tag page _] (segs k)] (str tag "/" page)))]
+             ["a key pointing at another frame"
+              (fn [k] (let [[tag page _] (segs k)] (str tag "/" page "/" (uuid/next))))]]]
+      (let [output (tmp/tempfile :suffix ".zip")
+            cause  (atom nil)
+            pairs  (with-open [zip (ZipFile. (fs/file packed))]
+                     (read-zip-lines zip path))]
+        (t/is (seq pairs) "the thumbnails travel in chunks")
+        (rewrite-entry-bytes
+         packed output path
+         (lines-bytes (map (fn [[k value]] [(bad-key k) value]) pairs)))
+        (try
+          (import-package profile output)
+          (catch Throwable error
+            (reset! cause error)))
+
+        (t/is (some? @cause) label)
+        (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))) label)
+        (t/is (contains? (ex-data @cause) :key) label)))))
+
+(t/deftest import-binfile-v3-ignores-a-family-chunk-without-its-entry
+  ;; The entry of the family is what declares it. Its chunks on their own are
+  ;; as meaningless as any other path the importer does not manage, so they are
+  ;; ignored instead of failing the import.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    (export-compact! (:id file) packed 1)
+
+    (t/is (contains? (zip-entry-names packed)
+                     (str "files/" f "/components/chunks/0.json")))
+
+    (rewrite-zip packed output #{(str "files/" f "/components.json")} {})
+
+    (let [result   (import-package profile output)
+          imported (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})]
+      (t/is (empty? (get-in imported [:data :components]))
+            "the family is absent, and its chunks do not become objects"))))
+
+(t/deftest import-binfile-v3-refuses-a-page-with-chunks-and-objects
+  ;; The two representations of a page can carry different shapes, and the
+  ;; reader can only keep one: refusing is the only way not to import fewer
+  ;; objects than the package has.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")
+        cause   (atom nil)]
+
+    (export-compact! file-id packed 1)
+
+    (rewrite-json-entry packed output path
+                        #(assoc % :objects {(keyword (str (uuid/next)))
+                                            {:type "rect"}}))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses a page with two representations")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))) "and names the page")))
+
+(t/deftest import-binfile-v3-refuses-page-chunks-without-a-count
+  ;; The page entry is what declares its chunks. Chunk entries that its page
+  ;; does not count would be ignored, so the package would import fewer shapes
+  ;; than it carries; the reader refuses it instead.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        path    (str "files/" file-id "/pages/" page-id ".json")
+        cause   (atom nil)]
+
+    (export-compact! file-id packed 1)
+
+    (t/is (< 1 (:chunks (with-open [zip (ZipFile. (fs/file packed))]
+                          (read-zip-json zip path))))
+          "the page travels in several chunks")
+
+    (rewrite-json-entry packed output path #(dissoc % :chunks))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses chunks the page does not count")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))) "and names the page")
+    (t/is (< 1 (:chunks (ex-data @cause))) "and how many it would drop")))
+
+(t/deftest import-binfile-v3-refuses-page-chunks-in-a-verbose-package
+  ;; A package in the verbose layout declares no page chunks at all, so any
+  ;; chunk entry is data the reader would not visit.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        output2 (tmp/tempfile :suffix ".zip")
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{file-id}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream output)}))
+
+    (add-json-entry output output2 (pc/chunk-path file-id page-id 0)
+                    {(keyword (str (uuid/next))) {:type "rect"}})
+
+    (try
+      (import-package profile output2)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses a page chunk of a verbose package")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= (str "files/" file-id "/pages/" page-id ".json")
+             (:path (ex-data @cause)))
+          "and names the page")))
+
+(t/deftest import-binfile-v3-refuses-a-family-header-with-members
+  ;; A chunked family keeps its objects in the chunks; a member next to the
+  ;; count is data the reader cannot keep, so the package is refused instead
+  ;; of importing the chunks and dropping it.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components.json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed nil)
+
+    (with-open [zip (ZipFile. (fs/file packed))]
+      (t/is (= 1 (:chunks (read-zip-json zip path)))
+            "the family travels as a header plus chunks"))
+
+    (rewrite-json-entry packed output path
+                        #(assoc % :components {:inline {:id (str (uuid/next))}}))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "the import refuses a header with members")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))) "and names the family")
+    (t/is (= [:components] (:keys (ex-data @cause)))
+          "and the keys it would have dropped")))
+
+(t/deftest import-binfile-v3-names-the-entry-of-an-unknown-codec
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/colors.json")
+        renamed (str path ".lz4")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed nil)
+    (rewrite-entry packed output path renamed (zip-entry-bytes packed path))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause))
+    (t/is (= :unsupported-binfile-codec (:code (ex-data @cause))))
+    (t/is (= renamed (:path (ex-data @cause)))
+          "the error names the entry, not only the codec")))
+
+(t/deftest index-entries-refuses-a-duplicated-base-path
+  (let [f      index-test-file-id
+        colors (str "files/" f "/colors.json")
+        zstd   (str "files/" f "/colors.json.zstd")]
+
+    (doseq [[label names] [["the same name twice" [colors colors]]
+                           ["the same path in two codecs" [colors zstd]]]]
+      (let [cause (try
+                    (index-entries-of names)
+                    nil
+                    (catch Throwable cause cause))]
+        (t/is (some? cause) label)
+        (t/is (= :inconsistent-penpot-file (:code (ex-data cause))) label)
+        (t/is (= (vec (sort names)) (:paths (ex-data cause))) label)))))
+
+(t/deftest index-entries-splits-every-name-once
+  (let [f      index-test-file-id
+        page   index-test-page-id
+        names  ["manifest.json"
+                (str "files/" f ".json")
+                (str "files/" f "/pages/" page ".json")
+                (str "files/" f "/pages/" page "/chunks/0.json.zstd")
+                (str "files/" f "/colors.json")
+                (str "files/" f "/components/chunks/1.json")
+                "objects.json"
+                "objects/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png"]
+        calls  (atom 0)
+        split  @#'v3/split-json-entry-name]
+
+    (with-redefs-fn {#'v3/split-json-entry-name
+                     (fn [name] (swap! calls inc) (split name))}
+      #(index-entries-of names))
+
+    (t/is (= (count names) @calls)
+          "every entry name is split once, duplicates included")))
+
+(t/deftest export-binfile-v3-writes-chunks-as-jsonl
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")
+        path    (pc/chunk-path file-id page-id 0)]
+
+    (export-compact! file-id output 1)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [lines (read-zip-lines zip path)]
+        (t/is (= 1 (count lines))
+              "one line per shape under a one-byte budget")
+        (t/is (vector? (first lines)) "a line is a [key value] pair")
+        (t/is (= 2 (count (first lines))))
+        (t/is (map? (second (first lines))))))
+
+    (t/is (= "[" (subs (String. (zip-entry-bytes output path)
+                                java.nio.charset.StandardCharsets/UTF_8)
+                       0 1))
+          "the chunk starts with a pair, not with a json object")))
+
+(t/deftest export-binfile-v3-chunks-every-packed-family
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        f       (str (:id file))]
+
+    (doseq [[variant export! suffix]
+            [[:compact export-compact! ".json"]
+             [:compact-zstd export-compact-zstd! ".json.zstd"]]]
+      (let [output (tmp/tempfile :suffix ".zip")]
+        (export! (:id file) output 1)
+
+        (with-open [zip (ZipFile. (fs/file output))]
+          (let [names    (zip-entry-names output)
+                families [["components" (str "files/" f "/components.json")
+                           (str "files/" f "/components/chunks/")]
+                          ["colors" (str "files/" f "/colors.json")
+                           (str "files/" f "/colors/chunks/")]
+                          ["typographies" (str "files/" f "/typographies.json")
+                           (str "files/" f "/typographies/chunks/")]
+                          ["media" (str "files/" f "/media.json")
+                           (str "files/" f "/media/chunks/")]
+                          ["thumbnails" (str "files/" f "/thumbnails.json")
+                           (str "files/" f "/thumbnails/chunks/")]
+                          ["objects" "objects.json" "objects/chunks/"]]]
+
+            (doseq [[family header-path chunk-prefix] families]
+              (let [header (read-zip-json zip header-path)
+                    chunks (->> names
+                                (filter #(str/starts-with? % chunk-prefix))
+                                sort
+                                vec)]
+
+                (t/is (map? header) (str variant " " family " header"))
+                (t/is (= 2 (:chunks header))
+                      (str variant " " family " names its chunks"))
+                (t/is (= 2 (count chunks))
+                      (str variant " " family " writes one chunk per object"))
+                (t/is (every? #(str/ends-with? % suffix) chunks)
+                      (str variant " " family " names its chunks with the codec"))
+                (t/is (nil? (.getEntry zip (str header-path ".zstd")))
+                      (str variant " " family " keeps its header plain"))))))
+
+        (let [result   (import-package profile output)
+              imported (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+              file-id  (first (:file-ids result))]
+
+          (t/is (= 2 (count (get-in imported [:data :components])))
+                (str variant " imports every component"))
+          (t/is (= 2 (count (get-in imported [:data :colors])))
+                (str variant " imports every color"))
+          (t/is (= 2 (count (get-in imported [:data :typographies])))
+                (str variant " imports every typography"))
+          (t/is (= 2 (count (db/query th/*system* :file-media-object
+                                      {:file-id file-id})))
+                (str variant " imports every media descriptor"))
+          (t/is (= 2 (count (db/query th/*system* :file-tagged-object-thumbnail
+                                      {:file-id file-id})))
+                (str variant " imports every thumbnail")))))))
+
+(t/deftest import-binfile-v3-taps-once-per-packed-family
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        output  (tmp/tempfile :suffix ".zip")
+        taps    (atom [])]
+
+    (export-compact! (:id file) output nil)
+
+    (binding [events/*sink* (fn [[_type data]] (swap! taps conj data))]
+      (import-package profile output))
+
+    ;; The read tap of a packed family reports the family, so it carries no id;
+    ;; the insert loop of the import taps once per object, and those carry one.
+    (let [read-taps (remove :id @taps)
+          counts    (frequencies (map :section read-taps))]
+      (t/is (= 1 (get counts :component))
+            (str "one read tap per packed family: " (pr-str counts)))
+      (t/is (= 1 (get counts :color)))
+      (t/is (= 1 (get counts :typography)))
+      (t/is (= 1 (get counts :media)))
+      (t/is (= 1 (get counts :thumbnails))))))
+
+(t/deftest import-binfile-v3-reads-a-library-style-version-2-package
+  ;; `@penpot/library` writes version 2 with one entry per object, while the
+  ;; backend packs the same families; both layouts must import.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))]
+
+    (export-compact! (:id file) packed nil)
+
+    (with-open [zip (ZipFile. (fs/file packed))]
+      (let [manifest (read-zip-json zip "manifest.json")
+            families [["components" (str "files/" f "/components")]
+                      ["colors" (str "files/" f "/colors")]
+                      ["typographies" (str "files/" f "/typographies")]
+                      ["media" (str "files/" f "/media")]
+                      ["thumbnails" (str "files/" f "/thumbnails")]
+                      ["objects" "objects"]]
+            lines    (fn [prefix]
+                       (read-zip-lines zip (str prefix "/chunks/0.json")))
+            entries  (into {}
+                           (mapcat (fn [[_ prefix]]
+                                     (map (fn [[k value]]
+                                            [(if (= prefix "objects")
+                                               (str "objects/" (key-text k) ".json")
+                                               (str prefix "/" (key-text k) ".json"))
+                                             value])
+                                          (lines prefix)))
+                                   families))
+            names    (zip-entry-names packed)
+            drop     (into #{}
+                           (mapcat (fn [[_ prefix]]
+                                     (cons (str prefix ".json")
+                                           (filter #(str/starts-with? % (str prefix "/chunks/"))
+                                                   names)))
+                                   families))]
+
+        (t/is (= 2 (:version manifest))
+              "the package keeps the version of the compact layout")
+        (rewrite-zip packed output drop entries)))
+
+    (let [result   (import-package profile output)
+          file-id  (first (:file-ids result))
+          imported (bfc/get-file th/*system* file-id {:realize? true})]
+      (t/is (= 2 (count (get-in imported [:data :components])))
+            "the per-entry components import")
+      (t/is (= 2 (count (get-in imported [:data :colors]))))
+      (t/is (= 2 (count (get-in imported [:data :typographies]))))
+      (t/is (= 2 (count (db/query th/*system* :file-media-object
+                                  {:file-id file-id}))))
+      (t/is (= 2 (count (db/query th/*system* :file-tagged-object-thumbnail
+                                  {:file-id file-id})))))))
+
+(t/deftest binfile-variants-map-to-a-version-and-a-codec
+  (t/is (= 1 (@#'v3/variant->version nil)))
+  (t/is (= 1 (@#'v3/variant->version :verbose)))
+  (t/is (= 2 (@#'v3/variant->version :compact)))
+  (t/is (= 3 (@#'v3/variant->version :compact-zstd)))
+
+  (t/is (nil? (@#'v3/variant->codec nil)))
+  (t/is (nil? (@#'v3/variant->codec :verbose)))
+  (t/is (nil? (@#'v3/variant->codec :compact)))
+  (t/is (= :zstd (@#'v3/variant->codec :compact-zstd)))
+
+  (t/testing "the layout carries codec, compactness and budget together"
+    (t/is (= {:codec nil :compact? false :budget pc/default-chunk-size}
+             (@#'v3/variant->layout :verbose)))
+    (t/is (= {:codec nil :compact? true :budget pc/default-chunk-size}
+             (@#'v3/variant->layout :compact)))
+    (t/is (= {:codec :zstd :compact? true :budget pc/compressed-chunk-size}
+             (@#'v3/variant->layout :compact-zstd)))))
+
+(t/deftest export-binfile-refuses-an-unregistered-compact-variant
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")
+        cause   (atom nil)]
+
+    (try
+      (v3/export-files!
+       (bfc/export-cfg th/*system*
+                       {:file-ids    #{(:id file)}
+                        :export-type :detach-libraries
+                        :variant     :compact-lz4
+                        :output      (io/output-stream output)}))
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause))
+    (t/is (= :unsupported-binfile-codec (:code (ex-data @cause))))
+    (t/is (= :compact-lz4 (:variant (ex-data @cause)))
+          "the writer names the variant")))
+
+(t/deftest import-binfile-v3-caps-the-decompressed-family-chunk
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components/chunks/0.json.zstd")]
+
+    (export-compact-zstd! (:id file) output 1)
+
+    (with-open [zip (ZipFile. (fs/file output))]
+      (let [^ZipEntry entry (.getEntry zip path)
+            declared        (.getSize entry)
+            cfg             {::v3/max-text-entry-size (inc declared)
+                             ::v3/max-text-total-size (* 64 1024 1024)
+                             ::v3/accumulated-total-text-size (atom 0)}
+            cause           (try
+                              (with-open [reader (@#'v3/zip-entry-reader cfg zip entry)]
+                                (slurp reader))
+                              nil
+                              (catch Throwable cause cause))]
+
+        (t/is (some? entry) "the family writes its chunk with the codec suffix")
+        (t/is (some? cause)
+              "a family chunk that decompresses past the cap is refused")
+        (t/is (= :max-file-size-reached (:code (ex-data cause))))))))
+
+;; --- PACKED COLLECTION READER: ONE TEST PER GUARD
+
+(t/deftest import-binfile-v3-refuses-an-invalid-family-chunk-count
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components.json")]
+
+    ;; A one-byte budget leaves the components in chunks, so the entry names
+    ;; a count.
+    (export-compact! (:id file) packed 1)
+
+    (doseq [chunks ["2" 2.0 -1 (inc bfc/default-max-zip-entries)]]
+      (let [output (tmp/tempfile :suffix ".zip")
+            cause  (atom nil)]
+        (rewrite-json-entry packed output path #(assoc % :chunks chunks))
+        (try
+          (import-package profile output)
+          (catch Throwable error
+            (reset! cause error)))
+
+        (t/is (some? @cause) (str "a chunk count of " (pr-str chunks) " is refused"))
+        (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))) (pr-str chunks))
+        (t/is (= chunks (:chunks (ex-data @cause))) (pr-str chunks))))))
+
+(t/deftest read-packed-collection-rejects-a-duplicated-chunk
+  ;; A zip cannot carry two entries with the same name, and the index refuses
+  ;; a duplicated base path before this runs, so the case goes straight to the
+  ;; function with the real entries of a package.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        hpath   (str "files/" f "/components.json")
+        cpath   (str "files/" f "/components/chunks/0.json")]
+
+    (export-compact! (:id file) packed 1)
+
+    (with-open [zip (ZipFile. (fs/file packed))]
+      (let [cfg   {::bfc/input zip
+                   ::v3/max-text-entry-size (* 20 1024 1024)
+                   ::v3/max-text-total-size (* 64 1024 1024)
+                   ::v3/accumulated-total-text-size (atom 0)
+                   ::v3/max-zip-entries bfc/default-max-zip-entries}
+            cause (try
+                    (@#'v3/read-packed-collection
+                     cfg
+                     {:entry (.getEntry zip hpath)}
+                     [{:entry (.getEntry zip cpath) :index 0}
+                      {:entry (.getEntry zip cpath) :index 0}])
+                    nil
+                    (catch Throwable cause cause))]
+
+        (t/is (some? cause) "a duplicated chunk is refused")
+        (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+        (t/is (= cpath (:path (ex-data cause))))))))
+
+(t/deftest import-binfile-v3-refuses-a-family-header-with-a-missing-chunk
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components.json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed 1)
+
+    ;; The package carries two chunks; the header claims three.
+    (rewrite-json-entry packed output path #(assoc % :chunks 3))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a header naming a chunk the package lacks is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-refuses-a-family-chunk-that-is-not-a-map
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components/chunks/0.json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed 1)
+    (rewrite-json-entry packed output path (constantly []))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a chunk that is not a map is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-refuses-a-family-that-declares-chunks-and-carries-none
+  ;; The inline branch must not read a `{:chunks n}` header as a family of
+  ;; objects keyed by `chunks`.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components.json")
+        chunk   (str "files/" f "/components/chunks/0.json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed nil)
+    ;; Drop the only chunk and the header, and write the header back alone.
+    (rewrite-zip packed output #{chunk path} {path {:chunks 1}})
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a header without its chunks is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= 1 (:chunks (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-refuses-a-family-entry-that-is-not-a-map
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        path    (str "files/" f "/components.json")
+        cause   (atom nil)]
+
+    (export-compact! (:id file) packed nil)
+    (rewrite-json-entry packed output path (constantly []))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a packed collection that is not a map is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))))))
+
+;; --- PER-ENTRY AND CROSS-CHUNK CONTRADICTIONS
+
+(t/deftest import-binfile-v3-refuses-a-per-entry-object-with-a-foreign-id
+  ;; The per-entry layout, which the library writes, must refuse the same
+  ;; contradiction the packed one refuses instead of dropping the object.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{(:id file)}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream packed)}))
+
+    (let [path (->> (zip-entry-names packed)
+                    (filter #(str/starts-with? % (str "files/" f "/components/")))
+                    sort
+                    first)]
+      (t/is (some? path) "the verbose export writes one entry per component")
+
+      (rewrite-json-entry packed output path #(assoc % :id (str (uuid/next))))
+
+      (try
+        (import-package profile output)
+        (catch Throwable error
+          (reset! cause error)))
+
+      (t/is (some? @cause) "the object is not silently dropped")
+      (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+      (t/is (= path (:path (ex-data @cause)))))))
+
+(t/deftest import-binfile-v3-refuses-a-page-with-a-foreign-id
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        page-id (uuid/custom 1 1)
+        path    (str "files/" f "/pages/" page-id ".json")
+        cause   (atom nil)]
+
+    (v3/export-files!
+     (bfc/export-cfg th/*system*
+                     {:file-ids    #{(:id file)}
+                      :export-type :detach-libraries
+                      :output      (io/output-stream packed)}))
+
+    (rewrite-json-entry packed output path #(assoc % :id (str (uuid/next))))
+
+    (try
+      (import-package profile output)
+      (catch Throwable error
+        (reset! cause error)))
+
+    (t/is (some? @cause) "a page whose id contradicts its path is refused")
+    (t/is (= :inconsistent-penpot-file (:code (ex-data @cause))))
+    (t/is (= path (:path (ex-data @cause))))))
+
+(t/deftest import-binfile-v3-refuses-a-shape-repeated-across-page-chunks
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 3)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        c0      (pc/chunk-path file-id page-id 0)
+        c1      (pc/chunk-path file-id page-id 1)]
+
+    (export-compact! file-id packed 1)
+
+    (let [[dup value] (with-open [zip (ZipFile. (fs/file packed))]
+                        (first (read-zip-lines zip c0)))]
+      (rewrite-entry-bytes packed output c1 (lines-bytes [[(name dup) value]]))
+
+      (let [cause (try
+                    (import-package profile output)
+                    nil
+                    (catch Throwable cause cause))]
+        (t/is (some? cause) "a key repeated in two chunks is refused")
+        (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+        (t/is (= (str "files/" file-id "/pages/" page-id ".json")
+                 (:path (ex-data cause))))
+        (t/is (= (name dup) (:key (ex-data cause))))))))
+
+(t/deftest import-binfile-v3-refuses-an-object-repeated-across-collection-chunks
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-all-families profile)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        f       (str (:id file))
+        c0      (str "files/" f "/components/chunks/0.json")
+        c1      (str "files/" f "/components/chunks/1.json")]
+
+    (export-compact! (:id file) packed 1)
+
+    (let [[dup value] (with-open [zip (ZipFile. (fs/file packed))]
+                        (first (read-zip-lines zip c0)))]
+      (rewrite-entry-bytes packed output c1 (lines-bytes [[(name dup) value]]))
+
+      (let [cause (try
+                    (import-package profile output)
+                    nil
+                    (catch Throwable cause cause))]
+        (t/is (some? cause) "a key repeated in two family chunks is refused")
+        (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+        (t/is (= (str "files/" f "/components.json") (:path (ex-data cause))))
+        (t/is (= (name dup) (:key (ex-data cause))))))))
+
+(t/deftest import-binfile-v3-refuses-a-key-repeated-inside-a-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        c0      (pc/chunk-path file-id page-id 0)]
+
+    (export-compact! file-id packed 1)
+
+    (let [[dup value] (with-open [zip (ZipFile. (fs/file packed))]
+                        (first (read-zip-lines zip c0)))]
+      (rewrite-entry-bytes packed output c0
+                           (lines-bytes [[(name dup) value]
+                                         [(name dup) value]]))
+
+      (let [cause (try
+                    (import-package profile output)
+                    nil
+                    (catch Throwable cause cause))]
+        (t/is (some? cause) "a key repeated inside one chunk is refused")
+        (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+        (t/is (= c0 (:path (ex-data cause))))
+        (t/is (= (name dup) (:key (ex-data cause))))))))
+
+(t/deftest import-binfile-v3-refuses-a-chunk-index-outside-the-count
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 1)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        extra   (pc/chunk-path file-id page-id 5)]
+
+    (export-compact! file-id packed 1)
+    (add-json-entry packed output extra {})
+
+    (let [page  (with-open [zip (ZipFile. (fs/file packed))]
+                  (read-zip-json zip (str "files/" file-id "/pages/" page-id ".json")))
+          cause (try
+                  (import-package profile output)
+                  nil
+                  (catch Throwable cause cause))]
+      (t/is (some? cause) "a chunk above the count of the page is refused")
+      (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+      (t/is (= extra (:path (ex-data cause))))
+      (t/is (= 5 (:index (ex-data cause))))
+      (t/is (= (:chunks page) (:chunks (ex-data cause)))))))
+
+(t/deftest import-binfile-v3-refuses-an-empty-chunk
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        packed  (tmp/tempfile :suffix ".zip")
+        output  (tmp/tempfile :suffix ".zip")
+        c0      (pc/chunk-path file-id page-id 0)]
+
+    (export-compact! file-id packed 1)
+    (rewrite-entry-bytes packed output c0 (byte-array 0))
+
+    (let [cause (try
+                  (import-package profile output)
+                  nil
+                  (catch Throwable cause cause))]
+      (t/is (some? cause) "a chunk with no lines is refused")
+      (t/is (= :inconsistent-penpot-file (:code (ex-data cause))))
+      (t/is (= c0 (:path (ex-data cause)))))))
+
+(t/deftest import-binfile-v3-imports-a-package-produced-by-the-library
+  ;; The compatibility the guide promises is inferred when both writers and the
+  ;; reader are tested apart. This reads the fixture that `@penpot/library`
+  ;; really writes: regenerate it with
+  ;; `cd library && pnpm run build && node scripts/generate-binfile-fixture.mjs`.
+  (let [profile  (th/create-profile* 1)
+        input    (-> (jio/resource "backend_tests/test_files/library-v2.penpot")
+                     jio/file)
+        result   (import-package profile input)
+        file-id  (first (:file-ids result))
+        imported (bfc/get-file th/*system* file-id {:realize? true})
+        data     (:data imported)
+        page-id  (first (:pages data))
+        page     (get-in data [:pages-index page-id])]
+
+    (t/is (= 1 (count (:file-ids result))))
+    (t/is (= 1 (count (:pages data))))
+    (let [rects (filter #(= :rect (:type %)) (vals (:objects page)))]
+      (t/is (= 2 (count rects))
+            (pr-str (map (juxt :id :type) (vals (:objects page))))))
+    (t/is (contains? (:objects page) uuid/zero)
+          "and the root frame the library writes")
+    (t/is (= 1 (count (:components data)))
+          "the packed components import")
+    (t/is (= 1 (count (:colors data))))
+    (t/is (= 1 (count (:typographies data))))
+    (t/is (= 1 (count (db/query th/*system* :file-media-object {:file-id file-id})))
+          "the packed media descriptor imports")
+    (t/is (some? (:media-id (first (db/query th/*system* :file-media-object
+                                             {:file-id file-id}))))
+          "and resolves to the restored storage object")))
+
+(t/deftest import-binfile-v3-keeps-no-transport-key-on-the-page
+  ;; `:chunks` (and `:index`, `:options`) are how the package travels, not page
+  ;; data: an imported page must not carry them into the stored file.
+  (let [profile (th/create-profile* 1)
+        {:keys [file-id page-id]} (add-page-with-rects profile 2)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (export-compact! file-id output 1)
+
+    (let [result   (import-package profile output)
+          imported (-> (bfc/get-file th/*system* (first (:file-ids result)) {:realize? true})
+                       :data :pages-index (get page-id))]
+
+      (t/is (some? imported))
+      (t/is (not (contains? imported :chunks)) "no chunk count in the stored page")
+      (t/is (not (contains? imported :index)) "no position in the stored page")
+      (t/is (not (contains? imported :options)) "no options in the stored page"))))
