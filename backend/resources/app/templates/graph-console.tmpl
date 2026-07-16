@@ -166,13 +166,9 @@ Graph Console
           </label>
         </legend>
         <desc>
-          Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
-          and glyph encode the node table; edges are <code>IsChildOf</code>
-          (arrow points to parent). With "fold containers" on, anything with
-          children (except the root) renders as a foldable box: double-click
-          to collapse or expand. Redraws automatically after live changes
-          (fold state survives redraws). Very large graphs need an explicit
-          "Render anyway".
+          Live view of the in-memory Ladybug graph (AntV G6); the legend
+          shows what is displayed. Double-click folds containers when
+          folding is on.
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
         <div id="graph-canvas"
@@ -336,9 +332,19 @@ Graph Console
     "Circle":    { color: "#1baf7a", glyph: "circle",   size: 14 },
     "Path":      { color: "#e34948", glyph: "triangle", size: 14 },
     "Text":      { color: "#e87ba4", glyph: "circle",   size: 14 },
-    "Image":     { color: "#eda100", glyph: "star",     size: 14 }
+    "Image":     { color: "#eda100", glyph: "star",     size: 14 },
+    "Component": { color: "#8250df", glyph: "diamond",  size: 20 }
   };
   const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
+  // Edge style keyed on rel (wire field since slice-3); future edge
+  // attributes can feed styling the same way. IsChildOf stays the
+  // recessive default; IsInstanceOf echoes the Component color, dashed
+  // (line style is the secondary encoding, color validated vs the gray).
+  const EDGE_STYLES = {
+    "IsChildOf":    { stroke: "#b3b0a8" },
+    "IsInstanceOf": { stroke: "#8250df", lineDash: [4, 3] }
+  };
+  const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
   // Legend glyph characters mirroring the G6 node types above.
   const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
                         circle: "●", triangle: "▲", star: "★" };
@@ -397,6 +403,10 @@ Graph Console
     return NODE_STYLES[table] || FALLBACK_STYLE;
   }
 
+  function edgeStyle(rel) {
+    return EDGE_STYLES[rel] || FALLBACK_EDGE_STYLE;
+  }
+
   function comboIdFor(nodeId) {
     return "combo:" + nodeId;
   }
@@ -441,9 +451,13 @@ Graph Console
     const edges = (data.edges || [])
       .slice()
       .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    // Hierarchy (tree ranking, combo derivation, fold-ability) comes from
+    // IsChildOf only — still a tree by construction. Other rels
+    // (IsInstanceOf, …) are overlay edges drawn between positioned nodes.
     const parentOf = {};
     const childrenOf = {};
     edges.forEach(function (e) {
+      if ((e.rel || "IsChildOf") !== "IsChildOf") return;
       parentOf[e.source] = e.target;
       (childrenOf[e.target] = childrenOf[e.target] || []).push(e.source);
     });
@@ -484,7 +498,8 @@ Graph Console
       return out;
     });
     const g6edges = edges.map(function (e) {
-      return { source: e.source, target: e.target, data: { position: e.position } };
+      return { source: e.source, target: e.target,
+               data: { position: e.position, rel: e.rel || "IsChildOf" } };
     });
     return { nodes: g6nodes, edges: g6edges, combos: combos };
   }
@@ -538,7 +553,12 @@ Graph Console
         }
       },
       edge: {
-        style: { stroke: "#b3b0a8", endArrow: true, endArrowSize: 6 }
+        style: {
+          stroke: function (d) { return edgeStyle(d.data.rel).stroke; },
+          lineDash: function (d) { return edgeStyle(d.data.rel).lineDash; },
+          endArrow: true,
+          endArrowSize: 6
+        }
       },
       combo: {
         type: "rect",
@@ -583,17 +603,39 @@ Graph Console
     });
   }
 
-  function renderGraphLegend() {
+  // Hand-rolled on purpose: the G6 legend plugin substitutes its own
+  // marker set (hexagon→circle, star→cross), breaking glyph identity.
+  // Entries reflect the *displayed* data only: node tables in roster
+  // order (unknown tables appended with the fallback style), then rels.
+  function renderGraphLegend(data) {
     const el = document.getElementById("graph-legend");
-    el.innerHTML = Object.keys(NODE_STYLES).map(function (table) {
-      const s = NODE_STYLES[table];
+    if (!el) return;
+    const tables = {};
+    (data.nodes || []).forEach(function (n) { tables[n.table] = true; });
+    const rels = {};
+    (data.edges || []).forEach(function (e) { rels[e.rel || "IsChildOf"] = true; });
+    function nodeItem(table, s) {
       return '<span style="margin-right: 1em; white-space: nowrap;">'
         + '<span style="color: ' + s.color + '; font-size: 14px;">'
         + (GLYPH_CHARS[s.glyph] || "●") + '</span> '
         + escapeHtml(table) + "</span>";
-      // join with a space: the spans are nowrap, so the separator is the
-      // only soft-wrap opportunity in the legend row
-    }).join(" ");
+    }
+    const items = Object.keys(NODE_STYLES)
+      .filter(function (t) { return tables[t]; })
+      .map(function (t) { return nodeItem(t, NODE_STYLES[t]); });
+    Object.keys(tables).sort().forEach(function (t) {
+      if (!NODE_STYLES[t]) items.push(nodeItem(t, FALLBACK_STYLE));
+    });
+    Object.keys(rels).sort().forEach(function (rel) {
+      const s = edgeStyle(rel);
+      items.push('<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + s.stroke + '; font-size: 14px;">'
+        + (s.lineDash ? "⇢" : "→") + '</span> '
+        + escapeHtml(rel) + "</span>");
+    });
+    // join with a space: the spans are nowrap, so the separator is the
+    // only soft-wrap opportunity in the legend row
+    el.innerHTML = items.join(" ");
   }
 
   function graphStatusText(data) {
@@ -634,6 +676,7 @@ Graph Console
   function renderCurrent() {
     if (!lastGraphData) return;
     const data = filteredGraphData();
+    renderGraphLegend(data);
     const anywayBtn = document.getElementById("graph-render-anyway");
     const filterBtn = document.getElementById("graph-filter-reset");
     if (filterBtn) filterBtn.style.display = graphFilterIds ? "inline" : "none";
@@ -1072,7 +1115,6 @@ Graph Console
 
   connect();
   refreshSyncStatus();
-  renderGraphLegend();
   refetchGraph();
 
   window.addEventListener("beforeunload", function () {
