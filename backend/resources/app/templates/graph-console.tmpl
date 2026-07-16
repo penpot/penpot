@@ -11,7 +11,10 @@ Graph Console
   </div>
 </nav>
 <main class="dashboard">
-  <section class="widget" style="max-width: none;">
+  <!-- flex: 1 1 0 + min-width: 0: size this .dashboard flex item from the
+       viewport, never from content — content-driven growth (e.g. the G6
+       canvas) would otherwise feed back into column width. -->
+  <section class="widget" style="max-width: none; flex: 1 1 0; min-width: 0;">
     <p><a href="/dbg">&larr; Back to debug</a></p>
 
     <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -151,7 +154,6 @@ Graph Console
          style="flex: 1 1 auto; min-width: 0;">
       <fieldset id="graph-view-panel">
         <legend>Graph view
-          <button type="button" id="graph-maximize" style="margin-left: 1em;">Expand</button>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             <input type="checkbox" id="graph-fold-toggle" /> fold containers
           </label>
@@ -173,7 +175,7 @@ Graph Console
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
         <div id="graph-canvas"
-             style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff;"></div>
+             style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff; overflow: hidden;"></div>
         <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
         <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
         <button type="button" id="graph-filter-reset" style="display: none;">Show full graph</button>
@@ -189,6 +191,13 @@ Graph Console
   #graph-view-column {
     position: sticky;
     top: 8px;
+  }
+  /* Fieldsets default to min-inline-size: min-content, so the panel could
+     never shrink below its content and grew with the G6 canvas instead
+     (content -> fieldset -> column -> canvas feedback). Let it shrink;
+     the legend wraps and the canvas clips. */
+  #graph-view-panel {
+    min-inline-size: 0;
   }
   #graph-view-column.graph-view-expanded {
     position: fixed;
@@ -512,7 +521,6 @@ Graph Console
       container: "graph-canvas",
       data: g6data,
       autoFit: "view",
-      autoResize: true,
       animation: animate,
       padding: 20,
       node: {
@@ -582,7 +590,9 @@ Graph Console
         + '<span style="color: ' + s.color + '; font-size: 14px;">'
         + (GLYPH_CHARS[s.glyph] || "●") + '</span> '
         + escapeHtml(table) + "</span>";
-    }).join("");
+      // join with a space: the spans are nowrap, so the separator is the
+      // only soft-wrap opportunity in the legend row
+    }).join(" ");
   }
 
   function graphStatusText(data) {
@@ -955,8 +965,8 @@ Graph Console
   }
 
   // In-page expand (no Fullscreen API): keeps browser chrome and window
-  // manager splits usable while the graph takes the whole page.
-  const maximizeBtn = document.getElementById("graph-maximize");
+  // manager splits usable while the graph takes the whole page. Entered
+  // via the toolbar's expand icon; exited via its exit icon or Esc.
   const graphColumn = document.getElementById("graph-view-column");
 
   function resizeGraphSoon() {
@@ -973,13 +983,16 @@ Graph Console
 
   function setExpanded(expanded) {
     graphColumn.classList.toggle("graph-view-expanded", expanded);
-    maximizeBtn.textContent = expanded ? "Restore (Esc)" : "Expand";
     resizeGraphSoon();
   }
 
-  // Follow container size (window resizes, flex reflow). Only setSize —
-  // the user's viewport must persist; explicit re-fit is the toolbar's
-  // auto-fit (or expand/restore, which do fitView via resizeGraphSoon).
+  // Follow container size (G6's autoResize is inert on this build).
+  // Safe only because the container's width is viewport-driven and can
+  // never follow the canvas: the fieldset's min-content floor is removed
+  // (#graph-view-panel min-inline-size: 0) and #graph-canvas clips
+  // (overflow: hidden). Without both, observer -> setSize -> wider canvas
+  // -> wider column -> observer is a runaway growth loop that also wipes
+  // the painted canvas on every step.
   const canvasEl = document.getElementById("graph-canvas");
   if (typeof ResizeObserver !== "undefined" && canvasEl) {
     let resizeRaf = null;
@@ -987,19 +1000,18 @@ Graph Console
       if (resizeRaf) return;
       resizeRaf = requestAnimationFrame(function () {
         resizeRaf = null;
-        if (g6graph) {
-          try {
-            g6graph.setSize(canvasEl.clientWidth, canvasEl.clientHeight);
-          } catch (_err) { /* instance mid-recreate */ }
-        }
+        if (!g6graph) return;
+        try {
+          const cur = g6graph.getSize();
+          const w = canvasEl.clientWidth;
+          const h = canvasEl.clientHeight;
+          if (!cur || cur[0] !== w || cur[1] !== h) g6graph.setSize(w, h);
+        } catch (_err) { /* instance mid-recreate */ }
       });
     }).observe(canvasEl);
   }
 
-  if (maximizeBtn && graphColumn) {
-    maximizeBtn.addEventListener("click", function () {
-      setExpanded(!graphColumn.classList.contains("graph-view-expanded"));
-    });
+  if (graphColumn) {
     document.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape"
           && graphColumn.classList.contains("graph-view-expanded")) {
