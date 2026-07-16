@@ -59,6 +59,7 @@ Graph Console
                       target="_blank">{{session.name}}</a></b> ({{session.file-id}})<br />
           Loaded at revision: <b>{{session.revn}}</b><br />
           Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
+          Graph size: <b id="graph-size">…</b><br />
           Schema: <b>{{session.schema-version}}</b><br />
           Loaded at: <b>{{session.loaded-at}}</b>
         </p>
@@ -125,6 +126,7 @@ Graph Console
       {% if query-result %}
       <fieldset>
         <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
+        <div style="max-height: 45vh; overflow: auto;">
         <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
           <thead>
             <tr>
@@ -143,6 +145,7 @@ Graph Console
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </fieldset>
       {% endif %}
     </div>
@@ -161,23 +164,31 @@ Graph Console
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             <input type="checkbox" id="graph-animate-toggle" /> animate
           </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="added/removed marks fade out over this many display steps (0 = off)">
+            fade: <input type="number" id="graph-diff-steps" min="0" max="20"
+                         style="width: 3.5em;" /> steps
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="collapse every container that holds no changed elements">
+            <input type="checkbox" id="graph-diff-fold" /> fold unchanged
+          </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             layout: <select id="graph-layout-select"></select>
           </label>
         </legend>
         <desc>
-          Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
-          and glyph encode the node table; edges are <code>IsChildOf</code>
-          (arrow points to parent). With "fold containers" on, anything with
-          children (except the root) renders as a foldable box: double-click
-          to collapse or expand. Redraws automatically after live changes
-          (fold state survives redraws). Very large graphs need an explicit
-          "Render anyway".
+          Live view of the in-memory Ladybug graph (AntV G6); the legend
+          shows what is displayed. Double-click folds containers when
+          folding is on.
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
         <div id="graph-canvas"
              style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff; overflow: hidden;"></div>
         <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+        <div id="graph-node-inspector"
+             style="display: none; font-size: 12px; margin-top: 4px; border: 1px solid #ccc;
+                    padding: 6px; max-height: 40vh; overflow: auto;"></div>
         <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
         <button type="button" id="graph-filter-reset" style="display: none;">Show full graph</button>
       </fieldset>
@@ -211,6 +222,22 @@ Graph Console
   }
   #graph-view-column.graph-view-expanded #graph-canvas {
     height: calc(100vh - 160px) !important;
+  }
+  /* Eye-guiding pulse on just-changed elements: DOM overlay rings over the
+     canvas, independent of the G6 animation gate (big graphs render with
+     animation off). Two quick beats, then gone. */
+  #graph-canvas { position: relative; }
+  .graph-pulse {
+    position: absolute;
+    border: 3px solid;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: graph-pulse 0.6s ease-out 2;
+    opacity: 0;
+  }
+  @keyframes graph-pulse {
+    0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
   }
   #graph-files-tree summary { cursor: pointer; }
   #graph-files-tree ul { margin: 2px 0 4px 0; padding-left: 2em; }
@@ -322,23 +349,221 @@ Graph Console
   let ws = null;
 
   // --- G6 graph view -------------------------------------------------
-  // Color+glyph per node table. Colors from the validated categorical
-  // palette; within-glyph pairs are the only ones color must separate
-  // alone (every node also carries a direct name label + legend).
+  // Monochrome entity scheme: chroma = change. All entities share one
+  // slate hue; *lightness* separates within-glyph siblings (validated:
+  // worst within-glyph pair ΔE 17.5; the chroma floor is deliberately
+  // violated — saturated color is reserved for diff marks and would
+  // otherwise compete with them). Glyph class carries type identity,
+  // direct labels relieve the light-step contrast; SVGRaw is the hollow
+  // hexagon instead of a fourth lightness step.
   const NODE_STYLES = {
-    "Document":  { color: "#0b0b0b", glyph: "diamond",  size: 28 },
-    "Page":      { color: "#2a78d6", glyph: "rect",     size: 22 },
-    "Frame":     { color: "#008300", glyph: "hexagon",  size: 18 },
-    "Group":     { color: "#4a3aa7", glyph: "hexagon",  size: 18 },
-    "Boolean":   { color: "#eda100", glyph: "hexagon",  size: 18 },
-    "SVGRaw":    { color: "#767470", glyph: "hexagon",  size: 18 },
-    "Rectangle": { color: "#eb6834", glyph: "rect",     size: 14 },
-    "Circle":    { color: "#1baf7a", glyph: "circle",   size: 14 },
-    "Path":      { color: "#e34948", glyph: "triangle", size: 14 },
-    "Text":      { color: "#e87ba4", glyph: "circle",   size: 14 },
-    "Image":     { color: "#eda100", glyph: "star",     size: 14 }
+    "Document":  { color: "#14202e", glyph: "diamond",  size: 28 },
+    "Page":      { color: "#2e415a", glyph: "rect",     size: 22 },
+    "Frame":     { color: "#22344a", glyph: "hexagon",  size: 18 },
+    "Group":     { color: "#5b7089", glyph: "hexagon",  size: 18 },
+    "Boolean":   { color: "#93a4b8", glyph: "hexagon",  size: 18 },
+    "SVGRaw":    { color: "#8b98a9", glyph: "hexagon",  size: 18, hollow: true },
+    "Rectangle": { color: "#93a4b8", glyph: "rect",     size: 14 },
+    "Circle":    { color: "#3b5069", glyph: "circle",   size: 14 },
+    "Path":      { color: "#5b7089", glyph: "triangle", size: 14 },
+    "Text":      { color: "#8b9cb1", glyph: "circle",   size: 14 },
+    "Image":     { color: "#5b7089", glyph: "star",     size: 14 },
+    "Component": { color: "#8195ab", glyph: "diamond",  size: 20 }
   };
-  const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
+  const FALLBACK_STYLE = { color: "#5b7089", glyph: "circle", size: 14 };
+  // Edge style keyed on rel (wire field since slice-3); future edge
+  // attributes can feed styling the same way. All rels stay grey (chroma
+  // belongs to diff marks); identity comes from `sym`, a compact unicode
+  // rel label rendered mid-edge (abacus viewer EDGE_SYM convention) —
+  // dash variants alone cannot carry the growing rel roster. IsChildOf
+  // is the unlabeled default (the background tree structure).
+  // `sym` may be a full rel name: no compact glyph reads as "derived from
+  // a template" (∈ wrongly connotes membership), so IsInstanceOf spells
+  // itself out; the legend falls back to the dash-arrow for long syms.
+  const EDGE_STYLES = {
+    "IsChildOf":    { stroke: "#b3b0a8" },
+    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3], sym: "IsInstanceOf" }
+  };
+  const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
+  // --- graph diff: add/remove marks with step fade --------------------
+  // A "step" is a display-changing refetch (no-op skips age nothing).
+  // Added elements get a green halo; removed ones stay in the display as
+  // ghosts with a dashed crimson halo and fading opacity (dash + fade
+  // carry the added/removed distinction for red-green CVD; the pair
+  // validates at deutan ΔE 17.4). Marks fade linearly with age and drop
+  // after N steps; N comes from the "fade" box (0 disables the feature).
+  // The diff is vs the previous display step, not between arbitrary
+  // revisions — true version-to-version diffs await server deltas / the
+  // graph-based-VCS work.
+  const DIFF_ADDED_COLOR = "#40c057";
+  const DIFF_REMOVED_COLOR = "#c2255c";
+  let diffMarks = { nodes: {}, edges: {} };
+
+  function diffSteps() {
+    const v = parseInt(localStorage.getItem("graph-diff-steps"), 10);
+    return Number.isFinite(v) && v >= 0 && v <= 20 ? v : 3;
+  }
+
+  function diffEdgeKey(source, rel, target) {
+    return source + "|" + (rel || "IsChildOf") + "|" + target;
+  }
+
+  function liveMark(marks, key) {
+    const m = marks[key];
+    return m && m.age < diffSteps() ? m : null;
+  }
+
+  // 1.0 at age 0 down to 1/N at age N-1; the mark drops at age N.
+  function diffFade(mark) {
+    return 1 - mark.age / diffSteps();
+  }
+
+  function markDiff(prev, next) {
+    if (!diffSteps() || !prev) {
+      diffMarks = { nodes: {}, edges: {} };
+      return;
+    }
+    [diffMarks.nodes, diffMarks.edges].forEach(function (marks) {
+      Object.keys(marks).forEach(function (k) {
+        marks[k].age += 1;
+        if (marks[k].age >= diffSteps()) delete marks[k];
+      });
+    });
+    const prevNodes = {};
+    prev.nodes.forEach(function (n) { prevNodes[n.id] = n; });
+    const nextNodes = {};
+    next.nodes.forEach(function (n) { nextNodes[n.id] = n; });
+    next.nodes.forEach(function (n) {
+      if (!prevNodes[n.id]) diffMarks.nodes[n.id] = { kind: "added", age: 0 };
+    });
+    prev.nodes.forEach(function (n) {
+      if (!nextNodes[n.id]) diffMarks.nodes[n.id] = { kind: "removed", age: 0, node: n };
+    });
+    const prevEdges = {};
+    prev.edges.forEach(function (e) { prevEdges[diffEdgeKey(e.source, e.rel, e.target)] = e; });
+    const nextEdges = {};
+    next.edges.forEach(function (e) { nextEdges[diffEdgeKey(e.source, e.rel, e.target)] = e; });
+    Object.keys(nextEdges).forEach(function (k) {
+      if (!prevEdges[k]) diffMarks.edges[k] = { kind: "added", age: 0 };
+    });
+    Object.keys(prevEdges).forEach(function (k) {
+      if (!nextEdges[k]) diffMarks.edges[k] = { kind: "removed", age: 0, edge: prevEdges[k] };
+    });
+  }
+
+  // Removed elements stay displayed as fading ghosts until their mark
+  // expires. Ghosts respect the query filter and re-enter layout and
+  // combo derivation through their ghost IsChildOf edges, so they keep
+  // their old place in the tree while fading.
+  function withGhosts(data) {
+    const nodes = data.nodes.slice();
+    const present = {};
+    nodes.forEach(function (n) { present[n.id] = true; });
+    Object.keys(diffMarks.nodes).forEach(function (id) {
+      const m = liveMark(diffMarks.nodes, id);
+      if (m && m.kind === "removed" && m.node && !present[id]
+          && (!graphFilterIds || graphFilterIds.has(id))) {
+        nodes.push(m.node);
+        present[id] = true;
+      }
+    });
+    const edges = data.edges.slice();
+    const have = {};
+    edges.forEach(function (e) { have[diffEdgeKey(e.source, e.rel, e.target)] = true; });
+    Object.keys(diffMarks.edges).forEach(function (k) {
+      const m = liveMark(diffMarks.edges, k);
+      if (m && m.kind === "removed" && m.edge && !have[k]
+          && present[m.edge.source] && present[m.edge.target]) {
+        edges.push(m.edge);
+      }
+    });
+    return { nodes: nodes, edges: edges, revn: data.revn, truncated: data.truncated };
+  }
+
+  function nodeMark(id) {
+    return liveMark(diffMarks.nodes, id);
+  }
+
+  function edgeMark(d) {
+    return liveMark(diffMarks.edges, diffEdgeKey(d.source, d.data.rel, d.target));
+  }
+
+  function diffColor(m) {
+    return m.kind === "added" ? DIFF_ADDED_COLOR : DIFF_REMOVED_COLOR;
+  }
+
+  function anyLiveMarks() {
+    return Object.keys(diffMarks.nodes).some(function (k) { return liveMark(diffMarks.nodes, k); })
+      || Object.keys(diffMarks.edges).some(function (k) { return liveMark(diffMarks.edges, k); });
+  }
+
+  // Node ids touched by live marks: marked nodes plus the endpoints of
+  // marked edges (edge keys are "src|rel|tgt").
+  function liveMarkedNodeIds() {
+    const ids = new Set();
+    Object.keys(diffMarks.nodes).forEach(function (id) {
+      if (liveMark(diffMarks.nodes, id)) ids.add(id);
+    });
+    Object.keys(diffMarks.edges).forEach(function (k) {
+      if (liveMark(diffMarks.edges, k)) {
+        const parts = k.split("|");
+        ids.add(parts[0]);
+        ids.add(parts[2]);
+      }
+    });
+    return ids;
+  }
+
+  function diffFoldEnabled() {
+    return localStorage.getItem("graph-diff-fold") === "1";
+  }
+
+  // One-shot pulse rings on age-0 marks, placed ~post-render (positions
+  // are sampled once; pulses don't track pan/zoom during their ~1.2 s).
+  function pulseAt(canvasPoint, color, sizePx) {
+    const host = document.getElementById("graph-canvas");
+    if (!host || !g6graph) return;
+    const vp = g6graph.getViewportByCanvas(canvasPoint);
+    const el = document.createElement("div");
+    el.className = "graph-pulse";
+    el.style.borderColor = color;
+    el.style.left = vp[0] + "px";
+    el.style.top = vp[1] + "px";
+    el.style.width = sizePx + "px";
+    el.style.height = sizePx + "px";
+    host.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1400);
+  }
+
+  function schedulePulses() {
+    if (!diffSteps()) return;
+    setTimeout(function () {
+      if (!g6graph) return;
+      let zoom = 1;
+      try { zoom = g6graph.getZoom() || 1; } catch (_err) {}
+      Object.keys(diffMarks.nodes).forEach(function (id) {
+        const m = diffMarks.nodes[id];
+        if (!m || m.age !== 0) return;
+        try {
+          const p = g6graph.getElementPosition(id);
+          pulseAt([p[0], p[1]], diffColor(m),
+                  Math.max(18, Math.min(64, 26 * zoom)));
+        } catch (_err) { /* hidden in a collapsed combo or gone */ }
+      });
+      Object.keys(diffMarks.edges).forEach(function (k) {
+        const m = diffMarks.edges[k];
+        if (!m || m.age !== 0) return;
+        const parts = k.split("|");
+        try {
+          const a = g6graph.getElementPosition(parts[0]);
+          const b = g6graph.getElementPosition(parts[2]);
+          pulseAt([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], diffColor(m),
+                  Math.max(14, Math.min(48, 18 * zoom)));
+        } catch (_err) { /* endpoint hidden or gone */ }
+      });
+    }, 300);
+  }
+  // --- end graph diff --------------------------------------------------
   // Legend glyph characters mirroring the G6 node types above.
   const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
                         circle: "●", triangle: "▲", star: "★" };
@@ -397,6 +622,10 @@ Graph Console
     return NODE_STYLES[table] || FALLBACK_STYLE;
   }
 
+  function edgeStyle(rel) {
+    return EDGE_STYLES[rel] || FALLBACK_EDGE_STYLE;
+  }
+
   function comboIdFor(nodeId) {
     return "combo:" + nodeId;
   }
@@ -436,14 +665,18 @@ Graph Console
     return pos;
   }
 
-  function toG6Data(data, collapsedIds, withCombos, presetPositions) {
+  function toG6Data(data, collapsedIds, withCombos, presetPositions, diffFold) {
     const nodes = data.nodes || [];
     const edges = (data.edges || [])
       .slice()
       .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    // Hierarchy (tree ranking, combo derivation, fold-ability) comes from
+    // IsChildOf only — still a tree by construction. Other rels
+    // (IsInstanceOf, …) are overlay edges drawn between positioned nodes.
     const parentOf = {};
     const childrenOf = {};
     edges.forEach(function (e) {
+      if ((e.rel || "IsChildOf") !== "IsChildOf") return;
       parentOf[e.source] = e.target;
       (childrenOf[e.target] = childrenOf[e.target] || []).push(e.source);
     });
@@ -460,13 +693,33 @@ Graph Console
         if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
       });
     }
+    // Diff-fold: derive fold state from the live marks instead of the
+    // instance — every combo collapses except those on an ancestor path
+    // of (or being) a changed element, so changes stand out of the
+    // unchanged mass. Manual double-click fold state is ignored while on.
+    if (diffFold && withCombos) {
+      collapsedIds = new Set();
+      Object.keys(hasCombo).forEach(function (id) { collapsedIds.add(comboIdFor(id)); });
+      liveMarkedNodeIds().forEach(function (id) {
+        if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
+        let p = parentOf[id];
+        while (p) {
+          if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
+          p = parentOf[p];
+        }
+      });
+    }
     const combos = [];
     nodes.forEach(function (n) {
       if (!hasCombo[n.id]) return;
       const combo = { id: comboIdFor(n.id), data: { label: n.label, table: n.table } };
       const p = parentOf[n.id];
       if (p && hasCombo[p]) combo.combo = comboIdFor(p);
-      if (collapsedIds && collapsedIds.has(combo.id)) combo.style = { collapsed: true };
+      // Explicit boolean both ways: setData merges datum props by id on a
+      // live instance, so omitting `collapsed` would retain a previous
+      // `true` — a change inside a folded combo could then never expand it
+      // (the fold-unchanged bug).
+      combo.style = { collapsed: !!(collapsedIds && collapsedIds.has(combo.id)) };
       combos.push(combo);
     });
     const g6nodes = nodes.map(function (n) {
@@ -484,7 +737,8 @@ Graph Console
       return out;
     });
     const g6edges = edges.map(function (e) {
-      return { source: e.source, target: e.target, data: { position: e.position } };
+      return { source: e.source, target: e.target,
+               data: { position: e.position, rel: e.rel || "IsChildOf" } };
     });
     return { nodes: g6nodes, edges: g6edges, combos: combos };
   }
@@ -528,17 +782,73 @@ Graph Console
         type: function (d) { return nodeStyle(d.data.table).glyph; },
         style: {
           size: function (d) { return nodeStyle(d.data.table).size; },
-          fill: function (d) { return nodeStyle(d.data.table).color; },
-          stroke: "#52514e",
-          lineWidth: 0.5,
+          fill: function (d) {
+            const s = nodeStyle(d.data.table);
+            return s.hollow ? "#ffffff" : s.color;
+          },
+          // Unmarked nodes carry no stroke (hollow ones keep a thin one as
+          // their identity); the stroke channel belongs to diff marks:
+          // thick colored ring, dashed for removals (the CVD-safe cue).
+          stroke: function (d) {
+            const m = nodeMark(d.id);
+            return m ? diffColor(m) : nodeStyle(d.data.table).color;
+          },
+          lineWidth: function (d) {
+            if (nodeMark(d.id)) return 2.5;
+            return nodeStyle(d.data.table).hollow ? 1.5 : 0;
+          },
+          lineDash: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? [3, 3] : 0;
+          },
           labelText: function (d) { return d.data.label; },
           labelFontSize: 9,
           labelFill: "#0b0b0b",
-          labelPlacement: "bottom"
+          labelPlacement: "bottom",
+          halo: function (d) { return !!nodeMark(d.id); },
+          haloStroke: function (d) {
+            const m = nodeMark(d.id);
+            return m ? diffColor(m) : "#ffffff";
+          },
+          haloLineWidth: 12,
+          haloStrokeOpacity: function (d) {
+            const m = nodeMark(d.id);
+            return m ? 0.35 * diffFade(m) : 0;
+          },
+          opacity: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? diffFade(m) : 1;
+          },
+          labelOpacity: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? diffFade(m) : 1;
+          }
         }
       },
       edge: {
-        style: { stroke: "#b3b0a8", endArrow: true, endArrowSize: 6 }
+        style: {
+          stroke: function (d) {
+            const m = edgeMark(d);
+            return m ? diffColor(m) : edgeStyle(d.data.rel).stroke;
+          },
+          lineDash: function (d) { return edgeStyle(d.data.rel).lineDash; },
+          lineWidth: function (d) {
+            const m = edgeMark(d);
+            return m ? (m.kind === "removed" ? 2.5 : 2) : 1;
+          },
+          strokeOpacity: function (d) {
+            const m = edgeMark(d);
+            return m ? Math.max(diffFade(m), 0.15) : 1;
+          },
+          labelText: function (d) { return edgeStyle(d.data.rel).sym || ""; },
+          labelFontSize: 9,
+          labelFill: "#52514e",
+          labelBackground: true,
+          labelBackgroundFill: "#ffffff",
+          labelBackgroundOpacity: 0.75,
+          endArrow: true,
+          endArrowSize: 6
+        }
       },
       combo: {
         type: "rect",
@@ -578,22 +888,59 @@ Graph Console
     };
     if (layoutCfg) opts.layout = layoutCfg;
     g6graph = new G6.Graph(opts);
+    // Re-attached on every instance creation (layout/animation switches
+    // destroy and recreate the graph).
+    g6graph.on("node:click", function (e) {
+      const id = e.target && e.target.id;
+      if (id) showNodeInspector(String(id));
+    });
     return g6graph.render().catch(function (_err) {
       /* see above */
     });
   }
 
-  function renderGraphLegend() {
+  // Hand-rolled on purpose: the G6 legend plugin substitutes its own
+  // marker set (hexagon→circle, star→cross), breaking glyph identity.
+  // Entries reflect the *displayed* data only: node tables in roster
+  // order (unknown tables appended with the fallback style), then rels.
+  function renderGraphLegend(data) {
     const el = document.getElementById("graph-legend");
-    el.innerHTML = Object.keys(NODE_STYLES).map(function (table) {
-      const s = NODE_STYLES[table];
+    if (!el) return;
+    const tables = {};
+    (data.nodes || []).forEach(function (n) { tables[n.table] = true; });
+    const rels = {};
+    (data.edges || []).forEach(function (e) { rels[e.rel || "IsChildOf"] = true; });
+    function nodeItem(table, s) {
       return '<span style="margin-right: 1em; white-space: nowrap;">'
         + '<span style="color: ' + s.color + '; font-size: 14px;">'
-        + (GLYPH_CHARS[s.glyph] || "●") + '</span> '
+        + (s.hollow ? "⬡" : (GLYPH_CHARS[s.glyph] || "●")) + '</span> '
         + escapeHtml(table) + "</span>";
-      // join with a space: the spans are nowrap, so the separator is the
-      // only soft-wrap opportunity in the legend row
-    }).join(" ");
+    }
+    const items = Object.keys(NODE_STYLES)
+      .filter(function (t) { return tables[t]; })
+      .map(function (t) { return nodeItem(t, NODE_STYLES[t]); });
+    Object.keys(tables).sort().forEach(function (t) {
+      if (!NODE_STYLES[t]) items.push(nodeItem(t, FALLBACK_STYLE));
+    });
+    Object.keys(rels).sort().forEach(function (rel) {
+      const s = edgeStyle(rel);
+      const glyph = (s.sym && s.sym.length <= 2) ? s.sym : (s.lineDash ? "⇢" : "→");
+      items.push('<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + s.stroke + '; font-size: 14px;">'
+        + escapeHtml(glyph) + '</span> '
+        + escapeHtml(rel) + "</span>");
+    });
+    if (anyLiveMarks()) {
+      items.push('<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + DIFF_ADDED_COLOR + '; font-size: 14px;">+</span>'
+        + ' added</span>');
+      items.push('<span style="white-space: nowrap;">'
+        + '<span style="color: ' + DIFF_REMOVED_COLOR + '; font-size: 14px;">−</span>'
+        + ' removed</span>');
+    }
+    // join with a space: the spans are nowrap, so the separator is the
+    // only soft-wrap opportunity in the legend row
+    el.innerHTML = items.join(" ");
   }
 
   function graphStatusText(data) {
@@ -634,6 +981,8 @@ Graph Console
   function renderCurrent() {
     if (!lastGraphData) return;
     const data = filteredGraphData();
+    const shown = withGhosts(data);
+    renderGraphLegend(shown);
     const anywayBtn = document.getElementById("graph-render-anyway");
     const filterBtn = document.getElementById("graph-filter-reset");
     if (filterBtn) filterBtn.style.display = graphFilterIds ? "inline" : "none";
@@ -641,7 +990,7 @@ Graph Console
       ? " — query filter: " + data.nodes.length + " of "
         + lastGraphData.nodes.length + " nodes"
       : "";
-    if (data.nodes.length > RENDER_GUARD_NODES && !renderForced) {
+    if (shown.nodes.length > RENDER_GUARD_NODES && !renderForced) {
       graphViewStatus.textContent =
         graphStatusText(data) + filterNote + " — too large to render automatically";
       if (anywayBtn) anywayBtn.style.display = "inline";
@@ -649,8 +998,8 @@ Graph Console
     }
     if (anywayBtn) anywayBtn.style.display = "none";
     graphViewStatus.textContent = graphStatusText(data) + filterNote;
-    renderGraph(toG6Data(data, collapsedComboIds(), foldEnabled(),
-                         LAYOUTS[currentLayoutName()] == null));
+    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled() || diffFoldEnabled(),
+                         LAYOUTS[currentLayoutName()] == null, diffFoldEnabled()));
   }
 
   function refetchGraph() {
@@ -667,19 +1016,106 @@ Graph Console
         return resp.json();
       })
       .then(function (data) {
+        // Session-fieldset size line stays live even through skipped
+        // repaints (unlike the status line under the canvas).
+        const sizeEl = document.getElementById("graph-size");
+        if (sizeEl) {
+          sizeEl.textContent = data.nodes.length + " nodes, "
+            + data.edges.length + " edges";
+        }
         // Skip the repaint when the display projection is unchanged: a
         // change burst that only touches non-projected attrs (e.g. moving
         // shapes around) bumps revn but not the picture.
         const sig = JSON.stringify([data.nodes, data.edges, data.truncated]);
+        if (sig === lastGraphSig) {
+          lastGraphData = data;
+          return;
+        }
+        markDiff(lastGraphData, data);
         lastGraphData = data;
-        if (sig === lastGraphSig) return;
         lastGraphSig = sig;
         renderCurrent();
+        schedulePulses();
       })
       .catch(function (err) {
         graphViewStatus.textContent = "graph view error: " + err;
       });
   }
+
+  // --- node inspector --------------------------------------------------
+  // Click a node → its full attribute row from the graph DB, rendered in
+  // a panel under the canvas. Panel over tooltip: the projected tables
+  // carry ~80 columns — too much for a tooltip, and the panel persists
+  // for side-by-side reading without obstructing the graph.
+  function runConsoleQuery(query) {
+    const formData = new FormData();
+    formData.append("query", query);
+    return fetch("/dbg/actions/graph-query", {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+      body: formData
+    })
+      .then(function (resp) { return resp.text(); })
+      .then(function (text) { return parseTransitMap(JSON.parse(text)); });
+  }
+
+  function showNodeInspector(id) {
+    const panel = document.getElementById("graph-node-inspector");
+    if (!panel || !g6graph) return;
+    let datum = null;
+    try { datum = g6graph.getNodeData(id); } catch (_err) { return; }
+    const table = datum && datum.data && datum.data.table;
+    const label = (datum && datum.data && datum.data.label) || "";
+    // Both values are interpolated into Cypher — accept only what our own
+    // export produces (bare table names, UUID ids).
+    if (!table || !/^[A-Za-z]+$/.test(table)) return;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+    panel.style.display = "block";
+    panel.textContent = "loading " + id + "…";
+    runConsoleQuery("MATCH (n:`" + table + "` {id: uuid('" + id + "')}) RETURN n.*;")
+      .then(function (data) {
+        if (data.error) {
+          panel.textContent = "inspector error: " + data.error;
+          return;
+        }
+        const result = data["query-result"];
+        const rows = (result && result.rows) || [];
+        let html = '<div style="display: flex; justify-content: space-between;">'
+          + "<b>" + escapeHtml(table) + " " + escapeHtml(label) + "</b>"
+          + '<button type="button" id="graph-inspector-close">close</button></div>'
+          + '<div style="color: #666;">' + escapeHtml(id) + "</div>";
+        if (!rows.length) {
+          html += "<div>not in the graph DB (removed?)</div>";
+        } else {
+          const columns = result.columns || [];
+          let hidden = 0;
+          html += '<table border="1" cellpadding="2" cellspacing="0"'
+            + ' style="border-collapse: collapse; margin-top: 4px;">';
+          columns.forEach(function (col, i) {
+            const val = rows[0][i];
+            // Ladybug's value->clj fallback renders SQL nulls as "NULL".
+            if (val === null || val === undefined || val === "" || val === "NULL") {
+              hidden += 1;
+              return;
+            }
+            html += "<tr><td><code>" + escapeHtml(col.replace(/^n\./, ""))
+              + "</code></td><td><code>" + escapeHtml(String(val))
+              + "</code></td></tr>";
+          });
+          html += "</table>";
+          if (hidden) {
+            html += '<div style="color: #666;">' + hidden + " empty attrs hidden</div>";
+          }
+        }
+        panel.innerHTML = html;
+        document.getElementById("graph-inspector-close")
+          .addEventListener("click", function () { panel.style.display = "none"; });
+      })
+      .catch(function (err) {
+        panel.textContent = "inspector error: " + err;
+      });
+  }
+  // --- end node inspector ----------------------------------------------
 
   function scheduleGraphRefetch() {
     if (refetchTimer) clearTimeout(refetchTimer);
@@ -882,10 +1318,15 @@ Graph Console
     }
 
     const truncated = result["truncated?"] ? ", truncated" : "";
+    // Actions bar sits above the table so a long result cannot push the
+    // "Show result in graph view" button out of sight; the table itself
+    // scrolls inside a capped container.
     let html =
       "<fieldset><legend>Results ("
       + escapeHtml(String(result["row-count"]))
       + " rows" + truncated + ")</legend>"
+      + "<div id=\"graph-result-actions\" style=\"margin-bottom: 4px;\"></div>"
+      + "<div style=\"max-height: 45vh; overflow: auto;\">"
       + "<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\""
       + " style=\"border-collapse: collapse; width: 100%;\">"
       + "<thead><tr>";
@@ -910,7 +1351,7 @@ Graph Console
       html += "</tr>";
     });
 
-    html += "</tbody></table></fieldset>";
+    html += "</tbody></table></div></fieldset>";
     output.innerHTML = html;
 
     // Offer to view the result as an induced subgraph: any UUID appearing
@@ -928,7 +1369,7 @@ Graph Console
       btn.type = "button";
       btn.textContent = "Show result in graph view (" + ids.size + " ids)";
       btn.addEventListener("click", function () { applyQueryFilter(ids); });
-      output.appendChild(btn);
+      document.getElementById("graph-result-actions").appendChild(btn);
     }
   }
 
@@ -1039,6 +1480,24 @@ Graph Console
     });
   }
 
+  const diffStepsInput = document.getElementById("graph-diff-steps");
+  if (diffStepsInput) {
+    diffStepsInput.value = String(diffSteps());
+    diffStepsInput.addEventListener("change", function () {
+      localStorage.setItem("graph-diff-steps", diffStepsInput.value);
+      renderCurrent();
+    });
+  }
+
+  const diffFoldToggle = document.getElementById("graph-diff-fold");
+  if (diffFoldToggle) {
+    diffFoldToggle.checked = diffFoldEnabled();
+    diffFoldToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-diff-fold", diffFoldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
   const layoutSelect = document.getElementById("graph-layout-select");
   if (layoutSelect) {
     Object.keys(LAYOUTS).forEach(function (name) {
@@ -1072,7 +1531,6 @@ Graph Console
 
   connect();
   refreshSyncStatus();
-  renderGraphLegend();
   refetchGraph();
 
   window.addEventListener("beforeunload", function () {
