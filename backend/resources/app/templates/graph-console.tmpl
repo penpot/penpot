@@ -1074,8 +1074,12 @@ Graph Console
         // shows per-table counts.
         const sizeEl = document.getElementById("graph-size");
         if (sizeEl) {
+          // bm-bytes = the session DB's buffer-manager usage (CALL
+          // bm_info()), i.e. actual resident memory, not an estimate.
+          const bm = data["bm-bytes"];
           sizeEl.textContent = data.nodes.length + " nodes, "
-            + data.edges.length + " edges";
+            + data.edges.length + " edges"
+            + (bm ? " (" + (bm / 1048576).toFixed(1) + " MiB)" : "");
           const counts = {};
           data.nodes.forEach(function (n) {
             counts[n.table] = (counts[n.table] || 0) + 1;
