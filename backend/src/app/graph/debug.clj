@@ -24,11 +24,17 @@
 (set! *warn-on-reflection* true)
 
 (def default-query
-  "Default console query. The `filter_*` columns carry node ids for the
-  graph-view result filter; the results table hides them (see
-  `hide-filter-columns` and the template's `renderQueryOutput`)."
-  (str "MATCH (s)-[r]->(t) "
-       "RETURN s.name, label(s) AS src, label(r) AS rel, t.name, label(t) AS tgt, "
+  "Default console query, written to be self-explanatory in the textarea.
+  The `filter_*` columns carry node ids for the graph-view result filter;
+  the results table hides them (see `hide-filter-columns` and the
+  template's `renderQueryOutput`)."
+  (str "MATCH (s)-[r]->(t)\n"
+       "// WHERE some condition\n"
+       "RETURN label(s) AS src, s.name,\n"
+       "       label(r) AS rel,\n"
+       "       t.name, label(t) AS tgt,\n"
+       "\n"
+       "// filter_* columns omitted from table; these needed for graph view\n"
        "s.id AS filter_src_id, t.id AS filter_tgt_id;"))
 
 (defonce ^:private sessions
