@@ -18,7 +18,10 @@
 (set! *warn-on-reflection* true)
 
 (def ^:private supported-change-types
-  #{:add-obj :mod-obj :del-obj :add-page :del-page :mod-page :mov-objects})
+  #{:add-obj :mod-obj :del-obj
+    :add-page :del-page :mod-page :mov-objects
+    :add-component :mod-component :del-component
+    :restore-component :purge-component})
 
 (defn- shape-table
   [shape]
@@ -80,9 +83,22 @@
   [nodes]
   (into {} (map page-index-entry (table-rows nodes "Page"))))
 
+(defn- component-index-entry
+  [attrs]
+  (let [id (node-attrs-id attrs)]
+    [id {:id      id
+         :name    (:name attrs)
+         :deleted (boolean (:deleted attrs))}]))
+
+(defn- index-components
+  [nodes]
+  (into {} (map component-index-entry (table-rows nodes "Component"))))
+
 (defn- shape-index-table?
   [table]
-  (not (contains? #{"Document" "Page" :Document :Page} table)))
+  (not (contains? #{"Document" "Page" "Component"
+                    :Document :Page :Component}
+                  table)))
 
 (defn- shape-index-entry
   [table attrs parents pages edges]
@@ -111,15 +127,17 @@
   [file-id revn {:keys [nodes edges]}]
   (let [doc-id         (document-id-from-nodes nodes file-id)
         pages          (index-pages nodes)
+        components     (index-components nodes)
         parents        (build-parent-map edges)
         children-index (build-children-map edges)
         shapes         (index-shapes nodes edges parents pages)]
-    {:file-id  file-id
-     :doc-id   doc-id
-     :revn     (long revn)
-     :pages    pages
-     :shapes   shapes
-     :children children-index}))
+    {:file-id    file-id
+     :doc-id     doc-id
+     :revn       (long revn)
+     :pages      pages
+     :components components
+     :shapes     shapes
+     :children   children-index}))
 
 
 (defn- format-node-value
@@ -195,6 +213,25 @@
   [page-id name]
   (str "MATCH (p:Page {id: " (ladybug/format-uuid page-id) "}) "
        "SET p.name = " (ladybug/format-string name) ";"))
+
+(defn- remove-node-attr-statement
+  "Clear a property. Ladybug has no Neo4j-style REMOVE; SET to NULL."
+  [table shape-id attr]
+  (str "MATCH (s:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
+       "SET s." (nodes/cypher-property-key attr) " = NULL;"))
+
+(defn- index-add-component!
+  [index {:keys [id name doc-id]}]
+  (-> index
+      (assoc-in [:components id] {:id id :name name :deleted false})
+      (update :children update doc-id (fnil conj #{}) id)))
+
+(defn- index-remove-component!
+  [index component-id]
+  (let [doc-id (:doc-id index)]
+    (-> index
+        (update :components dissoc component-id)
+        (update :children update doc-id #(disj (or % #{}) component-id)))))
 
 
 (defn- set-document-revision-statement
@@ -501,16 +538,145 @@
      :applied?   true}
     {:index index :statements [] :applied? false :reason :unsupported-page-change}))
 
+(defn- component-syncable-attrs
+  "Projected Component columns that sync may SET (everything but :id)."
+  []
+  (disj (set (nodes/column-keys "Component")) :id))
+
+(defn- component-attrs-from-change
+  "Build CREATE attrs for `:add-component` (objects are not projected)."
+  [{:keys [id name path main-instance-id main-instance-page
+           annotation variant-id variant-properties]}]
+  (cond-> {:id                 id
+           :name               (or name "Component")
+           :path               (or path "")
+           :main-instance-id   main-instance-id
+           :main-instance-page main-instance-page}
+    (some? annotation) (assoc :annotation annotation)
+    (some? variant-id) (assoc :variant-id variant-id)
+    (seq variant-properties) (assoc :variant-properties variant-properties)))
+
+(defn- apply-add-component
+  [index {:keys [id] :as change}]
+  (if (get-in index [:components id])
+    {:index index :statements [] :applied? true}
+    (let [doc-id   (:doc-id index)
+          position (count (:components index))
+          attrs    (nodes/project-attrs "Component" (component-attrs-from-change change))
+          edge     {:from-table "Component"
+                    :from-id    id
+                    :to-table   "Document"
+                    :to-id      doc-id
+                    :position   position}]
+      {:index      (index-add-component! index
+                                         {:id     id
+                                          :name   (:name attrs)
+                                          :doc-id doc-id})
+       :statements [(create-node-statement "Component" attrs)
+                    (create-edge-statement edge)]
+       :applied?   true})))
+
+(defn- apply-mod-component
+  "Update projected Component attrs from a `:mod-component` change.
+
+  Nil optional values clear the property (Penpot dissocs them). `:objects`
+  is never projected — shape trees live on pages."
+  [index {:keys [id] :as change}]
+  (let [syncable (component-syncable-attrs)
+        sets     (into {}
+                       (keep (fn [[k v]]
+                               (when (and (contains? syncable k) (some? v))
+                                 [k v])))
+                       (dissoc change :type :id :objects))
+        removes  (into []
+                       (keep (fn [[k v]]
+                               (when (and (contains? syncable k) (nil? v))
+                                 k)))
+                       (dissoc change :type :id :objects))
+        stmts    (into (mapv (fn [[k v]]
+                               (set-node-attr-statement "Component" id k v))
+                             sets)
+                       (map #(remove-node-attr-statement "Component" id %) removes))
+        index'   (if (get-in index [:components id])
+                   (cond-> index
+                     (contains? sets :name)
+                     (assoc-in [:components id :name] (:name sets)))
+                   (assoc-in index [:components id]
+                             {:id      id
+                              :name    (:name sets)
+                              :deleted false}))]
+    (if (empty? stmts)
+      {:index index :statements [] :applied? true}
+      {:index index' :statements stmts :applied? true})))
+
+(defn- apply-del-component
+  [index {:keys [id skip-undelete?]}]
+  (cond
+    (not (get-in index [:components id]))
+    {:index index :statements [] :applied? true}
+
+    skip-undelete?
+    {:index      (index-remove-component! index id)
+     :statements [(delete-edge-statement {:from-table "Component"
+                                          :from-id    id
+                                          :to-table   "Document"
+                                          :to-id      (:doc-id index)})
+                  (delete-node-statement "Component" id)]
+     :applied?   true}
+
+    :else
+    {:index      (assoc-in index [:components id :deleted] true)
+     :statements [(set-node-attr-statement "Component" id :deleted true)]
+     :applied?   true}))
+
+(defn- apply-restore-component
+  [index {:keys [id page-id]}]
+  (let [stmts (cond-> [(set-node-attr-statement "Component" id :deleted false)]
+                page-id
+                (conj (set-node-attr-statement "Component" id :main-instance-page page-id)))
+        index (if (get-in index [:components id])
+                (-> index
+                    (assoc-in [:components id :deleted] false)
+                    (cond-> page-id
+                      (assoc-in [:components id :main-instance-page] page-id)))
+                (assoc-in index [:components id]
+                          {:id id :name nil :deleted false}))]
+    {:index index :statements stmts :applied? true}))
+
+(defn- apply-purge-component
+  [index {:keys [id]}]
+  (if-not (get-in index [:components id])
+    ;; Still attempt delete in case the node exists but was not indexed.
+    {:index      index
+     :statements [(delete-edge-statement {:from-table "Component"
+                                          :from-id    id
+                                          :to-table   "Document"
+                                          :to-id      (:doc-id index)})
+                  (delete-node-statement "Component" id)]
+     :applied?   true}
+    {:index      (index-remove-component! index id)
+     :statements [(delete-edge-statement {:from-table "Component"
+                                          :from-id    id
+                                          :to-table   "Document"
+                                          :to-id      (:doc-id index)})
+                  (delete-node-statement "Component" id)]
+     :applied?   true}))
+
 (defn- apply-change
   [index change]
   (case (:type change)
-    :add-obj  (apply-add-obj index change)
-    :mod-obj  (apply-mod-obj index change)
-    :del-obj  (apply-del-obj index change)
-    :add-page (apply-add-page index change)
-    :del-page (apply-del-page index change)
-    :mod-page (apply-mod-page index change)
-    :mov-objects (apply-mov-objects index change)
+    :add-obj            (apply-add-obj index change)
+    :mod-obj            (apply-mod-obj index change)
+    :del-obj            (apply-del-obj index change)
+    :add-page           (apply-add-page index change)
+    :del-page           (apply-del-page index change)
+    :mod-page           (apply-mod-page index change)
+    :mov-objects        (apply-mov-objects index change)
+    :add-component      (apply-add-component index change)
+    :mod-component      (apply-mod-component index change)
+    :del-component      (apply-del-component index change)
+    :restore-component  (apply-restore-component index change)
+    :purge-component    (apply-purge-component index change)
     {:index index :statements [] :applied? false :reason :unsupported-type}))
 
 (defn apply-changes!
