@@ -820,6 +820,11 @@ Graph Console
             const m = nodeMark(d.id);
             return m && m.kind === "removed" ? diffFade(m) : 1;
           }
+        },
+        state: {
+          selected: { stroke: "#0b0b0b", lineWidth: 2 },
+          active:   {},
+          inactive: { opacity: 0.2, labelOpacity: 0.2 }
         }
       },
       edge: {
@@ -845,6 +850,11 @@ Graph Console
           labelBackgroundOpacity: 0.75,
           endArrow: true,
           endArrowSize: 6
+        },
+        state: {
+          selected: { lineWidth: 2 },
+          active:   {},
+          inactive: { strokeOpacity: 0.1, labelOpacity: 0.1 }
         }
       },
       combo: {
@@ -860,7 +870,12 @@ Graph Console
           radius: 4
         }
       },
-      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand"],
+      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand",
+        // Click highlights the 1-degree neighborhood (selected node black
+        // ring, neighbors keep full strength, the rest dims); clicking
+        // empty canvas clears. Runs alongside the node:click inspector.
+        { type: "click-select", degree: 1,
+          state: "selected", neighborState: "active", unselectedState: "inactive" }],
       plugins: [{
         key: "toolbar",
         type: "toolbar",
