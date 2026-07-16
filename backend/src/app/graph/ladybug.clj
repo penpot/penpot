@@ -97,7 +97,13 @@
 (defn- value->clj
   [^Value value]
   (when-not (.isNull value)
-    (let [v (.getValue value)]
+    (let [v (try
+              (.getValue value)
+              (catch Exception _
+                ;; LIST/STRUCT values are not supported by the binding's
+                ;; getValue (\"value_get_value\"); fall back to the textual
+                ;; representation so console queries do not crash.
+                (.toString value)))]
       (cond
         (instance? Long v)    v
         (instance? Integer v) (long v)
