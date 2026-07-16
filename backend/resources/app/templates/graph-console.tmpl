@@ -79,7 +79,8 @@ Graph Console
         <thead>
           <tr>
             <th>revn</th>
-            <th>changes</th>
+            <th>op</th>
+            <th>id</th>
           </tr>
         </thead>
         <tbody id="graph-changelog-body"></tbody>
@@ -1281,9 +1282,8 @@ Graph Console
     return out;
   }
 
-  function summarizeChange(change) {
-    const parts = [change.type];
-    if (change.id) parts.push("id=" + change.id);
+  function changeDetail(change) {
+    const parts = [];
     if (change.obj && change.obj.type) parts.push("shape=" + change.obj.type);
     if (change.operations && change.operations.length) {
       const attrs = change.operations
@@ -1292,11 +1292,6 @@ Graph Console
       if (attrs.length) parts.push("attrs=" + attrs.join(","));
     }
     return parts.join(" ");
-  }
-
-  function summarizeChanges(changes) {
-    if (!changes || !changes.length) return "(empty)";
-    return changes.map(summarizeChange).join("; ");
   }
 
   function summarizeSkipped(skipped) {
@@ -1336,26 +1331,37 @@ Graph Console
       .catch(function () {});
   }
 
-  function appendChange(revn, summary) {
+  // One row per operation (revn repeats across a batch); op wears the
+  // canvas diff colors, id shows the uuid's last group with the full
+  // uuid on hover, or N/A for ops without a subject id.
+  function appendChanges(revn, changes) {
     // The whole box stays hidden until the first change arrives; feed
     // state lives in the session fieldset.
     changelogBox.style.display = "block";
-
-    const row = document.createElement("tr");
-    const revnCell = document.createElement("td");
-    const changesCell = document.createElement("td");
-
-    revnCell.textContent = String(revn);
-    // add-obj / del-obj wear the diff-mark colors of the canvas.
-    changesCell.innerHTML = escapeHtml(summary)
-      .replace(/\badd-obj\b/g,
-               '<span style="color: ' + DIFF_ADDED_COLOR + ';">add-obj</span>')
-      .replace(/\bdel-obj\b/g,
-               '<span style="color: ' + DIFF_REMOVED_COLOR + ';">del-obj</span>');
-    row.appendChild(revnCell);
-    row.appendChild(changesCell);
-    changelogBody.appendChild(row);
-    row.scrollIntoView({ block: "nearest" });
+    let lastRow = null;
+    (changes && changes.length ? changes : [{}]).forEach(function (change) {
+      const row = document.createElement("tr");
+      const revnCell = document.createElement("td");
+      revnCell.textContent = String(revn);
+      const opCell = document.createElement("td");
+      const op = change.type || "?";
+      opCell.textContent = op;
+      const detail = changeDetail(change);
+      if (detail) opCell.title = detail;
+      if (op === "add-obj") opCell.style.color = DIFF_ADDED_COLOR;
+      if (op === "del-obj") opCell.style.color = DIFF_REMOVED_COLOR;
+      const idCell = document.createElement("td");
+      const id = change.id ? String(change.id) : null;
+      const groups = id ? id.split("-") : null;
+      idCell.textContent = groups ? groups[groups.length - 1] : "N/A";
+      if (id) idCell.title = id;
+      row.appendChild(revnCell);
+      row.appendChild(opCell);
+      row.appendChild(idCell);
+      changelogBody.appendChild(row);
+      lastRow = row;
+    });
+    if (lastRow) lastRow.scrollIntoView({ block: "nearest" });
   }
 
   function handleMessage(raw) {
@@ -1368,7 +1374,7 @@ Graph Console
 
     if (msg.type !== "file-change" || msg["file-id"] !== fileId) return;
 
-    appendChange(msg.revn, summarizeChanges(msg.changes));
+    appendChanges(msg.revn, msg.changes);
     setTimeout(refreshSyncStatus, 150);
     scheduleGraphRefetch();
   }
