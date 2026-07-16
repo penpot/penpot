@@ -136,7 +136,11 @@
   (swap! sessions dissoc (session-key profile-id)))
 
 (defn load-session!
-  "Ingest `file-id` into a new in-memory Ladybug database for `profile-id`."
+  "Ingest `file-id` into a new in-memory Ladybug database for `profile-id`.
+
+  Uses Arrow by default (`ingest-on-connection!`). After building the sync
+  index, drops `:nodes`/`:edges` from stored meta so the session does not
+  retain the full projection in heap."
   [cfg profile-id file-id]
   (unload-session! profile-id)
   (let [^Database db (Database.)
@@ -150,6 +154,7 @@
                                                       :skip-stats? true
                                                       :skip-validation? true)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
+            meta  (update meta :projection select-keys [:stats])
             session
             (-> {:db db
                  :conn conn
