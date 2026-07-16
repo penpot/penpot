@@ -9,18 +9,7 @@
 
    :modules
    {:test {:init-fn common-tests.runner/-main
-           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
-
-  :bench
-  {:target :node-script
-   :output-to "target/bench.js"
-   :output-dir "target/bench/"
-   :main bench/main
-   :devtools {:autoload false}
-
-   :compiler-options
-   {:output-feature-set :es-next
-    :output-wrapper false}}}
+           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}}
  }
 
 

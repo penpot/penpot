@@ -24,11 +24,13 @@
 
 (def schema:params
   "Business params of an export: the files to export, frozen when the job
-  was created, and how their libraries are handled."
+  was created, how their libraries are handled and the layout of their
+  pages."
   [:map {:title "export-binfile-params" :closed true}
    [:file-ids    [::sm/set ::sm/uuid]]
    [:export-type [::sm/one-of #{:include-libraries :merge-libraries
-                                :detach-libraries :link-later}]]])
+                                :detach-libraries :link-later}]]
+   [:variant     {:optional true} bfc/schema:variant]])
 
 (def ^:private artifact
   "What the user sees of the package an export produces. A single name
@@ -69,6 +71,7 @@
     (let [output (tmp/tempfile* :suffix ".penpot")
           cfg    (bfc/export-cfg cfg {:file-ids    file-ids
                                       :export-type (:export-type params)
+                                      :variant     (:variant params)
                                       :output      output})]
       (try
         (bfj/check-active cfg context)

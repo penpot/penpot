@@ -4,7 +4,7 @@
 
 ## Stable namespace map
 
-- `app.common.data` and `app.common.data.macros`: generic data helpers and performance macros that do not depend on Penpot domain entities.
+- `app.common.data`, `app.common.data.macros` and `app.common.data.object-diff`: generic data helpers, performance macros, and diff/patch of arbitrary values (`diff`/`apply-diff`) that do not depend on Penpot domain entities. The diff format and its ordering rules: `mem:common/object-diff`.
 - `app.common.types.*`: shared shape/file/page/component/token data types, schemas, predicates, and entity-local operations. `app.common.types.organization` contains organization schemas, `apply-organization`, and fail-closed organization/team permission rules (`allowed?`, `can-send-invitations?`).
 - `app.common.files.*`: file-level operations, shape tree helpers, change application, migrations, validation, and undo/redo-related logic.
 - `app.common.logic.*`: higher-level workflows/algorithms over files, shapes, components, variants, libraries, tokens, etc.
@@ -56,6 +56,9 @@ Text and tests:
 - Shared text data conversion, DraftJS compatibility, modern text content, and derived position data: `mem:common/text-subtleties`.
 - Common test commands, helper conventions, production-path test mutations, and runtime coverage choices: `mem:common/testing`.
 - Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
+
+Generic data:
+- Diff/patch element shapes (operations and groups), operation ordering, nil presence, and the `map-diff` split: `mem:common/object-diff`.
 
 ## Areas without focused memories
 

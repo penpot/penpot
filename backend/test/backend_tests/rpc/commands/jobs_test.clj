@@ -122,6 +122,31 @@
     (t/testing "and nothing was created"
       (t/is (zero? (count-jobs))))))
 
+(t/deftest create-export-binfile-job-takes-an-optional-variant
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))]
+
+    (t/testing "a known variant is frozen in the params of the job"
+      (let [out (create-export-binfile-job (:id profile) #{file-id}
+                                           :params {:file-ids    #{file-id}
+                                                    :export-type :detach-libraries
+                                                    :variant     :compact})
+            job (jobs/get-job th/*system* (:id (:result out)))
+            def (jobs/get-job-def (::jobs/defs th/*system*) :export-binfile)]
+        (t/is (th/success? out))
+        (t/is (= :compact (:variant (jobs/decode-params def (:params job)))))))
+
+    (t/testing "an unknown variant is refused before any job exists"
+      (let [before (count-jobs)
+            out    (th/command! {::th/type        :create-export-binfile-job
+                                 ::rpc/profile-id (:id profile)
+                                 :params          {:file-ids    #{file-id}
+                                                   :export-type :detach-libraries
+                                                   :variant     :other}})]
+        (t/is (not (th/success? out)))
+        (t/is (= :params-validation (th/ex-code (:error out))))
+        (t/is (= before (count-jobs)))))))
+
 (t/deftest create-export-binfile-job-requires-at-least-one-file
   (let [profile (th/create-profile* 1)
         out     (create-export-binfile-job (:id profile) #{})]
