@@ -166,6 +166,10 @@ Graph Console
             fade: <input type="number" id="graph-diff-steps" min="0" max="20"
                          style="width: 3.5em;" /> steps
           </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="collapse every container that holds no changed elements">
+            <input type="checkbox" id="graph-diff-fold" /> fold unchanged
+          </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
             layout: <select id="graph-layout-select"></select>
           </label>
@@ -212,6 +216,22 @@ Graph Console
   }
   #graph-view-column.graph-view-expanded #graph-canvas {
     height: calc(100vh - 160px) !important;
+  }
+  /* Eye-guiding pulse on just-changed elements: DOM overlay rings over the
+     canvas, independent of the G6 animation gate (big graphs render with
+     animation off). Two quick beats, then gone. */
+  #graph-canvas { position: relative; }
+  .graph-pulse {
+    position: absolute;
+    border: 3px solid;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: graph-pulse 0.6s ease-out 2;
+    opacity: 0;
+  }
+  @keyframes graph-pulse {
+    0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
   }
   #graph-files-tree summary { cursor: pointer; }
   #graph-files-tree ul { margin: 2px 0 4px 0; padding-left: 2em; }
@@ -323,31 +343,34 @@ Graph Console
   let ws = null;
 
   // --- G6 graph view -------------------------------------------------
-  // Color+glyph per node table. Colors from the validated categorical
-  // palette; within-glyph pairs are the only ones color must separate
-  // alone (every node also carries a direct name label + legend).
+  // Monochrome entity scheme: chroma = change. All entities share one
+  // slate hue; *lightness* separates within-glyph siblings (validated:
+  // worst within-glyph pair ΔE 17.5; the chroma floor is deliberately
+  // violated — saturated color is reserved for diff marks and would
+  // otherwise compete with them). Glyph class carries type identity,
+  // direct labels relieve the light-step contrast; SVGRaw is the hollow
+  // hexagon instead of a fourth lightness step.
   const NODE_STYLES = {
-    "Document":  { color: "#0b0b0b", glyph: "diamond",  size: 28 },
-    "Page":      { color: "#2a78d6", glyph: "rect",     size: 22 },
-    "Frame":     { color: "#008300", glyph: "hexagon",  size: 18 },
-    "Group":     { color: "#4a3aa7", glyph: "hexagon",  size: 18 },
-    "Boolean":   { color: "#eda100", glyph: "hexagon",  size: 18 },
-    "SVGRaw":    { color: "#767470", glyph: "hexagon",  size: 18 },
-    "Rectangle": { color: "#eb6834", glyph: "rect",     size: 14 },
-    "Circle":    { color: "#1baf7a", glyph: "circle",   size: 14 },
-    "Path":      { color: "#e34948", glyph: "triangle", size: 14 },
-    "Text":      { color: "#e87ba4", glyph: "circle",   size: 14 },
-    "Image":     { color: "#eda100", glyph: "star",     size: 14 },
-    "Component": { color: "#8250df", glyph: "diamond",  size: 20 }
+    "Document":  { color: "#14202e", glyph: "diamond",  size: 28 },
+    "Page":      { color: "#2e415a", glyph: "rect",     size: 22 },
+    "Frame":     { color: "#22344a", glyph: "hexagon",  size: 18 },
+    "Group":     { color: "#5b7089", glyph: "hexagon",  size: 18 },
+    "Boolean":   { color: "#93a4b8", glyph: "hexagon",  size: 18 },
+    "SVGRaw":    { color: "#8b98a9", glyph: "hexagon",  size: 18, hollow: true },
+    "Rectangle": { color: "#93a4b8", glyph: "rect",     size: 14 },
+    "Circle":    { color: "#3b5069", glyph: "circle",   size: 14 },
+    "Path":      { color: "#5b7089", glyph: "triangle", size: 14 },
+    "Text":      { color: "#8b9cb1", glyph: "circle",   size: 14 },
+    "Image":     { color: "#5b7089", glyph: "star",     size: 14 },
+    "Component": { color: "#8195ab", glyph: "diamond",  size: 20 }
   };
-  const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
+  const FALLBACK_STYLE = { color: "#5b7089", glyph: "circle", size: 14 };
   // Edge style keyed on rel (wire field since slice-3); future edge
-  // attributes can feed styling the same way. IsChildOf stays the
-  // recessive default; IsInstanceOf echoes the Component color, dashed
-  // (line style is the secondary encoding, color validated vs the gray).
+  // attributes can feed styling the same way. Both rels stay grey —
+  // dash alone separates them, keeping all chroma for diff marks.
   const EDGE_STYLES = {
     "IsChildOf":    { stroke: "#b3b0a8" },
-    "IsInstanceOf": { stroke: "#8250df", lineDash: [4, 3] }
+    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3] }
   };
   const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
   // --- graph diff: add/remove marks with step fade --------------------
@@ -456,6 +479,78 @@ Graph Console
   function diffColor(m) {
     return m.kind === "added" ? DIFF_ADDED_COLOR : DIFF_REMOVED_COLOR;
   }
+
+  function anyLiveMarks() {
+    return Object.keys(diffMarks.nodes).some(function (k) { return liveMark(diffMarks.nodes, k); })
+      || Object.keys(diffMarks.edges).some(function (k) { return liveMark(diffMarks.edges, k); });
+  }
+
+  // Node ids touched by live marks: marked nodes plus the endpoints of
+  // marked edges (edge keys are "src|rel|tgt").
+  function liveMarkedNodeIds() {
+    const ids = new Set();
+    Object.keys(diffMarks.nodes).forEach(function (id) {
+      if (liveMark(diffMarks.nodes, id)) ids.add(id);
+    });
+    Object.keys(diffMarks.edges).forEach(function (k) {
+      if (liveMark(diffMarks.edges, k)) {
+        const parts = k.split("|");
+        ids.add(parts[0]);
+        ids.add(parts[2]);
+      }
+    });
+    return ids;
+  }
+
+  function diffFoldEnabled() {
+    return localStorage.getItem("graph-diff-fold") === "1";
+  }
+
+  // One-shot pulse rings on age-0 marks, placed ~post-render (positions
+  // are sampled once; pulses don't track pan/zoom during their ~1.2 s).
+  function pulseAt(canvasPoint, color, sizePx) {
+    const host = document.getElementById("graph-canvas");
+    if (!host || !g6graph) return;
+    const vp = g6graph.getViewportByCanvas(canvasPoint);
+    const el = document.createElement("div");
+    el.className = "graph-pulse";
+    el.style.borderColor = color;
+    el.style.left = vp[0] + "px";
+    el.style.top = vp[1] + "px";
+    el.style.width = sizePx + "px";
+    el.style.height = sizePx + "px";
+    host.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1400);
+  }
+
+  function schedulePulses() {
+    if (!diffSteps()) return;
+    setTimeout(function () {
+      if (!g6graph) return;
+      let zoom = 1;
+      try { zoom = g6graph.getZoom() || 1; } catch (_err) {}
+      Object.keys(diffMarks.nodes).forEach(function (id) {
+        const m = diffMarks.nodes[id];
+        if (!m || m.age !== 0) return;
+        try {
+          const p = g6graph.getElementPosition(id);
+          pulseAt([p[0], p[1]], diffColor(m),
+                  Math.max(18, Math.min(64, 26 * zoom)));
+        } catch (_err) { /* hidden in a collapsed combo or gone */ }
+      });
+      Object.keys(diffMarks.edges).forEach(function (k) {
+        const m = diffMarks.edges[k];
+        if (!m || m.age !== 0) return;
+        const parts = k.split("|");
+        try {
+          const a = g6graph.getElementPosition(parts[0]);
+          const b = g6graph.getElementPosition(parts[2]);
+          pulseAt([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], diffColor(m),
+                  Math.max(14, Math.min(48, 18 * zoom)));
+        } catch (_err) { /* endpoint hidden or gone */ }
+      });
+    }, 300);
+  }
   // --- end graph diff --------------------------------------------------
   // Legend glyph characters mirroring the G6 node types above.
   const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
@@ -558,7 +653,7 @@ Graph Console
     return pos;
   }
 
-  function toG6Data(data, collapsedIds, withCombos, presetPositions) {
+  function toG6Data(data, collapsedIds, withCombos, presetPositions, diffFold) {
     const nodes = data.nodes || [];
     const edges = (data.edges || [])
       .slice()
@@ -584,6 +679,22 @@ Graph Console
     if (withCombos) {
       nodes.forEach(function (n) {
         if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
+      });
+    }
+    // Diff-fold: derive fold state from the live marks instead of the
+    // instance — every combo collapses except those on an ancestor path
+    // of (or being) a changed element, so changes stand out of the
+    // unchanged mass. Manual double-click fold state is ignored while on.
+    if (diffFold && withCombos) {
+      collapsedIds = new Set();
+      Object.keys(hasCombo).forEach(function (id) { collapsedIds.add(comboIdFor(id)); });
+      liveMarkedNodeIds().forEach(function (id) {
+        if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
+        let p = parentOf[id];
+        while (p) {
+          if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
+          p = parentOf[p];
+        }
       });
     }
     const combos = [];
@@ -655,9 +766,25 @@ Graph Console
         type: function (d) { return nodeStyle(d.data.table).glyph; },
         style: {
           size: function (d) { return nodeStyle(d.data.table).size; },
-          fill: function (d) { return nodeStyle(d.data.table).color; },
-          stroke: "#52514e",
-          lineWidth: 0.5,
+          fill: function (d) {
+            const s = nodeStyle(d.data.table);
+            return s.hollow ? "#ffffff" : s.color;
+          },
+          // Unmarked nodes carry no stroke (hollow ones keep a thin one as
+          // their identity); the stroke channel belongs to diff marks:
+          // thick colored ring, dashed for removals (the CVD-safe cue).
+          stroke: function (d) {
+            const m = nodeMark(d.id);
+            return m ? diffColor(m) : nodeStyle(d.data.table).color;
+          },
+          lineWidth: function (d) {
+            if (nodeMark(d.id)) return 2.5;
+            return nodeStyle(d.data.table).hollow ? 1.5 : 0;
+          },
+          lineDash: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? [3, 3] : 0;
+          },
           labelText: function (d) { return d.data.label; },
           labelFontSize: 9,
           labelFill: "#0b0b0b",
@@ -667,14 +794,10 @@ Graph Console
             const m = nodeMark(d.id);
             return m ? diffColor(m) : "#ffffff";
           },
-          haloLineWidth: 8,
-          haloLineDash: function (d) {
-            const m = nodeMark(d.id);
-            return m && m.kind === "removed" ? [3, 3] : 0;
-          },
+          haloLineWidth: 12,
           haloStrokeOpacity: function (d) {
             const m = nodeMark(d.id);
-            return m ? 0.9 * diffFade(m) : 0;
+            return m ? 0.35 * diffFade(m) : 0;
           },
           opacity: function (d) {
             const m = nodeMark(d.id);
@@ -762,7 +885,7 @@ Graph Console
     function nodeItem(table, s) {
       return '<span style="margin-right: 1em; white-space: nowrap;">'
         + '<span style="color: ' + s.color + '; font-size: 14px;">'
-        + (GLYPH_CHARS[s.glyph] || "●") + '</span> '
+        + (s.hollow ? "⬡" : (GLYPH_CHARS[s.glyph] || "●")) + '</span> '
         + escapeHtml(table) + "</span>";
     }
     const items = Object.keys(NODE_STYLES)
@@ -778,6 +901,14 @@ Graph Console
         + (s.lineDash ? "⇢" : "→") + '</span> '
         + escapeHtml(rel) + "</span>");
     });
+    if (anyLiveMarks()) {
+      items.push('<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + DIFF_ADDED_COLOR + '; font-size: 14px;">+</span>'
+        + ' added</span>');
+      items.push('<span style="white-space: nowrap;">'
+        + '<span style="color: ' + DIFF_REMOVED_COLOR + '; font-size: 14px;">−</span>'
+        + ' removed</span>');
+    }
     // join with a space: the spans are nowrap, so the separator is the
     // only soft-wrap opportunity in the legend row
     el.innerHTML = items.join(" ");
@@ -838,8 +969,8 @@ Graph Console
     }
     if (anywayBtn) anywayBtn.style.display = "none";
     graphViewStatus.textContent = graphStatusText(data) + filterNote;
-    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled(),
-                         LAYOUTS[currentLayoutName()] == null));
+    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled() || diffFoldEnabled(),
+                         LAYOUTS[currentLayoutName()] == null, diffFoldEnabled()));
   }
 
   function refetchGraph() {
@@ -868,6 +999,7 @@ Graph Console
         lastGraphData = data;
         lastGraphSig = sig;
         renderCurrent();
+        schedulePulses();
       })
       .catch(function (err) {
         graphViewStatus.textContent = "graph view error: " + err;
@@ -1237,6 +1369,15 @@ Graph Console
     diffStepsInput.value = String(diffSteps());
     diffStepsInput.addEventListener("change", function () {
       localStorage.setItem("graph-diff-steps", diffStepsInput.value);
+      renderCurrent();
+    });
+  }
+
+  const diffFoldToggle = document.getElementById("graph-diff-fold");
+  if (diffFoldToggle) {
+    diffFoldToggle.checked = diffFoldEnabled();
+    diffFoldToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-diff-fold", diffFoldToggle.checked ? "1" : "0");
       renderCurrent();
     });
   }
