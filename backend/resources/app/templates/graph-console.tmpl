@@ -18,7 +18,7 @@ Graph Console
     <p><a href="/dbg">&larr; Back to debug</a></p>
 
     <div style="display: flex; gap: 16px; align-items: flex-start;">
-    <div style="flex: 0 0 440px; min-width: 360px;">
+    <div style="flex: 0 0 330px; min-width: 300px;">
 
     <fieldset>
       <legend>Load graph from Penpot</legend>
@@ -29,13 +29,16 @@ Graph Console
       <div id="graph-files-tree" style="font-size: 13px; margin-bottom: 6px;">Loading&hellip;</div>
       <form id="graph-load-form" method="post" action="/dbg/actions/graph-load">
         <div class="row" style="display: flex; gap: 8px;">
-          <input type="text" style="width:320px" name="file-id"
+          <input type="text" style="flex: 1; min-width: 0; font-size: 11px;" name="file-id"
                  placeholder="file-id"
                  value="{% if session %}{{session.file-id}}{% endif %}" />
-          <input type="submit" value="Load" />
           {% if session %}
+          <input type="submit" value="Reload"
+                 title="Re-ingests the file in the box from scratch — the recovery fallback when live sync drifted or skipped changes. Paste a different UUID to switch files." />
           <input type="submit" value="Unload" form="graph-unload-form"
                  title="Drop the in-memory session and free its memory" />
+          {% else %}
+          <input type="submit" value="Load" />
           {% endif %}
         </div>
       </form>
@@ -50,9 +53,11 @@ Graph Console
       <desc>
         <p>
           File: <b><a id="graph-penpot-link" data-file-id="{{session.file-id}}"
-                      target="_blank">{{session.name}}</a></b> ({{session.file-id}})<br />
-          Loaded at revision: <b>{{session.revn}}</b><br />
-          Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
+                      target="_blank">{{session.name}}</a></b><br />
+          <span title="The file's revision when it was ingested vs the revision of the last live change applied to the graph. They start equal; a graph value behind the workspace means missed changes — use Reload.">
+            Revisions: ingested at <b>{{session.revn}}</b> · graph now
+            <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b>
+          </span><br />
           Graph size: <b id="graph-size">…</b><br />
           Schema: <b>{{session.schema-version}}</b>
         </p>
@@ -60,9 +65,6 @@ Graph Console
           Feed: <b id="graph-ws-status">connecting…</b>
           <span id="graph-sync-error" style="display:none; margin-left: 1em; color: #b91c1c;"></span>
         </p>
-        <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload">
-          <input type="submit" value="Full reload (fallback)" />
-        </form>
       </desc>
     </fieldset>
 
@@ -138,9 +140,8 @@ Graph Console
          style="flex: 1 1 auto; min-width: 0;">
       <fieldset id="graph-view-panel">
         <legend>Graph view
-          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
-                 title="When checked, containers render as foldable boxes (combos); double-click folds/unfolds. When unchecked, plain nodes only — the fold controls to the right go dormant.">
-            <input type="checkbox" id="graph-fold-toggle" /> fold containers
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            layout: <select id="graph-layout-select"></select>
           </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
                  title="When checked, graphs up to 100 nodes render with entrance animation.">
@@ -149,7 +150,11 @@ Graph Console
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
                  title="When set, added/removed marks fade out over this many display steps (0 disables diff marks).">
             fade: <input type="number" id="graph-diff-steps" min="0" max="20"
-                         style="width: 3.5em;" /> steps
+                         style="width: 1.8em;" /> steps
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When checked, containers render as foldable boxes (combos); double-click folds/unfolds. When unchecked, plain nodes only — the fold controls to the right go dormant.">
+            <input type="checkbox" id="graph-fold-toggle" /> foldable containers
           </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
                  title="When checked, every container without changed elements collapses, so changes stand out (overrides manual folds).">
@@ -158,10 +163,7 @@ Graph Console
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
                  title="When set, overview mode: 0 expands every container, n ≥ 1 collapses every container at depth ≥ n from the root (overrides manual folds; empty = manual folding).">
             fold ≥ depth: <input type="number" id="graph-depth-fold" min="0" max="99"
-                                 style="width: 3em;" />
-          </label>
-          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
-            layout: <select id="graph-layout-select"></select>
+                                 style="width: 2.2em;" />
           </label>
         </legend>
         <desc>
@@ -592,6 +594,11 @@ Graph Console
     "d3-force":      { type: "d3-force", collide: { radius: 26 } },
     "combo-combined": { type: "combo-combined" }
   };
+  // Tried and rejected 2026-07-17: fishbone (renders nothing on graph
+  // data — it is a category layout) and compact-box (degenerates into an
+  // overlapped chain: G6 tree layouts traverse parent→child while our
+  // IsChildOf edges point child→parent; revisit with a reversed-edge feed
+  // if a compact tree view is wanted).
   const DEFAULT_LAYOUT = "tree";
   // Always-on labels are the residual overlap driver on ring/stress
   // layouts (their collision handling ignores label extents), so these
