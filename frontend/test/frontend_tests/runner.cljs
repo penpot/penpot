@@ -46,6 +46,7 @@
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.svg-fills-test]
+   [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
@@ -132,6 +133,7 @@
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
