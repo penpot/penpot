@@ -183,6 +183,9 @@ Graph Console
         <div id="graph-canvas"
              style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff; overflow: hidden;"></div>
         <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+        <div id="graph-node-inspector"
+             style="display: none; font-size: 12px; margin-top: 4px; border: 1px solid #ccc;
+                    padding: 6px; max-height: 40vh; overflow: auto;"></div>
         <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
         <button type="button" id="graph-filter-reset" style="display: none;">Show full graph</button>
       </fieldset>
@@ -879,6 +882,12 @@ Graph Console
     };
     if (layoutCfg) opts.layout = layoutCfg;
     g6graph = new G6.Graph(opts);
+    // Re-attached on every instance creation (layout/animation switches
+    // destroy and recreate the graph).
+    g6graph.on("node:click", function (e) {
+      const id = e.target && e.target.id;
+      if (id) showNodeInspector(String(id));
+    });
     return g6graph.render().catch(function (_err) {
       /* see above */
     });
@@ -1018,6 +1027,81 @@ Graph Console
         graphViewStatus.textContent = "graph view error: " + err;
       });
   }
+
+  // --- node inspector --------------------------------------------------
+  // Click a node → its full attribute row from the graph DB, rendered in
+  // a panel under the canvas. Panel over tooltip: the projected tables
+  // carry ~80 columns — too much for a tooltip, and the panel persists
+  // for side-by-side reading without obstructing the graph.
+  function runConsoleQuery(query) {
+    const formData = new FormData();
+    formData.append("query", query);
+    return fetch("/dbg/actions/graph-query", {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+      body: formData
+    })
+      .then(function (resp) { return resp.text(); })
+      .then(function (text) { return parseTransitMap(JSON.parse(text)); });
+  }
+
+  function showNodeInspector(id) {
+    const panel = document.getElementById("graph-node-inspector");
+    if (!panel || !g6graph) return;
+    let datum = null;
+    try { datum = g6graph.getNodeData(id); } catch (_err) { return; }
+    const table = datum && datum.data && datum.data.table;
+    const label = (datum && datum.data && datum.data.label) || "";
+    // Both values are interpolated into Cypher — accept only what our own
+    // export produces (bare table names, UUID ids).
+    if (!table || !/^[A-Za-z]+$/.test(table)) return;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+    panel.style.display = "block";
+    panel.textContent = "loading " + id + "…";
+    runConsoleQuery("MATCH (n:`" + table + "` {id: uuid('" + id + "')}) RETURN n.*;")
+      .then(function (data) {
+        if (data.error) {
+          panel.textContent = "inspector error: " + data.error;
+          return;
+        }
+        const result = data["query-result"];
+        const rows = (result && result.rows) || [];
+        let html = '<div style="display: flex; justify-content: space-between;">'
+          + "<b>" + escapeHtml(table) + " " + escapeHtml(label) + "</b>"
+          + '<button type="button" id="graph-inspector-close">close</button></div>'
+          + '<div style="color: #666;">' + escapeHtml(id) + "</div>";
+        if (!rows.length) {
+          html += "<div>not in the graph DB (removed?)</div>";
+        } else {
+          const columns = result.columns || [];
+          let hidden = 0;
+          html += '<table border="1" cellpadding="2" cellspacing="0"'
+            + ' style="border-collapse: collapse; margin-top: 4px;">';
+          columns.forEach(function (col, i) {
+            const val = rows[0][i];
+            // Ladybug's value->clj fallback renders SQL nulls as "NULL".
+            if (val === null || val === undefined || val === "" || val === "NULL") {
+              hidden += 1;
+              return;
+            }
+            html += "<tr><td><code>" + escapeHtml(col.replace(/^n\./, ""))
+              + "</code></td><td><code>" + escapeHtml(String(val))
+              + "</code></td></tr>";
+          });
+          html += "</table>";
+          if (hidden) {
+            html += '<div style="color: #666;">' + hidden + " empty attrs hidden</div>";
+          }
+        }
+        panel.innerHTML = html;
+        document.getElementById("graph-inspector-close")
+          .addEventListener("click", function () { panel.style.display = "none"; });
+      })
+      .catch(function (err) {
+        panel.textContent = "inspector error: " + err;
+      });
+  }
+  // --- end node inspector ----------------------------------------------
 
   function scheduleGraphRefetch() {
     if (refetchTimer) clearTimeout(refetchTimer);
