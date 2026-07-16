@@ -203,7 +203,11 @@
     :link-preview
 
     ;; Shows the "link later" option on the files export modal.
-    :export-link-later})
+    :export-link-later
+
+    ;; Compact binfile-v3 export: one JSON per page with embedded
+    ;; shapes instead of one JSON per shape.
+    :binfile-v3-compact})
 
 (def all-flags
   (set/union email login varia))
