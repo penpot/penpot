@@ -9,8 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.shape :as cts]))
 
