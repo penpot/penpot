@@ -211,6 +211,17 @@
                     (:style font-data)
                     emoji?))))
 
+(defn- mark-font-as-fallback!
+  [font-data]
+  (let [id-buffer (uuid/get-u32 (:wasm-id font-data))]
+    (h/call wasm/internal-module "_mark_font_as_fallback"
+            (aget id-buffer 0)
+            (aget id-buffer 1)
+            (aget id-buffer 2)
+            (aget id-buffer 3)
+            (:weight font-data)
+            (:style font-data))))
+
 (defn- store-font-id
   [font-data asset-id emoji? fallback?]
   (when asset-id
@@ -223,7 +234,10 @@
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (font-stored? font-data emoji?)]
       (if font-stored?
-        (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
+        (do
+          (when fallback?
+            (mark-font-as-fallback! font-data))
+          (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)})))
         (fetch-font font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style

@@ -328,6 +328,94 @@ fn shape_segment(
     collector.runs
 }
 
+/// Shape a segment with explicit per-character font fallback. Penpot's
+/// `TypefaceFontProvider` can resolve named families, but its character
+/// fallback hook is not available consistently in every Skia build. Resolve
+/// coverage here so missing glyphs never depend on that hook.
+fn shape_segment_with_fallbacks(
+    text: &str,
+    font_size: f32,
+    families: &[String],
+    font_provider: &TypefaceFontProvider,
+    upright: bool,
+    font_features: FontFeatures,
+    fallback_mgr: &FontMgr,
+) -> Vec<ShapedRun> {
+    let typefaces: Vec<_> = families
+        .iter()
+        .filter_map(|family| font_provider.match_family_style(family, skia::FontStyle::default()))
+        .collect();
+    let Some(primary) = typefaces.first() else {
+        return Vec::new();
+    };
+
+    // Combining marks, variation selectors and ZWJ belong to the preceding
+    // grapheme. Keep them in that font run even when they have no standalone
+    // cmap entry; HarfBuzz then gets the complete shaping sequence.
+    let extends_previous = |ch: char| {
+        matches!(u32::from(ch),
+            0x0300..=0x036F
+            | 0x1AB0..=0x1AFF
+            | 0x1DC0..=0x1DFF
+            | 0x200D
+            | 0x20D0..=0x20FF
+            | 0x3099..=0x309A
+            | 0xFE00..=0xFE0F
+            | 0xFE20..=0xFE2F
+            | 0xE0100..=0xE01EF
+        )
+    };
+
+    let mut chunks: Vec<(std::ops::Range<usize>, usize)> = Vec::new();
+    let mut current_typeface = 0usize;
+    let mut chunk_start = 0usize;
+    let mut has_character = false;
+    for (byte, ch) in text.char_indices() {
+        let selected = if has_character && extends_previous(ch) {
+            current_typeface
+        } else {
+            typefaces
+                .iter()
+                .position(|typeface| typeface.unichar_to_glyph(ch as i32) != 0)
+                .unwrap_or(0)
+        };
+        if has_character && selected != current_typeface {
+            chunks.push((chunk_start..byte, current_typeface));
+            chunk_start = byte;
+        }
+        current_typeface = selected;
+        has_character = true;
+    }
+    if has_character {
+        chunks.push((chunk_start..text.len(), current_typeface));
+    }
+
+    let mut result = Vec::new();
+    for (range, typeface_index) in chunks {
+        let typeface = typefaces
+            .get(typeface_index)
+            .cloned()
+            .unwrap_or_else(|| primary.clone());
+        let font = Font::new(typeface, font_size);
+        let mut shaped = shape_segment(
+            &text[range.clone()],
+            &font,
+            upright,
+            font_features,
+            fallback_mgr.clone(),
+        );
+        for run in &mut shaped {
+            run.utf8_range =
+                (run.utf8_range.start + range.start)..(run.utf8_range.end + range.start);
+            for cluster in &mut run.clusters {
+                *cluster += range.start as u32;
+            }
+        }
+        result.extend(shaped);
+    }
+    result
+}
+
 /// Vertical advances from a font's `vhea`/`vmtx` tables. Upright cells
 /// advance down the column by the glyph's true vertical advance rather
 /// than its shaped horizontal advance: identical for full-width CJK, but
@@ -1574,32 +1662,14 @@ fn try_push_tcy_composite(
     }
 
     let letter_spacing = span.letter_spacing;
-    let probe = piece.chars().next().unwrap_or(' ');
-    let candidates = || {
-        families.iter().filter_map(|family| {
-            font_provider.match_family_style(family, skia::FontStyle::default())
-        })
-    };
-    // Prefer a face that covers the whole run; else one covering the first
-    // character; else the span's own face. Any glyph still uncovered is
-    // shaped through the fallback manager, which adds extra runs that
-    // compose into the same upright cell.
-    let typeface = candidates()
-        .find(|tf| piece.chars().all(|c| tf.unichar_to_glyph(c as i32) != 0))
-        .or_else(|| candidates().find(|tf| tf.unichar_to_glyph(probe as i32) != 0))
-        .or_else(|| {
-            font_provider.match_family_style(families[0].as_str(), skia::FontStyle::default())
-        });
-    let Some(typeface) = typeface else {
-        return false;
-    };
-    let font = Font::new(typeface, span.font_size);
-    let mut shaped = shape_segment(
+    let mut shaped = shape_segment_with_fallbacks(
         piece,
-        &font,
+        span.font_size,
+        families,
+        font_provider,
         false,
         span.font_features,
-        fallback_mgr.clone(),
+        fallback_mgr,
     );
     if shaped.is_empty() {
         return false;
@@ -1810,11 +1880,9 @@ pub fn layout_vertical(
             paints.push(merge_fills(&span.fills, bounds));
             let paint_index = paints.len() - 1;
 
-            // Candidate families: the span's own font first, then the
-            // registered fallback fonts (Noto etc.). The typeface font
-            // provider does no per-character fallback, so pick the first
-            // family that covers the whole segment (falling back to one that
-            // covers its first character).
+            // Candidate families: the span's own font first, then emoji and
+            // registered fallback fonts (Noto etc.). Shaping resolves glyph
+            // coverage explicitly and splits runs at typeface boundaries.
             let families = span_font_families(span, fallback_families);
 
             let orientation = span.text_orientation;
@@ -1848,88 +1916,76 @@ pub fn layout_vertical(
             // balanced by character count with the first line the longer one,
             // nudged so the sub-lines respect kinsoku.
             if span.warichu && text.chars().count() >= 2 {
-                let candidates = || {
-                    families.iter().filter_map(|family| {
-                        font_provider.match_family_style(family, skia::FontStyle::default())
-                    })
-                };
-                let probe = text.chars().next().unwrap_or(' ');
-                let typeface = candidates()
-                    .find(|tf| text.chars().all(|c| tf.unichar_to_glyph(c as i32) != 0))
-                    .or_else(|| candidates().find(|tf| tf.unichar_to_glyph(probe as i32) != 0))
-                    .or_else(|| {
-                        font_provider
-                            .match_family_style(families[0].as_str(), skia::FontStyle::default())
+                let half_size = span.font_size * WARICHU_FONT_SCALE;
+                let split_chars = warichu_split_chars(&text);
+                let split_utf8 = text
+                    .char_indices()
+                    .nth(split_chars)
+                    .map(|(i, _)| i)
+                    .unwrap_or(text.len());
+                let (first_text, second_text) = text.split_at(split_utf8);
+                let first_chars = first_text.encode_utf16().count();
+                let mut first_runs = shape_segment_with_fallbacks(
+                    first_text,
+                    half_size,
+                    &families,
+                    font_provider,
+                    true,
+                    span.font_features,
+                    &fallback_mgr,
+                );
+                let mut second_runs = shape_segment_with_fallbacks(
+                    second_text,
+                    half_size,
+                    &families,
+                    font_provider,
+                    true,
+                    span.font_features,
+                    &fallback_mgr,
+                );
+                if !first_runs.is_empty() && !second_runs.is_empty() {
+                    let first_extent: f32 = first_runs.iter().map(|r| r.advance).sum();
+                    let second_extent: f32 = second_runs.iter().map(|r| r.advance).sum();
+                    let extent = first_extent.max(second_extent) + letter_spacing;
+                    let run_start = runs.len();
+                    let first_count = first_runs.len();
+                    let run_count = first_count + second_runs.len();
+                    runs.append(&mut first_runs);
+                    runs.append(&mut second_runs);
+                    let end = span_utf16_offset + text.encode_utf16().count();
+                    para_cells.push(VerticalCell {
+                        kind: CellKind::Warichu {
+                            run_start,
+                            run_count,
+                            first_count,
+                            first_chars,
+                        },
+                        paragraph: paragraph_index,
+                        span: span_index,
+                        start: span_utf16_offset,
+                        end,
+                        column: 0,
+                        top: 0.0,
+                        extent,
+                        minimum_oikomi_extent: extent,
+                        // Two half-em sub-columns side by side fill the em.
+                        h_advance: span.font_size,
+                        ink_top: 0.0,
+                        ink_bottom: extent - letter_spacing,
+                        paint: paint_index,
+                        font_size: span.font_size,
+                        decoration: span.text_decoration,
+                        glyph_flow_shift: 0.0,
                     });
-                if let Some(typeface) = typeface {
-                    let half_size = span.font_size * WARICHU_FONT_SCALE;
-                    let font = Font::new(typeface, half_size);
-                    let split_chars = warichu_split_chars(&text);
-                    let split_utf8 = text
-                        .char_indices()
-                        .nth(split_chars)
-                        .map(|(i, _)| i)
-                        .unwrap_or(text.len());
-                    let (first_text, second_text) = text.split_at(split_utf8);
-                    let first_chars = first_text.encode_utf16().count();
-                    let mut first_runs = shape_segment(
-                        first_text,
-                        &font,
-                        true,
-                        span.font_features,
-                        fallback_mgr.clone(),
-                    );
-                    let mut second_runs = shape_segment(
-                        second_text,
-                        &font,
-                        true,
-                        span.font_features,
-                        fallback_mgr.clone(),
-                    );
-                    if !first_runs.is_empty() && !second_runs.is_empty() {
-                        let first_extent: f32 = first_runs.iter().map(|r| r.advance).sum();
-                        let second_extent: f32 = second_runs.iter().map(|r| r.advance).sum();
-                        let extent = first_extent.max(second_extent) + letter_spacing;
-                        let run_start = runs.len();
-                        let first_count = first_runs.len();
-                        let run_count = first_count + second_runs.len();
-                        runs.append(&mut first_runs);
-                        runs.append(&mut second_runs);
-                        let end = span_utf16_offset + text.encode_utf16().count();
-                        para_cells.push(VerticalCell {
-                            kind: CellKind::Warichu {
-                                run_start,
-                                run_count,
-                                first_count,
-                                first_chars,
-                            },
-                            paragraph: paragraph_index,
-                            span: span_index,
-                            start: span_utf16_offset,
-                            end,
-                            column: 0,
-                            top: 0.0,
-                            extent,
-                            minimum_oikomi_extent: extent,
-                            // Two half-em sub-columns side by side fill the em.
-                            h_advance: span.font_size,
-                            ink_top: 0.0,
-                            ink_bottom: extent - letter_spacing,
-                            paint: paint_index,
-                            font_size: span.font_size,
-                            decoration: span.text_decoration,
-                            glyph_flow_shift: 0.0,
-                        });
-                        items.push(FlowItem {
-                            extent,
-                            ch: None,
-                            keep_with_previous: false,
-                        });
-                        scripts.push(FlowScript::Upright);
-                        trailing_spacings.push(letter_spacing);
-                        span_utf16_offset += text.encode_utf16().count();
-                        continue;
-                    }
+                    items.push(FlowItem {
+                        extent,
+                        ch: None,
+                        keep_with_previous: false,
+                    });
+                    scripts.push(FlowScript::Upright);
+                    trailing_spacings.push(letter_spacing);
+                    span_utf16_offset += text.encode_utf16().count();
+                    continue;
                 }
             }
             // `digits` combines runs of 2..=max consecutive ASCII or full-width digits
@@ -1968,29 +2024,14 @@ pub fn layout_vertical(
                     continue;
                 }
                 for segment in segment_by_orientation(piece_text, orientation) {
-                    let probe = segment.text.chars().next().unwrap_or(' ');
-                    let typeface = families
-                        .iter()
-                        .filter_map(|family| {
-                            font_provider.match_family_style(family, skia::FontStyle::default())
-                        })
-                        .find(|tf| tf.unichar_to_glyph(probe as i32) != 0)
-                        .or_else(|| {
-                            font_provider.match_family_style(
-                                families[0].as_str(),
-                                skia::FontStyle::default(),
-                            )
-                        });
-                    let Some(typeface) = typeface else {
-                        continue;
-                    };
-                    let font = Font::new(typeface, span.font_size);
-                    let shaped = shape_segment(
+                    let shaped = shape_segment_with_fallbacks(
                         &segment.text,
-                        &font,
+                        span.font_size,
+                        &families,
+                        font_provider,
                         segment.upright,
                         span.font_features,
-                        fallback_mgr.clone(),
+                        &fallback_mgr,
                     );
 
                     // Map UTF-8 offsets in the segment text to UTF-16 offsets
@@ -2519,28 +2560,15 @@ pub fn layout_vertical(
             }
 
             let ruby_font_size = span.font_size * span.ruby_size.scale();
-            let probe = ruby_text.chars().next().unwrap_or(' ');
             let families = span_font_families(span, fallback_families);
-            let typeface = families
-                .iter()
-                .filter_map(|family| {
-                    font_provider.match_family_style(family, skia::FontStyle::default())
-                })
-                .find(|tf| tf.unichar_to_glyph(probe as i32) != 0)
-                .or_else(|| {
-                    font_provider
-                        .match_family_style(families[0].as_str(), skia::FontStyle::default())
-                });
-            let Some(typeface) = typeface else {
-                continue;
-            };
-            let font = Font::new(typeface, ruby_font_size);
-            let shaped = shape_segment(
+            let shaped = shape_segment_with_fallbacks(
                 ruby_text,
-                &font,
+                ruby_font_size,
+                &families,
+                font_provider,
                 true,
                 span.font_features,
-                fallback_mgr.clone(),
+                &fallback_mgr,
             );
             if shaped.is_empty() {
                 continue;
@@ -3297,26 +3325,14 @@ pub fn paint_horizontal_ruby(
             skia::textlayout::RectHeightStyle::Tight,
             skia::textlayout::RectWidthStyle::Tight,
         );
-        let probe = ruby_text.chars().next().unwrap_or(' ');
-        let typeface = families
-            .iter()
-            .filter_map(|family| {
-                font_provider.match_family_style(family, skia::FontStyle::default())
-            })
-            .find(|tf| tf.unichar_to_glyph(probe as i32) != 0)
-            .or_else(|| {
-                font_provider.match_family_style(families[0].as_str(), skia::FontStyle::default())
-            });
-        let Some(typeface) = typeface else {
-            continue;
-        };
-        let font = Font::new(typeface, ruby_font_size);
-        let shaped = shape_segment(
+        let shaped = shape_segment_with_fallbacks(
             &ruby_text,
-            &font,
+            ruby_font_size,
+            &families,
+            font_provider,
             false,
             span.font_features,
-            fallback_mgr.clone(),
+            &fallback_mgr,
         );
         let glyphs: Vec<(usize, usize, f32)> = shaped
             .iter()
@@ -4934,6 +4950,43 @@ mod tests {
             &content.bounds(),
             VerticalAlign::Top,
         );
+    }
+
+    #[test]
+    fn vertical_base_text_switches_font_inside_an_upright_segment() {
+        let content = make_content(&["あ、く"], 400.0);
+        let font_mgr = FontMgr::new();
+        let primary = font_mgr.new_from_data(VMTX_TEST_FONT, None).unwrap();
+        let fallback = font_mgr.new_from_data(VPAL_TEST_FONT, None).unwrap();
+        let mut provider = TypefaceFontProvider::new();
+        let family = format!("{}", FontFamily::new(Uuid::nil(), 400, FontStyle::Normal));
+        provider.register_typeface(primary, Some(family.as_str()));
+        provider.register_typeface(fallback, Some("base-fallback"));
+        let fallback_mgr = FontMgr::from(provider.clone());
+        let layout = layout_vertical(
+            &content,
+            400.0,
+            &provider,
+            fallback_mgr,
+            &["base-fallback".to_string()],
+            content.bounds(),
+        );
+
+        assert_eq!(layout.cells.len(), 3);
+        let run_ids: Vec<u32> = layout
+            .cells
+            .iter()
+            .map(|cell| match cell.kind {
+                CellKind::Upright { run, .. } => layout.runs[run].font.typeface().unique_id(),
+                _ => panic!("expected upright fallback cells"),
+            })
+            .collect();
+        assert_eq!(run_ids[0], run_ids[2]);
+        assert_ne!(run_ids[0], run_ids[1]);
+        let CellKind::Upright { run, glyph, .. } = layout.cells[1].kind else {
+            unreachable!();
+        };
+        assert_ne!(layout.runs[run].glyphs[glyph], 0);
     }
 
     #[test]
