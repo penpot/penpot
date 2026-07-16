@@ -55,6 +55,14 @@
   (when db
     (ex/ignoring (.close ^Database db))))
 
+(defn- slim-ingest-meta
+  "Drop full projection rows from session meta.
+
+  `build-index` needs `:nodes`/`:edges` once; keeping them in the session
+  duplicates the entire graph on the JVM heap for every Load."
+  [meta]
+  (update meta :projection #(select-keys % [:stats])))
+
 (defn- format-cell
   [value]
   (cond
@@ -110,11 +118,14 @@
   (if-let [msgbus (:msgbus session)]
     (let [sync-ch (sp/chan :buf (sp/dropping-buffer 64))]
       (mbus/sub! msgbus :topic file-id :chan sync-ch)
+      ;; Recur ONLY while the channel is open. A bare `(recur)` after
+      ;; `take!` returns nil would spin forever and pin this Connection
+      ;; (and its Ladybug Database native memory) across every Load.
       (sp/go-loop []
         (when-let [message (sp/take! sync-ch)]
           (when (= :file-change (:type message))
-            (apply-file-change! conn profile-id message)))
-        (recur))
+            (apply-file-change! conn profile-id message))
+          (recur)))
       (assoc session :sync-ch sync-ch))
     session))
 
@@ -164,6 +175,9 @@
                                                       :skip-stats? true
                                                       :skip-validation? true)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
+            ;; Discard projection rows after indexing — they are only needed
+            ;; to seed the sync index and would otherwise leak heap on each Load.
+            meta  (slim-ingest-meta meta)
             session
             ;; :lock serializes access to the shared Connection between the
             ;; msgbus sync loop (writes) and HTTP handlers (reads); the Java
