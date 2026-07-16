@@ -1070,8 +1070,9 @@ Graph Console
     }
     if (anywayBtn) anywayBtn.style.display = "none";
     graphViewStatus.textContent = graphStatusText(data) + filterNote;
-    renderGraph(toG6Data(shown, collapsedComboIds(),
-                         foldEnabled() || diffFoldEnabled() || depthFoldValue() != null,
+    // "fold containers" is the master gate for combo rendering; the
+    // derived fold rules (fold-unchanged, depth) are dormant without it.
+    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled(),
                          LAYOUTS[currentLayoutName()] == null, diffFoldEnabled()));
   }
 
