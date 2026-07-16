@@ -107,6 +107,19 @@ jobs:
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
           password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
+      # Frontend, backend, exporter, storybook and mcp now build FROM
+      # Docker Hardened Images (dhi.io). DHI is free (Apache 2.0, no
+      # subscription), but pulling from it still requires an
+      # authenticated login -- a separate `docker login` against a
+      # different registry host, even though it reuses the same
+      # PUB_DOCKER_* credentials as the DockerHub login above.
+      - name: Login to Docker Hardened Images registry (base image pull)
+        uses: docker/login-action@v4
+        with:
+          registry: dhi.io
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
       # Every build pushes an immutable `build-<key>` tag; if it already
       # exists in the registry, this exact image was already built and the
       # whole build can be skipped. Moving tags are handled by `promote`.
@@ -164,6 +177,8 @@ jobs:
           file: ./docker/images/Dockerfile.${{ matrix.image }}
           platforms: linux/amd64,linux/arm64
           push: true
+          provenance: mode=max
+          sbom: true
           # Immutable tag only; branch tags are moved atomically for the
           # whole image set by the `promote` job.
           tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:build-${{ needs.prepare.outputs.build_key }}
