@@ -118,9 +118,8 @@
                  [(str "files/" id "/pages/" page-id ".json")
                   (delay (-> page encode-page json/encode))]
                  (map (fn [[shape-id shape]]
-                        (let [shape (assoc shape :page-id page-id)]
-                          [(str "files/" id "/pages/" page-id "/" shape-id ".json")
-                           (delay (encode-shape* shape))]))
+                        [(str "files/" id "/pages/" page-id "/" shape-id ".json")
+                         (delay (encode-shape* shape))])
                       objects)))))))
 
     (->> (get data :components)
