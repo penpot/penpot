@@ -60,7 +60,7 @@
       (when profile-id
         [:div {:class (stl/css :go-back-wrapper)}
          [:> icon* {:icon-id i/arrow :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
-      [:div {:class (stl/css :deco-before)} [:> raw-svg* {:id "logo-error-screen"}]]
+     [:div {:class (stl/css :deco-before)} [:> raw-svg* {:id "logo-error-screen"}]]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
                  :on-click on-nav-root}
@@ -69,10 +69,10 @@
      [:div {:class (stl/css :exception-content)}
       [:div {:class (stl/css :container)} children]]
 
-      [:div {:class (stl/css :deco-after2)}
-       [:span (tr "labels.copyright-period")]
-       [:> raw-svg* {:id "logo-error-screen"}]
-       [:span (tr "not-found.made-with-love")]]]))
+     [:div {:class (stl/css :deco-after2)}
+      [:span (tr "labels.copyright-period")]
+      [:> raw-svg* {:id "logo-error-screen"}]
+      [:span (tr "not-found.made-with-love")]]]))
 
 (mf/defc invalid-token
   [{:keys [reason]}]
@@ -222,12 +222,12 @@
       [:div {:class (stl/css :dialog-title)} title]
       (for [[index content] (d/enumerate content)]
         [:div {:key index} content])
-       [:div {:class (stl/css :sign-info)}
-        (when cancel-text
-          [:button {:class (stl/css :cancel-button)
-                    :on-click on-close}
-           cancel-text])
-        [:> button* {:variant "primary" :on-click on-click} button-text]]]]))
+      [:div {:class (stl/css :sign-info)}
+       (when cancel-text
+         [:button {:class (stl/css :cancel-button)
+                   :on-click on-close}
+          cancel-text])
+       [:> button* {:variant "primary" :on-click on-click} button-text]]]]))
 
 (mf/defc request-access*
   [{:keys [file-id team-id is-default is-workspace profile]}]
@@ -523,8 +523,8 @@
    (cond
      is-workspace
      [:div {:class (stl/css :workspace)}
-       [:div {:class (stl/css :workspace-left)}
-        [:> raw-svg* {:id "penpot-logo-icon"}]
+      [:div {:class (stl/css :workspace-left)}
+       [:> raw-svg* {:id "penpot-logo-icon"}]
        [:div
         [:div {:class (stl/css :project-name)} (tr "not-found.no-permission.project-name")]
         [:div {:class (stl/css :file-name)} (tr "not-found.no-permission.penpot-file")]]]

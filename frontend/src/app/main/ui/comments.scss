@@ -318,16 +318,16 @@
 }
 
 .floating-thread-item {
+  @include use-typography("body-small");
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
-
-  @include use-typography("body-small");
 }
 
-.checkbox-wrapper {
-  margin-inline-end: var(--sp-s);
-}
+// .checkbox-wrapper {
+//   margin-inline-end: var(--sp-s);
+// }
 
 .dropdown-menu {
   position: absolute;

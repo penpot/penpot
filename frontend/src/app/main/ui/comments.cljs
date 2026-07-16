@@ -924,10 +924,10 @@
      [:div {:class (stl/css :floating-thread-header-left)}
       (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]]
      [:div {:class (stl/css :floating-thread-header-right)}
-       (when (some? thread)
-         [:> checkbox* {:class (stl/css :checkbox-wrapper)
-                        :checked (:is-resolved thread)
-                        :on-change toggle-resolved}])
+      (when (some? thread)
+        [:> checkbox* {:class (stl/css :checkbox-wrapper)
+                       :checked (:is-resolved thread)
+                       :on-change toggle-resolved}])
       (when (= (:id profile) (:id owner))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")

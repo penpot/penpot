@@ -4,24 +4,30 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/_typography.scss" as *;
 
 .button {
+  @include use-typography("body-small");
+
   appearance: none;
   align-items: center;
   border: none;
   cursor: pointer;
   display: flex;
-  font-family: "worksans", "vazirmatn", sans-serif;
   justify-content: center;
-  min-width: 25px;
-  padding: 0 1rem;
+  min-inline-size: px2rem(25);
+  padding-block: 0;
+  padding-inline: var(--sp-l);
   transition: all 0.4s;
   text-decoration: none !important;
-  height: 40px;
+  block-size: $sz-40;
 
-  svg {
-    height: 20px;
-    width: 20px;
-  }
+.logo {
+  block-size: px2rem(20);
+  inline-size: px2rem(20);
 }
+}
+
+
