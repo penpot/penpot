@@ -61,7 +61,7 @@ Graph Console
           Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
           Graph size: <b id="graph-size">…</b><br />
           Schema: <b>{{session.schema-version}}</b><br />
-          Loaded at: <b>{{session.loaded-at}}</b>
+          Loaded at: <b id="graph-loaded-at">{{session.loaded-at}}</b>
         </p>
         <p id="graph-sync-status">
           Feed: <b id="graph-ws-status">connecting…</b>
@@ -70,14 +70,6 @@ Graph Console
         <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload">
           <input type="submit" value="Full reload (fallback)" />
         </form>
-        {% if session.projection.stats %}
-        <p>
-          Projection:
-          documents={{session.projection.stats.documents}},
-          pages={{session.projection.stats.pages}},
-          shapes={{session.projection.stats.shapes}}
-        </p>
-        {% endif %}
       </desc>
     </fieldset>
 
@@ -379,10 +371,11 @@ Graph Console
   // is the unlabeled default (the background tree structure).
   // `sym` may be a full rel name: no compact glyph reads as "derived from
   // a template" (∈ wrongly connotes membership), so IsInstanceOf spells
-  // itself out; the legend falls back to the dash-arrow for long syms.
+  // itself out; the legend falls back to an arrow for long syms. No
+  // dashed edges — the label alone carries rel identity.
   const EDGE_STYLES = {
     "IsChildOf":    { stroke: "#b3b0a8" },
-    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3], sym: "IsInstanceOf" }
+    "IsInstanceOf": { stroke: "#8b98a9", sym: "IsInstanceOf" }
   };
   const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
   // --- graph diff: add/remove marks with step fade --------------------
@@ -841,7 +834,7 @@ Graph Console
             return m ? Math.max(diffFade(m), 0.15) : 1;
           },
           labelText: function (d) { return edgeStyle(d.data.rel).sym || ""; },
-          labelFontSize: 9,
+          labelFontSize: 7,
           labelFill: "#52514e",
           labelBackground: true,
           labelBackgroundFill: "#ffffff",
@@ -1017,11 +1010,22 @@ Graph Console
       })
       .then(function (data) {
         // Session-fieldset size line stays live even through skipped
-        // repaints (unlike the status line under the canvas).
+        // repaints (unlike the status line under the canvas). The MiB
+        // figure is a resident-size estimate fitted to the measurements
+        // in graph_sizes.md: ≈1.1 MiB session floor + ≈5.4 KiB per node
+        // (full-schema projection); hover shows per-table counts.
         const sizeEl = document.getElementById("graph-size");
         if (sizeEl) {
+          const mib = 1.1 + data.nodes.length * 5.4 / 1024;
           sizeEl.textContent = data.nodes.length + " nodes, "
-            + data.edges.length + " edges";
+            + data.edges.length + " edges (≈" + mib.toFixed(1) + " MiB)";
+          const counts = {};
+          data.nodes.forEach(function (n) {
+            counts[n.table] = (counts[n.table] || 0) + 1;
+          });
+          sizeEl.title = Object.keys(counts).sort().map(function (t) {
+            return t + "=" + counts[t];
+          }).join(", ") + " — MiB ≈ 1.1 + 5.4 KiB × nodes (measured fit)";
         }
         // Skip the repaint when the display projection is unchanged: a
         // change burst that only touches non-projected attrs (e.g. moving
@@ -1527,6 +1531,17 @@ Graph Console
       graphFilterIds = null;
       renderCurrent();
     });
+  }
+
+  // Compact the loaded-at timestamp to local HH:MM; full instant on hover.
+  const loadedAtEl = document.getElementById("graph-loaded-at");
+  if (loadedAtEl) {
+    const d = new Date(loadedAtEl.textContent.trim());
+    if (!isNaN(d.getTime())) {
+      loadedAtEl.title = loadedAtEl.textContent.trim();
+      loadedAtEl.textContent = String(d.getHours()).padStart(2, "0")
+        + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
   }
 
   connect();
