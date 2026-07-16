@@ -690,6 +690,33 @@ fn flow_class(cell: &VerticalCell, item: &FlowItem) -> Option<JapaneseClass> {
     }
 }
 
+/// Smallest legal flow extent after oikomi. Full-width Japanese punctuation
+/// normally carries removable aki inside its one-em advance, but `vpal` may
+/// have removed that aki already. Clamp the floor to the actual shaped extent
+/// so a proportional half-em glyph frame can never be compressed again.
+fn minimum_oikomi_extent(
+    ch: Option<char>,
+    extent: f32,
+    font_size: f32,
+    letter_spacing: f32,
+) -> f32 {
+    let half_em_frame = ch.is_some_and(|ch| {
+        matches!(
+            classify(ch),
+            JapaneseClass::OpeningBracket
+                | JapaneseClass::ClosingBracket
+                | JapaneseClass::FullStop
+                | JapaneseClass::Comma
+                | JapaneseClass::MiddleDot
+        )
+    });
+    if half_em_frame {
+        extent.min(0.5 * font_size + letter_spacing)
+    } else {
+        extent
+    }
+}
+
 /// Divide `amount` equally across capped opportunities, redistributing the
 /// remainder whenever one opportunity reaches its cap.
 fn capped_equal_allocations(capacities: &[(usize, f32)], amount: f32) -> Vec<(usize, f32)> {
@@ -799,13 +826,15 @@ fn reduce_cell_spacing(
     index: usize,
     amount: f32,
     leading: bool,
-) {
-    let amount = amount.min(items[index].extent.max(0.0));
+) -> f32 {
+    let removable = (cells[index].extent - cells[index].minimum_oikomi_extent).max(0.0);
+    let amount = amount.min(items[index].extent.max(0.0)).min(removable);
     items[index].extent -= amount;
     cells[index].extent -= amount;
     if leading {
         cells[index].glyph_flow_shift -= amount;
     }
+    amount
 }
 
 /// JLREQ oikomi: before wrapping a non-hanging item, try to keep it in the
@@ -840,7 +869,14 @@ fn apply_ordered_oikomi(
                     continue;
                 }
                 let em = cells[boundary].font_size.min(cells[boundary + 1].font_size);
-                let capacity = (pair_spacing_em[boundary] - rule.minimum_em) * em;
+                let (owner, _) = spacing_owner(before, after, boundary);
+                let rule_capacity = (pair_spacing_em[boundary] - rule.minimum_em) * em;
+                let physical_capacity =
+                    (cells[owner].extent - cells[owner].minimum_oikomi_extent).max(0.0);
+                let capacity = rule_capacity.min(physical_capacity);
+                if capacity <= 0.0001 {
+                    continue;
+                }
                 opportunities.push((boundary, rule.shrink_priority, capacity, em));
             }
             let total_capacity: f32 = opportunities.iter().map(|(_, _, cap, _)| *cap).sum();
@@ -869,7 +905,8 @@ fn apply_ordered_oikomi(
                         };
                         let em = cells[boundary].font_size.min(cells[boundary + 1].font_size);
                         let (owner, leading) = spacing_owner(before, after, boundary);
-                        reduce_cell_spacing(cells, items, owner, reduction, leading);
+                        let reduction =
+                            reduce_cell_spacing(cells, items, owner, reduction, leading);
                         pair_spacing_em[boundary] -= reduction / em;
                         if owner < i {
                             cursor -= reduction;
@@ -1175,6 +1212,9 @@ pub struct VerticalCell {
     /// Advance along the column (vertical/flow axis) — from `vmtx` when
     /// available, else the shaped horizontal advance.
     pub extent: f32,
+    /// Lower bound for oikomi reductions. This is the glyph frame after font
+    /// features such as `vpal`, before any removable pair spacing is added.
+    pub minimum_oikomi_extent: f32,
     /// Shaped horizontal glyph advance, used to centre the glyph on the
     /// column axis (independent of the vertical flow `extent`).
     pub h_advance: f32,
@@ -1613,6 +1653,7 @@ fn try_push_tcy_composite(
         column: 0,
         top: 0.0,
         extent,
+        minimum_oikomi_extent: extent,
         h_advance: combined_advance * scale,
         ink_top: 0.0,
         ink_bottom: em,
@@ -1869,6 +1910,7 @@ pub fn layout_vertical(
                             column: 0,
                             top: 0.0,
                             extent,
+                            minimum_oikomi_extent: extent,
                             // Two half-em sub-columns side by side fill the em.
                             h_advance: span.font_size,
                             ink_top: 0.0,
@@ -2028,6 +2070,12 @@ pub fn layout_vertical(
                                 let start = piece_base + utf8_to_utf16(cluster as usize);
                                 let end = piece_base + utf8_to_utf16(next_cluster_utf8);
                                 let ch = segment.text[(cluster as usize)..].chars().next();
+                                let minimum_oikomi_extent = minimum_oikomi_extent(
+                                    ch,
+                                    extent,
+                                    span.font_size,
+                                    letter_spacing,
+                                );
                                 let synthetic_rotation =
                                     cluster_needs_rotated_vertical_fallback(&run, glyph, count, ch);
                                 let (mut ink_top, mut ink_bottom) = if synthetic_rotation {
@@ -2078,6 +2126,7 @@ pub fn layout_vertical(
                                     column: 0,
                                     top: 0.0,
                                     extent,
+                                    minimum_oikomi_extent,
                                     h_advance,
                                     ink_top,
                                     ink_bottom,
@@ -2127,6 +2176,7 @@ pub fn layout_vertical(
                                 column: 0,
                                 top: 0.0,
                                 extent,
+                                minimum_oikomi_extent: extent,
                                 // Rotated runs draw from `run.positions`; the
                                 // centring path doesn't read `h_advance`.
                                 h_advance: run.advance,
@@ -5823,6 +5873,33 @@ mod tests {
             (layout.cells[1].extent - 10.0).abs() < 0.01,
             "、 is exactly half-width under vpal, got {}",
             layout.cells[1].extent
+        );
+    }
+
+    #[test]
+    fn vpal_oikomi_preserves_half_em_punctuation_frame() {
+        // vpal has already removed the opening bracket's leading aki. A tight
+        // fixed-height column must wrap instead of offering that same half-em
+        // to oikomi and collapsing the glyph frame a second time.
+        let provider = vpal_provider();
+        let content = vpal_content("あ「あ", FontFeatures::Vpal);
+        let natural = layout_with(&provider, &content);
+        let natural_total: f32 = natural.cells.iter().map(|cell| cell.extent).sum();
+        let bracket_extent = natural.cells[1].extent;
+        let constrained = layout_with_height(&provider, &content, natural_total - 5.0);
+
+        assert!(
+            (bracket_extent - 10.0).abs() < 0.01,
+            "vpal opening bracket starts at half-em, got {bracket_extent}"
+        );
+        assert!(
+            (constrained.cells[1].extent - bracket_extent).abs() < 0.01,
+            "oikomi collapsed the vpal bracket frame from {bracket_extent} to {}",
+            constrained.cells[1].extent
+        );
+        assert_ne!(
+            constrained.cells[0].column, constrained.cells[2].column,
+            "insufficient removable aki should wrap the protected bracket and following glyph"
         );
     }
 
