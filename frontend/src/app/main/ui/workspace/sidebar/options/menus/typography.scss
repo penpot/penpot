@@ -20,7 +20,6 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  block-size: $sz-32;
   inline-size: 100%;
   border-radius: $br-8;
   background-color: var(--typography-entry-background-color);
@@ -62,6 +61,7 @@
   block-size: 100%;
   inline-size: 100%;
   padding-inline-start: var(--sp-m);
+  gap: var(--sp-xs);
 
   &.is-selectable {
     cursor: pointer;
@@ -154,7 +154,6 @@
   display: grid;
   grid-template-columns: $sz-24 auto 1fr $sz-28;
   flex: 1;
-  block-size: $sz-32;
   inline-size: 100%;
   padding: 0 0 0 var(--sp-m);
   background-color: var(--color-background-quaternary);
@@ -167,7 +166,6 @@
   align-items: center;
   min-inline-size: $sz-24;
   font-size: px2rem(16);
-  block-size: $sz-32;
   padding: 0;
   color: var(--color-foreground-primary);
 }
@@ -178,7 +176,7 @@
 
   margin: 0;
   min-inline-size: px2rem(6);
-  padding: 8px 0 8px 6px;
+  align-self: center;
   max-width: 100%;
   color: var(--color-foreground-primary);
 }
