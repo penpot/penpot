@@ -577,9 +577,6 @@ Graph Console
   // page that hung on render can always be re-entered.
   const RENDER_GUARD_NODES = 4000;
   const RENDER_GUARD_EDGES = 8000;
-  // Edge bundling is iteration-heavy in the number of edges — a
-  // page-freezing cost at scale; bundle only small graphs.
-  const BUNDLE_MAX_EDGES = 300;
   // G6's entrance/update animation is nice didactics on small graphs but
   // the performance killer at scale (>2 min at 1700 nodes vs ~1.5 s off);
   // keep it only below this node count.
@@ -943,9 +940,6 @@ Graph Console
       }]
     };
     if (layoutCfg) opts.layout = layoutCfg;
-    if (g6data.edges.length <= BUNDLE_MAX_EDGES) {
-      opts.plugins.unshift({ key: "edge-bundling", type: "edge-bundling" });
-    }
     g6graph = new G6.Graph(opts);
     // Re-attached on every instance creation (layout/animation switches
     // destroy and recreate the graph).
