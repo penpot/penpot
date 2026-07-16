@@ -170,7 +170,11 @@
     :mcp
     :background-blur
     :available-viewer-wasm
-    :stroke-path})
+    :stroke-path
+
+    ;; Compact binfile-v3 export: one JSON per page with embedded
+    ;; shapes instead of one JSON per shape.
+    :binfile-v3-compact})
 
 (def all-flags
   (set/union email login varia))

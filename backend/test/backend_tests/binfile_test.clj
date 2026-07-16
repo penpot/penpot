@@ -14,6 +14,7 @@
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
@@ -105,3 +106,60 @@
                      (v3/import-files!))]
       (t/is (= (count result) 1))
       (t/is (every? uuid? result)))))
+
+(t/deftest export-binfile-v3-compact
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (with-redefs [cf/flags (conj cf/flags :binfile-v3-compact)]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output)))
+
+    (let [result (-> th/*system*
+                     (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/input output)
+                     (v3/import-files!))]
+      (t/is (= (count result) 1))
+      (t/is (every? uuid? result)))))
+
+(t/deftest export-binfile-v3-compact-round-trip
+  (let [profile    (th/create-profile* 1)
+        file       (prepare-simple-file profile)
+        output1    (tmp/tempfile :suffix ".zip")
+        output2    (tmp/tempfile :suffix ".zip")]
+
+    (with-redefs [cf/flags (conj cf/flags :binfile-v3-compact)]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output1)))
+
+    (let [result      (-> th/*system*
+                          (assoc ::bfc/project-id (:default-project-id profile))
+                          (assoc ::bfc/profile-id (:id profile))
+                          (assoc ::bfc/input output1)
+                          (v3/import-files!))
+          imported-id (first result)]
+
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{imported-id})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output2))
+
+      (let [result2 (-> th/*system*
+                        (assoc ::bfc/project-id (:default-project-id profile))
+                        (assoc ::bfc/profile-id (:id profile))
+                        (assoc ::bfc/input output2)
+                        (v3/import-files!))]
+        (t/is (= (count result2) 1))
+        (t/is (every? uuid? result2))))))
