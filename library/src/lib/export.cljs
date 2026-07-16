@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.builder :as fb]
+   [app.common.files.shape-compact :as fsc]
    [app.common.json :as json]
    [app.common.media :as media]
    [app.common.schema :as sm]
@@ -94,7 +95,7 @@
     (-> shape encode-shape json/encode)))
 
 (defn- generate-file-export-procs
-  [{:keys [id data] :as file}]
+  [format {:keys [id data] :as file}]
   (cons
    (let [file (cond-> (select-keys file file-attrs)
                 (:options data)
@@ -104,7 +105,8 @@
 
    (concat
     (let [pages       (get data :pages)
-          pages-index (get data :pages-index)]
+          pages-index (get data :pages-index)
+          compact?    (= format "compact")]
 
       (->> (d/enumerate pages)
            (mapcat
@@ -114,13 +116,31 @@
                     page    (-> page
                                 (dissoc :objects)
                                 (assoc :index index))]
-                (cons
-                 [(str "files/" id "/pages/" page-id ".json")
-                  (delay (-> page encode-page json/encode))]
-                 (map (fn [[shape-id shape]]
-                        [(str "files/" id "/pages/" page-id "/" shape-id ".json")
-                         (delay (encode-shape* shape))])
-                      objects)))))))
+                (if compact?
+                  (let [compacted-objects
+                        (reduce-kv
+                         (fn [m shape-id shape]
+                           (let [shape (-> shape
+                                           (cond-> (or (= (:type shape) :path)
+                                                       (= (:type shape) :bool))
+                                             (update :content vec))
+                                           fsc/compact-shape
+                                           fsc/round-values
+                                           encode-shape)]
+                             (assoc m shape-id shape)))
+                         {}
+                         objects)]
+                    (list
+                     [(str "files/" id "/pages/" page-id ".json")
+                      (delay (-> (assoc page :objects compacted-objects)
+                                 json/encode))]))
+                  (cons
+                   [(str "files/" id "/pages/" page-id ".json")
+                    (delay (-> page encode-page json/encode))]
+                   (map (fn [[shape-id shape]]
+                          [(str "files/" id "/pages/" page-id "/" shape-id ".json")
+                           (delay (encode-shape* shape))])
+                        objects))))))))
 
     (->> (get data :components)
          (map (fn [[component-id component]]
@@ -155,9 +175,9 @@
                         json/encode))])))))
 
 (defn- generate-files-export-procs
-  [state]
+  [state format]
   (->> (vals (get state ::fb/files))
-       (mapcat generate-file-export-procs)))
+       (mapcat #(generate-file-export-procs format %))))
 
 (defn- generate-media-export-procs
   [state]
@@ -181,7 +201,7 @@
                                 (json/encode)))]))))))
 
 (defn- generate-manifest-procs
-  [state]
+  [state format]
   (let [opts   (get state :options)
         files  (->> (get state ::fb/files)
                     (mapv (fn [[file-id file]]
@@ -189,7 +209,7 @@
                              :name (:name file)
                              :features (:features file)})))
         params {:type "penpot/export-files"
-                :version 1
+                :version (if (= format "compact") 2 1)
                 :generated-by "penpot-library/%version%"
                 :referer (get opts :referer)
                 :files files
@@ -201,11 +221,11 @@
      (delay (json/encode params))]))
 
 (defn- generate-procs
-  [state]
+  [state format]
   (let [state (deref state)]
-    (cons (generate-manifest-procs state)
+    (cons (generate-manifest-procs state format)
           (concat
-           (generate-files-export-procs state)
+           (generate-files-export-procs state format)
            (generate-media-export-procs state)))))
 
 (def ^:private
@@ -218,8 +238,8 @@
   (constantly nil))
 
 (defn- export
-  [state writer progress-fn]
-  (let [procs (into [] xf:add-proc-index (generate-procs state))
+  [state writer progress-fn format]
+  (let [procs (into [] xf:add-proc-index (generate-procs state format))
         total (count procs)]
     (->> (p/reduce (fn [writer [path data index]]
                      (let [data   (if (delay? data) (deref data) data)
@@ -237,7 +257,7 @@
 
 (defn export-bytes
   ([state]
-   (export state (zip/writer (zip/bytes-writer)) noop-fn))
+   (export state (zip/writer (zip/bytes-writer)) noop-fn "legacy"))
   ([state options]
    (let [options
          (if (object? options)
@@ -245,13 +265,16 @@
            options)
 
          progress-fn
-         (get options :on-progress noop-fn)]
+         (get options :on-progress noop-fn)
 
-     (export state (zip/writer (zip/bytes-writer)) progress-fn))))
+         format
+         (get options :format "legacy")]
+
+     (export state (zip/writer (zip/bytes-writer)) progress-fn format))))
 
 (defn export-blob
   ([state]
-   (export state (zip/writer (zip/blob-writer)) noop-fn))
+   (export state (zip/writer (zip/blob-writer)) noop-fn "legacy"))
   ([state options]
    (let [options
          (if (object? options)
@@ -259,13 +282,16 @@
            options)
 
          progress-fn
-         (get options :on-progress noop-fn)]
+         (get options :on-progress noop-fn)
 
-     (export state (zip/writer (zip/blob-writer)) progress-fn))))
+         format
+         (get options :format "legacy")]
+
+     (export state (zip/writer (zip/blob-writer)) progress-fn format))))
 
 (defn export-stream
   ([state stream]
-   (export state (zip/writer stream) noop-fn))
+   (export state (zip/writer stream) noop-fn "legacy"))
   ([state stream options]
    (let [options
          (if (object? options)
@@ -273,5 +299,9 @@
            options)
 
          progress-fn
-         (get options :on-progress noop-fn)]
-     (export state (zip/writer stream) progress-fn))))
+         (get options :on-progress noop-fn)
+
+         format
+         (get options :format "legacy")]
+
+     (export state (zip/writer stream) progress-fn format))))
