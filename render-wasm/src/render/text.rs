@@ -396,6 +396,12 @@ fn paint_text(
     paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
 }
 
+/// Alpha mask for background blur coverage
+pub fn paint_text_mask(canvas: &Canvas, shape: &Shape) {
+    let mut mask_builders = shape.get_text_content().paragraph_builder_group_opaque();
+    paint_text(canvas, shape, &mut mask_builders);
+}
+
 fn paint_text_with_emoji_overlay(
     canvas: &Canvas,
     shape: &Shape,

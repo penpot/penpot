@@ -660,8 +660,7 @@ impl RenderState {
         if self.options.is_fast_mode() {
             return;
         }
-        if matches!(shape.shape_type, Type::Text(_)) || matches!(shape.shape_type, Type::SVGRaw(_))
-        {
+        if matches!(shape.shape_type, Type::SVGRaw(_)) {
             return;
         }
         let blur = match shape.visible_background_blur() {
@@ -706,6 +705,40 @@ impl RenderState {
         canvas.scale((scale, scale));
         canvas.translate(translation);
         canvas.concat(&matrix);
+
+        if matches!(shape.shape_type, Type::Text(_)) {
+            canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+            // Blur in device space
+            canvas.reset_matrix();
+
+            // Save the layer rect to the shape's selection rect
+            // so the blur is only applied inside the glyphs.
+            let layer_rec = skia::canvas::SaveLayerRec::default()
+                .backdrop(&blur_filter)
+                .backdrop_tile_mode(skia::TileMode::Clamp);
+
+            canvas.save_layer(&layer_rec);
+
+            // Reset
+            canvas.scale((scale, scale));
+            canvas.translate(translation);
+            canvas.concat(&matrix);
+
+            // Keep the blurred backdrop only where the glyphs are
+            let mut mask_paint = skia::Paint::default();
+            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+            let mask_layer_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+            canvas.save_layer(&mask_layer_rec);
+
+            text::paint_text_mask(canvas, shape);
+
+            // Restore the mask layer, then the blur layer,
+            // then the shape transform
+            canvas.restore();
+            canvas.restore();
+            canvas.restore();
+            return;
+        }
 
         // Clip to shape's path based on shape type
         match &shape.shape_type {
