@@ -865,7 +865,8 @@ Graph Console
           return [
             { id: "auto-fit", value: "auto-fit" },
             { id: "request-fullscreen", value: "expand" },
-            { id: "exit-fullscreen", value: "restore" }
+            { id: "exit-fullscreen", value: "restore" },
+            { id: "export", value: "export-png" }
           ];
         },
         onClick: function (value) {
@@ -875,7 +876,20 @@ Graph Console
             setExpanded(true);
           } else if (value === "restore") {
             setExpanded(false);
+          } else if (value === "export-png") {
+            exportGraphPng();
           }
+        }
+      }, {
+        key: "tooltip",
+        type: "tooltip",
+        getContent: function (_evt, items) {
+          return Promise.resolve(items.map(function (it) {
+            const d = it.data || {};
+            return "<div><b>" + escapeHtml(d.table || "") + "</b> "
+              + escapeHtml(d.label || "") + "<br/><code>"
+              + escapeHtml(String(it.id)) + "</code></div>";
+          }).join(""));
         }
       }]
     };
@@ -896,6 +910,23 @@ Graph Console
   // marker set (hexagon→circle, star→cross), breaking glyph identity.
   // Entries reflect the *displayed* data only: node tables in roster
   // order (unknown tables appended with the fallback style), then rels.
+  // Clean graph-only capture (no page chrome): the whole laid-out graph
+  // regardless of viewport, downloaded as PNG. Also the fast path for
+  // agents debugging the console — no full-page screenshot needed.
+  function exportGraphPng() {
+    if (!g6graph) return;
+    g6graph.toDataURL({ mode: "overall" })
+      .then(function (dataUrl) {
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = "graph-" + (lastGraphData ? lastGraphData.revn : "view") + ".png";
+        a.click();
+      })
+      .catch(function (err) {
+        graphViewStatus.textContent = "export error: " + err;
+      });
+  }
+
   function renderGraphLegend(data) {
     const el = document.getElementById("graph-legend");
     if (!el) return;
