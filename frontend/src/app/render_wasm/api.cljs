@@ -91,14 +91,12 @@
 
 (def ^:private snapshot-capture-debounce-ms 250)
 
-
 (defn initialized?
   "True when the WASM render context is ready to receive design-state
   operations. Use it to skip WASM work during transient states (e.g. while
   switching renderer with a text shape being edited)."
   []
   (and wasm/context-initialized? (not @wasm/context-lost?)))
-
 
 (defn set-transition-image-from-background!
   "Sets `transition-image*` to a data URL representing a solid background color."
@@ -511,7 +509,6 @@
   (when (initialized?)
     (h/call wasm/internal-module "_render_preview")))
 
-
 (defonce pending-render (atom false))
 (defonce shapes-loading? (atom false))
 (defonce deferred-render? (atom false))
@@ -734,7 +731,6 @@
 (defn- get-string-length
   [string]
   (+ (count string) 1))
-
 
 (defn- get-texture-id-for-gl-object
   "Registers a WebGL texture with Emscripten's GL object system and returns its ID"
@@ -1666,7 +1662,6 @@
                                noop-fn)))))))]
          (process-next-chunk 0 [] [] []))))))
 
-
 ;; This is a version of process-pending that doesn't have sideffects
 ;; with like request render or update layout.
 (defn- process-pending-no-sideffects
@@ -1858,7 +1853,6 @@
           offset  (mem/alloc->offset-32 size)
           heapu32 (mem/get-heap-u32)
           heapf32 (mem/get-heap-f32)]
-
 
       (reduce (fn [offset {:keys [type parent id index value]}]
                 (-> offset
@@ -2537,7 +2531,11 @@
   [element _start-pos _end-pos]
   (let [text (:text element)
         ruby (:ruby element)]
-    (when (and (string? text) (seq text) (string? ruby) (seq ruby))
+    (when (and (not (true? (:ruby-hidden element)))
+               (string? text)
+               (seq text)
+               (string? ruby)
+               (seq ruby))
       ruby)))
 
 (defn- ruby-strip-entry
@@ -2546,7 +2544,8 @@
    gutter placement the canvas paints."
   [element {:keys [start-pos end-pos x y width height]}]
   (let [ruby (get element :ruby)]
-    (when (string? ruby)
+    (when (and (not (true? (:ruby-hidden element)))
+               (string? ruby))
       (let [text (subs ruby
                        (min start-pos (count ruby))
                        (min end-pos (count ruby)))
@@ -2655,7 +2654,10 @@
                               (when (= "auto" clearance) clearance))
                             :annotation-has-ruby
                             (let [ruby (get element :ruby)]
-                              (when (and (string? ruby) (seq ruby)) true))
+                              (when (and (not (true? (:ruby-hidden element)))
+                                         (string? ruby)
+                                         (seq ruby))
+                                true))
                             ;; Horizontal position data has no separate ruby
                             ;; strip, so carry the annotation on the base entry
                             ;; for static SVG export. Vertical ruby has its own

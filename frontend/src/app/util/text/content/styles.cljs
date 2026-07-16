@@ -23,6 +23,12 @@
 (def mapping
   {:fills [encode decode]
    :ruby [identity #(when-not (= "" %) %)]
+   :ruby-hidden [(fn [value] (when (some? value) (str value)))
+                 (fn [value]
+                   (case value
+                     "true" true
+                     "false" false
+                     nil))]
    :ruby-size [identity #(when-not (= "" %) %)]
    :ruby-align [identity #(when-not (= "" %) %)]
    :ruby-overhang [identity #(when-not (= "" %) %)]

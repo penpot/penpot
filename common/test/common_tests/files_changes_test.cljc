@@ -24,6 +24,26 @@
   (binding [ffeat/*current* #{"components/v2"}]
     (ctf/make-file-data file-id page-id)))
 
+(t/deftest set-japanese-layout-file-option
+  (let [file-id  (uuid/custom 2 2)
+        page-id  (uuid/custom 1 1)
+        data     (make-file-data file-id page-id)
+        enabled  (ch/process-changes data [{:type :set-japanese-layout
+                                            :enabled true}])
+        disabled (ch/process-changes enabled [{:type :set-japanese-layout
+                                               :enabled false}])
+        changes  (-> (pcb/empty-changes)
+                     (pcb/with-file-data data)
+                     (pcb/set-japanese-layout true))]
+    (t/is (false? (ctf/japanese-layout-enabled? data)))
+    (t/is (true? (ctf/japanese-layout-enabled? enabled)))
+    (t/is (false? (ctf/japanese-layout-enabled? disabled)))
+    (t/is (not (contains? (:options disabled) :japanese-layout)))
+    (t/is (= [{:type :set-japanese-layout :enabled true}]
+             (:redo-changes changes)))
+    (t/is (= '({:type :set-japanese-layout :enabled false})
+             (:undo-changes changes)))))
+
 (t/deftest add-obj
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)

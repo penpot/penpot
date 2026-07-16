@@ -604,6 +604,17 @@
 (dm/export layout/toggle-layout-flag)
 (dm/export layout/remove-layout-flag)
 
+(defn set-japanese-layout
+  [enabled?]
+  (ptk/reify ::set-japanese-layout
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (dsh/lookup-file-data state)
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/with-file-data file-data)
+                          (pcb/set-japanese-layout enabled?))]
+        (rx/of (dch/commit-changes changes))))))
+
 ;; --- Profile
 
 (defn update-nudge

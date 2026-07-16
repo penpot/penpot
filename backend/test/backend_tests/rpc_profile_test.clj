@@ -150,6 +150,21 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:photo-id (:result out))))))))
 
+(t/deftest update-profile-japanese-layout-setting
+  (let [profile (th/create-profile* 1)
+        params  {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:japanese-layout-all-files true}}
+        out     (th/command! params)]
+    (t/is (nil? (:error out)))
+    (t/is (true? (get-in out [:result :japanese-layout-all-files])))
+
+    (let [params {::th/type :get-profile
+                  ::rpc/profile-id (:id profile)}
+          out    (th/command! params)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (get-in out [:result :props :japanese-layout-all-files]))))))
+
 (t/deftest profile-deletion-1
   (let [prof (th/create-profile* 1)
         file (th/create-file* 1 {:profile-id (:id prof)

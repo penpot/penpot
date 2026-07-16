@@ -75,7 +75,8 @@
 (def schema:options
   [:map {:title "FileOptions"}
    [:components-v2 {:optional true} ::sm/boolean]
-   [:base-font-size {:optional true} :string]])
+   [:base-font-size {:optional true} :string]
+   [:japanese-layout {:optional true} ::sm/boolean]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -1223,6 +1224,19 @@
 (defn set-base-font-size
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
+
+
+;; Japanese text layout
+
+(defn japanese-layout-enabled?
+  [file-data]
+  (true? (get-in file-data [:options :japanese-layout])))
+
+(defn set-japanese-layout-enabled
+  [file-data enabled?]
+  (if enabled?
+    (assoc-in file-data [:options :japanese-layout] true)
+    (d/update-in-when file-data [:options] dissoc :japanese-layout)))
 
 
 ;; Ref Chains

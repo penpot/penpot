@@ -50,7 +50,6 @@
         padding-fills (max 0 (- MAX-TEXT-FILLS (count fills)))]
     (+ new-ofset (* padding-fills types.fills.impl/FILL-U8-SIZE))))
 
-
 (defn- write-paragraph
   [offset dview paragraph]
   (let [text-align       (sr/translate-text-align (get paragraph :text-align))
@@ -100,7 +99,9 @@
                     text-buffer (encode-text (get span :text ""))
                     text-length (mem/size text-buffer)
 
-                    ruby-buffer (encode-text (get span :ruby ""))
+                    ruby-buffer (encode-text (if (true? (:ruby-hidden span))
+                                               ""
+                                               (get span :ruby "")))
                     ruby-length (mem/size ruby-buffer)
 
                     fills       (take MAX-TEXT-FILLS (get span :fills []))
@@ -206,7 +207,10 @@
         text-buffer   (encode-text text)
         text-size     (mem/size text-buffer)
 
-        ruby-text     (apply str (map #(get % :ruby "") normalized-spans))
+        ruby-text     (apply str (map #(if (true? (:ruby-hidden %))
+                                         ""
+                                         (get % :ruby ""))
+                                      normalized-spans))
         ruby-buffer   (encode-text ruby-text)
         ruby-size     (mem/size ruby-buffer)
 

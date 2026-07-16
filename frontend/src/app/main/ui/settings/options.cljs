@@ -115,10 +115,37 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
+(mf/defc japanese-layout-settings*
+  [{:keys [enabled]}]
+  (let [handle-change
+        (mf/use-fn
+         (fn [enabled?]
+           (st/emit! (ev/event {::ev/name (if enabled?
+                                            "enable-japanese-layout-all-files"
+                                            "disable-japanese-layout-all-files")
+                                ::ev/origin "settings"})
+                     (du/update-profile-props
+                      {:japanese-layout-all-files enabled?})
+                     (ntf/success (tr "notifications.profile-saved")))))]
+    [:section {:class (stl/css :japanese-layout-container)}
+     [:> heading* {:class (stl/css :title)
+                   :level 2
+                   :typography t/title-large}
+      (tr "dashboard.japanese-layout.title")]
+     [:> text* {:class (stl/css :description) :typography t/body-medium}
+      (tr "dashboard.japanese-layout.description")]
+     [:form {:class (stl/css :japanese-layout-form)}
+      [:> switch* {:label (tr "dashboard.japanese-layout.enable-all-files")
+                   :default-checked enabled
+                   :on-change handle-change}]]]))
+
 (mf/defc options-page*
   []
   (let [profile (mf/deref refs/profile)
-        renderer (or (-> profile :props :renderer) :svg)]
+        renderer (or (-> profile :props :renderer) :svg)
+        japanese-layout-enabled (true? (-> profile
+                                           :props
+                                           :japanese-layout-all-files))]
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 
@@ -127,5 +154,6 @@
       [:div {:class (stl/css :form-container) :data-testid "settings-form"}
        [:h2 (tr "labels.settings")]
        [:> options-form*]]
+      [:> japanese-layout-settings* {:enabled japanese-layout-enabled}]
       (when (contains? cf/flags :render-switch)
         [:> webgl-settings* {:renderer renderer}])]]))

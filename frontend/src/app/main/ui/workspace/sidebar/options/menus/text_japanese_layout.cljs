@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.features :as features]
+   [app.common.types.file :as ctf]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -70,6 +70,13 @@
       (= writing-mode :multiple) nil
       (#{"horizontal-tb" "vertical-rl"} writing-mode) true
       :else false)))
+
+(defn japanese-layout-config-enabled?
+  "Japanese layout controls are available when enabled for the current file or
+  globally in the user's profile."
+  [file-data profile]
+  (or (ctf/japanese-layout-enabled? file-data)
+      (true? (get-in profile [:props :japanese-layout-all-files]))))
 
 (defn japanese-layout-toggle-attrs
   "Attrs emitted by the Japanese layout switch. A nil writing mode removes the
@@ -136,7 +143,7 @@
 
     [:div {:class (stl/css :japanese-layout-toggle)}
      [:> switch* {:default-checked enabled
-                  :label           (tr "workspace.options.text-options.japanese-layout")
+                  :label           (tr "workspace.options.text-options.japanese-layout-enable-for-text")
                   :on-change       handle-change}]]))
 
 (mf/defc writing-mode-options*
@@ -330,6 +337,26 @@
     :on-change on-change
     :on-blur   on-blur}))
 
+(mf/defc ruby-hidden-option*
+  [{:keys [values on-change on-blur]}]
+  (let [value (:ruby-hidden values)
+        enabled? (cond
+                   (mixed-span-value? value) nil
+                   (true? value) true
+                   :else false)
+        label (tr "workspace.options.text-options.ruby-hidden")
+        handle-change
+        (mf/use-fn
+         (mf/deps on-change on-blur)
+         (fn [checked?]
+           (on-change {:ruby-hidden checked?})
+           (when (some? on-blur) (on-blur))))]
+    [:div {:class (stl/css :ruby-hidden-option :japanese-select-option)}
+     [:span {:class (stl/css :japanese-option-label)} label]
+     [:> switch* {:default-checked enabled?
+                  :aria-label      label
+                  :on-change       handle-change}]]))
+
 (mf/defc ruby-customization-options*
   [{:keys [values on-change on-blur]}]
   (let [common-props (ruby-common-props values on-change on-blur)
@@ -345,6 +372,7 @@
         side-options [{:id "over" :label (tr "workspace.options.text-options.ruby-side-over")}
                       {:id "under" :label (tr "workspace.options.text-options.ruby-side-under")}]]
     [:div {:class (stl/css :japanese-layout-controls)}
+     [:> ruby-hidden-option* common-props]
      [:> ruby-select-option* (mf/spread-props common-props
                                               {:attr :ruby-size
                                                :default-value "half"
@@ -530,13 +558,10 @@
                   :options options
                   :on-change handle-change}]]))
 
-
-
 (mf/defc japanese-layout-options*
   [{:keys [ids values ruby-values text-selection-active
            on-change on-ruby-presentation-change on-blur]}]
-  (let [enabled?                   (features/use-feature "japanese-layout/v1")
-        selection-key             (hash ids)
+  (let [selection-key             (hash ids)
         previous-selection-key-ref (mf/use-ref selection-key)
         active*                    (mf/use-state #(japanese-layout-enabled? values))
         active?                    (deref active*)
@@ -564,28 +589,26 @@
                                                  selection-changed?))
         (mf/set-ref-val! previous-selection-key-ref selection-key)))
 
-    (when ^boolean enabled?
-      [:div {:class (stl/css :japanese-layout-options)}
-       [:> japanese-layout-toggle* toggle-props]
-       (when ^boolean active?
-         [:div {:class (stl/css :japanese-layout-controls)}
-          [:div {:class (stl/css :japanese-icon-options)}
-           [:> writing-mode-options* common-props]
-           (when ^boolean vertical?
-             [:*
-              [:> text-orientation-options* common-props]
-              [:> text-combine-upright-options*
-               (mf/spread-props common-props
-                                {:text-selection-active text-selection-active})]])
-           (when ^boolean text-selection-active
-             [:> warichu-options* common-props])]
-          (when ^boolean vertical?
-            [:> text-combine-upright-count-options* common-props])
-          [:> font-features-options* common-props]
-          (when ^boolean text-selection-active
-            [:> text-emphasis-options* common-props])
-          [:> annotation-clearance-options* common-props]
-          (if text-selection-active
-            [:> ruby-advanced-options* common-props]
-            [:> ruby-presentation-options* ruby-presentation-props])])])))
-
+    [:div {:class (stl/css :japanese-layout-options)}
+     [:> japanese-layout-toggle* toggle-props]
+     (when ^boolean active?
+       [:div {:class (stl/css :japanese-layout-controls)}
+        [:div {:class (stl/css :japanese-icon-options)}
+         [:> writing-mode-options* common-props]
+         (when ^boolean vertical?
+           [:*
+            [:> text-orientation-options* common-props]
+            [:> text-combine-upright-options*
+             (mf/spread-props common-props
+                              {:text-selection-active text-selection-active})]])
+         (when ^boolean text-selection-active
+           [:> warichu-options* common-props])]
+        (when ^boolean vertical?
+          [:> text-combine-upright-count-options* common-props])
+        [:> font-features-options* common-props]
+        (when ^boolean text-selection-active
+          [:> text-emphasis-options* common-props])
+        [:> annotation-clearance-options* common-props]
+        (if text-selection-active
+          [:> ruby-advanced-options* common-props]
+          [:> ruby-presentation-options* ruby-presentation-props])])]))

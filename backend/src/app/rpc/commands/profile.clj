@@ -49,6 +49,7 @@
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
+   [:japanese-layout-all-files {:optional true} ::sm/boolean]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]

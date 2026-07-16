@@ -648,6 +648,7 @@
   {:text-combine-upright "none"
    :text-emphasis        "none"
    :ruby                 ""
+   :ruby-hidden          false
    :ruby-size            "half"
    :ruby-align           "space-around"
    :ruby-overhang        "auto"

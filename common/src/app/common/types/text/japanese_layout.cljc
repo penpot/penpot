@@ -26,6 +26,7 @@
 ;; Ruby (furigana) annotation text and customization carried per span.
 (def text-ruby-attrs
   [:ruby
+   :ruby-hidden
    :ruby-size
    :ruby-align
    :ruby-overhang

@@ -427,7 +427,12 @@
    [:set-base-font-size
     [:map {:title "ModBaseFontSize"}
      [:type [:= :set-base-font-size]]
-     [:base-font-size :string]]]])
+     [:base-font-size :string]]]
+
+   [:set-japanese-layout
+    [:map {:title "SetJapaneseLayout"}
+     [:type [:= :set-japanese-layout]]
+     [:enabled ::sm/boolean]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1064,6 +1069,10 @@
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
   (ctf/set-base-font-size data base-font-size))
+
+(defmethod process-change :set-japanese-layout
+  [data {:keys [enabled]}]
+  (ctf/set-japanese-layout-enabled data enabled))
 
 
 ;; === Operations

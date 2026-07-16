@@ -9,6 +9,7 @@
    ["react-dom/server" :as rds]
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.ds.controls.select :as select]
+   [app.main.ui.shapes.text.html-text :as html-text]
    [app.main.ui.shapes.text.styles :as text-styles]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.util.text.content.styles :as content-styles]
@@ -20,6 +21,7 @@
   [:text-combine-upright
    :text-emphasis
    :ruby
+   :ruby-hidden
    :ruby-size
    :ruby-align
    :ruby-overhang
@@ -33,6 +35,18 @@
 (def ^:private span-select-value @#'tjl/span-select-value)
 (def ^:private with-mixed-span-option @#'tjl/with-mixed-span-option)
 (def ^:private ruby-common-props @#'tjl/ruby-common-props)
+
+(t/deftest japanese-layout-controls-follow-file-or-profile-configuration
+  (t/is (false? (tjl/japanese-layout-config-enabled? {} {})))
+  (t/is (true? (tjl/japanese-layout-config-enabled?
+                {:options {:japanese-layout true}}
+                {})))
+  (t/is (true? (tjl/japanese-layout-config-enabled?
+                {}
+                {:props {:japanese-layout-all-files true}})))
+  (t/is (true? (tjl/japanese-layout-config-enabled?
+                {:options {:japanese-layout true}}
+                {:props {:japanese-layout-all-files false}}))))
 
 (t/deftest text-emphasis-select-reports-and-restores-canonical-values
   (let [options     (tjl/text-emphasis-options identity)
@@ -71,6 +85,27 @@
     (t/is (str/includes? markup "aria-expanded=\"false\""))
     (t/is (str/includes? markup "workspace.options.text-options.ruby-advanced-options"))))
 
+(t/deftest advanced-furigana-options-include-hide-toggle
+  (let [markup (rds/renderToStaticMarkup
+                (mf/element tjl/ruby-customization-options*
+                            #js {:values {:ruby-hidden true}
+                                 :on-change identity
+                                 :on-blur identity}))]
+    (t/is (str/includes? markup "workspace.options.text-options.ruby-hidden"))
+    (t/is (str/includes? markup "role=\"switch\""))
+    (t/is (str/includes? markup "aria-checked=\"true\""))))
+
+(t/deftest hidden-furigana-renders-base-text-without-ruby-layout
+  (let [markup (rds/renderToStaticMarkup
+                (mf/element html-text/render-text*
+                            #js {:node {:text "日"
+                                        :ruby "にち"
+                                        :ruby-hidden true}
+                                 :parent {}
+                                 :shape {}}))]
+    (t/is (str/includes? markup ">日</span>"))
+    (t/is (not (str/includes? markup "<ruby")))))
+
 (t/deftest advanced-furigana-options-preserve-change-callbacks
   (let [on-change identity
         on-blur   identity
@@ -88,17 +123,23 @@
                       :children
                       [{:text "日"
                         :ruby "にち"
+                        :ruby-hidden false
                         :ruby-size "half"}
                        {:text "本"
                         :ruby ""
+                        :ruby-hidden false
                         :ruby-size "quarter"}]}]}]}}
         values  (dwt/current-ruby-values {:shape shape
                                           :attrs dwt/ruby-presentation-attrs})
-        updated (dwt/update-ruby-presentation-attrs shape {:ruby-size "third"})
+        updated (dwt/update-ruby-presentation-attrs
+                 shape {:ruby-hidden true :ruby-size "third"})
         spans   (get-in updated [:content :children 0 :children 0 :children])]
     (t/is (= "half" (:ruby-size values)))
+    (t/is (false? (:ruby-hidden values)))
     (t/is (= "third" (:ruby-size (first spans))))
-    (t/is (= "quarter" (:ruby-size (second spans))))))
+    (t/is (true? (:ruby-hidden (first spans))))
+    (t/is (= "quarter" (:ruby-size (second spans))))
+    (t/is (false? (:ruby-hidden (second spans))))))
 
 (t/deftest mixed-japanese-span-values-have-distinct-control-states
   (let [options (with-mixed-span-option
@@ -122,6 +163,7 @@
                       :text-combine-upright "digits2"
                       :text-emphasis "filled-dot"
                       :ruby "にち"
+                      :ruby-hidden true
                       :ruby-size "third"
                       :ruby-align "center"
                       :ruby-overhang "none"
@@ -133,6 +175,7 @@
                       :text-combine-upright "none"
                       :text-emphasis "none"
                       :ruby ""
+                      :ruby-hidden false
                       :ruby-size "half"
                       :ruby-align "space-around"
                       :ruby-overhang "auto"
@@ -175,6 +218,16 @@
   (t/is (= {:text-combine-upright "digits3"}
            (content-styles/styles->attrs
             {"text-combine-upright" "digits 3"}))))
+
+(t/deftest hidden-furigana-round-trips-through-editor-styles
+  (t/is (= "true"
+           (unchecked-get
+            (content-styles/attrs->styles {:ruby-hidden true})
+            "--ruby-hidden")))
+  (t/is (= {:ruby-hidden false}
+           (content-styles/styles->attrs {"--ruby-hidden" "false"})))
+  (t/is (= {:ruby-hidden nil}
+           (content-styles/styles->attrs {"--ruby-hidden" ""}))))
 
 (t/deftest japanese-layout-is-explicitly-enabled-by-writing-mode
   (t/is (false? (tjl/japanese-layout-enabled? {})))

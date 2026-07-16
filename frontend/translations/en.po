@@ -1320,6 +1320,18 @@ msgstr "Unpublish Library"
 msgid "dashboard.update-settings"
 msgstr "Update settings"
 
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.description"
+msgstr "Makes Japanese text layout controls available in every file."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.enable-all-files"
+msgstr "Enable Japanese text layout for all files"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.title"
+msgstr "Japanese text layout"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:1328
 msgid "dashboard.upgrade-plan.no-limits"
 msgstr "No limits on creativity"
@@ -6724,6 +6736,10 @@ msgstr "Disable snap to pixel"
 msgid "workspace.header.menu.disable-snap-ruler-guides"
 msgstr "Disable snap to ruler guides"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-japanese-layout"
+msgstr "Disable Japanese text layout"
+
 #: src/app/main/ui/workspace/main_menu.cljs:336
 msgid "workspace.header.menu.disable-webgl"
 msgstr "Disable WebGL rendering (beta)"
@@ -6731,6 +6747,10 @@ msgstr "Disable WebGL rendering (beta)"
 #: src/app/main/ui/workspace/main_menu.cljs:289
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Enable dynamic alignment"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-japanese-layout"
+msgstr "Enable Japanese text layout"
 
 #: src/app/main/ui/workspace/main_menu.cljs:250
 msgid "workspace.header.menu.enable-scale-content"
@@ -8522,6 +8542,10 @@ msgstr "Normal"
 msgid "workspace.options.text-options.japanese-layout"
 msgstr "Japanese text layout"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.japanese-layout-enable-for-text"
+msgstr "Enable for this text"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-combine-upright-all"
 msgstr "Tate-chu-yoko"
@@ -8625,6 +8649,10 @@ msgstr "Furigana"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
 msgstr "Advanced furigana options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.ruby-hidden"
+msgstr "Hide furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size"

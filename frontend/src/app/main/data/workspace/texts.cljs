@@ -61,7 +61,7 @@
 (declare v2-sync-wasm-text-layout)
 
 (def ruby-presentation-attrs
-  [:ruby-size :ruby-align :ruby-overhang :ruby-side])
+  [:ruby-hidden :ruby-size :ruby-align :ruby-overhang :ruby-side])
 
 ;; -- Content helpers
 
@@ -339,7 +339,6 @@
      (+ (apply + (map count-node-chars (:children node))) (if last? 0 1))
 
      (count (:text node)))))
-
 
 (defn decorate-range-info
   "Adds information about ranges inside the metadata of the text nodes"

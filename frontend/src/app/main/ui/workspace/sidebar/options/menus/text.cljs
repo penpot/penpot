@@ -314,6 +314,8 @@
                      (get n-values :text-emphasis))
          (identical? (get o-values :ruby)
                      (get n-values :ruby))
+         (identical? (get o-values :ruby-hidden)
+                     (get n-values :ruby-hidden))
          (identical? (get o-values :ruby-size)
                      (get n-values :ruby-size))
          (identical? (get o-values :ruby-align)
@@ -342,10 +344,17 @@
 
   (let [;; --- UI state
         menu-state*          (mf/use-state {:main-menu true
-                                            :more-options false})
+                                            :more-options false
+                                            :japanese-layout true})
         menu-state           (deref menu-state*)
         main-menu-open?      (:main-menu menu-state)
         more-options-open?   (:more-options menu-state)
+        japanese-layout-open? (:japanese-layout menu-state)
+
+        profile              (mf/deref refs/profile)
+        file-data            (mf/deref refs/workspace-data)
+        japanese-layout-config-enabled?
+        (tjl/japanese-layout-config-enabled? file-data profile)
 
         token-dropdown-open* (mf/use-state false)
         token-dropdown-open? (deref token-dropdown-open*)
@@ -430,6 +439,10 @@
         toggle-more-options
         (mf/use-fn
          #(swap! menu-state* update :more-options not))
+
+        toggle-japanese-layout
+        (mf/use-fn
+         #(swap! menu-state* update :japanese-layout not))
 
         toggle-token-dropdown
         (mf/use-fn
@@ -555,94 +568,104 @@
       (when token-dropdown-open?
         (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
 
-    [:section {:class      (stl/css :element-set)
-               :aria-label (tr "workspace.options.text-options.text-section")}
-     [:div {:class (stl/css :element-title)}
-      [:> title-bar* {:collapsable  true
-                      :collapsed    (not main-menu-open?)
-                      :on-collapsed toggle-main-menu
-                      :title        label
-                      :class        (stl/css :title-spacing-text)}
-       [:*
-        (when (and token-typography-row-enabled? (some? (resolve-delay typography-tokens)) (not typography))
-          [:> icon-button* {:variant           "ghost"
-                            :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
-                            :on-click          toggle-token-dropdown
-                            :tooltip-placement "top-left"
-                            :icon              i/tokens}])
-        (when (and (not typography) (not multiple?) (not applied-token-name))
-          [:> icon-button* {:variant           "ghost"
-                            :aria-label        (tr "workspace.options.convert-to-typography")
-                            :on-click          on-convert-to-typography
-                            :tooltip-placement "top-left"
-                            :icon              i/add}])]]
-      (when (and token-typography-row-enabled? token-dropdown-open?)
-        [:> searchable-options-dropdown* {:on-click     on-option-click
-                                          :id           listbox-id
-                                          :options      (resolve-delay dropdown-options)
-                                          :selected     selected-token-id
-                                          :align        "right"
-                                          :placeholder  (tr "workspace.tokens.search-by-token")
-                                          :ref          set-option-ref}])]
-
-     (when main-menu-open?
-       [:div {:class (stl/css :element-content)}
-        (cond
-          (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)}
-            (tr "workspace.libraries.text.mixed-tokens-and-assets")]]
-
-          (and token-typography-row-enabled? (= :multiple current-token-name))
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)}
-            (tr "workspace.libraries.text.mixed-tokens")]
-           [:> icon-button* {:variant    "ghost"
-                             :aria-label (tr "workspace.libraries.text.multiple-token-tooltip")
+    [:*
+     [:section {:class      (stl/css :element-set)
+                :aria-label (tr "workspace.options.text-options.text-section")}
+      [:div {:class (stl/css :element-title)}
+       [:> title-bar* {:collapsable  true
+                       :collapsed    (not main-menu-open?)
+                       :on-collapsed toggle-main-menu
+                       :title        label
+                       :class        (stl/css :title-spacing-text)}
+        [:*
+         (when (and token-typography-row-enabled? (some? (resolve-delay typography-tokens)) (not typography))
+           [:> icon-button* {:variant           "ghost"
+                             :aria-label        (tr "ds.inputs.numeric-input.open-token-list-dropdown")
+                             :on-click          toggle-token-dropdown
                              :tooltip-placement "top-left"
-                             :on-click   handle-detach-all-tokens
-                             :icon       i/detach}]]
-
-          (and token-typography-row-enabled? current-token-name)
-          [:> token-typography-row* {:token-name    current-token-name
-                                     :detach-token  detach-token
-                                     :active-tokens (resolve-delay typography-tokens)}]
-
-          (= typography-id :multiple)
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)}
-            (tr "workspace.libraries.text.mixed-typography")]
-           [:> icon-button* {:variant    "ghost"
-                             :aria-label (tr "workspace.libraries.text.multiple-assets-tooltip")
-                             :on-click   handle-detach-typography
+                             :icon              i/tokens}])
+         (when (and (not typography) (not multiple?) (not applied-token-name))
+           [:> icon-button* {:variant           "ghost"
+                             :aria-label        (tr "workspace.options.convert-to-typography")
+                             :on-click          on-convert-to-typography
                              :tooltip-placement "top-left"
-                             :icon       i/detach}]]
+                             :icon              i/add}])]]
+       (when (and token-typography-row-enabled? token-dropdown-open?)
+         [:> searchable-options-dropdown* {:on-click     on-option-click
+                                           :id           listbox-id
+                                           :options      (resolve-delay dropdown-options)
+                                           :selected     selected-token-id
+                                           :align        "right"
+                                           :placeholder  (tr "workspace.tokens.search-by-token")
+                                           :ref          set-option-ref}])]
 
-          typography
-          [:> typography-entry* {:file-id    typography-file-id
-                                 :typography typography
-                                 :is-local   (= typography-file-id file-id)
-                                 :on-detach  handle-detach-typography
-                                 :on-change  handle-change-typography}]
+      (when main-menu-open?
+        [:div {:class (stl/css :element-content)}
+         (cond
+           (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
+           [:div {:class (stl/css :multiple-typography)}
+            [:span {:class (stl/css :multiple-text)}
+             (tr "workspace.libraries.text.mixed-tokens-and-assets")]]
 
+           (and token-typography-row-enabled? (= :multiple current-token-name))
+           [:div {:class (stl/css :multiple-typography)}
+            [:span {:class (stl/css :multiple-text)}
+             (tr "workspace.libraries.text.mixed-tokens")]
+            [:> icon-button* {:variant    "ghost"
+                              :aria-label (tr "workspace.libraries.text.multiple-token-tooltip")
+                              :tooltip-placement "top-left"
+                              :on-click   handle-detach-all-tokens
+                              :icon       i/detach}]]
 
+           (and token-typography-row-enabled? current-token-name)
+           [:> token-typography-row* {:token-name    current-token-name
+                                      :detach-token  detach-token
+                                      :active-tokens (resolve-delay typography-tokens)}]
 
-          :else
-          [:> text-options* common-props])
+           (= typography-id :multiple)
+           [:div {:class (stl/css :multiple-typography)}
+            [:span {:class (stl/css :multiple-text)}
+             (tr "workspace.libraries.text.mixed-typography")]
+            [:> icon-button* {:variant    "ghost"
+                              :aria-label (tr "workspace.libraries.text.multiple-assets-tooltip")
+                              :on-click   handle-detach-typography
+                              :tooltip-placement "top-left"
+                              :icon       i/detach}]]
 
-        [:div {:class (stl/css :text-align-options)}
-         [:> text-align-options* common-props]
-         [:> grow-options* common-props]
-         [:> icon-button* {:variant     "ghost"
-                           :aria-label  (tr "labels.options")
-                           :data-testid "text-align-options-button"
-                           :on-click    toggle-more-options
-                           :icon        i/menu}]]
+           typography
+           [:> typography-entry* {:file-id    typography-file-id
+                                  :typography typography
+                                  :is-local   (= typography-file-id file-id)
+                                  :on-detach  handle-detach-typography
+                                  :on-change  handle-change-typography}]
 
-        (when more-options-open?
-          [:*
+           :else
+           [:> text-options* common-props])
+
+         [:div {:class (stl/css :text-align-options)}
+          [:> text-align-options* common-props]
+          [:> grow-options* common-props]
+          [:> icon-button* {:variant     "ghost"
+                            :aria-label  (tr "labels.options")
+                            :data-testid "text-align-options-button"
+                            :on-click    toggle-more-options
+                            :icon        i/menu}]]
+
+         (when more-options-open?
            [:div {:class (stl/css :text-decoration-options)}
             [:> vertical-align* common-props]
             [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-            [:> text-direction-options* common-props]]
+            [:> text-direction-options* common-props]])])]
+
+     (when japanese-layout-config-enabled?
+       [:section {:class      (stl/css :element-set)
+                  :aria-label (tr "workspace.options.text-options.japanese-layout")}
+        [:div {:class (stl/css :element-title)}
+         [:> title-bar* {:collapsable  true
+                         :collapsed    (not japanese-layout-open?)
+                         :on-collapsed toggle-japanese-layout
+                         :title        (tr "workspace.options.text-options.japanese-layout")
+                         :class        (stl/css :title-spacing-text)}]]
+        (when japanese-layout-open?
+          [:div {:class (stl/css :element-content)}
            [:> tjl/japanese-layout-options* japanese-layout-props]])])]))

@@ -46,6 +46,7 @@
     (t/is (= {:text-combine-upright "none"
               :text-emphasis "filled-dot"
               :ruby "にち"
+              :ruby-hidden false
               :ruby-size "half"
               :ruby-align "space-around"
               :ruby-overhang "auto"
@@ -58,6 +59,7 @@
     (t/is (= {:text-combine-upright "none"
               :text-emphasis "none"
               :ruby ""
+              :ruby-hidden false
               :ruby-size "half"
               :ruby-align "space-around"
               :ruby-overhang "auto"
@@ -74,17 +76,20 @@
                    :text-combine-upright "digits2"
                    :text-emphasis "filled-dot"
                    :ruby "へいせい"
+                   :ruby-hidden true
                    :ruby-size "third"
                    :ruby-align "center"
                    :ruby-overhang "none"
                    :ruby-side "under"
                    :annotation-clearance "auto"}
                   {:text "年"
+                   :ruby-hidden false
                    :warichu "warichu"
                    :font-features "vpal"}])]
     (t/is (= {:text-combine-upright :multiple
               :text-emphasis :multiple
               :ruby :multiple
+              :ruby-hidden :multiple
               :ruby-size :multiple
               :ruby-align :multiple
               :ruby-overhang :multiple
@@ -180,6 +185,27 @@
     (write-spans 0 dview [span] paragraph)
     (t/is (= [2 3 1 1 0 0]
              (mapv #(.getUint8 dview %) (range 10 16))))))
+
+(t/deftest write-spans-omits-hidden-ruby-bytes
+  (let [buffer    (js/ArrayBuffer. 256)
+        dview     (js/DataView. buffer)
+        paragraph {:font-size "16"
+                   :font-weight "400"
+                   :line-height "1"}]
+    (write-spans 0 dview [{:text "日"
+                           :ruby "にち"
+                           :ruby-hidden true
+                           :font-size "16"
+                           :font-weight "400"}]
+                 paragraph)
+    (t/is (= 0 (.getInt32 dview 72 true)))
+    (write-spans 0 dview [{:text "日"
+                           :ruby "にち"
+                           :ruby-hidden false
+                           :font-size "16"
+                           :font-weight "400"}]
+                 paragraph)
+    (t/is (pos? (.getInt32 dview 72 true)))))
 
 (t/deftest write-spans-serializes-counted-digits-tcy
   (let [sentinel (js-obj)

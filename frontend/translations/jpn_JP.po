@@ -992,6 +992,10 @@ msgstr "通常"
 msgid "workspace.options.text-options.japanese-layout"
 msgstr "日本語組版"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.japanese-layout-enable-for-text"
+msgstr "このテキストで有効にする"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-combine-upright-all"
 msgstr "縦中横"
@@ -1096,6 +1100,10 @@ msgstr "ふりがな"
 msgid "workspace.options.text-options.ruby-advanced-options"
 msgstr "ふりがなの詳細設定"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.ruby-hidden"
+msgstr "ふりがなを非表示"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size"
 msgstr "ルビの大きさ"
@@ -1171,3 +1179,23 @@ msgstr "横書き"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.writing-mode-vertical"
 msgstr "縦書き（右から左）"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.description"
+msgstr "すべてのファイルで日本語組版コントロールを利用できるようにします。"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.enable-all-files"
+msgstr "すべてのファイルで日本語組版を有効にする"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.japanese-layout.title"
+msgstr "日本語組版"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-japanese-layout"
+msgstr "日本語組版を無効にする"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-japanese-layout"
+msgstr "日本語組版を有効にする"

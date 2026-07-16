@@ -55,13 +55,16 @@
 }
 
 .japanese-layout-options {
-  padding-block-start: var(--sp-xs);
-  border-block-start: $b-1 solid var(--color-background-quaternary);
+  padding-block: var(--sp-xs);
 }
 
 .japanese-layout-toggle {
   display: flex;
   align-items: center;
+  min-block-size: $sz-32;
+}
+
+.ruby-hidden-option {
   min-block-size: $sz-32;
 }
 

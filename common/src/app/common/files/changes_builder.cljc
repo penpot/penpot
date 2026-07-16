@@ -1084,6 +1084,18 @@
                                     :base-font-size previous-font-size})
         (apply-changes-local))))
 
+(defn set-japanese-layout
+  [changes enabled?]
+  (assert-file-data! changes)
+  (let [file-data        (::file-data (meta changes))
+        previous-enabled (ctf/japanese-layout-enabled? file-data)]
+    (-> changes
+        (update :redo-changes conj {:type :set-japanese-layout
+                                    :enabled enabled?})
+        (update :undo-changes conj {:type :set-japanese-layout
+                                    :enabled previous-enabled})
+        (apply-changes-local))))
+
 ;; Misc changes
 
 (defn reorder-children

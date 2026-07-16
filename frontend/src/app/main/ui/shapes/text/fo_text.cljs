@@ -22,7 +22,9 @@
                 (sts/generate-text-styles shape parent)
                 (sts/generate-text-styles shape node))
         ruby  (:ruby node)
-        ruby? (and (string? ruby) (not (str/blank? ruby)))]
+        ruby? (and (not (true? (:ruby-hidden node)))
+                   (string? ruby)
+                   (not (str/blank? ruby)))]
     (if ruby?
       [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
        [:span.text-node {:style style} text]
