@@ -703,7 +703,11 @@ Graph Console
       const combo = { id: comboIdFor(n.id), data: { label: n.label, table: n.table } };
       const p = parentOf[n.id];
       if (p && hasCombo[p]) combo.combo = comboIdFor(p);
-      if (collapsedIds && collapsedIds.has(combo.id)) combo.style = { collapsed: true };
+      // Explicit boolean both ways: setData merges datum props by id on a
+      // live instance, so omitting `collapsed` would retain a previous
+      // `true` — a change inside a folded combo could then never expand it
+      // (the fold-unchanged bug).
+      combo.style = { collapsed: !!(collapsedIds && collapsedIds.has(combo.id)) };
       combos.push(combo);
     });
     const g6nodes = nodes.map(function (n) {
