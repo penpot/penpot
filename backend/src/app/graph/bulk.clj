@@ -10,7 +10,9 @@
   Node and relationship rows are written to a temporary staging directory
   and loaded with one COPY statement per table (or per rel FROM/TO pair)."
   (:require
+   [app.common.json :as json]
    [app.graph.ladybug :as ladybug]
+   [app.graph.schema.nodes :as nodes]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [datoteka.fs :as fs])
@@ -39,10 +41,52 @@
 (defn- csv-cell
   [v]
   (cond
+    (nil? v)      ""
     (uuid? v)     (str v)
     (string? v)   (csv-escape-string v)
-    (number? v)   (str (long v))
+    (number? v)   (if (== v (long v)) (str (long v)) (str (double v)))
+    (boolean? v)  (str v)
+    (keyword? v)  (csv-escape-string (name v))
+    (map? v)      (csv-escape-string (json/encode v))
+    (coll? v)     (csv-escape-string (json/encode v))
     :else         (csv-escape-string (str v))))
+
+(defn- kuzu-list-element
+  "Format one element of a Ladybug LIST column for CSV COPY. Kuzu parses
+  the (CSV-unquoted) field as a list literal: bare values for UUID/number
+  elements, single-quoted strings (backslash-escaped) for STRING/JSON."
+  [elem-type v]
+  (cond
+    (nil? v)
+    "NULL"
+
+    (contains? #{"STRING" "JSON"} elem-type)
+    (let [s (if (coll? v) (json/encode v) (csv-normalize-string (str v)))]
+      (str "'" (-> s
+                   (str/replace "\\" "\\\\")
+                   (str/replace "'" "\\'"))
+           "'"))
+
+    :else
+    (str v)))
+
+(defn- kuzu-list-cell
+  "CSV cell for a LIST-typed column (`UUID[]`, `STRING[]`, `JSON[]`, …).
+  JSON-encoding the collection (as `csv-cell` does) is wrong here: Kuzu
+  expects its own list literal, e.g. `[id1,id2]` with bare elements."
+  [ladybug-type v]
+  (let [elem-type (subs ladybug-type 0 (- (count ladybug-type) 2))
+        elems     (if (coll? v) (seq v) [v])]
+    (csv-escape-string
+     (str "[" (str/join "," (map #(kuzu-list-element elem-type %) elems)) "]"))))
+
+(defn- csv-typed-cell
+  [ladybug-type v]
+  (if (and (some? v)
+           (string? ladybug-type)
+           (str/ends-with? ladybug-type "[]"))
+    (kuzu-list-cell ladybug-type v)
+    (csv-cell v)))
 
 (defn- cypher-file-path
   [^File file]
@@ -50,20 +94,15 @@
       (str/replace "\\" "\\\\")
       (str/replace "'" "\\'")))
 
-(defn- node-columns
-  [rows]
-  (let [cols (into #{} (mapcat keys rows))
-        preferred [:id :name :version :revision :index]]
-    (into (vec (filter cols preferred))
-          (sort (remove (set preferred) cols)))))
-
 (defn- write-node-csv!
-  [^File file rows]
-  (let [columns (node-columns rows)]
+  [^File file table rows]
+  (let [columns (nodes/column-keys table)
+        types   (mapv #(nodes/column-ladybug-type table %) columns)]
     (with-open [w (io/writer file :encoding "UTF-8")]
       (.write w (str (str/join "," (map name columns)) "\n"))
       (doseq [row rows]
-        (.write w (str (str/join "," (map #(csv-cell (get row %)) columns))
+        (.write w (str (str/join "," (map (fn [k t] (csv-typed-cell t (get row k)))
+                                          columns types))
                        "\n"))))))
 
 (defn- write-edge-csv!
@@ -126,7 +165,7 @@
     (doseq [[table rows] (sort-by key nodes)
             :when (seq rows)]
       (let [csv-file (io/file staging-path (str table ".csv"))]
-        (write-node-csv! csv-file rows)
+        (write-node-csv! csv-file table rows)
         (copy-node-table! conn table csv-file)))
     (doseq [[[from-table to-table] group]
             (sort-by identity (group-by (juxt :from-table :to-table) edges))

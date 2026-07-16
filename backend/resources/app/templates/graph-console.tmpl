@@ -11,8 +11,14 @@ Graph Console
   </div>
 </nav>
 <main class="dashboard">
-  <section class="widget">
+  <!-- flex: 1 1 0 + min-width: 0: size this .dashboard flex item from the
+       viewport, never from content — content-driven growth (e.g. the G6
+       canvas) would otherwise feed back into column width. -->
+  <section class="widget" style="max-width: none; flex: 1 1 0; min-width: 0;">
     <p><a href="/dbg">&larr; Back to debug</a></p>
+
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+    <div style="flex: 0 0 440px; min-width: 360px;">
 
     <fieldset>
       <legend>Load graph in memory</legend>
@@ -20,23 +26,28 @@ Graph Console
         Projects the Penpot file into an in-memory Ladybug database for this
         admin session. Loading a new file replaces the previous one.
       </desc>
-      <form method="post" action="/dbg/actions/graph-load">
+      <form id="graph-load-form" method="post" action="/dbg/actions/graph-load">
         <div class="row">
           <input type="text" style="width:420px" name="file-id"
                  placeholder="file-id"
                  value="{% if session %}{{session.file-id}}{% endif %}" />
         </div>
-        <div class="row">                 
+        <div class="row" style="display: flex; gap: 8px;">
           <input type="submit" value="Load" />
+          {% if session %}
+          <input type="submit" value="Unload" form="graph-unload-form" />
+          {% endif %}
         </div>
       </form>
       {% if session %}
-      <form method="post" action="/dbg/actions/graph-unload">
-        <div class="row">
-          <input type="submit" value="Unload" />
-        </div>
-      </form>
+      <form id="graph-unload-form" method="post" action="/dbg/actions/graph-unload"></form>
       {% endif %}
+    </fieldset>
+
+    <fieldset>
+      <legend>Files</legend>
+      <desc>Teams &rarr; projects &rarr; files. Click a file to load it.</desc>
+      <div id="graph-files-tree" style="font-size: 13px;">Loading&hellip;</div>
     </fieldset>
 
     {% if session %}
@@ -44,7 +55,8 @@ Graph Console
       <legend>Loaded session</legend>
       <desc>
         <p>
-          File: <b>{{session.name}}</b> ({{session.file-id}})<br />
+          File: <b><a id="graph-penpot-link" data-file-id="{{session.file-id}}"
+                      target="_blank">{{session.name}}</a></b> ({{session.file-id}})<br />
           Loaded at revision: <b>{{session.revn}}</b><br />
           Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
           Schema: <b>{{session.schema-version}}</b><br />
@@ -89,10 +101,12 @@ Graph Console
     </fieldset>
 
     <fieldset>
-      <legend>Cypher query</legend>
+      <legend>LadybugDB <a href="https://docs.ladybugdb.com/cypher/"
+                            target="_blank">Cypher</a></legend>
       <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
         <div class="row">
-          <textarea name="query" rows="8" style="width:100%; font-family: monospace;">{{query}}</textarea>
+          <textarea name="query" rows="8" style="width:100%; font-family: monospace;"
+                    data-default-query="{{default-query}}">{{query}}</textarea>
         </div>
         <div class="row">
           <input type="submit" value="Run query" />
@@ -133,10 +147,163 @@ Graph Console
       {% endif %}
     </div>
     {% endif %}
+
+    </div><!-- left column -->
+
+    {% if session %}
+    <div id="graph-view-column"
+         style="flex: 1 1 auto; min-width: 0;">
+      <fieldset id="graph-view-panel">
+        <legend>Graph view
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            <input type="checkbox" id="graph-fold-toggle" /> fold containers
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            <input type="checkbox" id="graph-animate-toggle" /> animate
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            layout: <select id="graph-layout-select"></select>
+          </label>
+        </legend>
+        <desc>
+          Renders the in-memory Ladybug graph with AntV G6 (CDN). Node color
+          and glyph encode the node table; edges are <code>IsChildOf</code>
+          (arrow points to parent). With "fold containers" on, anything with
+          children (except the root) renders as a foldable box: double-click
+          to collapse or expand. Redraws automatically after live changes
+          (fold state survives redraws). Very large graphs need an explicit
+          "Render anyway".
+        </desc>
+        <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
+        <div id="graph-canvas"
+             style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff; overflow: hidden;"></div>
+        <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+        <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
+        <button type="button" id="graph-filter-reset" style="display: none;">Show full graph</button>
+      </fieldset>
+    </div>
+    {% endif %}
+
+    </div><!-- flex row -->
   </section>
 </main>
 
+<style>
+  #graph-view-column {
+    position: sticky;
+    top: 8px;
+  }
+  /* Fieldsets default to min-inline-size: min-content, so the panel could
+     never shrink below its content and grew with the G6 canvas instead
+     (content -> fieldset -> column -> canvas feedback). Let it shrink;
+     the legend wraps and the canvas clips. */
+  #graph-view-panel {
+    min-inline-size: 0;
+  }
+  #graph-view-column.graph-view-expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #fff;
+    overflow: auto;
+    padding: 12px;
+    margin: 0;
+  }
+  #graph-view-column.graph-view-expanded #graph-canvas {
+    height: calc(100vh - 160px) !important;
+  }
+  #graph-files-tree summary { cursor: pointer; }
+  #graph-files-tree ul { margin: 2px 0 4px 0; padding-left: 2em; }
+  #graph-files-tree a { text-decoration: none; }
+  #graph-files-tree a:hover { text-decoration: underline; }
+</style>
+
+<script>
+(function () {
+  const tree = document.getElementById("graph-files-tree");
+  const loadForm = document.getElementById("graph-load-form");
+  const loadInput = loadForm ? loadForm.querySelector("input[name=file-id]") : null;
+  const penpotLink = document.getElementById("graph-penpot-link");
+  if (!tree) return;
+
+  // Make the loaded-session file name a link into the Penpot workspace.
+  // The legacy /#/workspace/<project-id>/<file-id> route resolves the team
+  // itself, and project-id is already in the files-tree payload; same
+  // origin as this page, so no base URL to configure.
+  function linkLoadedFile(teams) {
+    if (!penpotLink || !penpotLink.dataset.fileId) return;
+    const fileId = penpotLink.dataset.fileId;
+    teams.forEach(function (team) {
+      (team.projects || []).forEach(function (project) {
+        (project.files || []).forEach(function (file) {
+          if (file.id === fileId) {
+            penpotLink.href = "/#/workspace/" + project.id + "/" + file.id;
+            penpotLink.title = "Open in Penpot";
+          }
+        });
+      });
+    });
+  }
+
+  function fileLink(file) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = file.name;
+    a.title = file.id;
+    a.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      if (loadInput) {
+        loadInput.value = file.id;
+        loadForm.submit();
+      }
+    });
+    li.appendChild(a);
+    return li;
+  }
+
+  fetch("/dbg/actions/graph-files")
+    .then(function (resp) {
+      if (!resp.ok) throw new Error("graph-files HTTP " + resp.status);
+      return resp.json();
+    })
+    .then(function (data) {
+      tree.textContent = "";
+      const teams = data.teams || [];
+      linkLoadedFile(teams);
+      if (!teams.length) {
+        tree.textContent = "No files found.";
+        return;
+      }
+      teams.forEach(function (team) {
+        const teamEl = document.createElement("details");
+        const teamSummary = document.createElement("summary");
+        teamSummary.textContent = team.name;
+        teamEl.appendChild(teamSummary);
+        (team.projects || []).forEach(function (project) {
+          const projEl = document.createElement("details");
+          projEl.style.marginLeft = "1em";
+          const projSummary = document.createElement("summary");
+          projSummary.textContent = project.name;
+          projEl.appendChild(projSummary);
+          const list = document.createElement("ul");
+          (project.files || []).forEach(function (file) {
+            list.appendChild(fileLink(file));
+          });
+          projEl.appendChild(list);
+          teamEl.appendChild(projEl);
+        });
+        tree.appendChild(teamEl);
+      });
+    })
+    .catch(function (err) {
+      tree.textContent = "Failed to load file tree: " + err;
+    });
+})();
+</script>
+
 {% if session %}
+<script src="https://cdn.jsdelivr.net/npm/@antv/g6@5/dist/g6.min.js"></script>
 <script>
 (function () {
   const fileId = "{{session.file-id}}";
@@ -153,6 +320,375 @@ Graph Console
   const changelogEmpty = document.getElementById("graph-changelog-empty");
 
   let ws = null;
+
+  // --- G6 graph view -------------------------------------------------
+  // Color+glyph per node table. Colors from the validated categorical
+  // palette; within-glyph pairs are the only ones color must separate
+  // alone (every node also carries a direct name label + legend).
+  const NODE_STYLES = {
+    "Document":  { color: "#0b0b0b", glyph: "diamond",  size: 28 },
+    "Page":      { color: "#2a78d6", glyph: "rect",     size: 22 },
+    "Frame":     { color: "#008300", glyph: "hexagon",  size: 18 },
+    "Group":     { color: "#4a3aa7", glyph: "hexagon",  size: 18 },
+    "Boolean":   { color: "#eda100", glyph: "hexagon",  size: 18 },
+    "SVGRaw":    { color: "#767470", glyph: "hexagon",  size: 18 },
+    "Rectangle": { color: "#eb6834", glyph: "rect",     size: 14 },
+    "Circle":    { color: "#1baf7a", glyph: "circle",   size: 14 },
+    "Path":      { color: "#e34948", glyph: "triangle", size: 14 },
+    "Text":      { color: "#e87ba4", glyph: "circle",   size: 14 },
+    "Image":     { color: "#eda100", glyph: "star",     size: 14 }
+  };
+  const FALLBACK_STYLE = { color: "#767470", glyph: "circle", size: 14 };
+  // Legend glyph characters mirroring the G6 node types above.
+  const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
+                        circle: "●", triangle: "▲", star: "★" };
+  // Above this many nodes the view is not rendered automatically; the
+  // "Render anyway" button forces it (~1.5 s per 2k nodes, measured).
+  const RENDER_GUARD_NODES = 4000;
+  // G6's entrance/update animation is nice didactics on small graphs but
+  // the performance killer at scale (>2 min at 1700 nodes vs ~1.5 s off);
+  // keep it only below this node count.
+  const ANIMATE_MAX_NODES = 100;
+  const LAYOUT_XS = 40;   // horizontal leaf slot spacing
+  const LAYOUT_YS = 70;   // vertical rank (depth) spacing
+
+  // Layout dropdown source of truth: name -> G6 layout config, or null for
+  // the built-in O(n) tree layout (preset positions from treePositions,
+  // fastest, exploits IsChildOf being a tree). The <select> is populated
+  // from these keys; add/remove/tune entries here. All 13 G6 configs below
+  // were smoke-tested against combo data on this UMD build (2026-07-15).
+  // Note: iterative layouts (force*, fruchterman) are slow on 1000+ nodes;
+  // combo-combined is the only combo-aware one; the rest just get bounding
+  // boxes drawn around wherever they put the member nodes.
+  const LAYOUTS = {
+    "tree":          null,
+    "antv-dagre":    { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
+    "dagre":         { type: "dagre", rankdir: "BT" },
+    "circular":      { type: "circular" },
+    "concentric":    { type: "concentric" },
+    "radial":        { type: "radial" },
+    "grid":          { type: "grid" },
+    "force":         { type: "force" },
+    "d3-force":      { type: "d3-force" },
+    "force-atlas2":  { type: "force-atlas2" },
+    "fruchterman":   { type: "fruchterman" },
+    "mds":           { type: "mds" },
+    "combo-combined": { type: "combo-combined" },
+    "random":        { type: "random" }
+  };
+  const DEFAULT_LAYOUT = "tree";
+
+  const graphViewStatus = document.getElementById("graph-view-status");
+  let g6graph = null;
+  let g6graphLayout = null;
+  let g6graphAnimated = null;
+  let refetchTimer = null;
+  let lastGraphData = null;
+  let lastGraphSig = null;
+  let renderForced = false;
+  let graphFilterIds = null;
+
+  function currentLayoutName() {
+    const stored = localStorage.getItem("graph-layout");
+    return Object.prototype.hasOwnProperty.call(LAYOUTS, stored) ? stored : DEFAULT_LAYOUT;
+  }
+
+  function nodeStyle(table) {
+    return NODE_STYLES[table] || FALLBACK_STYLE;
+  }
+
+  function comboIdFor(nodeId) {
+    return "combo:" + nodeId;
+  }
+
+  function foldEnabled() {
+    return localStorage.getItem("graph-fold-containers") !== "0";
+  }
+
+  // Off ⇒ animation disabled unconditionally, incl. small graphs (the
+  // adaptive ≤ ANIMATE_MAX_NODES rule only applies when this is on).
+  function animateEnabled() {
+    return localStorage.getItem("graph-animate") !== "0";
+  }
+
+  // IsChildOf is a tree, so an O(n) tidy layout replaces a generic DAG
+  // layout: depth = rank (y), post-order leaf slots = x, parents centered
+  // over their children. antv-dagre needed ~7 s at 1700 nodes; this is free.
+  function treePositions(nodes, parentOf, childrenOf) {
+    const pos = {};
+    let slot = 0;
+    function place(id, depth) {
+      const kids = childrenOf[id] || [];
+      if (!kids.length) {
+        pos[id] = { x: slot * LAYOUT_XS, y: depth * LAYOUT_YS };
+        slot += 1;
+        return;
+      }
+      kids.forEach(function (k) { place(k, depth + 1); });
+      const xs = kids.map(function (k) { return pos[k].x; });
+      pos[id] = { x: (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2,
+                  y: depth * LAYOUT_YS };
+      slot += 1; // breathing room between adjacent subtrees
+    }
+    nodes.forEach(function (n) {
+      if (!parentOf[n.id]) place(n.id, 0);
+    });
+    return pos;
+  }
+
+  function toG6Data(data, collapsedIds, withCombos, presetPositions) {
+    const nodes = data.nodes || [];
+    const edges = (data.edges || [])
+      .slice()
+      .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    const parentOf = {};
+    const childrenOf = {};
+    edges.forEach(function (e) {
+      parentOf[e.source] = e.target;
+      (childrenOf[e.target] = childrenOf[e.target] || []).push(e.source);
+    });
+    // Preset positions only for the built-in tree layout; under a G6
+    // layout they would make animated renders flash tree-then-layout.
+    const pos = presetPositions ? treePositions(nodes, parentOf, childrenOf) : null;
+    // Foldable = has children and has a parent: the IsChildOf root of the
+    // loaded graph (today a Document, later maybe a Project or Team) is
+    // never a combo — folding the whole graph is useless. Empty containers
+    // stay plain nodes.
+    const hasCombo = {};
+    if (withCombos) {
+      nodes.forEach(function (n) {
+        if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
+      });
+    }
+    const combos = [];
+    nodes.forEach(function (n) {
+      if (!hasCombo[n.id]) return;
+      const combo = { id: comboIdFor(n.id), data: { label: n.label, table: n.table } };
+      const p = parentOf[n.id];
+      if (p && hasCombo[p]) combo.combo = comboIdFor(p);
+      if (collapsedIds && collapsedIds.has(combo.id)) combo.style = { collapsed: true };
+      combos.push(combo);
+    });
+    const g6nodes = nodes.map(function (n) {
+      const out = { id: n.id,
+                    data: { label: n.label, table: n.table } };
+      if (pos) {
+        const p = pos[n.id] || { x: 0, y: 0 };
+        out.style = { x: p.x, y: p.y };
+      }
+      if (hasCombo[n.id]) {
+        out.combo = comboIdFor(n.id);
+      } else if (parentOf[n.id] && hasCombo[parentOf[n.id]]) {
+        out.combo = comboIdFor(parentOf[n.id]);
+      }
+      return out;
+    });
+    const g6edges = edges.map(function (e) {
+      return { source: e.source, target: e.target, data: { position: e.position } };
+    });
+    return { nodes: g6nodes, edges: g6edges, combos: combos };
+  }
+
+  function collapsedComboIds() {
+    if (!g6graph) return new Set();
+    try {
+      return new Set(g6graph.getComboData()
+        .filter(function (c) { return c.style && c.style.collapsed; })
+        .map(function (c) { return c.id; }));
+    } catch (_err) {
+      return new Set();
+    }
+  }
+
+  function renderGraph(g6data) {
+    const layoutName = currentLayoutName();
+    const animate = animateEnabled() && g6data.nodes.length <= ANIMATE_MAX_NODES;
+    if (g6graph && (g6graphLayout !== layoutName || g6graphAnimated !== animate)) {
+      // Layout or animation-mode switch: recreate the graph (cheap);
+      // neither is swappable on a live instance.
+      try { g6graph.destroy(); } catch (_err) {}
+      g6graph = null;
+    }
+    if (g6graph) {
+      g6graph.setData(g6data);
+      return g6graph.render().catch(function (_err) {
+        /* instance may be destroyed mid-render on rapid toggle/layout switches */
+      });
+    }
+    g6graphLayout = layoutName;
+    g6graphAnimated = animate;
+    const layoutCfg = LAYOUTS[layoutName];
+    const opts = {
+      container: "graph-canvas",
+      data: g6data,
+      autoFit: "view",
+      animation: animate,
+      padding: 20,
+      node: {
+        type: function (d) { return nodeStyle(d.data.table).glyph; },
+        style: {
+          size: function (d) { return nodeStyle(d.data.table).size; },
+          fill: function (d) { return nodeStyle(d.data.table).color; },
+          stroke: "#52514e",
+          lineWidth: 0.5,
+          labelText: function (d) { return d.data.label; },
+          labelFontSize: 9,
+          labelFill: "#0b0b0b",
+          labelPlacement: "bottom"
+        }
+      },
+      edge: {
+        style: { stroke: "#b3b0a8", endArrow: true, endArrowSize: 6 }
+      },
+      combo: {
+        type: "rect",
+        style: {
+          labelText: function (d) { return d.data.label; },
+          labelFontSize: 9,
+          labelFill: "#52514e",
+          labelPlacement: "top",
+          stroke: function (d) { return nodeStyle(d.data.table).color; },
+          lineWidth: 1,
+          fillOpacity: 0.03,
+          radius: 4
+        }
+      },
+      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand"],
+      plugins: [{
+        key: "toolbar",
+        type: "toolbar",
+        position: "top-left",
+        getItems: function () {
+          return [
+            { id: "auto-fit", value: "auto-fit" },
+            { id: "request-fullscreen", value: "expand" },
+            { id: "exit-fullscreen", value: "restore" }
+          ];
+        },
+        onClick: function (value) {
+          if (value === "auto-fit") {
+            if (g6graph) g6graph.fitView();
+          } else if (value === "expand") {
+            setExpanded(true);
+          } else if (value === "restore") {
+            setExpanded(false);
+          }
+        }
+      }]
+    };
+    if (layoutCfg) opts.layout = layoutCfg;
+    g6graph = new G6.Graph(opts);
+    return g6graph.render().catch(function (_err) {
+      /* see above */
+    });
+  }
+
+  function renderGraphLegend() {
+    const el = document.getElementById("graph-legend");
+    el.innerHTML = Object.keys(NODE_STYLES).map(function (table) {
+      const s = NODE_STYLES[table];
+      return '<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + s.color + '; font-size: 14px;">'
+        + (GLYPH_CHARS[s.glyph] || "●") + '</span> '
+        + escapeHtml(table) + "</span>";
+      // join with a space: the spans are nowrap, so the separator is the
+      // only soft-wrap opportunity in the legend row
+    }).join(" ");
+  }
+
+  function graphStatusText(data) {
+    return data.nodes.length + " nodes, " + data.edges.length + " edges"
+      + " (graph revn " + data.revn + ")"
+      + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
+  }
+
+  // Query filter: induced subgraph of the already-exported graph, selected
+  // by node ids found in the last Cypher result. No reconstruction from the
+  // query result is needed — ids are enough to slice the cached export.
+  function filteredGraphData() {
+    if (!graphFilterIds) return lastGraphData;
+    const keep = {};
+    const nodes = lastGraphData.nodes.filter(function (n) {
+      if (graphFilterIds.has(n.id)) { keep[n.id] = true; return true; }
+      return false;
+    });
+    const edges = lastGraphData.edges.filter(function (e) {
+      return keep[e.source] && keep[e.target];
+    });
+    return { nodes: nodes, edges: edges,
+             revn: lastGraphData.revn, truncated: lastGraphData.truncated };
+  }
+
+  function applyQueryFilter(ids) {
+    if (!lastGraphData) return;
+    const present = new Set();
+    lastGraphData.nodes.forEach(function (n) { if (ids.has(n.id)) present.add(n.id); });
+    if (!present.size) {
+      graphViewStatus.textContent = "query result matches no nodes in the loaded graph";
+      return;
+    }
+    graphFilterIds = present;
+    renderCurrent();
+  }
+
+  function renderCurrent() {
+    if (!lastGraphData) return;
+    const data = filteredGraphData();
+    const anywayBtn = document.getElementById("graph-render-anyway");
+    const filterBtn = document.getElementById("graph-filter-reset");
+    if (filterBtn) filterBtn.style.display = graphFilterIds ? "inline" : "none";
+    const filterNote = graphFilterIds
+      ? " — query filter: " + data.nodes.length + " of "
+        + lastGraphData.nodes.length + " nodes"
+      : "";
+    if (data.nodes.length > RENDER_GUARD_NODES && !renderForced) {
+      graphViewStatus.textContent =
+        graphStatusText(data) + filterNote + " — too large to render automatically";
+      if (anywayBtn) anywayBtn.style.display = "inline";
+      return;
+    }
+    if (anywayBtn) anywayBtn.style.display = "none";
+    graphViewStatus.textContent = graphStatusText(data) + filterNote;
+    renderGraph(toG6Data(data, collapsedComboIds(), foldEnabled(),
+                         LAYOUTS[currentLayoutName()] == null));
+  }
+
+  function refetchGraph() {
+    if (typeof G6 === "undefined") {
+      graphViewStatus.textContent = "G6 failed to load (CDN unreachable)";
+      return;
+    }
+    fetch("/dbg/actions/graph-data")
+      .then(function (resp) {
+        if (resp.status === 404) {
+          throw new Error("no graph session (backend restarted?) — reload a file");
+        }
+        if (!resp.ok) throw new Error("graph-data HTTP " + resp.status);
+        return resp.json();
+      })
+      .then(function (data) {
+        // Skip the repaint when the display projection is unchanged: a
+        // change burst that only touches non-projected attrs (e.g. moving
+        // shapes around) bumps revn but not the picture.
+        const sig = JSON.stringify([data.nodes, data.edges, data.truncated]);
+        lastGraphData = data;
+        if (sig === lastGraphSig) return;
+        lastGraphSig = sig;
+        renderCurrent();
+      })
+      .catch(function (err) {
+        graphViewStatus.textContent = "graph view error: " + err;
+      });
+  }
+
+  function scheduleGraphRefetch() {
+    if (refetchTimer) clearTimeout(refetchTimer);
+    refetchTimer = setTimeout(function () {
+      refetchTimer = null;
+      refetchGraph();
+    }, 400);
+  }
+  // --- end G6 graph view ---------------------------------------------
 
   function encodeTransitUuid(uuid) {
     return "~u" + uuid;
@@ -274,12 +810,24 @@ Graph Console
 
     appendChange(msg.revn, summarizeChanges(msg.changes));
     setTimeout(refreshSyncStatus, 150);
+    scheduleGraphRefetch();
   }
 
   function subscribe() {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(encodeSubscribe(fileId));
     }
+  }
+
+  let wsClosing = false;
+  let wsReconnectTimer = null;
+
+  function scheduleReconnect() {
+    if (wsClosing || wsReconnectTimer) return;
+    wsReconnectTimer = setTimeout(function () {
+      wsReconnectTimer = null;
+      connect();
+    }, 3000);
   }
 
   function connect() {
@@ -289,6 +837,9 @@ Graph Console
     ws.addEventListener("open", function () {
       wsStatus.textContent = "subscribed";
       subscribe();
+      // catch up on anything missed while disconnected
+      refreshSyncStatus();
+      scheduleGraphRefetch();
     });
 
     ws.addEventListener("message", function (event) {
@@ -296,7 +847,8 @@ Graph Console
     });
 
     ws.addEventListener("close", function () {
-      wsStatus.textContent = "disconnected";
+      wsStatus.textContent = wsClosing ? "disconnected" : "disconnected — retrying…";
+      scheduleReconnect();
     });
 
     ws.addEventListener("error", function () {
@@ -338,25 +890,63 @@ Graph Console
       + " style=\"border-collapse: collapse; width: 100%;\">"
       + "<thead><tr>";
 
-    (result.columns || []).forEach(function (column) {
-      html += "<th>" + escapeHtml(column) + "</th>";
+    // filter_* columns feed node ids to the graph-view filter below but
+    // are hidden from the table (convention; see default query).
+    const columns = result.columns || [];
+    const visibleIdx = [];
+    columns.forEach(function (column, i) {
+      if (!/^filter_/.test(column)) visibleIdx.push(i);
+    });
+    visibleIdx.forEach(function (i) {
+      html += "<th>" + escapeHtml(columns[i]) + "</th>";
     });
     html += "</tr></thead><tbody>";
 
     (result.rows || []).forEach(function (row) {
       html += "<tr>";
-      row.forEach(function (cell) {
-        html += "<td><code>" + escapeHtml(cell) + "</code></td>";
+      visibleIdx.forEach(function (i) {
+        html += "<td><code>" + escapeHtml(row[i]) + "</code></td>";
       });
       html += "</tr>";
     });
 
     html += "</tbody></table></fieldset>";
     output.innerHTML = html;
+
+    // Offer to view the result as an induced subgraph: any UUID appearing
+    // in any result cell selects that node in the loaded graph.
+    const uuidRe = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+    const ids = new Set();
+    (result.rows || []).forEach(function (row) {
+      row.forEach(function (cell) {
+        const found = String(cell).match(uuidRe);
+        if (found) found.forEach(function (m) { ids.add(m.toLowerCase()); });
+      });
+    });
+    if (ids.size) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Show result in graph view (" + ids.size + " ids)";
+      btn.addEventListener("click", function () { applyQueryFilter(ids); });
+      output.appendChild(btn);
+    }
   }
 
   const queryForm = document.getElementById("graph-query-form");
   if (queryForm) {
+    // Keep the query text across page reloads (load/unload/full-reload all
+    // re-render the page with the default query). Only restore over the
+    // default, never over a server-rendered non-default query.
+    const queryInput = queryForm.querySelector("textarea[name=query]");
+    const defaultQuery = (queryInput.dataset.defaultQuery || "").trim();
+    const storedQuery = localStorage.getItem("graph-query");
+    if (storedQuery && storedQuery.trim() !== defaultQuery
+        && queryInput.value.trim() === defaultQuery) {
+      queryInput.value = storedQuery;
+    }
+    queryInput.addEventListener("input", function () {
+      localStorage.setItem("graph-query", queryInput.value);
+    });
     queryForm.addEventListener("submit", function (event) {
       event.preventDefault();
       const formData = new FormData(queryForm);
@@ -375,10 +965,118 @@ Graph Console
     });
   }
 
+  // In-page expand (no Fullscreen API): keeps browser chrome and window
+  // manager splits usable while the graph takes the whole page. Entered
+  // via the toolbar's expand icon; exited via its exit icon or Esc.
+  const graphColumn = document.getElementById("graph-view-column");
+
+  function resizeGraphSoon() {
+    setTimeout(function () {
+      if (g6graph) {
+        const canvas = document.getElementById("graph-canvas");
+        try {
+          g6graph.setSize(canvas.clientWidth, canvas.clientHeight);
+          g6graph.fitView();
+        } catch (_err) { /* autoResize covers most cases */ }
+      }
+    }, 120);
+  }
+
+  function setExpanded(expanded) {
+    graphColumn.classList.toggle("graph-view-expanded", expanded);
+    resizeGraphSoon();
+  }
+
+  // Follow container size (G6's autoResize is inert on this build).
+  // Safe only because the container's width is viewport-driven and can
+  // never follow the canvas: the fieldset's min-content floor is removed
+  // (#graph-view-panel min-inline-size: 0) and #graph-canvas clips
+  // (overflow: hidden). Without both, observer -> setSize -> wider canvas
+  // -> wider column -> observer is a runaway growth loop that also wipes
+  // the painted canvas on every step.
+  const canvasEl = document.getElementById("graph-canvas");
+  if (typeof ResizeObserver !== "undefined" && canvasEl) {
+    let resizeRaf = null;
+    new ResizeObserver(function () {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(function () {
+        resizeRaf = null;
+        if (!g6graph) return;
+        try {
+          const cur = g6graph.getSize();
+          const w = canvasEl.clientWidth;
+          const h = canvasEl.clientHeight;
+          if (!cur || cur[0] !== w || cur[1] !== h) g6graph.setSize(w, h);
+        } catch (_err) { /* instance mid-recreate */ }
+      });
+    }).observe(canvasEl);
+  }
+
+  if (graphColumn) {
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape"
+          && graphColumn.classList.contains("graph-view-expanded")) {
+        setExpanded(false);
+      }
+    });
+  }
+
+  const foldToggle = document.getElementById("graph-fold-toggle");
+  if (foldToggle) {
+    foldToggle.checked = foldEnabled();
+    foldToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-fold-containers", foldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const animateToggle = document.getElementById("graph-animate-toggle");
+  if (animateToggle) {
+    animateToggle.checked = animateEnabled();
+    animateToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-animate", animateToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const layoutSelect = document.getElementById("graph-layout-select");
+  if (layoutSelect) {
+    Object.keys(LAYOUTS).forEach(function (name) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      layoutSelect.appendChild(opt);
+    });
+    layoutSelect.value = currentLayoutName();
+    layoutSelect.addEventListener("change", function () {
+      localStorage.setItem("graph-layout", layoutSelect.value);
+      renderCurrent();
+    });
+  }
+
+  const renderAnywayBtn = document.getElementById("graph-render-anyway");
+  if (renderAnywayBtn) {
+    renderAnywayBtn.addEventListener("click", function () {
+      renderForced = true;
+      renderCurrent();
+    });
+  }
+
+  const filterResetBtn = document.getElementById("graph-filter-reset");
+  if (filterResetBtn) {
+    filterResetBtn.addEventListener("click", function () {
+      graphFilterIds = null;
+      renderCurrent();
+    });
+  }
+
   connect();
   refreshSyncStatus();
+  renderGraphLegend();
+  refetchGraph();
 
   window.addEventListener("beforeunload", function () {
+    wsClosing = true;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(encodeUnsubscribe(fileId));
       ws.close();

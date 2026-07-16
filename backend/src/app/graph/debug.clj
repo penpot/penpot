@@ -12,6 +12,7 @@
    [app.common.time :as ct]
    [app.graph.ingest :as graph.ingest]
    [app.graph.ladybug :as ladybug]
+   [app.graph.schema.nodes :as nodes]
    [app.graph.sync :as graph.sync]
    [app.msgbus :as mbus]
    [clojure.string :as str]
@@ -23,7 +24,18 @@
 (set! *warn-on-reflection* true)
 
 (def default-query
-  "MATCH (n:Document) RETURN n.id AS id, n.name AS name;")
+  "Default console query, written to be self-explanatory in the textarea.
+  The `filter_*` columns carry node ids for the graph-view result filter;
+  the results table hides them (see `hide-filter-columns` and the
+  template's `renderQueryOutput`)."
+  (str "MATCH (s)-[r]->(t)\n"
+       "// WHERE some condition\n"
+       "RETURN label(s) AS src, s.name,\n"
+       "       label(r) AS rel,\n"
+       "       t.name, label(t) AS tgt,\n"
+       "\n"
+       "// filter_* columns omitted from table; these needed for graph view\n"
+       "s.id AS filter_src_id, t.id AS filter_tgt_id;"))
 
 (defonce ^:private sessions
   (atom {}))
@@ -65,18 +77,20 @@
     (some-> (get @sessions (session-key profile-id))
             (as-> current
                   (when (= file-id (:file-id current))
-                    (let [result (graph.sync/apply-changes!
-                                  conn (:index current) changes revn)
+                    (let [lock   (:lock current)
+                          result (locking lock
+                                   (graph.sync/apply-changes!
+                                    conn (:index current) changes revn))
                           sync-at (ct/now)]
                       (swap! sessions assoc-in [(session-key profile-id) :index]
                              (:index result))
                       (swap! sessions update-in [(session-key profile-id) :meta]
                              (fn [meta]
                                (cond-> (-> meta
-                                          (update :sync dissoc :error)
-                                          (assoc-in [:sync :last-at] sync-at)
-                                          (assoc-in [:sync :last-applied] (:applied result))
-                                          (assoc-in [:sync :last-skipped] (:skipped result)))
+                                           (update :sync dissoc :error)
+                                           (assoc-in [:sync :last-at] sync-at)
+                                           (assoc-in [:sync :last-applied] (:applied result))
+                                           (assoc-in [:sync :last-skipped] (:skipped result)))
                                  (seq (:applied result))
                                  (assoc :revn (:revn result)))))
                       (when (seq (:skipped result))
@@ -143,6 +157,7 @@
         ^Connection conn (Connection. db)
         msgbus     (::mbus/msgbus cfg)]
     (.setQueryTimeout conn 0)
+    (ladybug/ensure-extensions! conn)
     (try
       (let [meta  (graph.ingest/ingest-on-connection! cfg conn file-id
                                                       :db-path ":memory:"
@@ -150,8 +165,12 @@
                                                       :skip-validation? true)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
             session
+            ;; :lock serializes access to the shared Connection between the
+            ;; msgbus sync loop (writes) and HTTP handlers (reads); the Java
+            ;; binding gives no thread-safety guarantee for one Connection.
             (-> {:db db
                  :conn conn
+                 :lock (Object.)
                  :file-id file-id
                  :meta meta
                  :index index
@@ -172,19 +191,83 @@
     (ex/raise :type :validation
               :code :missing-query
               :hint "cypher query is required"))
-  (if-let [{:keys [conn]} (get @sessions (session-key profile-id))]
-    (-> (ladybug/query-on-connection! conn statement)
-        format-query-result)
+  (if-let [{:keys [conn lock]} (get @sessions (session-key profile-id))]
+    (locking lock
+      (-> (ladybug/query-on-connection! conn statement)
+          format-query-result))
     (ex/raise :type :not-found
               :code :graph-session-not-loaded
               :hint "load a file graph before running queries")))
+
+(def ^:private export-max-rows
+  "Row cap for graph-view export queries; far above expected per-file node
+  and edge counts. `:truncated` in the export signals when it was hit."
+  100000)
+
+(defn- export-nodes
+  [conn]
+  (reduce
+   (fn [acc {:keys [table]}]
+     (let [stmt (str "MATCH (n:" (nodes/match-label table)
+                     ") RETURN n.id AS id, n.name AS name;")
+           {:keys [rows truncated?]}
+           (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
+       (-> acc
+           (update :nodes into
+                   (map (fn [[id label]]
+                          {:id (str id) :label (str label) :table table}))
+                   rows)
+           (update :truncated? #(or % truncated?)))))
+   {:nodes [] :truncated? false}
+   nodes/node-types))
+
+(defn- export-edges
+  [conn]
+  (let [stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
+                  "RETURN a.id AS source, b.id AS target, r.position AS position;")
+        {:keys [rows truncated?]}
+        (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
+    {:edges (mapv (fn [[source target position]]
+                    {:source (str source) :target (str target) :position position})
+                  rows)
+     :truncated? truncated?}))
+
+(defn export-graph-data!
+  "Export the node/edge inventory of the in-memory graph for `profile-id`
+  as plain data for the debug graph view. Returns nil when no session is
+  loaded. Queries the Ladybug database (not the sync index) so the view
+  reflects actual DB state, including drift."
+  [profile-id]
+  (when-let [{:keys [conn lock file-id index]} (get @sessions (session-key profile-id))]
+    (locking lock
+      (let [{:keys [nodes] nodes-truncated? :truncated?} (export-nodes conn)
+            {:keys [edges] edges-truncated? :truncated?} (export-edges conn)]
+        {:file-id   (str file-id)
+         :revn      (:revn index)
+         :truncated (boolean (or nodes-truncated? edges-truncated?))
+         :nodes     nodes
+         :edges     edges}))))
+
+(defn- hide-filter-columns
+  "Drop `filter_*` columns from a query result before HTML table render;
+  they exist to feed node ids to the graph-view filter, not for reading.
+  The JSON response path keeps the full result."
+  [{:keys [columns rows] :as result}]
+  (let [idxs (vec (keep-indexed
+                   (fn [i c] (when-not (str/starts-with? (str c) "filter_") i))
+                   columns))]
+    (if (or (empty? idxs) (= (count idxs) (count columns)))
+      result
+      (assoc result
+             :columns (mapv (vec columns) idxs)
+             :rows    (mapv (fn [row] (mapv (vec row) idxs)) rows)))))
 
 (defn console-context
   "Build template data for the graph debug console page."
   [profile-id & {:keys [query query-result error message]}]
   {:session       (session-info profile-id)
    :query         (or query default-query)
-   :query-result  query-result
+   :query-result  (some-> query-result hide-filter-columns)
    :error         error
    :message       message
    :default-query default-query})
