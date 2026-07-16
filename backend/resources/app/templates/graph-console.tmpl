@@ -450,6 +450,7 @@ Graph Console
     Object.keys(diffMarks.nodes).forEach(function (id) {
       const m = liveMark(diffMarks.nodes, id);
       if (m && m.kind === "removed" && m.node && !present[id]
+          && !hiddenTables.has(m.node.table)
           && (!graphFilterIds || graphFilterIds.has(id))) {
         nodes.push(m.node);
         present[id] = true;
@@ -616,6 +617,8 @@ Graph Console
   let lastGraphSig = null;
   let renderForced = false;
   let graphFilterIds = null;
+  // Node tables hidden via legend clicks (session-local, not persisted).
+  const hiddenTables = new Set();
 
   function currentLayoutName() {
     const stored = localStorage.getItem("graph-layout");
@@ -961,15 +964,27 @@ Graph Console
       });
   }
 
+  // Legend entries are clickable: toggling one hides/shows that table's
+  // nodes (struck-through while hidden; hidden tables stay listed so they
+  // can be re-enabled).
   function renderGraphLegend(data) {
     const el = document.getElementById("graph-legend");
     if (!el) return;
     const tables = {};
     (data.nodes || []).forEach(function (n) { tables[n.table] = true; });
+    if (lastGraphData) {
+      lastGraphData.nodes.forEach(function (n) {
+        if (hiddenTables.has(n.table)) tables[n.table] = true;
+      });
+    }
     const rels = {};
     (data.edges || []).forEach(function (e) { rels[e.rel || "IsChildOf"] = true; });
     function nodeItem(table, s) {
-      return '<span style="margin-right: 1em; white-space: nowrap;">'
+      const off = hiddenTables.has(table);
+      return '<span data-table="' + escapeHtml(table) + '"'
+        + ' title="click to ' + (off ? "show" : "hide") + " " + escapeHtml(table) + ' nodes"'
+        + ' style="margin-right: 1em; white-space: nowrap; cursor: pointer;'
+        + (off ? " opacity: 0.35; text-decoration: line-through;" : "") + '">'
         + '<span style="color: ' + s.color + '; font-size: 14px;">'
         + (s.hollow ? "⬡" : (GLYPH_CHARS[s.glyph] || "●")) + '</span> '
         + escapeHtml(table) + "</span>";
@@ -1011,11 +1026,13 @@ Graph Console
   // by node ids found in the last Cypher result. No reconstruction from the
   // query result is needed — ids are enough to slice the cached export.
   function filteredGraphData() {
-    if (!graphFilterIds) return lastGraphData;
+    if (!graphFilterIds && !hiddenTables.size) return lastGraphData;
     const keep = {};
     const nodes = lastGraphData.nodes.filter(function (n) {
-      if (graphFilterIds.has(n.id)) { keep[n.id] = true; return true; }
-      return false;
+      if (hiddenTables.has(n.table)) return false;
+      if (graphFilterIds && !graphFilterIds.has(n.id)) return false;
+      keep[n.id] = true;
+      return true;
     });
     const edges = lastGraphData.edges.filter(function (e) {
       return keep[e.source] && keep[e.target];
@@ -1573,6 +1590,17 @@ Graph Console
     });
   }
 
+  const legendEl = document.getElementById("graph-legend");
+  if (legendEl) {
+    legendEl.addEventListener("click", function (ev) {
+      const item = ev.target.closest("[data-table]");
+      if (!item) return;
+      const t = item.getAttribute("data-table");
+      if (hiddenTables.has(t)) hiddenTables.delete(t); else hiddenTables.add(t);
+      renderCurrent();
+    });
+  }
+
   const diffFoldToggle = document.getElementById("graph-diff-fold");
   if (diffFoldToggle) {
     diffFoldToggle.checked = diffFoldEnabled();
@@ -1588,6 +1616,11 @@ Graph Console
     depthFoldInput.value = v == null ? "" : String(v);
     depthFoldInput.addEventListener("change", function () {
       localStorage.setItem("graph-depth-fold", depthFoldInput.value);
+      // A positive depth is meaningless without combos — switch them on.
+      if (parseInt(depthFoldInput.value, 10) > 0 && foldToggle && !foldToggle.checked) {
+        foldToggle.checked = true;
+        localStorage.setItem("graph-fold-containers", "1");
+      }
       renderCurrent();
     });
   }
