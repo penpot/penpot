@@ -68,11 +68,30 @@
   [v]
   (str "json('" (escape-cypher-string (json/encode v)) "')"))
 
+(defn format-timestamp
+  "Ladybug TIMESTAMP literal (beadpot: `timestamp('…')`)."
+  [v]
+  (let [s (cond
+            (instance? java.time.Instant v)
+            (.toString ^java.time.Instant v)
+
+            (instance? java.util.Date v)
+            (.toString (.toInstant ^java.util.Date v))
+
+            (string? v)
+            v
+
+            :else
+            (str v))]
+    (str "timestamp('" (escape-cypher-string s) "')")))
+
 (defn format-value
   [v]
   (cond
     (nil? v)     "NULL"
     (uuid? v)    (format-uuid v)
+    (instance? java.time.Instant v) (format-timestamp v)
+    (instance? java.util.Date v)    (format-timestamp v)
     (string? v)  (format-string v)
     (number? v)  (format-number v)
     (boolean? v) (if v "true" "false")
@@ -85,12 +104,13 @@
   "Format one element of a Cypher LIST literal for typed `elem-type`."
   [elem-type v]
   (case elem-type
-    "UUID"    (format-uuid v)
-    "STRING"  (format-string (str v))
-    "JSON"    (format-json v)
-    "INT64"   (format-int v)
-    "DOUBLE"  (format-number v)
-    "BOOLEAN" (if v "true" "false")
+    "UUID"      (format-uuid v)
+    "STRING"    (format-string (str v))
+    "JSON"      (format-json v)
+    "INT64"     (format-int v)
+    "DOUBLE"    (format-number v)
+    "BOOLEAN"   (if v "true" "false")
+    "TIMESTAMP" (format-timestamp v)
     (format-value v)))
 
 (defn- format-list
@@ -118,6 +138,9 @@
     ;; Coerce string ids from transit edge-cases into UUID literals.
     (= ladybug-type "UUID")
     (format-uuid v)
+
+    (= ladybug-type "TIMESTAMP")
+    (format-timestamp v)
 
     (and (string? ladybug-type)
          (str/ends-with? ladybug-type "[]"))
