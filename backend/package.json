@@ -21,7 +21,6 @@
   "scripts": {
     "lint": "clj-kondo --parallel --lint ../common/src src/",
     "check-fmt": "cljfmt check --parallel=true src/ test/",
-    "fmt": "cljfmt fix --parallel=true src/ test/",
-    "test": "clojure -M:dev:test"
+    "fmt": "cljfmt fix --parallel=true src/ test/"
   }
 }
