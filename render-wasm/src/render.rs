@@ -649,6 +649,44 @@ impl RenderState {
         shape.frame_clip_layer_blur()
     }
 
+    /// Builds the background-blur clip region for a shape whose strokes
+    /// extend beyond the fill geometry: the fill path expanded (via union)
+    /// with a solid stroke coverage of the maximum outward stroke reach.
+    /// Dash/dot stroke styles are treated as solid, so dash gaps also get
+    /// a blurred backdrop.
+    fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
+        let base = match &shape.shape_type {
+            Type::Rect(data) if data.corners.is_some() => {
+                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                skia::Path::rrect(rrect, None)
+            }
+            Type::Frame(data) if data.corners.is_some() => {
+                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                skia::Path::rrect(rrect, None)
+            }
+            Type::Rect(_) | Type::Frame(_) => skia::Path::rect(shape.selrect, None),
+            Type::Circle => skia::Path::oval(shape.selrect, None),
+            _ => shape
+                .get_skia_path()
+                .unwrap_or_else(|| skia::Path::rect(shape.selrect, None)),
+        };
+
+        // Expand outward by the max stroke reach: a centered stroke of
+        // 2× the outset covers exactly `stroke_outset` beyond the path
+        // (the inward half disappears in the union with the fill).
+        let mut paint = skia::Paint::default();
+        paint.set_style(skia::PaintStyle::Stroke);
+        paint.set_stroke_width(stroke_outset * 2.0);
+
+        let mut outline = skia::Path::default();
+        if skia::path_utils::fill_path_with_paint(&base, &paint, &mut outline, None, None) {
+            if let Some(united) = base.op(&outline, skia::PathOp::Union) {
+                return united;
+            }
+        }
+        base
+    }
+
     /// Renders background blur effect directly to the given target surface.
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
@@ -703,7 +741,14 @@ impl RenderState {
         canvas.concat(&matrix);
 
         if matches!(shape.shape_type, Type::Text(_)) {
-            canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+            // Outset the clip by the max outward stroke reach so the mask
+            // (which includes stroke coverage) isn't cut off at the shape rect.
+            let mut clip_rect = shape.selrect;
+            let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+            if stroke_outset > 0.0 {
+                clip_rect.outset((stroke_outset, stroke_outset));
+            }
+            canvas.clip_rect(clip_rect, skia::ClipOp::Intersect, true);
             // Blur in device space
             canvas.reset_matrix();
 
@@ -736,29 +781,40 @@ impl RenderState {
             return;
         }
 
-        // Clip to shape's path based on shape type
-        match &shape.shape_type {
-            Type::Rect(data) if data.corners.is_some() => {
-                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
-                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
-            }
-            Type::Frame(data) if data.corners.is_some() => {
-                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
-                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
-            }
-            Type::Rect(_) | Type::Frame(_) => {
-                canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
-            }
-            Type::Circle => {
-                let mut pb = skia::PathBuilder::new();
-                pb.add_oval(shape.selrect, None, None);
-                canvas.clip_path(&pb.detach(), skia::ClipOp::Intersect, true);
-            }
-            _ => {
-                if let Some(path) = shape.get_skia_path() {
-                    canvas.clip_path(&path, skia::ClipOp::Intersect, true);
-                } else {
+        // Clip to shape's path based on shape type. When the shape has
+        // strokes that extend beyond the fill geometry (center/outer), the
+        // clip is expanded with the stroke coverage so the backdrop is also
+        // blurred under the stroke (visible when the stroke is translucent).
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+        if stroke_outset > 0.0 {
+            let clip_path = Self::background_blur_clip_path(shape, stroke_outset);
+            canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
+        } else {
+            match &shape.shape_type {
+                Type::Rect(data) if data.corners.is_some() => {
+                    let rrect =
+                        RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                    canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                }
+                Type::Frame(data) if data.corners.is_some() => {
+                    let rrect =
+                        RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                    canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                }
+                Type::Rect(_) | Type::Frame(_) => {
                     canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+                }
+                Type::Circle => {
+                    let mut pb = skia::PathBuilder::new();
+                    pb.add_oval(shape.selrect, None, None);
+                    canvas.clip_path(&pb.detach(), skia::ClipOp::Intersect, true);
+                }
+                _ => {
+                    if let Some(path) = shape.get_skia_path() {
+                        canvas.clip_path(&path, skia::ClipOp::Intersect, true);
+                    } else {
+                        canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+                    }
                 }
             }
         }

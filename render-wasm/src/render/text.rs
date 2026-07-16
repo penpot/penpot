@@ -398,8 +398,20 @@ fn paint_text(
 
 /// Alpha mask for background blur coverage
 pub fn paint_text_mask(canvas: &Canvas, shape: &Shape) {
-    let mut mask_builders = shape.get_text_content().paragraph_builder_group_opaque();
+    let text_content = shape.get_text_content();
+    let mut mask_builders = text_content.paragraph_builder_group_opaque();
     paint_text(canvas, shape, &mut mask_builders);
+
+    // take strokes into account for the bblur mask
+    for stroke in shape.visible_strokes() {
+        let (mut stroke_builders, _) = stroke_paragraph_builder_group_from_text(
+            text_content,
+            stroke,
+            &shape.selrect(),
+            Some(true),
+        );
+        paint_text(canvas, shape, &mut stroke_builders);
+    }
 }
 
 fn paint_text_with_emoji_overlay(
