@@ -1,0 +1,7 @@
+Hello!
+
+"{{ organization-name|abbreviate:50 }}" has set up single sign-on (SSO) in Penpot. Access to its teams and files goes
+through your organization's identity provider. If you can't get in, your account probably isn't in the directory yet. To get access, contact the organization owner.
+
+
+The Penpot team.

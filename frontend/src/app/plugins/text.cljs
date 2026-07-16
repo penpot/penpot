@@ -33,7 +33,7 @@
 
 (def ^:private font-size-re #"^\d*\.?\d*$")
 (def ^:private line-height-re #"^\d*\.?\d*$")
-(def ^:private letter-spacing-re #"^\d*\.?\d*$")
+(def ^:private letter-spacing-re #"^-?\d*\.?\d*$")
 (def ^:private text-transform-re #"uppercase|capitalize|lowercase|none")
 (def ^:private text-decoration-re #"underline|line-through|none")
 (def ^:private text-direction-re #"ltr|rtl")
@@ -55,6 +55,19 @@
    {:font-variant-id (:id variant)
     :font-style (:style variant)
     :font-weight (:weight variant)}))
+
+(defn- unsupported-weight-message
+  "Validation message for a font weight the current font has no variant for,
+  listing the weights the font supports."
+  [font value]
+  (let [weights (->> (:variants font)
+                     (map :weight)
+                     (distinct)
+                     (sort-by #(or (d/parse-integer %) 0))
+                     (str/join ", "))]
+    (cond-> (dm/str "Font weight '" value "' not supported for the current font")
+      (seq weights)
+      (str ". Supported weights: " weights))))
 
 (defn- text-props
   [shape]
@@ -78,7 +91,7 @@
               taking?   (or taking? (and (<= from start) (< start to)))
               text      (subs text (max 0 (- start acc)) (- end acc))
               result    (cond-> result
-                          (and taking? (d/not-empty? text))
+                          (and taking? (seq text))
                           (conj (assoc node-style :text text)))
               continue? (or (> from end) (>= end to))]
           (recur (when continue? (rest styles)) taking? to result))
@@ -95,10 +108,11 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :$page {:enumerable false :get (constantly page-id)}
+    :$start {:enumerable false :get (constantly start)}
+    :$end {:enumerable false :get (constantly end)}
 
     :shape
-    {:this true
-     :get #(-> % u/proxy->shape)}
+    {:get (fn [] (format/shape-proxy plugin-id file-id page-id id))}
 
     :characters
     {:this true
@@ -224,7 +238,7 @@
               (fonts/find-variant font {:weight weight}))]
          (cond
            (nil? variant)
-           (u/not-valid plugin-id :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+           (u/not-valid plugin-id :fontWeight (unsupported-weight-message font value))
 
            (not (r/check-permission plugin-id "content:write"))
            (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'content:write' permission")
@@ -583,7 +597,7 @@
                (fonts/find-variant font {:weight weight}))]
           (cond
             (nil? variant)
-            (u/not-valid plugin-id :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+            (u/not-valid plugin-id :fontWeight (unsupported-weight-message font value))
 
             (not (r/check-permission plugin-id "content:write"))
             (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'content:write' permission")

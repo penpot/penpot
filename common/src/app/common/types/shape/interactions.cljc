@@ -76,7 +76,10 @@
   [:map {:title "AnimationDisolve"}
    [:animation-type [:= :dissolve]]
    [:duration ::sm/safe-int]
-   [:easing [::sm/one-of easing-types]]])
+   [:easing [::sm/one-of easing-types]]
+   [:way {:optional true} [::sm/one-of way-types]]
+   [:offset-effect {:optional true} :boolean]
+   [:direction {:optional true} [::sm/one-of direction-types]]])
 
 (def schema:slide-animation
   [:map {:title "AnimationSlide"}
@@ -136,8 +139,8 @@
   [:map {:title "OpenOverlayInteraction"}
    [:action-type [:= :open-overlay]]
    [:event-type [::sm/one-of event-types]]
-   [:overlay-position ::gpt/point]
-   [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+   [:overlay-position {:optional true} ::gpt/point]
+   [:overlay-pos-type {:optional true} [::sm/one-of overlay-positioning-types]]
    [:destination {:optional true} [:maybe ::sm/uuid]]
    [:close-click-outside {:optional true} :boolean]
    [:background-overlay {:optional true} :boolean]
@@ -148,8 +151,8 @@
   [:map {:title "ToggleOverlayInteraction"}
    [:action-type [:= :toggle-overlay]]
    [:event-type [::sm/one-of event-types]]
-   [:overlay-position ::gpt/point]
-   [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+   [:overlay-position {:optional true} ::gpt/point]
+   [:overlay-pos-type {:optional true} [::sm/one-of overlay-positioning-types]]
    [:destination {:optional true} [:maybe ::sm/uuid]]
    [:close-click-outside {:optional true} :boolean]
    [:background-overlay {:optional true} :boolean]

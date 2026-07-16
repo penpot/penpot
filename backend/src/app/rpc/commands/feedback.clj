@@ -54,7 +54,6 @@
 
     (eml/send! {::eml/conn pool
                 ::eml/factory eml/user-feedback
-                :from     (cf/get :smtp-default-from)
                 :to       destination
                 :reply-to (:email profile)
                 :email    (:email profile)

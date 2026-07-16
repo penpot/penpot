@@ -24,6 +24,8 @@ penpot.ui.onMessage<{ content: string; data: unknown }>(async (message) => {
     resizeW(message.data as { id: string });
   } else if (message.content === 'resize-h') {
     resizeH(message.data as { id: string });
+  } else if (message.content === 'throw-validation') {
+    throwValidation();
   } else if (message.content === 'lorem-ipsum') {
     loremIpsum();
   } else if (message.content === 'add-icon') {
@@ -200,6 +202,29 @@ function resizeH(data: { id: string }) {
   const shape = penpot.currentPage?.getShapeById('' + data.id);
   if (shape) {
     shape.resize(shape.width, shape.height * 2);
+  }
+}
+
+function throwValidation() {
+  const rect = penpot.createRectangle();
+  const center = penpot.viewport.center;
+  rect.x = center.x;
+  rect.y = center.y;
+
+  // `x` expects a number. Assigning an invalid value triggers a validation
+  // error so the v1 vs v2 manifest behavior can be compared:
+  //  - v1 manifest: the error is only logged to the console and the value is
+  //    left untouched (no exception, the try block completes).
+  //  - v2 manifest: `penpot.flags.throwValidationErrors` defaults to true, so
+  //    the assignment throws synchronously and the catch block runs.
+  try {
+    (rect as unknown as { x: unknown }).x = 'not-a-number';
+    console.log(
+      '[validation] No exception thrown — v1 / log-only behavior. rect.x =',
+      rect.x,
+    );
+  } catch (err) {
+    console.error('[validation] Exception thrown — v2 / strict behavior:', err);
   }
 }
 

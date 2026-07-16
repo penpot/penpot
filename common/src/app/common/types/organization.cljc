@@ -61,4 +61,16 @@
    [:name ::sm/text]
    [:initials [:maybe :string]]
    [:logo [:maybe ::sm/uri]]
-   [:avatar-bg-url [:maybe ::sm/uri]]])
+   [:avatar-bg-url [:maybe ::sm/uri]]
+   [:sso-active {:optional true} [:maybe :boolean]]])
+
+(def schema:nitrate-sso
+  [:map {:title "NitrateOrganizationSso"}
+   [:organization-id ::sm/uuid]
+   [:active {:optional true} [:maybe :boolean]]
+   [:provider {:optional true} [:maybe :string]]
+   [:client-id {:optional true} [:maybe :string]]
+   [:base-url {:optional true} [:maybe :string]]
+   [:client-secret {:optional true} [:maybe :string]]
+   [:issuer {:optional true} [:maybe :string]]
+   [:scopes {:optional true} [:maybe [::sm/set ::sm/text]]]])

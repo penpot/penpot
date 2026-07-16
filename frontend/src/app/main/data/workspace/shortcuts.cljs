@@ -18,6 +18,7 @@
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -149,7 +150,7 @@
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
-                          :fn #(st/emit! :interrupt (dw/deselect-all true))}
+                          :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
                       :fn #(st/emit! (dw/open-layers-search :find))}
@@ -312,6 +313,16 @@
                           :command "p"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :path))}
+
+   :draw-line            {:tooltip "L"
+                          :command "l"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (dwd/select-for-drawing :line))}
+
+   :draw-arrow           {:tooltip (ds/shift "L")
+                          :command "shift+l"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (dwd/select-for-drawing :arrow))}
 
    :draw-curve           {:tooltip (ds/shift "C")
                           :command "shift+c"

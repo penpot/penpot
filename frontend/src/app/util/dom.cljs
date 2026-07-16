@@ -12,6 +12,7 @@
    [app.common.geom.rect :as grc]
    [app.common.logging :as log]
    [app.common.media :as cm]
+   [app.common.uri :as u]
    [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.webapi :as wapi]
@@ -855,7 +856,42 @@
 
 (defn browser-back
   []
-  (.back (.-history js/window)))
+  (.back (.-history globals/window)))
+
+(defn replace-history-state!
+  "Replace the current browser history entry URL without triggering navigation."
+  [url]
+  (.replaceState (.-history globals/window) nil "" url))
+
+(defn- update-query-params
+  "Apply `f` to the query-params map of `url`, returning the updated URL string.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url f]
+  (let [transform (fn [parsed]
+                    (update parsed :query
+                            (fn [q]
+                              (-> (u/query-string->map (or q ""))
+                                  f
+                                  u/map->query-string))))
+        parsed    (u/uri url)
+        fragment  (:fragment parsed)]
+    (if (str/blank? fragment)
+      (str (transform parsed))
+      (-> parsed
+          (assoc :fragment (str (transform (u/parse fragment))))
+          str))))
+
+(defn append-query-param
+  "Return a new URL string with the given query parameter added or replaced.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url key value]
+  (update-query-params url #(assoc % key value)))
+
+(defn remove-query-param
+  "Return a new URL string with the given query parameter removed.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url key]
+  (update-query-params url #(dissoc % key)))
 
 (defn reload-current-window
   ([]

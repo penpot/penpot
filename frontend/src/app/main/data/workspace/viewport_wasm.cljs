@@ -27,4 +27,4 @@
 (defn maybe-view-interaction-end!
   [state]
   (when (and (features/active-feature? state "render-wasm/v1") (not (render-context-lost? state)))
-    (wasm.api/view-interaction-end!)))
+    (wasm.api/finalize-view-interaction!)))

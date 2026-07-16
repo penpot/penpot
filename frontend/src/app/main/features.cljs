@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as log]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.render-wasm :as wasm]
@@ -20,8 +21,6 @@
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-(log/set-level! :trace)
 
 (def global-enabled-features
   (cfeat/get-enabled-features cf/flags))
@@ -68,7 +67,7 @@
 (defn get-enabled-features
   "An explicit lookup of enabled features for the current team"
   [state team-id]
-  (let [team (dm/get-in state [:teams team-id])]
+  (let [team (dsh/lookup-team state team-id)]
     (-> global-enabled-features
         (set/union (get state :features-runtime #{}))
         (set/intersection cfeat/no-migration-features)

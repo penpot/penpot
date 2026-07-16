@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
@@ -43,10 +44,25 @@
            token-has-errors]}]
   (let [set-active? (some? id)
 
+        all-tokens-map (mf/deref refs/workspace-all-tokens-map)
+        token-exists? (contains? all-tokens-map label)
+        token-not-active (and token-exists? (not set-active?))
         content (cond
-                  token-has-errors (tr "workspace.tokens.ref-not-valid")
-                  (not set-active?) (tr "ds.inputs.token-field.no-active-token-option" label)
-                  :else label)
+                  (not token-exists?)
+                  (tr "options.deleted-token-with-name" label)
+
+                  (and token-exists? (not set-active?))
+                  (tr "ds.inputs.token-field.no-active-token-option" label)
+
+                  (and token-exists? token-has-errors)
+                  (tr "workspace.tokens.ref-not-valid" label)
+
+                  :else
+                  label)
+
+        broken-state (or (not token-exists?)
+                         token-has-errors
+                         token-not-active)
 
         default-id  (mf/use-id)
         id          (d/nilv id default-id)
@@ -84,15 +100,13 @@
         [:button {:on-click on-click
                   :ref pill-ref
                   :class (stl/css-case :pill true
-                                       :no-set-pill (or (not set-active?)
-                                                        token-has-errors)
+                                       :no-set-pill broken-state
                                        :pill-disabled disabled)
                   :disabled disabled
                   :aria-labelledby (dm/str id "-pill")
                   :on-key-down on-token-key-down}
          value
-         (when (or (not set-active?)
-                   token-has-errors)
+         (when broken-state
            [:div {:class (stl/css :pill-dot)}])]]]
 
       (when-not ^boolean disabled

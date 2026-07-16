@@ -156,12 +156,19 @@
                            (st/emit! (rt/nav :auth-login)))
 
                          empty-path?
-                         (let [team-id (dtm/get-last-team-id)]
-                           (if (contains? teams team-id)
-                             (st/emit! (rt/nav :dashboard-recent
-                                               (assoc query-params :team-id team-id)))
-                             (st/emit! (rt/nav :dashboard-recent
-                                               (assoc query-params :team-id (:default-team-id profile))))))
+                         (let [default-team-id (:default-team-id profile)
+                               last-team-id    (dtm/get-last-team-id)
+                               team-id         (if (contains? teams last-team-id)
+                                                 last-team-id
+                                                 default-team-id)]
+                           (->> (dtm/resolve-login-team-id {:team-id team-id
+                                                            :default-team-id default-team-id})
+                                (rx/subs!
+                                 (fn [team-id]
+                                   (st/emit! (rt/nav :dashboard-recent
+                                                     (assoc query-params :team-id team-id))))
+                                 (fn [cause]
+                                   (errors/on-error cause)))))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found}))))

@@ -8,6 +8,8 @@
   (:require
    [app.common.features :as ffeat]
    [app.common.files.changes :as ch]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
@@ -735,6 +737,55 @@
               (nil? (get-in result2 [:pages-index page-id :guides])))))
 
      {:num 1000})))
+
+(t/deftest set-comment-thread-position
+  (let [file-id   (uuid/custom 2 2)
+        page-id   (uuid/custom 1 1)
+        thread-id (uuid/custom 3 1)
+        frame-id  (uuid/custom 4 1)
+        data      (make-file-data file-id page-id)]
+
+    (t/testing "stores position and frame-id"
+      (let [change {:type :set-comment-thread-position
+                    :page-id page-id
+                    :comment-thread-id thread-id
+                    :frame-id frame-id
+                    :position (gpt/point 10 20)}
+            res    (ch/process-changes data [change])]
+        (t/is (= {:frame-id frame-id :position (gpt/point 10 20)}
+                 (get-in res [:pages-index page-id :comment-thread-positions thread-id])))))
+
+    (t/testing "removes the position when frame-id and position are nil"
+      (let [data (ch/process-changes data [{:type :set-comment-thread-position
+                                            :page-id page-id
+                                            :comment-thread-id thread-id
+                                            :frame-id frame-id
+                                            :position (gpt/point 10 20)}])
+            res  (ch/process-changes data [{:type :set-comment-thread-position
+                                            :page-id page-id
+                                            :comment-thread-id thread-id
+                                            :frame-id nil
+                                            :position nil}])]
+        (t/is (nil? (get-in res [:pages-index page-id :comment-thread-positions thread-id])))))
+
+    (t/testing "builder round-trips the position through undo and redo"
+      (let [data    (ch/process-changes data [{:type :set-comment-thread-position
+                                               :page-id page-id
+                                               :comment-thread-id thread-id
+                                               :frame-id frame-id
+                                               :position (gpt/point 10 20)}])
+            page    (get-in data [:pages-index page-id])
+            changes (-> (pcb/empty-changes)
+                        (pcb/with-page page)
+                        (pcb/set-comment-thread-position {:id thread-id
+                                                          :frame-id frame-id
+                                                          :position (gpt/point 100 200)}))
+            redone  (ch/process-changes data (:redo-changes changes))
+            undone  (ch/process-changes redone (:undo-changes changes))]
+        (t/is (= (gpt/point 100 200)
+                 (get-in redone [:pages-index page-id :comment-thread-positions thread-id :position])))
+        (t/is (= (gpt/point 10 20)
+                 (get-in undone [:pages-index page-id :comment-thread-positions thread-id :position])))))))
 
 (t/deftest set-plugin-data-json-encode-decode
   (let [schema ch/schema:set-plugin-data-change

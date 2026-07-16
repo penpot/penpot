@@ -23,6 +23,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -32,7 +33,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid*
-  [{:keys [vbox zoom]}]
+  [{:keys [vbox zoom clip-rulers] :or {clip-rulers false}}]
   (let [page         (mf/deref refs/workspace-page)
         custom-color (:pixel-grid-color page)
         custom-alpha (:pixel-grid-opacity page)
@@ -57,11 +58,14 @@
                        :stroke stroke
                        :stroke-opacity opacity
                        :stroke-width (str (/ 1 zoom))}}]]]
+     (when clip-rulers
+       [:> rulers/rulers-clip-path* {:id "clip-pixel-grid" :vbox vbox :zoom zoom}])
      [:rect {:x (:x vbox)
              :y (:y vbox)
              :width (:width vbox)
              :height (:height vbox)
              :fill (str "url(#pixel-grid)")
+             :clip-path (when clip-rulers "url(#clip-pixel-grid)")
              :style {:pointer-events "none"}}]]))
 
 (mf/defc cursor-tooltip*

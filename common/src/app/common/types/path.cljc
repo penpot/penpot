@@ -392,7 +392,9 @@
   ([shape]
    (convert-to-path shape {}))
   ([shape objects]
-   (-> (stp/convert-to-path shape objects)
-       (update :content impl/path-data))))
+   (let [shape' (stp/convert-to-path shape objects)]
+     (if (identical? shape shape')
+       shape'
+       (update shape' :content impl/path-data)))))
 
 (dm/export impl/decode-segments)

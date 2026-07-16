@@ -16,6 +16,7 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.permissions :as perms]
    [app.util.services :as sv]
    [cuerdas.core :as str]))
 
@@ -125,8 +126,8 @@
    ::sm/params schema:get-view-only-bundle}
   [system {:keys [::rpc/profile-id file-id share-id] :as params}]
   (db/run! system
-           (fn [{:keys [::db/conn] :as system}]
-             (let [perms  (bfc/get-file-permissions conn profile-id file-id share-id)
+           (fn [system]
+             (let [perms  (perms/get-file-read-permissions system profile-id file-id share-id)
                    params (-> params
                               (assoc ::perms perms)
                               (assoc :profile-id profile-id))]
@@ -139,5 +140,3 @@
                            :hint "object not found"))
 
                (get-view-only-bundle system params)))))
-
-

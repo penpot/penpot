@@ -46,6 +46,9 @@
 
   :dev
   {:extra-paths ["dev"]
+   :jvm-opts ["--sun-misc-unsafe-memory-access=allow"
+              "--enable-native-access=ALL-UNNAMED"]
+
    :extra-deps
    {thheller/shadow-cljs {:mvn/version "3.2.2"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}

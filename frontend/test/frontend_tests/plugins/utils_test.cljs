@@ -54,3 +54,36 @@
   ;; No validation errors -> no output (callers join with ". " and would
   ;; otherwise emit an empty string, which is fine).
   (t/is (empty? (flatten-error-map {}))))
+
+;; ---------------------------------------------------------------------
+;; Issue #9692 — `handle-error` must surface a useful message instead of a
+;; bare "Value not valid. Code: :error".
+;;
+;; `not-valid` is redefined to capture the rendered message directly, so the
+;; assertions don't depend on `st/state` or the console.
+
+(t/deftest test-handle-error-plain-js-error
+  ;; A plain JS error has no `::sm/explain` and CLJS `ex-data` returns nil, so
+  ;; the handler must fall back to the error's own message rather than nil.
+  (let [captured (atom ::none)]
+    (with-redefs [plugins.utils/not-valid (fn [_plugin-id _code value]
+                                            (reset! captured value) nil)]
+      ((plugins.utils/handle-error #uuid "00000000-0000-0000-0000-000000000000")
+       (js/Error. "boom: not a function")))
+    (t/is (= "boom: not a function" @captured))))
+
+(t/deftest test-handle-error-empty-explain
+  ;; An explain whose errors don't render any message must not produce an
+  ;; empty string; the handler falls back to the raw explain.
+  (let [captured (atom ::none)
+        cause    (ex-info "invalid" {:app.common.schema/explain {:errors [] :value 1}})]
+    (with-redefs [plugins.utils/not-valid (fn [_plugin-id _code value]
+                                            (reset! captured value) nil)]
+      ((plugins.utils/handle-error #uuid "00000000-0000-0000-0000-000000000000") cause))
+    (t/is (string? @captured))
+    (t/is (not= "" @captured))))
+
+(t/deftest test-error-messages-empty-returns-nil
+  ;; `error-messages` returns nil (not "") on an explain with no mappable
+  ;; errors, so `handle-error` can distinguish "no message" from a real one.
+  (t/is (nil? (plugins.utils/error-messages {:errors []}))))

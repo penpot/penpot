@@ -1,22 +1,69 @@
-## 1.5.0 (Unreleased)
+## 1.6.0 (Unreleased)
+
+### 🚀 Features
+
+- **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
+
+### 🩹 Fixes
+
+- **plugins-runtime**: Setting an individual padding/margin side (`leftPadding`, `topMargin`, …) now re-derives the padding/margin type, switching to `multiple` when the four sides stop being symmetric (so the value is actually painted) and back to `simple` once top/bottom and left/right are mirrored again.
+
+## 1.5.0 (2026-07-08)
+
+### 💣 Breaking changes & Deprecations
 
 - **plugins-runtime**: changes outside the current page now raise a validation error when the target belongs to a page that is not currently active, instead of silently operating on the active page.
-- **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
-- **plugins-runtime**: Array-typed properties (e.g. `page.flows`, `shape.exports`, `shape.shadows`, layout `rows`/`columns`, ruler guides, path `commands`) now always return an array, returning an empty array instead of `null` when there are no items
+- **plugin-types**: Change return type of `combineAsVariants`
+- **plugin-types**: Removed the `type` (`'layer-blur'`) property from the `Blur` interface; a blur is now described only by `id`, `value` and `hidden`.
+- **plugin-types:** Deprecate the legacy `Image` shape interface — image shapes exist only for backward compatibility with old files; new images are embedded in a `Fill` via its `fillImage` (an `ImageData`).
+- We've solved several inconsistencies accross the API, if you relied on an undocumented property or method be aware that might have changed.
+
+### 🚀 Features
+
+- **plugin-types**: Added the design **tokens API**: `Library.tokens` (a `TokenCatalog` exposing `themes`/`sets`, `addTheme`, `addSet`, `getThemeById`, `getSetById`), the `TokenSet` and `TokenTheme` interfaces, the full `Token` union (`TokenColor`, `TokenDimension`, `TokenBorderRadius`, `TokenShadow`, `TokenTypography`, `TokenFontFamilies`, etc.) with `value`/`resolvedValue`/`resolvedValueString`, `Shape.tokens` and `Shape.applyToken()`, per-token `applyToShapes()`/`applyToSelected()`, and the `TokenType` and `TokenProperty` types. Notable behaviors:
+  - `TokenCatalog.addSet` accepts an optional `active` flag to create an already-active set (sets are inactive by default).
+  - `TokenTheme.addSet` and `TokenTheme.removeSet` accept a token set id (`string`) in addition to a `TokenSet`.
+  - `TokenSet.addToken` resolves references against all token sets, allowing references to tokens in inactive sets.
+  - A `fontFamilies` token's `resolvedValue` returns the resolved family list as `string[]`.
+- **plugin-types**: Added `backgroundBlur` property for shapes (a `Blur` applied to the content behind the shape)
+- **plugin-types**: Added a `hidden` flag to `penpot.ui.open()` options to open the plugin without showing the modal
 - **plugins-runtime**: Added `version` field that returns the current version
 - **plugins-runtime**: Added optional parameter `throwOnError` to `penpot.ui.sendMessage` (default false, backwards-compatible)
-- **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
+- **plugin-types**: Added a `penpot.flags` subcontext with the flag `naturalChildOrdering`
+- **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: `penpot.openPage()` now returns `Promise<void>` and should be awaited before performing operations on the new page
-- **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
 - **plugin-types:** Change `LibraryComponent.isVariant()` return type to type guard `this is LibraryVariantComponent`
 - **plugin-types**: Added `createVariantFromComponents`
-- **plugin-types**: Change return type of `combineAsVariants`
 - **plugin-types**: Added `textBounds` property for text shapes
-- **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
 - **plugin-types**: Added `fixedWhenScrolling` property for shapes
-- **plugin-runtime:** `addToken` now resolves references against all token sets, allowing references to tokens in inactive sets
-- **plugin-types:** `TokenCatalog.addSet` now accepts an optional `active` flag to create an already-active set (sets are inactive by default)
+- **plugin-types**: Added `Page.remove()` to remove a page from the file (the last remaining page cannot be removed; removing the active page activates another one)
+- **plugin-types**: Added `RulerGuide.remove()` to remove a ruler guide
+- **plugin-types**: Added `File.validate()` to run the file's referential-integrity validation and return the list of errors found (empty when the file is valid) — the same errors the backend rejects on save
+- **plugin-types**: Added `Shape.resetOverrides()` to restore a component copy's attributes (and its children's) to the linked main component, like the "reset overrides" action on the Penpot interface
+
+### 🩹 Fixes
+
+- **plugins-runtime**: The validation error raised when setting a `fontWeight` the current font has no variant for now lists the weights the font supports.
+- **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
+- **plugins-runtime**: Array-typed properties (e.g. `page.flows`, `shape.exports`, `shape.shadows`, layout `rows`/`columns`, ruler guides, path `commands`) now always return an array, returning an empty array instead of `null` when there are no items
+- **plugin-types**: Fix `CommonLayout.horizontalSizing`/`verticalSizing` values, which were typed as `'fit-content'` but the runtime uses `'fix'` (now `'fix' | 'fill' | 'auto'`)
+- **plugin-types**: Fix `Shape.layoutCell` type, which pointed to `LayoutChildProperties` instead of `LayoutCellProperties`
+- **plugin-types**: Mark the interaction `animation` as optional (`animation?: Animation`) to match interactions that have no animation
+- **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
+- **plugin-types**: Rename `LibraryTypography.fontFamilies` to `fontFamily` to match the runtime (it holds a single font family, not an array)
+- **plugin-runtime:** Setting a `LibraryColor`'s `gradient` or `image` now clears the other color representations (solid/gradient/image are mutually exclusive), so the result is a valid color instead of being rejected with "expected valid color"
+- **plugin-types:** Mark members that have no runtime setter as `readonly`, fixing a mismatch where they were typed as writable: font metadata (`Font.*`, `FontVariant.*`, `FontsContext.all`), the `Ellipse`/`Image`/`SvgRaw` `type` discriminants (now consistent with the other shapes), `File.name`/`pages`/`revn`, `Page.root`, `TokenTheme.activeSets`, `Variants.properties`, `ImageData.*`, the board guide value objects (`GuideColumn`/`GuideRow`/`GuideSquare` and their params — `board.guides` returns a formatted snapshot, so reconfiguring means reassigning the whole array), the `Point` and `Bounds` value objects, the `Penpot.ui`/`Penpot.utils` subcontexts, the derived `Boolean` path data (`d`/`content`/`commands` are computed from the operands; `Boolean` is not editable like a `Path`), and the `EventsMap` event entries (a type-only event→callback map, never assigned). Members that do expose a setter stay writable: `Board.children`, `Path.d`/`content`/`commands` and `FileVersion.label`.
+- **plugins-runtime**: `Shape.rotation` (and `Shape.rotate()`) now reject `NaN`/non-finite values instead of letting them reach the geometry layer as an invalid move vector (which surfaced as an error toast).
+- **plugins-runtime**: The positional variant-property operations (`Variants.removeProperty`, `Variants.renameProperty`, `LibraryVariantComponent.setVariantProperty`) now reject an out-of-range `pos` instead of letting it reach the data layer as an index-out-of-bounds error (which surfaced as an error toast).
+- **plugins-runtime**: `createShapeFromSvg`/`createShapeFromSvgWithImages` now reject malformed SVG markup up front instead of failing asynchronously inside the import pipeline (which surfaced as an "SVG is invalid or malformed" error toast).
+- **plugins-runtime**: Setting `FileVersion.label` no longer raises an internal error toast after renaming the version (the internal rename event was built with a misplaced argument).
+- **plugins-runtime**: `Text.getRange(start, end)` now clamps an `end` past the text length to the character count instead of throwing an internal `TypeError` when reading the range's `characters`.
+- **plugins-runtime**: `penpot.openPage()` (and `Page.openPage()`) now resolves immediately when the target page is already active, instead of waiting forever for a page-initialization event that never fires.
+- **plugins-runtime**: `Shape.shadows`, `Shape.exports` and grid `rows`/`columns` now return live proxies, so writing a member on a returned shadow/export/track (e.g. `shape.shadows[0].blur = 7`) persists to the shape instead of mutating a detached snapshot that was silently discarded. The shadow `color` remains a plain snapshot (reconfigure it by assigning `shadow.color`).
+- **plugins-runtime**: Setting a variant component's `path` now renames the whole variant (its container and every main instance), like the `name` setter already did, instead of renaming only the component and leaving the file referentially inconsistent (which the backend rejected on save with a `variant-component-bad-name` error).
+- **plugins-runtime**: `Page.getSharedPluginDataKeys(namespace)` now works instead of always raising a namespace validation error: the implementation expected a spurious leading argument, so the caller's `namespace` was read as a missing second argument.
+- **plugins-runtime**: Storing plugin data on a connected (non-local) shared library is now consistently rejected with a `setPluginData-non-local-library` error on the `Library` object as well as its assets (colors, typographies, components). Previously the `Library` object accepted the write and applied it optimistically, but plugin data is not part of library synchronization and the change only persists when the caller can edit the library file — on a read-only shared library it failed silently and was lost on reload. Plugin data can only be stored on the file currently being edited.
 
 ## 1.4.2 (2026-01-21)
 

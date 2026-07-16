@@ -651,6 +651,21 @@ PENPOT_EXPORTER_URI: http://your-penpot-exporter:6061
 
 These variables are used for generate correct nginx.conf file on container startup.
 
+### Exporter
+
+The exporter uses this variable:
+
+```bash
+# Exporter
+PENPOT_INTERNAL_URI: http://penpot-frontend:8080
+```
+
+- `PENPOT_INTERNAL_URI`: The URI used by the exporter's headless browser to
+  communicate with the frontend (internal Docker network). Defaults to
+  `PENPOT_PUBLIC_URI` if not set. The default value
+  `http://penpot-frontend:8080` used in the docker-compose is a good default and
+  it is recommended to keep it unchanged.
+
 ## Other flags
 
 There are other flags that are useful for a more customized Penpot experience. This section has the list of the flags meant

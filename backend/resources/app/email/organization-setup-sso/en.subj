@@ -1,0 +1,1 @@
+“{{ organization-name|abbreviate:25 }}” has set up single sign-on (SSO) in Penpot

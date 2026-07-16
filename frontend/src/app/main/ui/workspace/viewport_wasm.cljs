@@ -51,7 +51,9 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
+                                                   path-edition-bar*
+                                                   view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -573,15 +575,30 @@
            (wasm.api/push-ruler-theme-colors!)
            (wasm.api/request-render "rulers-colors-theme")))))
 
+    ;; Text-editor-wasm: push the theme colors (selection background, caret)
+    ;; into the WASM text editor so the selection follows the design tokens per
+    ;; theme (purple on light, teal on dark) instead of a hardcoded default.
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (wasm.api/text-editor-apply-theme)
+        (theme/add-color-scheme-listener!
+         (fn []
+           (wasm.api/text-editor-apply-theme)
+           (wasm.api/request-render "text-editor-colors-theme")))))
+
+    ;; Ruler overlay updates below only change the UI surface, not the shapes.
+    ;; They use `render-from-cache!` (cached tiles + UI, atomic) instead of a full
+    ;; `request-render`, which would kick off a progressive tile-by-tile shape
+    ;; re-render that flashes on zoomed-in views (see penpot ruler-selection flash).
     (mf/with-effect [@canvas-init? frame-visible?]
       (when @canvas-init?
         (wasm.api/set-rulers-frame-visible! frame-visible?)
-        (wasm.api/request-render "rulers-frame")))
+        (wasm.api/render-from-cache!)))
 
     (mf/with-effect [@canvas-init? show-rulers?]
       (when @canvas-init?
         (wasm.api/set-rulers-visible! show-rulers?)
-        (wasm.api/request-render "rulers-visible")))
+        (wasm.api/render-from-cache!)))
 
     (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
       (when (and @canvas-init? show-rulers?)
@@ -592,7 +609,7 @@
                      (some-> ruler-selection :width) (some-> ruler-selection :height)]
       (when (and @canvas-init? show-rulers?)
         (wasm.api/set-rulers-selection! ruler-selection)
-        (wasm.api/request-render "rulers-selection")))
+        (wasm.api/render-from-cache!)))
 
     ;; Paint background + rulers instantly, before shapes finish loading. Runs
     ;; after the ruler push effects so the WASM ruler state is already set.
@@ -726,8 +743,8 @@
                                       :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
 
-           :else [:& editor-v1/text-editor-svg {:shape editing-shape
-                                                :ref text-editor-ref}]))
+           :else [:> editor-v1/text-editor-svg* {:shape editing-shape
+                                                 :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id (->> @hover-ids
@@ -776,9 +793,10 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
+          {:shapes selected-shapes
            :zoom zoom}])
 
        (when show-measures?
@@ -851,11 +869,14 @@
           {:zoom zoom
            :selected selected
            :transform transform
-           :focus focus}])
+           :focus focus
+           :vbox vbox
+           :clip-rulers show-rulers?}])
 
        (when show-pixel-grid?
          [:> widgets/pixel-grid* {:vbox vbox
-                                  :zoom zoom}])
+                                  :zoom zoom
+                                  :clip-rulers show-rulers?}])
 
        (when show-snap-points?
          [:> snap-points/snap-points*
