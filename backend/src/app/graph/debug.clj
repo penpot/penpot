@@ -18,7 +18,8 @@
    [promesa.exec.csp :as sp])
   (:import
    com.ladybugdb.Connection
-   com.ladybugdb.Database))
+   com.ladybugdb.Database
+   org.apache.arrow.memory.RootAllocator))
 
 (set! *warn-on-reflection* true)
 
@@ -32,8 +33,24 @@
   [profile-id]
   (str profile-id))
 
+(defn- close-arrow-alloc!
+  [arrow-alloc]
+  (when arrow-alloc
+    (let [^RootAllocator alloc arrow-alloc
+          outstanding (.getAllocatedMemory alloc)]
+      (try
+        (.close alloc)
+        (catch Exception e
+          (l/wrn :hint "arrow allocator close failed on session destroy"
+                 :allocated-bytes outstanding
+                 :cause e))))))
+
 (defn- destroy-session!
-  [{:keys [conn db sync-ch msgbus]}]
+  "Release session resources.
+
+  Order matters for Arrow: close Ladybug Connection/Database first so any
+  retained Arrow staging buffers are released, then close the RootAllocator."
+  [{:keys [conn db sync-ch msgbus arrow-alloc]}]
   (when sync-ch
     (sp/close! sync-ch)
     (when msgbus
@@ -41,7 +58,8 @@
   (when conn
     (ex/ignoring (.close ^Connection conn)))
   (when db
-    (ex/ignoring (.close ^Database db))))
+    (ex/ignoring (.close ^Database db)))
+  (close-arrow-alloc! arrow-alloc))
 
 (defn- format-cell
   [value]
@@ -138,26 +156,30 @@
 (defn load-session!
   "Ingest `file-id` into a new in-memory Ladybug database for `profile-id`.
 
-  Uses Arrow by default (`ingest-on-connection!`). After building the sync
-  index, drops `:nodes`/`:edges` from stored meta so the session does not
-  retain the full projection in heap."
+  Uses Arrow by default. The Arrow RootAllocator is owned by the session and
+  closed only after the Ladybug Database (on unload/reload); closing it while
+  the connection is still open leaks direct memory on every load."
   [cfg profile-id file-id]
   (unload-session! profile-id)
   (let [^Database db (Database.)
         ^Connection conn (Connection. db)
-        msgbus     (::mbus/msgbus cfg)]
+        ^RootAllocator arrow-alloc (RootAllocator.)
+        msgbus (::mbus/msgbus cfg)]
     (.setQueryTimeout conn 0)
     (ladybug/ensure-extensions! conn)
     (try
       (let [meta  (graph.ingest/ingest-on-connection! cfg conn file-id
                                                       :db-path ":memory:"
                                                       :skip-stats? true
-                                                      :skip-validation? true)
+                                                      :skip-validation? true
+                                                      :use-arrow? true
+                                                      :arrow-alloc arrow-alloc)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
             meta  (update meta :projection select-keys [:stats])
             session
             (-> {:db db
                  :conn conn
+                 :arrow-alloc arrow-alloc
                  :file-id file-id
                  :meta meta
                  :index index
@@ -168,7 +190,7 @@
         (swap! sessions assoc (session-key profile-id) session)
         meta)
       (catch Throwable cause
-        (destroy-session! {:conn conn :db db :msgbus msgbus})
+        (destroy-session! {:conn conn :db db :arrow-alloc arrow-alloc :msgbus msgbus})
         (throw cause)))))
 
 (defn query-session!
