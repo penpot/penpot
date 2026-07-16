@@ -29,6 +29,7 @@ function isDefined(v) {
 }
 
 function mergeBlockData(block, newData) {
+  if (!block) return undefined;
   let data = block.getData();
 
   for (let key of Object.keys(newData)) {
@@ -176,10 +177,12 @@ export function splitBlockPreservingData(state) {
 
   content = Modifier.splitBlock(content, selection);
 
-  const blockData = content.blockMap.get(content.selectionBefore.getStartKey()).getData();
+  const startKey = content.selectionBefore.getStartKey();
+  const block = content.blockMap.get(startKey);
+  const blockData = (block && block.getData()) || new Map();
   const blockKey = content.selectionAfter.getStartKey();
-  const blockMap = content.blockMap.update(blockKey, (block) => {
-    return block.set("data", blockData);
+  const blockMap = content.blockMap.update(blockKey, (b) => {
+    return b.set("data", blockData);
   });
 
   content = content.set("blockMap", blockMap);
@@ -325,6 +328,7 @@ export function updateBlockData(state, blockKey, data) {
   const content = state.getCurrentContent();
   const block = content.getBlockForKey(blockKey);
   const newBlock = mergeBlockData(block, data);
+  if (!newBlock) return state;
 
   const blockData = newBlock.getData();
 
