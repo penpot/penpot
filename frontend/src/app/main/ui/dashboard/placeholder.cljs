@@ -13,6 +13,8 @@
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.foundations.typography :as t]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -38,25 +40,25 @@
      [:div {:class (stl/css :empty-project-card)
             :on-click on-create
             :title (tr "dashboard.add-file")}
-      [:div {:class (stl/css :empty-project-card-title)}
-       (tr "dashboard.empty-project.create")]
-      [:div {:class (stl/css :empty-project-card-subtitle)}
-       (tr "dashboard.empty-project.start")]]
+      [:> text* {:typography t/body-small :as "span" :class (stl/css :empty-project-card-title)}
+        (tr "dashboard.empty-project.create")]
+      [:> text* {:typography t/body-small :as "span" :class (stl/css :empty-project-card-subtitle)}
+        (tr "dashboard.empty-project.start")]]
 
      [:div {:class (stl/css :empty-project-card)
             :on-click on-import
             :title (tr "dashboard.empty-project.import")}
-      [:div {:class (stl/css :empty-project-card-title)}
+      [:> text* {:typography t/body-small :as "span" :class (stl/css :empty-project-card-title)}
        (tr "dashboard.empty-project.import")]
-      [:div {:class (stl/css :empty-project-card-subtitle)}
+      [:> text* {:typography t/body-small :as "span" :class (stl/css :empty-project-card-subtitle)}
        (tr "dashboard.empty-project.import-penpot")]]
 
      [:div {:class (stl/css :empty-project-card)
             :on-click on-add-library
             :title (tr "dashboard.empty-project.go-to-libraries")}
-      [:div {:class (stl/css :empty-project-card-title)}
+      [:> text* {:typography t/body-small :as "span" :class (stl/css :empty-project-card-title)}
        (tr "dashboard.empty-project.add-library")]
-      [:div {:class (stl/css :empty-project-card-subtitle)}
+      [:> text* {:typography t/body-small :as "span" :class (stl/css :empty-project-card-subtitle)}
        (tr "dashboard.empty-project.explore")]]
 
      [:> udi/import-form* {:ref file-input
@@ -130,7 +132,7 @@
                    :on-mouse-enter on-mouse-enter
                    :on-mouse-leave on-mouse-leave}
           (if show-text?
-            (tr "dashboard.empty-project.create")
+            [:> text* {:typography t/title-small :as "span"} (tr "dashboard.empty-project.create")]
             deprecated-icon/add)]]))))
 
 (mf/defc loading-placeholder*

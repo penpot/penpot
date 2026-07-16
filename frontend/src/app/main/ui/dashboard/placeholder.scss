@@ -121,6 +121,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: var(--sp-xxs);
   align-items: center;
   background-color: var(--color-card-background);
   border: deprecated.$s-2 solid var(--color-background-quaternary);
