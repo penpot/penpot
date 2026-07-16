@@ -25,7 +25,10 @@
                      (map :table nodes/node-types)))
    :edges {:IsChildOf (count-on-connection
                        conn
-                       "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")}})
+                       "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")
+           :IsInstanceOf (count-on-connection
+                          conn
+                          "MATCH ()-[e:IsInstanceOf]->() RETURN count(e) AS IsInstanceOf_c;")}})
 
 (defn summarize
   "Return node/edge counts from the graph database."

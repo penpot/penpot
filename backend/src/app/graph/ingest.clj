@@ -66,7 +66,7 @@
        :projection     {:stats stats
                         :nodes nodes
                         :edges edges}
-       :transforms     (project.transforms/apply-transforms! system db-path data file)
+       :transforms     (project.transforms/apply-transforms! system conn data file)
        :stats          (when-not skip-stats?
                          (stats/summarize-connection conn))})))
 

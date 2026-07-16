@@ -55,6 +55,14 @@
   (when db
     (ex/ignoring (.close ^Database db))))
 
+(defn- slim-ingest-meta
+  "Drop full projection rows from session meta.
+
+  `build-index` needs `:nodes`/`:edges` once; keeping them in the session
+  duplicates the entire graph on the JVM heap for every Load."
+  [meta]
+  (update meta :projection #(select-keys % [:stats])))
+
 (defn- format-cell
   [value]
   (cond
@@ -110,11 +118,14 @@
   (if-let [msgbus (:msgbus session)]
     (let [sync-ch (sp/chan :buf (sp/dropping-buffer 64))]
       (mbus/sub! msgbus :topic file-id :chan sync-ch)
+      ;; Recur ONLY while the channel is open. A bare `(recur)` after
+      ;; `take!` returns nil would spin forever and pin this Connection
+      ;; (and its Ladybug Database native memory) across every Load.
       (sp/go-loop []
         (when-let [message (sp/take! sync-ch)]
           (when (= :file-change (:type message))
-            (apply-file-change! conn profile-id message)))
-        (recur))
+            (apply-file-change! conn profile-id message))
+          (recur)))
       (assoc session :sync-ch sync-ch))
     session))
 
@@ -164,6 +175,9 @@
                                                       :skip-stats? true
                                                       :skip-validation? true)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
+            ;; Discard projection rows after indexing — they are only needed
+            ;; to seed the sync index and would otherwise leak heap on each Load.
+            meta  (slim-ingest-meta meta)
             session
             ;; :lock serializes access to the shared Connection between the
             ;; msgbus sync loop (writes) and HTTP handlers (reads); the Java
@@ -223,14 +237,23 @@
 
 (defn- export-edges
   [conn]
-  (let [stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
-                  "RETURN a.id AS source, b.id AS target, r.position AS position;")
-        {:keys [rows truncated?]}
-        (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
-    {:edges (mapv (fn [[source target position]]
-                    {:source (str source) :target (str target) :position position})
-                  rows)
-     :truncated? truncated?}))
+  (let [child-stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
+                        "RETURN a.id AS source, b.id AS target, r.position AS position, "
+                        "'IsChildOf' AS rel;")
+        inst-stmt  (str "MATCH (a)-[r:IsInstanceOf]->(b) "
+                        "RETURN a.id AS source, b.id AS target, NULL AS position, "
+                        "'IsInstanceOf' AS rel;")
+        child      (ladybug/query-on-connection! conn child-stmt :max-rows export-max-rows)
+        inst       (ladybug/query-on-connection! conn inst-stmt :max-rows export-max-rows)
+        ->edge     (fn [[source target position rel]]
+                     (cond-> {:source (str source)
+                              :target (str target)
+                              :rel    (str rel)}
+                       (some? position) (assoc :position position)))]
+    {:edges (into (mapv ->edge (:rows child))
+                  (map ->edge)
+                  (:rows inst))
+     :truncated? (boolean (or (:truncated? child) (:truncated? inst)))}))
 
 (defn export-graph-data!
   "Export the node/edge inventory of the in-memory graph for `profile-id`
