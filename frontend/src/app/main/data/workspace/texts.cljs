@@ -39,6 +39,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as wasm.text-editor]
    [app.util.text-editor :as ted]
+   [app.util.text.content :as tc]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -60,6 +61,24 @@
 (declare v2-sync-wasm-text-layout)
 
 ;; -- Content helpers
+
+(defn ensure-valid-text-content
+  "Repair structurally incomplete text :content to a canonical
+  root -> paragraph-set -> paragraph -> span tree. Returns the
+  content unchanged when it is already well-formed.
+
+  A `nil` content, a root with no :children, or a root with an empty
+  :children vector all fail the backend `validate-shape` schema
+  (children must contain at least one paragraph-set). This helper
+  is the defensive normalizer used by content-commit paths."
+  [content]
+  (if (and (map? content)
+           (= "root" (:type content))
+           (or (nil? (:children content))
+               (empty? (:children content))))
+    (let [base (tc/v2-default-text-content)]
+      (d/txt-merge base (select-keys content txt/root-attrs)))
+    content))
 
 (defn- v2-content-has-text?
   [content]
@@ -426,7 +445,14 @@
             (fn [shape]
               (if (some? (:content shape))
                 (txt/update-text-content shape txt/is-root-node? d/txt-merge attrs)
-                (assoc shape :content (d/txt-merge {:type "root"} attrs))))
+                ;; Shape has no :content yet (e.g. a brand-new text
+                ;; shape that has never been edited). Seed the
+                ;; canonical root/paragraph-set/paragraph/span tree
+                ;; before applying the new root attrs; the
+                ;; `validate-shape` schema requires :children to
+                ;; contain at least one paragraph-set.
+                (assoc shape :content
+                       (d/txt-merge (tc/v2-default-text-content) attrs))))
 
             shape-ids
             (cond (cfh/text-shape? shape)  [id]
@@ -1078,124 +1104,132 @@
 (defn v2-update-text-shape-content
   [id content & {:keys [update-name? name finalize? save-undo? original-content]
                  :or {update-name? false name nil finalize? false save-undo? true original-content nil}}]
-  (ptk/reify ::v2-update-text-shape-content
-    ptk/WatchEvent
-    (watch [it state _]
-      (if (features/active-feature? state "render-wasm/v1")
-        (let [;; v3 editor always passes :finalize? from keyword opts; when absent
-              ;; that binds nil and :or defaults do not apply — coerce so undo flags
-              ;; stay strict booleans for changes-builder schema validation.
-              finalize?    (boolean finalize?)
-              objects      (dsh/lookup-page-objects state)
-              shape        (get objects id)
-              new-shape?   (contains? (:workspace-new-text-shapes state) id)
-              prev-content (:content shape)
-              has-prev-content? (not (nil? (:prev-content shape)))
-              ;; For existing shapes, capture geometry at session start once so
-              ;; finalize can build a single undo entry. Stored in workspace state,
-              ;; not in the shape, to avoid persisting session-only data.
-              session-start-geom (or (get-in state [:workspace-text-session-geom id])
-                                     (select-keys shape [:selrect :points :width :height]))
-              content-has-text? (v2-content-has-text? content)
-              prev-content-has-text? (v2-content-has-text? prev-content)
-              new-size (when (not= :fixed (:grow-type shape))
-                         (dwwt/get-wasm-text-new-size shape content))
-              ;; New shapes: single undo on finalize only (no per-keystroke undo)
-              effective-save-undo? (if new-shape? finalize? save-undo?)
-              effective-stack-undo? (and new-shape? finalize?)
-              ;; No save-undo on first update when finalizing: either build-finalize
-              ;; holds undo (non-new), or we delete empty text and only delete-shapes
-              ;; should record undo.
-              finalize-save-undo-first?
-              (if (and finalize? (or (not new-shape?) (not content-has-text?)))
-                false
-                effective-save-undo?)]
+  ;; Defensive: ensure the content we are about to commit has the
+  ;; canonical root/paragraph-set/paragraph/span tree. The v2 editor
+  ;; always produces well-formed content from `dom->cljs`, but legacy
+  ;; producers (or programmatic API calls) can still pass a root with
+  ;; empty :children, which would fail the backend `validate-shape`
+  ;; schema.
+  (let [content (ensure-valid-text-content content)
+        original-content (ensure-valid-text-content original-content)]
+    (ptk/reify ::v2-update-text-shape-content
+      ptk/WatchEvent
+      (watch [it state _]
+        (if (features/active-feature? state "render-wasm/v1")
+          (let [;; v3 editor always passes :finalize? from keyword opts; when absent
+                ;; that binds nil and :or defaults do not apply — coerce so undo flags
+                ;; stay strict booleans for changes-builder schema validation.
+                finalize?    (boolean finalize?)
+                objects      (dsh/lookup-page-objects state)
+                shape        (get objects id)
+                new-shape?   (contains? (:workspace-new-text-shapes state) id)
+                prev-content (:content shape)
+                has-prev-content? (not (nil? (:prev-content shape)))
+                ;; For existing shapes, capture geometry at session start once so
+                ;; finalize can build a single undo entry. Stored in workspace state,
+                ;; not in the shape, to avoid persisting session-only data.
+                session-start-geom (or (get-in state [:workspace-text-session-geom id])
+                                       (select-keys shape [:selrect :points :width :height]))
+                content-has-text? (v2-content-has-text? content)
+                prev-content-has-text? (v2-content-has-text? prev-content)
+                new-size (when (not= :fixed (:grow-type shape))
+                           (dwwt/get-wasm-text-new-size shape content))
+                ;; New shapes: single undo on finalize only (no per-keystroke undo)
+                effective-save-undo? (if new-shape? finalize? save-undo?)
+                effective-stack-undo? (and new-shape? finalize?)
+                ;; No save-undo on first update when finalizing: either build-finalize
+                ;; holds undo (non-new), or we delete empty text and only delete-shapes
+                ;; should record undo.
+                finalize-save-undo-first?
+                (if (and finalize? (or (not new-shape?) (not content-has-text?)))
+                  false
+                  effective-save-undo?)]
 
-          (rx/concat
-           (rx/of
-            ;; Store session-start geometry in workspace state once for existing shapes
-            (when (and (not new-shape?)
-                       (nil? (get-in state [:workspace-text-session-geom id])))
-              (fn [s] (assoc-in s [:workspace-text-session-geom id] session-start-geom)))
-            (dwsh/update-shapes
-             [id]
-             (fn [shape]
-               (-> shape
-                   (assoc :content content)
-                   (cond-> (and (not new-shape?)
-                                content-has-text?
-                                has-prev-content?)
-                     (dissoc :prev-content))
+            (rx/concat
+             (rx/of
+              ;; Store session-start geometry in workspace state once for existing shapes
+              (when (and (not new-shape?)
+                         (nil? (get-in state [:workspace-text-session-geom id])))
+                (fn [s] (assoc-in s [:workspace-text-session-geom id] session-start-geom)))
+              (dwsh/update-shapes
+               [id]
+               (fn [shape]
+                 (-> shape
+                     (assoc :content content)
+                     (cond-> (and (not new-shape?)
+                                  content-has-text?
+                                  has-prev-content?)
+                       (dissoc :prev-content))
 
-                   (cond-> (and (not new-shape?)
-                                prev-content-has-text?
-                                (not content-has-text?)
-                                (not finalize?))
-                     (assoc :prev-content prev-content))
+                     (cond-> (and (not new-shape?)
+                                  prev-content-has-text?
+                                  (not content-has-text?)
+                                  (not finalize?))
+                       (assoc :prev-content prev-content))
 
-                   (cond-> (and update-name? (some? name))
-                     (assoc :name name))))
-             {:save-undo? finalize-save-undo-first?
-              :stack-undo? effective-stack-undo?
-              :undo-group (when new-shape? id)})
+                     (cond-> (and update-name? (some? name))
+                       (assoc :name name))))
+               {:save-undo? finalize-save-undo-first?
+                :stack-undo? effective-stack-undo?
+                :undo-group (when new-shape? id)})
 
-            ;; When `get-wasm-text-new-size` reports a change, `update-shapes` above resizes the
-            ;; shape data; the WASM renderer still needs matching modifiers. While editing, use
-            ;; `set-wasm-modifiers` for a temporary preview; on `finalize?`, `apply-wasm-modifiers`
-            ;; commits layout (flex parents, sidebar width, etc.) like other transform flows.
-            (when (some? new-size)
-              (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
-                (if finalize?
-                  (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)})
-                  (dwm/set-wasm-modifiers modifiers {:undo-group (when new-shape? id)})))))
+              ;; When `get-wasm-text-new-size` reports a change, `update-shapes` above resizes the
+              ;; shape data; the WASM renderer still needs matching modifiers. While editing, use
+              ;; `set-wasm-modifiers` for a temporary preview; on `finalize?`, `apply-wasm-modifiers`
+              ;; commits layout (flex parents, sidebar width, etc.) like other transform flows.
+              (when (some? new-size)
+                (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
+                  (if finalize?
+                    (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)})
+                    (dwm/set-wasm-modifiers modifiers {:undo-group (when new-shape? id)})))))
 
-           (when finalize?
-             (rx/concat
-              (if (and (not content-has-text?) (some? id))
+             (when finalize?
+               (rx/concat
+                (if (and (not content-has-text?) (some? id))
+                  (rx/concat
+                   (if (and (some? original-content) (v2-content-has-text? original-content))
+                     (rx/of
+                      (dwsh/update-shapes
+                       [id]
+                       (fn [s] (-> s (assoc :content original-content) (dissoc :prev-content)))
+                       {:save-undo? false}))
+                     (rx/empty))
+                   (rx/of (dws/deselect-shape id)
+                          (dwsh/delete-shapes #{id})))
+                  (rx/empty))
                 (rx/concat
-                 (if (and (some? original-content) (v2-content-has-text? original-content))
+                 (if content-has-text?
                    (rx/of
-                    (dwsh/update-shapes
-                     [id]
-                     (fn [s] (-> s (assoc :content original-content) (dissoc :prev-content)))
-                     {:save-undo? false}))
+                    (dch/commit-changes
+                     (build-finalize-commit-changes it state id
+                                                    {:new-shape? new-shape?
+                                                     :content-has-text? content-has-text?
+                                                     :content content
+                                                     :original-content original-content
+                                                     :update-name? update-name?
+                                                     :name name})))
                    (rx/empty))
-                 (rx/of (dws/deselect-shape id)
-                        (dwsh/delete-shapes #{id})))
-                (rx/empty))
-              (rx/concat
-               (if content-has-text?
-                 (rx/of
-                  (dch/commit-changes
-                   (build-finalize-commit-changes it state id
-                                                  {:new-shape? new-shape?
-                                                   :content-has-text? content-has-text?
-                                                   :content content
-                                                   :original-content original-content
-                                                   :update-name? update-name?
-                                                   :name name})))
-                 (rx/empty))
-               (rx/of (dwt/finish-transform)
-                      (fn [state]
-                        (-> state
-                            (update :workspace-new-text-shapes disj id)
-                            (update :workspace-text-session-geom (fnil dissoc {}) id)))))))))
+                 (rx/of (dwt/finish-transform)
+                        (fn [state]
+                          (-> state
+                              (update :workspace-new-text-shapes disj id)
+                              (update :workspace-text-session-geom (fnil dissoc {}) id)))))))))
 
-        (let [modifiers    (get-in state [:workspace-text-modifier id])
-              new-shape?   (contains? (:workspace-new-text-shapes state) id)]
-          (rx/of
-           (dwsh/update-shapes [id]
-                               (fn [shape]
-                                 (let [{:keys [width height position-data]} modifiers]
-                                   (-> shape
-                                       (assoc :content content)
-                                       (cond-> position-data
-                                         (assoc :position-data position-data))
-                                       (cond-> (and update-name? (some? name))
-                                         (assoc :name name))
-                                       (cond-> (or (some? width) (some? height))
-                                         (gsh/transform-shape (ctm/change-size shape width height))))))
-                               {:undo-group (when new-shape? id)})))))))
+          (let [modifiers    (get-in state [:workspace-text-modifier id])
+                new-shape?   (contains? (:workspace-new-text-shapes state) id)]
+            (rx/of
+             (dwsh/update-shapes [id]
+                                 (fn [shape]
+                                   (let [{:keys [width height position-data]} modifiers]
+                                     (-> shape
+                                         (assoc :content content)
+                                         (cond-> position-data
+                                           (assoc :position-data position-data))
+                                         (cond-> (and update-name? (some? name))
+                                           (assoc :name name))
+                                         (cond-> (or (some? width) (some? height))
+                                           (gsh/transform-shape (ctm/change-size shape width height))))))
+                                 {:undo-group (when new-shape? id)}))))))))
 
 (defn replace-layer-names-in-shapes
   [ids search replacement]

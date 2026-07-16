@@ -912,3 +912,73 @@
               (nil? (get-in result2 [:pages-index page-id :default-grids])))))
 
      {:num 1000})))
+
+;; Geometry-only mod-objs must not trigger shape-level validation, so
+;; a single broken shape on any page cannot take down an unrelated
+;; batch of geometry edits.
+(t/deftest geometry-only-mod-obj-skips-validation
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)
+        id-a    (uuid/custom 2 1)
+        id-b    (uuid/custom 2 2)
+        good    (cts/setup-shape
+                 {:id id-a
+                  :frame-id uuid/zero
+                  :parent-id uuid/zero
+                  :type :rect
+                  :name "rect"})
+        ;; A text shape with the broken :content that triggered the
+        ;; Sentry alert (root with empty :children).
+        broken  (assoc (cts/setup-shape
+                        {:id id-b
+                         :frame-id uuid/zero
+                         :parent-id uuid/zero
+                         :type :text
+                         :name "Desplegable"
+                         :x 0
+                         :y 0
+                         :grow-type :auto-width})
+                       :content {:type         "root"
+                                 :vertical-align "top"
+                                 :children     []})
+        data    (-> data
+                    (assoc-in [:pages-index page-id :objects id-a] good)
+                    (assoc-in [:pages-index page-id :objects id-b] broken))]
+
+    (t/testing "pure-geometry mod-obj on a broken text shape does not throw"
+      ;; Simulates the production scenario: the user is moving/rotating
+      ;; shapes elsewhere while a text shape on the same page has
+      ;; pre-existing broken content.
+      (let [chg  {:type :mod-obj
+                  :page-id page-id
+                  :id id-b
+                  :operations [{:type :set :attr :points :val []}
+                               {:type :set :attr :selrect :val {:x 0 :y 0 :width 100 :height 20}}
+                               {:type :set :attr :flip-x :val false}
+                               {:type :set :attr :flip-y :val false}]}
+            res  (ch/process-changes data [chg])]
+        (t/is (some? res) "process-changes returns the updated data")
+        (t/is (= (get-in res [:pages-index page-id :objects id-b :content])
+                 (get-in data  [:pages-index page-id :objects id-b :content]))
+              "the broken content is left untouched (geometry-only mod-obj)")))
+
+    (t/testing "content-affecting mod-obj on a broken text shape still throws"
+      (let [chg  {:type :mod-obj
+                  :page-id page-id
+                  :id id-b
+                  :operations [{:type :set :attr :content
+                                :val {:type "root" :children []}}]}]
+        (t/is (thrown-with-msg?
+               #?(:cljs js/Error :clj Exception)
+               #"invalid shape found"
+               (ch/process-changes data [chg]))
+              "validation still runs when the mod-obj touches :content")))
+
+    (t/testing "geometry-only mod-obj on a healthy shape succeeds"
+      (let [chg  {:type :mod-obj
+                  :page-id page-id
+                  :id id-a
+                  :operations [{:type :set :attr :x :val 42}]}
+            res  (ch/process-changes data [chg])]
+        (t/is (= 42 (get-in res [:pages-index page-id :objects id-a :x])))))))

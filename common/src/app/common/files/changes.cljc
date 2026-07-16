@@ -479,6 +479,29 @@
               :shape-id id
               ::sm/explain (cts/explain-shape shape))))
 
+(def ^:private geometry-only-attrs
+  "Set of attributes whose mutation cannot affect shape schema validity.
+  Used by `process-operations` to skip `validate-shape` when a mod-obj
+  only changes geometry, so a single broken shape elsewhere in the file
+  cannot take down an unrelated batch of geometry edits."
+  #{:x :y :width :height :points :selrect :rotation
+    :transform :transform-inverse :proportion :proportion-lock
+    :flip-x :flip-y :constraints-h :constraints-v :fixed-scroll
+    :opacity :hidden :blocked :locked :masked-group :blend-mode})
+
+#_:clj-kondo/ignore
+(defn- geometry-only-mod-obj?
+  "True when every `:set` op in a mod-obj targets an attribute in
+  `geometry-only-attrs`. Other op types (`:set-touched`,
+  `:set-remote-synced`, content-affecting `:set`s, etc.) make this
+  return false so validation is preserved for them."
+  [change]
+  (and (seq (:operations change))
+       (every? (fn [op]
+                 (and (= :set (:type op))
+                      (contains? geometry-only-attrs (:attr op))))
+               (:operations change))))
+
 (defn- process-touched-change
   [data {:keys [id page-id component-id]}]
   (let [objects (if page-id
@@ -619,8 +642,15 @@
       (when (and *state* page-id)
         (swap! *state* collect-shape-media-refs shape page-id))
 
-      ;; NOTE: we only perform hard validation on backend
-      #?(:clj (validate-shape shape page-id))
+      ;; NOTE: we only perform hard validation on backend. Pure-geometry
+      ;; mod-objs cannot change shape schema validity, so skip
+      ;; validation there: a single broken shape elsewhere in the file
+      ;; must not be able to roll back an unrelated batch of geometry
+      ;; edits. Validation is still enforced for any op that touches
+      ;; content-affecting attributes (`:content`, `:position-data`,
+      ;; `:fills`, `:strokes`, fonts, etc.).
+      #?(:clj (when-not (geometry-only-mod-obj? change)
+                (validate-shape shape page-id)))
 
       (assoc objects id shape))
 
