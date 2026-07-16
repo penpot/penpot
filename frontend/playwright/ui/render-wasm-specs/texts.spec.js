@@ -209,7 +209,10 @@ test("Renders a file with emoji and text decoration", async ({ page }) => {
     pageId: "82d128e1-d3b1-80a5-8006-ae60fedcd5e8",
   });
   await workspace.waitForFirstRenderWithoutUI();
-  await expect(workspace.canvas).toHaveScreenshot();
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
 });
 
 test("Renders a file with multiple emoji", async ({ page }) => {

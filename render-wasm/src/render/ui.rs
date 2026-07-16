@@ -2,9 +2,10 @@ use skia_safe::{self as skia, Color4f};
 
 use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::globals::get_ui_state;
-use crate::render::{grid_layout, rulers};
+use crate::render::grid_layout;
 use crate::shapes::{Layout, Type};
 pub mod guides;
+pub mod rulers;
 
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
@@ -63,8 +64,12 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     }
 
     let viewbox = render_state.viewbox;
-    let ruler_state = render_state.rulers;
-    rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
+    rulers::render(
+        canvas,
+        viewbox,
+        &render_state.fonts,
+        get_ui_state().ruler_state(),
+    );
 
     // Width of the ruler bars in document coordinates.
     // Note that when rulers are hidden, guides are not shown either, so we

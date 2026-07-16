@@ -39,6 +39,9 @@ Backend RPC command areas without focused memories include access tokens, binfil
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 
+For interactive PostgreSQL access with correct dev defaults, use `tools/psql`; to dump
+the current DDL schema, use `tools/db-schema` (see `mem:tools/psql`).
+
 For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/rpc-db-worker-subtleties`.
 
 ## Background tasks
@@ -98,8 +101,10 @@ misleading linter/compiler output. See `mem:tools/paren-repair`.
 
 ## Testing
 
-IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
+IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory. JVM tests are invoked directly via `clojure -M:dev:test` — there is no pnpm wrapper. If you need to filter output, tee to a temp file first: `clojure -M:dev:test 2>&1 | tee /tmp/penpot-test-output.txt`. See `mem:testing` for execution discipline.
 
 * **Coverage:** If code is added or modified in `src/`, corresponding tests in `test/backend_tests/` must be added or updated.
 * **Isolated run:** `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace.
 * **Regression run:** `clojure -M:dev:test` to ensure no regressions in related functional areas.
+* **Principles:** Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
+

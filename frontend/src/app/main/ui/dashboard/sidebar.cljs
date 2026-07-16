@@ -315,8 +315,14 @@
         (mf/use-fn
          (mf/deps profile)
          (fn []
-           (if (dnt/is-valid-license? profile)
+           (cond
+             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
+
+             (dnt/is-valid-license? profile)
              (dnt/go-to-nitrate-ac-create-org)
+
+             :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
@@ -407,9 +413,9 @@
      [:> dropdown-menu-item* {:on-click    on-team-click
                               :data-value  default-team-id
                               :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
+      [:span {:class (stl/css :penpot-icon)} (if (contains? cf/flags :nitrate) deprecated-icon/logo-files deprecated-icon/logo-icon)]
 
-      [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
+      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :nitrate) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
       (when (= default-team-id (:id team))
         tick-icon)]
 
@@ -755,8 +761,14 @@
         (mf/use-fn
          (mf/deps profile)
          (fn []
-           (if (dnt/is-valid-license? profile)
+           (cond
+             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
+
+             (dnt/is-valid-license? profile)
              (dnt/go-to-nitrate-ac-create-org)
+
+             :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
@@ -801,7 +813,12 @@
                                                     :class (stl/css :dropdown :teams-dropdown)
                                                     :organization current-org
                                                     :profile profile
-                                                    :organizations (vals orgs)}]])
+                                                    :organizations (->> (vals orgs)
+                                                                        (sort-by (juxt (fn [o] (str/lower (:name o "")))
+                                                                                       :id)))}]])
+
+
+
             orgs-portal-container)))
        ;; Orgs options
        [:> org-options-dropdown* {:show show-org-options-menu?
@@ -901,8 +918,8 @@
        (cond
          is-default?
          [:div {:class (stl/css :team-name)}
-          [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
-          [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
+          [:span {:class (stl/css :penpot-icon)} (if nitrate? deprecated-icon/logo-files deprecated-icon/logo-icon)]
+          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.my-files") (tr "dashboard.default-team-name"))]]
 
          (and (contains? cf/flags :subscriptions)
               (not is-default?)
@@ -1128,7 +1145,7 @@
 
 (mf/defc help-learning-menu*
   {::mf/private true}
-  [{:keys [on-close on-click]}]
+  [{:keys [on-close on-click on-pointer-enter on-pointer-leave]}]
   (let [handle-click-url
         (mf/use-fn
          (fn [event]
@@ -1145,7 +1162,9 @@
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :sub-menu :help-learning)
-                        :on-close on-close}
+                        :on-close on-close
+                        :on-pointer-enter on-pointer-enter
+                        :on-pointer-leave on-pointer-leave}
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :data-url "https://help.penpot.app"
@@ -1172,7 +1191,7 @@
 
 (mf/defc community-contributions-menu*
   {::mf/private true}
-  [{:keys [on-close]}]
+  [{:keys [on-close on-pointer-enter on-pointer-leave]}]
   (let [handle-click-url
         (mf/use-fn
          (fn [event]
@@ -1186,7 +1205,9 @@
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :sub-menu :community)
-                        :on-close on-close}
+                        :on-close on-close
+                        :on-pointer-enter on-pointer-enter
+                        :on-pointer-leave on-pointer-leave}
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :data-url "https://github.com/penpot/penpot"
@@ -1202,7 +1223,7 @@
 
 (mf/defc about-penpot-menu*
   {::mf/private true}
-  [{:keys [on-close]}]
+  [{:keys [on-close on-pointer-enter on-pointer-leave]}]
   (let [version cf/version
         show-release-notes
         (mf/use-fn
@@ -1225,7 +1246,9 @@
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :sub-menu :about)
-                        :on-close on-close}
+                        :on-close on-close
+                        :on-pointer-enter on-pointer-enter
+                        :on-pointer-leave on-pointer-leave}
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click show-release-notes}
@@ -1250,6 +1273,11 @@
         show-profile-menu? (deref show-profile-menu*)
         sub-menu*      (mf/use-state false)
         sub-menu       (deref sub-menu*)
+
+        ;; Tracks whether the pointer is over an expandable option or
+        ;; its floating submenu, so the submenu survives the gap
+        ;; between them while the pointer travels across.
+        hovering?*     (mf/use-ref false)
         version        (:base cf/version)
 
         close-sub-menu
@@ -1314,6 +1342,24 @@
                           (dom/get-data "testid")
                           (keyword))]
              (reset! sub-menu* menu))))
+
+        on-menu-pointer-enter
+        (mf/use-fn
+         (fn [event]
+           (mf/set-ref-val! hovering?* true)
+           (on-menu-click event)))
+
+        on-menu-pointer-leave
+        (mf/use-fn
+         (fn [_]
+           (mf/set-ref-val! hovering?* false)
+           (ts/schedule 200 #(when-not (mf/ref-val hovering?*)
+                               (reset! sub-menu* nil)))))
+
+        on-sub-menu-pointer-enter
+        (mf/use-fn
+         (fn [_]
+           (mf/set-ref-val! hovering?* true)))
 
         on-power-up-click
         (mf/use-fn
@@ -1388,7 +1434,8 @@
                                 :on-key-down (fn [event]
                                                (when (kbd/enter? event)
                                                  (on-menu-click event)))
-                                :on-pointer-enter on-menu-click
+                                :on-pointer-enter on-menu-pointer-enter
+                                :on-pointer-leave on-menu-pointer-leave
                                 :data-testid "help-learning"
                                 :id          "help-learning"}
         [:span {:class (stl/css :item-name)} (tr "labels.help-learning")]
@@ -1399,7 +1446,8 @@
                                 :on-key-down (fn [event]
                                                (when (kbd/enter? event)
                                                  (on-menu-click event)))
-                                :on-pointer-enter on-menu-click
+                                :on-pointer-enter on-menu-pointer-enter
+                                :on-pointer-leave on-menu-pointer-leave
                                 :data-testid "community-contributions"
                                 :id          "community-contributions"}
         [:span {:class (stl/css :item-name)} (tr "labels.community-contributions")]
@@ -1410,7 +1458,8 @@
                                 :on-key-down (fn [event]
                                                (when (kbd/enter? event)
                                                  (on-menu-click event)))
-                                :on-pointer-enter on-menu-click
+                                :on-pointer-enter on-menu-pointer-enter
+                                :on-pointer-leave on-menu-pointer-leave
                                 :data-testid "about-penpot"
                                 :id          "about-penpot"}
 
@@ -1435,13 +1484,20 @@
      (when show-profile-menu?
        (case sub-menu
          :help-learning
-         [:> help-learning-menu* {:on-close close-sub-menu :on-click on-click}]
+         [:> help-learning-menu* {:on-close close-sub-menu
+                                  :on-click on-click
+                                  :on-pointer-enter on-sub-menu-pointer-enter
+                                  :on-pointer-leave on-menu-pointer-leave}]
 
          :community-contributions
-         [:> community-contributions-menu* {:on-close close-sub-menu}]
+         [:> community-contributions-menu* {:on-close close-sub-menu
+                                            :on-pointer-enter on-sub-menu-pointer-enter
+                                            :on-pointer-leave on-menu-pointer-leave}]
 
          :about-penpot
-         [:> about-penpot-menu* {:on-close close-sub-menu}]
+         [:> about-penpot-menu* {:on-close close-sub-menu
+                                 :on-pointer-enter on-sub-menu-pointer-enter
+                                 :on-pointer-leave on-menu-pointer-leave}]
          nil))]))
 
 (mf/defc sidebar*

@@ -1,13 +1,12 @@
 use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
 use std::collections::HashMap;
 
-mod rulers;
 mod shapes_pool;
 mod text_editor;
 mod ui;
-pub use rulers::RulerState;
 pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
+pub use ui::RulerState;
 pub use ui::UIState;
 
 use crate::error::{Error, Result};

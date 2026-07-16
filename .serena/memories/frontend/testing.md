@@ -4,15 +4,18 @@ Frontend validation: CLJS + React/Rumext + RxJS/Potok; SCSS modules; shared CLJC
 
 ## Unit tests
 
+READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee to file, preferred commands) that applies to all CLJS/JS test runs.
+
 Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access.
 
 From `frontend/`:
-- Full unit test run: `pnpm run test:quiet`.
+- Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.
+- Full unit test run (always builds, build output visible): `pnpm run test`.
 - Focus a frontend CLJS test namespace: `pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens`.
 - Focus one frontend CLJS test var: `pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Quiet `app.*` logging during a run: append `--log-level warn` (or `trace|debug|info|warn|error`).
-- Build test target only: `pnpm run build:test`.
-- After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
+- Build test target only (no run): `pnpm run build:test`.
+- After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 - Watch tests: `pnpm run watch:test`.
 
 New frontend test namespaces must be required/listed in `frontend_tests/runner.cljs`; new vars in existing namespaces need no runner change.

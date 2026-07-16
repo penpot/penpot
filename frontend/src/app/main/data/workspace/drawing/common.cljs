@@ -18,11 +18,14 @@
    [potok.v2.core :as ptk]))
 
 (defn clear-drawing
-  []
-  (ptk/reify ::clear-drawing
-    ptk/UpdateEvent
-    (update [_ state]
-      (dissoc state :workspace-drawing))))
+  ([] (clear-drawing nil))
+  ([{:keys [preserve-tool?]}]
+   (ptk/reify ::clear-drawing
+     ptk/UpdateEvent
+     (update [_ state]
+       (if preserve-tool?
+         (update state :workspace-drawing dissoc :object :lock)
+         (dissoc state :workspace-drawing))))))
 
 (defn handle-finish-drawing
   []
@@ -95,6 +98,5 @@
                 (rx/empty)))))
 
          ;; Delay so the mouse event can read the drawing state
-         (->> (rx/of (clear-drawing))
+         (->> (rx/of (clear-drawing {:preserve-tool? (= tool :curve)}))
               (rx/delay 0)))))))
-

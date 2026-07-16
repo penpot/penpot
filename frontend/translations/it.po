@@ -615,9 +615,8 @@ msgstr "Esporta selezionati"
 msgid "dashboard.export-standard-multi"
 msgstr "Scarica %s file standard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Uno o più file che desideri scaricare utilizzano librerie condivise. Che "
 "cosa desideri fare con le loro risorse*?"
@@ -1484,10 +1483,6 @@ msgstr "Nessuna corrispondenza trovata."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Apri elenco token"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} non è disponibile in nessun set o tema attivo."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -4040,10 +4035,6 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:492
 msgid "modals.update-remote-component.message"
 msgstr "Aggiorna un componente in una libreria condivisa"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr "Questo token non è presente in alcun set attivo o ha un valore non valido."
 
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
@@ -8542,10 +8533,6 @@ msgstr "Padding"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Raggio"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Il riferimento non è valido o non è presente in nessun set attivo"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

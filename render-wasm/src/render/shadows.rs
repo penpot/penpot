@@ -165,15 +165,24 @@ pub fn render_text_shadows(
 
         for (i, stroke_paragraphs) in stroke_paragraphs_group.iter_mut().enumerate() {
             if i < stroke_kinds.len() && stroke_kinds[i] == StrokeKind::Inner {
-                let mut mask_builders = text_content.paragraph_builder_group_opaque();
                 let mut fill_builders = text_content.paragraph_builder_group_from_text(Some(true));
                 text::render_inner_stroke(
                     None,
                     Some(canvas),
                     shape,
-                    &mut mask_builders,
                     stroke_paragraphs,
                     &mut fill_builders,
+                    surface_id,
+                    blur_filter.as_ref(),
+                    0.0,
+                    None,
+                )?;
+            } else if i < stroke_kinds.len() && stroke_kinds[i] == StrokeKind::Outer {
+                text::render_outer_stroke(
+                    None,
+                    Some(canvas),
+                    shape,
+                    stroke_paragraphs,
                     surface_id,
                     blur_filter.as_ref(),
                     0.0,

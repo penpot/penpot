@@ -23,6 +23,7 @@
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
@@ -88,11 +89,9 @@
       [:div {:class (stl/css :info)}
        [:span (tr "dasboard.team-hero.text")]
        [:a {:on-click on-nav-members-click} (tr "dasboard.team-hero.management")]]
-      [:button
-       {:class (stl/css :btn-primary :invite)
-        :on-click on-invite}
+      [:> button* {:variant "primary"
+                   :on-click on-invite}
        (tr "onboarding.choice.team-up.invite-members")]]
-
      [:button {:class (stl/css :close)
                :on-click on-close'
                :aria-label (tr "labels.close")}

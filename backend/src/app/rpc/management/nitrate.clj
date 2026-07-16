@@ -8,6 +8,7 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
+   [app.auth :as aauth]
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -24,6 +25,7 @@
    [app.media :as media]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
@@ -51,7 +53,8 @@
   "Authenticate the current user"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:profile}
+   ::sm/result schema:profile
+   ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id] :as params}]
   (let [profile            (profile/get-profile cfg profile-id)]
     (-> (profile-to-map profile)
@@ -102,7 +105,8 @@
   "List teams for which current user is owner"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:get-teams-result}
+   ::sm/result schema:get-teams-result
+   ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id]}]
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (->> (db/exec! cfg [sql:get-teams current-user-id])
@@ -125,7 +129,8 @@
   collection when replacing an existing one."
   {::doc/added "2.17"
    ::sm/params schema:upload-org-logo
-   ::sm/result schema:upload-org-logo-result}
+   ::sm/result schema:upload-org-logo-result
+   ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
   (when previous-id
     (sto/touch-object! storage previous-id))
@@ -193,7 +198,8 @@
   "List profiles that belong to teams for which current user is owner"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:managed-profile-result}
+   ::sm/result schema:managed-profile-result
+   ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id]}]
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (db/exec! cfg [sql:get-managed-profiles current-user-id current-user-id])))
@@ -232,7 +238,8 @@
   "Get summary information for a list of teams"
   {::doc/added "2.15"
    ::sm/params schema:get-teams-summary-params
-   ::sm/result schema:get-teams-summary-result}
+   ::sm/result schema:get-teams-summary-result
+   ::nitrate/sso false}
   [cfg {:keys [ids]}]
   (let [;; Handle one or multiple params
         ids (cond
@@ -371,7 +378,8 @@ RETURNING id, deleted_at;")
   "For a given user, find all owned organizations and apply the deleted-org
    transfer rules to their imported Your Penpot teams."
   {::doc/added "2.18"
-   ::sm/params schema:notify-user-organizations-deletion}
+   ::sm/params schema:notify-user-organizations-deletion
+   ::nitrate/sso false}
   [cfg {:keys [profile-id]}]
   (let [owned-orgs (nitrate/call cfg :get-owned-orgs {:profile-id profile-id})]
     (doseq [org owned-orgs]
@@ -397,7 +405,8 @@ RETURNING id, deleted_at;")
   "Get profile by email"
   {::doc/added "2.15"
    ::sm/params [:map [:email ::sm/email]]
-   ::sm/result schema:profile}
+   ::sm/result schema:profile
+   ::nitrate/sso false}
   [cfg {:keys [email]}]
   (let [profile (db/exec-one! cfg [sql:get-profile-by-email email])]
     (when-not profile
@@ -420,7 +429,8 @@ RETURNING id, deleted_at;")
   "Get profile by email"
   {::doc/added "2.15"
    ::sm/params [:map [:id ::sm/uuid]]
-   ::sm/result schema:profile}
+   ::sm/result schema:profile
+   ::nitrate/sso false}
   [cfg {:keys [id]}]
   (let [profile (db/exec-one! cfg [sql:get-profile-by-id id])]
     (when-not profile
@@ -480,7 +490,8 @@ RETURNING id, deleted_at;")
   {::doc/added "2.15"
    ::sm/params [:map
                 [:email ::sm/email]
-                [:organization schema:organization-with-avatar]]}
+                [:organization schema:organization-with-avatar]]
+   ::nitrate/sso false}
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)
   nil)
@@ -507,7 +518,8 @@ RETURNING id, deleted_at;")
   "Get valid invitations for an organization, returning at most one invitation per email."
   {::doc/added "2.16"
    ::sm/params schema:get-org-invitations-params
-   ::sm/result schema:get-org-invitations-result}
+   ::sm/result schema:get-org-invitations-result
+   ::nitrate/sso false}
   [cfg {:keys [organization-id]}]
   (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
@@ -533,7 +545,8 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::delete-org-invitations
   "Delete all invitations for one email in an organization scope (org + org teams)."
   {::doc/added "2.16"
-   ::sm/params schema:delete-org-invitations-params}
+   ::sm/params schema:delete-org-invitations-params
+   ::nitrate/sso false}
   [cfg {:keys [organization-id email]}]
   (let [clean-email (profile/clean-email email)
         team-ids    (noh/get-org-team-ids cfg organization-id)]
@@ -602,7 +615,8 @@ RETURNING id, deleted_at;")
                 [:organization-id ::sm/uuid]
                 [:organization-name ::sm/text]
                 [:default-team-id ::sm/uuid]]
-   ::db/transaction true}
+   ::db/transaction true
+   ::nitrate/sso false}
   [cfg {:keys [profile-id organization-id organization-name default-team-id] :as params}]
   (let [{:keys [valid-teams-to-delete-ids
                 valid-teams-to-transfer
@@ -639,7 +653,8 @@ RETURNING id, deleted_at;")
                 [:organization-id ::sm/uuid]
                 [:default-team-id ::sm/uuid]]
    ::sm/result schema:get-remove-from-org-summary-result
-   ::db/transaction true}
+   ::db/transaction true
+   ::nitrate/sso false}
   [cfg {:keys [profile-id organization-id default-team-id]}]
   (let [{:keys [valid-teams-to-delete-ids
                 valid-teams-to-transfer
@@ -740,7 +755,8 @@ RETURNING id, deleted_at;")
   "Return if there are any team invitations for emails that are not organization members."
   {::doc/added "2.18"
    ::sm/params schema:org-team-invitations-for-non-members-params
-   ::sm/result schema:exists-org-team-invitations-for-non-members-result}
+   ::sm/result schema:exists-org-team-invitations-for-non-members-result
+   ::nitrate/sso false}
   [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  {:exists (boolean (non-member-org-team-invitations-exist? conn params))})))
@@ -749,7 +765,8 @@ RETURNING id, deleted_at;")
   "Delete team invitations for emails that are not organization members."
   {::doc/added "2.18"
    ::sm/params schema:org-team-invitations-for-non-members-params
-   ::db/transaction true}
+   ::db/transaction true
+   ::nitrate/sso false}
   [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (let [{:keys [emails-array teams-array]}
@@ -864,7 +881,8 @@ RETURNING id, deleted_at;")
    including owner info and project/file/member counts."
   {::doc/added "2.20"
    ::sm/params schema:get-teams-detail-params
-   ::sm/result schema:get-teams-detail-result}
+   ::sm/result schema:get-teams-detail-result
+   ::nitrate/sso false}
   [cfg {:keys [organization-id]}]
   (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
         team-ids    (into [] (comp d/xf:map-id (filter uuid?)) (:teams org-summary))]
@@ -914,3 +932,55 @@ RETURNING id, deleted_at;")
     (neh/send-organization-setup-sso-emails! cfg organization-id))
   nil)
 
+;; ---- API: bulk-create-profiles
+
+(def ^:private schema:bulk-create-profiles-params
+  [:map
+   [:password [::sm/word-string {:max 500}]]
+   [:emails [:vector ::sm/email]]])
+
+(def ^:private schema:bulk-create-profiles-result
+  [:map
+   [:created [:vector ::sm/email]]
+   [:skipped [:vector ::sm/email]]])
+
+(defn- create-active-profile!
+  "Create a single already-active profile (email pre-verified, onboarding
+   skipped) plus its default team. Returns nil; existence checks happen in the
+   caller so duplicates are skipped instead of aborting the whole batch."
+  [cfg email password]
+  (let [fullname (-> (str/split email "@") first)]
+    (->> {:email email
+          :fullname fullname
+          :password password
+          :is-active true
+          :props {:onboarding-viewed true}}
+         (auth/create-profile cfg)
+         (auth/create-profile-rels cfg))
+    nil))
+
+(sv/defmethod ::bulk-create-profiles
+  "Create multiple already-active profiles that share a single password. The
+   created users skip email verification and onboarding. Emails that already
+   belong to an existing profile are skipped. Intended for the Nitrate admin
+   bulk-creation screen; access is gated by the shared key and, in Nitrate, an
+   email allow-list."
+  {::doc/added "2.19"
+   ::sm/params schema:bulk-create-profiles-params
+   ::sm/result schema:bulk-create-profiles-result
+   ::rpc/auth false}
+  [cfg {:keys [password emails]}]
+  (let [derived (aauth/derive-password password)]
+    (db/tx-run!
+     cfg
+     (fn [{:keys [::db/conn] :as cfg}]
+       (reduce
+        (fn [acc email]
+          (let [email (eml/clean email)]
+            (if (profile/get-profile-by-email conn email)
+              (update acc :skipped conj email)
+              (do
+                (create-active-profile! cfg email derived)
+                (update acc :created conj email)))))
+        {:created [] :skipped []}
+        emails)))))
