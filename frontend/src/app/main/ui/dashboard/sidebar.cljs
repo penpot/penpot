@@ -40,6 +40,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.hooks :refer [use-focus-timer-ref]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
@@ -96,7 +97,7 @@
 
 (defn schedule-focus-by-id!
   [ref element-id]
-  (when-let [h @ref]
+  (when-let [h (mf/ref-val ref)]
     (ts/dispose! h))
   (mf/set-ref-val! ref
                    (ts/schedule
@@ -120,9 +121,7 @@
 
         project-id       (get item :id)
 
-        focus-timer-ref  (mf/use-ref nil)
-
-        _               (mf/use-effect (fn [] #(some-> @focus-timer-ref ts/dispose!)))
+        focus-timer-ref  (use-focus-timer-ref)
 
         on-click
         (mf/use-fn
@@ -235,9 +234,7 @@
         focused?    (mf/use-state false)
         emit!       (mf/use-memo #(f/debounce st/emit! 500))
 
-        focus-timer-ref  (mf/use-ref nil)
-
-        _               (mf/use-effect (fn [] #(some-> @focus-timer-ref ts/dispose!)))
+        focus-timer-ref  (use-focus-timer-ref)
 
         on-search-blur
         (mf/use-fn
@@ -953,9 +950,7 @@
 
         nitrate?    (contains? cf/flags :nitrate)
 
-        focus-timer-ref  (mf/use-ref nil)
-
-        _               (mf/use-effect (fn [] #(some-> @focus-timer-ref ts/dispose!)))
+        focus-timer-ref  (use-focus-timer-ref)
 
         go-projects
         (mf/use-fn #(st/emit! (dcm/go-to-dashboard-recent)))
