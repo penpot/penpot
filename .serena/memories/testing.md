@@ -135,6 +135,20 @@ E2E tests should not be added unless explicitly requested.
 | Snapshot abuse | Nobody reviews, break on any change | Focused assertions |
 | Skipping tests to make suite pass | Hides real failures | Fix the test or fix the code |
 
+## Execution discipline
+
+When running CLJS/JS tests (frontend, common):
+
+- **Always use `pnpm run test:quiet`** — it silently builds the test bundle then runs the test runner, giving you clean test output.
+- **Never pipe test output through `tail`, `head`, or similar filters** — doing so can silently hide test failures. Use `--focus` to narrow scope instead.
+- **If you need to filter output, tee to a temp file first:** `pnpm run test:quiet 2>&1 | tee /tmp/penpot-test-output.txt`. The full output is preserved on disk so you can `grep`/`tail`/`head` the file without re-running.
+- Use `pnpm run test` when you want to see build output alongside test results (always builds, then runs).
+- After `build:test` has been run once, you can invoke the runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
+
+When running JVM tests (backend, common):
+- Use `clojure -M:dev:test` directly (no pnpm wrapper).
+- The same no-piping rule applies: use `--focus` to narrow scope.
+
 ## Verification Checklist
 
 After completing any implementation:
