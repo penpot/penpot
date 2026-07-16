@@ -77,7 +77,8 @@
     (some-> (get @sessions (session-key profile-id))
             (as-> current
                   (when (= file-id (:file-id current))
-                    (let [result (locking (:lock current)
+                    (let [lock   (:lock current)
+                          result (locking lock
                                    (graph.sync/apply-changes!
                                     conn (:index current) changes revn))
                           sync-at (ct/now)]
@@ -191,7 +192,7 @@
               :code :missing-query
               :hint "cypher query is required"))
   (if-let [{:keys [conn lock]} (get @sessions (session-key profile-id))]
-    (locking (or lock ::no-lock)
+    (locking lock
       (-> (ladybug/query-on-connection! conn statement)
           format-query-result))
     (ex/raise :type :not-found
@@ -238,7 +239,7 @@
   reflects actual DB state, including drift."
   [profile-id]
   (when-let [{:keys [conn lock file-id index]} (get @sessions (session-key profile-id))]
-    (locking (or lock ::no-lock)
+    (locking lock
       (let [{:keys [nodes] nodes-truncated? :truncated?} (export-nodes conn)
             {:keys [edges] edges-truncated? :truncated?} (export-edges conn)]
         {:file-id   (str file-id)
