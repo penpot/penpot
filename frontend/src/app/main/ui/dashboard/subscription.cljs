@@ -169,7 +169,7 @@
                                                {:show-contact-sales-option true})))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-ac-create-org)
+        (mf/use-fn dnt/go-to-nitrate-ac-create-organization)
 
         handle-open-renew-modal
         (mf/use-fn #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))]
