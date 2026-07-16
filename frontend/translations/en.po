@@ -1328,23 +1328,23 @@ msgstr "No limits on creativity"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
-#: src/app/main/ui/settings/options.cljs:135
-msgid "dashboard.ui-scale.115x"
-msgstr "1.15x (Medium)"
+#: src/app/main/ui/settings/options.cljs:148
+msgid "dashboard.ui-scale.comfortable"
+msgstr "Comfortable"
 
-#: src/app/main/ui/settings/options.cljs:135
-msgid "dashboard.ui-scale.1x"
-msgstr "1x (Default)"
+#: src/app/main/ui/settings/options.cljs:147
+msgid "dashboard.ui-scale.compact"
+msgstr "Compact (default)"
 
-#: src/app/main/ui/settings/options.cljs:133
+#: src/app/main/ui/settings/options.cljs:145
 msgid "dashboard.ui-scale.description"
-msgstr "Scale the Penpot interface. This does not affect the design canvas."
+msgstr "Scale the Penpot interface. This does not affect the workspace canvas."
 
-#: src/app/main/ui/settings/options.cljs:132
+#: src/app/main/ui/settings/options.cljs:144
 msgid "dashboard.ui-scale.title"
 msgstr "UI scale"
 
-#: src/app/main/ui/settings/options.cljs:129
+#: src/app/main/ui/settings/options.cljs:141
 msgid "dashboard.ui-scale.updated"
 msgstr "UI scale was updated"
 

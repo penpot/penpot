@@ -7,6 +7,7 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
@@ -15,7 +16,6 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.typography :as t]
@@ -31,6 +31,10 @@
   [:map {:title "OptionsForm"}
    [:lang {:optional true} [:string {:max 20}]]
    [:theme {:optional true} [:string {:max 250}]]])
+
+(def ^:private schema:ui-scale-form
+  [:map {:title "UiScaleForm"}
+   [:ui-scale [::sm/one-of #{:compact :comfortable}]]])
 
 (defn- on-success
   [_]
@@ -118,11 +122,18 @@
 
 (mf/defc ui-scale-settings*
   [{:keys [ui-scale]}]
-  (let [selected (if (= ui-scale 1.15) "1.15" "1")
+  (let [initial (mf/with-memo [ui-scale]
+                  {:ui-scale (if (= ui-scale 1.15) "comfortable" "compact")})
+
+        ;; The form only holds the radio group state: there is no submit step,
+        ;; the change is applied (and persisted) as soon as an option is picked.
+        form    (fm/use-form :schema schema:ui-scale-form
+                             :initial initial)
+
         handle-scale-change
         (mf/use-fn
-         (fn [value]
-           (let [scale (if (= value "1.15") 1.15 1.0)]
+         (fn [_ value]
+           (let [scale (if (= value "comfortable") 1.15 1.0)]
              (st/emit! (ev/event {::ev/name "change-ui-scale"
                                   ::ev/origin "settings"
                                   :scale scale})
@@ -132,10 +143,13 @@
      [:header {:class (stl/css :ui-scale-header)}
       [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.ui-scale.title")]]
      [:> text* {:class (stl/css :description) :typography t/body-medium} (tr "dashboard.ui-scale.description")]
-     [:> select* {:default-selected selected
-                  :options [{:id "1" :label (tr "dashboard.ui-scale.1x")}
-                            {:id "1.15" :label (tr "dashboard.ui-scale.115x")}]
-                  :on-change handle-scale-change}]]))
+     [:& fm/radio-buttons
+      {:options [{:label (tr "dashboard.ui-scale.compact") :value "compact"}
+                 {:label (tr "dashboard.ui-scale.comfortable") :value "comfortable"}]
+       :name :ui-scale
+       :form form
+       :on-change handle-scale-change
+       :class (stl/css :ui-scale-radio-btns)}]]))
 
 (mf/defc options-page*
   []

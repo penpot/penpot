@@ -1339,6 +1339,26 @@ msgstr "Sin límites a la creatividad"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
+#: src/app/main/ui/settings/options.cljs:148
+msgid "dashboard.ui-scale.comfortable"
+msgstr "Cómodo"
+
+#: src/app/main/ui/settings/options.cljs:147
+msgid "dashboard.ui-scale.compact"
+msgstr "Compacto (valor por defecto)"
+
+#: src/app/main/ui/settings/options.cljs:145
+msgid "dashboard.ui-scale.description"
+msgstr "Escala la interfaz de Penpot. Esto no afecta al canvas del área de trabajo."
+
+#: src/app/main/ui/settings/options.cljs:144
+msgid "dashboard.ui-scale.title"
+msgstr "Escalado de interfaz"
+
+#: src/app/main/ui/settings/options.cljs:141
+msgid "dashboard.ui-scale.updated"
+msgstr "Escalado de interfaz actualizado"
+
 #, unused
 msgid "dashboard.user-no-longer-belong-org"
 msgstr "Ya no perteneces a la organización %s"

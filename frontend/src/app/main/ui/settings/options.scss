@@ -45,6 +45,14 @@
   padding-block-end: var(--sp-xxxl);
 }
 
+// Stack the options instead of the default 3-column grid of `.custom-radio`,
+// which would leave a dangling empty column with only two options.
+.ui-scale-radio-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .description {
   color: var(--color-foreground-secondary);
 }
