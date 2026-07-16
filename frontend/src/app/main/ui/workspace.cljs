@@ -44,7 +44,6 @@
    [app.main.ui.workspace.webgl-unavailable-modal]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
-   [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [goog.events :as events]
    [okulary.core :as l]
@@ -177,7 +176,7 @@
 
     (mf/with-effect []
       (let [focus-out #(st/emit! (dw/workspace-focus-lost))
-            key       (events/listen globals/window "blur" focus-out)]
+            key       (events/listen js/window "blur" focus-out)]
         (partial events/unlistenByKey key)))
 
     (mf/with-effect [file-id page-id]
@@ -255,7 +254,7 @@
       (let [handle-wasm-render
             (fn [_]
               (reset! first-frame-rendered? true))
-            listener-key (events/listen globals/document "penpot:wasm:render" handle-wasm-render)]
+            listener-key (events/listen js/document "penpot:wasm:render" handle-wasm-render)]
         (fn []
           (events/unlistenByKey listener-key))))
 
