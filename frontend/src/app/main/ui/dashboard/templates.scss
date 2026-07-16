@@ -93,6 +93,7 @@
 
 .title-icon-text {
   margin-inline-end: var(--sp-s);
+  @include t.use-typography("title-small");
 }
 
 .title-icon-collapsed {
