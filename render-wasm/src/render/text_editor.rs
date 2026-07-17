@@ -2,7 +2,6 @@ use crate::render::options::RenderOptions;
 use crate::shapes::{Shape, TextContent, Type, VerticalAlign};
 use crate::state::{TextEditorState, TextSelection};
 use crate::view::Viewbox;
-use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
 use skia_safe::{BlendMode, Canvas, Color, Paint, Rect};
 
 pub fn render_overlay(
@@ -148,58 +147,13 @@ fn calculate_cursor_rect(
                 .map(|span| span.text.chars().count())
                 .sum();
 
-            let (cursor_x, cursor_y, cursor_width, cursor_height) = if para_char_count == 0 {
-                // Empty paragraph - use default height
-                (0.0, 0.0, 1.0, laid_out_para.height())
-            } else if char_pos == 0 {
-                let rects = laid_out_para.get_rects_for_range(
-                    0..1,
-                    RectHeightStyle::Max,
-                    RectWidthStyle::Tight,
-                );
-                if !rects.is_empty() {
-                    let r = &rects[0].rect;
-                    (r.left(), r.top(), r.width(), r.height())
-                } else {
-                    (0.0, 0.0, 1.0, laid_out_para.height())
-                }
-            } else if char_pos >= para_char_count {
-                let rects = laid_out_para.get_rects_for_range(
-                    para_char_count.saturating_sub(1)..para_char_count,
-                    RectHeightStyle::Max,
-                    RectWidthStyle::Tight,
-                );
-                if !rects.is_empty() {
-                    let r = &rects[0].rect;
-                    (r.right(), r.top(), r.width(), r.height())
-                } else {
-                    (
-                        laid_out_para.longest_line(),
-                        0.0,
-                        1.0,
-                        laid_out_para.height(),
-                    )
-                }
-            } else {
-                let rects = laid_out_para.get_rects_for_range(
-                    char_pos..char_pos + 1,
-                    RectHeightStyle::Max,
-                    RectWidthStyle::Tight,
-                );
-                if !rects.is_empty() {
-                    let r = &rects[0].rect;
-                    (r.left(), r.top(), r.width(), r.height())
-                } else {
-                    // Fallback: use glyph position
-                    let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
-                    (pos.position as f32, 0.0, 1.0, laid_out_para.height())
-                }
-            };
+            let (cursor_x, cursor_y, cursor_width, cursor_height) =
+                para.caret_rect_in_laid_out_paragraph(laid_out_para, char_pos, para_char_count);
 
             return Some(Rect::from_xywh(
-                cursor_x,
+                cursor_x + para.list_gutter(),
                 y_offset + cursor_y,
-                cursor_width, // cursor_width
+                cursor_width,
                 cursor_height,
             ));
         }
@@ -255,16 +209,19 @@ fn calculate_selection_rects(
 
         if range_start < range_end {
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
+            let skia_start = para.text_offset_to_skia(range_start);
+            let skia_end = para.text_offset_to_skia(range_end).max(skia_start + 1);
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                skia_start..skia_end,
                 RectHeightStyle::Max,
                 RectWidthStyle::Tight,
             );
 
             for text_box in text_boxes {
                 let r = text_box.rect;
+                let gutter = para.list_gutter();
                 rects.push(Rect::from_xywh(
-                    r.left(),
+                    r.left() + gutter,
                     y_offset + r.top(),
                     r.width(),
                     r.height(),

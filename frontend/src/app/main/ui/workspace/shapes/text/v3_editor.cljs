@@ -8,6 +8,7 @@
   "Contenteditable DOM element for WASM text editor input"
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.text :as txt]
    [app.main.data.helpers :as dsh]
@@ -155,11 +156,18 @@
          (fn [^js event]
            (dom/prevent-default event)
            (let [clipboard-data (.-clipboardData event)
-                 text (.getData clipboard-data "text/plain")]
-             (when (and text (seq text))
-               (text-editor/text-editor-insert-text text)
-               (sync-wasm-text-editor-content!)
-               (wasm.api/request-render "text-paste"))
+                 plain (or (.getData clipboard-data "text/plain") "")
+                 html  (or (.getData clipboard-data "text/html") "")]
+             (when (or (seq plain) (seq html))
+               (when-let [{:keys [shape-id content]}
+                          (wasm.api/text-editor-paste-clipboard-text plain html)]
+                 (let [text (txt/content->text content)
+                       name (when (not= text "")
+                              (txt/generate-shape-name text))]
+                   (st/emit! (dwt/v2-update-text-shape-content
+                              shape-id content
+                              :update-name? true
+                              :name name)))))
              (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-copy
@@ -215,6 +223,24 @@
                    (text-editor/text-editor-insert-paragraph)
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render "text-paragraph"))
+
+                 ;; Tab / Shift+Tab: indent/outdent list items
+                 (= key "Tab")
+                 (let [list-vals (text-editor/current-list-values)
+                       style     (some-> (:list-style list-vals) str)
+                       indent    (d/nilv (:list-indent list-vals) 0)]
+                   (when (contains? #{"bullet" "numbered"} style)
+                     (dom/prevent-default event)
+                     (let [next-indent (if shift?
+                                         (max 0 (dec indent))
+                                         (min txt/max-list-indent (inc indent)))
+                           result (wasm.api/apply-list-attrs-to-selection
+                                   {:list-indent next-indent})]
+                       (when result
+                         (st/emit! (dwt/v2-update-text-shape-content
+                                    (:shape-id result) (:content result)
+                                    :update-name? false)))
+                       (wasm.api/request-render "text-list-indent"))))
 
                  ;; Backspace
                  (= key "Backspace")
@@ -291,6 +317,19 @@
                (when (and data (seq data))
                  (text-editor/text-editor-insert-text data)
                  (sync-wasm-text-editor-content!)
+                 (when (= data " ")
+                   (when-let [{:keys [list-style list-style-position prefix-len]}
+                              (wasm.api/text-editor-try-apply-markdown-list)]
+                     (dotimes [_ prefix-len]
+                       (text-editor/text-editor-delete-backward false))
+                     (sync-wasm-text-editor-content!)
+                     (when-let [result (wasm.api/apply-list-attrs-to-selection
+                                        (cond-> {:list-style list-style}
+                                          (some? list-style-position)
+                                          (assoc :list-style-position list-style-position)))]
+                       (st/emit! (dwt/v2-update-text-shape-content
+                                  (:shape-id result) (:content result)
+                                  :update-name? false)))))
                  (wasm.api/request-render "text-input"))
                (reset-input-node (mf/ref-val contenteditable-ref))))))
 

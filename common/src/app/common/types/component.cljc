@@ -62,6 +62,9 @@
    :letter-spacing          :text-display-group
    :line-height             :text-display-group
    :text-align              :text-display-group
+   :list-style              :text-display-group
+   :list-indent             :text-display-group
+   :list-style-position     :text-display-group
    :strokes                 :stroke-group
 
    ;; DEPRECATED: FIXME: this attrs are deprecated for a long time but

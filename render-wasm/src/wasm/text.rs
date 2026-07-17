@@ -4,7 +4,7 @@ use super::{fills::RawFillData, fonts::RawFontStyle};
 
 use crate::mem::{self, SerializableResult};
 use crate::shapes::{
-    self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
+    self, GrowType, ListStyle, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{with_current_shape, with_current_shape_mut, with_state};
@@ -94,6 +94,25 @@ impl From<RawTextTransform> for Option<TextTransform> {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawListStyle {
+    None = 0,
+    Bullet = 1,
+    Numbered = 2,
+}
+
+impl From<RawListStyle> for ListStyle {
+    fn from(value: RawListStyle) -> Self {
+        match value {
+            RawListStyle::None => ListStyle::None,
+            RawListStyle::Bullet => ListStyle::Bullet,
+            RawListStyle::Numbered => ListStyle::Numbered,
+        }
+    }
+}
+
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
@@ -105,6 +124,10 @@ pub struct RawParagraphData {
     text_transform: RawTextTransform,
     line_height: f32,
     letter_spacing: f32,
+    list_style: RawListStyle,
+    list_indent: u8,
+    list_style_position: u8,
+    _pad: u8,
 }
 
 impl From<[u8; RAW_PARAGRAPH_DATA_SIZE]> for RawParagraphData {
@@ -251,6 +274,9 @@ impl From<RawParagraph> for shapes::Paragraph {
             value.attrs.text_transform.into(),
             value.attrs.line_height,
             value.attrs.letter_spacing,
+            value.attrs.list_style.into(),
+            value.attrs.list_indent,
+            shapes::ListStylePosition::from(value.attrs.list_style_position),
             spans,
         )
     }

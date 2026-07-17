@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.fills.impl :as types.fills.impl]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.helpers :as h]
@@ -15,7 +16,7 @@
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]))
 
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 16)
 (def ^:const SPAN-ATTR-U8-SIZE 64)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
@@ -49,6 +50,20 @@
     (+ new-ofset (* padding-fills types.fills.impl/FILL-U8-SIZE))))
 
 
+(defn- translate-list-style
+  [list-style]
+  (case (some-> list-style d/name)
+    "bullet" 1
+    "numbered" 2
+    0))
+
+(defn- translate-list-style-position
+  [list-style-position]
+  (case (txt/normalize-list-style-position list-style-position)
+    "inside" 1
+    ;; outside
+    0))
+
 (defn- write-paragraph
   [offset dview paragraph]
   (let [text-align      (sr/translate-text-align (get paragraph :text-align))
@@ -56,7 +71,11 @@
         text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
         text-transform  (sr/translate-text-transform (get paragraph :text-transform))
         line-height     (f/serialize-line-height (get paragraph :line-height))
-        letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))]
+        letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))
+        list-style      (translate-list-style (get paragraph :list-style))
+        list-indent     (-> (get paragraph :list-indent 0) int (max 0) (min 4))
+        list-style-position (translate-list-style-position
+                             (get paragraph :list-style-position txt/default-list-style-position))]
 
     (-> offset
         (mem/write-u8 dview text-align)
@@ -66,6 +85,11 @@
 
         (mem/write-f32 dview line-height)
         (mem/write-f32 dview letter-spacing)
+
+        (mem/write-u8 dview list-style)
+        (mem/write-u8 dview list-indent)
+        (mem/write-u8 dview list-style-position)
+        (mem/write-u8 dview 0)
 
         (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
 

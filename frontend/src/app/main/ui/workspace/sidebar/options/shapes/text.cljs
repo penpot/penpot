@@ -27,6 +27,7 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -143,7 +144,10 @@
            :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
-           :attrs txt/text-node-attrs}))]
+           :attrs txt/text-node-attrs})
+         (when (and text-editor-wasm?
+                    (wasm.api/text-editor-has-focus?))
+           (wasm.api/text-editor-current-list-values)))]
 
     [:*
      [:> layer-menu* {:ids ids

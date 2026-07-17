@@ -357,6 +357,10 @@
 
            :text-direction
 
+           :list-style
+           :list-indent
+           :list-style-position
+
            :line-height
            :letter-spacing
 

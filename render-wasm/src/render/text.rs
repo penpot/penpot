@@ -44,7 +44,9 @@ pub fn stroke_paragraph_builder_group_from_text(
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
                     let paragraph_style = paragraph.paragraph_to_style();
-                    ParagraphBuilder::new(&paragraph_style, fonts)
+                    let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+                    paragraph.push_list_marker_placeholder(&mut builder);
+                    builder
                 });
                 let stroke_paint = stroke_paint.clone();
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
@@ -406,23 +408,212 @@ fn paint_text_with_emoji_overlay(
     let mut layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
 
-    for para in &mut layout_info.paragraphs {
-        para.paragraph.paint(canvas, (para.x, para.y));
+    // paragraph_builder_groups is 1:1 with content paragraphs; each group may
+    // expand to several laid-out ParagraphLayout entries (e.g. stroke paints).
+    let mut layout_idx = 0usize;
+    for (para_idx, group) in paragraph_builder_groups.iter().enumerate() {
+        let group_len = group.len().max(1);
+        for builder_idx in 0..group_len {
+            if let Some(para) = layout_info.paragraphs.get_mut(layout_idx) {
+                para.paragraph.paint(canvas, (para.x, para.y));
 
-        if overlay_emoji {
-            paint_emoji_overlay(canvas, para);
-        }
+                if overlay_emoji {
+                    paint_emoji_overlay(canvas, para);
+                }
 
-        for deco in &para.decorations {
-            draw_text_decorations(
-                canvas,
-                &deco.text_style,
-                Some(deco.y),
-                deco.thickness,
-                deco.left,
-                deco.width,
-            );
+                for deco in &para.decorations {
+                    draw_text_decorations(
+                        canvas,
+                        &deco.text_style,
+                        Some(deco.y),
+                        deco.thickness,
+                        deco.left,
+                        deco.width,
+                    );
+                }
+
+                // Draw list markers once per content paragraph (first builder).
+                if builder_idx == 0 {
+                    if let Some(content_para) = text_content.paragraphs().get(para_idx) {
+                        paint_list_marker(canvas, text_content, para_idx, content_para, para);
+                    }
+                }
+            }
+            layout_idx += 1;
         }
+    }
+}
+
+fn list_item_index(text_content: &TextContent, para_idx: usize) -> u32 {
+    let paragraphs = text_content.paragraphs();
+    let Some(para) = paragraphs.get(para_idx) else {
+        return 1;
+    };
+    let indent = para.list_indent();
+    let mut count = 1u32;
+    for prev in paragraphs.iter().take(para_idx).rev() {
+        if prev.list_style() != crate::shapes::ListStyle::Numbered {
+            break;
+        }
+        if prev.list_indent() < indent {
+            break;
+        }
+        if prev.list_indent() == indent {
+            count += 1;
+        }
+    }
+    count
+}
+
+/// CSS-style lower-alpha: 1 -> a, 26 -> z, 27 -> aa.
+fn number_to_lower_alpha(mut n: u32) -> String {
+    if n == 0 {
+        return "a".to_string();
+    }
+    let mut result = String::new();
+    while n > 0 {
+        n -= 1;
+        result.insert(0, (b'a' + (n % 26) as u8) as char);
+        n /= 26;
+    }
+    result
+}
+
+/// CSS-style lower-roman: 1 -> i, 4 -> iv, 9 -> ix.
+fn number_to_lower_roman(mut n: u32) -> String {
+    if n == 0 {
+        return "i".to_string();
+    }
+    const VALUES: [(u32, &str); 13] = [
+        (1000, "m"),
+        (900, "cm"),
+        (500, "d"),
+        (400, "cd"),
+        (100, "c"),
+        (90, "xc"),
+        (50, "l"),
+        (40, "xl"),
+        (10, "x"),
+        (9, "ix"),
+        (5, "v"),
+        (4, "iv"),
+        (1, "i"),
+    ];
+    let mut result = String::new();
+    for (value, symbol) in VALUES {
+        while n >= value {
+            result.push_str(symbol);
+            n -= value;
+        }
+    }
+    result
+}
+
+/// Numbered list marker text by indent level: decimal, lower-alpha, lower-roman (cycles).
+fn numbered_marker_label(count: u32, indent: u8) -> String {
+    let marker = match indent % 3 {
+        0 => count.to_string(),
+        1 => number_to_lower_alpha(count),
+        _ => number_to_lower_roman(count),
+    };
+    format!("{marker}.")
+}
+
+fn list_marker_label(text_content: &TextContent, para_idx: usize) -> Option<String> {
+    let paragraphs = text_content.paragraphs();
+    let para = paragraphs.get(para_idx)?;
+    if para.list_style() != crate::shapes::ListStyle::Numbered {
+        return None;
+    }
+    let count = list_item_index(text_content, para_idx);
+    Some(numbered_marker_label(count, para.list_indent()))
+}
+
+fn marker_font(para_layout: &mut crate::shapes::ParagraphLayout, font_size: f32) -> skia::Font {
+    // Prefer the typeface Skia already resolved for this paragraph's text.
+    // Empty paragraphs still return a usable default from the paragraph.
+    let mut font = para_layout.paragraph.get_font_at_utf16_offset(0);
+    if font.typeface().family_name().is_empty() {
+        font = crate::globals::get_render_state()
+            .fonts()
+            .debug_font()
+            .clone();
+    }
+    font.set_size(font_size);
+    font
+}
+
+fn paint_list_marker(
+    canvas: &Canvas,
+    text_content: &TextContent,
+    para_idx: usize,
+    content_para: &crate::shapes::Paragraph,
+    para_layout: &mut crate::shapes::ParagraphLayout,
+) {
+    let list_style = content_para.list_style();
+    if !list_style.is_active() {
+        return;
+    }
+
+    let font_size = content_para
+        .children()
+        .first()
+        .map(|span| span.font_size)
+        .unwrap_or(14.0);
+
+    let fill_color = content_para
+        .children()
+        .first()
+        .and_then(|span| span.fills.first())
+        .map(|fill| match fill {
+            crate::shapes::Fill::Solid(crate::shapes::SolidColor(color)) => *color,
+            _ => skia::Color::BLACK,
+        })
+        .unwrap_or(skia::Color::BLACK);
+
+    let mut paint = Paint::default();
+    paint.set_anti_alias(true);
+    paint.set_color(fill_color);
+
+    let marker_column = content_para.list_marker_column();
+    let marker_center_x = if content_para.list_style_position().is_inside() {
+        // Marker sits in the first-line placeholder inside the text box.
+        para_layout.x + (marker_column * 0.5)
+    } else {
+        // Marker lives in the outside gutter to the left of the text box.
+        para_layout.x - (marker_column * 0.5)
+    };
+
+    let baseline = para_layout
+        .paragraph
+        .get_line_metrics()
+        .first()
+        .map(|line| para_layout.y + line.baseline as f32)
+        .unwrap_or(para_layout.y + font_size);
+
+    let center_y = baseline - (font_size * 0.35);
+
+    match list_style {
+        crate::shapes::ListStyle::Bullet => {
+            paint.set_style(skia::PaintStyle::Fill);
+            let radius = (font_size * 0.18).max(1.5);
+            canvas.draw_circle((marker_center_x, center_y), radius, &paint);
+        }
+        crate::shapes::ListStyle::Numbered => {
+            paint.set_style(skia::PaintStyle::Fill);
+            let Some(label) = list_marker_label(text_content, para_idx) else {
+                return;
+            };
+            let font = marker_font(para_layout, font_size);
+            let width = font.measure_str(&label, Some(&paint)).0;
+            let marker_x = if content_para.list_style_position().is_inside() {
+                para_layout.x + ((marker_column - width) * 0.5).max(0.0)
+            } else {
+                para_layout.x - width - 4.0
+            };
+            canvas.draw_str(label, (marker_x, baseline), &font, &paint);
+        }
+        crate::shapes::ListStyle::None => {}
     }
 }
 
@@ -1003,6 +1194,64 @@ pub fn calculate_decoration_metrics(
     )
 }
 
+/// Loose index overlap between a span and a line, with list-placeholder end fix.
+pub fn span_overlaps_line(
+    skia_start: usize,
+    skia_end: usize,
+    line_start: usize,
+    line_end: usize,
+    list_index_offset: usize,
+) -> bool {
+    let line_end = line_end.saturating_add(list_index_offset.min(1));
+    skia_start < line_end && skia_end > line_start
+}
+
+/// Horizontal bounds for a styled run on one line.
+/// Filters glyph rects by vertical overlap so list-marker placeholders do not
+/// shrink underline/strikethrough at the line edges.
+pub fn segment_advance_bounds_for_line(
+    paragraph: &skia::textlayout::Paragraph,
+    seg_start: usize,
+    seg_end: usize,
+    line_left: f32,
+    line_top: f32,
+    line_bottom: f32,
+) -> Option<(f32, f32)> {
+    if seg_start >= seg_end {
+        return None;
+    }
+
+    let rects = paragraph.get_rects_for_range(
+        seg_start..seg_end,
+        skia::textlayout::RectHeightStyle::Tight,
+        skia::textlayout::RectWidthStyle::Tight,
+    );
+
+    if rects.is_empty() {
+        return None;
+    }
+
+    const Y_EPS: f32 = 0.5;
+    let mut min_left: Option<f32> = None;
+    let mut max_right: Option<f32> = None;
+
+    for text_box in rects {
+        let r = text_box.rect;
+        if r.bottom() <= line_top - Y_EPS || r.top() >= line_bottom + Y_EPS {
+            continue;
+        }
+        min_left = Some(min_left.map_or(r.left, |v| v.min(r.left)));
+        max_right = Some(max_right.map_or(r.right(), |v| v.max(r.right())));
+    }
+
+    let (left, right) = (min_left?, max_right?);
+    let width = (right - left).max(0.0);
+    if width <= 0.0 {
+        return None;
+    }
+    Some((width, left - line_left))
+}
+
 // How to use it?
 // Type::Text(text_content) => {
 //     self.surfaces
@@ -1028,3 +1277,33 @@ pub fn calculate_decoration_metrics(
 
 //     shadows::render_text_inner_shadows(self, &shape, &paths, antialias);
 // }
+
+#[cfg(test)]
+mod list_marker_tests {
+    use super::*;
+
+    #[test]
+    fn lower_alpha_sequence() {
+        assert_eq!(number_to_lower_alpha(1), "a");
+        assert_eq!(number_to_lower_alpha(2), "b");
+        assert_eq!(number_to_lower_alpha(26), "z");
+        assert_eq!(number_to_lower_alpha(27), "aa");
+    }
+
+    #[test]
+    fn lower_roman_sequence() {
+        assert_eq!(number_to_lower_roman(1), "i");
+        assert_eq!(number_to_lower_roman(4), "iv");
+        assert_eq!(number_to_lower_roman(9), "ix");
+        assert_eq!(number_to_lower_roman(14), "xiv");
+    }
+
+    #[test]
+    fn numbered_marker_cycles_by_indent() {
+        assert_eq!(numbered_marker_label(1, 0), "1.");
+        assert_eq!(numbered_marker_label(2, 1), "b.");
+        assert_eq!(numbered_marker_label(3, 2), "iii.");
+        assert_eq!(numbered_marker_label(1, 3), "1.");
+        assert_eq!(numbered_marker_label(1, 4), "a.");
+    }
+}

@@ -40,6 +40,11 @@
           [:direction {:optional true} ::sm/text]
           [:text-decoration {:optional true} ::sm/text]
           [:text-transform {:optional true} ::sm/text]
+          [:text-align {:optional true} ::sm/text]
+          [:text-direction {:optional true} ::sm/text]
+          [:list-style {:optional true} ::sm/text]
+          [:list-indent {:optional true} ::sm/safe-int]
+          [:list-style-position {:optional true} ::sm/text]
           [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
           [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
           [:children

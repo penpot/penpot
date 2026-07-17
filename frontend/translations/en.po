@@ -8514,6 +8514,24 @@ msgstr "Title case"
 msgid "workspace.options.text-options.underline"
 msgstr "Underline (%s)"
 
+msgid "workspace.options.text-options.bulleted-list"
+msgstr "Bulleted list"
+
+msgid "workspace.options.text-options.numbered-list"
+msgstr "Numbered list"
+
+msgid "workspace.options.text-options.no-list"
+msgstr "No list"
+
+msgid "workspace.options.text-options.list-style-position"
+msgstr "List position"
+
+msgid "workspace.options.text-options.list-style-position.outside"
+msgstr "Outside"
+
+msgid "workspace.options.text-options.list-style-position.inside"
+msgstr "Inside"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.options.text-options.uppercase"

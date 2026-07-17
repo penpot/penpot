@@ -766,19 +766,44 @@ impl TextEditorState {
     }
 
     pub fn delete_backward(&mut self, text_content: &mut TextContent, word_boundary: bool) {
+        let mut styles_changed = false;
+
         if self.selection.is_selection() {
             text_helpers::delete_selection_range(text_content, &self.selection);
             let start = self.selection.start();
             let clamped = text_helpers::clamp_cursor(start, text_content.paragraphs());
             self.selection.set_caret(clamped);
-        } else if word_boundary {
-            let cursor = self.selection.focus;
-            if let Some(new_cursor) = text_helpers::delete_word_before(text_content, &cursor) {
-                self.selection.set_caret(new_cursor);
-            }
         } else {
             let cursor = self.selection.focus;
-            if let Some(new_cursor) = text_helpers::delete_char_before(text_content, &cursor) {
+
+            // Backspace at the start of a list item removes the list style
+            // (keeps the text; does not merge with the previous paragraph).
+            let cleared_list = if cursor.offset == 0 {
+                let paragraphs = text_content.paragraphs_mut();
+                if cursor.paragraph < paragraphs.len() {
+                    let para = &mut paragraphs[cursor.paragraph];
+                    if para.list_style().is_active() {
+                        para.set_list_style(crate::shapes::ListStyle::None);
+                        para.set_list_indent(0);
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
+
+            if cleared_list {
+                styles_changed = true;
+            } else if word_boundary {
+                if let Some(new_cursor) = text_helpers::delete_word_before(text_content, &cursor) {
+                    self.selection.set_caret(new_cursor);
+                }
+            } else if let Some(new_cursor) = text_helpers::delete_char_before(text_content, &cursor)
+            {
                 self.selection.set_caret(new_cursor);
             }
         }
@@ -789,6 +814,9 @@ impl TextEditorState {
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);
         self.push_event(TextEditorEvent::NeedsLayout);
+        if styles_changed {
+            self.push_event(TextEditorEvent::StylesChanged);
+        }
     }
 
     pub fn delete_forward(&mut self, text_content: &mut TextContent, word_boundary: bool) {
@@ -825,6 +853,40 @@ impl TextEditorState {
         }
 
         let cursor = self.selection.focus;
+
+        // Empty list item + Enter exits the list (Figma/Sketch behaviour).
+        let exit_list = {
+            let paragraphs = text_content.paragraphs();
+            if cursor.paragraph < paragraphs.len() {
+                let para = &paragraphs[cursor.paragraph];
+                let is_empty = para
+                    .children()
+                    .iter()
+                    .all(|span| span.text.chars().all(|c| c.is_whitespace()));
+                is_empty && para.list_style().is_active()
+            } else {
+                false
+            }
+        };
+
+        if exit_list {
+            let paragraphs = text_content.paragraphs_mut();
+            let para = &mut paragraphs[cursor.paragraph];
+            if para.list_indent() > 0 {
+                para.set_list_indent(para.list_indent() - 1);
+            } else {
+                para.set_list_style(crate::shapes::ListStyle::None);
+                para.set_list_indent(0);
+            }
+            text_content.layout.paragraphs.clear();
+            text_content.layout.paragraph_builders.clear();
+            self.reset_blink();
+            self.push_event(TextEditorEvent::ContentChanged);
+            self.push_event(TextEditorEvent::NeedsLayout);
+            self.push_event(TextEditorEvent::StylesChanged);
+            return;
+        }
+
         if text_helpers::split_paragraph_at_cursor(text_content, &cursor) {
             let new_cursor =
                 TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0);

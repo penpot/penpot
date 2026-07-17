@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 @use "ds/typography.scss" as t;
 @use "ds/_utils.scss" as *;
@@ -66,4 +67,20 @@
 .text-decoration-options {
   display: flex;
   gap: var(--sp-xs);
+}
+
+.text-list-options {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+}
+
+.list-style-position {
+  flex: none;
+  inline-size: var(--four-columns-width);
+}
+
+.list-style-position-select {
+  inline-size: 100%;
 }

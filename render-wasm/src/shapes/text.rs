@@ -1,8 +1,10 @@
 use crate::render::text::calculate_decoration_metrics;
+use crate::render::text::segment_advance_bounds_for_line;
+use crate::render::text::span_overlaps_line;
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
-    utils::Browser,
+    utils::{get_fallback_fonts, Browser},
 };
 
 use core::f32;
@@ -14,7 +16,10 @@ use skia_safe::{
     textlayout::Affinity,
     textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
+    textlayout::PlaceholderAlignment,
+    textlayout::PlaceholderStyle,
     textlayout::PositionWithAffinity,
+    textlayout::TextBaseline,
     Contains,
 };
 
@@ -24,7 +29,7 @@ use std::collections::HashSet;
 use super::FontFamily;
 use crate::math::Point;
 use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
-use crate::utils::{get_fallback_fonts, get_font_collection};
+use crate::utils::get_font_collection;
 use crate::Uuid;
 
 // TODO: maybe move this to the wasm module?
@@ -296,15 +301,26 @@ pub fn build_paragraphs_from_paragraph_builders(
     paragraph_builders: &mut [ParagraphBuilderGroup],
     width: f32,
 ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+    build_paragraphs_from_paragraph_builders_with_gutters(paragraph_builders, width, &[])
+}
+
+pub fn build_paragraphs_from_paragraph_builders_with_gutters(
+    paragraph_builders: &mut [ParagraphBuilderGroup],
+    width: f32,
+    gutters: &[f32],
+) -> Vec<Vec<skia::textlayout::Paragraph>> {
     let paragraphs = paragraph_builders
         .iter_mut()
-        .map(|builders| {
+        .enumerate()
+        .map(|(idx, builders)| {
+            let gutter = gutters.get(idx).copied().unwrap_or(0.0);
+            let layout_width = (width - gutter).max(1.0);
             builders
                 .iter_mut()
                 .map(|builder| {
                     let mut paragraph = builder.build();
                     // For auto-width, always layout with infinite width first to get intrinsic width
-                    paragraph.layout(width);
+                    paragraph.layout(layout_width);
                     paragraph
                 })
                 .collect()
@@ -454,7 +470,7 @@ impl TextContent {
         let mut has_lines = false;
         let mut y_accum = base_y + vertical_offset;
 
-        for group in paragraphs {
+        for (para_idx, group) in paragraphs.iter().enumerate() {
             if let Some(paragraph) = group.first() {
                 let line_metrics = paragraph.get_line_metrics();
                 for line in &line_metrics {
@@ -480,6 +496,22 @@ impl TextContent {
                     max_x = max_x.max(x + line.left as f32 + line.width as f32);
                     has_lines = true;
                 }
+
+                // `list-style-position: outside` renders list markers in the
+                // left margin area (outside the paragraph's text box).
+                // Extend the tight bounds to include that marker area.
+                if let Some(content_para) = self.paragraphs().get(para_idx) {
+                    if content_para.list_style.is_active()
+                        && !content_para.list_style_position().is_inside()
+                    {
+                        // Extend on the left side only. Using `min_x` keeps
+                        // us consistent with the line-metric based bounds
+                        // computed above (which already include any internal
+                        // alignment offsets).
+                        min_x -= content_para.list_marker_column();
+                    }
+                }
+
                 y_accum += paragraph.height();
             }
         }
@@ -635,42 +667,24 @@ impl TextContent {
                 // Skia's get_glyph_position_at_coordinate expects coordinates relative to
                 // the paragraph's top-left. For multi-paragraph or wrapped text, each
                 // paragraph has its own origin; subtract start_y so we pass paragraph-local coords.
-                let para_pt = Point::new(point.x, point.y - start_y);
+                let gutter = self
+                    .paragraphs()
+                    .get(paragraph_index)
+                    .map(|p| p.list_gutter())
+                    .unwrap_or(0.0);
+                let para_pt = Point::new(point.x - gutter, point.y - start_y);
                 let position_with_affinity =
                     layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
-                    // Computed position keeps the current position in terms
-                    // of number of characters of text. This is used to know
-                    // in which span we are.
-                    let mut computed_position: usize = 0;
-
-                    // If paragraph has no spans, default to span 0, offset 0
-                    if !paragraph.children().is_empty() {
-                        for span in paragraph.children() {
-                            let length = span.text.chars().count();
-                            let start_position = computed_position;
-                            let end_position = computed_position + length;
-                            let current_position = position_with_affinity.position as usize;
-
-                            // Handle empty spans: if the span is empty and current position
-                            // matches the start, this is the right span
-                            if length == 0 && current_position == start_position {
-                                break;
-                            }
-
-                            if start_position <= current_position
-                                && end_position >= current_position
-                            {
-                                break;
-                            }
-                            computed_position += length;
-                        }
-                    }
+                    let skia_index = position_with_affinity.position.max(0) as usize;
+                    let text_offset = paragraph.skia_index_to_text(skia_index);
+                    let mut normalized_position = position_with_affinity;
+                    normalized_position.position = text_offset as i32;
 
                     return Some(TextPositionWithAffinity::new(
-                        position_with_affinity,
+                        normalized_position,
                         paragraph_index,
-                        position_with_affinity.position as usize,
+                        text_offset,
                     ));
                 }
             }
@@ -721,6 +735,7 @@ impl TextContent {
         for paragraph in self.paragraphs() {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            paragraph.push_list_marker_placeholder(&mut builder);
             let mut has_text = false;
             for span in paragraph.children() {
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
@@ -756,6 +771,7 @@ impl TextContent {
         for paragraph in self.paragraphs() {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            paragraph.push_list_marker_placeholder(&mut builder);
             let mut has_text = false;
             for span in paragraph.children() {
                 let text_style = span.to_style(
@@ -780,15 +796,23 @@ impl TextContent {
         paragraph_group
     }
 
+    fn list_gutters(&self) -> Vec<f32> {
+        self.paragraphs.iter().map(|p| p.list_gutter()).collect()
+    }
+
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let gutters = self.list_gutters();
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
 
-        let paragraphs =
-            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+        let paragraphs = build_paragraphs_from_paragraph_builders_with_gutters(
+            &mut paragraph_builders,
+            f32::MAX,
+            &gutters,
+        );
 
         let (width, height) =
             paragraphs
@@ -800,6 +824,25 @@ impl TextContent {
                         auto_height + paragraph.height(),
                     )
                 });
+
+        // Include the widest list gutter so auto-width still fits markers.
+        let max_gutter = self
+            .paragraphs()
+            .iter()
+            .map(|p| {
+                if !p.list_style().is_active() {
+                    return 0.0;
+                }
+                if p.list_style_position().is_inside() {
+                    p.list_indent_offset()
+                } else {
+                    // `outside` renders the marker in the left margin area,
+                    // which needs space when sizing auto-width shapes.
+                    p.list_indent_offset() + p.list_marker_column()
+                }
+            })
+            .fold(0.0_f32, f32::max);
+        let width = width + max_gutter;
 
         let size = TextContentSize::new_with_normalized_line_height(
             width.ceil(),
@@ -815,11 +858,16 @@ impl TextContent {
     fn text_layout_auto_height(&self) -> TextContentLayoutResult {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let gutters = self.list_gutters();
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut paragraph_builders, width);
 
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders_with_gutters(
+            &mut paragraph_builders,
+            width,
+            &gutters,
+        );
         let height = paragraphs
             .iter()
             .flatten()
@@ -839,11 +887,16 @@ impl TextContent {
     fn text_layout_fixed(&self) -> TextContentLayoutResult {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let gutters = self.list_gutters();
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut paragraph_builders, width);
 
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders_with_gutters(
+            &mut paragraph_builders,
+            width,
+            &gutters,
+        );
         let paragraph_height = paragraphs
             .iter()
             .flatten()
@@ -1091,6 +1144,59 @@ pub enum TextTransform {
 
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
 // wasm module and store here meaningful model values (and/or skia type aliases)
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+#[repr(u8)]
+pub enum ListStyle {
+    #[default]
+    None = 0,
+    Bullet = 1,
+    Numbered = 2,
+}
+
+impl ListStyle {
+    pub fn is_active(self) -> bool {
+        !matches!(self, Self::None)
+    }
+}
+
+/// CSS `list-style-position` for list markers.
+/// See https://www.w3schools.com/cssref/pr_list-style-position.php
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+#[repr(u8)]
+pub enum ListStylePosition {
+    Outside = 0,
+    #[default]
+    Inside = 1,
+}
+
+impl ListStylePosition {
+    pub fn is_inside(self) -> bool {
+        matches!(self, Self::Inside)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Outside => "outside",
+            Self::Inside => "inside",
+        }
+    }
+}
+
+impl From<u8> for ListStylePosition {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => Self::Inside,
+            _ => Self::Outside,
+        }
+    }
+}
+
+/// Maximum nesting depth for list items (levels 0..=4).
+pub const MAX_LIST_INDENT: u8 = 4;
+
+/// Default horizontal inset per list indent level, in canvas units (pixels).
+pub const LIST_INDENT_STEP: f32 = 24.0;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
     text_align: TextAlign,
@@ -1099,6 +1205,9 @@ pub struct Paragraph {
     text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
+    list_style: ListStyle,
+    list_indent: u8,
+    list_style_position: ListStylePosition,
     children: Vec<TextSpan>,
 }
 
@@ -1111,6 +1220,9 @@ impl Default for Paragraph {
             text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
+            list_style: ListStyle::None,
+            list_indent: 0,
+            list_style_position: ListStylePosition::Inside,
             children: vec![],
         }
     }
@@ -1125,6 +1237,9 @@ impl Paragraph {
         text_transform: Option<TextTransform>,
         line_height: f32,
         letter_spacing: f32,
+        list_style: ListStyle,
+        list_indent: u8,
+        list_style_position: ListStylePosition,
         children: Vec<TextSpan>,
     ) -> Self {
         Self {
@@ -1134,6 +1249,9 @@ impl Paragraph {
             text_transform,
             line_height,
             letter_spacing,
+            list_style,
+            list_indent: list_indent.min(MAX_LIST_INDENT),
+            list_style_position,
             children,
         }
     }
@@ -1170,6 +1288,139 @@ impl Paragraph {
         self.text_transform
     }
 
+    pub fn list_style(&self) -> ListStyle {
+        self.list_style
+    }
+
+    pub fn list_indent(&self) -> u8 {
+        self.list_indent
+    }
+
+    pub fn list_style_position(&self) -> ListStylePosition {
+        self.list_style_position
+    }
+
+    pub fn set_list_style(&mut self, list_style: ListStyle) {
+        self.list_style = list_style;
+    }
+
+    pub fn set_list_indent(&mut self, list_indent: u8) {
+        self.list_indent = list_indent.min(MAX_LIST_INDENT);
+    }
+
+    #[allow(dead_code)]
+    pub fn set_list_style_position(&mut self, list_style_position: ListStylePosition) {
+        self.list_style_position = list_style_position;
+    }
+
+    /// Horizontal offset for nested list levels (does not affect marker-to-text gap).
+    pub fn list_indent_offset(&self) -> f32 {
+        if self.list_style.is_active() {
+            LIST_INDENT_STEP * self.list_indent as f32
+        } else {
+            0.0
+        }
+    }
+
+    /// Fixed width of the marker column (bullet/number to text gap).
+    pub fn list_marker_column(&self) -> f32 {
+        if self.list_style.is_active() {
+            LIST_INDENT_STEP
+        } else {
+            0.0
+        }
+    }
+
+    /// Left inset for layout/positioning.
+    /// - outside: indent + marker column (marker lives outside the text box)
+    /// - inside: indent only (marker uses first-line text indent)
+    pub fn list_gutter(&self) -> f32 {
+        if !self.list_style.is_active() {
+            0.0
+        } else if self.list_style_position.is_inside() {
+            self.list_indent_offset()
+        } else {
+            // `outside`: the marker is rendered in the margin area to the left
+            // of the text box, so it should not reduce the paragraph's text
+            // layout width.
+            self.list_indent_offset()
+        }
+    }
+
+    /// Skia reserves one index for the list-marker placeholder on inside lists.
+    pub fn list_skia_index_offset(&self) -> usize {
+        if self.list_style.is_active() && self.list_style_position.is_inside() {
+            1
+        } else {
+            0
+        }
+    }
+
+    pub fn text_offset_to_skia(&self, text_offset: usize) -> usize {
+        text_offset.saturating_add(self.list_skia_index_offset())
+    }
+
+    pub fn skia_index_to_text(&self, skia_index: usize) -> usize {
+        skia_index.saturating_sub(self.list_skia_index_offset())
+    }
+
+    /// Paragraph-local X where typed text begins (after an inside-list marker).
+    pub fn list_text_start_x(&self) -> f32 {
+        if self.list_style.is_active() && self.list_style_position.is_inside() {
+            self.list_marker_column()
+        } else {
+            0.0
+        }
+    }
+
+    /// Caret position in paragraph-local coordinates.
+    pub fn caret_rect_in_laid_out_paragraph(
+        &self,
+        laid_out_para: &skia::textlayout::Paragraph,
+        char_pos: usize,
+        para_char_count: usize,
+    ) -> (f32, f32, f32, f32) {
+        use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
+
+        if char_pos >= para_char_count && para_char_count > 0 {
+            let skia_start = self.text_offset_to_skia(para_char_count.saturating_sub(1));
+            let skia_end = self
+                .text_offset_to_skia(para_char_count)
+                .max(skia_start + 1);
+            let rects = laid_out_para.get_rects_for_range(
+                skia_start..skia_end,
+                RectHeightStyle::Max,
+                RectWidthStyle::Tight,
+            );
+            if let Some(r) = rects.first() {
+                let rect = &r.rect;
+                return (rect.right(), rect.top(), rect.width(), rect.height());
+            }
+            return (
+                laid_out_para.longest_line(),
+                0.0,
+                1.0,
+                laid_out_para.height(),
+            );
+        }
+
+        let skia_start = self.text_offset_to_skia(char_pos);
+        let skia_end = self
+            .text_offset_to_skia(char_pos.saturating_add(1))
+            .max(skia_start + 1);
+        let rects = laid_out_para.get_rects_for_range(
+            skia_start..skia_end,
+            RectHeightStyle::Max,
+            RectWidthStyle::Tight,
+        );
+        if let Some(r) = rects.first() {
+            let rect = &r.rect;
+            return (rect.left(), rect.top(), rect.width(), rect.height());
+        }
+
+        (self.list_text_start_x(), 0.0, 1.0, laid_out_para.height())
+    }
+
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
 
@@ -1180,6 +1431,22 @@ impl Paragraph {
         style.set_apply_rounding_hack(true);
         style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
+    }
+
+    /// For `list-style-position: inside`, reserve space for the marker on the
+    /// first line only (wrapped lines start under the marker, like CSS).
+    pub fn push_list_marker_placeholder(&self, builder: &mut ParagraphBuilder) {
+        if self.list_style.is_active() && self.list_style_position.is_inside() {
+            let width = self.list_marker_column();
+            let placeholder = PlaceholderStyle::new(
+                width,
+                1.0,
+                PlaceholderAlignment::Baseline,
+                TextBaseline::Alphabetic,
+                0.0,
+            );
+            builder.add_placeholder(&placeholder);
+        }
     }
 
     pub fn scale_content(&mut self, value: f32) {
@@ -1437,15 +1704,23 @@ pub fn calculate_text_layout_data(
 
     // 1. Build + layout each paragraph once, recording heights as we go.
     let mut paragraph_heights: Vec<f32> = Vec::new();
+    let mut paragraph_gutters: Vec<f32> = Vec::with_capacity(paragraph_builder_groups.len());
     let mut built_groups: Vec<Vec<skia::textlayout::Paragraph>> =
         Vec::with_capacity(paragraph_builder_groups.len());
-    for paragraph_builder_group in paragraph_builder_groups.iter_mut() {
+    for (para_idx, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
+        let gutter = text_paragraphs
+            .get(para_idx)
+            .map(|p| p.list_gutter())
+            .unwrap_or(0.0);
+        paragraph_gutters.push(gutter);
+        let layout_width = (text_width - gutter).max(1.0);
+
         let group_len = paragraph_builder_group.len();
         let mut paragraph_offset_y = previous_line_height;
         let mut group_paragraphs: Vec<skia::textlayout::Paragraph> = Vec::with_capacity(group_len);
         for (builder_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut skia_paragraph = paragraph_builder.build();
-            skia_paragraph.layout(text_width);
+            skia_paragraph.layout(layout_width);
             if builder_index == group_len - 1 {
                 if skia_paragraph.get_line_metrics().is_empty() {
                     paragraph_offset_y = skia_paragraph.ideographic_baseline();
@@ -1471,79 +1746,115 @@ pub fn calculate_text_layout_data(
     };
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
-    for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
+    let fallback_fonts = get_fallback_fonts();
+    let content_bounds = text_content.bounds();
+    for (para_idx, group_paragraphs) in built_groups.into_iter().enumerate() {
+        let gutter = paragraph_gutters.get(para_idx).copied().unwrap_or(0.0);
+        let para_x = x + gutter;
+        let content_para = text_paragraphs.get(para_idx);
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
             // Calculate text decorations for this paragraph
             let mut decorations = Vec::new();
             let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
+            if let Some(content_para) = content_para {
+                let mut utf16_cur = 0usize;
+                for span in content_para.children() {
+                    let text = span.apply_text_transform();
+                    let text_utf16_len = text.encode_utf16().count();
+                    if text_utf16_len == 0 {
                         continue;
                     }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
+
+                    let skia_start = content_para.text_offset_to_skia(utf16_cur);
+                    let skia_end = content_para
+                        .text_offset_to_skia(utf16_cur + text_utf16_len)
+                        .max(skia_start + 1);
+
+                    if let Some(deco) = span.text_decoration {
+                        let text_style = span.to_style(
+                            &content_bounds,
+                            fallback_fonts,
+                            false,
+                            content_para.line_height(),
+                        );
+
+                        let list_index_offset = content_para.list_skia_index_offset();
+                        for line in &line_metrics {
+                            if !span_overlaps_line(
+                                skia_start,
+                                skia_end,
+                                line.start_index,
+                                line.end_index,
+                                list_index_offset,
+                            ) {
+                                continue;
+                            }
+
+                            let style_metrics: Vec<_> = line
+                                .get_style_metrics(line.start_index..line.end_index)
+                                .into_iter()
+                                .collect();
+                            let line_baseline = y_accum + line.baseline as f32;
+                            let line_top = line_baseline - line.ascent as f32;
+                            let line_bottom = line_baseline + line.descent as f32;
+                            let (
+                                max_underline_thickness,
+                                underline_y,
+                                max_strike_thickness,
+                                strike_y,
+                            ) = calculate_decoration_metrics(&style_metrics, line_baseline);
+
+                            let Some((segment_width, actual_x_offset)) =
+                                segment_advance_bounds_for_line(
+                                    &skia_paragraph,
+                                    skia_start,
+                                    skia_end,
+                                    line.left as f32,
+                                    line_top - y_accum,
+                                    line_bottom - y_accum,
+                                )
+                            else {
+                                continue;
+                            };
+
+                            let text_left = para_x + line.left as f32 + actual_x_offset;
+                            let text_width = segment_width;
+                            use skia::textlayout::TextDecoration;
+                            if deco == TextDecoration::UNDERLINE {
+                                decorations.push(TextDecorationSegment {
+                                    kind: TextDecoration::UNDERLINE,
+                                    text_style: text_style.clone(),
+                                    y: underline_y.unwrap_or(line_baseline),
+                                    thickness: max_underline_thickness,
+                                    left: text_left,
+                                    width: text_width,
+                                });
+                            }
+                            if deco == TextDecoration::LINE_THROUGH {
+                                decorations.push(TextDecorationSegment {
+                                    kind: TextDecoration::LINE_THROUGH,
+                                    text_style: text_style.clone(),
+                                    y: strike_y.unwrap_or(line_baseline),
+                                    thickness: max_strike_thickness,
+                                    left: text_left,
+                                    width: text_width,
+                                });
+                            }
+                        }
                     }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
+
+                    utf16_cur += text_utf16_len;
                 }
             }
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
-                x,
+                x: para_x,
                 y: y_accum,
                 decorations,
             });
         }
-        y_accum += paragraph_heights[i];
+        y_accum += paragraph_heights[para_idx];
     }
 
     // Calculate position data from paragraph_layouts
@@ -1561,8 +1872,10 @@ pub fn calculate_text_layout_data(
                     cur += text_len;
                 }
                 for (start, end, span_index) in span_ranges {
+                    let skia_start = text_para.text_offset_to_skia(start);
+                    let skia_end = text_para.text_offset_to_skia(end).max(skia_start + 1);
                     let rects = para_layout.paragraph.get_rects_for_range(
-                        start..end,
+                        skia_start..skia_end,
                         RectHeightStyle::Tight,
                         RectWidthStyle::Tight,
                     );
@@ -1573,19 +1886,18 @@ pub fn calculate_text_layout_data(
                         let cy = rect.top + rect.height() / 2.0;
 
                         // Get byte positions from Skia's transformed text layout
-                        let start_pos = para_layout
+                        let skia_pos_start = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.left + 0.1, cy))
-                            .position as usize
-                            - start;
-
-                        let end_pos = para_layout
+                            .position as usize;
+                        let skia_pos_end = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.right - 0.1, cy))
-                            .position as usize
-                            - start;
+                            .position as usize;
+                        let start_pos = text_para.skia_index_to_text(skia_pos_start) - start;
+                        let end_pos = text_para.skia_index_to_text(skia_pos_end) - start;
 
-                        rect.offset((x, current_y));
+                        rect.offset((para_layout.x, current_y));
                         position_data.push(PositionData {
                             paragraph: paragraph_index as u32,
                             span: span_index as u32,

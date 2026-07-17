@@ -26,6 +26,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.shared.searchable-options-dropdown :refer [searchable-options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
@@ -229,6 +230,63 @@
                          :allow-empty  true
                          :options      options}]]))
 
+(mf/defc text-list-options*
+  [{:keys [ids values]}]
+  (let [list-style (some-> (:list-style values) d/name)
+        selected   (if (contains? #{"bullet" "numbered"} list-style)
+                     list-style
+                     "none")
+        list-style-position
+        (txt/normalize-list-style-position
+         (get values :list-style-position txt/default-list-style-position))
+        options
+        [{:value "none"
+          :id    "none-list-style"
+          :label (tr "workspace.options.text-options.no-list")
+          :icon  i/remove}
+         {:value "bullet"
+          :id    "bullet-list-style"
+          :label (tr "workspace.options.text-options.bulleted-list")
+          :icon  i/view-as-list}
+         {:value "numbered"
+          :id    "numbered-list-style"
+          :label (tr "workspace.options.text-options.numbered-list")
+          :icon  i/number}]
+
+        position-options
+        (mf/with-memo []
+          [{:id "outside" :label (tr "workspace.options.text-options.list-style-position.outside")}
+           {:id "inside" :label (tr "workspace.options.text-options.list-style-position.inside")}])
+
+        handle-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (dwt/update-list-style ids value))))
+
+        handle-position-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (dwt/update-list-style-position ids value))))]
+
+    [:div {:class (stl/css :text-list-options)}
+     [:> radio-buttons* {:selected  selected
+                         :on-change handle-change
+                         :name      "text-list-options"
+                         :options   options}]
+     [:div {:class (stl/css :list-style-position)
+            :title (tr "workspace.options.text-options.list-style-position")}
+      [:> select*
+       {:class (stl/css :list-style-position-select)
+        :default-selected (if (= :multiple list-style-position)
+                            ""
+                            list-style-position)
+        :aria-label (tr "workspace.options.text-options.list-style-position")
+        :options position-options
+        :disabled (= selected "none")
+        :on-change handle-position-change}]]]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -285,6 +343,12 @@
                      (get n-values :text-direction))
          (identical? (get o-values :text-transform)
                      (get n-values :text-transform))
+         (identical? (get o-values :list-style)
+                     (get n-values :list-style))
+         (identical? (get o-values :list-indent)
+                     (get n-values :list-indent))
+         (identical? (get o-values :list-style-position)
+                     (get n-values :list-style-position))
          (identical? (get o-values :typography-ref-file)
                      (get n-values :typography-ref-file))
          (identical? (get o-values :typography-ref-id)
@@ -585,4 +649,8 @@
           [:div {:class (stl/css :text-decoration-options)}
            [:> vertical-align* common-props]
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-           [:> text-direction-options* common-props]])])]))
+           [:> text-direction-options* common-props]])
+
+        (when (and more-options-open?
+                   (features/active-feature? @st/state "text-editor-wasm/v1"))
+          [:> text-list-options* {:ids ids :values values}])])]))

@@ -918,7 +918,18 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
                     .replace('\t', "\\t");
                 span_parts.push(format!("\"{}\"", escaped_text));
             }
-            json_parts.push(format!("[{}]", span_parts.join(",")));
+            let list_style = match para.list_style() {
+                crate::shapes::ListStyle::Bullet => "bullet",
+                crate::shapes::ListStyle::Numbered => "numbered",
+                crate::shapes::ListStyle::None => "none",
+            };
+            json_parts.push(format!(
+                "{{\"spans\":[{}],\"listStyle\":\"{}\",\"listIndent\":{},\"listStylePosition\":\"{}\"}}",
+                span_parts.join(","),
+                list_style,
+                para.list_indent(),
+                para.list_style_position().as_str()
+            ));
         }
         let json = format!("[{}]", json_parts.join(","));
 
@@ -1008,7 +1019,7 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
-    if !get_text_editor_state().selection.is_selection() {
+    if !get_text_editor_state().has_focus {
         return false;
     }
     let sel = &get_text_editor_state().selection;
@@ -1048,27 +1059,26 @@ fn get_cursor_rect(
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
             let char_pos = cursor.offset;
+            let para = &paragraphs[cursor.paragraph];
+            let para_char_count: usize = para
+                .children()
+                .iter()
+                .map(|span| span.text.chars().count())
+                .sum();
 
-            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            let rects = laid_out_para.get_rects_for_range(
-                char_pos..char_pos,
-                RectHeightStyle::Tight,
-                RectWidthStyle::Tight,
-            );
-
-            let (x, height) = if !rects.is_empty() {
-                (rects[0].rect.left(), rects[0].rect.height())
-            } else {
-                let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
-                let height = laid_out_para.height();
-                (pos.position as f32, height)
-            };
+            let (x, y, _width, height) =
+                para.caret_rect_in_laid_out_paragraph(laid_out_para, char_pos, para_char_count);
 
             let selrect = shape.selrect();
             let base_x = selrect.x();
             let base_y = selrect.y() + y_offset;
 
-            return Some(Rect::from_xywh(base_x + x, base_y, 1.0, height));
+            return Some(Rect::from_xywh(
+                base_x + para.list_gutter() + x,
+                base_y + y,
+                1.0,
+                height,
+            ));
         }
         y_offset += laid_out_para.height();
     }
@@ -1134,8 +1144,10 @@ fn get_selection_rects(
 
         if range_start < range_end {
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
+            let skia_start = para.text_offset_to_skia(range_start);
+            let skia_end = para.text_offset_to_skia(range_end).max(skia_start + 1);
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                skia_start..skia_end,
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );
@@ -1143,7 +1155,7 @@ fn get_selection_rects(
             for text_box in text_boxes {
                 let r = text_box.rect;
                 rects.push(Rect::from_xywh(
-                    selrect.x() + r.left(),
+                    selrect.x() + para.list_gutter() + r.left(),
                     selrect.y() + y_offset + r.top(),
                     r.width(),
                     r.height(),

@@ -289,6 +289,8 @@
 (def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
+(def text-editor-current-list-values text-editor/current-list-values)
+(def text-editor-try-apply-markdown-list text-editor/try-apply-markdown-list)
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
@@ -613,6 +615,28 @@
   [attrs]
   (let [result (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)]
     (request-render "apply-styles-to-selection")
+    result))
+
+(defn apply-text-attrs-to-all
+  "Apply span-level attrs to every text run in the active WASM editor shape."
+  [attrs]
+  (let [result (text-editor/apply-text-attrs-to-all attrs use-shape set-shape-text-content)]
+    (request-render "apply-text-attrs-to-all")
+    result))
+
+(defn apply-list-attrs-to-selection
+  "Apply list-style / list-indent to caret or selected paragraphs in the WASM editor."
+  [attrs]
+  (let [result (text-editor/apply-list-attrs-to-selection attrs use-shape set-shape-text-content)]
+    (request-render "apply-list-attrs-to-selection")
+    result))
+
+(defn text-editor-paste-clipboard-text
+  "Paste plain/HTML clipboard text into the WASM editor, preserving lists when present."
+  [plain html]
+  (let [result (text-editor/paste-clipboard-text plain html use-shape set-shape-text-content)]
+    (when result
+      (request-render "text-paste"))
     result))
 
 (defn set-parent-id

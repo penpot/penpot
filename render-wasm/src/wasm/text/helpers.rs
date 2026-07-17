@@ -813,6 +813,9 @@ pub fn split_paragraph_at_cursor(
     let text_transform = para.text_transform();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
+    let list_style = para.list_style();
+    let list_indent = para.list_indent();
+    let list_style_position = para.list_style_position();
 
     let para = &mut paragraphs[cursor.paragraph];
     let children = para.children_mut();
@@ -833,6 +836,9 @@ pub fn split_paragraph_at_cursor(
         text_transform,
         line_height,
         letter_spacing,
+        list_style,
+        list_indent,
+        list_style_position,
         new_para_children,
     );
 

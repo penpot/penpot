@@ -29,6 +29,7 @@
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts-v3 :as dwt-v3]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -846,16 +847,18 @@
 
            (when (features/active-feature? state "render-wasm/v1")
              (rx/concat
-              ;; Apply style to selected spans and sync content
-              (let [has-selection? (wasm.api/text-editor-has-selection?)]
-                (when has-selection?
-                  (let [span-attrs (select-keys attrs txt/text-node-attrs)]
-                    (when (not (empty? span-attrs))
-                      (let [result (wasm.api/apply-styles-to-selection span-attrs)]
-                        (when result
-                          (rx/of (v2-update-text-shape-content
-                                  (:shape-id result) (:content result)
-                                  :update-name? true))))))))
+              (let [span-attrs (select-keys attrs txt/text-node-attrs)
+                    editing?   (and (features/active-feature? state "text-editor-wasm/v1")
+                                    (wasm.api/text-editor-has-focus?))]
+                (when (and editing? (not (empty? span-attrs)))
+                  (let [has-selection? (wasm.api/text-editor-has-selection?)
+                        result         (if has-selection?
+                                         (wasm.api/apply-styles-to-selection span-attrs)
+                                         (wasm.api/apply-text-attrs-to-all span-attrs))]
+                    (when result
+                      (rx/of (v2-update-text-shape-content
+                              (:shape-id result) (:content result)
+                              :update-name? true))))))
               ;; Resize (with delay for font-id changes)
               (if (contains? attrs :font-id)
                 (->> stream
@@ -888,6 +891,47 @@
          (->> (rx/from ids)
               (rx/map #(update-attrs % attrs)))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
+(defn update-list-attrs
+  "Apply paragraph-level list attrs on text shapes (selection-aware when editing)."
+  [ids attrs]
+  (ptk/reify ::update-list-attrs
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [undo-id (js/Symbol)
+            editing? (and (features/active-feature? state "text-editor-wasm/v1")
+                          (wasm.api/text-editor-has-focus?))]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (if editing?
+           (let [result (wasm.api/apply-list-attrs-to-selection attrs)]
+             (rx/concat
+              (rx/of (dwt-v3/v3-update-text-editor-styles (first ids) attrs))
+              (when result
+                (rx/of (v2-update-text-shape-content
+                        (:shape-id result) (:content result)
+                        :update-name? false)))))
+           (->> (rx/from ids)
+                (rx/map #(update-attrs % attrs))))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+
+(defn update-list-style
+  "Toggle or apply list-style on text shapes.
+
+  When the WASM text editor is active, applies to the caret paragraph or
+  selected paragraph range. Otherwise applies to every paragraph on the shape."
+  [ids list-style]
+  (let [list-style (d/name list-style)
+        attrs      (if (= list-style "none")
+                     {:list-style "none" :list-indent 0}
+                     {:list-style list-style})]
+    (update-list-attrs ids attrs)))
+
+(defn update-list-style-position
+  "Apply CSS list-style-position (inside/outside) on text shapes."
+  [ids list-style-position]
+  (update-list-attrs ids {:list-style-position
+                          (txt/normalize-list-style-position list-style-position)}))
 
 (defn apply-typography
   "A higher level event that has the resposability of to apply the

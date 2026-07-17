@@ -1,7 +1,7 @@
 ---
 title: Text & Typography
 order: 5
-desc: Penpot's guide on custom fonts! Upload, manage, and use custom fonts in Penpot! Enhance your designs with personalised typography.
+desc: Learn how to create and style text in Penpot, including fonts, typography, bullet and numbered lists, RTL support, and custom fonts.
 ---
 
 <h1 id="text-typo">Text & Typography</h1>
@@ -43,7 +43,51 @@ desc: Penpot's guide on custom fonts! Upload, manage, and use custom fonts in Pe
   <li><strong>Vertical alignment:</strong> top, center, bottom.</li>
   <li><strong>Decoration:</strong> none, underline, strikethrough.</li>
   <li><strong>Direction:</strong> LTR (left to right), RTL (right to left).</li>
+  <li><strong>Lists:</strong> bullet or numbered lists, including indentation and list style position. See <a href="#lists">Lists</a>.</li>
 </ol>
+
+<h2 id="lists">Lists</h2>
+<p>You can turn text paragraphs into bullet or numbered lists. List options live in the Design sidebar, under the text <strong>More options</strong> menu.</p>
+
+<h3 id="lists-create">Create a list</h3>
+<ol>
+  <li>Select a text layer (or press <kbd>Enter</kbd> to edit it).</li>
+  <li>Open the text <strong>More options</strong> menu in the Design sidebar.</li>
+  <li>Choose <strong>Bullet</strong> or <strong>Numbered</strong>. Choose <strong>None</strong> to turn the paragraph back into plain text.</li>
+</ol>
+<p>While editing, you can also start a list with markdown-style shortcuts and then press <kbd>Space</kbd>:</p>
+<ul>
+  <li><code>*</code>, <code>-</code>, or <code>+</code> followed by a space creates a bullet list.</li>
+  <li><code>1.</code> followed by a space creates a numbered list.</li>
+</ul>
+<p>You can also paste lists from other apps. Markdown-style plain text (including nested items with leading spaces) and HTML lists from tools like Google Docs keep their bullet/numbered style and nesting when pasted into a text layer.</p>
+
+<h3 id="lists-indent">Indent and nest items</h3>
+<p>Lists support up to 5 levels (indent 0 to 4). While editing a list item:</p>
+<ul>
+  <li>Press <kbd>Tab</kbd> to indent (nest) the item.</li>
+  <li>Press <kbd>Shift/⇧</kbd> + <kbd>Tab</kbd> to outdent.</li>
+</ul>
+<p>Press <kbd>Enter</kbd> on a list item to create another item at the same level. Press <kbd>Enter</kbd> on an empty list item to outdent one level, or to leave the list when you are already at the top level. Press <kbd>Backspace</kbd> at the start of a list item to remove the list style and keep the text.</p>
+
+<h3 id="lists-numbered-styles">Numbered list styles by level</h3>
+<p>Numbered lists change marker style as you nest items. The sequence cycles every three levels:</p>
+<ol>
+  <li><strong>Decimal:</strong> <code>1.</code> <code>2.</code> <code>3.</code></li>
+  <li><strong>Lower alpha:</strong> <code>a.</code> <code>b.</code> <code>c.</code></li>
+  <li><strong>Lower roman:</strong> <code>i.</code> <code>ii.</code> <code>iii.</code></li>
+</ol>
+<p>After that it starts again with decimals. Numbering restarts for each group of siblings at the same indent level.</p>
+<figure>
+  <img src="/img/objects/text-lists-numbered.webp" alt="Nested numbered list with decimal, lower-alpha, and lower-roman markers">
+</figure>
+
+<h3 id="lists-style-position">List style position</h3>
+<p>You can choose where the marker sits relative to the text, similar to CSS <code>list-style-position</code>:</p>
+<ul>
+  <li><strong>Inside</strong> (default): the marker is part of the first line of text.</li>
+  <li><strong>Outside</strong>: the marker sits in the margin to the left of the text box.</li>
+</ul>
 
 <h2 id="rtl-support">RTL support</h2>
 <p>Diversity and inclusion is a major Penpot concern and that's why we love to give support to RTL languages, unlike most design tools.</p>

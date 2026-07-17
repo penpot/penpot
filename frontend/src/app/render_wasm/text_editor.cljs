@@ -7,6 +7,7 @@
 (ns app.render-wasm.text-editor
   "Text editor WASM bindings"
   (:require
+   [app.common.data :as d]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -18,7 +19,8 @@
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.wasm :as wasm]
    [app.util.color :as uc]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [cuerdas.core :as str]))
 
 (def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
@@ -537,6 +539,35 @@
   [shape-id content]
   (swap! shape-text-contents assoc shape-id content))
 
+(defn- normalize-exported-paragraph
+  "Accept either legacy [[span…]] export rows or the richer
+  {:spans […] :list-style … :list-indent … :list-style-position …} maps."
+  [exported]
+  (cond
+    (map? exported)
+    {:spans (vec (get exported "spans" (get exported :spans)))
+     :list-style (or (get exported "listStyle")
+                     (get exported :list-style)
+                     "none")
+     :list-indent (or (get exported "listIndent")
+                      (get exported :list-indent)
+                      0)
+     :list-style-position (or (get exported "listStylePosition")
+                              (get exported :list-style-position)
+                              txt/default-list-style-position)}
+
+    (sequential? exported)
+    {:spans (vec exported)
+     :list-style nil
+     :list-indent nil
+     :list-style-position nil}
+
+    :else
+    {:spans [""]
+     :list-style nil
+     :list-indent nil
+     :list-style-position nil}))
+
 (defn- merge-exported-texts-into-content
   "Merge exported span texts back into the existing content tree.
 
@@ -545,7 +576,7 @@
   original.  When extra paragraphs or spans appear we clone styling from
   the nearest existing sibling; when fewer appear we truncate.
 
-  exported-texts  vector of vectors  [[\"span1\" \"span2\"] [\"p2s1\"]]
+  exported-texts  vector of paragraph exports (legacy span vectors or maps)
   content         existing Penpot content map (root -> paragraph-set -> …)"
   [content exported-texts]
   (let [para-set       (first (get content :children))
@@ -555,21 +586,32 @@
         template-span  (when last-orig-para
                          (-> last-orig-para :children last))
         new-paras
-        (mapv (fn [para-idx exported-span-texts]
-                (let [orig-para (if (< para-idx num-orig)
+        (mapv (fn [para-idx exported]
+                (let [{:keys [spans list-style list-indent list-style-position]} (normalize-exported-paragraph exported)
+                      orig-para (if (< para-idx num-orig)
                                   (nth orig-paras para-idx)
                                   (dissoc last-orig-para :children))
                       orig-spans     (get orig-para :children)
                       num-orig-spans (count orig-spans)
-                      last-orig-span (when (seq orig-spans) (last orig-spans))]
-                  (assoc orig-para :children
-                         (mapv (fn [span-idx new-text]
-                                 (let [orig-span (if (< span-idx num-orig-spans)
-                                                   (nth orig-spans span-idx)
-                                                   (or last-orig-span template-span))]
-                                   (assoc orig-span :text new-text)))
-                               (range (count exported-span-texts))
-                               exported-span-texts))))
+                      last-orig-span (when (seq orig-spans) (last orig-spans))
+                      para-with-spans
+                      (assoc orig-para :children
+                             (mapv (fn [span-idx new-text]
+                                     (let [orig-span (if (< span-idx num-orig-spans)
+                                                       (nth orig-spans span-idx)
+                                                       (or last-orig-span template-span))]
+                                       (assoc orig-span :text new-text)))
+                                   (range (count spans))
+                                   spans))]
+                  (cond-> para-with-spans
+                    (some? list-style)
+                    (assoc :list-style list-style)
+
+                    (some? list-indent)
+                    (assoc :list-indent (txt/clamp-list-indent list-indent))
+
+                    (some? list-style-position)
+                    (assoc :list-style-position (txt/normalize-list-style-position list-style-position)))))
               (range (count exported-texts))
               exported-texts)
         new-para-set (assoc para-set :children new-paras)]
@@ -661,6 +703,37 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
+(defn- apply-attrs-to-all-paragraphs
+  [content attrs]
+  (let [paragraph-set (first (:children content))
+        new-paragraphs
+        (mapv (fn [para]
+                (update para :children
+                        (fn [spans]
+                          (mapv #(merge % attrs) spans))))
+              (:children paragraph-set))]
+    (assoc content :children [(assoc paragraph-set :children new-paragraphs)])))
+
+(defn- editor-content-for-style-update
+  "Prefer live WASM text merged into the cached content tree."
+  [shape-id]
+  (or (:content (text-editor-sync-content))
+      (get-cached-content shape-id)))
+
+(defn apply-text-attrs-to-all
+  "Apply span-level attrs to every text run in the active WASM editor shape."
+  [attrs use-shape-fn set-shape-text-content-fn]
+  (when wasm/context-initialized?
+    (let [shape-id (text-editor-get-active-shape-id)]
+      (when shape-id
+        (when-let [content (editor-content-for-style-update shape-id)]
+          (let [new-content (apply-attrs-to-all-paragraphs content attrs)]
+            (update-cached-content! shape-id new-content)
+            (use-shape-fn shape-id)
+            (set-shape-text-content-fn shape-id new-content)
+            {:shape-id shape-id
+             :content  new-content}))))))
+
 (defn apply-styles-to-selection
   [attrs use-shape-fn set-shape-text-content-fn]
   (when wasm/context-initialized?
@@ -668,50 +741,400 @@
           selection (text-editor-get-selection)]
 
       (when (and shape-id selection)
+        (when-let [content (editor-content-for-style-update shape-id)]
+          (let [normalized-selection (normalize-selection selection)
+                {:keys [start-para start-offset end-para end-offset]} normalized-selection
+
+                collapsed?      (and (= start-para end-para) (= start-offset end-offset))
+
+                paragraph-set   (first (:children content))
+                paragraphs      (:children paragraph-set)
+
+                new-paragraphs
+                (if collapsed?
+                  (:children (first (apply-attrs-to-all-paragraphs content attrs)))
+                  (mapv (fn [idx para]
+                          (cond
+                            (or (< idx start-para) (> idx end-para))
+                            para
+
+                            (= start-para end-para)
+                            (apply-attrs-to-paragraph para start-offset end-offset attrs)
+
+                            (= idx start-para)
+                            (apply-attrs-to-paragraph para start-offset (para-char-count para) attrs)
+
+                            (= idx end-para)
+                            (apply-attrs-to-paragraph para 0 end-offset attrs)
+
+                            :else
+                            (apply-attrs-to-paragraph para 0 (para-char-count para) attrs)))
+
+                        (range (count paragraphs))
+                        paragraphs))
+
+                new-content
+                (if collapsed?
+                  (apply-attrs-to-all-paragraphs content attrs)
+                  (assoc content :children
+                         [(assoc paragraph-set :children new-paragraphs)]))]
+
+            (update-cached-content! shape-id new-content)
+            (use-shape-fn shape-id)
+            (set-shape-text-content-fn shape-id new-content)
+            {:shape-id shape-id
+             :content  new-content}))))))
+
+(defn- selection-paragraph-range
+  "Return inclusive [start end] paragraph indices for the current caret/selection.
+   Falls back to the whole content when there is no active editor selection."
+  [paragraphs]
+  (let [selection (text-editor-get-selection)
+        last-idx  (max 0 (dec (count paragraphs)))]
+    (if selection
+      (let [{:keys [start-para end-para]} (normalize-selection selection)]
+        [(max 0 (min start-para end-para))
+         (min last-idx (max start-para end-para))])
+      [0 last-idx])))
+
+(defn current-list-values
+  "Read list-style / list-indent / list-style-position for the active caret/selection paragraphs."
+  []
+  (when wasm/context-initialized?
+    (when-let [shape-id (text-editor-get-active-shape-id)]
+      (when-let [content (get-cached-content shape-id)]
+        (let [paragraphs (-> content :children first :children)
+              [start end] (selection-paragraph-range paragraphs)
+              selected    (subvec (vec paragraphs) start (inc end))
+              styles      (into #{} (map #(d/nilv (:list-style %) "none")) selected)
+              indents     (into #{} (map #(d/nilv (:list-indent %) 0)) selected)
+              positions   (into #{} (map #(txt/normalize-list-style-position
+                                           (:list-style-position %)))
+                                selected)]
+          {:list-style (if (= 1 (count styles)) (first styles) :multiple)
+           :list-indent (if (= 1 (count indents)) (first indents) :multiple)
+           :list-style-position (if (= 1 (count positions)) (first positions) :multiple)})))))
+
+(defn apply-list-attrs-to-selection
+  "Apply paragraph-level list attrs to the caret paragraph or selected range.
+   When not editing, callers should update the shape content directly."
+  [attrs use-shape-fn set-shape-text-content-fn]
+  (when wasm/context-initialized?
+    (let [shape-id (text-editor-get-active-shape-id)]
+      (when shape-id
         (let [content (get-cached-content shape-id)]
           (when content
-            (let [normalized-selection (normalize-selection selection)
-                  {:keys [start-para start-offset end-para end-offset]} normalized-selection
-
-                  collapsed?      (and (= start-para end-para) (= start-offset end-offset))
-
-                  paragraph-set   (first (:children content))
-                  paragraphs      (:children paragraph-set)
-
+            (let [paragraph-set (first (:children content))
+                  paragraphs    (:children paragraph-set)
+                  [start end]   (selection-paragraph-range paragraphs)
+                  list-style    (some-> (:list-style attrs) d/name)
+                  list-indent   (when (contains? attrs :list-indent)
+                                  (txt/clamp-list-indent (:list-indent attrs)))
+                  list-style-position
+                  (when (contains? attrs :list-style-position)
+                    (txt/normalize-list-style-position (:list-style-position attrs)))
                   new-paragraphs
-                  (when (not collapsed?)
-                    (mapv (fn [idx para]
-                            (cond
-                              ;; paragraph outside the range of paragraphs.
-                              (or (< idx start-para) (> idx end-para))
-                              para
+                  (mapv (fn [idx para]
+                          (if (<= start idx end)
+                            (cond-> para
+                              (some? list-style)
+                              (assoc :list-style list-style)
 
-                              ;; same paragraph.
-                              (= start-para end-para)
-                              (apply-attrs-to-paragraph para start-offset end-offset attrs)
+                              (some? list-indent)
+                              (assoc :list-indent list-indent)
 
-                              ;; first paragraph
-                              (= idx start-para)
-                              (apply-attrs-to-paragraph para start-offset (para-char-count para) attrs)
+                              (some? list-style-position)
+                              (assoc :list-style-position list-style-position)
 
-                              ;; final paragraph
-                              (= idx end-para)
-                              (apply-attrs-to-paragraph para 0 end-offset attrs)
+                              (= list-style "none")
+                              (assoc :list-indent 0)
 
-                              ;; any other paragraph
-                              :else
-                              (apply-attrs-to-paragraph para 0 (para-char-count para) attrs)))
+                              (and (contains? #{"bullet" "numbered"} list-style)
+                                   (not (contains? attrs :list-style-position))
+                                   (nil? (:list-style-position para)))
+                              (assoc :list-style-position txt/default-list-style-position))
+                            para))
+                        (range (count paragraphs))
+                        paragraphs)
+                  new-content (assoc content :children
+                                     [(assoc paragraph-set :children new-paragraphs)])]
+              (update-cached-content! shape-id new-content)
+              (use-shape-fn shape-id)
+              (set-shape-text-content-fn shape-id new-content)
+              {:shape-id shape-id
+               :content  new-content})))))))
 
-                          (range (count paragraphs))
-                          paragraphs))
+(defn try-apply-markdown-list
+  "If the current paragraph looks like markdown list syntax (`* `, `- `, `+ `, `1. `),
+   convert it into a list item and strip the marker characters.
+   Returns {:list-style ... :prefix-len N} so the caller can delete the prefix
+   and apply the list style, or nil when no conversion applies."
+  []
+  (when wasm/context-initialized?
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+      (when (and shape-id selection)
+        (let [content (get-cached-content shape-id)
+              sel     (normalize-selection selection)
+              para-idx (:start-para sel)
+              offset   (:start-offset sel)]
+          (when (and content
+                     (= para-idx (:end-para sel))
+                     (= offset (:end-offset sel)))
+            (let [para      (-> content :children first :children (nth para-idx nil))
+                  full-text (->> (:children para) (map :text) (str/join ""))
+                  bullet-match   (re-matches #"^([\*\-\+]) (.*)$" full-text)
+                  numbered-match (re-matches #"^(\d+)[\.\)] (.*)$" full-text)
+                  prefix-len
+                  (cond
+                    bullet-match 2
+                    numbered-match (+ 2 (count (second numbered-match)))
+                    :else nil)]
+              (when (and prefix-len (= offset prefix-len))
+                {:list-style (if bullet-match "bullet" "numbered")
+                 :list-style-position txt/default-list-style-position
+                 :prefix-len prefix-len
+                 :shape-id shape-id}))))))))
 
-                  new-content (when new-paragraphs
-                                (assoc content :children
-                                       [(assoc paragraph-set :children new-paragraphs)]))]
+(def ^:private bullet-marker-re
+  #"^([ \t]*)(?:[\*\-\+]|[•●○◦▪▫‣⁃])[ \t]+(.*)$")
 
-              (when new-content
-                (update-cached-content! shape-id new-content)
-                (use-shape-fn shape-id)
-                (set-shape-text-content-fn shape-id new-content)
-                {:shape-id shape-id
-                 :content  new-content}))))))))
+(def ^:private numbered-marker-re
+  #"^([ \t]*)(\d+)[.\)][ \t]+(.*)$")
+
+(defn- leading-whitespace->indent
+  "Map leading spaces/tabs to a list indent level (2 spaces or 1 tab ≈ 1 level)."
+  [prefix]
+  (let [expanded (str/replace (or prefix "") #"\t" "  ")]
+    (txt/clamp-list-indent (quot (count expanded) 2))))
+
+(defn- normalize-clipboard-newlines
+  [text]
+  (-> (or text "")
+      (str/replace #"\r\n" "\n")
+      (str/replace #"\r" "\n")))
+
+(defn parse-plain-text-clipboard
+  "Parse pasted plain text into paragraph descriptors.
+
+  Recognizes markdown-style and unicode list markers, including nested
+  indentation via leading spaces/tabs. Each item is
+  {:text :list-style :list-indent}."
+  [text]
+  (let [lines (-> text normalize-clipboard-newlines (str/split #"\n"))]
+    (mapv (fn [line]
+            (let [bullet   (re-matches bullet-marker-re line)
+                  numbered (re-matches numbered-marker-re line)]
+              (cond
+                bullet
+                {:text (str/trim (nth bullet 2))
+                 :list-style "bullet"
+                 :list-indent (leading-whitespace->indent (nth bullet 1))}
+
+                numbered
+                {:text (str/trim (nth numbered 3))
+                 :list-style "numbered"
+                 :list-indent (leading-whitespace->indent (nth numbered 1))}
+
+                :else
+                {:text line
+                 :list-style "none"
+                 :list-indent 0})))
+          lines)))
+
+(defn- dom-element-name
+  [node]
+  (when (and node (= (.-nodeType node) 1))
+    (str/lower (.-tagName node))))
+
+(defn- node-text-excluding-lists
+  [node]
+  (->> (array-seq (.-childNodes node))
+       (map (fn [child]
+              (let [name (dom-element-name child)]
+                (cond
+                  (#{"ul" "ol"} name) ""
+                  (= (.-nodeType child) 3) (or (.-textContent child) "")
+                  (= (.-nodeType child) 1) (node-text-excluding-lists child)
+                  :else ""))))
+       (str/join "")))
+
+(declare parse-html-list-node)
+
+(defn- parse-html-list-item
+  [li-node indent list-style]
+  (let [text (str/trim (node-text-excluding-lists li-node))
+        nested (->> (array-seq (.-childNodes li-node))
+                    (mapcat (fn [child]
+                              (when (#{"ul" "ol"} (dom-element-name child))
+                                (parse-html-list-node child (inc indent)))))
+                    vec)]
+    (into [{:text text
+            :list-style list-style
+            :list-indent (txt/clamp-list-indent indent)}]
+          nested)))
+
+(defn- parse-html-list-node
+  [list-node indent]
+  (let [list-style (if (= (dom-element-name list-node) "ol") "numbered" "bullet")]
+    (->> (array-seq (.-childNodes list-node))
+         (mapcat (fn [child]
+                   (let [name (dom-element-name child)]
+                     (cond
+                       (= name "li")
+                       (parse-html-list-item child indent list-style)
+
+                       ;; Google Docs emits nested lists as siblings of <li>
+                       ;; (ul > li + ul) instead of nesting them inside the
+                       ;; parent <li>. Keep those nested items.
+                       (#{"ul" "ol"} name)
+                       (parse-html-list-node child (inc indent))
+
+                       :else nil))))
+         vec)))
+
+(defn- parse-html-block-node
+  [node]
+  (let [name (dom-element-name node)]
+    (cond
+      (#{"ul" "ol"} name)
+      (parse-html-list-node node 0)
+
+      (#{"li"} name)
+      (parse-html-list-item node 0 "bullet")
+
+      (#{"p" "div" "h1" "h2" "h3" "h4" "h5" "h6" "blockquote" "pre" "section" "article" "td" "th"} name)
+      (let [child-lists (->> (array-seq (.-childNodes node))
+                             (filter #(#{"ul" "ol"} (dom-element-name %)))
+                             vec)]
+        (if (seq child-lists)
+          (->> (array-seq (.-childNodes node))
+               (mapcat (fn [child]
+                         (let [cname (dom-element-name child)]
+                           (cond
+                             (#{"ul" "ol"} cname) (parse-html-list-node child 0)
+                             (= (.-nodeType child) 1) (parse-html-block-node child)
+                             :else nil))))
+               vec)
+          (let [text (str/trim (node-text-excluding-lists node))]
+            (when (seq text)
+              [{:text text :list-style "none" :list-indent 0}]))))
+
+      (= name "br")
+      [{:text "" :list-style "none" :list-indent 0}]
+
+      (some? name)
+      (->> (array-seq (.-childNodes node))
+           (mapcat parse-html-block-node)
+           vec)
+
+      :else
+      nil)))
+
+(defn parse-html-clipboard
+  "Parse clipboard HTML into paragraph descriptors when it contains lists.
+
+  Returns a vector of {:text :list-style :list-indent}, or nil when the HTML
+  has no `<ul>`/`<ol>` structure worth preserving."
+  [html]
+  (when (and (string? html)
+             (re-find #"(?i)<(ul|ol)\b" html))
+    (let [doc  (.parseFromString (js/DOMParser.) html "text/html")
+          body (.-body doc)
+          items (->> (array-seq (.-childNodes body))
+                     (mapcat parse-html-block-node)
+                     vec)]
+      (when (seq items)
+        items))))
+
+(defn- clipboard-lines-have-lists?
+  [lines]
+  (boolean (some #(contains? #{"bullet" "numbered"} (:list-style %)) lines)))
+
+(defn- count-list-items
+  [lines]
+  (count (filter #(contains? #{"bullet" "numbered"} (:list-style %)) lines)))
+
+(defn- choose-clipboard-lines
+  "Prefer HTML lists when present, but fall back to plain text when it
+  preserves more list items (common with Google Docs nested-list quirks)."
+  [html-lines plain-lines]
+  (let [html-ok?  (clipboard-lines-have-lists? html-lines)
+        plain-ok? (clipboard-lines-have-lists? plain-lines)]
+    (cond
+      (and html-ok? plain-ok?)
+      (if (>= (count-list-items html-lines) (count-list-items plain-lines))
+        html-lines
+        plain-lines)
+
+      html-ok? html-lines
+      plain-ok? plain-lines
+      :else plain-lines)))
+
+(defn- apply-paragraph-list-attrs
+  "Set list attrs on paragraphs [start-para, start-para+n) from line descriptors."
+  [content start-para line-attrs]
+  (let [para-set    (first (:children content))
+        paragraphs  (:children para-set)
+        end-para    (+ start-para (count line-attrs))
+        new-paras
+        (mapv (fn [idx para]
+                (if (and (>= idx start-para) (< idx end-para))
+                  (let [attrs  (nth line-attrs (- idx start-para))
+                        style  (or (:list-style attrs) "none")
+                        indent (txt/clamp-list-indent (or (:list-indent attrs) 0))]
+                    (cond-> para
+                      true (assoc :list-style style)
+                      true (assoc :list-indent (if (= style "none") 0 indent))
+                      (contains? #{"bullet" "numbered"} style)
+                      (assoc :list-style-position
+                             (or (:list-style-position para)
+                                 txt/default-list-style-position))
+                      (= style "none")
+                      (assoc :list-indent 0)))
+                  para))
+              (range (count paragraphs))
+              paragraphs)]
+    (assoc content :children [(assoc para-set :children new-paras)])))
+
+(defn paste-clipboard-text
+  "Insert clipboard text into the active WASM text editor.
+
+  When the clipboard contains markdown-style or HTML lists, markers are
+  stripped and paragraph list attrs are applied. Returns
+  {:shape-id :content} after sync (and optional list-attr application)."
+  [plain html use-shape-fn set-shape-text-content-fn]
+  (when (and wasm/context-initialized?
+             (text-editor-has-focus?))
+    (let [shape-id    (text-editor-get-active-shape-id)
+          selection   (text-editor-get-selection)
+          start-para  (if selection
+                        (:start-para (normalize-selection selection))
+                        0)
+          html-lines  (parse-html-clipboard html)
+          plain-lines (when (and (string? plain) (seq plain))
+                        (parse-plain-text-clipboard plain))
+          lines       (choose-clipboard-lines html-lines plain-lines)
+          has-lists?  (clipboard-lines-have-lists? lines)
+          insert-text (cond
+                        has-lists?
+                        (->> lines (map :text) (str/join "\n"))
+
+                        (and (string? plain) (seq plain))
+                        (normalize-clipboard-newlines plain)
+
+                        :else nil)]
+      (when (and shape-id (string? insert-text) (seq insert-text))
+        (text-editor-insert-text insert-text)
+        (let [synced (text-editor-sync-content)]
+          (if (and synced has-lists?)
+            (let [new-content (apply-paragraph-list-attrs
+                               (:content synced)
+                               start-para
+                               lines)]
+              (update-cached-content! shape-id new-content)
+              (use-shape-fn shape-id)
+              (set-shape-text-content-fn shape-id new-content)
+              {:shape-id shape-id
+               :content  new-content})
+            synced))))))

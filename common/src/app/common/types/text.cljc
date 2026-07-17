@@ -55,6 +55,11 @@
 (def text-transform-attrs
   [:text-transform])
 
+(def text-list-attrs
+  [:list-style
+   :list-indent
+   :list-style-position])
+
 (def text-fills
   [:fills])
 
@@ -67,7 +72,41 @@
 (def paragraph-attrs
   (d/concat-vec
    text-align-attrs
-   text-direction-attrs))
+   text-direction-attrs
+   text-list-attrs))
+
+(def list-style-values #{"none" "bullet" "numbered"})
+
+(def max-list-indent 4)
+
+(def list-style-position-values #{"outside" "inside"})
+
+(def default-list-style-position "inside")
+
+(defn valid-list-style?
+  [value]
+  (contains? list-style-values (d/name value)))
+
+(defn clamp-list-indent
+  [value]
+  (-> (d/nilv value 0)
+      (int)
+      (max 0)
+      (min max-list-indent)))
+
+(defn valid-list-style-position?
+  [value]
+  (contains? list-style-position-values (d/name value)))
+
+(defn normalize-list-style-position
+  "CSS list-style-position. Falls back to inside."
+  [value]
+  (let [name (some-> value d/name)]
+    (cond
+      (nil? value) default-list-style-position
+      (= :multiple value) value
+      (contains? list-style-position-values name) name
+      :else default-list-style-position)))
 
 (def text-node-attrs
   (d/concat-vec
@@ -101,7 +140,10 @@
 
 (def default-paragraph-attrs
   {:text-align "left"
-   :text-direction "ltr"})
+   :text-direction "ltr"
+   :list-style "none"
+   :list-indent 0
+   :list-style-position default-list-style-position})
 
 (def default-text-attrs
   {:typography-ref-file nil
@@ -117,7 +159,10 @@
    :text-transform "none"
    :text-align "left"
    :text-decoration "none"
-   :text-direction "ltr"})
+   :text-direction "ltr"
+   :list-style "none"
+   :list-indent 0
+   :list-style-position default-list-style-position})
 
 (defn get-default-text-fills
   "Return calculated default text fills"
