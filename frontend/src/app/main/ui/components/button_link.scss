@@ -6,7 +6,7 @@
 
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
-@use "ds/_typography.scss" as *;
+@use "ds/typography.scss" as *;
 
 .button {
   @include use-typography("body-small");
@@ -24,10 +24,8 @@
   text-decoration: none !important;
   block-size: $sz-40;
 
-.logo {
-  block-size: px2rem(20);
-  inline-size: px2rem(20);
+  .logo {
+    block-size: px2rem(20);
+    inline-size: px2rem(20);
+  }
 }
-}
-
-

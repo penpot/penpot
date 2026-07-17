@@ -152,7 +152,9 @@
                          :on-click on-nav-root
                          :icon i/close}]]
       [:div {:class (stl/css :login)}
-       [:div {:class (stl/css :logo)} [:> raw-svg* {:id "penpot-logo"}]]
+       [:div {:class (stl/css :logo)}
+        [:> raw-svg*  {:id "penpot-logo"
+                       :class (stl/css :logo-icon)}]]
 
        (case @current-section
          :login

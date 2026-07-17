@@ -322,21 +322,23 @@
   margin-block-start: var(--sp-xxxl);
 }
 
-.overlay .dialog .sign-info .cancel-button,
-.overlay .dialog-login .sign-info .cancel-button {
-  background: none;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
-  border: $b-1 solid var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
-  padding: var(--sp-s) var(--sp-l);
-  font-size: 0.688rem;
-  text-transform: uppercase;
-  margin-inline-end: var(--sp-l);
+.overlay .dialog .sign-info,
+.overlay .dialog-login .sign-info {
+  .cancel-button {
+    background: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: $br-8;
+    background-color: var(--color-background-tertiary);
+    border: $b-1 solid var(--color-background-tertiary);
+    color: var(--color-foreground-secondary);
+    padding: var(--sp-s) var(--sp-l);
+    font-size: 0.688rem;
+    text-transform: uppercase;
+    margin-inline-end: var(--sp-l);
+  }
 }
 
 .overlay .dialog {
@@ -352,8 +354,7 @@
   margin-block-end: $sz-40;
 }
 
-// SVG inside login logo — no class available
-.overlay .login .logo svg {
+.logo-icon {
   fill: var(--color-foreground-primary);
   inline-size: $sz-120;
   block-size: $sz-40;
@@ -392,8 +393,10 @@
 }
 
 // Native <form> and <div> inside login — no class available
-.overlay .login form div {
-  margin-block-end: var(--sp-s);
+.overlay .login form {
+  div {
+    margin-block-end: var(--sp-s);
+  }
 }
 
 .buttons-container {
