@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-07-18 03:01+0000\n"
-"Last-Translator: \"Mahmoud A. Rabo\" <Mahmoud@s3geeks.com>\n"
+"Last-Translator: jonnysemon <jonnysemon@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
 "Language: ar\n"
@@ -863,7 +863,7 @@ msgstr ""
 
 #: src/app/main/data/auth.cljs:342, src/app/main/ui/auth/register.cljs:91
 msgid "errors.registration-disabled"
-msgstr "التسجيل معطل حاليا."
+msgstr "التسجيل مُعطّل حاليًا."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:469, src/app/main/ui/dashboard/team.cljs:474
 msgid "errors.team-leave.insufficient-members"
