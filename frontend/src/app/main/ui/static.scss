@@ -74,14 +74,6 @@
   inset-block-end: 0;
 }
 
-// TODO: `.deco-after` appears unused in CLJS — verify before removal
-// .deco-after {
-//   position: absolute;
-//   inset-inline-start: calc(50% - $sz-40);
-//   block-size: 34vh;
-//   inset-block-end: 0;
-// }
-
 // SVG inside deco-after2 — no class available on the raw element
 .deco-after2 svg {
   block-size: 1537px;
@@ -144,21 +136,19 @@
 }
 
 .login-header {
+  @include t.use-typography("headline-small");
+
   background: none;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "worksans", "vazirmatn", sans-serif;
-  line-height: 1.2;
-  font-weight: 500;
   background-color: var(--color-accent-primary);
   border: $b-1 solid var(--color-accent-primary);
   color: var(--color-background-secondary);
   border-radius: $br-8;
   min-block-size: $sz-32;
   padding: var(--sp-s) var(--sp-l);
-  font-size: 0.688rem;
   position: fixed;
   inset-inline-end: 0;
   margin: $sz-40 $sz-32;
@@ -214,11 +204,6 @@
   text-align: center;
 }
 
-// TODO: `.image` appears unused in CLJS — verify before removal
-// .image svg {
-//   fill: var(--color-foreground-primary);
-// }
-
 .workspace {
   inline-size: 100%;
   block-size: 100%;
@@ -246,22 +231,17 @@
 
 .workspace .workspace-left .project-name,
 .workspace .workspace-right .project-name {
-  font-family: "worksans", "vazirmatn", sans-serif;
-  font-size: 0.688rem;
-  font-weight: 500;
-  line-height: 1.2;
-  text-transform: uppercase;
+  @include t.use-typography("headline-small");
+
   color: var(--color-foreground-secondary);
 }
 
 .workspace .workspace-left .file-name,
 .workspace .workspace-right .file-name {
-  font-family: "worksans", "vazirmatn", sans-serif;
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.2;
-  text-transform: none;
+  @include t.use-typography("title-small");
+
   color: var(--color-foreground-primary);
+  text-transform: none;
 }
 
 .dashboard {
@@ -308,6 +288,13 @@
   align-content: stretch;
   padding: $sz-36;
   color: var(--color-foreground-secondary);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  inset-block-start: $sz-16;
+  inset-inline-end: $sz-16;
 }
 
 .overlay .dialog .dialog-title,
@@ -322,21 +309,23 @@
   margin-block-start: var(--sp-xxxl);
 }
 
-.overlay .dialog .sign-info .cancel-button,
-.overlay .dialog-login .sign-info .cancel-button {
-  background: none;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
-  border: $b-1 solid var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
-  padding: var(--sp-s) var(--sp-l);
-  font-size: 0.688rem;
-  text-transform: uppercase;
-  margin-inline-end: var(--sp-l);
+.overlay .dialog .sign-info,
+.overlay .dialog-login .sign-info {
+  .cancel-button {
+    background: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: $br-8;
+    background-color: var(--color-background-tertiary);
+    border: $b-1 solid var(--color-background-tertiary);
+    color: var(--color-foreground-secondary);
+    padding: var(--sp-s) var(--sp-l);
+    font-size: 0.688rem;
+    text-transform: uppercase;
+    margin-inline-end: var(--sp-l);
+  }
 }
 
 .overlay .dialog {
@@ -352,8 +341,7 @@
   margin-block-end: $sz-40;
 }
 
-// SVG inside login logo — no class available
-.overlay .login .logo svg {
+.logo-icon {
   fill: var(--color-foreground-primary);
   inline-size: $sz-120;
   block-size: $sz-40;
@@ -392,8 +380,10 @@
 }
 
 // Native <form> and <div> inside login — no class available
-.overlay .login form div {
-  margin-block-end: var(--sp-s);
+.overlay .login form {
+  div {
+    margin-block-end: var(--sp-s);
+  }
 }
 
 .buttons-container {

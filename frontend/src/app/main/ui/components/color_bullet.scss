@@ -22,7 +22,7 @@
   border-radius: $br-circle;
 }
 
- .color-bullet-wrapper {
+.color-bullet-wrapper {
   display: flex;
   flex-direction: row;
   block-size: 100%;
@@ -71,7 +71,6 @@
     left center;
   background-color: var(--color-static-white);
 }
-
 
 .color-bullet .color-bullet-wrapper > * {
   inline-size: 100%;

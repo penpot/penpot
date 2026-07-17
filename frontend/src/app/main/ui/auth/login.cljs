@@ -210,6 +210,11 @@
            :class (stl/css :login-ldap-button)
            :on-click on-submit-ldap}])]]]))
 
+(defn raw-icon
+  [id]
+  (mf/html
+   [:> raw-svg* {:id id :class (stl/css :sso-icon)}]))
+
 (mf/defc login-sso-buttons*
   [{:keys [params] :as props}]
   (let [login-with-google (mf/use-fn (mf/deps params) #(login-with-sso "google" params))
@@ -220,29 +225,25 @@
     [:div {:class (stl/css :auth-buttons)}
      (when (contains? cf/flags :login-with-google)
        [:> bl/button-link* {:on-click login-with-google
-                            :icon (mf/html
-                                   [:> raw-svg* {:id raw-icons/brand-google :class (stl/css :sso-icon)}])
+                            :icon (raw-icon raw-icons/brand-google)
                             :label (tr "auth.login-with-google-submit")
                             :class (stl/css :login-btn :btn-google-auth)}])
 
      (when (contains? cf/flags :login-with-github)
        [:> bl/button-link* {:on-click login-with-github
-                            :icon (mf/html
-                                   [:> raw-svg* {:id raw-icons/brand-github :class (stl/css :sso-icon)}])
+                            :icon (raw-icon raw-icons/brand-github)
                             :label (tr "auth.login-with-github-submit")
                             :class (stl/css :login-btn :btn-github-auth)}])
 
      (when (contains? cf/flags :login-with-gitlab)
        [:> bl/button-link* {:on-click login-with-gitlab
-                            :icon (mf/html
-                                   [:> raw-svg* {:id raw-icons/brand-gitlab :class (stl/css :sso-icon)}])
+                            :icon (raw-icon raw-icons/brand-gitlab)
                             :label (tr "auth.login-with-gitlab-submit")
                             :class (stl/css :login-btn :btn-gitlab-auth)}])
 
      (when (contains? cf/flags :login-with-oidc)
        [:> bl/button-link* {:on-click login-with-oidc
-                            :icon (mf/html
-                                   [:> raw-svg* {:id raw-icons/brand-openid :class (stl/css :sso-icon)}])
+                            :icon (raw-icon raw-icons/brand-openid)
                             :label (or (not-empty cf/oidc-name) (tr "auth.login-with-oidc-submit"))
                             :class (stl/css :login-btn :btn-oidc-auth)}])]))
 
