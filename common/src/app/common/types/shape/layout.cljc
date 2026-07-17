@@ -347,6 +347,22 @@
       (+ pad-top pad-top)
       (+ pad-top pad-bottom))))
 
+(defn padding-type-for
+  "`:simple` when top≈bottom and left≈right, `:multiple` otherwise (nil sides = 0)."
+  [{:keys [p1 p2 p3 p4]}]
+  (if (and (mth/close? (d/nilv p1 0) (d/nilv p3 0))
+           (mth/close? (d/nilv p2 0) (d/nilv p4 0)))
+    :simple
+    :multiple))
+
+(defn margin-type-for
+  "`:simple` when top≈bottom and left≈right, `:multiple` otherwise (nil sides = 0)."
+  [{:keys [m1 m2 m3 m4]}]
+  (if (and (mth/close? (d/nilv m1 0) (d/nilv m3 0))
+           (mth/close? (d/nilv m2 0) (d/nilv m4 0)))
+    :simple
+    :multiple))
+
 (defn child-min-width
   [child]
   (if (and (fill-width? child)

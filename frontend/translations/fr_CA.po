@@ -616,9 +616,8 @@ msgstr "Exporter la sélection"
 msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Un ou plus des fichiers que tu veux télécharger utilisent une bibliothèque "
 "partagée. Que veux-tu faire avec ces atouts*?"
@@ -1481,10 +1480,6 @@ msgstr "Aucun résultat trouvé."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Ouvrir la liste de tokens"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} n'est disponible dans aucune collection ou est invalide."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -4509,10 +4504,6 @@ msgstr "Annuler l'abonnement"
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renouveler avec code d'activation"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr "Ce token n'est disponible dans aucun ensemble ou a une valeur invalide."
 
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
@@ -9425,10 +9416,6 @@ msgstr "Marges intérieures"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Rayon"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "La référence est invalide ou n'existe dans aucun ensemble actif"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

@@ -613,14 +613,7 @@ msgstr "Export selection"
 msgid "dashboard.export-standard-multi"
 msgstr "Download %s standard files (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
-msgstr ""
-"One or more files that you want to download are using shared libraries. "
-"What do you want to do with their assets*?"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:267
+#: src/app/main/ui/dashboard/file_menu.cljs:266
 msgid "dashboard.file-menu.delete-files-permanently-option"
 msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Delete file"
@@ -1429,6 +1422,9 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
+msgid "dashboard.my-files"
+msgstr "My Files"
+
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -1471,7 +1467,7 @@ msgstr "Open token list"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} is not in any active set or has an invalid value."
+msgstr "{%s} token is not in any active set or has an invalid value."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -2070,9 +2066,10 @@ msgid "feedback.type.issue"
 msgstr "Issue"
 
 #: src/app/main/ui/exports/files.cljs:131
-#, fuzzy
 msgid "files-download-modal.description-1"
 msgstr ""
+"One or more files that you want to download are using shared libraries. "
+"What do you want to do with their assets*?"
 
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
@@ -4480,10 +4477,6 @@ msgstr "Cancel subscription"
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renew with activation code"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr "This token is not in any active set or has an invalid value."
-
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
 msgstr "This page doesn't exist"
@@ -5026,7 +5019,12 @@ msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
 msgid "options.deleted-token"
-msgstr "This token does not exists or has been deleted."
+msgstr "This token does not exist or has been deleted."
+
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "{%s} token does not exist or has been deleted."
 
 #: src/app/plugins/utils.cljs:318
 msgid "plugins.validation.message"
@@ -5773,10 +5771,10 @@ msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Unlock Enterprise features"
 
 #: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
+msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Set fine-grained permissions and keep your design operations secure, "
-"without compromising the open-source freedom your team already loves."
+"Set fine-grained permissions and stay in control, "
+"without compromising the open-source freedom your team loves."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -8781,6 +8779,9 @@ msgstr "Copy as CSS (nested layers)"
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copy link"
 
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copy id"
+
 #: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-paste-as"
 msgstr "Copy/Paste as ..."
@@ -9460,7 +9461,7 @@ msgstr "Radius"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
-msgstr "Reference is not valid or is not in any active set"
+msgstr "Reference in {%s} is not valid or is not in any active set."
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"
@@ -10105,3 +10106,6 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "notifications.invitation-canceled"
+msgstr "This invitation is no longer available."

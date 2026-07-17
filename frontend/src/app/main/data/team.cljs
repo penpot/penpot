@@ -36,6 +36,18 @@
   []
   (::current-team-id storage/global))
 
+(defn resolve-login-team-id
+  "Resolve the team to navigate to after login. Falls back to the
+  default team when the candidate requires SSO and the user has no
+  valid SSO session for it."
+  [{:keys [team-id default-team-id]}]
+  (if (or (not (contains? cf/flags :nitrate))
+          (= team-id default-team-id))
+    (rx/of team-id)
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url (rt/get-current-href)})
+         (rx/map (fn [{:keys [authorized]}]
+                   (if authorized team-id default-team-id))))))
+
 (defn teams-fetched
   [teams]
   (ptk/reify ::teams-fetched

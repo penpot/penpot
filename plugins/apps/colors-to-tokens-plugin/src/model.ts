@@ -35,9 +35,7 @@ export interface ResizePluginUIEvent {
 }
 
 export type PluginUIEvent =
-  | GETColorsPluginUIEvent
-  | ResizePluginUIEvent
-  | ResetPluginUIEvent;
+  GETColorsPluginUIEvent | ResizePluginUIEvent | ResetPluginUIEvent;
 
 export interface ThemePluginEvent {
   type: 'theme';
