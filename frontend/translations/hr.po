@@ -461,9 +461,8 @@ msgstr "Izvezi odabir"
 msgid "dashboard.export-standard-multi"
 msgstr "Preuzmi %s standardne datoteke (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Jedna ili više datoteka koju želiš izvesti koristi zajedničke biblioteke. "
 "Što želiš učiniti s njihovim stavkama*?"
@@ -6329,10 +6328,6 @@ msgstr "Trenutno nemate nijednu temu."
 #, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Izvorna vrijednost: %s"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Referenca nije važeća ili nije ni u jednom aktivnom skupu"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
 #, fuzzy

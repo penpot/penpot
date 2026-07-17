@@ -554,10 +554,11 @@ msgstr "선택 영역 내보내기"
 msgid "dashboard.export-standard-multi"
 msgstr "표준 파일 %s개(.svg + .json) 다운로드"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
-msgstr "다운로드하려는 하나 이상의 파일이 공유 라이브러리를 사용 중입니다. 해당 에셋*을 어떻게 처리하시겠습니까?"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
+msgstr ""
+"다운로드하려는 하나 이상의 파일이 공유 라이브러리를 사용 중입니다. 해당 에셋*"
+"을 어떻게 처리하시겠습니까?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:267
 msgid "dashboard.file-menu.delete-files-permanently-option"
@@ -1224,10 +1225,6 @@ msgstr "일치하는 항목이 없습니다."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "token 목록 열기"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "이 token은 활성 세트에 없거나 유효하지 않은 값을 가지고 있습니다."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -7712,10 +7709,6 @@ msgstr "패딩"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "반지름"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "참조가 유효하지 않거나 활성 세트에 없습니다"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

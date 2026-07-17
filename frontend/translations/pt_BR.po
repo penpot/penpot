@@ -497,9 +497,8 @@ msgstr "Exportar seleção"
 msgid "dashboard.export-standard-multi"
 msgstr "Baixar %s arquivos padrões (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Um ou mais arquivos que você deseja exportar estão usando bibliotecas "
 "compartilhadas. O que você quer fazer com seus recursos*?"
@@ -1107,10 +1106,6 @@ msgstr "Nenhum resultado encontrado."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Abrir lista de tokens"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} não está em nenhum conjunto ativo ou possui um valor inválido."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"

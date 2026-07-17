@@ -800,7 +800,8 @@
   (ptk/reify ::library-thumbnails-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update state :thumbnails merge thumbnails))))
+      (update state :thumbnails merge
+              (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil}))))))
 
 (defn fetch-library-thumbnails
   [library-id]
@@ -1379,7 +1380,7 @@
   []
   (ptk/reify ::watch-component-changes
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       (let [stopper-s
             (->> stream
                  (rx/map ptk/type)
@@ -1449,7 +1450,7 @@
                  (rx/tap #(log/trc :hint "buffer initialized")))]
 
         (when (or (contains? cf/flags :component-thumbnails)
-                  (features/active-feature? @st/state "render-wasm/v1"))
+                  (features/active-feature? state "render-wasm/v1"))
           (->> (rx/merge
                 changes-s
 
@@ -1457,7 +1458,7 @@
                 ;; change so single edits (fill, etc.) update instantly.
                 ;; Non-WASM persists on every render, so it stays on the
                 ;; debounced path below to avoid per-edit backend posts.
-                (if (features/active-feature? @st/state "render-wasm/v1")
+                (if (features/active-feature? state "render-wasm/v1")
                   (->> changes-s
                        (rx/filter (ptk/type? ::component-changed))
                        (rx/map deref)
@@ -1541,7 +1542,8 @@
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
-                          (update state :thumbnails merge thumbnails))))))))))
+                          (update state :thumbnails merge
+                                  (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil}))))))))))))
 
 (defn link-file-to-library
   [file-id library-id]

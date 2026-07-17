@@ -411,9 +411,8 @@ msgstr "Избор извоза"
 msgid "dashboard.export-standard-multi"
 msgstr "Преузмите &s стандардних датотека (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Једна или више датотека које желите да извезете користе дељене библиотеке. "
 "Шта желите да урадите са њиховим средстрвима*?"

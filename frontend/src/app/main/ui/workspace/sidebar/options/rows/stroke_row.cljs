@@ -171,12 +171,20 @@
         on-caps-start-change
         (mf/use-fn
          (mf/deps index on-stroke-cap-start-change)
-         #(on-stroke-cap-start-change index (keyword %)))
+         (fn [cap]
+           (let [cap (if (= cap "none")
+                       nil
+                       (keyword cap))]
+             (on-stroke-cap-start-change index cap))))
 
         on-caps-end-change
         (mf/use-fn
          (mf/deps index on-stroke-cap-end-change)
-         #(on-stroke-cap-end-change index (keyword %)))
+         (fn [cap]
+           (let [cap (if (= cap "none")
+                       nil
+                       (keyword cap))]
+             (on-stroke-cap-end-change index cap))))
 
         on-detach-token-color
         (mf/use-fn
@@ -191,16 +199,16 @@
            (on-detach-token token #{:stroke-width})))
 
         stroke-caps-options
-        [{:value nil :label (tr "workspace.options.stroke-cap.none")}
-         :separator
-         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon :stroke-arrow}
-         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon :stroke-triangle}
-         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon :stroke-rectangle}
-         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon :stroke-circle}
-         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon :stroke-diamond}
-         :separator
-         {:value :round :label (tr "workspace.options.stroke-cap.round") :icon :stroke-rounded}
-         {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :stroke-squared}]
+        [{:id "none" :value "none" :label (tr "workspace.options.stroke-cap.none")}
+         {:label "" :type :separator :id "separator"}
+         {:id "line-arrow" :value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon i/stroke-arrow}
+         {:id "triangle-arrow" :value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon i/stroke-triangle}
+         {:id "square-marker" :value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon i/stroke-rectangle}
+         {:id "circle-marker" :value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon i/stroke-circle}
+         {:id "diamond-marker" :value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon i/stroke-diamond}
+         {:label "" :type :separator :id "separator"}
+         {:id "round" :value :round :label (tr "workspace.options.stroke-cap.round") :icon i/stroke-rounded}
+         {:id "square" :value :square :label (tr "workspace.options.stroke-cap.square") :icon i/stroke-squared}]
 
         on-cap-switch
         (mf/use-fn
@@ -340,16 +348,18 @@
      ;; Stroke Caps
      (when show-caps
        [:div {:class (stl/css :stroke-caps-options)}
-        [:& select {:default-value (:stroke-cap-start stroke)
-                    :options stroke-caps-options
-                    :disabled hidden?
-                    :on-change on-caps-start-change}]
+        [:> select* {:default-selected (or (d/name (:stroke-cap-start stroke)) "none")
+                     :options stroke-caps-options
+                     :data-testid "stroke.cap-start"
+                     :disabled hidden?
+                     :on-change on-caps-start-change}]
         [:> icon-button* {:variant "secondary"
                           :aria-label (tr "labels.switch")
                           :disabled hidden?
                           :on-click on-cap-switch
                           :icon i/switch}]
-        [:& select {:default-value (:stroke-cap-end stroke)
-                    :options stroke-caps-options
-                    :disabled hidden?
-                    :on-change on-caps-end-change}]])]))
+        [:> select* {:default-selected (or (d/name (:stroke-cap-end stroke)) "none")
+                     :options stroke-caps-options
+                     :data-testid "stroke.cap-end"
+                     :disabled hidden?
+                     :on-change on-caps-end-change}]])]))

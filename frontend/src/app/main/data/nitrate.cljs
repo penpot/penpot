@@ -59,7 +59,7 @@
    (st/emit! (rt/nav-raw :href "/admin-console/")))
   ([{:keys [organization-id organization-slug]}]
    (if (and organization-id organization-slug)
-     (let [href (dm/str "/admin-console/org/"
+     (let [href (dm/str "/admin-console/organization/"
                         (u/percent-encode organization-slug)
                         "/"
                         (u/percent-encode (str organization-id))
@@ -67,9 +67,9 @@
        (st/emit! (rt/nav-raw :href href)))
      (st/emit! (rt/nav-raw :href "/admin-console/")))))
 
-(defn go-to-nitrate-ac-create-org
+(defn go-to-nitrate-ac-create-organization
   []
-  (st/emit! (rt/nav-raw :href "/admin-console/?action=create-org")))
+  (st/emit! (rt/nav-raw :href "/admin-console/?action=create-organization")))
 
 (defn can-send-invitations?
   [{:keys [organization profile-id team-permissions]}]

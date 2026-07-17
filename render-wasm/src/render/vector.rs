@@ -194,16 +194,25 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 for (kind, stroke_paragraphs) in &mut stroke_shadow_groups {
                     if *kind == StrokeKind::Inner {
                         // Inner stroke masked by the glyph fill (outset 0 here).
-                        let mut mask_builders = text_content.paragraph_builder_group_opaque();
                         let mut fill_builders =
                             text_content.paragraph_builder_group_from_text(Some(true));
                         text::render_inner_stroke(
                             None,
                             Some(self.canvas),
                             shape,
-                            &mut mask_builders,
                             stroke_paragraphs,
                             &mut fill_builders,
+                            None,
+                            blur_filter.as_ref(),
+                            0.0,
+                            None,
+                        )?;
+                    } else if *kind == StrokeKind::Outer {
+                        text::render_outer_stroke(
+                            None,
+                            Some(self.canvas),
+                            shape,
+                            stroke_paragraphs,
                             None,
                             blur_filter.as_ref(),
                             0.0,
@@ -250,15 +259,24 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 );
             if stroke.render_kind(false) == StrokeKind::Inner {
                 // Inner text stroke: clip to the glyph fill, else it bleeds out.
-                let mut mask_builders = text_content.paragraph_builder_group_opaque();
                 let mut fill_builders = text_content.paragraph_builder_group_from_text(None);
                 text::render_inner_stroke(
                     None,
                     Some(self.canvas),
                     shape,
-                    &mut mask_builders,
                     &mut stroke_paragraphs,
                     &mut fill_builders,
+                    None,
+                    blur_filter.as_ref(),
+                    stroke_blur_outset,
+                    layer_opacity,
+                )?;
+            } else if stroke.render_kind(false) == StrokeKind::Outer {
+                text::render_outer_stroke(
+                    None,
+                    Some(self.canvas),
+                    shape,
+                    &mut stroke_paragraphs,
                     None,
                     blur_filter.as_ref(),
                     stroke_blur_outset,

@@ -279,7 +279,6 @@
                        profile-id)
                       schema:profile-org params))
 
-
 (defn- get-org-summary-api
   [cfg {:keys [organization-id] :as params}]
   (request-to-nitrate cfg :get

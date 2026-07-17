@@ -7,7 +7,6 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
-pub mod rulers;
 mod shadows;
 pub mod shape_renderer;
 mod strokes;
@@ -30,7 +29,7 @@ use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
 };
-use crate::state::{RulerState, ShapesPoolMutRef, ShapesPoolRef};
+use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -374,7 +373,6 @@ pub(crate) struct RenderState {
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
-    pub rulers: RulerState,
     pub focus_mode: FocusMode,
     /// Viewer-only whitelist for fixed-scroll layer passes.
     pub include_filter: Option<HashSet<Uuid>>,
@@ -410,6 +408,11 @@ pub(crate) struct RenderState {
     /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// Whether we've already forced a GPU flush+submit before a tile-atlas
+    /// snapshot this render. The first snapshot of a pass can otherwise capture
+    /// a tile before its text glyph uploads complete (blank first/center tile).
+    /// One explicit flush warms the submit path for the rest of the pass.
+    pub tile_atlas_flushed: bool,
 }
 
 pub struct InteractiveDragCrop {
@@ -519,21 +522,26 @@ impl RenderState {
                 .is_some_and(|s| s.is_safe_for_drag_crop_cache(tree));
         }
 
-        // If the moving content overlaps this cached crop, do not use the cached pixels
-        // for this frame. We intentionally keep the cache entry: overlap is typically
-        // transient during drag, and once the moving content leaves the area the crop
-        // becomes valid again (stationary shape unchanged).
-        if let Some(moved) = moved_bounds {
-            let intersects = self
-                .backbuffer_crop_cache
-                .get(&node_id)
-                .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
-
-            if intersects {
-                return false;
+        match moved_bounds {
+            // Something is actually moving/resizing. If the moving content overlaps this
+            // cached crop, do not use the cached pixels for this frame. We intentionally
+            // keep the cache entry: overlap is typically transient during drag, and once
+            // the moving content leaves the area the crop becomes valid again (stationary
+            // shape unchanged).
+            Some(moved) => {
+                let intersects = self
+                    .backbuffer_crop_cache
+                    .get(&node_id)
+                    .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
+                !intersects
             }
+
+            // Interactive-transform mode is active but nothing is moving (no modifiers):
+            // e.g. editing a text shape inside this board reflows its content without
+            // changing geometry. The cached crop was captured before the edit, so blitting
+            // it would paint stale pixels over the freshly rendered tiles. Render live.
+            None => false,
         }
-        true
     }
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
@@ -579,7 +587,6 @@ impl RenderState {
             nested_blurs: vec![],
             nested_shadows: vec![],
             show_grid: None,
-            rulers: RulerState::default(),
             focus_mode: FocusMode::new(),
             include_filter: None,
             viewer_render_root: None,
@@ -592,6 +599,7 @@ impl RenderState {
             interactive_target_seeded: false,
             preserve_target_during_render: false,
             backbuffer_crop_cache: HashMap::default(),
+            tile_atlas_flushed: false,
         })
     }
 
@@ -1020,6 +1028,10 @@ impl RenderState {
             .as_ref()
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
 
+        if self.tile_atlas_flushed {
+            crate::get_gpu_state().context.flush_and_submit();
+        }
+
         self.surfaces.draw_current_tile_into_tile_atlas(
             &self.tile_viewbox,
             &current_tile,
@@ -1386,7 +1398,7 @@ impl RenderState {
         }
 
         match &shape.shape_type {
-            Type::SVGRaw(sr) => {
+            Type::SVGRaw(_) => {
                 if let Some(svg_transform) = shape.svg_transform() {
                     matrix.pre_concat(&svg_transform);
                 }
@@ -1398,21 +1410,13 @@ impl RenderState {
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
-                    let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
-                    let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
-                    match dom_result {
-                        Ok(dom) => {
-                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
-                            shape.to_mut().set_svg(dom);
-                        }
-                        Err(e) => {
-                            eprintln!("Error parsing SVG. Error: {}", e);
-                        }
-                    }
+                    panic!("SVG should be available");
                 }
             }
 
             Type::Text(stored_text_content) => {
+                self.tile_atlas_flushed = true;
+
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
@@ -1469,16 +1473,25 @@ impl RenderState {
                         .enumerate()
                     {
                         if stroke_kinds[i] == StrokeKind::Inner {
-                            let mut mask_builders = text_content.paragraph_builder_group_opaque();
                             let mut fill_builders =
                                 text_content.paragraph_builder_group_from_text(None);
                             text::render_inner_stroke(
                                 Some(self),
                                 None,
                                 &shape,
-                                &mut mask_builders,
                                 stroke_paragraphs,
                                 &mut fill_builders,
+                                Some(strokes_surface_id),
+                                None,
+                                text_stroke_blur_outset,
+                                *layer_opacity,
+                            )?;
+                        } else if stroke_kinds[i] == StrokeKind::Outer {
+                            text::render_outer_stroke(
+                                Some(self),
+                                None,
+                                &shape,
+                                stroke_paragraphs,
                                 Some(strokes_surface_id),
                                 None,
                                 text_stroke_blur_outset,
@@ -1498,6 +1511,20 @@ impl RenderState {
                                 *layer_opacity,
                             )?;
                         }
+                    }
+
+                    if shape.has_visible_strokes() && text_content.has_non_ascii() {
+                        let mut emoji_builders = text_content.paragraph_builder_group_opaque();
+                        let mut deco_builders =
+                            text_content.paragraph_builder_group_from_text(None);
+                        text::render_emoji_overlay(
+                            self,
+                            &shape,
+                            &mut emoji_builders,
+                            &mut deco_builders,
+                            strokes_surface_id,
+                            None,
+                        );
                     }
                 } else {
                     let mut drop_shadows = shape.drop_shadow_paints();
@@ -1605,17 +1632,25 @@ impl RenderState {
                             .enumerate()
                         {
                             if stroke_kinds[i] == StrokeKind::Inner {
-                                let mut mask_builders =
-                                    text_content.paragraph_builder_group_opaque();
                                 let mut fill_builders =
                                     text_content.paragraph_builder_group_from_text(None);
                                 text::render_inner_stroke(
                                     Some(self),
                                     None,
                                     &shape,
-                                    &mut mask_builders,
                                     stroke_paragraphs,
                                     &mut fill_builders,
+                                    Some(strokes_surface_id),
+                                    blur_filter.as_ref(),
+                                    text_stroke_blur_outset,
+                                    *layer_opacity,
+                                )?;
+                            } else if stroke_kinds[i] == StrokeKind::Outer {
+                                text::render_outer_stroke(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    stroke_paragraphs,
                                     Some(strokes_surface_id),
                                     blur_filter.as_ref(),
                                     text_stroke_blur_outset,
@@ -1635,6 +1670,20 @@ impl RenderState {
                                     *layer_opacity,
                                 )?;
                             }
+                        }
+
+                        if shape.has_visible_strokes() && text_content.has_non_ascii() {
+                            let mut emoji_builders = text_content.paragraph_builder_group_opaque();
+                            let mut deco_builders =
+                                text_content.paragraph_builder_group_from_text(None);
+                            text::render_emoji_overlay(
+                                self,
+                                &shape,
+                                &mut emoji_builders,
+                                &mut deco_builders,
+                                strokes_surface_id,
+                                blur_filter.as_ref(),
+                            );
                         }
 
                         // 5. Stroke inner shadows
@@ -3572,6 +3621,7 @@ impl RenderState {
                 // a resumed-from-yield case rather than a genuinely
                 // empty tile.
                 self.current_tile_had_shapes = false;
+                self.tile_atlas_flushed = false;
 
                 let viewer_masked_pass = self.viewer_masked_pass();
 

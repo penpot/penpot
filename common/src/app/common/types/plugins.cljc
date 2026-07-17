@@ -30,6 +30,7 @@
 (def schema:registry-entry
   [:map
    [:plugin-id :string]
+   [:version {:optional true} :int]
    [:name :string]
    [:description {:optional true} :string]
    [:host :string]

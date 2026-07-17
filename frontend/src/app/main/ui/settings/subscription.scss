@@ -83,6 +83,10 @@
   border: $b-1 solid var(--color-accent-select);
 }
 
+.plan-card-current {
+  border: $b-1 solid var(--color-foreground-secondary);
+}
+
 .plan-card-header {
   display: flex;
   justify-content: space-between;
@@ -146,6 +150,8 @@
 }
 
 .benefits-list {
+  list-style-position: inside;
+  list-style-type: disc;
   margin-block: 0;
 }
 

@@ -588,9 +588,8 @@ msgstr "Exporter la sélection"
 msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Un ou plusieurs fichiers que vous souhaitez exporter utilisent des "
 "bibliothèques partagées. Que voulez-vous faire avec leurs ressources ?"
@@ -1293,10 +1292,6 @@ msgstr "Aucune correspondance."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Ouvrir la liste des tokens"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} n'est pas disponible dans la collection ou le thème actif."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -8118,10 +8113,6 @@ msgstr "Marges intérieures"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Rayons"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "La référence n'est pas valide ou n'est pas dans une collection active"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

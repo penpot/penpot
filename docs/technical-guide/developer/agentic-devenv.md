@@ -1,30 +1,22 @@
 ---
-title: 3.11. Agentic Development Environment
+title: 3.11. Agentic Dev Environment
 desc: Dive into agentic Penpot development.
 ---
 
-# Agentic Development Environment
+# Agentic Dev Environment
 
 The agentic DevEnv is an extension of the standard DevEnv (the
 [general DevEnv instructions](/technical-guide/developer/devenv/) apply),
 optimised for AI agent-based development. It adds MCP servers (Penpot,
 Serena, Playwright) and supports a launcher that wires them into your AI client.
 
-Two things to know up front:
-
-- **Parallel workspaces are first-class.** Run several devenv instances side
-  by side - one per AI agent if you like - each with its own source-tree
-  clone, ports, and tmux session. Pass `--ws N` to target one.
-- **Your existing AI-client config is preserved.** The launcher loads a
-  per-workspace MCP config on top of your global one.
-
 ## Quick Start
 
 1. **Bring up one or more workspaces**[^cfg]:
 
    ```bash
-   ./manage.sh run-devenv-agentic              # ws0 (the live repo)
-   ./manage.sh run-devenv-agentic --ws 1       # ws1 (sibling clone)
+   ./manage.sh run-devenv --agentic --attach   # ws0 (the live repo)
+   ./manage.sh run-devenv --agentic --ws 1     # ws1 (sibling clone)
    ```
 
    Add `--ws 2`, `--ws 3`, … for more parallel workspaces.
@@ -47,20 +39,20 @@ Two things to know up front:
    "MCP Server" on. The agentic DevEnv runs the MCP server in single-user
    mode - the key and proxied URL shown in the UI are not needed.
 
-4. **Launch your AI client** against the workspace you want it to drive:
+4. **Launch your AI client**. Either use your manually configured client
+   (as described below) or conveniently launch an explicitly supported client
+   against the workspace you want it to drive:
 
    ```bash
-   ./manage.sh start-coding-agent claude              # ws0
+   ./manage.sh start-coding-agent claude              # ws0 (main)
    ./manage.sh start-coding-agent claude --ws 1       # ws1
    ```
 
    Supported clients: `claude` | `opencode` | `vscode` | `codex`.
-5. **Attach to the tmux session** for the workspace (optional):
+   Note: The launcher loads a per-workspace MCP config on top of your global one (if any).
 
-   ```bash
-   ./manage.sh attach-devenv            # ws0
-   ./manage.sh attach-devenv --ws 1     # ws1
-   ```
+5. **Work within your client**, which is now equipped with extended capabilities
+   for Penpot development (see below for details).
 
 6. **Shut down workspaces** with `./manage.sh stop-devenv`, either one by one or all at once.
    You cannot shut down `ws0` if any other workspace is still running, since it's the worker-bearer.
@@ -113,10 +105,10 @@ var penpotFlags = "enable-mcp";
 ```
 
 The file is gitignored and lives in the live repo only. On every
-`run-devenv-agentic` call it is read directly for ws0; for wsN (N ≥ 1) it is
+`run-devenv --agentic` call it is read directly for ws0; for wsN (N ≥ 1) it is
 copied into the workspace clone on the **initial** sync only - subsequent
 `--sync` passes leave the workspace's copy alone so per-workspace
-customisations survive. `run-devenv-agentic` refuses to start if the file is
+customisations survive. `run-devenv --agentic` refuses to start if the file is
 missing.
 
 **Browser remote debugging.** The Playwright MCP server drives a real
@@ -148,13 +140,13 @@ devenv image itself (add a tool, change a base layer):
 ./manage.sh build-devenv --local
 ```
 
-The default `run-devenv-agentic` flow pulls the published image
+The default `run-devenv --agentic` flow pulls the published image
 automatically, so regular users never run this.
 
 ### Bringing up workspaces
 
 ```bash
-./manage.sh run-devenv-agentic \
+./manage.sh run-devenv --agentic \
     [--ws N] [--sync] [--serena-context CTX] \
     [--git-user-name NAME] [--git-user-email EMAIL]
 ```
@@ -171,7 +163,7 @@ every bring-up so you don't compute offsets by hand. See the
 semantics, and stop ordering.
 
 **Git identity for agent commits.** Coding agents typically need to commit
-inside the devenv, so `run-devenv-agentic` wires a Git identity into the
+inside the devenv, so `run-devenv --agentic` wires a Git identity into the
 container's global config on every bring-up. By default it propagates the
 host's effective `git config user.{name,email}` (local repo override wins
 over `~/.gitconfig`, matching what `git commit` on the host would record).
@@ -189,7 +181,7 @@ the full mechanics.
 >
 > ```bash
 > ./manage.sh stop-devenv
-> ./manage.sh run-devenv-agentic
+> ./manage.sh run-devenv --agentic
 > ```
 
 ### Launching an AI client
@@ -198,7 +190,7 @@ The agentic environment supports any AI client, one just needs to set the right 
 see [manual configuration](#manual-ai-client-configuration) below. For some popular clients, the `manage.sh`
 CLI offers direct support through the following mechanism:
 
-Every `run-devenv-agentic` regenerates three MCP-client config files with
+Every `run-devenv --agentic` regenerates three MCP-client config files with
 the workspace's ports baked in; Codex is wired up at launch instead (see
 below):
 
