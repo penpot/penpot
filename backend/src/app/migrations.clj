@@ -493,7 +493,10 @@
     :fn (mg/resource "app/migrations/sql/0150-mod-storage-object-table.sql")}
 
    {:name "0151-mod-file-tagged-object-thumbnail-table"
-    :fn (mg/resource "app/migrations/sql/0151-mod-file-tagged-object-thumbnail-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0151-mod-file-tagged-object-thumbnail-table.sql")}
+
+   {:name "0152-add-issuer-to-sso-provider"
+    :fn (mg/resource "app/migrations/sql/0152-add-issuer-to-sso-provider.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
