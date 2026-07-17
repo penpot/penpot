@@ -255,6 +255,14 @@
                   (:rows inst))
      :truncated? (boolean (or (:truncated? child) (:truncated? inst)))}))
 
+(defn- bm-usage-bytes
+  "Buffer-manager memory in use by this session's in-memory database
+  (`CALL bm_info()` → [mem_limit mem_usage]); nil if the call fails."
+  [conn]
+  (ex/ignoring
+   (-> (ladybug/query-on-connection! conn "CALL bm_info() RETURN *;" :max-rows 1)
+       :rows first second)))
+
 (defn export-graph-data!
   "Export the node/edge inventory of the in-memory graph for `profile-id`
   as plain data for the debug graph view. Returns nil when no session is
@@ -268,6 +276,7 @@
         {:file-id   (str file-id)
          :revn      (:revn index)
          :truncated (boolean (or nodes-truncated? edges-truncated?))
+         :bm-bytes  (bm-usage-bytes conn)
          :nodes     nodes
          :edges     edges}))))
 

@@ -18,24 +18,27 @@ Graph Console
     <p><a href="/dbg">&larr; Back to debug</a></p>
 
     <div style="display: flex; gap: 16px; align-items: flex-start;">
-    <div style="flex: 0 0 440px; min-width: 360px;">
+    <div style="flex: 0 0 350px; min-width: 300px;">
 
     <fieldset>
-      <legend>Load graph in memory</legend>
+      <legend>Load graph from Penpot</legend>
       <desc>
-        Projects the Penpot file into an in-memory Ladybug database for this
-        admin session. Loading a new file replaces the previous one.
+        Click file or paste UUID to load Penpot file into an in-memory
+        Ladybug database. Loading a new file replaces the previous one.
       </desc>
+      <div id="graph-files-tree" style="font-size: 13px; margin-bottom: 6px;">Loading&hellip;</div>
       <form id="graph-load-form" method="post" action="/dbg/actions/graph-load">
-        <div class="row">
-          <input type="text" style="width:420px" name="file-id"
+        <div class="row" style="display: flex; gap: 8px;">
+          <input type="text" style="flex: 1; min-width: 0; font-size: 11px;" name="file-id"
                  placeholder="file-id"
                  value="{% if session %}{{session.file-id}}{% endif %}" />
-        </div>
-        <div class="row" style="display: flex; gap: 8px;">
-          <input type="submit" value="Load" />
           {% if session %}
-          <input type="submit" value="Unload" form="graph-unload-form" />
+          <input type="submit" value="Reload"
+                 title="Re-ingests the file in the box from scratch — the recovery fallback when live sync drifted or skipped changes. Paste a different UUID to switch files." />
+          <input type="submit" value="Unload" form="graph-unload-form"
+                 title="Drop the in-memory session and free its memory" />
+          {% else %}
+          <input type="submit" value="Load" />
           {% endif %}
         </div>
       </form>
@@ -44,57 +47,40 @@ Graph Console
       {% endif %}
     </fieldset>
 
-    <fieldset>
-      <legend>Files</legend>
-      <desc>Teams &rarr; projects &rarr; files. Click a file to load it.</desc>
-      <div id="graph-files-tree" style="font-size: 13px;">Loading&hellip;</div>
-    </fieldset>
-
     {% if session %}
     <fieldset>
-      <legend>Loaded session</legend>
+      <legend>Loaded session (<span id="graph-loaded-at">{{session.loaded-at}}</span>)</legend>
       <desc>
-        <p>
-          File: <b><a id="graph-penpot-link" data-file-id="{{session.file-id}}"
-                      target="_blank">{{session.name}}</a></b> ({{session.file-id}})<br />
-          Loaded at revision: <b>{{session.revn}}</b><br />
-          Graph revision: <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b><br />
+        <p style="margin: 0 0 4px;">
+          File: <span id="graph-file-crumbs"></span><b><a id="graph-penpot-link"
+                      data-file-id="{{session.file-id}}"
+                      target="_blank">{{session.name}}</a></b>
+          <span id="graph-bm" style="color: #666;"
+                title="resident memory of the session's in-memory DB (buffer manager)"></span><br />
+          <span title="The file's revision when it was ingested vs the revision of the last live change applied to the graph. They start equal; a graph value behind the workspace means missed changes — use Reload.">
+            Revisions: ingested at <b>{{session.revn}}</b> · graph now
+            <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b>
+          </span><br />
           Graph size: <b id="graph-size">…</b><br />
-          Schema: <b>{{session.schema-version}}</b><br />
-          Loaded at: <b>{{session.loaded-at}}</b>
+          Schema: <b>{{session.schema-version}}</b>
         </p>
-        <p id="graph-sync-status">
+        <p id="graph-sync-status" style="margin: 0;">
           Feed: <b id="graph-ws-status">connecting…</b>
           <span id="graph-sync-error" style="display:none; margin-left: 1em; color: #b91c1c;"></span>
         </p>
-        <form id="graph-reload-form" method="post" action="/dbg/actions/graph-reload">
-          <input type="submit" value="Full reload (fallback)" />
-        </form>
-        {% if session.projection.stats %}
-        <p>
-          Projection:
-          documents={{session.projection.stats.documents}},
-          pages={{session.projection.stats.pages}},
-          shapes={{session.projection.stats.shapes}}
-        </p>
-        {% endif %}
       </desc>
     </fieldset>
 
-    <fieldset>
-      <legend>File changes (live)</legend>
-      <desc>
-        Subscribes to the workspace WebSocket feed for visibility. The backend
-        applies supported changes incrementally to the in-memory Ladybug graph
-        via msgbus (<code>:file-change</code>).
-      </desc>
-      <div id="graph-changelog-empty" style="color: #666;">Waiting for changes…</div>
+    <fieldset id="graph-changelog-box" style="display: none;">
+      <legend>Live changes</legend>
+      <desc>Latest changes applied to the backend graph.</desc>
       <table id="graph-changelog" border="1" cellpadding="4" cellspacing="0"
-             style="border-collapse: collapse; width: 100%; display: none;">
+             style="border-collapse: collapse; width: 100%;">
         <thead>
           <tr>
             <th>revn</th>
-            <th>changes</th>
+            <th>op</th>
+            <th>id</th>
           </tr>
         </thead>
         <tbody id="graph-changelog-body"></tbody>
@@ -102,8 +88,8 @@ Graph Console
     </fieldset>
 
     <fieldset>
-      <legend>LadybugDB <a href="https://docs.ladybugdb.com/cypher/"
-                            target="_blank">Cypher</a></legend>
+      <legend>Query graph (<a href="https://docs.ladybugdb.com/cypher/"
+                              target="_blank">LadybugDB Cypher</a>)</legend>
       <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
         <div class="row">
           <textarea name="query" rows="8" style="width:100%; font-family: monospace;"
@@ -159,28 +145,34 @@ Graph Console
       <fieldset id="graph-view-panel">
         <legend>Graph view
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
-            <input type="checkbox" id="graph-fold-toggle" /> fold containers
+            layout: <select id="graph-layout-select"></select>
           </label>
-          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When checked, graphs up to 100 nodes render with entrance animation.">
             <input type="checkbox" id="graph-animate-toggle" /> animate
           </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
-                 title="added/removed marks fade out over this many display steps (0 = off)">
+                 title="When set, added/removed marks fade out over this many display steps (0 disables diff marks).">
             fade: <input type="number" id="graph-diff-steps" min="0" max="20"
-                         style="width: 3.5em;" /> steps
+                         style="width: 1.8em;" /> steps
           </label>
           <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
-                 title="collapse every container that holds no changed elements">
+                 title="When checked, containers render as foldable boxes (combos); double-click folds/unfolds. When unchecked, plain nodes only — the fold controls to the right go dormant.">
+            <input type="checkbox" id="graph-fold-toggle" /> foldable containers
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When checked, every container without changed elements collapses, so changes stand out (overrides manual folds).">
             <input type="checkbox" id="graph-diff-fold" /> fold unchanged
           </label>
-          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
-            layout: <select id="graph-layout-select"></select>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When set, overview mode: 0 expands every container, n ≥ 1 collapses every container at depth ≥ n from the root (overrides manual folds; empty = manual folding).">
+            fold ≥ depth: <input type="number" id="graph-depth-fold" min="0" max="99"
+                                 style="width: 2.2em;" />
           </label>
         </legend>
         <desc>
-          Live view of the in-memory Ladybug graph (AntV G6); the legend
-          shows what is displayed. Double-click folds containers when
-          folding is on.
+          Live view of the in-memory Ladybug graph (AntV G6). Double-click
+          folds containers when folding is on.
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
         <div id="graph-canvas"
@@ -266,6 +258,8 @@ Graph Console
           if (file.id === fileId) {
             penpotLink.href = "/#/workspace/" + project.id + "/" + file.id;
             penpotLink.title = "Open in Penpot";
+            const crumbs = document.getElementById("graph-file-crumbs");
+            if (crumbs) crumbs.textContent = team.name + " › " + project.name + " › ";
           }
         });
       });
@@ -342,9 +336,8 @@ Graph Console
   const wsStatus = document.getElementById("graph-ws-status");
   const syncRevnEl = document.getElementById("graph-sync-revn");
   const syncErrorEl = document.getElementById("graph-sync-error");
-  const changelog = document.getElementById("graph-changelog");
+  const changelogBox = document.getElementById("graph-changelog-box");
   const changelogBody = document.getElementById("graph-changelog-body");
-  const changelogEmpty = document.getElementById("graph-changelog-empty");
 
   let ws = null;
 
@@ -379,10 +372,11 @@ Graph Console
   // is the unlabeled default (the background tree structure).
   // `sym` may be a full rel name: no compact glyph reads as "derived from
   // a template" (∈ wrongly connotes membership), so IsInstanceOf spells
-  // itself out; the legend falls back to the dash-arrow for long syms.
+  // itself out; the legend falls back to an arrow for long syms. No
+  // dashed edges — the label alone carries rel identity.
   const EDGE_STYLES = {
     "IsChildOf":    { stroke: "#b3b0a8" },
-    "IsInstanceOf": { stroke: "#8b98a9", lineDash: [4, 3], sym: "IsInstanceOf" }
+    "IsInstanceOf": { stroke: "#8b98a9", sym: "IsInstanceOf" }
   };
   const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
   // --- graph diff: add/remove marks with step fade --------------------
@@ -462,6 +456,7 @@ Graph Console
     Object.keys(diffMarks.nodes).forEach(function (id) {
       const m = liveMark(diffMarks.nodes, id);
       if (m && m.kind === "removed" && m.node && !present[id]
+          && !hiddenTables.has(m.node.table)
           && (!graphFilterIds || graphFilterIds.has(id))) {
         nodes.push(m.node);
         present[id] = true;
@@ -518,6 +513,15 @@ Graph Console
     return localStorage.getItem("graph-diff-fold") === "1";
   }
 
+  // Overview mode: null = off, else collapse containers at depth ≥ value
+  // (root = depth 0, so e.g. 2 folds the containers hanging from a Page).
+  function depthFoldValue() {
+    const raw = localStorage.getItem("graph-depth-fold");
+    if (raw == null || raw === "") return null;
+    const v = parseInt(raw, 10);
+    return Number.isFinite(v) && v >= 0 ? v : null;
+  }
+
   // One-shot pulse rings on age-0 marks, placed ~post-render (positions
   // are sampled once; pulses don't track pan/zoom during their ~1.2 s).
   function pulseAt(canvasPoint, color, sizePx) {
@@ -567,9 +571,13 @@ Graph Console
   // Legend glyph characters mirroring the G6 node types above.
   const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
                         circle: "●", triangle: "▲", star: "★" };
-  // Above this many nodes the view is not rendered automatically; the
-  // "Render anyway" button forces it (~1.5 s per 2k nodes, measured).
+  // Above this many nodes/edges the view is not rendered automatically;
+  // the "Render anyway" button forces it (~1.5 s per 2k nodes, measured;
+  // edges gate the guard too since plugin/combo cost scales with them).
+  // Escape hatch: /dbg/graph?safe disables auto-render entirely, so a
+  // page that hung on render can always be re-entered.
   const RENDER_GUARD_NODES = 4000;
+  const RENDER_GUARD_EDGES = 8000;
   // G6's entrance/update animation is nice didactics on small graphs but
   // the performance killer at scale (>2 min at 1700 nodes vs ~1.5 s off);
   // keep it only below this node count.
@@ -580,28 +588,35 @@ Graph Console
   // Layout dropdown source of truth: name -> G6 layout config, or null for
   // the built-in O(n) tree layout (preset positions from treePositions,
   // fastest, exploits IsChildOf being a tree). The <select> is populated
-  // from these keys; add/remove/tune entries here. All 13 G6 configs below
-  // were smoke-tested against combo data on this UMD build (2026-07-15).
-  // Note: iterative layouts (force*, fruchterman) are slow on 1000+ nodes;
-  // combo-combined is the only combo-aware one; the rest just get bounding
-  // boxes drawn around wherever they put the member nodes.
+  // from these keys; add/remove/tune entries here. Pruned 2026-07-16:
+  // grid/random/force/fruchterman/force-atlas2 added nothing over this
+  // set. combo-combined is the only combo-aware layout: it lays out each
+  // combo's members internally, then treats every combo as one super-node
+  // in an outer force pass. Non-hierarchical layouts carry overlap
+  // parameters (preventOverlap ignores label extents — see
+  // DENSE_LABEL_LAYOUTS).
   const LAYOUTS = {
     "tree":          null,
     "antv-dagre":    { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
     "dagre":         { type: "dagre", rankdir: "BT" },
     "circular":      { type: "circular" },
-    "concentric":    { type: "concentric" },
-    "radial":        { type: "radial" },
-    "grid":          { type: "grid" },
-    "force":         { type: "force" },
-    "d3-force":      { type: "d3-force" },
-    "force-atlas2":  { type: "force-atlas2" },
-    "fruchterman":   { type: "fruchterman" },
-    "mds":           { type: "mds" },
-    "combo-combined": { type: "combo-combined" },
-    "random":        { type: "random" }
+    "concentric":    { type: "concentric", preventOverlap: true, nodeSize: 32, nodeSpacing: 12 },
+    "radial":        { type: "radial", preventOverlap: true, nodeSize: 32, unitRadius: 90 },
+    "d3-force":      { type: "d3-force", collide: { radius: 26 } },
+    "combo-combined": { type: "combo-combined" }
   };
+  // Tried and rejected 2026-07-17: fishbone (renders nothing on graph
+  // data — it is a category layout) and compact-box (degenerates into an
+  // overlapped chain: G6 tree layouts traverse parent→child while our
+  // IsChildOf edges point child→parent; revisit with a reversed-edge feed
+  // if a compact tree view is wanted).
   const DEFAULT_LAYOUT = "tree";
+  // Always-on labels are the residual overlap driver on ring/stress
+  // layouts (their collision handling ignores label extents), so these
+  // get smaller labels; the node inspector carries full identity.
+  const DENSE_LABEL_LAYOUTS = {
+    "concentric": true, "radial": true, "d3-force": true
+  };
 
   const graphViewStatus = document.getElementById("graph-view-status");
   let g6graph = null;
@@ -612,6 +627,8 @@ Graph Console
   let lastGraphSig = null;
   let renderForced = false;
   let graphFilterIds = null;
+  // Node tables hidden via legend clicks (session-local, not persisted).
+  const hiddenTables = new Set();
 
   function currentLayoutName() {
     const stored = localStorage.getItem("graph-layout");
@@ -693,21 +710,38 @@ Graph Console
         if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
       });
     }
-    // Diff-fold: derive fold state from the live marks instead of the
-    // instance — every combo collapses except those on an ancestor path
-    // of (or being) a changed element, so changes stand out of the
-    // unchanged mass. Manual double-click fold state is ignored while on.
-    if (diffFold && withCombos) {
+    // Derived fold state (overrides manual double-click folds while on):
+    // overview mode collapses every combo at depth ≥ the limit — except
+    // 0, which expands everything (saves hunting for the max depth) —
+    // and all of them when only diff-fold is on; diff-fold then re-opens
+    // the ancestor paths of changed elements — combined, that reads as
+    // "overview, with changes drilled open".
+    const depthLimit = depthFoldValue();
+    if (withCombos && (diffFold || depthLimit != null)) {
+      const depthOf = {};
+      const depth = function (id) {
+        if (depthOf[id] != null) return depthOf[id];
+        const p = parentOf[id];
+        depthOf[id] = p ? depth(p) + 1 : 0;
+        return depthOf[id];
+      };
       collapsedIds = new Set();
-      Object.keys(hasCombo).forEach(function (id) { collapsedIds.add(comboIdFor(id)); });
-      liveMarkedNodeIds().forEach(function (id) {
-        if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
-        let p = parentOf[id];
-        while (p) {
-          if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
-          p = parentOf[p];
+      Object.keys(hasCombo).forEach(function (id) {
+        if (depthLimit === 0) return;
+        if (depthLimit == null || depth(id) >= depthLimit) {
+          collapsedIds.add(comboIdFor(id));
         }
       });
+      if (diffFold) {
+        liveMarkedNodeIds().forEach(function (id) {
+          if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
+          let p = parentOf[id];
+          while (p) {
+            if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
+            p = parentOf[p];
+          }
+        });
+      }
     }
     const combos = [];
     nodes.forEach(function (n) {
@@ -802,7 +836,9 @@ Graph Console
             return m && m.kind === "removed" ? [3, 3] : 0;
           },
           labelText: function (d) { return d.data.label; },
-          labelFontSize: 9,
+          labelFontSize: function () {
+            return DENSE_LABEL_LAYOUTS[currentLayoutName()] ? 7 : 9;
+          },
           labelFill: "#0b0b0b",
           labelPlacement: "bottom",
           halo: function (d) { return !!nodeMark(d.id); },
@@ -823,6 +859,11 @@ Graph Console
             const m = nodeMark(d.id);
             return m && m.kind === "removed" ? diffFade(m) : 1;
           }
+        },
+        state: {
+          selected: { stroke: "#0b0b0b", lineWidth: 2 },
+          active:   {},
+          inactive: { opacity: 0.2, labelOpacity: 0.2 }
         }
       },
       edge: {
@@ -841,13 +882,18 @@ Graph Console
             return m ? Math.max(diffFade(m), 0.15) : 1;
           },
           labelText: function (d) { return edgeStyle(d.data.rel).sym || ""; },
-          labelFontSize: 9,
+          labelFontSize: 7,
           labelFill: "#52514e",
           labelBackground: true,
           labelBackgroundFill: "#ffffff",
           labelBackgroundOpacity: 0.75,
           endArrow: true,
           endArrowSize: 6
+        },
+        state: {
+          selected: { lineWidth: 2 },
+          active:   {},
+          inactive: { strokeOpacity: 0.1, labelOpacity: 0.1 }
         }
       },
       combo: {
@@ -863,7 +909,12 @@ Graph Console
           radius: 4
         }
       },
-      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand"],
+      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand",
+        // Click highlights the 1-degree neighborhood (selected node black
+        // ring, neighbors keep full strength, the rest dims); clicking
+        // empty canvas clears. Runs alongside the node:click inspector.
+        { type: "click-select", degree: 1,
+          state: "selected", neighborState: "active", unselectedState: "inactive" }],
       plugins: [{
         key: "toolbar",
         type: "toolbar",
@@ -872,7 +923,8 @@ Graph Console
           return [
             { id: "auto-fit", value: "auto-fit" },
             { id: "request-fullscreen", value: "expand" },
-            { id: "exit-fullscreen", value: "restore" }
+            { id: "exit-fullscreen", value: "restore" },
+            { id: "export", value: "export-png" }
           ];
         },
         onClick: function (value) {
@@ -882,6 +934,8 @@ Graph Console
             setExpanded(true);
           } else if (value === "restore") {
             setExpanded(false);
+          } else if (value === "export-png") {
+            exportGraphPng();
           }
         }
       }]
@@ -903,15 +957,44 @@ Graph Console
   // marker set (hexagon→circle, star→cross), breaking glyph identity.
   // Entries reflect the *displayed* data only: node tables in roster
   // order (unknown tables appended with the fallback style), then rels.
+  // Clean graph-only capture (no page chrome): the whole laid-out graph
+  // regardless of viewport, downloaded as PNG. Also the fast path for
+  // agents debugging the console — no full-page screenshot needed.
+  function exportGraphPng() {
+    if (!g6graph) return;
+    g6graph.toDataURL({ mode: "overall" })
+      .then(function (dataUrl) {
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = "graph-" + (lastGraphData ? lastGraphData.revn : "view") + ".png";
+        a.click();
+      })
+      .catch(function (err) {
+        graphViewStatus.textContent = "export error: " + err;
+      });
+  }
+
+  // Legend entries are clickable: toggling one hides/shows that table's
+  // nodes (struck-through while hidden; hidden tables stay listed so they
+  // can be re-enabled).
   function renderGraphLegend(data) {
     const el = document.getElementById("graph-legend");
     if (!el) return;
     const tables = {};
     (data.nodes || []).forEach(function (n) { tables[n.table] = true; });
+    if (lastGraphData) {
+      lastGraphData.nodes.forEach(function (n) {
+        if (hiddenTables.has(n.table)) tables[n.table] = true;
+      });
+    }
     const rels = {};
     (data.edges || []).forEach(function (e) { rels[e.rel || "IsChildOf"] = true; });
     function nodeItem(table, s) {
-      return '<span style="margin-right: 1em; white-space: nowrap;">'
+      const off = hiddenTables.has(table);
+      return '<span data-table="' + escapeHtml(table) + '"'
+        + ' title="click to ' + (off ? "show" : "hide") + " " + escapeHtml(table) + ' nodes"'
+        + ' style="margin-right: 1em; white-space: nowrap; cursor: pointer;'
+        + (off ? " opacity: 0.35; text-decoration: line-through;" : "") + '">'
         + '<span style="color: ' + s.color + '; font-size: 14px;">'
         + (s.hollow ? "⬡" : (GLYPH_CHARS[s.glyph] || "●")) + '</span> '
         + escapeHtml(table) + "</span>";
@@ -953,11 +1036,13 @@ Graph Console
   // by node ids found in the last Cypher result. No reconstruction from the
   // query result is needed — ids are enough to slice the cached export.
   function filteredGraphData() {
-    if (!graphFilterIds) return lastGraphData;
+    if (!graphFilterIds && !hiddenTables.size) return lastGraphData;
     const keep = {};
     const nodes = lastGraphData.nodes.filter(function (n) {
-      if (graphFilterIds.has(n.id)) { keep[n.id] = true; return true; }
-      return false;
+      if (hiddenTables.has(n.table)) return false;
+      if (graphFilterIds && !graphFilterIds.has(n.id)) return false;
+      keep[n.id] = true;
+      return true;
     });
     const edges = lastGraphData.edges.filter(function (e) {
       return keep[e.source] && keep[e.target];
@@ -990,15 +1075,22 @@ Graph Console
       ? " — query filter: " + data.nodes.length + " of "
         + lastGraphData.nodes.length + " nodes"
       : "";
-    if (shown.nodes.length > RENDER_GUARD_NODES && !renderForced) {
+    const safeMode = new URLSearchParams(location.search).has("safe");
+    if ((safeMode
+         || shown.nodes.length > RENDER_GUARD_NODES
+         || shown.edges.length > RENDER_GUARD_EDGES) && !renderForced) {
       graphViewStatus.textContent =
-        graphStatusText(data) + filterNote + " — too large to render automatically";
+        graphStatusText(data) + filterNote
+        + (safeMode ? " — safe mode (?safe): auto-render off"
+                    : " — too large to render automatically");
       if (anywayBtn) anywayBtn.style.display = "inline";
       return;
     }
     if (anywayBtn) anywayBtn.style.display = "none";
     graphViewStatus.textContent = graphStatusText(data) + filterNote;
-    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled() || diffFoldEnabled(),
+    // "fold containers" is the master gate for combo rendering; the
+    // derived fold rules (fold-unchanged, depth) are dormant without it.
+    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled(),
                          LAYOUTS[currentLayoutName()] == null, diffFoldEnabled()));
   }
 
@@ -1017,11 +1109,27 @@ Graph Console
       })
       .then(function (data) {
         // Session-fieldset size line stays live even through skipped
-        // repaints (unlike the status line under the canvas).
+        // repaints (unlike the status line under the canvas); hover
+        // shows per-table counts.
+        // bm-bytes = the session DB's buffer-manager usage (CALL
+        // bm_info()), i.e. actual resident memory; shown next to the
+        // file name. Floor-dominated: the wide slice-3 schema costs
+        // ~115 MiB before any data.
+        const bmEl = document.getElementById("graph-bm");
+        if (bmEl && data["bm-bytes"]) {
+          bmEl.textContent = "(" + (data["bm-bytes"] / 1048576).toFixed(1) + " MiB)";
+        }
         const sizeEl = document.getElementById("graph-size");
         if (sizeEl) {
           sizeEl.textContent = data.nodes.length + " nodes, "
             + data.edges.length + " edges";
+          const counts = {};
+          data.nodes.forEach(function (n) {
+            counts[n.table] = (counts[n.table] || 0) + 1;
+          });
+          sizeEl.title = Object.keys(counts).sort().map(function (t) {
+            return t + "=" + counts[t];
+          }).join(", ");
         }
         // Skip the repaint when the display projection is unchanged: a
         // change burst that only touches non-projected attrs (e.g. moving
@@ -1089,8 +1197,9 @@ Graph Console
         } else {
           const columns = result.columns || [];
           let hidden = 0;
-          html += '<table border="1" cellpadding="2" cellspacing="0"'
-            + ' style="border-collapse: collapse; margin-top: 4px;">';
+          // Two-column flow; JSON-like values fold behind the same
+          // disclosure triangle the file tree uses.
+          html += '<div style="column-count: 2; column-gap: 16px; margin-top: 4px;">';
           columns.forEach(function (col, i) {
             const val = rows[0][i];
             // Ladybug's value->clj fallback renders SQL nulls as "NULL".
@@ -1098,11 +1207,21 @@ Graph Console
               hidden += 1;
               return;
             }
-            html += "<tr><td><code>" + escapeHtml(col.replace(/^n\./, ""))
-              + "</code></td><td><code>" + escapeHtml(String(val))
-              + "</code></td></tr>";
+            const key = escapeHtml(col.replace(/^n\./, ""));
+            const sval = String(val);
+            // Fold structured values ({…}) and walls of text (long arrays
+            // like migrations) behind a disclosure triangle.
+            if (sval.indexOf("{") !== -1 || sval.length > 120) {
+              html += '<details style="break-inside: avoid;">'
+                + '<summary style="cursor: pointer;"><code>' + key + '</code></summary>'
+                + '<pre style="white-space: pre-wrap; word-break: break-all; margin: 2px 0 4px 1.2em;">'
+                + escapeHtml(sval) + "</pre></details>";
+            } else {
+              html += '<div style="break-inside: avoid;"><code>' + key
+                + '</code>: <code>' + escapeHtml(sval) + "</code></div>";
+            }
           });
-          html += "</table>";
+          html += "</div>";
           if (hidden) {
             html += '<div style="color: #666;">' + hidden + " empty attrs hidden</div>";
           }
@@ -1163,9 +1282,8 @@ Graph Console
     return out;
   }
 
-  function summarizeChange(change) {
-    const parts = [change.type];
-    if (change.id) parts.push("id=" + change.id);
+  function changeDetail(change) {
+    const parts = [];
     if (change.obj && change.obj.type) parts.push("shape=" + change.obj.type);
     if (change.operations && change.operations.length) {
       const attrs = change.operations
@@ -1174,11 +1292,6 @@ Graph Console
       if (attrs.length) parts.push("attrs=" + attrs.join(","));
     }
     return parts.join(" ");
-  }
-
-  function summarizeChanges(changes) {
-    if (!changes || !changes.length) return "(empty)";
-    return changes.map(summarizeChange).join("; ");
   }
 
   function summarizeSkipped(skipped) {
@@ -1218,20 +1331,37 @@ Graph Console
       .catch(function () {});
   }
 
-  function appendChange(revn, summary) {
-    changelogEmpty.style.display = "none";
-    changelog.style.display = "table";
-
-    const row = document.createElement("tr");
-    const revnCell = document.createElement("td");
-    const changesCell = document.createElement("td");
-
-    revnCell.textContent = String(revn);
-    changesCell.textContent = summary;
-    row.appendChild(revnCell);
-    row.appendChild(changesCell);
-    changelogBody.appendChild(row);
-    row.scrollIntoView({ block: "nearest" });
+  // One row per operation (revn repeats across a batch); op wears the
+  // canvas diff colors, id shows the uuid's last group with the full
+  // uuid on hover, or N/A for ops without a subject id.
+  function appendChanges(revn, changes) {
+    // The whole box stays hidden until the first change arrives; feed
+    // state lives in the session fieldset.
+    changelogBox.style.display = "block";
+    let lastRow = null;
+    (changes && changes.length ? changes : [{}]).forEach(function (change) {
+      const row = document.createElement("tr");
+      const revnCell = document.createElement("td");
+      revnCell.textContent = String(revn);
+      const opCell = document.createElement("td");
+      const op = change.type || "?";
+      opCell.textContent = op;
+      const detail = changeDetail(change);
+      if (detail) opCell.title = detail;
+      if (op === "add-obj") opCell.style.color = DIFF_ADDED_COLOR;
+      if (op === "del-obj") opCell.style.color = DIFF_REMOVED_COLOR;
+      const idCell = document.createElement("td");
+      const id = change.id ? String(change.id) : null;
+      const groups = id ? id.split("-") : null;
+      idCell.textContent = groups ? groups[groups.length - 1] : "N/A";
+      if (id) idCell.title = id;
+      row.appendChild(revnCell);
+      row.appendChild(opCell);
+      row.appendChild(idCell);
+      changelogBody.appendChild(row);
+      lastRow = row;
+    });
+    if (lastRow) lastRow.scrollIntoView({ block: "nearest" });
   }
 
   function handleMessage(raw) {
@@ -1244,7 +1374,7 @@ Graph Console
 
     if (msg.type !== "file-change" || msg["file-id"] !== fileId) return;
 
-    appendChange(msg.revn, summarizeChanges(msg.changes));
+    appendChanges(msg.revn, msg.changes);
     setTimeout(refreshSyncStatus, 150);
     scheduleGraphRefetch();
   }
@@ -1489,11 +1619,37 @@ Graph Console
     });
   }
 
+  const legendEl = document.getElementById("graph-legend");
+  if (legendEl) {
+    legendEl.addEventListener("click", function (ev) {
+      const item = ev.target.closest("[data-table]");
+      if (!item) return;
+      const t = item.getAttribute("data-table");
+      if (hiddenTables.has(t)) hiddenTables.delete(t); else hiddenTables.add(t);
+      renderCurrent();
+    });
+  }
+
   const diffFoldToggle = document.getElementById("graph-diff-fold");
   if (diffFoldToggle) {
     diffFoldToggle.checked = diffFoldEnabled();
     diffFoldToggle.addEventListener("change", function () {
       localStorage.setItem("graph-diff-fold", diffFoldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const depthFoldInput = document.getElementById("graph-depth-fold");
+  if (depthFoldInput) {
+    const v = depthFoldValue();
+    depthFoldInput.value = v == null ? "" : String(v);
+    depthFoldInput.addEventListener("change", function () {
+      localStorage.setItem("graph-depth-fold", depthFoldInput.value);
+      // A positive depth is meaningless without combos — switch them on.
+      if (parseInt(depthFoldInput.value, 10) > 0 && foldToggle && !foldToggle.checked) {
+        foldToggle.checked = true;
+        localStorage.setItem("graph-fold-containers", "1");
+      }
       renderCurrent();
     });
   }
@@ -1527,6 +1683,17 @@ Graph Console
       graphFilterIds = null;
       renderCurrent();
     });
+  }
+
+  // Compact the loaded-at timestamp to local HH:MM; full instant on hover.
+  const loadedAtEl = document.getElementById("graph-loaded-at");
+  if (loadedAtEl) {
+    const d = new Date(loadedAtEl.textContent.trim());
+    if (!isNaN(d.getTime())) {
+      loadedAtEl.title = loadedAtEl.textContent.trim();
+      loadedAtEl.textContent = String(d.getHours()).padStart(2, "0")
+        + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
   }
 
   connect();
