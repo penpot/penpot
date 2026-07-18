@@ -66,15 +66,21 @@
 
 (defn- type->options
   [type]
+  ;; `:image` shapes carry size/position/rotation/radius like rects, so they
+  ;; map to rect-options. The trailing default keeps `case` total: any future
+  ;; or unexpected shape type degrades to the universal measure controls
+  ;; instead of throwing "No matching clause" and blanking the workspace.
   (case type
     :bool    generic-options
     :circle  generic-options
     :frame   frame-options
     :group   generic-options
+    :image   rect-options
     :path    generic-options
     :rect    rect-options
     :svg-raw generic-options
-    :text    generic-options))
+    :text    generic-options
+    generic-options))
 
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
