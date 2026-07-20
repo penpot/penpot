@@ -21,6 +21,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.inspect.right-sidebar :as hrs]
+   [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info*]]
    [app.main.ui.workspace.sidebar.options.drawing :as drawing]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options*]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options*]]
@@ -38,6 +39,7 @@
    [app.main.ui.workspace.sidebar.options.shapes.rect :as rect]
    [app.main.ui.workspace.sidebar.options.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
+   [app.util.debug :as dbg]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -199,13 +201,17 @@
 
     [:> hrs/right-sidebar* props]))
 
-(def ^:private options-tabs
-  [{:label (tr "workspace.options.design")
-    :id "design"}
-   {:label (tr "workspace.options.prototype")
-    :id "prototype"}
-   {:label (tr "workspace.options.inspect")
-    :id "inspect"}])
+(defn- generate-options-tabs
+  []
+  (cond-> [{:label (tr "workspace.options.design")
+            :id "design"}
+           {:label (tr "workspace.options.prototype")
+            :id "prototype"}
+           {:label (tr "workspace.options.inspect")
+            :id "inspect"}]
+    (dbg/enabled? :shape-panel)
+    (conj {:label "Debug"
+           :id "debug"})))
 
 (defn- on-option-tab-change
   [mode]
@@ -225,9 +231,28 @@
         options-mode
         (mf/deref refs/options-mode-global)
 
+        ;; dbg/state is an okulary atom; deref'ing it makes this component
+        ;; re-render when debug options change (e.g. :shape-panel toggle)
+        ;; so the tabs list is regenerated reactively without a page reload.
+        dbg-state
+        (mf/deref dbg/state)
+
         shapes
         (mf/with-memo [selected objects]
-          (sequence (keep (d/getf objects)) selected))]
+          (sequence (keep (d/getf objects)) selected))
+
+        options-tabs
+        (generate-options-tabs)]
+
+    (mf/use-effect
+     (mf/deps dbg-state)
+     (fn []
+       (if (contains? dbg-state :shape-panel)
+         ;; shape-panel was just enabled: select the debug tab
+         (on-option-tab-change "debug")
+         ;; shape-panel was just disabled: if debug tab is active, go back to design
+         (when (= options-mode :debug)
+           (on-option-tab-change "design")))))
 
     [:div {:class (stl/css :tool-window)}
      (if (and (:can-edit permissions) (not render-context-lost?))
@@ -255,7 +280,10 @@
                             :objects objects
                             :page-id page-id
                             :file-id file-id
-                            :shapes shapes}])]
+                            :shapes shapes}]
+
+          :debug
+          [:> debug-shape-info*])]
 
        [:div {:class (stl/css :element-options :inspect-options :read-only)}
         [:> inspect-tab* {:page-id page-id
