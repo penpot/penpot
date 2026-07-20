@@ -747,6 +747,13 @@ export interface CommonLayout {
    * The `leftPadding` property specifies the padding at the left of the container.
    */
   leftPadding: number;
+  /**
+   * The `paddingType` property specifies how the four padding values are applied.
+   * It can be one of the following values:
+   * - 'simple': the vertical and horizontal paddings are mirrored across both sides.
+   * - 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
+   */
+  paddingType: 'simple' | 'multiple';
 
   /**
    * The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
@@ -2577,6 +2584,14 @@ export interface LayoutChildProperties {
   leftMargin: number;
 
   /**
+   * The `marginType` property specifies how the four margin values are applied.
+   * It can be one of the following values:
+   * - 'simple': the vertical and horizontal margins are mirrored across both sides.
+   * - 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
+   */
+  marginType: 'simple' | 'multiple';
+
+  /**
    * Defines the maximum width of the child element.
    * If set to null, there is no maximum width constraint.
    */
@@ -4165,6 +4180,10 @@ export interface Stroke {
    * The optional gradient stroke defined by a Gradient object.
    */
   strokeColorGradient?: Gradient;
+  /**
+   * The optional image stroke defined by an ImageData object.
+   */
+  strokeImage?: ImageData;
 }
 
 /**

@@ -1216,6 +1216,10 @@
                (and (= type :simple) (or (= prop :p2) (= prop #{:p2 :p4})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
+               (and (= type :multiple) (some? prop))
+               (st/emit! (dwsl/update-layout ids {:layout-padding-type :multiple
+                                                  :layout-padding {prop val}}))
+
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
 

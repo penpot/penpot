@@ -38,7 +38,7 @@ Include concise sections covering:
 PR descriptions follow this structure:
 
 ```markdown
-**Note:** This PR was created with AI assistance as part of the Penpot MCP self-improvement initiative.
+**Note:** This PR was created with AI assistance.
 
 ## What
 

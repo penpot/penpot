@@ -6,6 +6,7 @@
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.code-gen-style-test]
+   [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
@@ -56,6 +57,7 @@
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
@@ -78,6 +80,7 @@
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
    'frontend-tests.code-gen-style-test
+   'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
@@ -128,6 +131,7 @@
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
+   'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test

@@ -273,6 +273,7 @@
 (def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
 
 ;; Re-export public text editor functions
+(def text-editor-apply-theme text-editor/text-editor-apply-theme)
 (def text-editor-focus text-editor/text-editor-focus)
 (def text-editor-blur text-editor/text-editor-blur)
 (def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
@@ -742,56 +743,87 @@
     (aset textures new-id texture)
     new-id))
 
-(defn- retrieve-image
-  [url]
-  (rx/from
-   (-> (js/fetch url)
-       (p/then (fn [^js response] (.blob response)))
-       (p/then (fn [^js image] (js/createImageBitmap image))))))
+(defn- svg-blob?
+  [^js blob]
+  (str/starts-with? (.-type blob) "image/svg"))
+
+(defn- store-svg-image
+  "Sends raw SVG bytes to WASM so Skia parses and rasterizes them there.
+   Browsers reject SVG blobs in `createImageBitmap`, so SVGs skip the
+   shared-texture path."
+  [shape-id image-id thumbnail? ^js blob]
+  (-> (.arrayBuffer blob)
+      (p/then
+       (fn [buffer]
+         (let [image-bytes (js/Uint8Array. buffer)
+               ;; Header: 16 bytes shape uuid + 16 bytes image uuid
+               ;; + 4 bytes thumbnail flag, then the raw SVG payload.
+               offset (mem/alloc (+ 36 (.-byteLength image-bytes)))
+               heap   (mem/get-heap-u8)
+               dview  (mem/get-data-view)]
+           (-> offset
+               (mem/write-uuid dview shape-id)
+               (mem/write-uuid dview image-id)
+               (mem/write-u32 dview (if thumbnail? 1 0))
+               (mem/write-buffer heap image-bytes))
+           (h/call wasm/internal-module "_store_image")
+           true)))))
+
+(defn- store-image-texture
+  "Creates a WebGL texture from a decoded image and passes the texture ID to
+   WASM. This avoids decoding the image twice (once in browser, once in WASM)."
+  [shape-id image-id thumbnail? img]
+  (when-let [gl (webgl/get-webgl-context)]
+    (let [texture (webgl/create-webgl-texture-from-image gl img)
+          texture-id (get-texture-id-for-gl-object texture)
+          width  (.-width ^js img)
+          height (.-height ^js img)
+          ;; Header: 32 bytes (2 UUIDs) + 4 bytes (thumbnail)
+          ;;     + 4 bytes (texture ID) + 8 bytes (dimensions)
+          total-bytes 48
+          offset (mem/alloc->offset-32 total-bytes)
+          heap32 (mem/get-heap-u32)]
+
+      ;; 1. Set shape id (offset + 0 to offset + 3)
+      (mem.h32/write-uuid offset heap32 shape-id)
+
+      ;; 2. Set image id (offset + 4 to offset + 7)
+      (mem.h32/write-uuid (+ offset 4) heap32 image-id)
+
+      ;; 3. Set thumbnail flag as u32 (offset + 8)
+      (aset heap32 (+ offset 8) (if thumbnail? 1 0))
+
+      ;; 4. Set texture ID (offset + 9)
+      (aset heap32 (+ offset 9) texture-id)
+
+      ;; 5. Set width (offset + 10)
+      (aset heap32 (+ offset 10) width)
+
+      ;; 6. Set height (offset + 11)
+      (aset heap32 (+ offset 11) height)
+
+      (h/call wasm/internal-module "_store_image_from_texture")
+      true)))
 
 (defn- fetch-image
-  "Loads an image and creates a WebGL texture from it, passing the texture ID to WASM.
-   This avoids decoding the image twice (once in browser, once in WASM)."
+  "Loads an image and hands it to WASM. Raster images are decoded by the
+   browser and shared as a WebGL texture; SVG images are sent as raw bytes
+   so Skia rasterizes them."
   [shape-id image-id thumbnail?]
   (let [url (cf/resolve-file-media {:id image-id} thumbnail?)]
     {:key url
      :thumbnail? thumbnail?
      :callback
      (fn []
-       (->> (retrieve-image url)
-            (rx/map
-             (fn [img]
-               (when-let [gl (webgl/get-webgl-context)]
-                 (let [texture (webgl/create-webgl-texture-from-image gl img)
-                       texture-id (get-texture-id-for-gl-object texture)
-                       width  (.-width ^js img)
-                       height (.-height ^js img)
-                       ;; Header: 32 bytes (2 UUIDs) + 4 bytes (thumbnail)
-                       ;;     + 4 bytes (texture ID) + 8 bytes (dimensions)
-                       total-bytes 48
-                       offset (mem/alloc->offset-32 total-bytes)
-                       heap32 (mem/get-heap-u32)]
-
-                   ;; 1. Set shape id (offset + 0 to offset + 3)
-                   (mem.h32/write-uuid offset heap32 shape-id)
-
-                   ;; 2. Set image id (offset + 4 to offset + 7)
-                   (mem.h32/write-uuid (+ offset 4) heap32 image-id)
-
-                   ;; 3. Set thumbnail flag as u32 (offset + 8)
-                   (aset heap32 (+ offset 8) (if thumbnail? 1 0))
-
-                   ;; 4. Set texture ID (offset + 9)
-                   (aset heap32 (+ offset 9) texture-id)
-
-                   ;; 5. Set width (offset + 10)
-                   (aset heap32 (+ offset 10) width)
-
-                   ;; 6. Set height (offset + 11)
-                   (aset heap32 (+ offset 11) height)
-
-                   (h/call wasm/internal-module "_store_image_from_texture")
-                   true))))
+       (->> (rx/from (-> (js/fetch url)
+                         (p/then (fn [^js response] (.blob response)))))
+            (rx/mapcat
+             (fn [^js blob]
+               (rx/from
+                (if (svg-blob? blob)
+                  (store-svg-image shape-id image-id thumbnail? blob)
+                  (p/then (js/createImageBitmap blob)
+                          (partial store-image-texture shape-id image-id thumbnail?))))))
             (rx/catch
              (fn [cause]
                (log/error :hint "Could not fetch image"
@@ -2502,19 +2534,22 @@
   ;; After the content is returned we discard that temporary context
   (h/call wasm/internal-module "_start_temp_objects")
 
-  (let [bool-type (get shape :bool-type)
-        ids (get shape :shapes)
-        all-children
-        (->> ids
-             (mapcat #(cfh/get-children-with-self objects %)))]
+  (try
+    (let [bool-type (get shape :bool-type)
+          ids (get shape :shapes)
+          all-children
+          (->> ids
+               (mapcat #(cfh/get-children-with-self objects %)))]
 
-    (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-    (run! set-object all-children)
+      (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+      (run! set-object all-children)
 
-    (let [content (-> (calculate-bool* bool-type ids)
-                      (path.impl/path-data))]
-      (h/call wasm/internal-module "_end_temp_objects")
-      content)))
+      (-> (calculate-bool* bool-type ids)
+          (path.impl/path-data)))
+    (finally
+      ;; Always restore the main shapes pool: leaving the temp pool
+      ;; active would make the next `_start_temp_objects` panic.
+      (h/call wasm/internal-module "_end_temp_objects"))))
 
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
