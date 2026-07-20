@@ -360,9 +360,8 @@ msgstr "Esportatu aukeraketa"
 msgid "dashboard.export-standard-multi"
 msgstr "Deskargatu %s fitxategi estandar (.svn + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Esportatu nahi duzun fitxategi bat edo gehiagok partekatutako liburutegiak "
 "darabiltzate. Zer egin nahi duzu baliabideekin*?"

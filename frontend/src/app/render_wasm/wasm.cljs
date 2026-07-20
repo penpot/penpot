@@ -75,6 +75,7 @@
        :text-direction shared/RawTextDirection
        :text-decoration shared/RawTextDecoration
        :text-transform shared/RawTextTransform
+       :multiple-state shared/MultipleState
        :transform-entry-kind shared/RawTransformEntryKind
        :segment-data shared/RawSegmentData
        :stroke-linecap shared/RawStrokeLineCap

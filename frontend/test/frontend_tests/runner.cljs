@@ -6,12 +6,14 @@
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.code-gen-style-test]
+   [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
+   [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
@@ -27,15 +29,22 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
+   [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.file-test]
    [frontend-tests.plugins.format-test]
+   [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
+   [frontend-tests.plugins.library-test]
+   [frontend-tests.plugins.local-storage-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.shape-bugfixes-test]
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.plugins.utils-test]
+   [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
@@ -45,7 +54,11 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
+   [frontend-tests.ui.comments-clustering-test]
+   [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.layout-container-multiple-test]
+   [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
@@ -65,13 +78,16 @@
     (.exit js/process 1)))
 
 (def test-namespaces
-  ['frontend-tests.code-gen-style-test
+  ['frontend-tests.basic-shapes-test
+   'frontend-tests.code-gen-style-test
+   'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
+   'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
@@ -87,15 +103,22 @@
    'frontend-tests.logic.groups-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.main-errors-test
+   'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.file-test
    'frontend-tests.plugins.format-test
+   'frontend-tests.plugins.grid-test
    'frontend-tests.plugins.interactions-test
+   'frontend-tests.plugins.library-test
+   'frontend-tests.plugins.local-storage-test
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.page-test
    'frontend-tests.plugins.parser-test
+   'frontend-tests.plugins.shape-bugfixes-test
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
    'frontend-tests.plugins.utils-test
+   'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.import-export-test
@@ -105,13 +128,16 @@
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.workspace-tokens-remap-test
+   'frontend-tests.ui.comments-clustering-test
+   'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
+   'frontend-tests.ui.layout-container-multiple-test
+   'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
    'frontend-tests.util-webapi-test
-   'frontend-tests.worker-snap-test
-   'frontend-tests.basic-shapes-test])
+   'frontend-tests.worker-snap-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

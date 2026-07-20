@@ -472,9 +472,8 @@ msgstr "导出已选中"
 msgid "dashboard.export-standard-multi"
 msgstr "下载 %s 标准文件 (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的素材？"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336
@@ -7021,10 +7020,6 @@ msgstr "内边距"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "圆角半径"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "引用无效或不在任何活动集中"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused

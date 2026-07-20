@@ -13,6 +13,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
@@ -313,7 +314,9 @@
         on-interrupt
         (mf/use-fn
          (fn []
-           (st/emit! :interrupt (dw/clear-edition-mode))))
+           (st/emit! :interrupt
+                     (dw/clear-edition-mode)
+                     (dwdc/clear-drawing))))
 
         on-select-tool
         (mf/use-fn

@@ -611,9 +611,8 @@ msgstr "Exportera markerade"
 msgid "dashboard.export-standard-multi"
 msgstr "Ladda ner %s standardfiler (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "En eller flera filer som du vill exportera använder delade bibliotek. Vad "
 "vill du göra med deras tillgångar*?"
@@ -1469,10 +1468,6 @@ msgstr "Inga träffar hittades."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Öppna token-lista"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} är inte i någon aktiv uppsättning eller har ett ogiltigt värde."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -4477,12 +4472,6 @@ msgstr "Avsluta prenumeration"
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Förnya med aktiveringskod"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr ""
-"Denna token finns inte i någon aktiv uppsättning eller har ett ogiltigt "
-"värde."
 
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
@@ -9372,10 +9361,6 @@ msgstr "Utfyllnader"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Radie"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Referensen är inte giltig eller finns inte i någon aktiv uppsättning"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

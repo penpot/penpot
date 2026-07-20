@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.types.text :as txt]
+   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
@@ -23,7 +24,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
@@ -39,6 +40,7 @@
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [goog.events :as events]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (defn- attr->string [value]
@@ -63,11 +65,73 @@
       (or next (peek fonts)))
     current))
 
+(defn- use-font-lazy-load
+  "Lazily loads `font-id` for the fallback preview when `fallback?`, on idle so
+  fast scrolling over recycled virtualized rows doesn't storm requests (cancelled
+  if the row is reused first). Returns whether the font face is loaded yet."
+  [font-id fallback?]
+  (let [loaded? (mf/use-state #(and fallback? (contains? @fonts/loaded font-id)))]
+    (mf/use-effect
+     (mf/deps font-id fallback?)
+     (fn []
+       (let [already? (and fallback? (contains? @fonts/loaded font-id))]
+         (reset! loaded? already?)
+         (if (and fallback? (not already?))
+           (let [cancelled? (volatile! false)
+                 task (tm/schedule-on-idle
+                       (fn []
+                         (-> (fonts/ensure-loaded! font-id)
+                             (p/then (fn [_]
+                                       (when-not @cancelled?
+                                         (reset! loaded? true))))
+                             (p/catch (fn [_] nil)))))]
+             (fn []
+               (vreset! cancelled? true)
+               (tm/dispose! task)))
+           (constantly nil)))))
+    @loaded?))
+
+;; --- FEATURE: font preview (flag :font-preview) ------------------------------
+;; font-item-preview* and use-font-lazy-load are the whole feature. They are only
+;; rendered/called behind the `:font-preview` flag check in font-item* below, so
+;; their hooks never run when the flag is off. To remove the flag, inline
+;; font-item-preview* into font-item* and drop the plain-name branch.
+
+(mf/defc font-item-preview*
+  "Row content with previews: a vector preview from the shared sprite for catalog
+  fonts, or the font's own name lazily loaded for custom fonts the sprite doesn't
+  cover."
+  {::mf/wrap [mf/memo]}
+  [{:keys [font]}]
+  (let [font-id    (:id font)
+        sprite     (mf/deref fonts/preview-sprite)
+        in-sprite? (contains? (:ids sprite) font-id)
+
+        ;; Fallback is ONLY for custom fonts: ones the (ready) sprite doesn't
+        ;; cover. If the sprite isn't ready (loading/error) we show the plain name
+        ;; rather than runtime-loading the whole catalog.
+        fallback?  (and (= :ready (:status sprite))
+                        (not in-sprite?))
+        loaded?    (use-font-lazy-load font-id fallback?)]
+    (if in-sprite?
+      ;; `fill: currentColor` (scss) makes the sprite glyph follow the row color.
+      [:svg {:class (stl/css :font-item-preview)
+             :role "img"
+             :aria-label (:name font)}
+       [:use {:href (dm/str "#" fonts/preview-sprite-prefix font-id)}]]
+      [:span {:class (stl/css :font-item-label)
+              :style (when loaded?
+                       #js {:fontFamily (dm/str "\"" (:family font) "\", sans-serif")})}
+       (:name font)])))
+
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
   [{:keys [font is-current on-click style]}]
   (let [item-ref (mf/use-ref)
-        on-click (mf/use-fn (mf/deps font) #(on-click font))]
+        on-click (mf/use-fn (mf/deps font) #(on-click font))
+        ;; FLAG :font-preview — gates the feature markup AND its row styling
+        ;; (.font-item-preview-on in the scss). Remove this and its two uses below.
+        preview? (contains? cf/flags :font-preview)]
 
     (mf/use-effect
      (mf/deps is-current)
@@ -82,8 +146,11 @@
            :ref item-ref
            :on-click on-click}
      [:div {:class  (stl/css-case :font-item true
+                                  :font-item-preview-on preview?
                                   :selected is-current)}
-      [:span {:class (stl/css :font-item-label)} (:name font)]
+      (if preview?
+        [:> font-item-preview* {:font font}]
+        [:span {:class (stl/css :font-item-label)} (:name font)])
       (when is-current
         [:> icon* {:icon-id i/tick
                    :size "s"}])]]))
@@ -114,6 +181,8 @@
         fonts        (mf/deref fonts/fonts)
         fonts        (mf/with-memo [state fonts]
                        (filter-fonts state fonts))
+
+        sprite-status (:status (mf/deref fonts/preview-sprite))
 
         recent-fonts (mf/deref refs/recent-fonts)
         recent-fonts (mf/with-memo [state recent-fonts]
@@ -164,6 +233,16 @@
     (mf/with-effect [fonts]
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
+
+    ;; FLAG :font-preview — materialize the preview sprite into the DOM only while
+    ;; the picker is open (markup is prefetched on workspace load), removing it on
+    ;; close so its ~2000 nodes aren't kept around idle. Remove the flag clause to
+    ;; drop the feature.
+    (mf/with-effect [sprite-status]
+      (when (and (contains? cf/flags :font-preview)
+                 (= :ready sprite-status))
+        (let [node (fonts/attach-preview-sprite!)]
+          #(fonts/detach-preview-sprite! node))))
 
     (mf/with-effect [@selected]
       (when-let [inst (mf/ref-val flist)]
@@ -360,6 +439,9 @@
                                                {:value (:id variant)
                                                 :key (pr-str variant)
                                                 :label (:name variant)})))
+             ;; When the selection mixes variants we prepend a "--" entry: it is
+             ;; shown as the collapsed value (nothing single is selected) while
+             ;; the real variants of the resolved font are still listed below it.
              variant-options (if (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
                                (conj basic-variant-options
                                      {:value ""
@@ -393,7 +475,7 @@
       [:span {:class (stl/css :icon)
               :alt (tr "workspace.options.text-options.line-height")}
        deprecated-icon/text-lineheight]
-      [:> numeric-input*
+      [:> deprecated-input/numeric-input*
        {:min -200
         :max 200
         :step 0.1
@@ -402,7 +484,7 @@
         :aria-label (tr "inspect.attributes.typography.line-height")
         :value (attr->string line-height)
         :placeholder (if (= :multiple line-height) (tr "settings.multiple") "--")
-        :nillable (= :multiple line-height)
+        :is-nillable (= :multiple line-height)
         :on-change #(handle-change % :line-height)
         :on-blur on-blur}]]
 
@@ -412,7 +494,7 @@
        {:class (stl/css :icon)
         :alt (tr "workspace.options.text-options.letter-spacing")}
        deprecated-icon/text-letterspacing]
-      [:> numeric-input*
+      [:> deprecated-input/numeric-input*
        {:min -200
         :max 200
         :step 0.1
@@ -422,7 +504,7 @@
         :value (attr->string letter-spacing)
         :placeholder (if (= :multiple letter-spacing) (tr "settings.multiple") "--")
         :on-change #(handle-change % :letter-spacing)
-        :nillable (= :multiple letter-spacing)
+        :is-nillable (= :multiple letter-spacing)
         :on-blur on-blur}]]]))
 
 (mf/defc text-transform-options*

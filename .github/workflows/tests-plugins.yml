@@ -40,19 +40,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Node
-        id: setup-node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-
       - name: Install deps
         working-directory: ./plugins
         shell: bash
         run: |
           corepack enable;
           corepack install;
-          pnpm install;
+          pnpm install -r;
 
       - name: Run Lint
         working-directory: ./plugins

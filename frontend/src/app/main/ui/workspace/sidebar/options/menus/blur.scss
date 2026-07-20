@@ -10,6 +10,10 @@
 @use "ds/_utils.scss" as *;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
+.element-set {
+  max-width: var(--options-width);
+}
+
 .title-spacing-blur {
   padding-left: var(--sp-xxs);
   margin: 0;

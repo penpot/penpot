@@ -38,9 +38,12 @@ impl FontFamily {
     pub fn id(&self) -> Uuid {
         self.id
     }
+
     pub fn style(&self) -> FontStyle {
         self.style
     }
+
+    #[allow(dead_code)]
     pub fn weight(&self) -> u32 {
         self.weight
     }

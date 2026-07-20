@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620",
+  "packageManager": "pnpm@11.10.0+sha512.0b7f8b98060031904c017e3a41eb187a16d40eeb829b95c4f8cb03681761fc4ab53dd219115b9b447f4dce1a05a214764461e7d3703392a9f32f9511ce8c86c8",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
@@ -16,10 +16,10 @@
     "fmt": "./scripts/fmt"
   },
   "devDependencies": {
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.0.1",
     "esbuild": "^0.28.1",
     "mdts": "^0.20.3",
     "nrepl-client": "^0.3.0",
-    "opencode-ai": "^1.17.9"
+    "opencode-ai": "^1.17.11"
   }
 }

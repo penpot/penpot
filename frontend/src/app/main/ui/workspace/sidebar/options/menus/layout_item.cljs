@@ -163,7 +163,7 @@
                                              :on-focus on-focus-m1
                                              :on-change on-m1-change
                                              :on-blur on-blur
-                                             :nillable true
+                                             :is-nillable true
                                              :value m1}]])
 
      (if token-numeric-inputs
@@ -194,7 +194,7 @@
                                              :on-focus on-focus-m2
                                              :on-change on-m2-change
                                              :on-blur on-blur
-                                             :nillable true
+                                             :is-nillable true
                                              :value m2}]])]))
 
 (mf/defc margin-multiple*
@@ -287,7 +287,7 @@
                                              :on-focus on-focus-m1
                                              :on-change on-m1-change
                                              :on-blur on-blur
-                                             :nillable true
+                                             :is-nillable true
                                              :value m1}]])
      (if token-numeric-inputs
        [:> numeric-input-wrapper*
@@ -316,7 +316,7 @@
                                              :on-focus on-focus-m2
                                              :on-change on-m2-change
                                              :on-blur on-blur
-                                             :nillable true
+                                             :is-nillable true
                                              :value m2}]])
 
      (if token-numeric-inputs
@@ -346,7 +346,7 @@
                                              :on-focus on-focus-m3
                                              :on-change on-m3-change
                                              :on-blur on-blur
-                                             :nillable true
+                                             :is-nillable true
                                              :value m3}]])
 
      (if token-numeric-inputs
@@ -375,7 +375,7 @@
                                              :on-focus on-focus-m4
                                              :on-change on-m4-change
                                              :on-blur on-blur
-                                             :nillable true
+                                             :is-nillable true
                                              :value m4}]])]))
 
 (mf/defc margin-section*
@@ -619,7 +619,7 @@
              :on-focus dom/select-target
              :on-change on-layout-item-min-w-change
              :value (get values :layout-item-min-w)
-             :nillable true}]])
+             :is-nillable true}]])
 
         (if token-numeric-inputs
           [:> numeric-input-wrapper*
@@ -649,7 +649,7 @@
              :on-focus dom/select-target
              :on-change on-layout-item-max-w-change
              :value (get values :layout-item-max-w)
-             :nillable true}]])])
+             :is-nillable true}]])])
 
      (when (= v-sizing :fill)
        [:div {:class (stl/css :vertical-fill)}
@@ -681,7 +681,7 @@
              :on-focus dom/select-target
              :on-change on-layout-item-min-h-change
              :value (get values :layout-item-min-h)
-             :nillable true}]])
+             :is-nillable true}]])
 
         (if token-numeric-inputs
           [:> numeric-input-wrapper*
@@ -712,7 +712,7 @@
              :on-focus dom/select-target
              :on-change on-layout-item-max-h-change
              :value (get values :layout-item-max-h)
-             :nillable true}]])])]))
+             :is-nillable true}]])])]))
 
 (defn- check-layout-item-menu-props
   [old-props new-props]
@@ -912,7 +912,7 @@
               :placeholder "--"
               :on-focus #(dom/select-target %)
               :on-change #(on-change-z-index %)
-              :nillable true
+              :is-nillable true
               :value (:layout-item-z-index values)}]]])
 
         [:div {:class (stl/css :behavior-row)}

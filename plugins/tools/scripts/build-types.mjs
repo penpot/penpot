@@ -1,14 +1,19 @@
 import { copy } from 'fs-extra';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
-const source = 'libs/plugin-types';
-const dist = 'dist/plugin-types';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const source = resolve(root, 'libs/plugin-types');
+const dist = resolve(root, 'dist/plugin-types');
 
 const handleErr = (err) => {
   console.error(err);
   process.exit(1);
 };
 
-copy(`${source}/package.json`, `${dist}/package.json`).catch(handleErr);
-copy(`${source}/README.md`, `${dist}/README.md`).catch(handleErr);
-copy(`${source}/index.d.ts`, `${dist}/index.d.ts`).catch(handleErr);
-copy(`LICENSE`, `${dist}/LICENSE`).catch(handleErr);
+Promise.all([
+  copy(`${source}/package.json`, `${dist}/package.json`),
+  copy(`${source}/README.md`, `${dist}/README.md`),
+  copy(`${source}/index.d.ts`, `${dist}/index.d.ts`),
+  copy(resolve(root, 'LICENSE'), `${dist}/LICENSE`),
+]).catch(handleErr);

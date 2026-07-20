@@ -10,13 +10,23 @@
    [app.main.store :as st]
    [app.util.dom :as dom]))
 
+(defn- get-element
+  "Given a DOM node, returns the nearest Element, walking up from text nodes."
+  [target]
+  (if (and (some? target)
+           (not= (.-nodeType target) js/Node.ELEMENT_NODE))
+    (.-parentElement target)
+    target))
+
 (defn v1-closest-text-editor-content
   [target]
-  (.closest ^js target ".public-DraftEditor-content"))
+  (when-let [el (get-element target)]
+    (.closest ^js el ".public-DraftEditor-content")))
 
 (defn v2-closest-text-editor-content
   [target]
-  (.closest ^js target "[data-itype=\"editor\"]"))
+  (when-let [el (get-element target)]
+    (.closest ^js el "[data-itype=\"editor\"]")))
 
 (defn closest-text-editor-content
   [target]
