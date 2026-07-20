@@ -27,5 +27,3 @@ ALTER TABLE team_invitation          ALTER COLUMN id SET DEFAULT gen_random_uuid
 ALTER TABLE team_profile_rel         ALTER COLUMN id SET DEFAULT gen_random_uuid();
 ALTER TABLE team_project_profile_rel ALTER COLUMN id SET DEFAULT gen_random_uuid();
 ALTER TABLE usage_quote              ALTER COLUMN id SET DEFAULT gen_random_uuid();
-
-DROP EXTENSION IF EXISTS "uuid-ossp";
