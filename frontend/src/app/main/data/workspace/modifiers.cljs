@@ -256,8 +256,8 @@
 
 (defn assoc-position-data
   [shape position-data old-shape]
-  (let [deltav (gpt/to-vec (gpt/point (:selrect old-shape))
-                           (gpt/point (:selrect shape)))
+  (let [deltav (gpt/to-vec (gpt/point (ctm/safe-size-rect old-shape))
+                           (gpt/point (ctm/safe-size-rect shape)))
         position-data
         (-> position-data
             (gsh/move-position-data deltav))]
@@ -838,8 +838,13 @@
             (dwsh/update-shapes ids update-shape options)
 
             ;; The update to the bool path needs to be in a different operation because it
-            ;; needs to have the updated children info
-            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
+            ;; needs to have the updated children info.
+            ;; `update-layout? false`: recalculating a bool path can never change
+            ;; `:hidden`, and the layout check would recompute the whole boolean
+            ;; path in WASM once per bool shape just to find that out.
+            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options
+                                                                       :with-objects? true
+                                                                       :update-layout? false)))
 
            (if undo-transation?
              (rx/of (dwu/commit-undo-transaction undo-id))

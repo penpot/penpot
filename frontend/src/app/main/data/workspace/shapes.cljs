@@ -154,12 +154,14 @@
   ([ids update-fn
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr translation?
+            update-layout?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
           ignore-touched false
-          with-objects? false}}]
+          with-objects? false
+          update-layout? true}}]
 
    (assert (every? uuid? ids) "expect a coll of uuid for `ids`")
    (assert (fn? update-fn) "the `update-fn` should be a valid function")
@@ -181,8 +183,17 @@
                 (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
                 (map :id))
 
+               ;; `changed-attrs` runs `update-fn` in full for every shape, which
+               ;; can be expensive (e.g. `update-bool-shape` recalculates the whole
+               ;; boolean path in WASM). Skip the pass entirely when we can prove it
+               ;; cannot match: when the caller declares `attrs`, `changed-attrs`
+               ;; filters its result to that set, so if no layout attr is present
+               ;; the check is always empty.
                update-layout-ids
-               (when-not translation?
+               (when-not (or translation?
+                             (not update-layout?)
+                             (and (some? attrs)
+                                  (not (some update-layout-attr? attrs))))
                  (->> (into [] xf-update-layout ids)
                       (not-empty)))
 

@@ -28,12 +28,14 @@
 
 (mf/defc comment-floating-bubble-wrapper*
   {::mf/private true}
-  [{:keys [thread zoom is-open]}]
+  [{:keys [thread zoom is-open offset ring]}]
   (let [position-modifier (use-frame-position-modifier (:frame-id thread))]
     [:> cmt/comment-floating-bubble*
      {:thread thread
       :zoom zoom
       :position-modifier position-modifier
+      :offset offset
+      :ring ring
       :is-open is-open}]))
 
 (mf/defc comment-floating-group-wrapper*
@@ -42,6 +44,16 @@
   (let [thread            (first thread-group)
         position-modifier (use-frame-position-modifier (:frame-id thread))]
     [:> cmt/comment-floating-group*
+     {:thread-group thread-group
+      :zoom zoom
+      :position-modifier position-modifier}]))
+
+(mf/defc comment-floating-ghost-wrapper*
+  {::mf/private true}
+  [{:keys [thread-group zoom]}]
+  (let [thread            (first thread-group)
+        position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-ghost*
      {:thread-group thread-group
       :zoom zoom
       :position-modifier position-modifier}]))
@@ -93,6 +105,10 @@
       (st/emit! (dwcm/initialize-comments file-id))
       (fn [] (st/emit! ::dwcm/finalize)))
 
+    ;; Any viewport change (pan/zoom) collapses an expanded cluster back.
+    (mf/with-effect [vbox zoom]
+      (st/emit! (dcm/collapse-comment-group)))
+
     [:div {:class (stl/css :comments-section)}
      [:div
       {:id "comments"
@@ -102,13 +118,30 @@
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
 
-       (for [thread-group (cmt/group-bubbles zoom threads)]
-         (let [group? (> (count thread-group) 1)
-               thread (first thread-group)]
-           (if group?
+       (for [thread-group (dwcm/group-bubbles zoom threads)]
+         (let [group?    (> (count thread-group) 1)
+               thread    (first thread-group)
+               expanded? (and group?
+                              (= (:expanded local) (into #{} (map :id) thread-group)))]
+           (cond
+             expanded?
+             [:* {:key (:seqn thread)}
+              [:> comment-floating-ghost-wrapper* {:thread-group thread-group
+                                                   :zoom zoom}]
+              (for [[thread offset ring] (cmt/expanded-group-offsets zoom thread-group)]
+                [:> comment-floating-bubble-wrapper* {:thread thread
+                                                      :zoom zoom
+                                                      :offset offset
+                                                      :ring ring
+                                                      :is-open false
+                                                      :key (:seqn thread)}])]
+
+             group?
              [:> comment-floating-group-wrapper* {:thread-group thread-group
                                                   :zoom zoom
                                                   :key (:seqn thread)}]
+
+             :else
              [:> comment-floating-bubble-wrapper* {:thread thread
                                                    :zoom zoom
                                                    :is-open (= (:id thread) (:open local))

@@ -8,12 +8,14 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.router :as-alias rt]
    [app.main.store :as st]
@@ -229,6 +231,13 @@
     (mf/with-effect []
       (st/emit! (dps/initialize-persistence)
                 (dpl/update-plugins-permissions-peek)))
+
+    ;; FLAG :font-preview — prefetch the preview sprite markup on workspace mount
+    ;; (kept in memory, not the DOM) so the typography selector renders previews on
+    ;; open with no network wait. Remove the flag check to drop the feature.
+    (mf/with-effect []
+      (when (contains? cf/flags :font-preview)
+        (fonts/prefetch-preview-sprite!)))
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]

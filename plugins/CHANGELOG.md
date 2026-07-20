@@ -1,4 +1,14 @@
-## 1.5.0 (Unreleased)
+## 1.6.0 (Unreleased)
+
+### 🚀 Features
+
+- **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
+
+### 🩹 Fixes
+
+- **plugins-runtime**: Setting an individual padding/margin side (`leftPadding`, `topMargin`, …) now re-derives the padding/margin type, switching to `multiple` when the four sides stop being symmetric (so the value is actually painted) and back to `simple` once top/bottom and left/right are mirrored again.
+
+## 1.5.0 (2026-07-08)
 
 ### 💣 Breaking changes & Deprecations
 
@@ -52,6 +62,8 @@
 - **plugins-runtime**: `penpot.openPage()` (and `Page.openPage()`) now resolves immediately when the target page is already active, instead of waiting forever for a page-initialization event that never fires.
 - **plugins-runtime**: `Shape.shadows`, `Shape.exports` and grid `rows`/`columns` now return live proxies, so writing a member on a returned shadow/export/track (e.g. `shape.shadows[0].blur = 7`) persists to the shape instead of mutating a detached snapshot that was silently discarded. The shadow `color` remains a plain snapshot (reconfigure it by assigning `shadow.color`).
 - **plugins-runtime**: Setting a variant component's `path` now renames the whole variant (its container and every main instance), like the `name` setter already did, instead of renaming only the component and leaving the file referentially inconsistent (which the backend rejected on save with a `variant-component-bad-name` error).
+- **plugins-runtime**: `Page.getSharedPluginDataKeys(namespace)` now works instead of always raising a namespace validation error: the implementation expected a spurious leading argument, so the caller's `namespace` was read as a missing second argument.
+- **plugins-runtime**: Storing plugin data on a connected (non-local) shared library is now consistently rejected with a `setPluginData-non-local-library` error on the `Library` object as well as its assets (colors, typographies, components). Previously the `Library` object accepted the write and applied it optimistically, but plugin data is not part of library synchronization and the change only persists when the caller can edit the library file — on a read-only shared library it failed silently and was lost on reload. Plugin data can only be stored on the file currently being edited.
 
 ## 1.4.2 (2026-01-21)
 

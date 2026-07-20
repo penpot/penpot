@@ -1132,6 +1132,10 @@ impl Shape {
             .fold(0.0, f32::max)
     }
 
+    pub fn has_cap_bounds(&self) -> bool {
+        self.cap_bounds_margin() > 0.0
+    }
+
     pub fn mask_id(&self) -> Option<&Uuid> {
         self.children.first()
     }
@@ -1452,7 +1456,8 @@ impl Shape {
             }
         }
 
-        self.blur.is_none()
+        !self.has_cap_bounds()
+            && self.blur.is_none()
             && self.background_blur.is_none()
             && self.shadows.is_empty()
             && (self.opacity - 1.0).abs() <= 1e-4

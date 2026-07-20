@@ -128,18 +128,24 @@ function formatEvalMessages(messages) {
 
 function parseArgs(argv) {
   const args = {
-    port: 6064,
+    port: null,
     host: "127.0.0.1",
     timeout: DEFAULT_TIMEOUT,
     help: false,
     resetSession: false,
     lastError: false,
+    backend: false,
+    frontend: false,
     code: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "-p" || a === "--port") {
+    if (a === "--backend") {
+      args.backend = true;
+    } else if (a === "--frontend") {
+      args.frontend = true;
+    } else if (a === "-p" || a === "--port") {
       const val = argv[++i];
       if (val === undefined) { console.error("Error: --port requires a value."); process.exit(1); }
       args.port = parseInt(val, 10);
@@ -166,6 +172,19 @@ function parseArgs(argv) {
     }
   }
 
+  if (args.backend && args.frontend) {
+    console.error("Error: --backend and --frontend are mutually exclusive.");
+    process.exit(1);
+  }
+
+  if (args.backend) {
+    args.port = 6064;
+  } else if (args.frontend) {
+    args.port = 3447;
+  } else if (args.port === null) {
+    args.port = 6064;
+  }
+
   return args;
 }
 
@@ -177,7 +196,9 @@ Evaluate Clojure code via a running nREPL server. Session state (defs, in-ns)
 persists across invocations via a stored session ID.
 
 Options:
-  -p, --port PORT             nREPL port (default: 6064)
+  --backend                   Connect to backend nREPL on port 6064 (default)
+  --frontend                  Connect to frontend nREPL on port 3447
+  -p, --port PORT             nREPL port (default: 6064; overridden by --backend/--frontend)
   -H, --host HOST             nREPL host (default: 127.0.0.1)
   -t, --timeout MILLISECONDS  Timeout in milliseconds (default: 120000)
   --reset-session             Discard stored session and start fresh
@@ -187,6 +208,8 @@ Options:
 Examples:
   ${bin} '(def x 42)'
   ${bin} 'x'
+  ${bin} --backend '(+ 1 2 3)'
+  ${bin} --frontend '(js/alert "hi")'
   ${bin} --reset-session '(def x 0)'
   ${bin} --last-error
   ${bin} <<'EOF'

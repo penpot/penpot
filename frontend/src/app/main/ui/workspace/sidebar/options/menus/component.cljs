@@ -522,7 +522,7 @@
     [:*
      [:div {:class (stl/css :variant-property-list)}
       (for [[pos prop] (map-indexed vector props-first)]
-        (let [mixed-value? (not-every? #(= (:value prop) (:value (nth % pos))) properties)
+        (let [mixed-value? (not-every? #(= (:value prop) (:value (get % pos))) properties)
               options      (get-options (:name prop))
               boolean-pair (ctv/find-boolean-pair (mapv :id options))
               options      (cond-> options
