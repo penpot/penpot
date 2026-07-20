@@ -19,9 +19,9 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.deleted :as deleted]
-   [app.main.ui.dashboard.files-layout :as files-layout :refer [files-layout-toggle*]]
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -51,13 +51,15 @@
 (mf/defc header*
   {::mf/wrap [mf/memo]
    ::mf/private true}
-  [{:keys [can-edit]}]
+  [{:keys [can-edit layout on-change]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
-    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+    [:header {:class (stl/css :dashboard-header)
+              :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
      [:div {:class (stl/css :dashboard-header-actions)}
-      [:> files-layout-toggle*]
+      [:> layout-toggle* {:layout layout
+                          :on-change on-change}]
       (when can-edit
         [:button {:class (stl/css :btn-secondary :btn-small)
                   :on-click on-click
@@ -333,7 +335,13 @@
 
         show-deleted?   (:can-edit permisions)
 
-        layout          (mf/deref files-layout/ref)
+        layout*         (hooks/use-persisted-state lt/layout-key lt/default-layout)
+        layout          (deref layout*)
+
+        on-layout-change
+        (mf/use-fn
+         (fn [value]
+           (reset! layout* (keyword value))))
 
         projects
         (mf/with-memo [projects]
@@ -366,7 +374,9 @@
 
     (when (seq projects)
       [:*
-       [:> header* {:can-edit can-edit}]
+       [:> header* {:can-edit can-edit
+                    :layout layout
+                    :on-change on-layout-change}]
        [:div {:class (stl/css :projects-container)}
         [:*
          (when (and show-team-hero?

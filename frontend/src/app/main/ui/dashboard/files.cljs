@@ -14,9 +14,9 @@
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.dashboard.files-layout :as files-layout :refer [files-layout-toggle*]]
    [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
@@ -33,7 +33,7 @@
 
 (mf/defc header*
   {::mf/private true}
-  [{:keys [project create-fn can-edit]}]
+  [{:keys [project create-fn can-edit layout on-change]}]
   (let [project-id (:id project)
 
         local
@@ -74,7 +74,8 @@
                      (dd/clear-selected-files))))]
 
 
-    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+    [:header {:class (stl/css :dashboard-header)
+              :data-testid "dashboard-header"}
      (if (:is-default project)
        [:div#dashboard-drafts-title {:class (stl/css :dashboard-title)}
         [:h1 (tr "labels.drafts")]]
@@ -96,7 +97,8 @@
            (:name project)]]))
 
      [:div {:class (stl/css :dashboard-header-actions)}
-      [:> files-layout-toggle*]
+      [:> layout-toggle* {:layout layout
+                          :on-change on-change}]
 
       (when ^boolean can-edit
         [:a {:class (stl/css :btn-secondary :btn-small :new-file)
@@ -157,7 +159,14 @@
                                 (= 0 file-count))
 
         selected-files     (mf/deref refs/selected-files)
-        layout             (mf/deref files-layout/ref)
+
+        layout*            (hooks/use-persisted-state lt/layout-key lt/default-layout)
+        layout             (deref layout*)
+
+        on-layout-change
+        (mf/use-fn
+         (fn [value]
+           (reset! layout* (keyword value))))
 
         on-file-created
         (mf/use-fn
@@ -192,7 +201,9 @@
      [:> header* {:team team
                   :can-edit can-edit?
                   :project project
-                  :create-fn create-file}]
+                  :create-fn create-file
+                  :layout layout
+                  :on-change on-layout-change}]
      [:section {:class (stl/css :dashboard-container :no-bg)
                 :ref rowref}
       (if empty-state-viewer
