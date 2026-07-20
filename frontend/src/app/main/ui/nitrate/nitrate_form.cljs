@@ -24,7 +24,8 @@
    ::mf/wrap-props true}
   [connectivity]
 
-  (let [online? (:licenses connectivity)
+  (let [show-contact-sales-option (:show-contact-sales-option connectivity)
+        online? (and (:licenses connectivity) (not show-contact-sales-option))
         profile  (mf/deref refs/profile)
         on-click
         (mf/use-fn
