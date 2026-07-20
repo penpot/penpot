@@ -7,6 +7,7 @@
 (ns app.srepl.binfile
   (:require
    [app.binfile.v2 :as binfile.v2]
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.main :as main]
    [app.srepl.helpers :as h]
@@ -30,7 +31,8 @@
 
                   (when owner
                     (db/insert! cfg :team-profile-rel
-                                {:team-id (:id team)
+                                {:id (uuid/next)
+                                 :team-id (:id team)
                                  :profile-id (:id owner)
                                  :is-admin true
                                  :is-owner true
