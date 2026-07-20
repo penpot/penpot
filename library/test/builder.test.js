@@ -227,7 +227,7 @@ test("export compact format produces page-level objects", async () => {
 
   context.addRect({name: "rect1", x: 100, y: 200, width: 50, height: 30});
 
-  const blob = await penpot.exportAsBlob(context, {format: "compact"});
+  const blob = await penpot.exportAsBlob(context, {version: 2});
 
   const zipReader = new ZipReader(new BlobReader(new Blob([blob])));
   const entries = await zipReader.getEntries();
@@ -262,7 +262,7 @@ test("export legacy format produces per-shape entries", async () => {
 
   context.addRect({name: "rect1", x: 100, y: 200, width: 50, height: 30});
 
-  const blob = await penpot.exportAsBlob(context, {format: "legacy"});
+  const blob = await penpot.exportAsBlob(context, {version: 1});
 
   const zipReader = new ZipReader(new BlobReader(new Blob([blob])));
   const entries = await zipReader.getEntries();
