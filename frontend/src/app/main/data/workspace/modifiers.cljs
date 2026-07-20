@@ -141,16 +141,18 @@
                          (-> (gpt/subtract (center shape) (center root))
                              (gpt/transform (:transform-inverse root (gmt/matrix))))))
 
-        rel-rotation (fn [shape root]
-                       (if is-root?
-                         (d/nilv (:rotation shape) 0)
-                         (- (d/nilv (:rotation shape) 0)
-                            (d/nilv (:rotation root) 0))))
-
-        rel-flip     (fn [shape root attr]
-                       (if is-root?
-                         (true? (get shape attr))
-                         (not= (true? (get shape attr)) (true? (get root attr)))))
+        orientation  (fn [shape root]
+                       ;; the shape's rotation/flip orientation taken from its
+                       ;; transform matrix, so it is reliable regardless of how the
+                       ;; transform was applied (the WASM apply-transform path does
+                       ;; not refresh the :rotation attribute). For the ROOT the
+                       ;; absolute orientation; for a DESCENDANT the orientation
+                       ;; relative to the root — invariant when the whole instance
+                       ;; is rotated or flipped as a unit.
+                       (let [t (:transform shape (gmt/matrix))]
+                         (if is-root?
+                           t
+                           (gmt/multiply (:transform-inverse root (gmt/matrix)) t))))
 
         pos-before   (rel-pos shape root)
         pos-after    (rel-pos transformed-shape transformed-root)
@@ -160,16 +162,9 @@
           (gpt/distance-vector pos-before pos-after)
           (gpt/point 0 0))
 
-        rotation-delta
-        (-> (- (rel-rotation transformed-shape transformed-root)
-               (rel-rotation shape root))
-            (mod 360))
-
-        flips-equal?
-        (and (= (rel-flip shape root :flip-x)
-                (rel-flip transformed-shape transformed-root :flip-x))
-             (= (rel-flip shape root :flip-y)
-                (rel-flip transformed-shape transformed-root :flip-y)))
+        orientation-unchanged?
+        (gmt/close? (orientation shape root)
+                    (orientation transformed-shape transformed-root))
 
         selrect (:selrect shape)
         transformed-selrect (:selrect transformed-shape)]
@@ -183,8 +178,7 @@
     (and (and (< (:x distance) 1) (< (:y distance) 1))
          (mth/close? (:width selrect) (:width transformed-selrect))
          (mth/close? (:height selrect) (:height transformed-selrect))
-         (or (mth/close? rotation-delta 0) (mth/close? rotation-delta 360))
-         flips-equal?)))
+         orientation-unchanged?)))
 
 (defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"

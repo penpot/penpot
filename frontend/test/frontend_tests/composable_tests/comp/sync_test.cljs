@@ -27,6 +27,9 @@
    Async: each deftest uses `t/async`; `ftm/check` drives the store and calls
    `done` when finished."
   (:require
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctst]
@@ -390,5 +393,41 @@
            (t/is (= (if (tm/applied? situation rotate-copy) #{:geometry-group} nil)
                     (:touched copy-root)))
            (t/is (nil? (:touched copy-child)))))))))
+
+(t/deftest case-touched-copy-child-survives-main-rotation
+  ;; A copy whose ROOT is rotated (a geometry override) AND whose CHILD has its
+  ;; own geometry override (resized) must keep the child exactly in place when the
+  ;; MAIN is later rotated: the child's placement is its own, shielded by its
+  ;; touched :geometry-group. We capture the child's position relative to the copy
+  ;; root before the main rotation and assert it is unchanged after.
+  (t/async
+    done
+    (let [before   (atom nil)
+          rel-pos  (fn [situation]
+                     (let [child (setup/copy-instance situation)
+                           root  (setup/copy-root situation)]
+                       (-> (gpt/subtract (grc/rect->center (:selrect child))
+                                         (grc/rect->center (:selrect root)))
+                           (gpt/transform (:transform-inverse root (gmt/matrix))))))
+          capture  (tm/test-that (fn [s] (reset! before (rel-pos s)) (t/is (some? @before))))]
+      (ftm/check
+       done
+       {:setup     setup/simple-component-with-labeled-copy
+        :operation (tm/in-sequence [(n/rotate :copy-root 30)
+                                    (n/change-height :copy-instance 60)
+                                    capture
+                                    (n/rotate :main-root 40)])}
+       (fn [situation]
+         (let [copy-child (setup/copy-instance situation)
+               copy-root  (setup/copy-root situation)
+               after      (rel-pos situation)]
+           ;; both overrides are recorded as geometry touches
+           (t/is (contains? (:touched copy-root) :geometry-group))
+           (t/is (contains? (:touched copy-child) :geometry-group))
+           ;; the child keeps its own overridden height
+           (t/is (mth/close? (:height copy-child) 60))
+           ;; and its position relative to the copy root is unchanged by the main rotation
+           (t/is (mth/close? (:x @before) (:x after) 0.5) (str "rel-x " (:x @before) " -> " (:x after)))
+           (t/is (mth/close? (:y @before) (:y after) 0.5) (str "rel-y " (:y @before) " -> " (:y after)))))))))
 
 
