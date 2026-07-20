@@ -9,7 +9,7 @@
   (as a grid of thumbnails or as a compact list). The preference is shared
   between the team (projects) view and the project (files) view."
   (:require
-   [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
@@ -36,16 +36,19 @@
 (mf/defc files-layout-toggle*
   []
   (let [layout    (mf/deref ref)
-        on-change (mf/use-fn (fn [value _event] (set-layout! value)))]
-    [:& radio-buttons {:selected (name layout)
-                       :on-change on-change
-                       :decode-fn keyword
-                       :name "dashboard-files-layout"}
-     [:& radio-button {:icon i/view-as-list
-                       :value "list"
-                       :id "dashboard-files-layout-list"
-                       :title (tr "dashboard.files-layout.list")}]
-     [:& radio-button {:icon i/view-as-icons
-                       :value "grid"
-                       :id "dashboard-files-layout-grid"
-                       :title (tr "dashboard.files-layout.grid")}]]))
+
+        on-change (mf/use-fn
+                   (fn [value]
+                     (set-layout! (keyword value))))]
+
+    [:> radio-buttons* {:selected (name layout)
+                        :on-change on-change
+                        :name "dashboard-files-layout"
+                        :options [{:id "dashboard-files-layout-list"
+                                   :value "list"
+                                   :icon i/view-as-list
+                                   :label (tr "dashboard.files-layout.list")}
+                                  {:id "dashboard-files-layout-grid"
+                                   :value "grid"
+                                   :icon i/view-as-icons
+                                   :label (tr "dashboard.files-layout.grid")}]}]))
