@@ -118,19 +118,14 @@ describe('Shapes', () => {
         if (bool) {
           ctx.board.appendChild(bool);
           expect(typeof bool.d).toBe('string');
-          expect(typeof bool.toD()).toBe('string');
         }
       }
     });
 
-    test('createShapeFromSvg is lenient with unparseable markup', (ctx) => {
-      // The SVG importer is permissive: it still produces a group for input
-      // that is not valid SVG rather than returning null.
-      const group = ctx.penpot.createShapeFromSvg('not svg at all');
-      expect(group).not.toBeNull();
-      if (group) {
-        ctx.board.appendChild(group);
-      }
+    test('createShapeFromSvg rejects unparseable markup', (ctx) => {
+      // Malformed SVG is rejected up front rather than failing asynchronously
+      // inside the import pipeline (which would surface as an error toast).
+      expect(() => ctx.penpot.createShapeFromSvg('not svg at all')).toThrow();
     });
 
     // Success edges — non-trivial valid construction.
@@ -229,8 +224,10 @@ describe('Shapes', () => {
       if (group) {
         const before = ctx.board.children.length;
         ctx.penpot.ungroup(group);
-        // After ungroup the two shapes should be back on the board directly.
-        expect(ctx.board.children.length).toBeGreaterThan(before - 1);
+        // The group dissolves into its two children (net +1 on the board) and
+        // the group itself is gone.
+        expect(ctx.board.children.length).toBe(before + 1);
+        expect(ctx.board.children.some((c) => c.id === group.id)).toBe(false);
       }
     });
 
@@ -269,35 +266,48 @@ describe('Shapes', () => {
       expect(a.y).toBeCloseTo(b.y, 0);
     });
 
-    test('distributeHorizontal runs without error', (ctx) => {
+    test('distributeHorizontal spaces the shapes evenly', (ctx) => {
       const a = ctx.penpot.createRectangle();
       const b = ctx.penpot.createRectangle();
       const c = ctx.penpot.createRectangle();
       a.x = 0;
       b.x = 50;
       c.x = 300;
+      a.resize(20, 20);
+      b.resize(20, 20);
+      c.resize(20, 20);
       ctx.board.appendChild(a);
       ctx.board.appendChild(b);
       ctx.board.appendChild(c);
 
       ctx.penpot.distributeHorizontal([a, b, c]);
-      // Middle shape should end up between the outer two.
-      expect(b.x).toBeGreaterThan(a.x);
+      // The outer shapes stay in place and the middle one lands so the gaps
+      // between consecutive shapes are equal.
+      const xs = [a.x, b.x, c.x].sort((p, q) => p - q);
+      expect(xs[1] - xs[0]).toBeCloseTo(xs[2] - xs[1], 0);
+      expect(xs[0]).toBeCloseTo(0, 0);
+      expect(xs[2]).toBeCloseTo(300, 0);
     });
 
-    test('distributeVertical runs without error', (ctx) => {
+    test('distributeVertical spaces the shapes evenly', (ctx) => {
       const a = ctx.penpot.createRectangle();
       const b = ctx.penpot.createRectangle();
       const c = ctx.penpot.createRectangle();
       a.y = 0;
       b.y = 50;
       c.y = 300;
+      a.resize(20, 20);
+      b.resize(20, 20);
+      c.resize(20, 20);
       ctx.board.appendChild(a);
       ctx.board.appendChild(b);
       ctx.board.appendChild(c);
 
       ctx.penpot.distributeVertical([a, b, c]);
-      expect(b.y).toBeGreaterThan(a.y);
+      const ys = [a.y, b.y, c.y].sort((p, q) => p - q);
+      expect(ys[1] - ys[0]).toBeCloseTo(ys[2] - ys[1], 0);
+      expect(ys[0]).toBeCloseTo(0, 0);
+      expect(ys[2]).toBeCloseTo(300, 0);
     });
 
     // Edge cases.

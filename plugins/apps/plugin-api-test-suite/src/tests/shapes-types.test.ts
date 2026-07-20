@@ -168,7 +168,6 @@ describe('Shapes', () => {
         ctx.board.appendChild(bool);
         expect(bool.children.length).toBeGreaterThan(1);
         expect(typeof bool.d).toBe('string');
-        expect(typeof bool.toD()).toBe('string');
         expect(Array.isArray(bool.commands)).toBe(true);
       }
     });
@@ -181,7 +180,6 @@ describe('Shapes', () => {
       path.d = 'M0 0 L10 0 L10 10 Z';
       expect(path.d).toContain('M');
       expect(path.commands.length).toBeGreaterThan(0);
-      expect(typeof path.toD()).toBe('string');
     });
 
     test('content alias is readable and writable', (ctx) => {
@@ -227,21 +225,26 @@ describe('Shapes', () => {
   // ---------------------------------------------------------------------------
   describe('Hierarchy — circular references', () => {
     // The plugin appendChild does not explicitly reject cycle-creating moves;
-    // the underlying relocate handles them without throwing. These pin that the
-    // call is not rejected (cycle-prevention at the API boundary is a candidate
-    // for future hardening).
-    test('appending a board into itself does not throw', (ctx) => {
+    // the underlying relocate drops them without throwing, leaving the
+    // hierarchy untouched. These pin both halves: the call is not rejected
+    // (cycle-prevention at the API boundary is a candidate for future
+    // hardening) AND the tree stays intact.
+    test('appending a board into itself is a safe no-op', (ctx) => {
       const board = ctx.penpot.createBoard();
       ctx.board.appendChild(board);
       expect(() => board.appendChild(board)).not.toThrow();
+      expect(board.parent?.id).toBe(ctx.board.id);
+      expect(board.children.some((c) => c.id === board.id)).toBe(false);
     });
 
-    test('appending an ancestor into its descendant does not throw', (ctx) => {
+    test('appending an ancestor into its descendant is a safe no-op', (ctx) => {
       const outer = ctx.penpot.createBoard();
       const inner = ctx.penpot.createBoard();
       ctx.board.appendChild(outer);
       outer.appendChild(inner);
       expect(() => inner.appendChild(outer)).not.toThrow();
+      expect(outer.parent?.id).toBe(ctx.board.id);
+      expect(inner.parent?.id).toBe(outer.id);
     });
   });
 

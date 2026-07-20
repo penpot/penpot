@@ -1422,6 +1422,9 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
+msgid "dashboard.my-files"
+msgstr "My Files"
+
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -5768,10 +5771,10 @@ msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Unlock Enterprise features"
 
 #: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
+msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Set fine-grained permissions and keep your design operations secure, "
-"without compromising the open-source freedom your team already loves."
+"Set fine-grained permissions and stay in control, "
+"without compromising the open-source freedom your team loves."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -8776,6 +8779,9 @@ msgstr "Copy as CSS (nested layers)"
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copy link"
 
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copy id"
+
 #: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-paste-as"
 msgstr "Copy/Paste as ..."
@@ -10100,3 +10106,6 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "notifications.invitation-canceled"
+msgstr "This invitation is no longer available."

@@ -5,7 +5,7 @@ use crate::uuid::Uuid;
 use crate::error::Result;
 use crate::get_gpu_state;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
-use skia_safe::{self as skia, Codec, ISize};
+use skia_safe::{self as skia, Codec, ISize, Size};
 use std::collections::HashMap;
 
 pub type Image = skia::Image;
@@ -57,6 +57,13 @@ pub fn get_source_rect(size: ISize, container: &MathRect, image_fill: &ImageFill
 enum StoredImage {
     Raw(Vec<u8>),
     Gpu(Image),
+    Svg {
+        dom: skia::svg::Dom,
+        size: Size,
+        // Lazy raster for consumers that need a texture (stroke fills,
+        // exports). The shape fill path draws the DOM directly instead.
+        raster: Option<Image>,
+    },
 }
 
 pub struct ImageStore {
@@ -143,6 +150,61 @@ fn decode_image(context: &mut Box<DirectContext>, raw_data: &[u8]) -> Option<Ima
     Some(surface.image_snapshot())
 }
 
+// Size for SVGs without intrinsic dimensions nor a viewBox.
+const DEFAULT_SVG_SIZE: f32 = 512.0;
+
+// Parse an SVG and resolve its natural size. Skia codecs don't handle SVG,
+// so this is the fallback when `decode_image` fails.
+fn parse_svg(raw_data: &[u8]) -> Option<(skia::svg::Dom, Size)> {
+    // An empty font manager: <text> elements inside SVG image fills won't
+    // resolve typefaces. Wire the render state's font provider here if that
+    // ever becomes a need.
+    let font_mgr = skia::FontMgr::new();
+    let mut dom = skia::svg::Dom::from_bytes(raw_data, font_mgr).ok()?;
+
+    let mut size = dom.root().intrinsic_size();
+    if size.is_empty() {
+        // SVGs without width/height attributes have no intrinsic size;
+        // fall back to the viewBox dimensions.
+        size = dom
+            .root()
+            .view_box()
+            .map(|vb| Size::new(vb.width(), vb.height()))
+            .unwrap_or_else(|| Size::new(DEFAULT_SVG_SIZE, DEFAULT_SVG_SIZE));
+    }
+
+    // Ceil so the size matches the integer dimensions used when rasterizing.
+    let size = Size::new(size.width.ceil(), size.height.ceil());
+    if size.is_empty() {
+        return None;
+    }
+    dom.set_container_size(size);
+
+    Some((dom, size))
+}
+
+fn rasterize_svg(
+    context: &mut Box<DirectContext>,
+    dom: &skia::svg::Dom,
+    size: Size,
+) -> Option<Image> {
+    let dimensions = ISize::new(size.width as i32, size.height as i32);
+    let image_info = skia::ImageInfo::new_n32_premul(dimensions, None);
+    let mut surface = surfaces::render_target(
+        context,
+        Budgeted::Yes,
+        &image_info,
+        None,
+        None,
+        None,
+        true,
+        false,
+    )?;
+
+    dom.render(surface.canvas());
+    Some(surface.image_snapshot())
+}
+
 impl ImageStore {
     pub fn new() -> Self {
         let gpu_state = get_gpu_state();
@@ -169,7 +231,18 @@ impl ImageStore {
 
         if let Some(gpu_image) = decode_image(&mut self.context, &raw_data) {
             self.images.insert(key, StoredImage::Gpu(gpu_image));
+        } else if let Some((dom, size)) = parse_svg(&raw_data) {
+            self.images.insert(
+                key,
+                StoredImage::Svg {
+                    dom,
+                    size,
+                    raster: None,
+                },
+            );
         } else {
+            // The lazy re-decode in `get_internal` only retries raster codecs,
+            // so SVGs that fail to parse here stay raw.
             self.images.insert(key, StoredImage::Raw(raw_data));
         }
         Ok(())
@@ -218,6 +291,19 @@ impl ImageStore {
         gpu_image.make_non_texture_image(self.context.as_mut())
     }
 
+    /// Vector access for SVG images: the fill render path draws the DOM
+    /// directly so it stays crisp at any zoom level.
+    pub fn get_svg(&self, id: &Uuid) -> Option<(&skia::svg::Dom, Size)> {
+        let entry = self
+            .images
+            .get(&(*id, false))
+            .or_else(|| self.images.get(&(*id, true)))?;
+        match entry {
+            StoredImage::Svg { dom, size, .. } => Some((dom, *size)),
+            _ => None,
+        }
+    }
+
     fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {
         let key = (*id, is_thumbnail);
         // Use entry API to mutate the HashMap in-place if needed
@@ -233,6 +319,12 @@ impl ImageStore {
                     } else {
                         None
                     }
+                }
+                StoredImage::Svg { dom, size, raster } => {
+                    if raster.is_none() {
+                        *raster = rasterize_svg(&mut self.context, dom, *size);
+                    }
+                    raster.as_ref()
                 }
             }
         } else {

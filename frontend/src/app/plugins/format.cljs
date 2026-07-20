@@ -174,10 +174,6 @@
           :hidden hidden
           :color (format-color color)})))
 
-(defn format-shadows
-  [shadows]
-  (format-array format-shadow shadows))
-
 ;;export interface Fill {
 ;;  fillColor?: string;
 ;;  fillOpacity?: number;
@@ -210,11 +206,13 @@
 ;;   strokeCapStart?: StrokeCap;
 ;;   strokeCapEnd?: StrokeCap;
 ;;   strokeColorGradient?: Gradient;
+;;   strokeImage?: ImageData;
 ;; }
 (defn format-stroke
   [{:keys [stroke-color stroke-color-ref-file stroke-color-ref-id
            stroke-opacity stroke-style stroke-width stroke-alignment
-           stroke-cap-start stroke-cap-end stroke-color-gradient] :as stroke}]
+           stroke-cap-start stroke-cap-end stroke-color-gradient
+           stroke-image] :as stroke}]
 
   (when (some? stroke)
     (obj/without-empty
@@ -227,7 +225,8 @@
           :strokeAlignment (format-key stroke-alignment)
           :strokeCapStart (format-key stroke-cap-start)
           :strokeCapEnd (format-key stroke-cap-end)
-          :strokeColorGradient (format-gradient stroke-color-gradient)})))
+          :strokeColorGradient (format-gradient stroke-color-gradient)
+          :strokeImage (format-image stroke-image)})))
 
 
 ;; export interface Blur {
@@ -249,16 +248,13 @@
 ;;   suffix: string;
 ;; }
 (defn format-export
-  [{:keys [type scale suffix] :as export}]
+  [{:keys [type scale suffix skip-children] :as export}]
   (when (some? export)
     (obj/without-empty
      #js {:type (format-key type)
           :scale scale
-          :suffix suffix})))
-
-(defn format-exports
-  [exports]
-  (format-array format-export exports))
+          :suffix suffix
+          :skipChildren skip-children})))
 
 ;; export interface GuideColumnParams {
 ;;   color: { color: string; opacity: number };
@@ -408,10 +404,6 @@
     (obj/without-empty
      #js {:type (-> type format-key)
           :value value})))
-
-(defn format-tracks
-  [tracks]
-  (format-array format-track tracks))
 
 
 ;; export interface Dissolve {

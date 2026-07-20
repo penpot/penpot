@@ -123,6 +123,22 @@
      :enumerable false
      :get #(.getRoot ^js %)}
 
+    :remove
+    (fn []
+      (let [pages (-> (u/locate-file file-id) :data :pages)]
+        (cond
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+          (nil? (u/locate-page file-id id))
+          (u/not-valid plugin-id :remove "Page not found")
+
+          (<= (count pages) 1)
+          (u/not-valid plugin-id :remove "Cannot remove the last page of the file")
+
+          :else
+          (st/emit! (dw/delete-page id)))))
+
     :background
     {:this true
      :get #(or (-> % u/proxy->page :background) cc/canvas)
@@ -256,13 +272,13 @@
         (st/emit! (dp/set-plugin-data file-id :page id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
-    (fn [self namespace]
+    (fn [namespace]
       (cond
         (not (string? namespace))
         (u/not-valid plugin-id :page-plugin-data-namespace namespace)
 
         :else
-        (let [page (u/proxy->page self)]
+        (let [page (u/locate-page file-id id)]
           (apply array (keys (dm/get-in page [:plugin-data (keyword "shared" namespace)]))))))
 
     :openPage
@@ -274,6 +290,11 @@
         (true? new-window)
         (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
             (js/Promise.resolve nil))
+
+        ;; Navigating to the already-active page emits no initialization
+        ;; event, so resolve right away instead of waiting forever.
+        (u/page-active? id)
+        (js/Promise.resolve nil)
 
         :else
         (js/Promise.

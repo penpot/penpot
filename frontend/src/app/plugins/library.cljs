@@ -710,24 +710,26 @@
 
     :removeProperty
     (fn [pos]
-      (if (not (nat-int? pos))
-        (u/not-valid plugin-id :pos pos)
-        (st/emit!
-         (se/event plugin-id "remove-property")
-         (dwv/remove-property id pos))))
+      (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
+        (if (or (not (nat-int? pos)) (>= pos nprops))
+          (u/not-valid plugin-id :pos pos)
+          (st/emit!
+           (se/event plugin-id "remove-property")
+           (dwv/remove-property id pos)))))
 
     :renameProperty
     (fn [pos name]
-      (cond
-        (not (nat-int? pos))
-        (u/not-valid plugin-id :pos pos)
+      (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
+        (cond
+          (or (not (nat-int? pos)) (>= pos nprops))
+          (u/not-valid plugin-id :pos pos)
 
-        (not (string? name))
-        (u/not-valid plugin-id :name name)
+          (not (string? name))
+          (u/not-valid plugin-id :name name)
 
-        :else
-        (st/emit!
-         (dwv/update-property-name id pos name {:trigger "plugin:rename-property"}))))))
+          :else
+          (st/emit!
+           (dwv/update-property-name id pos name {:trigger "plugin:rename-property"})))))))
 
 (set! shape/variant-proxy variant-proxy)
 
@@ -778,7 +780,7 @@
          :else
          (let [component (u/proxy->library-component self)
                value (dm/str value " / " (:name component))]
-           (st/emit! (dwl/rename-component id value)))))}
+           (st/emit! (dwv/rename-comp-or-variant-and-main id value)))))}
 
     :remove
     (fn []
@@ -938,17 +940,18 @@
 
     :setVariantProperty
     (fn [pos value]
-      (cond
-        (not (nat-int? pos))
-        (u/not-valid plugin-id :pos (str pos))
+      (let [nprops (-> (u/locate-library-component file-id id) :variant-properties count)]
+        (cond
+          (or (not (nat-int? pos)) (>= pos nprops))
+          (u/not-valid plugin-id :pos (str pos))
 
-        (not (string? value))
-        (u/not-valid plugin-id :name value)
+          (not (string? value))
+          (u/not-valid plugin-id :name value)
 
-        :else
-        (st/emit!
-         (se/event plugin-id "variant-edit-property-value")
-         (dwv/update-property-value id pos value))))))
+          :else
+          (st/emit!
+           (se/event plugin-id "variant-edit-property-value")
+           (dwv/update-property-value id pos value)))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
@@ -1056,6 +1059,9 @@
     :setPluginData
     (fn [key value]
       (cond
+        (not= file-id (:current-file-id @st/state))
+        (u/not-valid plugin-id :setPluginData-non-local-library file-id)
+
         (not (string? key))
         (u/not-valid plugin-id :setPluginData-key key)
 
@@ -1089,6 +1095,9 @@
     :setSharedPluginData
     (fn [namespace key value]
       (cond
+        (not= file-id (:current-file-id @st/state))
+        (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
+
         (not (string? namespace))
         (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
 

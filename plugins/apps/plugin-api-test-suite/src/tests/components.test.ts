@@ -1,7 +1,10 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
+import { waitFor } from './wait';
 import type { Board, Shape } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
+
+const COPY_STRUCTURE_ERROR = 'Cannot change the structure of a component copy';
 
 // Component instances and the ShapeBase component methods.
 // A component is built from a rectangle and instantiated; the instance exposes
@@ -18,6 +21,35 @@ function instanceOf(ctx: TestContext): Shape {
   const inst = comp.instance();
   ctx.board.appendChild(inst);
   return inst;
+}
+
+function nestedComponentMain(ctx: TestContext): Board {
+  const nested = makeComponent(ctx).instance();
+  const host = ctx.penpot.createBoard();
+  ctx.board.appendChild(host);
+  host.appendChild(nested);
+  return ctx.penpot.library.local
+    .createComponent([host])
+    .mainInstance() as Board;
+}
+
+function boardComponentMainWithChildren(ctx: TestContext): Board {
+  const first = ctx.penpot.createRectangle();
+  const second = ctx.penpot.createRectangle();
+  const host = ctx.penpot.createBoard();
+  ctx.board.appendChild(host);
+  host.appendChild(first);
+  host.appendChild(second);
+  return ctx.penpot.library.local
+    .createComponent([host])
+    .mainInstance() as Board;
+}
+
+function componentMainFromClonedNestedMain(ctx: TestContext): Board {
+  const cloned = nestedComponentMain(ctx).clone();
+  return ctx.penpot.library.local
+    .createComponent([cloned])
+    .mainInstance() as Board;
 }
 
 describe('Component instances', () => {
@@ -37,6 +69,125 @@ describe('Component instances', () => {
     expect(inst.componentRoot()).toBeDefined();
     expect(inst.componentHead()).toBeDefined();
     expect(inst.componentRefShape()).toBeDefined();
+  });
+
+  // Community report (forum #10700, issue #8): cloning a component's main
+  // instance was said to yield a shape with null type/name that appendChild
+  // silently drops. Did not reproduce (clone attaches to the same parent and
+  // can be re-parented); kept as a regression pin.
+  test('cloning a component main instance yields a valid shape', (ctx) => {
+    const comp = makeComponent(ctx);
+    const main = comp.mainInstance();
+    const copy = main.clone();
+    expect(copy.type).not.toBeNull();
+    expect(copy.type).toBe(main.type);
+    expect(copy.name).not.toBeNull();
+    expect(copy.id).not.toBe(main.id);
+
+    const target = ctx.penpot.createBoard();
+    ctx.board.appendChild(target);
+    target.resize(200, 200);
+    const before = target.children.length;
+    target.appendChild(copy);
+    expect(target.children.length).toBe(before + 1);
+    expect(target.children.some((s) => s.id === copy.id)).toBe(true);
+  });
+
+  test('appendChild rejects moving children out of a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    expect(() => ctx.board.appendChild(child)).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('insertChild rejects moving children out of a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    const target = ctx.penpot.createBoard();
+    ctx.board.appendChild(target);
+    expect(child).toBeDefined();
+
+    expect(() => target.insertChild(0, child)).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('children assignment rejects reordering a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+
+    expect(() => {
+      cloned.children = [...cloned.children];
+    }).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('setParentIndex rejects reordering children inside a component copy', (ctx) => {
+    const main = boardComponentMainWithChildren(ctx);
+    const copy = main.component()?.instance() as Board | undefined;
+    expect(copy).toBeDefined();
+    if (!copy) return;
+
+    ctx.board.appendChild(copy);
+    const child = copy.children[1];
+    expect(child).toBeDefined();
+
+    expect(() => child.setParentIndex(0)).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('group rejects children inside a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    expect(() => ctx.penpot.group([child])).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('remove hides children inside a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    child.remove();
+    expect(child.hidden).toBe(true);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('detaching a cloned main instance makes child reparenting safe', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    cloned.detach();
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    ctx.board.appendChild(child);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('cloned nested main instances can be used as variant component sources', async (ctx) => {
+    const mainA = componentMainFromClonedNestedMain(ctx);
+    const mainB = componentMainFromClonedNestedMain(ctx);
+    const container = ctx.penpot.createVariantFromComponents([mainA, mainB]);
+
+    await waitFor(
+      () => (container.variants?.variantComponents().length ?? 0) >= 2,
+    );
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
   });
 
   test('component() returns the library component', (ctx) => {
@@ -63,6 +214,27 @@ describe('Component instances', () => {
     if (comp) {
       expect(comp.id).toBe(other.id);
     }
+  });
+
+  test('resetOverrides restores a copy to its main component', (ctx) => {
+    const comp = makeComponent(ctx);
+    const main = comp.mainInstance();
+    const inst = comp.instance();
+    ctx.board.appendChild(inst);
+
+    const mainColor = main.fills?.[0]?.fillColor;
+    inst.fills = [{ fillColor: '#FF0000', fillOpacity: 1 }];
+    // The override applied (fill getter normalizes to lowercase).
+    expect(inst.fills?.[0]?.fillColor?.toLowerCase()).toBe('#ff0000');
+
+    inst.resetOverrides();
+    expect(inst.fills?.[0]?.fillColor).toBe(mainColor);
+  });
+
+  test('resetOverrides on a plain shape throws', (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    expect(() => rect.resetOverrides()).toThrow();
   });
 
   // ---------------------------------------------------------------------------
@@ -115,21 +287,10 @@ describe('Component instances', () => {
       expect(c1.id).toBe(c2.id);
     }
   });
-});
 
-describe('Shape interactions cleanup', () => {
-  test('removeInteraction removes an interaction from a shape', (ctx) => {
-    const dest = ctx.penpot.createBoard();
-    ctx.board.appendChild(dest as Board);
-    const rect = ctx.penpot.createRectangle();
-    ctx.board.appendChild(rect);
-
-    const interaction = rect.addInteraction('click', {
-      type: 'navigate-to',
-      destination: dest,
-    });
-    const before = rect.interactions.length;
-    rect.removeInteraction(interaction);
-    expect(rect.interactions.length).toBe(before - 1);
+  test('detaching a copy breaks the component link', (ctx) => {
+    const inst = instanceOf(ctx);
+    inst.detach();
+    expect(inst.isComponentInstance()).toBeFalsy();
   });
 });

@@ -9,9 +9,11 @@
    [app.common.geom.rect :as grc]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
 
@@ -374,3 +376,34 @@
                  "exactly one typography was added")
            (t/is (= "0.1" (:letter-spacing (first typographies)))
                  "float letter-spacing is normalised to 2-decimal string")))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: fix-position with degenerate selrect
+;; ---------------------------------------------------------------------------
+
+(t/deftest fix-position-zero-width-selrect-does-not-throw
+  (t/testing "fix-position on a shape with zero selrect width does not throw"
+    (let [shape     (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 50)
+          modifiers (ctm/change-dimensions-modifiers shape :width 200 {:ignore-lock? true})
+          shape'    (assoc shape :modifiers modifiers)
+          result    (vth/fix-position shape')]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest fix-position-zero-height-selrect-does-not-throw
+  (t/testing "fix-position on a shape with zero selrect height does not throw"
+    (let [shape     (make-degenerate-text-shape :x 0 :y 0 :width 100 :height 0)
+          modifiers (ctm/change-dimensions-modifiers shape :height 80 {:ignore-lock? true})
+          shape'    (assoc shape :modifiers modifiers)
+          result    (vth/fix-position shape')]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest fix-position-zero-width-and-height-selrect-does-not-throw
+  (t/testing "fix-position on a fully degenerate selrect does not throw"
+    (let [shape     (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 0)
+          modifiers (ctm/change-dimensions-modifiers shape :width 150 {:ignore-lock? true})
+          shape'    (assoc shape :modifiers modifiers)
+          result    (vth/fix-position shape')]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))

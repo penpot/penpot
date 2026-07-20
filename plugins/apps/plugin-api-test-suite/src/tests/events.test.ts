@@ -1,5 +1,6 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
+import { waitFor } from './wait';
 
 // Events.
 // Listeners are registered with `on`, triggered by mutating state, and removed
@@ -20,7 +21,7 @@ describe('Events', () => {
     });
 
     ctx.penpot.selection = [rect];
-    await sleep(150);
+    await waitFor(() => received !== null);
     ctx.penpot.off(listenerId);
 
     expect(received).not.toBeNull();
@@ -43,7 +44,7 @@ describe('Events', () => {
     );
 
     rect.name = 'changed-name';
-    await sleep(150);
+    await waitFor(() => fired);
     ctx.penpot.off(listenerId);
 
     expect(fired).toBe(true);
@@ -60,6 +61,8 @@ describe('Events', () => {
     ctx.penpot.off(listenerId);
 
     ctx.penpot.selection = [rect];
+    // Asserting a non-event: there is no positive condition to poll for, so
+    // give the debounce a fixed window to (not) fire.
     await sleep(150);
 
     expect(count).toBe(0);

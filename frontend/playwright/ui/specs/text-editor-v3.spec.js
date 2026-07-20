@@ -67,3 +67,89 @@ test.describe("BUG 10502 - Mixed families and variants", () => {
   });
 });
 
+test.describe("BUG 10530 - Empty text box left behind when leaving the editor", () => {
+  test("An empty text box is removed when leaving the editor by clicking outside", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+    await expect(layerRows).toHaveCount(0);
+
+    // Draw an empty text box
+    await workspace.createTextShape(200, 150, 320, 210);
+    // The shape exists while it is being edited
+    await expect(layerRows).toHaveCount(1);
+
+    // Leave the editor by clicking outside
+    await workspace.clickAt(500, 400);
+
+    await expect(layerRows).toHaveCount(0);
+  });
+
+  test("A non-empty text box is kept when leaving the editor by clicking outside", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+
+    // A text box with content must survive leaving the editor by clicking outside.
+    await workspace.createTextShape(200, 150, 320, 210, "hello");
+    await workspace.clickAt(500, 400);
+
+    await expect(layerRows).toHaveCount(1);
+  });
+});
+
+test("BUG 10467 - Auto-width text captures every typed character", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const layerRows = workspace.layers.getByTestId("layer-row");
+
+  // A single click with the text tool creates an auto-width text box by default
+  await workspace.createAutoWidthTextShape(200, 150, "hello world");
+
+  // Leave the editor to finalize the content
+  await workspace.textEditor.stopEditing();
+
+  // Assert the whole typed text made it into the shape
+  await workspace.layers.getByTestId("layer-row").first().click();
+  await workspace.waitForSelectedShapeName("hello world");
+});
+
+test("BUG 10531 - Entering the editor auto-selects the whole text", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  // Select the existing text shape and enter edit mode via Enter
+  await workspace.clickLeafLayer("Lorem ipsum");
+  await workspace.textEditor.startEditing();
+
+  // Copying while editing exports only the selected text as raw text.
+  // Since we just entered the editor, the whole text should be selected.
+  await workspace.copy("keyboard");
+
+  // Assert the text was copied correctly
+  const copiedText = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(copiedText).toBe("Lorem ipsum");
+});
+

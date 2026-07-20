@@ -1,4 +1,5 @@
 import { runTests } from '../framework/runner';
+import { getTests } from '../framework/registry';
 
 // In-sandbox CI entry point. Built as a standalone IIFE bundle (headless.js) and
 // evaluated inside a real Penpot plugin sandbox by the out-of-sandbox driver
@@ -16,10 +17,25 @@ async function main() {
     globalThis as unknown as { __PLUGIN_SUITE_MOCKED__?: boolean }
   ).__PLUGIN_SUITE_MOCKED__;
 
+  // Set by the driver from TEST_FILTER: run only tests whose group or name
+  // contains the given substring (case-insensitive).
+  const filter = (
+    globalThis as unknown as { __PLUGIN_SUITE_FILTER__?: string }
+  ).__PLUGIN_SUITE_FILTER__?.toLowerCase();
+  const ids = filter
+    ? getTests()
+        .filter(
+          (t) =>
+            t.name.toLowerCase().includes(filter) ||
+            t.group.toLowerCase().includes(filter),
+        )
+        .map((t) => t.id)
+    : ('all' as const);
+
   // Stream each result as it completes (not just at the end) so the runner sees
   // progress and partial output survives if a later test hangs to its timeout.
   const { summary, coverage, skipped } = await runTests(
-    'all',
+    ids,
     (result) => {
       if (result.status !== 'running') {
         console.log('__TEST_RESULT__ ' + JSON.stringify(result));

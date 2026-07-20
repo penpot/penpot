@@ -15,6 +15,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
@@ -176,13 +177,22 @@
                        (-> (dcm/open-thread thread)
                            (with-meta {::ev/origin "viewer"}))))))
 
+        expanded     (:expanded local)
+
         on-click
         (mf/use-fn
-         (mf/deps open-thread-id zoom page-id file-id modifier2)
+         (mf/deps open-thread-id expanded zoom page-id file-id modifier2)
          (fn [event]
            (dom/stop-propagation event)
-           (if (some? open-thread-id)
+           (cond
+             ;; A click anywhere first collapses a temporarily expanded cluster.
+             (some? expanded)
+             (st/emit! (dcm/collapse-comment-group))
+
+             (some? open-thread-id)
              (st/emit! (dcm/close-thread))
+
+             :else
              (let [event    (dom/event->native-event event)
                    position (-> (dom/get-offset-position event)
                                 (update :x #(/ % zoom))
@@ -204,24 +214,60 @@
              (st/emit! (dcm/create-thread-on-viewer params)
                        (dcm/close-thread)))))]
 
+    ;; Any zoom change collapses an expanded cluster back, matching the workspace.
+    (mf/with-effect [zoom]
+      (st/emit! (dcm/collapse-comment-group)))
+
     [:div {:class (stl/css :comments-section)
            :on-click on-click}
      [:div {:class (dm/str cursor " " (stl/css :viewer-comments-container))}
       [:div {:class (stl/css :threads)}
-       (for [item threads]
-         [:> cmt/comment-floating-bubble*
-          {:thread item
-           :position-modifier modifier1
-           :zoom zoom
-           :on-click on-bubble-click
-           :is-open (= (:id item) (:open local))
-           :key (:seqn item)
-           :origin :viewer}])
+       (for [thread-group (dwcm/group-bubbles zoom threads)]
+         (let [group?    (> (count thread-group) 1)
+               thread    (first thread-group)
+               expanded? (and group?
+                              (= expanded (into #{} (map :id) thread-group)))]
+           (cond
+             expanded?
+             [:* {:key (:seqn thread)}
+              [:> cmt/comment-floating-ghost*
+               {:thread-group thread-group
+                :zoom zoom
+                :position-modifier modifier1}]
+              (for [[thread offset ring] (cmt/expanded-group-offsets zoom thread-group)]
+                [:> cmt/comment-floating-bubble*
+                 {:thread thread
+                  :position-modifier modifier1
+                  :zoom zoom
+                  :offset offset
+                  :ring ring
+                  :on-click on-bubble-click
+                  :is-open false
+                  :origin :viewer
+                  :key (:seqn thread)}])]
+
+             group?
+             [:> cmt/comment-floating-group*
+              {:thread-group thread-group
+               :zoom zoom
+               :position-modifier modifier1
+               :key (:seqn thread)}]
+
+             :else
+             [:> cmt/comment-floating-bubble*
+              {:thread thread
+               :position-modifier modifier1
+               :zoom zoom
+               :on-click on-bubble-click
+               :is-open (= (:id thread) (:open local))
+               :origin :viewer
+               :key (:seqn thread)}])))
 
        (when-let [thread (get threads-map open-thread-id)]
          [:> cmt/comment-floating-thread*
           {:thread thread
            :position-modifier modifier1
+           :origin :viewer
            :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
            :zoom zoom}])
 

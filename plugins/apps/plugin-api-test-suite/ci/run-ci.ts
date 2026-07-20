@@ -15,6 +15,8 @@ import type { CoverageReport, TestResult } from '../src/framework/types';
 //   file, and drives the real backend + frontend end-to-end.
 //   Required env: E2E_LOGIN_EMAIL, E2E_LOGIN_PASSWORD.
 //   Optional env: PENPOT_BASE_URL (default https://localhost:3449).
+//   Optional env: TEST_FILTER — run only tests whose group or name contains
+//   the given substring (case-insensitive).
 //
 // - MOCKED (`MOCK_BACKEND=1`): serves the prebuilt frontend bundle via the e2e
 //   static server and intercepts every backend RPC with Playwright `page.route`,
@@ -369,9 +371,13 @@ async function main() {
   // The bundle runs inside an SES Compartment (its own `globalThis`), so a page
   // `addInitScript` global can't reach it. Prepend the mocked flag straight into
   // the evaluated code so the bundle's `runTests` excludes `skipIfMocked` tests.
-  const injectedCode = MOCKED
-    ? `globalThis.__PLUGIN_SUITE_MOCKED__ = true;\n${bundle}`
-    : bundle;
+  const filter = process.env['TEST_FILTER'];
+  const flags =
+    (MOCKED ? 'globalThis.__PLUGIN_SUITE_MOCKED__ = true;\n' : '') +
+    (filter
+      ? `globalThis.__PLUGIN_SUITE_FILTER__ = ${JSON.stringify(filter)};\n`
+      : '');
+  const injectedCode = flags ? `${flags}${bundle}` : bundle;
 
   const results: TestResult[] = [];
   let coverage: CoverageReport | null = null;

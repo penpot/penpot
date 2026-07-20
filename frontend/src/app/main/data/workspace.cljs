@@ -65,6 +65,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwva]
    [app.main.data.workspace.viewport :as dwv]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
    [app.main.features :as features]
@@ -440,6 +441,14 @@
 
                ;; Keep comment thread positions in sync on undo/redo
                (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
+
+               ;; Resize auto-grow text shapes whose selrect does not match
+               ;; the WASM text layout once their fonts finish loading.
+               (->> stream
+                    (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
+                    (rx/map deref)
+                    (rx/map (fn [{:keys [ids]}]
+                              (dwwt/resize-wasm-text-all ids))))
 
                (let [local-commits-s
                      (->> stream
@@ -1559,6 +1568,7 @@
 (dm/export dwcp/paste-shapes)
 (dm/export dwcp/paste-data-valid?)
 (dm/export dwcp/copy-link-to-clipboard)
+(dm/export dwcp/copy-id-to-clipboard)
 (dm/export dwcp/copy-as-image)
 
 ;; Drawing

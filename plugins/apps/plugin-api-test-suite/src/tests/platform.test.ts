@@ -35,9 +35,13 @@ describe('Platform', () => {
       expect(['light', 'dark']).toContain(ctx.penpot.theme);
     });
 
-    test('flags are readable', (ctx) => {
-      expect(typeof ctx.penpot.flags.naturalChildOrdering).toBe('boolean');
-      expect(typeof ctx.penpot.flags.throwValidationErrors).toBe('boolean');
+    // The whole suite is written against both flags being on (README "Runtime
+    // details"): invalid input throws and `children` is z-index ordered. Pin
+    // them so a runner-setup regression fails here instead of silently
+    // changing what dozens of tests mean.
+    test('runner pins naturalChildOrdering and throwValidationErrors on', (ctx) => {
+      expect(ctx.penpot.flags.naturalChildOrdering).toBe(true);
+      expect(ctx.penpot.flags.throwValidationErrors).toBe(true);
     });
   });
 

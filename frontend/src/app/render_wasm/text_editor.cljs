@@ -8,13 +8,17 @@
   "Text editor WASM bindings"
   (:require
    [app.common.types.fills.impl :as types.fills.impl]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.fonts :as main-fonts]
    [app.render-wasm.api.fonts :as fonts]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]))
+   [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.wasm :as wasm]
+   [app.util.color :as uc]
+   [app.util.dom :as dom]))
 
 (def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
@@ -122,6 +126,31 @@
                       :name "sample"}})
 
       nil)))
+
+(def ^:private selection-color-css-var "--text-editor-selection-background-color")
+(def ^:private caret-color-css-var "--text-editor-caret-color")
+
+(defn- resolve-theme-color
+  "Resolve a themed CSS color variable (read from the document body) into a
+   32-bit argb value for the WASM text editor, preserving the variable's alpha
+   channel."
+  [css-var]
+  (when-let [{:keys [color opacity]}
+             (uc/parse-css-color-opacity
+              (dom/get-css-variable css-var js/document.body))]
+    (sr-clr/hex->u32argb color opacity)))
+
+(defn text-editor-apply-theme
+  "Push the current theme's selection and caret colors (read from the CSS
+   custom properties on the document body) into the WASM text editor. The
+   editor theme is a persistent singleton, so call once after init and again
+   on every color-scheme change."
+  []
+  (when wasm/context-initialized?
+    (let [selection (resolve-theme-color selection-color-css-var)
+          caret     (resolve-theme-color caret-color-css-var)]
+      (when (and selection caret)
+        (h/call wasm/internal-module "_text_editor_apply_theme" selection caret)))))
 
 (defn text-editor-focus
   [id]
@@ -546,6 +575,22 @@
         new-para-set (assoc para-set :children new-paras)]
     (assoc content :children [new-para-set])))
 
+(defn- default-empty-text-content
+  "Build a default, empty text content tree used as a merge template.
+
+  A text shape created by a single click starts with `:content` nil, so
+  `set-shape-text-content` never seeds the content cache for it. Without a
+  template `text-editor-sync-content` would bail and the characters typed into
+  the WASM editor would never reach the shape. This provides the default
+  (Source Sans Pro) styling the WASM editor uses for a fresh empty shape."
+  []
+  (let [attrs (txt/get-default-text-attrs)]
+    {:type "root"
+     :children [{:type "paragraph-set"
+                 :children [(merge attrs
+                                   {:type "paragraph"
+                                    :children [(merge attrs {:text ""})]})]}]}))
+
 (defn text-editor-sync-content
   "Sync text content from the WASM text editor back to the frontend shape.
 
@@ -559,7 +604,11 @@
           new-texts (text-editor-export-content)]
       (when (and shape-id new-texts)
         (let [texts-clj (js->clj new-texts)
-              content   (get-cached-content shape-id)]
+              ;; A brand-new empty text shape (single click) has no cached
+              ;; content yet, so fall back to a default template so the first
+              ;; keystrokes are synced back to the shape instead of dropped.
+              content   (or (get-cached-content shape-id)
+                            (default-empty-text-content))]
           (when content
             (let [merged (merge-exported-texts-into-content content texts-clj)]
               (swap! shape-text-contents assoc shape-id merged)

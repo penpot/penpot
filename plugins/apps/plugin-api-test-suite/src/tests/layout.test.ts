@@ -82,6 +82,34 @@ describe('Layout', () => {
       expect(flex.leftPadding).toBeCloseTo(4.5, 2);
     });
 
+    // paddingType is "simple" (sides mirrored) or "multiple" (each side independent).
+    test('paddingType round-trips', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      expect(flex.paddingType).toBe('simple');
+      flex.paddingType = 'multiple';
+      expect(flex.paddingType).toBe('multiple');
+      flex.paddingType = 'simple';
+      expect(flex.paddingType).toBe('simple');
+    });
+
+    // Issue #10278: a single asymmetric side must switch paddingType to "multiple" so it paints.
+    test('setting an individual padding side switches paddingType to multiple', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      expect(flex.paddingType).toBe('simple');
+      flex.leftPadding = 40;
+      expect(flex.leftPadding).toBeCloseTo(40, 0);
+      expect(flex.paddingType).toBe('multiple');
+    });
+
+    // Re-derived from the sides: once symmetric again, the type collapses to "simple".
+    test('padding collapsing back to symmetric restores simple type', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      flex.leftPadding = 40;
+      expect(flex.paddingType).toBe('multiple');
+      flex.leftPadding = 0;
+      expect(flex.paddingType).toBe('simple');
+    });
+
     test('sizing round-trips', (ctx) => {
       const flex = board(ctx).addFlexLayout();
       flex.horizontalSizing = 'fix';
@@ -208,6 +236,22 @@ describe('Layout', () => {
       expect(grid.rightPadding).toBeCloseTo(2.75, 2);
       expect(grid.bottomPadding).toBeCloseTo(3.25, 2);
       expect(grid.leftPadding).toBeCloseTo(4.5, 2);
+    });
+
+    // paddingType behaves the same as on flex layouts (see issue #10278).
+    test('paddingType round-trips', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      expect(grid.paddingType).toBe('simple');
+      grid.paddingType = 'multiple';
+      expect(grid.paddingType).toBe('multiple');
+    });
+
+    test('setting an individual padding side switches paddingType to multiple', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      expect(grid.paddingType).toBe('simple');
+      grid.leftPadding = 40;
+      expect(grid.leftPadding).toBeCloseTo(40, 0);
+      expect(grid.paddingType).toBe('multiple');
     });
 
     // Index boundaries — invalid indices must be rejected.
@@ -388,6 +432,75 @@ describe('Layout', () => {
         expect(child.minHeight).toBeCloseTo(20, 0);
       }
     });
+
+    // marginType is the child-margin counterpart of a layout's paddingType.
+    test('marginType round-trips', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        expect(child.marginType).toBe('simple');
+        child.marginType = 'multiple';
+        expect(child.marginType).toBe('multiple');
+        child.marginType = 'simple';
+        expect(child.marginType).toBe('simple');
+      }
+    });
+
+    // Issue #10278 (margins): a single asymmetric side must switch marginType to "multiple".
+    test('setting an individual margin side switches marginType to multiple', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        expect(child.marginType).toBe('simple');
+        child.leftMargin = 12;
+        expect(child.leftMargin).toBeCloseTo(12, 0);
+        expect(child.marginType).toBe('multiple');
+      }
+    });
+
+    // Symmetric margins collapse the child back to "simple", mirroring padding.
+    test('margin collapsing back to symmetric restores simple type', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        child.leftMargin = 12;
+        expect(child.marginType).toBe('multiple');
+        child.leftMargin = 0;
+        expect(child.marginType).toBe('simple');
+      }
+    });
+
+    // Community report (forum #10700, issue #12): layoutChild was said to be
+    // null for children appended to a flex board that is re-found (fresh
+    // proxy) instead of using the creation-time reference. Did not reproduce;
+    // kept as a regression pin.
+    test('layoutChild is available on children of a re-found flex board', (ctx) => {
+      const b = board(ctx);
+      b.resize(300, 200);
+      b.addFlexLayout();
+
+      const found = ctx.penpot.currentPage.getShapeById(b.id) as Board;
+      expect(found).not.toBeNull();
+      const child = ctx.penpot.createRectangle();
+      found.appendChild(child);
+      expect(child.layoutChild).toBeDefined();
+      if (child.layoutChild) {
+        child.layoutChild.horizontalSizing = 'fill';
+        expect(child.layoutChild.horizontalSizing).toBe('fill');
+      }
+    });
   });
 
   describe('Cell', () => {
@@ -412,6 +525,94 @@ describe('Layout', () => {
         expect(cell.column).toBeCloseTo(1, 0);
         expect(cell.columnSpan).toBeCloseTo(2, 0);
       }
+    });
+
+    // Community report (forum #10700, issue #2): columnSpan was said to expand
+    // the grid's column count and scramble the other cells' positions. Did not
+    // reproduce; kept as a regression pin.
+    test('columnSpan spans a cell without changing column count or other cells', (ctx) => {
+      const b = board(ctx);
+      b.resize(600, 400);
+      const grid = b.addGridLayout();
+      grid.addColumn('flex', 1);
+      grid.addColumn('flex', 1);
+      grid.addColumn('flex', 1);
+      grid.addRow('flex', 1);
+      grid.addRow('flex', 1);
+
+      const a = ctx.penpot.createRectangle();
+      const c = ctx.penpot.createRectangle();
+      const d = ctx.penpot.createRectangle();
+      grid.appendChild(a, 1, 1);
+      grid.appendChild(c, 1, 3);
+      grid.appendChild(d, 2, 2);
+
+      const cellA = a.layoutCell;
+      expect(cellA).toBeDefined();
+      if (cellA) {
+        cellA.columnSpan = 2;
+      }
+
+      expect(grid.columns.length).toBe(3);
+      expect(grid.rows.length).toBe(2);
+      if (cellA) {
+        expect(cellA.row).toBeCloseTo(1, 0);
+        expect(cellA.column).toBeCloseTo(1, 0);
+        expect(cellA.columnSpan).toBeCloseTo(2, 0);
+      }
+      const cellC = c.layoutCell;
+      const cellD = d.layoutCell;
+      expect(cellC).toBeDefined();
+      expect(cellD).toBeDefined();
+      if (cellC && cellD) {
+        expect(cellC.row).toBeCloseTo(1, 0);
+        expect(cellC.column).toBeCloseTo(3, 0);
+        expect(cellD.row).toBeCloseTo(2, 0);
+        expect(cellD.column).toBeCloseTo(2, 0);
+      }
+    });
+  });
+
+  describe('Sizing', () => {
+    // Community report (forum #10700, feature request C): resize on a board
+    // whose layout hugs content (auto sizing) must behave like the UI — switch
+    // the sizing to fixed and apply the requested dimensions. This once snapped
+    // back to the hugged content (flex) or left the sizing 'auto' (grid). Fixed;
+    // kept as a regression pin.
+    test('resize on an auto-sized flex board switches sizing to fixed', (ctx) => {
+      const b = board(ctx);
+      b.resize(300, 200);
+      const flex = b.addFlexLayout();
+      flex.horizontalSizing = 'auto';
+      flex.verticalSizing = 'auto';
+      const child = ctx.penpot.createRectangle();
+      child.resize(50, 50);
+      b.appendChild(child);
+
+      b.resize(500, 400);
+      expect(b.width).toBeCloseTo(500, 0);
+      expect(b.height).toBeCloseTo(400, 0);
+      expect(flex.horizontalSizing).toBe('fix');
+      expect(flex.verticalSizing).toBe('fix');
+    });
+
+    test('resize on an auto-sized grid board switches sizing to fixed', (ctx) => {
+      const b = board(ctx);
+      b.resize(300, 200);
+      const grid = b.addGridLayout();
+      grid.addColumn('auto');
+      grid.addRow('auto');
+      grid.horizontalSizing = 'auto';
+      grid.verticalSizing = 'auto';
+      const child = ctx.penpot.createRectangle();
+      child.resize(50, 50);
+      grid.appendChild(child, 1, 1);
+
+      b.resize(500, 400);
+      expect(b.width).toBeCloseTo(500, 0);
+      expect(b.height).toBeCloseTo(400, 0);
+      expect(grid.horizontalSizing).toBe('fix');
+      expect(grid.verticalSizing).toBe('fix');
     });
   });
 

@@ -496,7 +496,7 @@
                 selected-child-render-idx
                 (when (> total default-chunk-size)
                   (some (fn [sel-id]
-                          (d/index-of-pred shapes #(= (:id %) sel-id)))
+                          (d/index-of-pred shapes #(= (get % :id) sel-id)))
                         selected))
 
                 ;; Load at least enough to include the selected child plus extra
@@ -514,12 +514,7 @@
 
             (reset! children-count* new-count))
 
-          (reset! children-count* 0))
-
-        (fn []
-          (when-let [obs (mf/ref-val observer-ref)]
-            (.disconnect obs)
-            (mf/set-ref-val! obs nil)))))
+          (reset! children-count* 0))))
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
     ;; and (shapes item) to reconnect observer after shape changes
@@ -528,11 +523,6 @@
             name-node   (mf/ref-val name-node-ref)
             scroll-node (dom/get-parent-with-data name-node "scroll-container")
             lazy-node   (mf/ref-val lazy-ref)]
-
-        ;; Disconnect previous observer
-        (when-let [obs (mf/ref-val observer-ref)]
-          (.disconnect obs)
-          (mf/set-ref-val! observer-ref nil))
 
         ;; Setup new observer if there are more children to load
         (when (and ^boolean is-expanded
@@ -547,7 +537,13 @@
                          (reset! children-count* next-count))))
                 observer (js/IntersectionObserver. cb #js {:root scroll-node})]
             (.observe observer lazy-node)
-            (mf/set-ref-val! observer-ref observer)))))
+            (mf/set-ref-val! observer-ref observer)))
+
+        ;; Disconnect on deps change or unmount; this effect owns the observer
+        (fn []
+          (when-let [obs (mf/ref-val observer-ref)]
+            (.disconnect obs)
+            (mf/set-ref-val! observer-ref nil)))))
 
     [:> layer-item-inner*
      {:ref dref

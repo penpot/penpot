@@ -85,9 +85,18 @@
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))
 
+(defn- with-nitrate-licence
+  [profile cfg]
+  (if (contains? cf/flags :nitrate)
+    (nitrate/add-nitrate-licence-to-profile cfg profile)
+    profile))
+
 (defmethod process-token :auth
   [{:keys [::db/conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/get-profile conn profile-id)]
+  (let [profile (-> (profile/get-profile conn profile-id)
+                    (profile/strip-private-attrs)
+                    (update :props profile/filter-props)
+                    (with-nitrate-licence cfg))]
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
@@ -184,13 +193,7 @@
                                         {:columns [:id :email :default-team-id]})
         registration-disabled? (not (contains? cf/flags :registration))
 
-        org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
-        ;; Membership only makes sense for a logged-in profile; querying it for
-        ;; an anonymous recipient would call nitrate with a nil profile-id and
-        ;; mask the clean :invalid-token response with a generic error.
-        membership             (when (and profile org-invitation?)
-                                 (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                                        :organization-id organization-id}))]
+        org-invitation?        (and (contains? cf/flags :nitrate) organization-id)]
 
     (if profile
       (do
@@ -201,23 +204,32 @@
                     :reason :email-mismatch
                     :hint "logged-in user does not matches the invitation"))
 
-        (when (:is-member membership)
-          (ex/raise :type :validation
-                    :code :already-an-org-member
-                    :team-id (:default-team-id membership)
-                    :hint "the user is already a member of the organization"))
-
-        (when (and org-invitation? (not (:organization-id membership)))
-          (ex/raise :type :validation
-                    :code :org-not-found
-                    :team-id (:default-team-id profile)
-                    :hint "the organization doesn't exist"))
-
         (when (nil? invitation)
           (ex/raise :type :validation
-                    :code :invalid-token
-                    :hint "no invitation associated with the token"))
+                    :code (if organization-id :canceled-invitation :invalid-token)
+                    :hint (if organization-id
+                            "the invitation has been canceled"
+                            "no invitation associated with the token")))
 
+        ;; Membership only makes sense for a logged-in profile with an
+        ;; existing invitation; querying it when the invitation is absent
+        ;; would call nitrate needlessly and could mask the clean
+        ;; :canceled-invitation/:invalid-token response with a generic error.
+        (let [membership (when org-invitation?
+                           (nitrate/call cfg :get-org-membership {:profile-id profile-id
+                                                                  :organization-id organization-id}))]
+
+          (when (:is-member membership)
+            (ex/raise :type :validation
+                      :code :already-an-org-member
+                      :team-id (:default-team-id membership)
+                      :hint "the user is already a member of the organization"))
+
+          (when (and org-invitation? (not (:organization-id membership)))
+            (ex/raise :type :validation
+                      :code :org-not-found
+                      :team-id (:default-team-id profile)
+                      :hint "the organization doesn't exist")))
 
         ;; if we have logged-in user and it matches the invitation we proceed
         ;; with accepting the invitation and joining the current profile to the
@@ -251,12 +263,17 @@
               (assoc :org-team-id accepted-team-id)))))
 
       (do
-        ;; If the user is not logged-in and the token is invalid we throw the error
-        ;; Taiga issue #14182
+        ;; If the user is not logged-in and the invitation has been canceled
+        ;; we return a specific error code so the frontend can redirect to
+        ;; login with an appropriate message instead of showing the error page.
+        ;; This only applies to org invitations; team invitations keep the
+        ;; existing :invalid-token behavior.
         (when (nil? invitation)
           (ex/raise :type :validation
-                    :code :invalid-token
-                    :hint "no invitation associated with the token"))
+                    :code (if organization-id :canceled-invitation :invalid-token)
+                    :hint (if organization-id
+                            "the invitation has been canceled"
+                            "no invitation associated with the token")))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
         ;; redirect user to login, if no member-id is present and  in the invitation

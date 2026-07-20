@@ -34,6 +34,24 @@ describe('Library', () => {
     expect(Array.isArray(ctx.penpot.library.connected)).toBe(true);
   });
 
+  // The Library object itself carries plugin data (it extends PluginData),
+  // stored on the underlying file. Exercised on the local library; the
+  // connected-library case (writing to a shared library's file/assets) shares
+  // the same code path but can't be fixtured here (connecting a library hangs).
+  test('local library stores plugin data', (ctx) => {
+    const lib = ctx.penpot.library.local;
+    lib.setPluginData('k', 'v');
+    expect(lib.getPluginData('k')).toBe('v');
+    expect(lib.getPluginDataKeys()).toContain('k');
+  });
+
+  test('local library stores shared plugin data', (ctx) => {
+    const lib = ctx.penpot.library.local;
+    lib.setSharedPluginData('ns', 'k', 'v');
+    expect(lib.getSharedPluginData('ns', 'k')).toBe('v');
+    expect(lib.getSharedPluginDataKeys('ns')).toContain('k');
+  });
+
   test('library elements expose a libraryId', (ctx) => {
     const color = ctx.penpot.library.local.createColor();
     expect(typeof color.libraryId).toBe('string');
@@ -126,6 +144,23 @@ describe('Library', () => {
       color.image = image;
       expect(color.image).toBeDefined();
     });
+
+    // `name`/`path` and the PluginData methods are inherited (LibraryElement /
+    // PluginData) but implemented per concrete type in the cljs binding
+    // (lib-color-proxy), so they must be exercised on each type separately.
+    test('color plugin data round-trips', (ctx) => {
+      const color = ctx.penpot.library.local.createColor();
+      color.setPluginData('k', 'v');
+      expect(color.getPluginData('k')).toBe('v');
+      expect(color.getPluginDataKeys()).toContain('k');
+    });
+
+    test('color shared plugin data round-trips', (ctx) => {
+      const color = ctx.penpot.library.local.createColor();
+      color.setSharedPluginData('ns', 'k', 'v');
+      expect(color.getSharedPluginData('ns', 'k')).toBe('v');
+      expect(color.getSharedPluginDataKeys('ns')).toContain('k');
+    });
   });
 
   describe('Typographies', () => {
@@ -141,6 +176,30 @@ describe('Library', () => {
       expect(typo.name).toBe('plugin-typo');
       expect(typo.fontSize).toBe('18');
       expect(typeof typo.fontId).toBe('string');
+    });
+
+    // `name`/`path` and PluginData are implemented per concrete type
+    // (lib-typography-proxy); exercise them on a typography specifically.
+    test('typography name and path round-trip', (ctx) => {
+      const typo = ctx.penpot.library.local.createTypography();
+      typo.name = 'Heading';
+      typo.path = 'Text';
+      expect(typo.name).toBe('Heading');
+      expect(typo.path).toBe('Text');
+    });
+
+    test('typography plugin data round-trips', (ctx) => {
+      const typo = ctx.penpot.library.local.createTypography();
+      typo.setPluginData('k', 'v');
+      expect(typo.getPluginData('k')).toBe('v');
+      expect(typo.getPluginDataKeys()).toContain('k');
+    });
+
+    test('typography shared plugin data round-trips', (ctx) => {
+      const typo = ctx.penpot.library.local.createTypography();
+      typo.setSharedPluginData('ns', 'k', 'v');
+      expect(typo.getSharedPluginData('ns', 'k')).toBe('v');
+      expect(typo.getSharedPluginDataKeys('ns')).toContain('k');
     });
 
     test('typography fontFamily and fontId round-trip', (ctx) => {
@@ -204,6 +263,38 @@ describe('Library', () => {
       comp.name = 'plugin-component';
       expect(comp.name).toBe('plugin-component');
       expect(comp.isVariant()).toBe(false);
+    });
+
+    // `name`/`path` and PluginData are implemented per concrete type
+    // (lib-component-proxy). `component.path` in particular had no test before,
+    // which is how the variant `.path` corruption slipped through — exercise it
+    // on a plain (non-variant) component here.
+    test('component name and path round-trip', (ctx) => {
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      const comp = ctx.penpot.library.local.createComponent([rect]);
+      comp.name = 'Button';
+      comp.path = 'Controls';
+      expect(comp.name).toBe('Button');
+      expect(comp.path).toBe('Controls');
+    });
+
+    test('component plugin data round-trips', (ctx) => {
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      const comp = ctx.penpot.library.local.createComponent([rect]);
+      comp.setPluginData('k', 'v');
+      expect(comp.getPluginData('k')).toBe('v');
+      expect(comp.getPluginDataKeys()).toContain('k');
+    });
+
+    test('component shared plugin data round-trips', (ctx) => {
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      const comp = ctx.penpot.library.local.createComponent([rect]);
+      comp.setSharedPluginData('ns', 'k', 'v');
+      expect(comp.getSharedPluginData('ns', 'k')).toBe('v');
+      expect(comp.getSharedPluginDataKeys('ns')).toContain('k');
     });
 
     test('component instance and mainInstance return shapes', (ctx) => {

@@ -15,8 +15,12 @@ automatically pull the identity from the local git config `user.name` and `user.
 
 Body explaining what changed and why.
 
-Co-authored-by: model-name <model-name@penpot.app>
+AI-assisted-by: model-name
 ```
+
+**AI-assisted-by trailer rules:**
+- Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`
+- Do NOT add prefixes like `opencode-go/` — use the bare model name
 
 ## Commit Type Emojis
 
