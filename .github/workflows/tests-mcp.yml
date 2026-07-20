@@ -49,4 +49,4 @@ jobs:
       - name: Tests
         working-directory: ./mcp
         run: |
-          pnpm -r run test;
+          pnpm run test;
