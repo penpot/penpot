@@ -733,7 +733,11 @@ pub extern "C" fn set_shape_svg_raw_content() -> Result<()> {
             .map_err(|e| Error::RecoverableError(e.to_string()))?
             .trim_end_matches('\0')
             .to_string();
+
+        let render_state = get_render_state();
+        let font_manager = skia::FontMgr::from(render_state.fonts().font_provider().clone());
         shape.set_svg_raw_content(svg_raw_content);
+        shape.update_svg_raw_content(font_manager);
     });
 
     Ok(())

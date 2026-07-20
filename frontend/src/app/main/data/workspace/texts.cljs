@@ -1098,7 +1098,12 @@
                                      (select-keys shape [:selrect :points :width :height]))
               content-has-text? (v2-content-has-text? content)
               prev-content-has-text? (v2-content-has-text? prev-content)
-              new-size (when (not= :fixed (:grow-type shape))
+              ;; Only measure/resize the shape on finalize. While the user is
+              ;; actively typing, the WASM editor already renders the growing text
+              ;; (and the editor overlay measures it live), so a per-keystroke
+              ;; resize is redundant and, going through the interactive-transform
+              ;; modifier machinery, made auto-width typing very laggy.
+              new-size (when (and finalize? (not= :fixed (:grow-type shape)))
                          (dwwt/get-wasm-text-new-size shape content))
               ;; New shapes: single undo on finalize only (no per-keystroke undo)
               effective-save-undo? (if new-shape? finalize? save-undo?)
@@ -1139,15 +1144,12 @@
               :stack-undo? effective-stack-undo?
               :undo-group (when new-shape? id)})
 
-            ;; When `get-wasm-text-new-size` reports a change, `update-shapes` above resizes the
-            ;; shape data; the WASM renderer still needs matching modifiers. While editing, use
-            ;; `set-wasm-modifiers` for a temporary preview; on `finalize?`, `apply-wasm-modifiers`
-            ;; commits layout (flex parents, sidebar width, etc.) like other transform flows.
+            ;; `new-size` is only computed on finalize (see above), so this commits
+            ;; the final auto-width/auto-height geometry via `apply-wasm-modifiers`
+            ;; like other transform flows (flex parents, sidebar width, etc.).
             (when (some? new-size)
               (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
-                (if finalize?
-                  (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)})
-                  (dwm/set-wasm-modifiers modifiers {:undo-group (when new-shape? id)})))))
+                (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)}))))
 
            (when finalize?
              (rx/concat

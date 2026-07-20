@@ -400,6 +400,13 @@ impl TextContent {
         &self.paragraphs
     }
 
+    pub fn has_non_ascii(&self) -> bool {
+        self.paragraphs
+            .iter()
+            .flat_map(|p| p.children())
+            .any(|span| !span.text.is_ascii())
+    }
+
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
         self.content_version = self.content_version.wrapping_add(1);
         &mut self.paragraphs
@@ -886,6 +893,11 @@ impl TextContent {
         self.layout.set(result.0, result.1);
         self.size
             .copy_finite_size(result.2, default_width, default_height);
+    }
+
+    pub fn force_next_layout_update(&mut self) {
+        self.layout_width = None;
+        self.layout.cached_extrect.set(None);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {

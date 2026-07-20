@@ -11,6 +11,7 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
@@ -67,9 +68,7 @@
   (t/is (= :r1 (ptok/token-attr-plugin->token-attr :border-radius-top-left)))
   (t/is (= :r2 (ptok/token-attr-plugin->token-attr :border-radius-top-right)))
   (t/is (= :r3 (ptok/token-attr-plugin->token-attr :border-radius-bottom-right)))
-  (t/is (= :r4 (ptok/token-attr-plugin->token-attr :border-radius-bottom-left)))
-  (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top-left)))
-  (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom-right))))
+  (t/is (= :r4 (ptok/token-attr-plugin->token-attr :border-radius-bottom-left))))
 
 (t/deftest token-attr-plugin->token-attr-resolves-padding-margin-side-aliases
   (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top)))
@@ -87,7 +86,7 @@
   (t/is (= :stroke-color (ptok/token-attr-plugin->token-attr "stroke-color")))
   ;; Verbose plugin aliases work via the string path too.
   (t/is (= :r1 (ptok/token-attr-plugin->token-attr "border-radius-top-left")))
-  (t/is (= :m3 (ptok/token-attr-plugin->token-attr "margin-bottom-right"))))
+  (t/is (= :m3 (ptok/token-attr-plugin->token-attr "margin-bottom"))))
 
 (t/deftest token-attr?-accepts-keyword-input
   (t/is (true? (boolean (ptok/token-attr? :fill))))
@@ -142,7 +141,7 @@
        (fn []
          (let [shape-id (cthi/id :frame1)
                page-id  (cthf/current-page-id file)]
-           (t/is (= "spacing.medium" (.. shape -tokens -paddingTopLeft)))
+           (t/is (= "spacing.medium" (.. shape -tokens -paddingTop)))
            (t/is (= "spacing.medium"
                     (get-in @store
                             [:files (:id file) :data :pages-index page-id
@@ -338,3 +337,66 @@
         result (get-resolved-value token {(:name token) token})]
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec result)))))
+
+(t/deftest token-theme-add-set-accepts-token-set-id
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        token-set (ctob/make-token-set :id set-id :name "Core")
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
+                                         ([event & _] (swap! emitted conj event) nil))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.addSet theme-proxy (str set-id))
+        (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
+        (t/is (empty? @invalid))))))
+
+(t/deftest token-theme-add-set-accepts-token-set-proxy
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        token-set (ctob/make-token-set :id set-id :name "Core")
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
+                                         ([event & _] (swap! emitted conj event) nil))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
+            set-proxy   (ptok/token-set-proxy plugin-id file-id set-id "Core")]
+        (.addSet theme-proxy set-proxy)
+        (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
+        (t/is (empty? @invalid))))))
+
+(t/deftest token-theme-add-set-rejects-invalid-arguments
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (constantly nil)
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
+                                         ([event & _] (swap! emitted conj event) nil))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        ;; Non-id, non-proxy arguments are rejected by the schema coercer.
+        (.addSet theme-proxy 42)
+        (.removeSet theme-proxy nil)
+        (t/is (empty? @emitted))
+        (t/is (= 2 (count @invalid)))
+        (t/is (every? #(= :error (first %)) @invalid))))))
+

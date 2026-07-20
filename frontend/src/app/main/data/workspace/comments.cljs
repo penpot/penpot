@@ -24,7 +24,7 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwlo]
-   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -71,7 +71,7 @@
 
              (rx/take-until stopper-s))))))
 
-(defn- handle-interrupt
+(defn handle-interrupt
   []
   (ptk/reify ::handle-interrupt
     ptk/WatchEvent
@@ -79,15 +79,15 @@
       (let [local           (:comments-local state)
             comments-mode?  (= :comments (get-in state [:workspace-drawing :tool]))]
         (cond
-          (:draft local) (rx/of (dcmt/close-thread))
-          (:open local)  (rx/of (dcmt/close-thread))
+          (:draft local)    (rx/of (dcmt/close-thread))
+          (:open local)     (rx/of (dcmt/close-thread))
+          (:expanded local) (rx/of (dcmt/collapse-comment-group))
           ;; Only clear edition / deselect on interrupt while the comments
           ;; tool is active. When comments are merely visible during design,
           ;; `select-shape` emits `:interrupt` and this would otherwise wipe
           ;; the freshly selected shape, breaking click selection.
-          comments-mode? (rx/of (dwe/clear-edition-mode)
-                                (dws/deselect-all true))
-          :else          (rx/empty))))))
+          comments-mode?    (rx/of (dwe/clear-edition-mode))
+          :else             (rx/empty))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,
@@ -98,17 +98,28 @@
   (ptk/reify ::handle-comment-layer-click
     ptk/WatchEvent
     (watch [_ state _]
-      (if (not= :comments (get-in state [:workspace-drawing :tool]))
-        (rx/empty)
-        (let [local (:comments-local state)]
-          (if (some? (:open local))
-            (rx/of (dcmt/close-thread))
-            (let [page-id (:current-page-id state)
-                  file-id (:current-file-id state)
-                  params  {:position position
-                           :page-id page-id
-                           :file-id file-id}]
-              (rx/of (dcmt/create-draft params)))))))))
+      (let [local          (:comments-local state)
+            comments-mode? (= :comments (get-in state [:workspace-drawing :tool]))]
+        (cond
+          ;; A click anywhere collapses a temporarily separated cluster,
+          ;; regardless of the active tool. Opening a thread clears :expanded,
+          ;; so this never fires while a comment is open.
+          (some? (:expanded local))
+          (rx/of (dcmt/collapse-comment-group))
+
+          (not comments-mode?)
+          (rx/empty)
+
+          (some? (:open local))
+          (rx/of (dcmt/close-thread))
+
+          :else
+          (let [page-id (:current-page-id state)
+                file-id (:current-file-id state)
+                params  {:position position
+                         :page-id page-id
+                         :file-id file-id}]
+            (rx/of (dcmt/create-draft params))))))))
 
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
@@ -127,7 +138,11 @@
                       nh (- (/ (:height vbox) 2) ph)
                       nx (- (:x position) nw)
                       ny (- (:y position) nh)]
-                  (update local :vbox assoc :x nx :y ny)))))))
+                  (update local :vbox assoc :x nx :y ny)))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn- set-comment-thread
   "Stores the comment thread in the workspace state so its bubble re-renders."
@@ -305,6 +320,25 @@
         distance-overlap 32]
     (< distance-zoom distance-overlap)))
 
+(defn group-bubbles
+  "Group bubbles into vectors by proximity: each group holds threads whose
+   bubbles overlap at the given `zoom`."
+  [zoom circles]
+  (letfn [(overlaps-group? [current group]
+            (some #(overlap-bubbles? zoom current %) group))
+
+          (find-overlapping-group [groups current]
+            (some #(when (overlaps-group? current %) %) groups))
+
+          (add-to-group [groups target current]
+            (map #(if (= % target) (cons current %) %) groups))
+
+          (assign [groups current]
+            (if-let [group (find-overlapping-group groups current)]
+              (add-to-group groups group current)
+              (cons [current] groups)))]
+    (reduce assign [] circles)))
+
 (defn- calculate-zoom-scale-to-ungroup-current-bubble
   "Calculate the minimum zoom scale needed to keep the current bubble ungrouped from the rest"
   [zoom thread threads]
@@ -373,7 +407,7 @@
          (rx/empty))
        (->> (rx/of
              (dwd/select-for-drawing :comments)
-             (set-zoom-to-separate-grouped-bubbles thread)
+             ;; Center on the comment (no zoom) and open its thread.
              (center-to-comment-thread thread)
              (with-meta (dcmt/open-thread thread) {::ev/origin "workspace"}))
             (rx/observe-on :async))))))

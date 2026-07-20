@@ -10,11 +10,12 @@
    [app.main.data.workspace.path.common :as dwpc]
    [app.main.features :as features]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.text-editor :as text-editor]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn interrupt? [e] (= e :interrupt))
+(defn interrupt?
+  [e]
+  (= e :interrupt))
 
 (declare clear-edition-mode)
 
@@ -52,7 +53,7 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :edition :edit-path)
-          (update :workspace-drawing dissoc :tool :object :lock)
+          (update :workspace-drawing dissoc :object :lock)
           (dissoc :workspace-grid-edition)
           (dissoc :workspace-wasm-editor-styles)))
 
@@ -66,6 +67,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "text-editor-wasm/v1")
-        (text-editor/text-editor-dispose)
+        ;; NOTE: the WASM text editor is disposed by the v3 editor component on
+        ;; unmount, *after* it finalizes its content.
         (wasm.api/request-render "clear-edition-mode")))))
 

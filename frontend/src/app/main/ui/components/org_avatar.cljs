@@ -11,7 +11,6 @@
    [rumext.v2 :as mf]))
 
 (mf/defc org-avatar*
-  {::mf/props :obj}
   [{:keys [org size]}]
   (let [name         (:name org)
         custom-photo (:custom-photo org)

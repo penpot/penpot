@@ -13,6 +13,8 @@
 .nyc_output
 .rebel_readline_history
 .repl
+opencode.json
+.opencode/package-lock.json
 /*.jpg
 /*.md
 !CHANGES.md
@@ -30,7 +32,6 @@
 /.clj-kondo/.cache
 /_dump
 /notes
-/.opencode/package-lock.json
 /plans
 /prompts
 /playground/
@@ -98,5 +99,8 @@
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
+/.opencode/plans
+/.opencode/reports
+/.opencode/prompts
 /.codex/
 /tools/__pycache__

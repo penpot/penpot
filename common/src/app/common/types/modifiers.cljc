@@ -500,9 +500,9 @@
         shape-transform (:transform shape)
         shape-transform-inv (:transform-inverse shape)
         shape-center (gco/shape->center shape)
-        {sr-width :width sr-height :height} (:selrect shape)
+        {sr-width :width sr-height :height} (safe-size-rect shape)
 
-        origin (cond-> (gpt/point (:selrect shape))
+        origin (cond-> (gpt/point (safe-size-rect shape))
                  (some? shape-transform)
                  (gmt/transform-point-center shape-center shape-transform))
 

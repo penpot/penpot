@@ -81,7 +81,8 @@
                          (fn [err]
                            (rx/error! subs err)))))
 
-                    (rx/error! subs "Frame not found")))
+                    ;; A missing frame. Nothing to render, so end quietly. 
+                    (rx/end! subs)))
                 (catch :default err
                   (rx/error! subs err)))))]
        #(timers/cancel-af! req-id)))))

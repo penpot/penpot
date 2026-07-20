@@ -9,6 +9,7 @@ import type {
   TokenTypography,
 } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
+import { waitFor } from './wait';
 
 // Design tokens.
 // The token catalog is reached through the local library. Sets/themes/tokens are
@@ -66,6 +67,29 @@ describe('Tokens', () => {
       set.active = false;
       expect(set.active).toBe(false);
       set.toggleActive();
+      expect(set.active).toBe(true);
+    });
+
+    // Community report (forum #10700, issue #14): toggling a token set's
+    // active state was said to freeze and roll back when tokens from the set
+    // are bound to shapes. Did not reproduce; kept as a regression pin.
+    test('toggleActive persists when the set has bound tokens', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderRadius',
+        name: unique('radius.'),
+        value: '12',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      rect.applyToken(token);
+      await sleep(300);
+
+      set.toggleActive();
+      await waitFor(() => set.active === false);
+      expect(set.active).toBe(false);
+      set.toggleActive();
+      await waitFor(() => set.active === true);
       expect(set.active).toBe(true);
     });
 
@@ -143,9 +167,22 @@ describe('Tokens', () => {
       const theme = cat.addTheme({ group: '', name: unique('theme') });
       const set = cat.addSet({ name: unique('set'), active: false });
       theme.addSet(set);
-      await sleep(300);
+      await waitFor(() => theme.activeSets.length > 0);
       expect(theme.activeSets.length).toBeGreaterThan(0);
       theme.removeSet(set);
+    });
+
+    // addSet/removeSet also accept a token set id (string), not just a TokenSet.
+    test('addSet and removeSet accept a set id', async (ctx) => {
+      const cat = catalog(ctx);
+      const theme = cat.addTheme({ group: '', name: unique('theme') });
+      const set = cat.addSet({ name: unique('set'), active: false });
+      theme.addSet(set.id);
+      await waitFor(() => theme.activeSets.length > 0);
+      expect(theme.activeSets.length).toBeGreaterThan(0);
+      theme.removeSet(set.id);
+      await waitFor(() => theme.activeSets.length === 0);
+      expect(theme.activeSets.length).toBe(0);
     });
 
     test('duplicate and remove a theme', (ctx) => {
@@ -211,7 +248,7 @@ describe('Tokens', () => {
       const rect = ctx.penpot.createRectangle();
       ctx.board.appendChild(rect);
       token.applyToShapes([rect]);
-      await sleep(300);
+      await waitFor(() => Object.keys(rect.tokens).length > 0);
       expect(Object.keys(rect.tokens).length).toBeGreaterThan(0);
     });
 
@@ -226,7 +263,7 @@ describe('Tokens', () => {
       ctx.board.appendChild(rect);
       ctx.penpot.selection = [rect];
       token.applyToSelected();
-      await sleep(300);
+      await waitFor(() => Object.keys(rect.tokens).length > 0);
       expect(Object.keys(rect.tokens).length).toBeGreaterThan(0);
     });
 
@@ -241,6 +278,32 @@ describe('Tokens', () => {
       ctx.board.appendChild(rect);
       rect.applyToken(token);
       expect(rect.tokens).toBeDefined();
+    });
+
+    // Community report (forum #10700, issue #9): applyToken with a spacing token
+    // on 'paddingLeft' once recorded the binding under a bogus
+    // 'paddingBottomLeft' key (the gap properties bound correctly). Fixed; kept
+    // as a regression pin.
+    test('applyToken binds a spacing token to flex padding', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'spacing',
+        name: unique('spacing.'),
+        value: '8',
+      });
+
+      const b = ctx.penpot.createBoard();
+      ctx.board.appendChild(b);
+      b.resize(300, 200);
+      b.addFlexLayout();
+
+      b.applyToken(token, ['columnGap']);
+      b.applyToken(token, ['paddingLeft']);
+      // Both bindings settle together; wait on columnGap, then assert paddingLeft
+      // lands under its own key (the previously-misfiled case).
+      await waitFor(() => Object.keys(b.tokens).includes('columnGap'));
+      expect(Object.keys(b.tokens)).toContain('columnGap');
+      expect(Object.keys(b.tokens)).toContain('paddingLeft');
     });
 
     test('duplicate and remove a token', (ctx) => {
@@ -305,11 +368,19 @@ describe('Token types', () => {
       expect(typeof token.type).toBe('string');
       void token.value;
       token.value = value2;
-      token.name = unique('renamed.');
-      expect(typeof token.name).toBe('string');
-      // Record the resolvedValue (get) target for every type. fontFamilies
-      // returns the wrong shape (see the dedicated red test below), but reading
-      // it no longer throws, so a plain read is enough here.
+      const renamed = unique('renamed.');
+      token.name = renamed;
+      // The value and name setters round-trip on the live backend. A
+      // `fontFamilies` value reads back as a family array, so join it before
+      // comparing to the assigned single family.
+      const readValue = token.value;
+      const normalized = Array.isArray(readValue)
+        ? readValue.join(', ')
+        : readValue;
+      expect(normalized).toBe(value2);
+      expect(token.name).toBe(renamed);
+      // Record the resolvedValue (get) target for every type; the fontFamilies
+      // shape is asserted in the dedicated test below.
       void token.resolvedValue;
     });
   }

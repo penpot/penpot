@@ -4,10 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .badge-text {
-  fill: var(--app-black);
-  font-size: calc(deprecated.$fs-12 / var(--zoom));
-  font-family: "worksans", "vazirmatn", sans-serif;
+  fill: var(--color-static-white);
+  font-size: calc(px2rem(12) / var(--zoom));
 }

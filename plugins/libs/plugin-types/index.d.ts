@@ -485,9 +485,9 @@ export interface CloseOverlay {
   readonly destination?: Board;
 
   /**
-   * Animation displayed with this interaction.
+   * Animation displayed with this interaction. Omit it to close with no transition.
    */
-  readonly animation: Animation;
+  readonly animation?: Animation;
 }
 
 /**
@@ -747,6 +747,13 @@ export interface CommonLayout {
    * The `leftPadding` property specifies the padding at the left of the container.
    */
   leftPadding: number;
+  /**
+   * The `paddingType` property specifies how the four padding values are applied.
+   * It can be one of the following values:
+   * - 'simple': the vertical and horizontal paddings are mirrored across both sides.
+   * - 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
+   */
+  paddingType: 'simple' | 'multiple';
 
   /**
    * The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
@@ -1654,6 +1661,46 @@ export interface File extends PluginData {
    * Requires the `content:write` permission.
    */
   saveVersion(label: string): Promise<FileVersion>;
+
+  /**
+   * Runs the referential-integrity validation on the file and returns the list
+   * of errors found. An empty array means the file is valid. Useful to detect
+   * inconsistencies (dangling references, broken components/variants, …) that
+   * the backend would otherwise reject when the file is saved.
+   *
+   * @example
+   * ```js
+   * const errors = file.validate();
+   * if (errors.length) console.error(errors);
+   * ```
+   */
+  validate(): FileValidationError[];
+}
+
+/**
+ * A single referential-integrity error reported by {@link File.validate}.
+ */
+export interface FileValidationError {
+  /**
+   * The validation error code (e.g. `'variant-component-bad-name'`,
+   * `'child-not-found'`).
+   */
+  readonly code: string;
+
+  /**
+   * A human-readable description of the error.
+   */
+  readonly hint: string;
+
+  /**
+   * The id of the offending shape, when the error is attached to one.
+   */
+  readonly shapeId: string | null;
+
+  /**
+   * The id of the page the offending shape lives in, when applicable.
+   */
+  readonly pageId: string | null;
 }
 
 /**
@@ -2537,6 +2584,14 @@ export interface LayoutChildProperties {
   leftMargin: number;
 
   /**
+   * The `marginType` property specifies how the four margin values are applied.
+   * It can be one of the following values:
+   * - 'simple': the vertical and horizontal margins are mirrored across both sides.
+   * - 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
+   */
+  marginType: 'simple' | 'multiple';
+
+  /**
    * Defines the maximum width of the child element.
    * If set to null, there is no maximum width constraint.
    */
@@ -3103,6 +3158,20 @@ export interface Page extends PluginData {
   readonly root: Shape;
 
   /**
+   * Removes the page from the file. The last remaining page of the file
+   * cannot be removed. If the removed page is the active one, another page
+   * is activated.
+   * Requires `content:write` permission.
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.remove();
+   * ```
+   */
+  remove(): void;
+
+  /**
    * Retrieves a shape by its unique identifier.
    * @param id The unique identifier of the shape.
    *
@@ -3514,6 +3583,11 @@ export interface RulerGuide {
    * If the guide is attached to a board this will retrieve the board shape
    */
   board?: Board;
+
+  /**
+   * Removes the guide from its page.
+   */
+  remove(): void;
 }
 
 /**
@@ -3882,6 +3956,14 @@ export interface ShapeBase extends PluginData {
   swapComponent(component: LibraryComponent): void;
 
   /**
+   * Resets the overrides of the component copy, restoring all its attributes
+   * (and those of its children) to the ones in the linked main component.
+   * Similar to the "reset overrides" action on the Penpot interface.
+   * The current shape must be a component copy instance.
+   */
+  resetOverrides(): void;
+
+  /**
    * Switch a VariantComponent copy to the nearest one that has the specified property value
    * @param pos The position of the property to update
    * @param value The new value of the property
@@ -4098,6 +4180,10 @@ export interface Stroke {
    * The optional gradient stroke defined by a Gradient object.
    */
   strokeColorGradient?: Gradient;
+  /**
+   * The optional image stroke defined by an ImageData object.
+   */
+  strokeImage?: ImageData;
 }
 
 /**
@@ -5291,13 +5377,17 @@ export interface TokenTheme {
 
   /**
    * Adds a set to the list of the theme.
+   *
+   * @param tokenSet a `TokenSet` or the id of a token set.
    */
-  addSet(tokenSet: TokenSet): void;
+  addSet(tokenSet: TokenSet | string): void;
 
   /**
    * Removes a set from the list of the theme.
+   *
+   * @param tokenSet a `TokenSet` or the id of a token set.
    */
-  removeSet(tokenSet: TokenSet): void;
+  removeSet(tokenSet: TokenSet | string): void;
 
   /**
    * Adds to the catalog a new TokenTheme equal to this one but with a new id.

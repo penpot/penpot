@@ -2,20 +2,17 @@ import { expect, expectReject } from '../framework/expect';
 import { describe, test } from '../framework/registry';
 import type { CommentThread, Page } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
+import { waitFor } from './wait';
 
 // Comments.
-// Comment threads are created on the current page. Both thread removal APIs are
-// currently broken (see the dedicated red tests), so cleanup is best-effort to
-// keep the other assertions meaningful.
+// Comment threads are created on the current page. Thread/comment removal is
+// asynchronous (it resolves once the backend delete RPC completes), so callers
+// must await it; cleanup is best-effort and swallows errors.
 
 function page(ctx: TestContext): Page {
   const p = ctx.penpot.currentPage;
   if (!p) throw new Error('no current page');
   return p;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function cleanup(thread: CommentThread): void {
@@ -97,7 +94,7 @@ describe.skipIfMocked('Comments', () => {
       const comment = comments[0];
       comment.content = 'edited content';
       // The content setter persists via an async RPC before updating locally.
-      await sleep(300);
+      await waitFor(() => comment.content === 'edited content');
       expect(comment.content).toBe('edited content');
       expect(comment.user).toBeDefined();
     } finally {
@@ -111,8 +108,10 @@ describe.skipIfMocked('Comments', () => {
     try {
       const reply = await thread.reply('to be removed');
       await reply.remove();
+      // The root comment survives but the removed reply is gone.
       const comments = await thread.findComments();
       expect(comments.length).toBeGreaterThan(0);
+      expect(comments.some((c) => c.content === 'to be removed')).toBe(false);
     } finally {
       cleanup(thread);
     }
@@ -124,7 +123,7 @@ describe.skipIfMocked('Comments', () => {
       x: 8,
       y: 8,
     });
-    thread.remove();
+    await thread.remove();
     const threads = await p.findCommentThreads();
     expect(threads.every((t) => t.seqNumber !== thread.seqNumber)).toBe(true);
   });
@@ -136,6 +135,8 @@ describe.skipIfMocked('Comments', () => {
       y: 70,
     });
     await p.removeCommentThread(thread);
+    const threads = await p.findCommentThreads();
+    expect(threads.every((t) => t.seqNumber !== thread.seqNumber)).toBe(true);
   });
 
   // ---------------------------------------------------------------------------

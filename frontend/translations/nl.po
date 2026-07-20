@@ -585,9 +585,8 @@ msgstr "Selectie exporteren"
 msgid "dashboard.export-standard-multi"
 msgstr "%s standaardbestanden downloaden (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Een of meer bestanden die je wilt downloaden maken gebruik van gedeelde "
 "bibliotheken. Wat wil je doen met hun assets*?"
@@ -1282,10 +1281,6 @@ msgstr "Geen overeenkomsten gevonden."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Lijst met tokens openen"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} is niet beschikbaar in een actieve verzameling of thema."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -8124,10 +8119,6 @@ msgstr "Vulling"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Radius"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Referentie is niet geldig of zit niet in een actieve verzameling"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

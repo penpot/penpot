@@ -22,6 +22,7 @@
 
 (def ^:private defaults
   {:public-uri "http://localhost:3449"
+   :internal-uri nil
    :tenant "default"
    :host "localhost"
    :http-server-port 6061
@@ -33,6 +34,7 @@
   [:map {:title "config"}
    [:secret-key :string]
    [:public-uri {:optional true} ::sm/uri]
+   [:internal-uri {:optional true} ::sm/uri]
    [:exporter-shared-key {:optional true} :string]
    [:host {:optional true} :string]
    [:tenant {:optional true} :string]
@@ -99,6 +101,12 @@
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+(defn get-internal-uri
+  "Returns internal-uri if set, otherwise falls back to public-uri."
+  []
+  (or (c/get config :internal-uri)
+      (c/get config :public-uri)))
 
 (def management-key
   (let [key (or (c/get config :exporter-shared-key)

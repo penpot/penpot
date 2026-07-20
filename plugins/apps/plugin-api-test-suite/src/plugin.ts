@@ -16,17 +16,29 @@ function send(message: PluginToUIMessage) {
   penpot.ui.sendMessage(message);
 }
 
+// Set by a `stop` message and read between tests by the runner. Reset at the
+// start of every run.
+let stopRequested = false;
+
 penpot.ui.onMessage<UIToPluginMessage>(async (message) => {
   if (message.type === 'ready') {
     send({ type: 'tests', tests: getTestMetas() });
     return;
   }
 
+  if (message.type === 'stop') {
+    stopRequested = true;
+    return;
+  }
+
   if (message.type === 'run') {
-    const { summary, coverage } = await runTests(message.ids, (result) =>
-      send({ type: 'result', result }),
+    stopRequested = false;
+    const { summary, coverage, stopped } = await runTests(
+      message.ids,
+      (result) => send({ type: 'result', result }),
+      { shouldStop: () => stopRequested },
     );
-    send({ type: 'runComplete', summary, coverage });
+    send({ type: 'runComplete', summary, coverage, stopped });
     return;
   }
 

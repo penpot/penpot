@@ -139,6 +139,25 @@
     (when (and (some? file-id) (some? page-id) (some? id))
       (locate-shape file-id page-id id))))
 
+(defn inside-component-copy?
+  "True when `shape` is nested inside a component copy. The copy root itself is
+  movable as a whole; its descendants are structural copy content and must not
+  be reparented by the Plugin API."
+  [objects shape]
+  (boolean (ctn/has-any-copy-parent? objects shape)))
+
+(defn component-copy-container?
+  "True when changing `shape`'s children would alter a component copy structure."
+  [shape]
+  (boolean (ctk/in-component-copy? shape)))
+
+(defn changes-component-copy-structure?
+  "Returns true when moving `child` into `parent` would either alter a copy
+  container or move an existing child out of/within a component copy."
+  [objects parent child]
+  (or (component-copy-container? parent)
+      (inside-component-copy? objects child)))
+
 (defn proxy->library-color
   [proxy]
   (let [file-id (obj/get proxy "$file")
@@ -311,12 +330,16 @@
 
 (defn error-messages
   [explain]
-  (->> (:errors explain)
-       (reduce csm/interpret-schema-problem {})
-       (flatten-error-map)
-       (map (fn [[field message]]
-              (tr "plugins.validation.message" field message)))
-       (str/join ". ")))
+  (let [msg (->> (:errors explain)
+                 (reduce csm/interpret-schema-problem {})
+                 (flatten-error-map)
+                 (map (fn [[field message]]
+                        (tr "plugins.validation.message" field message)))
+                 (str/join ". "))]
+    ;; Return nil (not "") when the explain has no mappable errors, so
+    ;; `handle-error` can fall back to a non-empty message instead of
+    ;; surfacing a bare "Value not valid. Code: :error" (#9692).
+    (when-not (str/blank? msg) msg)))
 
 (defn handle-error
   "Function to be used in plugin proxies methods to handle errors and print a readable
@@ -340,8 +363,8 @@
               (if explain
                 (do
                   (js/console.error (sm/humanize-explain explain))
-                  (error-messages explain))
-                (ex-data cause))]
+                  (or (error-messages explain) (pr-str explain)))
+                (or (ex-data cause) (ex-message cause) (str cause)))]
           (js/console.log (.-stack cause))
           (not-valid plugin-id :error message))))))
 
