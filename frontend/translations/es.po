@@ -4629,7 +4629,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invitar integrantes"
 
 msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr "" 
+msgstr ""
 "Personas de desarrollo, diseño, gestión... todo el mundo es bienvenido. "
 "Podrás invitar a más gente posteriormente."
 
@@ -5628,11 +5628,10 @@ msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Desbloquea las funciones Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
+msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Establece permisos detallados y garantiza la seguridad de tus operaciones "
-"de diseño, sin renunciar a la libertad del código abierto que tanto valora "
-"tu equipo."
+"Establece permisos detallados y mantén el control, "
+"sin renunciar a la libertad del código abierto que tanto valora tu equipo."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -8551,6 +8550,9 @@ msgstr "Copiar como CSS (capas anidadas)"
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copiar enlace"
 
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copiar id"
+
 #: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-paste-as"
 msgstr "Copiar/Pegar como ..."
@@ -9755,3 +9757,6 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "notifications.invitation-canceled"
+msgstr "Esta invitación ya no está disponible."
