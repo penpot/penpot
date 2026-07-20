@@ -61,6 +61,20 @@
         (.removeAllRanges sel)
         (.addRange sel range)))))
 
+(defn- keep-input-alive
+  "Keeps the capture surface able to receive further input WITHOUT clearing it.
+
+  Unlike `reset-input-node`, this does not empty the surface. The macOS
+  press-and-hold accent menu replaces the previously typed base character (its
+  'marked text' when an accent is chosen, and that replacement only works
+  while the base character is still present in the surface DOM. Clearing it
+  drops the marked text, so the accent gets appended instead of replacing it,
+  producing e.g. 'oö' instead of 'ö'."
+  [^js node]
+  (when (and (some? node)
+             (not= (.-activeElement js/document) node))
+    (.focus node)))
+
 (defn- font-family-from-font-id [font-id]
   (if (str/includes? font-id "gfont-noto-sans")
     (let [lang (str/replace font-id #"gfont\-noto\-sans\-" "")]
@@ -93,6 +107,11 @@
         clip-id   (dm/str "text-edition-clip" shape-id)
 
         contenteditable-ref (mf/use-ref nil)
+
+        ;; Number of characters the browser is about to replace via marked text
+        ;; (macOS press-and-hold accent menu). Set on `beforeinput`, consumed on
+        ;; `input`. See on-before-input / on-input.
+        pending-replace-ref (mf/use-ref 0)
 
         fallback-fonts    (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
@@ -279,6 +298,32 @@
                  ;; Let contenteditable handle text input via on-input
                  :else nil)))))
 
+        ;; Native `beforeinput` listener (see the use-effect that registers it).
+        ;; We use the native event, not React's synthetic `onBeforeInput`, because
+        ;; only the native event reliably exposes `getTargetRanges()`.
+        ;;
+        ;; The macOS press-and-hold accent menu does NOT use composition events:
+        ;; picking an accent arrives as a plain `insertText` whose target range
+        ;; spans the previously typed base character (marked text), so the browser
+        ;; replaces it instead of appending. We remember how many characters that
+        ;; range covers so `on-input` can delete them from the WASM editor before
+        ;; inserting the accented one. We ignore it while the WASM editor has an
+        ;; active selection, since that selection is replaced by `insert-text`
+        ;; itself and deleting extra characters would corrupt the content.
+        on-before-input
+        (mf/use-fn
+         (fn [^js native]
+           (mf/set-ref-val! pending-replace-ref 0)
+           (when (and (= (.-inputType native) "insertText")
+                      (not (.-isComposing native))
+                      (not (text-editor/text-editor-has-selection?)))
+             (let [ranges (.getTargetRanges native)]
+               (when (pos? (.-length ranges))
+                 (let [range (aget ranges 0)
+                       n     (- (.-endOffset range) (.-startOffset range))]
+                   (when (pos? n)
+                     (mf/set-ref-val! pending-replace-ref n))))))))
+
         on-input
         (mf/use-fn
          (fn [^js event]
@@ -289,10 +334,19 @@
              (when (and (not (composing-event? event))
                         (not= input-type "insertCompositionText"))
                (when (and data (seq data))
+                 ;; Marked-text replacement (macOS accent menu): remove the base
+                 ;; character(s) the browser is replacing before inserting.
+                 (let [pending (mf/ref-val pending-replace-ref)]
+                   (dotimes [_ pending]
+                     (text-editor/text-editor-delete-backward)))
                  (text-editor/text-editor-insert-text data)
                  (sync-wasm-text-editor-content!)
                  (wasm.api/request-render "text-input"))
-               (reset-input-node (mf/ref-val contenteditable-ref))))))
+               (mf/set-ref-val! pending-replace-ref 0)
+               ;; IMPORTANT: do NOT clear the surface here (see keep-input-alive):
+               ;; the browser must retain the just-typed character so the macOS
+               ;; accent menu can replace it on the next input.
+               (keep-input-alive (mf/ref-val contenteditable-ref))))))
 
         on-pointer-down
         (mf/use-fn
@@ -345,6 +399,19 @@
                    "--editor-container-height" (dm/str height "px")
                    "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")}]
 
+    ;; Register the native `beforeinput` listener. React's synthetic
+    ;; `onBeforeInput` does not expose `getTargetRanges()`, even with
+    ;; nativeEvent (it's fully synthetic, composed of other two events).
+    ;; We need `getTargetRranges` to detect macOS accent-menu replacements.
+    ;; See https://github.com/react/react/issues/11211
+    (mf/use-effect
+     (mf/deps on-before-input)
+     (fn []
+       (when-let [node (mf/ref-val contenteditable-ref)]
+         (.addEventListener node "beforeinput" on-before-input)
+         (fn []
+           (.removeEventListener node "beforeinput" on-before-input)))))
+
     ;; Focus contenteditable on mount
     (mf/use-effect
      (mf/deps contenteditable-ref)
@@ -394,6 +461,13 @@
         {:ref contenteditable-ref
          :contentEditable true
          :suppressContentEditableWarning true
+         ;; The surface retains typed text between keystrokes (see
+         ;; keep-input-alive), so disable text assistance that would otherwise
+         ;; rewrite that retained text and desync the WASM editor.
+         ;; NOTE: this was already not working in v1/v2
+         :spellCheck false
+         :autoCorrect "off"
+         :autoCapitalize "off"
          :on-composition-start on-composition-start
          :on-composition-update on-composition-update
          :on-composition-end on-composition-end

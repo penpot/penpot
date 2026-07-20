@@ -4180,6 +4180,10 @@ export interface Stroke {
    * The optional gradient stroke defined by a Gradient object.
    */
   strokeColorGradient?: Gradient;
+  /**
+   * The optional image stroke defined by an ImageData object.
+   */
+  strokeImage?: ImageData;
 }
 
 /**

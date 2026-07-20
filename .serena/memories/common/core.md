@@ -49,7 +49,7 @@ Components, variants, and debugging:
 Text and tests:
 - Shared text data conversion, DraftJS compatibility, modern text content, and derived position data: `mem:common/text-subtleties`.
 - Common test commands, helper conventions, production-path test mutations, and runtime coverage choices: `mem:common/testing`.
-- Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:common/testing-principles`.
+- Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
 
 ## Areas without focused memories
 
