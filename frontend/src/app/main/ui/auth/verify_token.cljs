@@ -96,6 +96,17 @@
                    (rt/nav :dashboard-recent {:team-id team-id})
                    (ntf/error (tr "errors.org-not-found")))
 
+                  (= :canceled-invitation code)
+                  (let [profile (:profile @st/state)
+                        authenticated? (da/is-authenticated? profile)]
+                    (if authenticated?
+                      (st/emit!
+                       (dcm/go-to-dashboard-recent :team-id :default)
+                       (ntf/warn (tr "notifications.invitation-canceled")))
+                      (st/emit!
+                       (rt/nav :auth-login)
+                       (ntf/warn (tr "notifications.invitation-canceled")))))
+
                   (or (= :validation type)
                       (= :invalid-token code)
                       (= :token-expired reason))

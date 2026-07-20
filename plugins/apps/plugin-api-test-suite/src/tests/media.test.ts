@@ -61,6 +61,39 @@ describe.skipIfMocked('Media', () => {
     expect(fill.fillImage).toBeDefined();
   });
 
+  test('an uploaded image can be used as a stroke', async (ctx) => {
+    const image = await ctx.penpot.uploadMediaData(
+      'plugin-stroke',
+      PNG_1X1,
+      'image/png',
+    );
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    rect.strokes = [{ strokeWidth: 2, strokeImage: image }];
+
+    const strokes = rect.strokes;
+    expect(strokes).toHaveLength(1);
+    expect(strokes[0].strokeImage).toBeDefined();
+  });
+
+  test('Stroke.strokeImage can be set on a stroke and clears the solid color', async (ctx) => {
+    const image = await ctx.penpot.uploadMediaData(
+      'plugin-stroke-set',
+      PNG_1X1,
+      'image/png',
+    );
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    rect.strokes = [{ strokeColor: '#ff0000', strokeWidth: 2 }];
+
+    // Set strokeImage directly on the stroke (covers Stroke.strokeImage (set)).
+    const stroke = rect.strokes[0];
+    stroke.strokeImage = image;
+    expect(stroke.strokeImage).toBeDefined();
+    // An image stroke replaces the solid color.
+    expect(stroke.strokeColor).toBeFalsy();
+  });
+
   test('uploadMediaUrl resolves to image data', async (ctx) => {
     // Needs the backend to fetch an external URL, which may be unavailable in
     // the headless runner; treat a rejection as an environment limitation.
