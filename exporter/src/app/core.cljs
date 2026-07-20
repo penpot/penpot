@@ -21,6 +21,7 @@
   [& _]
   (l/info :msg "initializing"
           :public-uri (str (cf/get :public-uri))
+          :internal-uri (str (cf/get-internal-uri))
           :version (:full cf/version))
   (p/do!
    (bwr/init)

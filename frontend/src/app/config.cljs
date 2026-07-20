@@ -196,6 +196,11 @@
       (get :path)
       (str "?version=" version-tag)))
 
+(def fonts-preview-sprite-uri
+  (-> public-uri
+      (u/join "fonts/fonts-preview-sprite.svg")
+      (str)))
+
 (defn external-feature-flag
   [flag value]
   (let [f (obj/get global "externalFeatureFlag")]

@@ -6,12 +6,14 @@
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.code-gen-style-test]
+   [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
+   [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
@@ -52,8 +54,10 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
+   [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
@@ -76,12 +80,14 @@
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
    'frontend-tests.code-gen-style-test
+   'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
+   'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
@@ -122,8 +128,10 @@
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.workspace-tokens-remap-test
+   'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
+   'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test

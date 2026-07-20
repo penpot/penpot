@@ -657,3 +657,35 @@
           mods   (ctm/rotation (ctm/empty) (gpt/point 50 25) 45)
           result (ctm/apply-structure-modifiers shape mods)]
       (t/is (mth/close? 45.0 (:rotation result))))))
+
+;; ─── change-orientation-modifiers — degenerate selrect ────────────────────────
+
+(defn- make-degenerate-shape
+  "Build a shape whose selrect has zero width/height, simulating a shape
+  decoded from the server via map->Rect (bypasses make-rect's 0.01 floor)."
+  [x y selrect-width selrect-height]
+  (let [shape (make-shape x y 100 50)]
+    (assoc shape :selrect (grc/map->Rect {:x x :y y
+                                          :width  selrect-width
+                                          :height selrect-height
+                                          :x1 x :y1 y
+                                          :x2 (+ x selrect-width)
+                                          :y2 (+ y selrect-height)}))))
+
+(t/deftest change-orientation-zero-width-selrect-does-not-throw
+  (t/testing "orientation change on a shape with zero selrect width does not throw"
+    (let [shape (make-degenerate-shape 0 0 0 50)
+          mods  (ctm/change-orientation-modifiers shape :horiz)]
+      (t/is (some? mods)))))
+
+(t/deftest change-orientation-zero-height-selrect-does-not-throw
+  (t/testing "orientation change on a shape with zero selrect height does not throw"
+    (let [shape (make-degenerate-shape 0 0 100 0)
+          mods  (ctm/change-orientation-modifiers shape :vert)]
+      (t/is (some? mods)))))
+
+(t/deftest change-orientation-zero-width-and-height-selrect-does-not-throw
+  (t/testing "orientation change on a fully degenerate selrect does not throw"
+    (let [shape (make-degenerate-shape 0 0 0 0)
+          mods  (ctm/change-orientation-modifiers shape :horiz)]
+      (t/is (some? mods)))))

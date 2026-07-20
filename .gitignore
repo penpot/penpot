@@ -100,6 +100,9 @@ opencode.json
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
+/.opencode/plans
+/.opencode/reports
+/.opencode/prompts
 /.codex/
 /tools/__pycache__
 /performance/results/

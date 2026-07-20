@@ -18,8 +18,6 @@
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.comments :as dwcm]
-   [app.main.data.workspace.viewport :as dwv]
-   [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -704,15 +702,21 @@
 
 (mf/defc comment-reply-form*
   {::mf/private true}
-  [{:keys [on-submit]}]
+  [{:keys [on-submit on-cancel]}]
   (let [content       (mf/use-state "")
 
         disabled? (or (blank-content? @content)
                       (exceeds-length? @content))
 
+        ;; Contexts without a global interrupt handler (e.g. the viewer) pass an
+        ;; explicit cancel; otherwise fall back to the interrupt cycle.
         on-cancel
         (mf/use-fn
-         #(st/emit! :interrupt))
+         (mf/deps on-cancel)
+         (fn []
+           (if (fn? on-cancel)
+             (on-cancel)
+             (st/emit! :interrupt))))
 
         on-change
         (mf/use-fn
@@ -799,14 +803,19 @@
                     (some? position-modifier)
                     (gpt/transform position-modifier))
         content   (:content draft)
-        bubble-margin (gpt/point 0 0)
 
+        ;; Keep the draft bubble centered on the comment position (matching a
+        ;; created bubble) while the input box is offset to the side.
+        bubble-margin (gpt/point 24 24)
         pos           (offset-position position viewport zoom bubble-margin)
 
         margin-x      (* (:x bubble-margin) (if (= (:h-dir pos) :left) -1 1))
         margin-y      (* (:y bubble-margin) (if (= (:v-dir pos) :top) -1 1))
         pos-x         (+ (* (:x pos) zoom) margin-x)
         pos-y         (- (* (:y pos) zoom) margin-y)
+
+        bubble-x      (floor (* (:x position) zoom))
+        bubble-y      (floor (* (:y position) zoom))
 
         disabled? (or (blank-content? content)
                       (exceeds-length? content))
@@ -833,39 +842,36 @@
            (on-submit draft)))]
 
     [:> (mf/provider mentions-context) {:value mentions-s}
-     [:div {:class (stl/css-case :floating-thread-draft-wrapper true
+     [:div {:class (stl/css :floating-preview-wrapper :floating-preview-bubble)
+            :data-testid "floating-thread-bubble"
+            :style {:top (dm/str bubble-y "px")
+                    :left (dm/str bubble-x "px")}
+            :on-click dom/stop-propagation}
+      [:> comment-avatar* {:class (stl/css :avatar-lg)
+                           :image (cfg/resolve-profile-photo-url profile)}]]
+
+     [:div {:class (stl/css-case :floating-thread-draft-inner-wrapper true
+                                 :cursor-auto true
                                  :left (= (:h-dir pos) :left)
                                  :top (= (:v-dir pos) :top))
             :style {:top (str pos-y "px")
-                    :left (str pos-x "px")}}
-      [:div
-       {:data-testid "floating-thread-bubble"
-        :style {:top (str pos-y "px")
-                :left (str pos-x "px")}
-        :on-click dom/stop-propagation}
-       [:> comment-avatar* {:class (stl/css :avatar-lg)
-                            :image (cfg/resolve-profile-photo-url profile)}]]
-      [:div {:class (stl/css :floating-thread-draft-inner-wrapper
-                             :cursor-auto)
-             :style {:top (str (- pos-y 24) "px")
-                     :left (str (+ pos-x 28) "px")}
-
-             :on-click dom/stop-propagation}
-       [:div {:class (stl/css :form)}
-        [:> comment-input*
-         {:placeholder (tr "labels.write-new-comment")
-          :value (or content "")
-          :autofocus true
-          :on-esc on-esc
-          :on-change on-change
-          :on-ctrl-enter on-submit*}]
-        (when (exceeds-length? content)
-          [:div {:class (stl/css :error-text)}
-           (tr "errors.character-limit-exceeded")])
-        [:> comment-form-buttons* {:on-submit on-submit*
-                                   :on-cancel on-esc
-                                   :is-disabled disabled?}]]
-       [:> mentions-panel*]]]]))
+                    :left (str pos-x "px")}
+            :on-click dom/stop-propagation}
+      [:div {:class (stl/css :form)}
+       [:> comment-input*
+        {:placeholder (tr "labels.write-new-comment")
+         :value (or content "")
+         :autofocus true
+         :on-esc on-esc
+         :on-change on-change
+         :on-ctrl-enter on-submit*}]
+       (when (exceeds-length? content)
+         [:div {:class (stl/css :error-text)}
+          (tr "errors.character-limit-exceeded")])
+       [:> comment-form-buttons* {:on-submit on-submit*
+                                  :on-cancel on-esc
+                                  :is-disabled disabled?}]]
+      [:> mentions-panel*]]]))
 
 (mf/defc comment-floating-thread-header*
   {::mf/private true}
@@ -1057,7 +1063,10 @@
         (mf/use-fn
          (mf/deps thread)
          (fn [content]
-           (st/emit! (dcm/add-comment thread content))))]
+           (st/emit! (dcm/add-comment thread content))))
+
+        on-cancel
+        (mf/use-fn #(st/emit! (dcm/close-thread)))]
 
     (mf/with-effect [thread-id]
       (st/emit! (dcm/retrieve-comments thread-id)))
@@ -1092,60 +1101,65 @@
            [:* {:key (dm/str (:id item))}
             [:> comment-floating-thread-item* {:comment item}]])]
 
-        [:> comment-reply-form* {:on-submit on-submit}]
+        [:> comment-reply-form* {:on-submit on-submit
+                                 :on-cancel (when (= origin :viewer) on-cancel)}]
 
         [:> mentions-panel*]])]))
 
-(defn group-bubbles
-  "Group bubbles in different vectors by proximity"
-  ([zoom circles]
-   (group-bubbles zoom circles [] []))
+;; Screen-space gap (px) between concentric rings of an expanded cluster.
+(def ^:private expanded-ring-gap 44)
 
-  ([zoom circles visited groups]
-   (if (empty? circles)
-     groups
-     (let [current (first circles)
-           remaining (rest circles)
-           overlapping-group (some (fn [group]
-                                     (when (some (partial dwcm/overlap-bubbles? zoom current) group) group))
-                                   groups)]
-       (if overlapping-group
-         (group-bubbles zoom remaining visited (map (fn [group]
-                                                      (if (= group overlapping-group)
-                                                        (cons current group)
-                                                        group))
-                                                    groups))
-         (group-bubbles zoom remaining visited (cons [current] groups)))))))
+;; Number of bubbles that fit in the innermost ring; each further ring
+;; grows its capacity proportionally to its circumference.
+(def ^:private expanded-ring-base 6)
 
-(defn- inside-vbox?
-  "Checks if a bubble or a bubble group is inside a viewbox"
-  [thread-group wl]
-  (let [vbox      (:vbox wl)
-        positions (mapv :position thread-group)
-        position  (gpt/center-points positions)
-        pos-x     (:x position)
-        pos-y     (:y position)
-        x1        (:x vbox)
-        y1        (:y vbox)
-        x2        (+ x1 (:width vbox))
-        y2        (+ y1 (:height vbox))]
-    (and (> x2 pos-x x1) (> y2 pos-y y1))))
+(defn- expanded-ring-slot
+  "Return [ring slot capacity] placing the bubble at index `i` (0-based) into
+   concentric rings, filling the innermost ring first."
+  [i]
+  (loop [ring 1
+         i    i]
+    (let [capacity (* expanded-ring-base ring)]
+      (if (< i capacity)
+        [ring i capacity]
+        (recur (inc ring) (- i capacity))))))
 
-(defn- calculate-zoom-scale
-  "Calculates the zoom level needed to ungroup the largest number of bubbles while
-   keeping them all visible in the viewbox."
-  [position zoom threads wl]
-  (let [num-threads         (count threads)
-        grouped-threads     (group-bubbles zoom threads)
-        num-grouped-threads (count grouped-threads)
-        zoom-scale-step     1.75
-        scaled-zoom         (* zoom zoom-scale-step)
-        zoomed-wl           (dwz/impl-update-zoom wl position scaled-zoom)
-        outside-vbox?       (complement inside-vbox?)]
-    (if (or (= num-threads num-grouped-threads)
-            (some #(outside-vbox? % zoomed-wl) grouped-threads))
-      zoom
-      (calculate-zoom-scale position scaled-zoom threads zoomed-wl))))
+(defn- expanded-ring-vector
+  "Pure ring displacement (px) around the cluster center for the bubble at index
+   `i` (0-based), laid out into concentric rings, innermost first."
+  [i]
+  (let [[ring slot capacity] (expanded-ring-slot i)
+        ;; Start each ring at the top and stagger alternate rings by half a
+        ;; slot so bubbles don't line up radially.
+        angle  (+ (* (/ slot capacity) 2 mth/PI)
+                  (- (/ mth/PI 2))
+                  (if (even? ring) (/ mth/PI capacity) 0))
+        radius (* ring expanded-ring-gap)]
+    (gpt/point (* radius (mth/cos angle))
+               (* radius (mth/sin angle)))))
+
+(defn expanded-group-center
+  "Cluster center point (stored coordinates) shared by all bubbles of a group."
+  [thread-group]
+  (gpt/center-points (mapv :position thread-group)))
+
+(defn expanded-group-offsets
+  "Return a seq of [thread offset ring] triples laying each thread of
+   `thread-group` into a centered concentric-ring layout, leaving stored
+   positions untouched. `offset` is the total screen-space displacement from the
+   bubble's own position; `ring` is just the displacement from the cluster
+   center (used to animate the fan-out)."
+  [zoom thread-group]
+  (let [threads (sort-by :seqn thread-group)
+        center  (expanded-group-center threads)]
+    (map-indexed
+     (fn [i thread]
+       (let [position (:position thread)
+             ring     (expanded-ring-vector i)
+             base     (gpt/point (* (- (:x center) (:x position)) zoom)
+                                 (* (- (:y center) (:y position)) zoom))]
+         [thread (gpt/add base ring) ring]))
+     threads)))
 
 (mf/defc comment-floating-group*
   {::mf/wrap [mf/memo]}
@@ -1167,16 +1181,15 @@
         ;; Click-through while transforming a shape, so it doesn't capture the drag
         dragging?   (some? (mf/deref refs/current-transform))
 
+        thread-ids  (mf/with-memo [thread-group]
+                      (into #{} (map :id) thread-group))
+
         on-click
         (mf/use-fn
-         (mf/deps thread-group position zoom)
-         (fn []
-           (let [wl           (deref refs/workspace-local)
-                 centered-wl  (dwv/calculate-centered-viewbox wl position)
-                 updated-zoom (calculate-zoom-scale position zoom thread-group centered-wl)
-                 scale-zoom   (/ updated-zoom zoom)]
-             (st/emit! (dwv/update-viewport-position-center position)
-                       (dwz/set-zoom position scale-zoom)))))]
+         (mf/deps thread-ids)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dcm/expand-comment-group thread-ids))))]
 
     [:div {:style {:top (dm/str pos-y "px")
                    :left (dm/str pos-x "px")
@@ -1189,9 +1202,31 @@
        :data-testid (dm/str "floating-thread-bubble-" test-id)}
       num-threads]]))
 
+(mf/defc comment-floating-ghost*
+  "Dashed, semi-transparent placeholder shown at the cluster center while its
+   bubbles are fanned out into the expanded ring."
+  {::mf/wrap [mf/memo]
+   ::mf/private true}
+  [{:keys [thread-group zoom position-modifier]}]
+  (let [center      (expanded-group-center thread-group)
+        center      (cond-> center
+                      (some? position-modifier)
+                      (gpt/transform position-modifier))
+        pos-x       (floor (* (:x center) zoom))
+        pos-y       (floor (* (:y center) zoom))
+        num-threads (str (count thread-group))]
+    [:div {:style {:top (dm/str pos-y "px")
+                   :left (dm/str pos-x "px")
+                   :pointer-events "none"}
+           :class (stl/css :floating-preview-wrapper :floating-preview-bubble :floating-preview-ghost)}
+     [:> comment-avatar*
+      {:class (stl/css :avatar-lg)
+       :variant "read"}
+      num-threads]]))
+
 (mf/defc comment-floating-bubble*
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom is-open on-click origin position-modifier]}]
+  [{:keys [thread zoom is-open on-click origin position-modifier offset ring]}]
   (let [owner        (mf/with-memo [thread]
                        (dcm/get-owner thread))
 
@@ -1201,6 +1236,10 @@
                        (gpt/transform position-modifier))
 
         frame-id     (:frame-id thread)
+
+        ;; A bubble with `offset` is one of the fanned-out members of an
+        ;; expanded cluster.
+        expanded?    (some? offset)
 
         ;; Click-through while transforming a shape, so it doesn't capture the drag
         dragging?    (some? (mf/deref refs/current-transform))
@@ -1212,8 +1251,31 @@
                             :new-position-y nil
                             :new-frame-id frame-id}))
 
-        pos-x        (floor (* (or (:new-position-x @state) (:x position)) zoom))
-        pos-y        (floor (* (or (:new-position-y @state) (:y position)) zoom))
+        new-x        (:new-position-x @state)
+        new-y        (:new-position-y @state)
+
+        ;; While dragging, the new position already accounts for the ring offset;
+        ;; otherwise an expanded bubble sits at its stored position plus the
+        ;; screen-space ring offset.
+        pos-x        (if (some? new-x)
+                       (floor (* new-x zoom))
+                       (+ (floor (* (:x position) zoom))
+                          (if expanded? (:x offset) 0)))
+        pos-y        (if (some? new-y)
+                       (floor (* new-y zoom))
+                       (+ (floor (* (:y position) zoom))
+                          (if expanded? (:y offset) 0)))
+
+        ;; World-space anchor a drag starts from: an expanded bubble is shown at
+        ;; its ring position, so dragging must begin there, not at its stored
+        ;; position.
+        drag-base-x  (if expanded? (+ (:x position) (/ (:x offset) zoom)) (:x position))
+        drag-base-y  (if expanded? (+ (:y position) (/ (:y offset) zoom)) (:y position))
+
+        ;; CSS custom properties fed to the fan-out animation; nil for regular
+        ;; (non-expanded) bubbles.
+        ring-x       (when (and expanded? (some? ring)) (dm/str (- (:x ring)) "px"))
+        ring-y       (when (and expanded? (some? ring)) (dm/str (- (:y ring)) "px"))
 
         drag?        (mf/use-ref nil)
         was-open?    (mf/use-ref nil)
@@ -1237,7 +1299,7 @@
 
         on-pointer-up
         (mf/use-fn
-         (mf/deps origin thread (select-keys @state [:new-position-x :new-position-y :new-frame-id]))
+         (mf/deps origin thread expanded? (select-keys @state [:new-position-x :new-position-y :new-frame-id]))
          (fn [event]
            (when (not= origin :viewer)
              (swap! state assoc :is-grabbing false)
@@ -1250,13 +1312,16 @@
                     (some? (:new-position-y @state)))
                (st/emit! (dwcm/update-comment-thread-position thread [(:new-position-x @state)
                                                                       (:new-position-y @state)]))
+               ;; Dropping a fanned-out bubble commits its new spot and closes
+               ;; the temporary cluster expansion.
+               (when expanded? (st/emit! (dcm/collapse-comment-group)))
                (swap! state assoc
                       :new-position-x nil
                       :new-position-y nil)))))
 
         on-pointer-move
         (mf/use-fn
-         (mf/deps origin drag? position zoom)
+         (mf/deps origin drag? drag-base-x drag-base-y zoom)
          (fn [event]
            (when (not= origin :viewer)
              (mf/set-ref-val! drag? true)
@@ -1267,8 +1332,8 @@
                      delta-x    (/ (- (:x current-pt) (:x start-pt)) zoom)
                      delta-y    (/ (- (:y current-pt) (:y start-pt)) zoom)]
                  (swap! state assoc
-                        :new-position-x (+ (:x position) delta-x)
-                        :new-position-y (+ (:y position) delta-y)))))))
+                        :new-position-x (+ drag-base-x delta-x)
+                        :new-position-y (+ drag-base-y delta-y)))))))
 
         on-pointer-enter
         (mf/use-fn
@@ -1286,7 +1351,7 @@
 
         on-click*
         (mf/use-fn
-         (mf/deps origin thread on-click was-open? drag? (select-keys @state [:is-hover]))
+         (mf/deps origin thread on-click was-open? drag?)
          (fn [event]
            (dom/stop-propagation event)
            (when (or (and (mf/ref-val was-open?) (mf/ref-val drag?))
@@ -1298,34 +1363,42 @@
 
     [:div {:style {:top (dm/str pos-y "px")
                    :left (dm/str pos-x "px")
-                   :pointer-events (when dragging? "none")}
-           :on-pointer-down on-pointer-down
-           :on-pointer-up on-pointer-up
-           :on-pointer-move on-pointer-move
-           :on-pointer-enter on-pointer-enter
-           :on-pointer-leave on-pointer-leave
-           :on-click on-click*
+                   :pointer-events (when dragging? "none")
+                   "--comment-ring-x" ring-x
+                   "--comment-ring-y" ring-y}
            :class (stl/css-case :floating-preview-wrapper true
-                                :floating-preview-bubble (false? (:is-hover @state)))}
+                                :floating-preview-bubble (false? (:is-hover @state))
+                                :floating-preview-expanded expanded?
+                                :floating-preview-hovered (:is-hover @state))}
 
-     (if (:is-hover @state)
-       [:div {:class (stl/css-case :floating-thread-wrapper true
-                                   :floating-preview-displacement true
-                                   :cursor-pointer (false? (:is-grabbing @state))
-                                   :cursor-grabbing (true? (:is-grabbing @state)))}
+     ;; The avatar circle is the only pointer target: it drives hover, drag and
+     ;; click, so hovering the preview card below never keeps the tooltip open.
+     [:div {:on-pointer-down on-pointer-down
+            :on-pointer-up on-pointer-up
+            :on-pointer-move on-pointer-move
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave
+            :on-click on-click*
+            :class (stl/css-case :floating-preview-avatar true
+                                 :cursor-pointer (false? (:is-grabbing @state))
+                                 :cursor-grabbing (true? (:is-grabbing @state)))}
+      [:> comment-avatar*
+       {:image (cfg/resolve-profile-photo-url owner)
+        :class (stl/css :avatar-lg)
+        :data-testid (dm/str "floating-thread-bubble-" (:seqn thread))
+        :variant (cond
+                   (:is-resolved thread) "solved"
+                   (pos? (:count-unread-comments thread)) "unread"
+                   :else "read")}]]
+
+     (when (:is-hover @state)
+       [:div {:class (stl/css :floating-thread-wrapper
+                              :floating-preview-displacement
+                              :floating-preview-hover-card)}
         [:div {:class (stl/css :floating-thread-item-wrapper)}
          [:div {:class (stl/css :floating-thread-item)}
           [:> comment-info* {:item thread
-                             :profile owner}]]]]
-
-       [:> comment-avatar*
-        {:image (cfg/resolve-profile-photo-url owner)
-         :class (stl/css :avatar-lg)
-         :data-testid (dm/str "floating-thread-bubble-" (:seqn thread))
-         :variant (cond
-                    (:is-resolved thread) "solved"
-                    (pos? (:count-unread-comments thread)) "unread"
-                    :else "read")}])]))
+                             :profile owner}]]]])]))
 
 (mf/defc comment-sidebar-thread-item*
   {::mf/private true}

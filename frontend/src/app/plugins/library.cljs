@@ -1059,6 +1059,9 @@
     :setPluginData
     (fn [key value]
       (cond
+        (not= file-id (:current-file-id @st/state))
+        (u/not-valid plugin-id :setPluginData-non-local-library file-id)
+
         (not (string? key))
         (u/not-valid plugin-id :setPluginData-key key)
 
@@ -1092,6 +1095,9 @@
     :setSharedPluginData
     (fn [namespace key value]
       (cond
+        (not= file-id (:current-file-id @st/state))
+        (u/not-valid plugin-id :setSharedPluginData-non-local-library file-id)
+
         (not (string? namespace))
         (u/not-valid plugin-id :setSharedPluginData-namespace namespace)
 

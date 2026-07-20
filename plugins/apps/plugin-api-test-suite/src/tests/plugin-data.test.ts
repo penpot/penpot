@@ -26,6 +26,41 @@ describe('Plugin data', () => {
     if (file) {
       file.setPluginData('fileKey', 'fileValue');
       expect(file.getPluginData('fileKey')).toBe('fileValue');
+      expect(file.getPluginDataKeys()).toContain('fileKey');
+    }
+  });
+
+  test('shared plugin data round-trips on the file', (ctx) => {
+    const file = ctx.penpot.currentFile;
+    expect(file).not.toBeNull();
+    if (file) {
+      file.setSharedPluginData('ns', 'fileShared', 'fileSharedValue');
+      expect(file.getSharedPluginData('ns', 'fileShared')).toBe(
+        'fileSharedValue',
+      );
+      expect(file.getSharedPluginDataKeys('ns')).toContain('fileShared');
+    }
+  });
+
+  test('plugin data round-trips on a page', (ctx) => {
+    const page = ctx.penpot.currentPage;
+    expect(page).not.toBeNull();
+    if (page) {
+      page.setPluginData('pageKey', 'pageValue');
+      expect(page.getPluginData('pageKey')).toBe('pageValue');
+      expect(page.getPluginDataKeys()).toContain('pageKey');
+    }
+  });
+
+  test('shared plugin data round-trips on a page', (ctx) => {
+    const page = ctx.penpot.currentPage;
+    expect(page).not.toBeNull();
+    if (page) {
+      page.setSharedPluginData('ns', 'pageShared', 'pageSharedValue');
+      expect(page.getSharedPluginData('ns', 'pageShared')).toBe(
+        'pageSharedValue',
+      );
+      expect(page.getSharedPluginDataKeys('ns')).toContain('pageShared');
     }
   });
 
@@ -43,6 +78,47 @@ describe('Plugin data', () => {
     expect(() => rect.setPluginData('', 'value')).not.toThrow();
     expect(rect.getPluginData('')).toBe('value');
     expect(rect.getPluginDataKeys()).toContain('');
+  });
+
+  // Keys are opaque strings: no case normalization is applied. A camelCase key
+  // and its kebab-case spelling are distinct entries that each round-trip
+  // independently. Pins that behaviour so a future key-normalization regression
+  // (reported as camelCase keys "behaving incorrectly") would be caught here.
+  test('camelCase and kebab-case keys are distinct and both round-trip', (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    rect.setPluginData('myKey', 'camel');
+    rect.setPluginData('my-key', 'kebab');
+    expect(rect.getPluginData('myKey')).toBe('camel');
+    expect(rect.getPluginData('my-key')).toBe('kebab');
+    const keys = rect.getPluginDataKeys();
+    expect(keys).toContain('myKey');
+    expect(keys).toContain('my-key');
+  });
+
+  // Same guarantee at the file-data storage location (a distinct code path from
+  // shape/page objects), covering a camelCase key on the file itself.
+  test('a camelCase key round-trips on the file', (ctx) => {
+    const file = ctx.penpot.currentFile;
+    expect(file).not.toBeNull();
+    if (file) {
+      file.setPluginData('camelCaseFileKey', 'value');
+      expect(file.getPluginData('camelCaseFileKey')).toBe('value');
+      expect(file.getPluginDataKeys()).toContain('camelCaseFileKey');
+    }
+  });
+
+  // camelCase is likewise preserved in the shared namespace and the shared key.
+  test('camelCase shared namespace and key round-trip', (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    rect.setSharedPluginData('myNamespace', 'myKey', 'camel');
+    rect.setSharedPluginData('myNamespace', 'my-key', 'kebab');
+    expect(rect.getSharedPluginData('myNamespace', 'myKey')).toBe('camel');
+    expect(rect.getSharedPluginData('myNamespace', 'my-key')).toBe('kebab');
+    const keys = rect.getSharedPluginDataKeys('myNamespace');
+    expect(keys).toContain('myKey');
+    expect(keys).toContain('my-key');
   });
 
   test('setPluginData with a non-string value throws', (ctx) => {

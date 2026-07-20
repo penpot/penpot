@@ -350,7 +350,10 @@
      (mf/deps contenteditable-ref)
      (fn []
        (when-let [node (mf/ref-val contenteditable-ref)]
-         (.focus node))
+         ;; Focus and select all text on mount (this will trigger on-focus)
+         (.focus node)
+         (text-editor/text-editor-select-all)
+         (wasm.api/request-render "text-editor-select-all-on-mount"))
        ;; On unmount, finalize the editor content and then dispose the WASM editor.
        ;; We finalize on unmount instead of relying on the browser blur event, because
        ;; it was not being reliable (timing issues, Firefox issues…)

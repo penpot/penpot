@@ -82,6 +82,34 @@ describe('Layout', () => {
       expect(flex.leftPadding).toBeCloseTo(4.5, 2);
     });
 
+    // paddingType is "simple" (sides mirrored) or "multiple" (each side independent).
+    test('paddingType round-trips', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      expect(flex.paddingType).toBe('simple');
+      flex.paddingType = 'multiple';
+      expect(flex.paddingType).toBe('multiple');
+      flex.paddingType = 'simple';
+      expect(flex.paddingType).toBe('simple');
+    });
+
+    // Issue #10278: a single asymmetric side must switch paddingType to "multiple" so it paints.
+    test('setting an individual padding side switches paddingType to multiple', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      expect(flex.paddingType).toBe('simple');
+      flex.leftPadding = 40;
+      expect(flex.leftPadding).toBeCloseTo(40, 0);
+      expect(flex.paddingType).toBe('multiple');
+    });
+
+    // Re-derived from the sides: once symmetric again, the type collapses to "simple".
+    test('padding collapsing back to symmetric restores simple type', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      flex.leftPadding = 40;
+      expect(flex.paddingType).toBe('multiple');
+      flex.leftPadding = 0;
+      expect(flex.paddingType).toBe('simple');
+    });
+
     test('sizing round-trips', (ctx) => {
       const flex = board(ctx).addFlexLayout();
       flex.horizontalSizing = 'fix';
@@ -208,6 +236,22 @@ describe('Layout', () => {
       expect(grid.rightPadding).toBeCloseTo(2.75, 2);
       expect(grid.bottomPadding).toBeCloseTo(3.25, 2);
       expect(grid.leftPadding).toBeCloseTo(4.5, 2);
+    });
+
+    // paddingType behaves the same as on flex layouts (see issue #10278).
+    test('paddingType round-trips', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      expect(grid.paddingType).toBe('simple');
+      grid.paddingType = 'multiple';
+      expect(grid.paddingType).toBe('multiple');
+    });
+
+    test('setting an individual padding side switches paddingType to multiple', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      expect(grid.paddingType).toBe('simple');
+      grid.leftPadding = 40;
+      expect(grid.leftPadding).toBeCloseTo(40, 0);
+      expect(grid.paddingType).toBe('multiple');
     });
 
     // Index boundaries — invalid indices must be rejected.
@@ -386,6 +430,55 @@ describe('Layout', () => {
         expect(child.topMargin).toBeCloseTo(1, 0);
         expect(child.maxWidth).toBeCloseTo(200, 0);
         expect(child.minHeight).toBeCloseTo(20, 0);
+      }
+    });
+
+    // marginType is the child-margin counterpart of a layout's paddingType.
+    test('marginType round-trips', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        expect(child.marginType).toBe('simple');
+        child.marginType = 'multiple';
+        expect(child.marginType).toBe('multiple');
+        child.marginType = 'simple';
+        expect(child.marginType).toBe('simple');
+      }
+    });
+
+    // Issue #10278 (margins): a single asymmetric side must switch marginType to "multiple".
+    test('setting an individual margin side switches marginType to multiple', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        expect(child.marginType).toBe('simple');
+        child.leftMargin = 12;
+        expect(child.leftMargin).toBeCloseTo(12, 0);
+        expect(child.marginType).toBe('multiple');
+      }
+    });
+
+    // Symmetric margins collapse the child back to "simple", mirroring padding.
+    test('margin collapsing back to symmetric restores simple type', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        child.leftMargin = 12;
+        expect(child.marginType).toBe('multiple');
+        child.leftMargin = 0;
+        expect(child.marginType).toBe('simple');
       }
     });
 
