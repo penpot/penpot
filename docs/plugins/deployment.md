@@ -8,15 +8,15 @@ desc: Deploy your free Penpot plugins! Learn about Netlify, Cloudflare, Surge & 
 
 When it comes to deploying your plugin there are several platforms to choose from. Each platform has its unique features and benefits, so the choice depends on you.
 
-In this guide you will found some options for static sites that have free plans.
+In this guide you will find some options for static sites that have free plans.
 
 ## 3.1. Building your project
 
 The building may vary between frameworks but if you had previously configured your scripts in <code class="language-bash">package.json</code>, <code class="language-bash">npm run build</code> should work.
 
-The resulting build should be located somewhere in the <code class="language-bash">dist/</code> folder, maybe somewhere else if you have configured so.
+The resulting build should be located somewhere in the <code class="language-bash">dist/</code> folder, or somewhere else if you configured it that way.
 
-Be wary that some framework's builders can add additional folders like <code class="language-bash">apps/project-name/</code>, <code class="language-bash">project-name/</code> or <code class="language-bash">browser/</code>.
+Be wary that some framework builders can add additional folders like <code class="language-bash">apps/project-name/</code>, <code class="language-bash">project-name/</code> or <code class="language-bash">browser/</code>.
 
 Examples:
 
@@ -27,7 +27,7 @@ Examples:
 
 ### Create an account
 
-You need a Netlify account if you don't already have one. You can <a target="_blank" href="https://app.netlify.com/signup">sign up</a> with Github, GItlab, BItbucket or via email and password.
+You need a Netlify account if you don't already have one. You can <a target="_blank" href="https://app.netlify.com/signup">sign up</a> with GitHub, GitLab, Bitbucket or via email and password.
 
 ### CORS issues
 
@@ -82,7 +82,7 @@ npm run build
 
 2. Go to <a target="_blank" href="https://app.netlify.com/drop">Netlify Drop</a>.
 
-3. Drag and drop the build folder into Netlify Sites. Dropping the whole dist may not work, you should drop the folder where the main files are located.
+3. Drag and drop the build folder into Netlify Sites. Dropping the whole dist may not work; you should drop the folder where the main files are located.
 
 4. Done!
 
@@ -122,11 +122,11 @@ Cloudflare allows you to import an existing project from GitHub or GitLab.
 
 ![Cloudflare git installation](/img/plugins/install_cloudflare.png)
 
-4. Configure your build settings.
+3. Configure your build settings.
 
 ![Cloudflare git configuration](/img/plugins/cf_build_settings.png)
 
-5. Save and deploy.
+4. Save and deploy.
 
 ### Direct upload
 
@@ -220,6 +220,6 @@ Success! - Published to example-plugin-penpot.surge.sh
 
 ## 3.5. Submitting to Penpot
 
-To make your finished plugin available in our catalog, submit in on the [plugin submission page](https://penpot.app/penpothub/plugins/create-plugin). Once it becomes available any Penpot user will be able to install and use it.
+To make your finished plugin available in our catalog, submit it on the [plugin submission page](https://penpot.app/penpothub/plugins/create-plugin). Once it becomes available, any Penpot user will be able to install and use it.
 
 
