@@ -19,7 +19,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.deleted :as deleted]
-   [app.main.ui.dashboard.grid :refer [line-grid]]
+   [app.main.ui.dashboard.grid :refer [line-grid*]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
@@ -290,14 +290,13 @@
                                             (tr "dashboard.empty-placeholder-drafts-subtitle")
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
 
-        [:& line-grid
-         {:project project
-          :team team
-          :files files
-          :create-fn create-file
-          :can-edit can-edit
-          :limit limit
-          :layout layout}])]
+        [:> line-grid* {:project project
+                        :team team
+                        :files files
+                        :create-fn create-file
+                        :can-edit can-edit
+                        :limit limit
+                        :layout layout}])]
 
      (when (and (> limit 0)
                 (> file-count limit))
@@ -393,7 +392,8 @@
                                                           can-invite))}
 
           (when show-deleted?
-            [:> deleted/menu* {:team-id team-id :section :dashboard-recent}])
+            [:> deleted/menu* {:team-id team-id
+                               :section :dashboard-recent}])
 
           (for [{:keys [id] :as project} projects]
             ;; FIXME: refactor this, looks inneficient

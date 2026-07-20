@@ -91,14 +91,13 @@
             :id     "project-delete"
             :handler on-delete-project}])]
 
-    [:> context-menu*
-     {:on-close on-close
-      :show show
-      :fixed (or (not= top 0) (not= left 0))
-      :min-width true
-      :top top
-      :left left
-      :options options}]))
+    [:> context-menu* {:on-close on-close
+                       :show show
+                       :fixed (or (not= top 0) (not= left 0))
+                       :min-width true
+                       :top top
+                       :left left
+                       :options options}]))
 
 (mf/defc deleted-project-item*
   {::mf/private true}
@@ -253,7 +252,7 @@
 
         ;; Calculate deletion days based on team subscription
         deletion-days
-        (let [profile          (mf/deref refs/profile)
+        (let [profile           (mf/deref refs/profile)
               subscription-type (get-subscription-type (:subscription team))
               nitrate-type      (get-in profile [:subscription :type])
               nitrate-active?   (dnt/is-valid-license? profile)]
@@ -306,7 +305,8 @@
       [:*
        [:div {:class (stl/css :no-bg)}
 
-        [:> menu* {:team-id team-id :section :dashboard-deleted}]
+        [:> menu* {:team-id team-id
+                   :section :dashboard-deleted}]
 
         (if (seq projects)
           [:*
@@ -329,15 +329,15 @@
                           :on-click on-delete-all}
               (tr "dashboard.clear-trash-button")]]]
 
-            (for [{:keys [id] :as project} projects]
-              (let [files (when deleted-map
-                            (->> (vals deleted-map)
-                                 (filterv #(= id (:project-id %)))
-                                 (sort-by :modified-at #(compare %2 %1))))]
-                [:> deleted-project-item* {:project project
-                                           :files files
-                                           :layout layout
-                                           :key id}]))]
+           (for [{:keys [id] :as project} projects]
+             (let [files (when deleted-map
+                           (->> (vals deleted-map)
+                                (filterv #(= id (:project-id %)))
+                                (sort-by :modified-at #(compare %2 %1))))]
+               [:> deleted-project-item* {:project project
+                                          :files files
+                                          :layout layout
+                                          :key id}]))]
 
           ;; when no deleted projects
           [:div {:class (stl/css :deleted-info-content)}
