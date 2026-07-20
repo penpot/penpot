@@ -838,8 +838,13 @@
             (dwsh/update-shapes ids update-shape options)
 
             ;; The update to the bool path needs to be in a different operation because it
-            ;; needs to have the updated children info
-            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
+            ;; needs to have the updated children info.
+            ;; `update-layout? false`: recalculating a bool path can never change
+            ;; `:hidden`, and the layout check would recompute the whole boolean
+            ;; path in WASM once per bool shape just to find that out.
+            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options
+                                                                       :with-objects? true
+                                                                       :update-layout? false)))
 
            (if undo-transation?
              (rx/of (dwu/commit-undo-transaction undo-id))

@@ -369,7 +369,7 @@
     (t/is (= :not-found (th/ex-type (:error ko-out))))
     (t/is (= :profile-not-found (th/ex-code (:error ko-out))))))
 
-(t/deftest get-org-invitations-returns-valid-deduped-by-email
+(t/deftest get-organization-invitations-returns-valid-deduped-by-email
   (let [profile      (th/create-profile* 1 {:is-active true})
         team-1       (th/create-team* 1 {:profile-id (:id profile)})
         team-2       (th/create-team* 2 {:profile-id (:id profile)})
@@ -377,7 +377,7 @@
         org-summary  {:id org-id
                       :teams [{:id (:id team-1)}
                               {:id (:id team-2)}]}
-        params       {::th/type :get-org-invitations
+        params       {::th/type :get-organization-invitations
                       ::rpc/profile-id (:id profile)
                       :organization-id org-id}]
 
@@ -439,12 +439,12 @@
       (t/is (nil? (:role dedup)))
       (t/is (nil? (:valid-until dedup))))))
 
-(t/deftest get-org-invitations-includes-org-level-invitations-when-no-teams
+(t/deftest get-organization-invitations-includes-org-level-invitations-when-no-teams
   (let [profile      (th/create-profile* 1 {:is-active true})
         org-id       (uuid/random)
         org-summary  {:id org-id
                       :teams []}
-        params       {::th/type :get-org-invitations
+        params       {::th/type :get-organization-invitations
                       ::rpc/profile-id (:id profile)
                       :organization-id org-id}]
 
@@ -468,7 +468,7 @@
       (t/is (= "org-only@example.com" (-> result first :email)))
       (t/is (some? (-> result first :sent-at))))))
 
-(t/deftest get-org-invitations-returns-existing-profile-data
+(t/deftest get-organization-invitations-returns-existing-profile-data
   (let [profile      (th/create-profile* 1 {:is-active true})
         invited      (th/create-profile* 2 {:is-active true
                                             :fullname "Invited User"})
@@ -479,7 +479,7 @@
         org-id       (uuid/random)
         org-summary  {:id org-id
                       :teams []}
-        params       {::th/type :get-org-invitations
+        params       {::th/type :get-organization-invitations
                       ::rpc/profile-id (:id profile)
                       :organization-id org-id}]
 
@@ -504,7 +504,7 @@
       (t/is (str/ends-with? (:photo-url invitation)
                             (str "/assets/by-id/" photo-id))))))
 
-(t/deftest delete-org-invitations-removes-org-and-org-team-invitations-for-email
+(t/deftest delete-organization-invitations-removes-org-and-org-team-invitations-for-email
   (let [profile      (th/create-profile* 1 {:is-active true})
         team-1       (th/create-team* 1 {:profile-id (:id profile)})
         team-2       (th/create-team* 2 {:profile-id (:id profile)})
@@ -514,7 +514,7 @@
                       :teams [{:id (:id team-1)}
                               {:id (:id team-2)}]}
         target-email "target@example.com"
-        params       {::th/type :delete-org-invitations
+        params       {::th/type :delete-organization-invitations
                       ::rpc/profile-id (:id profile)
                       :organization-id org-id
                       :email "TARGET@example.com"}]
@@ -572,7 +572,7 @@
       (t/is (= (:id outside-team) (:team-id (first remaining-target))))
       (t/is (= 1 (count remaining-other))))))
 
-(t/deftest delete-all-org-invitations-removes-org-and-org-team-invitations
+(t/deftest delete-all-organization-invitations-removes-org-and-org-team-invitations
   (let [profile      (th/create-profile* 1 {:is-active true})
         team-1       (th/create-team* 1 {:profile-id (:id profile)})
         team-2       (th/create-team* 2 {:profile-id (:id profile)})
@@ -581,7 +581,7 @@
         org-summary  {:id org-id
                       :teams [{:id (:id team-1)}
                               {:id (:id team-2)}]}
-        params       {::th/type :delete-all-org-invitations
+        params       {::th/type :delete-all-organization-invitations
                       :organization-id org-id}]
 
     ;; Should be deleted: org-level invitation.
@@ -660,10 +660,10 @@
       (t/is (present? "dan@example.com"))
       (t/is (present? "erin@example.com")))))
 
-(t/deftest delete-all-org-invitations-handles-org-with-no-teams
+(t/deftest delete-all-organization-invitations-handles-org-with-no-teams
   (let [profile (th/create-profile* 1 {:is-active true})
         org-id  (uuid/random)
-        params  {::th/type :delete-all-org-invitations
+        params  {::th/type :delete-all-organization-invitations
                  :organization-id org-id}]
 
     ;; Org-level invitation should still be deleted.
@@ -686,14 +686,14 @@
       (t/is (nil? (:result out)))
       (t/is (empty? remaining)))))
 
-(t/deftest exists-org-team-invitations-for-non-members-reports-invitations-to-delete
+(t/deftest exists-organization-team-invitations-for-non-members-reports-invitations-to-delete
   (let [member1      (th/create-profile* 1 {:is-active true :email "member1@example.com"})
         profile      (th/create-profile* 4 {:is-active true})
         team-1       (th/create-team* 1 {:profile-id (:id profile)})
         team-2       (th/create-team* 2 {:profile-id (:id profile)})
         outside-team (th/create-team* 3 {:profile-id (:id profile)})
         org-id       (uuid/random)
-        base-params  {::th/type :exists-org-team-invitations-for-non-members
+        base-params  {::th/type :exists-organization-team-invitations-for-non-members
                       ::rpc/profile-id (:id profile)
                       :organization-id org-id
                       :team-ids [(:id team-1) (:id team-2)]
@@ -744,14 +744,14 @@
                     :valid-until (ct/in-future "24h")})
     (t/is (true? (exist!)))))
 
-(t/deftest delete-org-team-invitations-for-non-members-removes-non-member-invitations
+(t/deftest delete-organization-team-invitations-for-non-members-removes-non-member-invitations
   (let [member1     (th/create-profile* 1 {:is-active true :email "member1@example.com"})
         profile     (th/create-profile* 4 {:is-active true})
         team-1      (th/create-team* 1 {:profile-id (:id profile)})
         team-2      (th/create-team* 2 {:profile-id (:id profile)})
         outside-team (th/create-team* 3 {:profile-id (:id profile)})
         org-id      (uuid/random)
-        params      {::th/type :delete-org-team-invitations-for-non-members
+        params      {::th/type :delete-organization-team-invitations-for-non-members
                      ::rpc/profile-id (:id profile)
                      :organization-id org-id
                      :team-ids [(:id team-1) (:id team-2)]
@@ -830,7 +830,7 @@
       (t/is (= 1 (count (th/db-query :team-invitation {:email-to "outsider@example.com"})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tests: remove-from-org
+;; Tests: remove-from-organization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- make-org-summary
@@ -853,7 +853,7 @@
       :remove-profile-from-org nil
       nil)))
 
-(t/deftest remove-from-org-happy-path-no-extra-teams
+(t/deftest remove-from-organization-happy-path-no-extra-teams
   ;; User is only in its default team (which has files); it should be
   ;; kept, renamed and unset as default.  A notification must be sent.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
@@ -875,7 +875,7 @@
                                   mbus/pub! (fn [_bus & {:keys [topic message]}]
                                               (swap! calls conj {:topic topic :message message}))]
                       (management-command-with-nitrate!
-                       {::th/type        :remove-from-org
+                       {::th/type        :remove-from-organization
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -898,7 +898,7 @@
       (t/is (= "Acme Org" (:organization-name msg)))
       (t/is (= "dashboard.user-no-longer-belong-org" (:notification msg))))))
 
-(t/deftest remove-from-org-deletes-empty-default-team
+(t/deftest remove-from-organization-deletes-empty-default-team
   ;; When the default team has no files it should be soft-deleted.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -913,7 +913,7 @@
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
                                   mbus/pub! (fn [& _] nil)]
                       (management-command-with-nitrate!
-                       {::th/type        :remove-from-org
+                       {::th/type        :remove-from-organization
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -923,7 +923,7 @@
     (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
       (t/is (some? (:deleted-at team))))))
 
-(t/deftest remove-from-org-deletes-sole-owner-team
+(t/deftest remove-from-organization-deletes-sole-owner-team
   ;; When the user is the sole member of an org team it should be deleted.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -939,7 +939,7 @@
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
                                   mbus/pub! (fn [& _] nil)]
                       (management-command-with-nitrate!
-                       {::th/type        :remove-from-org
+                       {::th/type        :remove-from-organization
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -949,7 +949,7 @@
     (let [team (th/db-get :team {:id (:id extra-team)} {::db/remove-deleted false})]
       (t/is (some? (:deleted-at team))))))
 
-(t/deftest remove-from-org-transfers-ownership-of-multi-member-team
+(t/deftest remove-from-organization-transfers-ownership-of-multi-member-team
   ;; When the user owns a team that has another non-owner member, ownership
   ;; is transferred to that member by the endpoint automatically.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
@@ -970,7 +970,7 @@
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
                                   mbus/pub! (fn [& _] nil)]
                       (management-command-with-nitrate!
-                       {::th/type        :remove-from-org
+                       {::th/type        :remove-from-organization
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -984,7 +984,7 @@
     (let [rel (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id candidate)})]
       (t/is (true? (:is-owner rel))))))
 
-(t/deftest remove-from-org-exits-non-owned-team
+(t/deftest remove-from-organization-exits-non-owned-team
   ;; When the user is a non-owner member of an org team, they simply leave.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -1003,7 +1003,7 @@
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
                                   mbus/pub! (fn [& _] nil)]
                       (management-command-with-nitrate!
-                       {::th/type        :remove-from-org
+                       {::th/type        :remove-from-organization
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1017,7 +1017,7 @@
     (let [team (th/db-get :team {:id (:id extra-team)})]
       (t/is (some? team)))))
 
-(t/deftest remove-from-org-error-nobody-to-reassign
+(t/deftest remove-from-organization-error-nobody-to-reassign
   ;; When the user owns a multi-member team but every other member is
   ;; also an owner, the auto-selection query finds nobody and raises.
   (let [other-owner (th/create-profile* 1 {:is-active true})
@@ -1041,7 +1041,7 @@
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)
                                   mbus/pub! (fn [& _] nil)]
                       (management-command-with-nitrate!
-                       {::th/type        :remove-from-org
+                       {::th/type        :remove-from-organization
                         ::rpc/profile-id (:id other-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1051,10 +1051,10 @@
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :nobody-to-reassign-team (th/ex-code (:error out))))))
 
-;; Tests: get-remove-from-org-summary
+;; Tests: get-remove-from-organization-summary
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest get-remove-from-org-summary-no-extra-teams
+(t/deftest get-remove-from-organization-summary-no-extra-teams
   ;; User only has a default team — nothing to delete/transfer/exit.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -1068,7 +1068,7 @@
                      :org-teams         [])
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
                       (management-command-with-nitrate!
-                       {::th/type        :get-remove-from-org-summary
+                       {::th/type        :get-remove-from-organization-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1080,7 +1080,7 @@
               :teams-to-detach   0}
              (:result out)))))
 
-(t/deftest get-remove-from-org-summary-with-teams-to-delete
+(t/deftest get-remove-from-organization-summary-with-teams-to-delete
   ;; User owns a sole-member extra org team → 1 to delete.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -1095,7 +1095,7 @@
                      :org-teams         [(:id extra-team)])
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
                       (management-command-with-nitrate!
-                       {::th/type        :get-remove-from-org-summary
+                       {::th/type        :get-remove-from-organization-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1107,7 +1107,7 @@
               :teams-to-detach   0}
              (:result out)))))
 
-(t/deftest get-remove-from-org-summary-with-teams-to-transfer
+(t/deftest get-remove-from-organization-summary-with-teams-to-transfer
   ;; User owns a multi-member extra org team → 1 to transfer.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -1126,7 +1126,7 @@
                      :org-teams         [(:id extra-team)])
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
                       (management-command-with-nitrate!
-                       {::th/type        :get-remove-from-org-summary
+                       {::th/type        :get-remove-from-organization-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1138,7 +1138,7 @@
               :teams-to-detach   0}
              (:result out)))))
 
-(t/deftest get-remove-from-org-summary-with-teams-to-exit
+(t/deftest get-remove-from-organization-summary-with-teams-to-exit
   ;; User is a non-owner member of an org team → 1 to exit.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -1156,7 +1156,7 @@
                      :org-teams         [(:id extra-team)])
         out         (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
                       (management-command-with-nitrate!
-                       {::th/type        :get-remove-from-org-summary
+                       {::th/type        :get-remove-from-organization-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1168,7 +1168,7 @@
               :teams-to-detach   0}
              (:result out)))))
 
-(t/deftest get-remove-from-org-summary-does-not-mutate
+(t/deftest get-remove-from-organization-summary-does-not-mutate
   ;; Calling the summary endpoint must not modify any teams.
   (let [org-owner   (th/create-profile* 1 {:is-active true})
         user        (th/create-profile* 2 {:is-active true})
@@ -1183,7 +1183,7 @@
                      :org-teams         [(:id extra-team)])
         _           (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
                       (management-command-with-nitrate!
-                       {::th/type        :get-remove-from-org-summary
+                       {::th/type        :get-remove-from-organization-summary
                         ::rpc/profile-id (:id org-owner)
                         :profile-id      (:id user)
                         :organization-id          organization-id
@@ -1201,7 +1201,7 @@
     (let [rel2 (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id user)})]
       (t/is (some? rel2)))))
 
-(t/deftest notify-org-sso-change-sends-setup-sso-email-once-per-recipient
+(t/deftest notify-organization-sso-change-sends-setup-sso-email-once-per-recipient
   (let [owner       (th/create-profile* 1 {:is-active true :fullname "Owner"})
         member      (th/create-profile* 2 {:is-active true
                                            :fullname "Member"
@@ -1216,7 +1216,7 @@
                      :name org-name
                      :teams [{:id (:id team)}]}
         sent        (atom [])
-        params      {::th/type :notify-org-sso-change
+        params      {::th/type :notify-organization-sso-change
                      :organization-id org-id
                      :updated-props false
                      :became-active true}]
@@ -1269,9 +1269,9 @@
         (t/is (= org-name (:organization-name email-params)))
         (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
 
-(t/deftest notify-org-sso-change-skips-email-when-not-active
+(t/deftest notify-organization-sso-change-skips-email-when-not-active
   (let [sent   (atom [])
-        params {::th/type :notify-org-sso-change
+        params {::th/type :notify-organization-sso-change
                 :organization-id (uuid/random)
                 :updated-props false
                 :became-active false}]

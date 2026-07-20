@@ -315,8 +315,14 @@
         (mf/use-fn
          (mf/deps profile)
          (fn []
-           (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-ac-create-org)
+           (cond
+             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
+
+             (dnt/is-valid-license? profile)
+             (dnt/go-to-nitrate-ac-create-organization)
+
+             :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
@@ -755,8 +761,14 @@
         (mf/use-fn
          (mf/deps profile)
          (fn []
-           (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-ac-create-org)
+           (cond
+             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
+
+             (dnt/is-valid-license? profile)
+             (dnt/go-to-nitrate-ac-create-organization)
+
+             :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
