@@ -16,6 +16,7 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.media :as media]
+   [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
@@ -44,7 +45,7 @@
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:name [:string {:max 250}]]
-   [:content media/schema:upload]])
+   [:content media.v/schema:upload]])
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.17"
@@ -53,8 +54,8 @@
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
-  (media/validate-media-type! content)
-  (media/validate-media-size! content)
+  (media.v/validate-media-type! content)
+  (media.v/validate-media-size! content)
 
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  ;; We get the minimal file for proper checking if
@@ -315,7 +316,7 @@
   [:map {:title "upload-chunk"}
    [:session-id ::sm/uuid]
    [:index      ::sm/int]
-   [:content    media/schema:upload]])
+   [:content    media.v/schema:upload]])
 
 (def ^:private schema:upload-chunk-result
   [:map {:title "upload-chunk-result"}
@@ -386,7 +387,7 @@
 (defn assemble-chunks
   "Validates that all expected chunks are present for `session-id` and
   concatenates them into a single temporary file.  Returns a map
-  conforming to `media/schema:upload` with `:filename`, `:path` and
+  conforming to `media.v/schema:upload` with `:filename`, `:path` and
   `:size`.
 
   Raises a :validation/:missing-chunks error when the number of stored
@@ -440,8 +441,8 @@
                       content (-> content
                                   (assoc :filename (str "upload:" name))
                                   (assoc :mtype mtype)
-                                  (media/validate-media-type!)
-                                  (media/validate-media-size!))
+                                  (media.v/validate-media-type!)
+                                  (media.v/validate-media-size!))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :id id
                                                                    :from-chunks? true
