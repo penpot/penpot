@@ -3810,6 +3810,14 @@ msgstr "¿Seguro que quieres borrar esta página?"
 msgid "modals.delete-page.title"
 msgstr "Borrar página"
 
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "¿Seguro que quieres borrar las páginas seleccionadas?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Borrar páginas"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
 msgstr "Eliminar proyecto"
@@ -6316,6 +6324,10 @@ msgstr ""
 #: src/app/main/ui/workspace/context_menu.cljs:716, src/app/main/ui/workspace/sidebar/assets/colors.cljs:265, src/app/main/ui/workspace/sidebar/assets/components.cljs:670, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:541
 msgid "workspace.assets.delete"
 msgstr "Borrar"
+
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Borrar páginas"
 
 #: src/app/main/ui/workspace/context_menu.cljs:721, src/app/main/ui/workspace/sidebar/assets/colors.cljs:262, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:471, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:537
 msgid "workspace.assets.duplicate"
