@@ -22,8 +22,8 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Align `let` binding values: when a `let` form has multiple bindings spanning
   several lines, align the value forms to the same column with spaces.
 - If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files,
-  fix them with `tools/paren-repair.bb` BEFORE running lint/format checks.
-  See `mem:tools/paren-repair` for usage.
+  fix them with `scripts/paren-repair` BEFORE running lint/format checks.
+  See `mem:scripts/paren-repair` for usage.
 - Never run anything that destroys data without explicit permission, including `drop-devenv`, `docker compose down -v`, `docker volume rm ...`. The user's real work lives in the volumes of the shared infra.
 
 # Project modules
@@ -54,18 +54,21 @@ module. You can read it from `mem:<MODULE>/core`
 
 # Dev tools
 
-- `tools/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL.
+- `scripts/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL.
   Supports `--backend` (port 6064) and `--frontend` (port 3447) aliases.
-  See `mem:tools/nrepl-eval`.
-- `tools/paren-repair.bb` — Fix mismatched delimiters in Clojure/CLJS files
+  See `mem:scripts/nrepl-eval`.
+- `scripts/paren-repair` — Fix mismatched delimiters in Clojure/CLJS files
   and reformat with cljfmt. Run before lint checks when LLM edits break parens.
-  See `mem:tools/paren-repair`.
-- `tools/psql` — PostgreSQL client wrapper with devenv defaults.
-  Companion: `tools/db-schema` for DDL dumps. See `mem:tools/psql`.
-- `tools/taiga.py` — Fetch public issues, user stories, and tasks from the
-  Penpot Taiga project without authentication. See `mem:tools/taiga`.
-- `tools/gh.py` — GitHub operations helper: list milestone issues, fetch PR
-  details, compare against CHANGES.md. Requires `gh` CLI. See `mem:tools/gh`.
+  See `mem:scripts/paren-repair`.
+- `scripts/psql` — PostgreSQL client wrapper with devenv defaults.
+  Companion: `scripts/db-schema` for DDL dumps. See `mem:scripts/psql`.
+- `scripts/taiga.py` — Fetch public issues, user stories, and tasks from the
+  Penpot Taiga project without authentication. See `mem:scripts/taiga`.
+- `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR
+  details, compare against CHANGES.md. Requires `gh` CLI. See `mem:scripts/gh`.
+- `scripts/error-reports.mjs` — Query error reports via RPC API with token
+  authentication. Supports list/get operations with filtering and pagination.
+  See `mem:scripts/error-reports`.
 
 # Dependency graph
 

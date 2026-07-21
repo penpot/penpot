@@ -11,10 +11,10 @@ The latter is needed because syntax errors in parentheses give an uninformative 
 tool can often find the exact location of such errors.
 
 When delimiter errors are detected (typically from lint or compiler output),
-fix the affected files with `tools/paren-repair.bb`. The `clj_check_parentheses`
+fix the affected files with `scripts/paren-repair`. The `clj_check_parentheses`
 MCP tool can also pinpoint the error location when available, but it is not
 required — standard build errors are usually enough.
-See `mem:tools/paren-repair`.
+See `mem:scripts/paren-repair`.
 
 ## Runtime patching with `set!`
 
