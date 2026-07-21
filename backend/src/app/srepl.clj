@@ -142,7 +142,7 @@
     (ig/init-key key opts)))
 
 (defmethod ig/suspend-key! ::urepl
-  [_ name]
+  [_ _]
   (l/inf :hint "keep urepl server"))
 
 ;; --- PREPL
@@ -180,7 +180,7 @@
     (ig/init-key key opts)))
 
 (defmethod ig/suspend-key! ::prepl
-  [_ name]
+  [_ _]
   (l/inf :hint "keep prepl server"))
 
 ;; --- NREPL
@@ -209,5 +209,5 @@
     (ig/init-key key opts)))
 
 (defmethod ig/suspend-key! ::nrepl
-  [_ server]
+  [_ _]
   (l/inf :hint "keep nrepl server"))

@@ -536,12 +536,12 @@
   [id]
   (let [id (h/parse-uuid id)]
     (db/tx-run! sys/system (fn [cfg]
-                              (-> (db/update! cfg :file
-                                              {:has-media-trimmed true}
-                                              {:id id}
-                                              {::db/return-keys false})
-                                  (db/get-update-count)
-                                  (pos?))))))
+                             (-> (db/update! cfg :file
+                                             {:has-media-trimmed true}
+                                             {:id id}
+                                             {::db/return-keys false})
+                                 (db/get-update-count)
+                                 (pos?))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
