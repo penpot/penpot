@@ -680,7 +680,7 @@
      (if-let [sns (namespace o)]
        (do (require (symbol sns))
            (test/test-vars [(resolve o)]))
-        (test/test-ns o)))))
+       (test/test-ns o)))))
 
 (defn -main
   [& _args]
