@@ -495,6 +495,14 @@ msgstr "Cuando un miembro del equipo cree algún archivo, este aparecerá aquí.
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Aún no hay archivos."
 
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Vista de cuadrícula"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "Vista de lista"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:117
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
