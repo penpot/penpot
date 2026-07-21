@@ -1651,3 +1651,6 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
+
+;; Shapes
+(dm/export dwsh/delete-shapes)
