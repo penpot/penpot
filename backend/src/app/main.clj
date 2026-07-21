@@ -335,6 +335,7 @@
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
     ::setup/props        (ig/ref ::setup/props)
+    ::setup/shared-keys  (ig/ref ::setup/shared-keys)
 
     ::email/blacklist    (ig/ref ::email/blacklist)
     ::email/whitelist    (ig/ref ::email/whitelist)
@@ -470,7 +471,8 @@
    {::setup/props (ig/ref ::setup/props)
     :nexus        (cf/get :nexus-shared-key)
     :nitrate      (cf/get :nitrate-shared-key)
-    :exporter     (cf/get :exporter-shared-key)}
+    :exporter     (cf/get :exporter-shared-key)
+    :media-processor (cf/get :media-processor-shared-key)}
 
    ::setup/clock
    {}

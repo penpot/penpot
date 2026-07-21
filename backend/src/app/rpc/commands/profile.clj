@@ -21,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -263,7 +264,7 @@
 (def ^:private
   schema:update-profile-photo
   [:map {:title "update-profile-photo"}
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -271,8 +272,8 @@
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo

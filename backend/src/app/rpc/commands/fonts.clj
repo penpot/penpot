@@ -22,6 +22,7 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
+   [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
@@ -38,10 +39,7 @@
    [datoteka.fs :as fs]
    [datoteka.io :as io])
   (:import
-   java.io.InputStream
    java.io.OutputStream
-   java.io.SequenceInputStream
-   java.util.Collections
    java.util.zip.ZipEntry
    java.util.zip.ZipOutputStream))
 
@@ -96,18 +94,13 @@
 (declare create-font-variant)
 
 (def ^:private schema:create-font-variant
-  [:and
-   [:map {:title "create-font-variant"}
-    [:team-id    ::sm/uuid]
-    [:font-id    ::sm/uuid]
-    [:font-family types.font/schema:font-family]
-    [:font-weight [::sm/one-of {:format "number"} valid-weight]]
-    [:font-style  [::sm/one-of {:format "string"} valid-style]]
-    [:data    {:optional true} [:map-of ::sm/text [:or ::sm/bytes [::sm/vec ::sm/bytes]]]]
-    [:uploads {:optional true} [:map-of ::sm/text ::sm/uuid]]]
-   [:fn {:error/message "one of :data or :uploads is required"}
-    (fn [{:keys [data uploads]}]
-      (or (seq data) (seq uploads)))]])
+  [:map {:title "create-font-variant"}
+   [:team-id    ::sm/uuid]
+   [:font-id    ::sm/uuid]
+   [:font-family types.font/schema:font-family]
+   [:font-weight [::sm/one-of {:format "number"} valid-weight]]
+   [:font-style  [::sm/one-of {:format "string"} valid-style]]
+   [:uploads [:map-of ::sm/text ::sm/uuid]]])
 
 (defn- prepare-font-data-from-uploads
   "Assembles each chunked-upload session in `uploads` (a `{mtype →
@@ -118,8 +111,8 @@
               (fn [acc mtype session-id]
                 (let [assembled (assemble-chunks cfg session-id)]
                   (-> {:mtype mtype :size (:size assembled)}
-                      (media/validate-media-type! cm/font-types)
-                      (media/validate-font-size!))
+                      (media.v/validate-media-type! cm/font-types)
+                      (media.v/validate-font-size!))
                   (assoc acc mtype (:path assembled))))
               {}
               uploads)]
@@ -128,54 +121,23 @@
         (assoc :data data)
         (dissoc :uploads))))
 
-(defn- prepare-font-data-from-legacy
-  "Validates the media type and size of every entry in the legacy
-  `:data` map (a `{mtype → bytes | [bytes]}` map). Normalises every
-  entry to a tempfile. Returns params with a normalised
-  `{mtype → path}` data map."
-  [{:keys [data] :as params}]
-  (let [data (reduce-kv
-              (fn [acc mtype content]
-                (let [tmp     (tmp/tempfile :prefix "penpot.tempfont." :suffix "")
-                      chunks  (if (vector? content) content [content])
-                      streams (map io/input-stream chunks)
-                      streams (Collections/enumeration streams)]
-
-                  ;; Generate the tempfile from all chunks
-                  (with-open [^OutputStream output (io/output-stream tmp)
-                              ^InputStream input (SequenceInputStream. streams)]
-                    (io/copy input output))
-
-                  ;; Validate
-                  (-> {:mtype mtype :size (fs/size tmp)}
-                      (media/validate-media-type! cm/font-types)
-                      (media/validate-font-size!))
-
-                  (assoc acc mtype tmp)))
-              {}
-              data)]
-    (assoc params :data data)))
-
 (sv/defmethod ::create-font-variant
-  "Upload a font variant.  Font data may be provided either as a
-  Transit-encoded `:data` map (keyed by mime-type) for small fonts, or
-  as an `:uploads` map (keyed by mime-type, values are upload-session
-  UUIDs from the chunked-upload API) for large fonts.  Exactly one of
-  the two must be present."
+  "Upload a font variant. Font data must be provided as an `:uploads`
+  map (keyed by mime-type, values are upload-session UUIDs from the
+  chunked-upload API)."
   {::doc/added "1.18"
-   ::doc/changes ["2.16" "Add :uploads param for chunked upload support"]
+   ::doc/changes [["2.16" "Add :uploads param for chunked upload support"]
+                  ["2.18" "Remove :data param, use :uploads exclusively"]]
    ::climit/id [[:process-font/by-profile ::rpc/profile-id]
                 [:process-font/global]]
    ::webhooks/event? true
    ::sm/params schema:create-font-variant}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id uploads] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (teams/check-edition-permissions! pool profile-id team-id)
   (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
                       ::quotes/profile-id profile-id
                       ::quotes/team-id team-id})
-  (let [params (if (some? uploads)
-                 (db/tx-run! cfg prepare-font-data-from-uploads params)
-                 (prepare-font-data-from-legacy params))]
+  (let [params (db/tx-run! cfg prepare-font-data-from-uploads params)]
     (create-font-variant cfg (assoc params :profile-id profile-id))))
 
 (defn create-font-variant
@@ -229,9 +191,7 @@
     (let [tpoint     (ct/tpoint)
           mtypes     (vec (keys data))
           total-size (reduce-kv (fn [acc _ content]
-                                  (+ acc (if (bytes? content)
-                                           (alength ^bytes content)
-                                           (fs/size content))))
+                                  (+ acc (fs/size content)))
                                 0
                                 data)]
 
@@ -370,7 +330,7 @@
 (defn- make-temporal-storage-object
   [cfg profile-id content]
   (let [storage (sto/resolve cfg)
-        content (media/check-input content)
+        content (media.v/check-input content)
         hash    (sto/calculate-hash (:path content))
         data    (-> (sto/content (:path content))
                     (sto/wrap-with-hash hash))

@@ -121,6 +121,7 @@
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
+    [:media-processor-shared-key {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
@@ -146,6 +147,9 @@
     [:imagemagick-time-limit {:optional true} :string]
     [:imagemagick-width-limit {:optional true} :string]
     [:imagemagick-height-limit {:optional true} :string]
+
+    [:media-processing-service-uri {:optional true} ::sm/uri]
+    [:media-processing-service-timeout {:optional true} ::sm/int]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
