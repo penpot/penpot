@@ -12,8 +12,8 @@ set -euo pipefail
 # branch shares its tip commit with the target (not yet diverged).
 #
 # Usage:
-#   tools/detect-target-branch             # print branch name
-#   tools/detect-target-branch --verbose   # print "branch~N"
+#   scripts/detect-target-branch             # print branch name
+#   scripts/detect-target-branch --verbose   # print "branch~N"
 #
 # Exit status:
 #   0 — target found

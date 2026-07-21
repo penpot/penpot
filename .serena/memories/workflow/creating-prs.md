@@ -4,10 +4,10 @@ PR only on explicit request. Branch: issue/feature-specific; fallback `<type>/<s
 
 ## Target Branch
 
-Auto-detect the base branch with `tools/detect-target-branch`:
+Auto-detect the base branch with `scripts/detect-target-branch`:
 
 ```bash
-TARGET=$(tools/detect-target-branch)
+TARGET=$(scripts/detect-target-branch)
 ```
 
 This outputs `staging` or `develop` by walking the local commit graph (pure local, no remote/network). Do not ask the user for the target branch unless the tool fails.
@@ -83,7 +83,7 @@ cat > /tmp/pr-body.md << 'PR_BODY'
 <body content here>
 PR_BODY
 
-TARGET=$(tools/detect-target-branch)
+TARGET=$(scripts/detect-target-branch)
 
 gh pr create \
   --repo penpot/penpot \

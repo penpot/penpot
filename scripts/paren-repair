@@ -323,27 +323,14 @@
               success-count (count successes)
               failure-count (count failures)]
 
-          ;; Print results
-          (println)
-          (println "paren-repair Results")
-          (println "========================")
-          (println)
-
-          (doseq [{:keys [file-path message delimiter-fixed formatted]} results]
-            (let [tags (when (or delimiter-fixed formatted)
-                         (str " ["
-                              (string/join ", "
-                                           (filter some?
-                                                   [(when delimiter-fixed "delimiter-fixed")
-                                                    (when formatted "formatted")]))
-                              "]"))]
-              (println (str "  " file-path ": " message tags))))
-
-          (println)
-          (println "Summary:")
-          (println "  Success:" success-count)
-          (println "  Failed: " failure-count)
-          (println)
+          (doseq [{:keys [file-path success message delimiter-fixed formatted]} results]
+            (let [status (cond
+                           (not success) (str "error: " message)
+                           (and delimiter-fixed formatted) "delimiter-fixed, formatted"
+                           delimiter-fixed "delimiter-fixed"
+                           formatted "formatted"
+                           :else "no-changes")]
+              (println (str file-path ": " status))))
 
           (if (zero? failure-count)
             (System/exit 0)
