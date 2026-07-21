@@ -825,11 +825,21 @@ RETURNING id, deleted_at;")
      t.name,
      t.photo_id,
      t.created_at,
-      (SELECT MAX(p2.modified_at)
-         FROM project AS p2
-        WHERE p2.team_id = t.id
-          AND p2.deleted_at IS NULL
-          AND p2.is_default IS FALSE) AS last_activity_at,
+       (SELECT MAX(activity.modified_at)
+          FROM (
+            SELECT p2.modified_at
+              FROM project AS p2
+             WHERE p2.team_id = t.id
+               AND p2.deleted_at IS NULL
+               AND p2.is_default IS FALSE
+            UNION ALL
+            SELECT f.modified_at
+              FROM file AS f
+              JOIN project AS p ON p.id = f.project_id
+             WHERE p.team_id = t.id
+               AND p.deleted_at IS NULL
+               AND f.deleted_at IS NULL
+          ) AS activity) AS last_activity_at,
      owner_tpr.profile_id AS owner_profile_id,
      owner_p.fullname AS owner_name,
      owner_p.photo_id AS owner_photo_id,
