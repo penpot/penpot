@@ -94,15 +94,23 @@
   grid-template-columns: 1fr auto;
   gap: var(--sp-s);
   height: 100%;
-  padding: 0 var(--sp-m);
+  padding: 0 var(--sp-m) 0 var(--sp-l);
 }
 
 .team-name {
   display: grid;
   align-items: center;
   grid-template-columns: auto 1fr;
-  gap: var(--sp-m);
+  gap: var(--sp-s);
   height: $sz-40;
+}
+
+.team-name-no-logo {
+  grid-template-columns: 1fr;
+}
+
+.team-name-default-logo {
+  gap: var(--sp-xs);
 }
 
 .team-text {
@@ -185,6 +193,11 @@
   grid-template-columns: var(--sp-xxl) 1fr auto;
   gap: var(--sp-s);
   height: $sz-40;
+  padding-inline-start: var(--sp-m);
+}
+
+.team-dropdown-item-no-logo {
+  grid-template-columns: 1fr auto;
 }
 
 .org-dropdown-item {
@@ -194,6 +207,11 @@
   grid-template-columns: auto 1fr auto;
   gap: var(--sp-s);
   height: $sz-40;
+  padding-inline-start: var(--sp-m);
+}
+
+.org-dropdown-item-default-logo {
+  gap: var(--sp-xs);
 }
 
 .action {
@@ -211,7 +229,6 @@
 
   width: var(--sp-xxl);
   height: var(--sp-xxl);
-  margin-right: var(--sp-m);
   border-radius: 50%;
   background-color: var(--sidebar-icon-backgroun-color);
 }
@@ -234,7 +251,7 @@
 
   color: var(--color-foreground-secondary);
   list-style: none;
-  padding: var(--sp-m) $sz-6 $sz-6;
+  padding: var(--sp-m) $sz-6 $sz-6 var(--sp-m);
   text-transform: uppercase;
 }
 
