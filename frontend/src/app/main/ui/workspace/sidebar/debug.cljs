@@ -23,7 +23,8 @@
   These options are handled reactively via okulary subscriptions."
   #{:shape-panel
     :show-ids
-    :show-touched})
+    :show-touched
+    :components-debugger})
 
 (mf/defc debug-panel*
   [{:keys [class]}]

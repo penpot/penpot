@@ -68,7 +68,8 @@ enum StoredImage {
 
 pub struct ImageStore {
     images: HashMap<(Uuid, bool), StoredImage>,
-    context: Box<DirectContext>,
+    /// gpu-only
+    context: Option<Box<DirectContext>>,
 }
 
 /// Creates a Skia image from an existing WebGL texture.
@@ -211,7 +212,17 @@ impl ImageStore {
         let context = &gpu_state.context;
         Self {
             images: HashMap::with_capacity(2048),
-            context: Box::new(context.clone()),
+            context: Some(Box::new(context.clone())),
+        }
+    }
+
+    /// GPU-free image store for the headless export path: no GPU context, so
+    /// images are kept as encoded bytes and decoded on the CPU at draw time
+    /// (see `get_cpu_image`).
+    pub fn new_without_gpu() -> Self {
+        Self {
+            images: HashMap::with_capacity(16),
+            context: None,
         }
     }
 
@@ -229,21 +240,41 @@ impl ImageStore {
 
         let raw_data = image_data.to_vec();
 
-        if let Some(gpu_image) = decode_image(&mut self.context, &raw_data) {
-            self.images.insert(key, StoredImage::Gpu(gpu_image));
-        } else if let Some((dom, size)) = parse_svg(&raw_data) {
-            self.images.insert(
-                key,
-                StoredImage::Svg {
-                    dom,
-                    size,
-                    raster: None,
-                },
-            );
-        } else {
-            // The lazy re-decode in `get_internal` only retries raster codecs,
-            // so SVGs that fail to parse here stay raw.
-            self.images.insert(key, StoredImage::Raw(raw_data));
+        match self.context.as_mut() {
+            Some(context) => {
+                if let Some(gpu_image) = decode_image(context, &raw_data) {
+                    self.images.insert(key, StoredImage::Gpu(gpu_image));
+                } else if let Some((dom, size)) = parse_svg(&raw_data) {
+                    self.images.insert(
+                        key,
+                        StoredImage::Svg {
+                            dom,
+                            size,
+                            raster: None,
+                        },
+                    );
+                } else {
+                    // The lazy re-decode in `get_internal` only retries raster codecs,
+                    // so SVGs that fail to parse here stay raw.
+                    self.images.insert(key, StoredImage::Raw(raw_data));
+                }
+            }
+            // GPU-free: keep the encoded bytes; decoded on the CPU at draw time.
+            // SVGs still get parsed up front since that needs no GPU context.
+            None => {
+                if let Some((dom, size)) = parse_svg(&raw_data) {
+                    self.images.insert(
+                        key,
+                        StoredImage::Svg {
+                            dom,
+                            size,
+                            raster: None,
+                        },
+                    );
+                } else {
+                    self.images.insert(key, StoredImage::Raw(raw_data));
+                }
+            }
         }
         Ok(())
     }
@@ -266,7 +297,12 @@ impl ImageStore {
         }
 
         // Create a Skia image from the existing GL texture
-        let image = create_image_from_gl_texture(&mut self.context, texture_id, width, height)?;
+        let Some(context) = self.context.as_mut() else {
+            return Err(crate::error::Error::CriticalError(
+                "Cannot register a GL texture without a GPU context".to_string(),
+            ));
+        };
+        let image = create_image_from_gl_texture(context, texture_id, width, height)?;
         self.images.insert(key, StoredImage::Gpu(image));
 
         Ok(())
@@ -287,8 +323,35 @@ impl ImageStore {
     }
 
     pub fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
-        let gpu_image = self.get(id)?.clone();
-        gpu_image.make_non_texture_image(self.context.as_mut())
+        // GPU path: promote to a texture, then copy to a CPU image.
+        if self.context.is_some() {
+            let gpu_image = self.get(id)?.clone();
+            let context = self.context.as_mut()?;
+            return gpu_image.make_non_texture_image(context.as_mut());
+        }
+        // Headless (no GPU context): decode the stored encoded bytes directly to
+        // a CPU image, which draws fine on a raster/PDF canvas. Try full first,
+        // then thumbnail.
+        self.decode_raw_cpu_image(id, false)
+            .or_else(|| self.decode_raw_cpu_image(id, true))
+    }
+
+    fn decode_raw_cpu_image(&self, id: &Uuid, is_thumbnail: bool) -> Option<Image> {
+        match self.images.get(&(*id, is_thumbnail))? {
+            StoredImage::Raw(raw_data) => {
+                let data = unsafe { skia::Data::new_bytes(raw_data) };
+                Image::from_encoded(&data)
+            }
+            StoredImage::Gpu(img) => Some(img.clone()),
+            StoredImage::Svg { dom, size, .. } => {
+                // No GPU context in the headless path: rasterize on a CPU
+                // surface instead of `rasterize_svg` (which needs one).
+                let dimensions = ISize::new(size.width as i32, size.height as i32);
+                let mut surface = skia::surfaces::raster_n32_premul(dimensions)?;
+                dom.render(surface.canvas());
+                Some(surface.image_snapshot())
+            }
+        }
     }
 
     /// Vector access for SVG images: the fill render path draws the DOM
@@ -311,7 +374,8 @@ impl ImageStore {
             match entry {
                 StoredImage::Gpu(ref img) => Some(img),
                 StoredImage::Raw(raw_data) => {
-                    let gpu_image = decode_image(&mut self.context, raw_data)?;
+                    let context = self.context.as_mut()?;
+                    let gpu_image = decode_image(context, raw_data)?;
                     *entry = StoredImage::Gpu(gpu_image);
 
                     if let StoredImage::Gpu(ref img) = entry {
@@ -322,7 +386,8 @@ impl ImageStore {
                 }
                 StoredImage::Svg { dom, size, raster } => {
                     if raster.is_none() {
-                        *raster = rasterize_svg(&mut self.context, dom, *size);
+                        let context = self.context.as_mut()?;
+                        *raster = rasterize_svg(context, dom, *size);
                     }
                     raster.as_ref()
                 }

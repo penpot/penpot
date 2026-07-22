@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::get_render_state;
+use crate::get_resources;
 use crate::mem;
 use crate::shapes::Fill;
 use crate::state::State;
@@ -104,7 +104,10 @@ pub extern "C" fn store_image() -> Result<()> {
     let image_bytes = &bytes[IMAGE_HEADER_SIZE..];
 
     with_state!(state, {
-        if let Err(msg) = get_render_state().add_image(ids.image_id, is_thumbnail, image_bytes) {
+        if let Err(msg) = get_resources()
+            .images
+            .add(ids.image_id, is_thumbnail, image_bytes)
+        {
             eprintln!("{}", msg);
         }
         touch_shapes_with_image(state, ids.image_id);
@@ -174,7 +177,7 @@ pub extern "C" fn store_image_from_texture() -> Result<()> {
     );
 
     with_state!(state, {
-        if let Err(msg) = get_render_state().add_image_from_gl_texture(
+        if let Err(msg) = get_resources().images.add_image_from_gl_texture(
             ids.image_id,
             is_thumbnail,
             texture_id,

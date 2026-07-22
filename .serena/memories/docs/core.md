@@ -1,4 +1,4 @@
-# Docs Workflow
+# Docs
 
 `docs/`: Penpot documentation site; Eleventy.
 

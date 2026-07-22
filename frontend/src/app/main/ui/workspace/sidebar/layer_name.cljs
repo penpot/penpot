@@ -27,7 +27,7 @@
            variant-id variant-name variant-properties variant-error
            on-tab-press ref]}]
   (let [;; Subscribe to dbg/state so the component re-renders when
-        ;; :show-ids or :show-touched are toggled without a page reload.
+        ;; debug options are toggled without a page reload.
         _dbg             (mf/deref dbg/state)
 
         edition*         (mf/use-state false)

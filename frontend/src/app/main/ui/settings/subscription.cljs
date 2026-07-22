@@ -477,7 +477,10 @@
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings"}))
            (if (= subscription-type "nitrate")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license}))
+             (st/emit! (dnt/show-nitrate-popup
+                        :nitrate-dialog
+                        {:nitrate-license nitrate-license
+                         :event-origin "settings:plan-confirmation-modal"}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
@@ -749,7 +752,7 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [{:keys [nitrate-license show-contact-sales-option] :as connectivity}]
+  [{:keys [nitrate-license show-contact-sales-option event-origin] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         handle-close-dialog
@@ -760,7 +763,11 @@
         on-subscribe-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" (rt/get-current-href))))]
+           (dnt/go-to-buy-nitrate-license
+            "monthly"
+            (rt/get-current-href)
+            event-origin
+            (if nitrate-license "paid" "trial"))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}

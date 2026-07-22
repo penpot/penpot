@@ -665,7 +665,7 @@
         (mf/use-fn
          (mf/deps frames)
          (fn [_]
-           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))
+           (st/emit! (de/show-workspace-export-frames-dialog frames))))
 
         on-export-frames-key-down
         (mf/use-fn

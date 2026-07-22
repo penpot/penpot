@@ -27,9 +27,9 @@ From `frontend/`:
 - Translation formatting after i18n edits: `pnpm run translations`.
 
 **Before linting:** if delimiter errors are suspected (after LLM edits, or
-lint/compiler reports syntax errors), run `tools/paren-repair.bb` on the
+lint/compiler reports syntax errors), run `scripts/paren-repair` on the
 affected files first. Delimiter errors produce misleading linter output.
-See `mem:tools/paren-repair`.
+See `mem:scripts/paren-repair`.
 
 ## Focused memory routing
 
