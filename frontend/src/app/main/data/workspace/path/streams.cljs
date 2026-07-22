@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
+   [app.main.data.workspace.edition :as-alias dwe]
    [app.main.data.workspace.path.state :as pst]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -20,24 +21,30 @@
 
 (defonce drag-threshold 5)
 
+(def ^:private half-pixel-snap-zoom
+  "Zoom threshold for half-pixel snapping."
+  3)
+
 (defn dragging? [start zoom]
   (fn [current]
     (>= (gpt/distance start current) (/ drag-threshold zoom))))
 
-(defn finish-edition? [event]
-  (= (ptk/type event) :app.main.data.workspace.common/clear-edition-mode))
+(defn finish-edition?
+  "True for the path edition stop event."
+  [event]
+  (= (ptk/type event) ::dwe/clear-edition-mode))
 
 (defn to-pixel-snap [position]
   (let [layout      (get @st/state :workspace-layout)
-        snap-pixel? (contains? layout :snap-pixel-grid)]
+        snap-pixel? (contains? layout :snap-pixel-grid)
+        zoom        (get-in @st/state [:workspace-local :zoom] 1)]
 
     (cond
       (or (not snap-pixel?) (not (gpt/point? position)))
       position
 
-
       :else
-      (gpt/round position))))
+      (gpt/round-step position (if (> zoom half-pixel-snap-zoom) 0.5 1)))))
 
 (defn drag-stream
   ([to-stream]
@@ -79,12 +86,70 @@
     (-> (l/derived get-snap st/state)
         (rx/from-atom {:emit-current-value? true}))))
 
+(def ^:private node-merge-snap-distance
+  "Maximum screen distance for node merge snapping."
+  10)
+
+(def ^:private neighboring-cell-offsets
+  [[-1 -1] [-1 0] [-1 1]
+   [0 -1]  [0 0]  [0 1]
+   [1 -1]  [1 0]  [1 1]])
+
+(defn- point-cell
+  [point cell-size]
+  [(js/Math.floor (/ (:x point) cell-size))
+   (js/Math.floor (/ (:y point) cell-size))])
+
+(defn make-node-merge-snap
+  "Builds a stationary-node index and returns its merge snap function."
+  [start-point selected-points points max-distance]
+  (let [selected-points (set selected-points)
+        point-index     (reduce
+                         (fn [index point]
+                           (if (contains? selected-points point)
+                             index
+                             (update index (point-cell point max-distance) (fnil conj []) point)))
+                         {}
+                         points)
+        closest-target  (fn [closest moved-point]
+                          (let [[cell-x cell-y] (point-cell moved-point max-distance)]
+                            (reduce
+                             (fn [closest [offset-x offset-y]]
+                               (reduce
+                                (fn [closest target]
+                                  (let [distance (gpt/distance moved-point target)]
+                                    (if (and (<= distance max-distance)
+                                             (or (nil? closest)
+                                                 (< distance (first closest))))
+                                      [distance (gpt/subtract target moved-point)]
+                                      closest)))
+                                closest
+                                (get point-index [(+ cell-x offset-x) (+ cell-y offset-y)] [])))
+                             closest
+                             neighboring-cell-offsets)))]
+    (fn [position]
+      (let [delta   (gpt/subtract position start-point)
+            closest (reduce
+                     (fn [closest selected-point]
+                       (closest-target closest (gpt/add selected-point delta)))
+                     nil
+                     selected-points)]
+        (when (some? closest)
+          (gpt/add position (second closest)))))))
+
 (defn move-points-stream
   [start-point selected-points points]
 
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
+        snap-pixel? (contains? (get @st/state :workspace-layout) :snap-pixel-grid)
         ranges (snap/create-ranges points selected-points)
         d-pos (/ snap/snap-path-accuracy zoom)
+
+        ;; Build the merge index once per pixel-snapped gesture.
+        merge-distance     (/ node-merge-snap-distance zoom)
+        node-merge-snap    (when snap-pixel?
+                             (make-node-merge-snap
+                              start-point selected-points points merge-distance))
 
         check-path-snap
         (fn [[position snap-toggled]]
@@ -93,16 +158,23 @@
                   moved-points (->> selected-points (mapv #(gpt/add % delta)))
                   snap (snap/get-snap-delta moved-points ranges d-pos)]
               (gpt/add position snap))
+            position))
+
+        ;; Node merge snapping takes priority over the pixel grid.
+        snap-position
+        (fn [[position snap-toggled]]
+          (if (gpt/point? position)
+            (or (when node-merge-snap
+                  (node-merge-snap position))
+                (check-path-snap [(to-pixel-snap position) snap-toggled]))
             position))]
     (->> ms/mouse-position
-         (rx/map to-pixel-snap)
          (rx/with-latest-from (snap-toggled-stream))
-         (rx/map check-path-snap)
-         (rx/with-latest-from
-           (fn [position shift? alt?]
-             (assoc position :shift? shift? :alt? alt?))
-           ms/mouse-position-shift
-           ms/mouse-position-alt))))
+         (rx/map snap-position)
+         ;; Apply keyboard modifiers without waiting for pointer movement.
+         (rx/combine-latest-with ms/keyboard-shift ms/keyboard-alt)
+         (rx/map (fn [[position shift? alt?]]
+                   (assoc position :shift? shift? :alt? alt?))))))
 
 (defn get-angle [node handler opposite]
   (when (and (some? node) (some? handler) (some? opposite))
@@ -144,13 +216,13 @@
                   (merge position (gpt/add position snap)))))
             position))]
 
+    ;; Keep handler movement off the pixel grid.
     (->> ms/mouse-position
-         (rx/map to-pixel-snap)
-         (rx/with-latest-from
-           (fn [position shift? alt?]
-             (assoc position :shift? shift? :alt? alt?))
-           ms/mouse-position-shift
-           ms/mouse-position-alt)
+         (rx/filter gpt/point?)
+         ;; Apply keyboard modifiers without waiting for pointer movement.
+         (rx/combine-latest-with ms/keyboard-shift ms/keyboard-alt ms/keyboard-mod)
+         (rx/map (fn [[position shift? alt? mod?]]
+                   (assoc position :shift? shift? :alt? alt? :mod? mod?)))
          (rx/with-latest-from (snap-toggled-stream))
          (rx/map check-path-snap))))
 
@@ -171,6 +243,8 @@
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position
+         ;; The subject can hold nil until the pointer enters the viewport
+         (rx/filter gpt/point?)
          (rx/map to-pixel-snap)
          (rx/with-latest-from ranges-stream (snap-toggled-stream))
          (rx/map (fn [[position ranges snap-toggled]]
@@ -178,8 +252,7 @@
                      (let [snap (snap/get-snap-delta [position] ranges d-pos)]
                        (gpt/add position snap))
                      position)))
-         (rx/with-latest-from
-           (fn [position shift? alt?]
-             (assoc position :shift? shift? :alt? alt?))
-           ms/mouse-position-shift
-           ms/mouse-position-alt))))
+         ;; Apply Shift without waiting for pointer movement.
+         (rx/combine-latest-with ms/keyboard-shift ms/keyboard-alt)
+         (rx/map (fn [[position shift? alt?]]
+                   (assoc position :shift? shift? :alt? alt?))))))

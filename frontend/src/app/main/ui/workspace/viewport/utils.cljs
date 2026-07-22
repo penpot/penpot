@@ -29,6 +29,8 @@
     :create-ellipse (cur/get-static "create-ellipse")
     :pen (cur/get-static "pen")
     :pencil (cur/get-static "pencil")
+    :draw-path (cur/get-static "draw")
+    :edit-path (cur/get-static "move")
     :create-shape (cur/get-static "create-shape")
     :duplicate (cur/get-static "duplicate")
     :zoom (cur/get-static "zoom")

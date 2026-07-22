@@ -6,86 +6,57 @@
 
 (ns app.main.data.workspace.path.changes
   (:require
-   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.types.path :as path]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
-   [app.main.data.workspace.path.state :as st]
+   [app.main.data.workspace.shapes :as dwsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn generate-path-changes
-  "Generates changes to update the new content of the shape"
-  [it objects page-id shape old-content new-content]
+(defn- normalize-content
+  "Normalizes path content for persistence."
+  [content preserve-move-to]
+  (-> (if (and (not preserve-move-to)
+               (= (-> content last :command) :move-to))
+        (take (dec (count content)) content)
+        content)
+      (path/close-loops)))
 
-  (assert (path/content? old-content))
-  (assert (path/content? new-content))
+(defn finalize-path-content
+  [id]
+  (ptk/reify ::finalize-path-content
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id      (:current-page-id state)
+            objects      (dsh/lookup-page-objects state page-id)
+            shape        (get objects id)
+            old-content  (get-in state [:workspace-local :edit-path id :old-content])
+            edit-content (get-in state [:workspace-drawing :object :content])
+            new-content  (some-> edit-content (normalize-content false))]
+        (cond
+          ;; Ignore differences introduced only by normalization.
+          (or (nil? shape)
+              (nil? old-content)
+              (nil? edit-content)
+              (= old-content edit-content)
+              (= (path/close-loops old-content) new-content))
+          (rx/empty)
 
-  (let [shape-id (:id shape)
+          (empty? new-content)
+          (let [changes (-> (pcb/empty-changes it page-id)
+                            (pcb/with-objects objects)
+                            (pcb/remove-objects [id])
+                            (pcb/resize-parents [id]))]
+            (rx/of (dch/commit-changes changes)))
 
-        ;; We set the old values so the update-shapes works
-        objects
-        (update objects shape-id
-                (fn [shape]
-                  (-> shape
-                      (assoc :content old-content)
-                      (path/update-geometry))))
-
-        changes
-        (-> (pcb/empty-changes it page-id)
-            (pcb/with-objects objects))
-
-        new-content
-        (path/content new-content)]
-
-    (cond
-      ;; https://tree.taiga.io/project/penpot/issue/2366
-      (nil? shape-id)
-      changes
-
-      (empty? new-content)
-      (-> changes
-          (pcb/remove-objects [shape-id])
-          (pcb/resize-parents [shape-id]))
-
-      :else
-      (-> changes
-          (pcb/update-shapes [shape-id]
-                             (fn [shape]
-                               (-> shape
-                                   (assoc :content new-content)
-                                   (path/update-geometry))))
-          (pcb/resize-parents [shape-id])))))
-
-(defn save-path-content
-  ([]
-   (save-path-content {}))
-  ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
-   (ptk/reify ::save-path-content
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [content (st/get-path state :content)
-             content (if (and (not preserve-move-to)
-                              (= (-> content last :command) :move-to))
-                       (path/content (take (dec (count content)) content))
-                       (path/content content))]
-         (st/set-content state content)))
-
-     ptk/WatchEvent
-     (watch [it state _]
-       (let [page-id     (:current-page-id state)
-             local       (get state :workspace-local)
-             id          (get local :edition)
-             objects     (dsh/lookup-page-objects state page-id)]
-
-         ;; NOTE: we proceed only if the shape is present on the
-         ;; objects, if shape is a ephimeral drawing shape, we should
-         ;; do nothing
-         (when-let [shape (get objects id)]
-           (when-let [old-content (dm/get-in local [:edit-path id :old-content])]
-             (let [new-content (get shape :content)
-                   changes     (generate-path-changes it objects page-id shape old-content new-content)]
-               (rx/of (dch/commit-changes changes))))))))))
-
-
+          :else
+          (rx/of
+           (dwsh/update-shapes
+            [id]
+            (fn [shape]
+              (-> shape
+                  (path/convert-to-path)
+                  (assoc :content new-content)
+                  (path/update-geometry)))
+            {:reg-objects? true})))))))

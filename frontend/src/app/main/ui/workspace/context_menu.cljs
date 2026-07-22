@@ -510,7 +510,10 @@
                         :shortcut-key :start-editing
                         :on-click do-start-editing}])
 
-     (when-not (or disable-flatten has-frame? has-path?)
+     ;; Flattening a single path bakes its transform.
+     (when (and (not disable-flatten)
+                (not has-frame?)
+                (or (not has-path?) (and single? has-path?)))
        [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
                         :on-click do-transform-to-path}])
 
