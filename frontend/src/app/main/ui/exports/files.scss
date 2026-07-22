@@ -4,289 +4,205 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
 
 // EXPORT MODAL
 .modal-overlay {
-  @extend %modal-overlay-base;
-
-  &.transparent {
-    background-color: transparent;
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
 }
 
 .modal-container {
-  @extend %modal-container-base;
-
-  max-height: calc(10 * deprecated.$s-80);
-}
-
-.modal-header {
-  margin-bottom: deprecated.$s-24;
-}
-
-.modal-title {
-  @include deprecated.headline-medium-typography;
-
-  color: var(--modal-title-foreground-color);
-}
-
-.modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxxl);
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-block-size: $sz-192;
+  inline-size: $sz-512;
+  max-block-size: calc(10 * px2rem(80));
 }
 
 .modal-content {
-  @include deprecated.body-small-typography;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  margin-block-end: var(--sp-xxl);
+}
 
-  margin-bottom: deprecated.$s-24;
+.modal-content-extended {
+  gap: var(--sp-xxl);
+}
 
-  .modal-link {
-    @include deprecated.body-large-typography;
+.modal-title {
+  color: var(--color-foreground-primary);
+}
 
-    text-decoration: none;
-    cursor: pointer;
-    color: var(--modal-link-foreground-color);
-  }
+.modal-close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+}
 
-  .selection-header {
-    @include deprecated.flex-row;
+.modal-msg {
+  color: var(--color-foreground-secondary);
+  margin: 0;
+}
 
-    height: deprecated.$s-32;
-    margin-bottom: deprecated.$s-4;
-
-    .selection-btn {
-      @include deprecated.button-style;
-      @extend %input-checkbox;
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-24;
-      width: deprecated.$s-24;
-      padding: 0;
-      margin-left: deprecated.$s-16;
-
-      span {
-        @extend %checkbox-icon;
-      }
-    }
-
-    .selection-title {
-      @include deprecated.body-large-typography;
-
-      color: var(--modal-text-foreground-color);
-    }
-  }
-
-  .selection-wrapper {
-    position: relative;
-    width: 100%;
-    height: fit-content;
-  }
-
-  .selection-shadow {
-    width: 100%;
-    height: 100%;
-
-    &::after {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
-      background: linear-gradient(to top, rgb(24 24 26 / 1) 0%, rgb(24 24 26 / 0) 100%);
-      content: "";
-      pointer-events: none;
-    }
-  }
-
-  .selection-list {
-    @include deprecated.flex-column;
-
-    max-height: deprecated.$s-400;
-    overflow-y: auto;
-    padding-bottom: deprecated.$s-12;
-
-    .selection-row {
-      @include deprecated.flex-row;
-
-      background-color: var(--entry-background-color);
-      min-height: deprecated.$s-40;
-      border-radius: deprecated.$br-8;
-
-      .selection-btn {
-        @include deprecated.button-style;
-
-        display: grid;
-        grid-template-columns: min-content auto 1fr auto auto;
-        align-items: center;
-        width: 100%;
-        height: 10%;
-        gap: deprecated.$s-8;
-        padding: 0 deprecated.$s-16;
-
-        .checkbox-wrapper {
-          @extend %input-checkbox;
-          @include deprecated.flex-center;
-
-          height: deprecated.$s-24;
-          width: deprecated.$s-24;
-          padding: 0;
-
-          .checkobox-tick {
-            @extend %checkbox-icon;
-          }
-        }
-
-        .selection-name {
-          @include deprecated.body-large-typography;
-          @include deprecated.text-ellipsis;
-
-          flex-grow: 1;
-          color: var(--modal-text-foreground-color);
-          text-align: start;
-        }
-
-        .selection-scale {
-          @include deprecated.body-large-typography;
-          @include deprecated.text-ellipsis;
-
-          min-width: deprecated.$s-108;
-          padding: deprecated.$s-12;
-          color: var(--modal-text-foreground-color);
-        }
-
-        .selection-extension {
-          @include deprecated.body-large-typography;
-          @include deprecated.text-ellipsis;
-
-          min-width: deprecated.$s-72;
-          padding: deprecated.$s-12;
-          color: var(--modal-text-foreground-color);
-        }
-      }
-
-      .image-wrapper {
-        @include deprecated.flex-center;
-
-        min-height: deprecated.$s-32;
-        min-width: deprecated.$s-32;
-        background-color: var(--app-white);
-        border-radius: deprecated.$br-6;
-        margin: auto 0;
-
-        img,
-        svg {
-          object-fit: contain;
-          max-height: deprecated.$s-40;
-        }
-      }
-    }
-  }
+.option-content {
+  display: flex;
+  flex-direction: column;
 }
 
 .status-message {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
   font-style: italic;
 }
 
 .action-buttons {
-  @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
-}
-
-.modal-scd-msg,
-.modal-subtitle,
-.modal-msg {
-  @include deprecated.body-large-typography;
-
-  color: var(--modal-text-foreground-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
 }
 
 .export-option {
-  @extend %input-checkbox;
-
-  width: 100%;
+  display: flex;
   align-items: flex-start;
+  inline-size: 100%;
+}
 
-  label {
-    align-items: flex-start;
+.export-option-label {
+  --input-border-color: var(--input-checkbox-border-color-rest);
+  --input-icon-color: var(--color-background-primary);
 
-    .modal-subtitle {
-      @include deprecated.body-large-typography;
+  display: flex;
+  align-items: flex-start;
+  gap: px2rem(6);
+  cursor: pointer;
+  color: var(--color-foreground-primary);
 
-      color: var(--modal-title-foreground-color);
-      padding: 0.25rem 0;
-    }
+  &:hover {
+    --input-border-color: var(--color-accent-primary-muted);
   }
 
-  span {
-    margin-top: deprecated.$s-8;
+  &:focus,
+  &:focus-within {
+    --input-border-color: var(--color-accent-primary);
   }
 }
 
-.option-content {
-  @include deprecated.flex-column;
-  @include deprecated.body-large-typography;
+.option-icon-wrapper {
+  --icon-display: none;
+  --background-color: var(--color-background-quaternary);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: px2rem(16);
+  min-inline-size: px2rem(16);
+  block-size: px2rem(16);
+  margin-block-start: px2rem(10);
+  background-color: var(--background-color);
+  border: px2rem(1) solid var(--input-border-color);
+  border-radius: $br-circle;
+
+  &.checked {
+    --icon-display: block;
+    --input-border-color: var(--color-background-quaternary);
+    --input-icon-color: var(--color-background-primary);
+    --background-color: var(--color-accent-primary);
+  }
+
+  &:hover {
+    --input-border-color: var(--color-accent-primary-muted);
+  }
+
+  &:focus {
+    --input-border-color: var(--color-accent-primary);
+  }
+}
+
+.option-icon {
+  inline-size: px2rem(8);
+  block-size: px2rem(8);
+  display: var(--icon-display);
+  fill: var(--input-icon-color);
+}
+
+.option-input {
+  margin: 0;
 }
 
 .file-entry {
-  .file-name {
-    @include deprecated.flex-row;
-
-    .file-icon {
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-16;
-      width: deprecated.$s-16;
-
-      svg {
-        @extend %button-icon-small;
-
-        stroke: var(--input-foreground);
-      }
-    }
-
-    .file-name-label {
-      @include deprecated.body-large-typography;
-      @include deprecated.text-ellipsis;
-    }
-  }
+  --file-entry-color: var(--color-foreground-secondary);
 
   &.loading {
     .file-name {
-      color: var(--modal-text-foreground-color);
+      color: var(--color-foreground-secondary);
     }
   }
 
   &.error {
     .file-name {
-      color: var(--modal-text-foreground-color);
+      color: var(--color-foreground-secondary);
 
       .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
+        stroke: var(--color-foreground-secondary);
       }
     }
   }
 
   &.success {
     .file-name {
-      color: var(--modal-text-foreground-color);
+      color: var(--color-foreground-secondary);
 
       .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
+        stroke: var(--color-foreground-secondary);
       }
     }
   }
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+
+  .file-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: px2rem(16);
+    inline-size: px2rem(16);
+    color: var(--color-foreground-secondary);
+  }
+
+  .file-name-label {
+    display: block;
+    max-inline-size: 99%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.icon-status-tick {
+  fill: none;
+  stroke: var(--color-accent-primary);
 }
