@@ -964,12 +964,19 @@ RETURNING id, deleted_at;")
    created users skip email verification and onboarding. Emails that already
    belong to an existing profile are skipped. Intended for the Nitrate admin
    bulk-creation screen; access is gated by the shared key and, in Nitrate, an
-   email allow-list."
+   email allow-list. Requires the `nitrate-bulk-create-profiles` flag, disabled
+   by default so it is only available on test environments."
   {::doc/added "2.19"
    ::sm/params schema:bulk-create-profiles-params
    ::sm/result schema:bulk-create-profiles-result
    ::rpc/auth false}
   [cfg {:keys [password emails]}]
+
+  (when-not (contains? cf/flags :nitrate-bulk-create-profiles)
+    (ex/raise :type :restriction
+              :code :nitrate-bulk-create-profiles-not-allowed
+              :hint "Bulk profile creation is disabled by config."))
+
   (let [derived (aauth/derive-password password)]
     (db/tx-run!
      cfg
