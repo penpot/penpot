@@ -147,6 +147,12 @@ belongs to.
 The `gh.py` issues command already includes `issue_type` in every entry's
 output. **No separate GraphQL query is needed.**
 
+**Preserve highlighted entries:** If an entry is already featured in
+`### :rocket: Epics and highlights`, keep it in that section when refreshing a
+changelog version. Do not remove a highlighted entry just because issue type
+categorization would otherwise place it under `### :sparkles: New features &
+Enhancements`.
+
 **Community contribution attribution:** If the issue or its fix PR has the
 `community contribution` label, add an attribution `(by @<github_username>)`
 on the changelog entry line, **before** the GitHub issue/PR references.

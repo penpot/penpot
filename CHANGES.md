@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.18.0
+## 2.18.0 (Unreleased)
 
 ### :bug: Bugs fixed
 
@@ -23,9 +23,7 @@
 - Refactor wasm rulers and UI state [#10116](https://github.com/penpot/penpot/issues/10116) (PR: [#10461](https://github.com/penpot/penpot/pull/10461))
 - Improve team invitations modal in the dashboard [#10484](https://github.com/penpot/penpot/issues/10484) (PR: [#10459](https://github.com/penpot/penpot/pull/10459))
 
-## 2.17.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
+## 2.17.0
 
 ### :rocket: Epics and highlights
 
@@ -190,6 +188,9 @@
 - Fix Plugin API validation error when listing shared plugin data keys [#10628](https://github.com/penpot/penpot/issues/10628) (PR: [#10632](https://github.com/penpot/penpot/pull/10632))
 - Fix Plugin API silently dropping plugin data written to shared library [#10629](https://github.com/penpot/penpot/issues/10629) (PR: [#10632](https://github.com/penpot/penpot/pull/10632))
 - Fix workspace crash when event target is a DOM text node [#10640](https://github.com/penpot/penpot/issues/10640) (PR: [#10641](https://github.com/penpot/penpot/pull/10641))
+- Fix text shape position-data to include required fills in WASM and DOM calculation paths [#10646](https://github.com/penpot/penpot/issues/10646) (PR: [#10650](https://github.com/penpot/penpot/pull/10650))
+- Log expired OIDC tokens as auth failures instead of server errors [#10635](https://github.com/penpot/penpot/issues/10635) (PR: [#10636](https://github.com/penpot/penpot/pull/10636))
+- Return 400 instead of 500 when ImageMagick rejects invalid uploaded images [#10642](https://github.com/penpot/penpot/issues/10642) (PR: [#10643](https://github.com/penpot/penpot/pull/10643))
 
 ## 2.16.2
 
