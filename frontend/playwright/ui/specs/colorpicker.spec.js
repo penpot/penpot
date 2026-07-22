@@ -24,6 +24,35 @@ test("Bug 7549 - User clicks on color swatch to display the color picker next to
   expect(distance).toBeLessThan(60);
 });
 
+test("Bug 10756 - Image fill picker accepts SVG files", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+  await workspacePage.page
+    .getByRole("button", { name: "#B1B2B5" })
+    .click();
+  await workspacePage.page.getByText("Solid").click();
+  await workspacePage.page.getByText("Image").click();
+
+  await expect(workspacePage.page.locator("#fill-image-upload")).toHaveAttribute(
+    "accept",
+    /(?:^|,)image\/svg\+xml(?:,|$)/,
+  );
+});
+
 test("Create a LINEAR gradient", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
