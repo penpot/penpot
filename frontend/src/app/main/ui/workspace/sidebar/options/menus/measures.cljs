@@ -374,7 +374,7 @@
          (fn [value attr]
            (if (or (string? value) (number? value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (udw/update-dimensions ids attr value))
+                       (udw/update-dimensions-coalesced ids attr value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
@@ -408,7 +408,7 @@
            (if (or (string? value) (number? value))
              (let [value (fixed-decimal-value value)]
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/increase-rotation ids value)))
+               (st/emit! (udw/increase-rotation-coalesced ids value)))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{:rotation}

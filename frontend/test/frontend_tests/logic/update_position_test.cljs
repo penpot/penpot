@@ -12,7 +12,12 @@
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.workspace :as dw]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]))
+
+(t/use-fixtures :each
+  {:before (fn [] (thw/setup-wasm-mocks!))
+   :after (fn [] (thw/teardown-wasm-mocks!))})
 
 (t/deftest test-update-positions-multiple-ids
   (t/async
