@@ -5142,6 +5142,13 @@ msgid "shortcuts.delete-node"
 msgstr "Borrar nodo"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Borrar nodo y segmentos"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.deselect-all"
+msgstr "Deseleccionar todo"
+
 msgid "shortcuts.detach-component"
 msgstr "Desvincular componente"
 
@@ -9468,6 +9475,22 @@ msgstr "Comentarios (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:247, src/app/main/ui/workspace/top_toolbar.cljs:248
 msgid "workspace.toolbar.curve"
 msgstr "Curva (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-type"
+msgstr "Comportamiento manejador"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Igual"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Alineado"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-independent"
+msgstr "Independiente"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:231
 #, unused

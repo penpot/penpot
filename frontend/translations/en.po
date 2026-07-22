@@ -5281,6 +5281,14 @@ msgid "shortcuts.delete-node"
 msgstr "Delete node"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Delete node and segments"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.deselect-all"
+msgstr "Deselect all"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:104
 msgid "shortcuts.detach-component"
 msgstr "Detach component"
 
@@ -8613,6 +8621,22 @@ msgstr "To corner (%s)"
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:210
 msgid "workspace.path.actions.make-curve"
 msgstr "To curve (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-type"
+msgstr "Handler behaviour"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Equal"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Aligned"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-independent"
+msgstr "Independent"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:181
 msgid "workspace.path.actions.merge-nodes"

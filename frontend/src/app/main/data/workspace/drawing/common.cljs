@@ -11,6 +11,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.path.state :as path.state]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as mw]
@@ -23,9 +24,16 @@
    (ptk/reify ::clear-drawing
      ptk/UpdateEvent
      (update [_ state]
-       (if preserve-tool?
-         (update state :workspace-drawing dissoc :object :lock)
-         (dissoc state :workspace-drawing))))))
+       (let [path-editing? (path.state/editing? state)]
+         (cond
+           path-editing?
+           (update state :workspace-drawing select-keys [:object])
+
+           preserve-tool?
+           (update state :workspace-drawing dissoc :object :lock)
+
+           :else
+           (dissoc state :workspace-drawing)))))))
 
 (defn handle-finish-drawing
   []
@@ -97,6 +105,6 @@
                  (rx/of (dwu/commit-undo-transaction (:id shape))))
                 (rx/empty)))))
 
-         ;; Delay so the mouse event can read the drawing state
+         ;; Let the current mouse event finish before clearing drawing state.
          (->> (rx/of (clear-drawing {:preserve-tool? (= tool :curve)}))
               (rx/delay 0)))))))

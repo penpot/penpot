@@ -17,6 +17,7 @@
 (def default-hotspot-y 12)
 (def default-rotation 0)
 (def default-height 20)
+(def default-width 20)
 
 (defn parse-svg [svg-data]
   (-> svg-data
@@ -51,7 +52,7 @@
       (str/replace #"\s+$" "")))
 
 (defn encode-svg-cursor
-  [id rotation x y height]
+  [id rotation x y height width]
   (let [svg-path  (str cursor-folder "/" (name id) ".svg")
         data      (-> svg-path io/resource slurp parse-svg)
         data      (u/percent-encode data)
@@ -59,15 +60,16 @@
         data (if rotation
                (str/fmt "%3Cg transform='rotate(%s 8,8)'%3E%s%3C/g%3E" rotation data)
                data)]
-    (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='20px' "
+    (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='" width "px' "
          "height='" height "px' %3E" data "%3C/svg%3E\") " x " " y ", auto")))
 
 (defmacro cursor-ref
-  "Creates a static cursor given its name, rotation and x/y hotspot"
-  ([id] (encode-svg-cursor id default-rotation default-hotspot-x default-hotspot-y default-height))
-  ([id rotation] (encode-svg-cursor id rotation default-hotspot-x default-hotspot-y default-height))
-  ([id rotation x y] (encode-svg-cursor id rotation x y default-height))
-  ([id rotation x y height] (encode-svg-cursor id rotation x y height)))
+  "Creates a static SVG cursor."
+  ([id] (encode-svg-cursor id default-rotation default-hotspot-x default-hotspot-y default-height default-width))
+  ([id rotation] (encode-svg-cursor id rotation default-hotspot-x default-hotspot-y default-height default-width))
+  ([id rotation x y] (encode-svg-cursor id rotation x y default-height default-width))
+  ([id rotation x y height] (encode-svg-cursor id rotation x y height default-width))
+  ([id rotation x y height width] (encode-svg-cursor id rotation x y height width)))
 
 (defmacro cursor-fn
   "Creates a dynamic cursor that can be rotated in runtime"
@@ -75,7 +77,8 @@
   (let [[cp1 cp2] (-> (encode-svg-cursor id "$$$"
                                          default-hotspot-x
                                          default-hotspot-y
-                                         default-height)
+                                         default-height
+                                         default-width)
                       (str/split #"\$\$\$"))]
     `(fn [rot#]
        (str/concat ~cp1 (+ ~initial rot#) ~cp2))))

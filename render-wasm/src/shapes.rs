@@ -1499,7 +1499,6 @@ impl Shape {
         };
 
         let path_transform = self.to_path_transform();
-        let apply_doc_transform = path_transform.is_some();
 
         for stroke in self.visible_strokes() {
             let Some(stroke_region) = stroke_to_path(
@@ -1512,10 +1511,7 @@ impl Shape {
             ) else {
                 continue;
             };
-            let mut sk = stroke_region.to_skia_path(self.svg_attrs.as_ref());
-            if apply_doc_transform {
-                sk = sk.make_transform(&self.shape_document_transform());
-            }
+            let sk = stroke_region.to_skia_path(self.svg_attrs.as_ref());
             acc = acc.op(&sk, skia::PathOp::Union).unwrap_or(acc);
         }
 

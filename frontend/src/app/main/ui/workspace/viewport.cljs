@@ -13,7 +13,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
-   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
@@ -46,6 +45,7 @@
    [app.main.ui.workspace.viewport.hooks :as hooks]
    [app.main.ui.workspace.viewport.interactions :as interactions]
    [app.main.ui.workspace.viewport.outline :as outline]
+   [app.main.ui.workspace.viewport.path-state :as path-state]
    [app.main.ui.workspace.viewport.pixel-overlay :as pixel-overlay]
    [app.main.ui.workspace.viewport.presence :as presence]
    [app.main.ui.workspace.viewport.rulers :as rulers]
@@ -53,8 +53,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
-                                                   path-edition-bar*
+   [app.main.ui.workspace.viewport.top-bar :refer [edition-bars*
                                                    view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
@@ -177,21 +176,22 @@
         selected-frame    (when (= (count selected-frames) 1)
                             (get base-objects (first selected-frames)))
 
-        edit-path-state   (get edit-path edition)
-        edit-path-mode    (get edit-path-state :edit-mode)
+        {:keys [edit-state
+                editing?
+                drawing?
+                editing-shape
+                bar-state
+                bar-shape
+                drawing-shape]}
+        (mf/with-memo [edit-path edition drawing-tool drawing-obj base-objects]
+          (path-state/derive-path-state edit-path edition drawing-tool drawing-obj base-objects))
 
-        path-editing?     (some? edit-path-state)
-        path-drawing?     (or (= edit-path-mode :draw)
-                              (and (= :path (get drawing-obj :type))
-                                   (not= :curve drawing-tool)))
-
-        editing-shape     (when edition
-                            (get base-objects edition))
-
-        editing-shape     (mf/with-memo [editing-shape path-editing? base-objects]
-                            (if path-editing?
-                              (path/convert-to-path editing-shape base-objects)
-                              editing-shape))
+        edit-path-state   edit-state
+        path-editing?     editing?
+        path-drawing?     drawing?
+        path-bar-state    bar-state
+        path-bar-shape    bar-shape
+        draw-area-shape   drawing-shape
 
         create-comment?   (= :comments drawing-tool)
 
@@ -255,8 +255,14 @@
                                       (seq selected))
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
                                           (contains? layout :snap-guides))
-                                      (or drawing-obj transform))
-        show-selrect?            (and selrect (empty? drawing) (not text-editing?))
+                                      (or drawing-obj transform)
+                                      (not path-editing?))
+
+        render-objects           (mf/with-memo [base-objects path-editing? edition]
+                                   (cond-> base-objects
+                                     path-editing?
+                                     (assoc-in [edition :hidden] true)))
+        show-selrect?            (and selrect (or (empty? drawing) path-editing?) (not text-editing?))
         show-measures?           (and (not transform)
                                       (not path-editing?)
                                       (or show-distances? mode-inspect? read-only?))
@@ -311,7 +317,7 @@
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
-    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? (get path-bar-state :drag-cursor) z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
@@ -332,15 +338,14 @@
         (when-not hide-ui?
           [:> top-toolbar* {:layout layout}])
 
-        (when (and ^boolean path-editing?
-                   ^boolean single-select?)
-          [:> path-edition-bar* {:shape editing-shape
-                                 :edit-path-state edit-path-state
-                                 :layout layout}])
-
-        (when (and ^boolean grid-editing?
-                   ^boolean single-select?)
-          [:> grid-edition-bar* {:shape editing-shape}])])
+        [:> edition-bars* {:layout layout
+                           :path-editing path-editing?
+                           :path-drawing path-drawing?
+                           :path-state path-bar-state
+                           :path-shape path-bar-shape
+                           :grid-editing grid-editing?
+                           :grid-shape editing-shape
+                           :single-select single-select?}]])
 
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
@@ -411,7 +416,7 @@
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
         ;; Render root shape
         [:& shapes/root-shape {:key (str page-id)
-                               :objects base-objects
+                               :objects render-objects
                                :active-frames @active-frames
                                ;; disable thumbnails when previewing a version
                                :disable-thumbnails (some? preview-id)}]]]]
@@ -593,7 +598,7 @@
        (when (and ^boolean show-draw-area?
                   ^boolean (cts/shape? drawing-obj))
          [:> drawarea/draw-area*
-          {:shape drawing-obj
+          {:shape draw-area-shape
            :zoom zoom
            :tool drawing-tool}])
 

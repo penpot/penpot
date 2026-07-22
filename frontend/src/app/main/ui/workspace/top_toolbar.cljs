@@ -16,6 +16,7 @@
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.path.state :as pst]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -34,16 +35,16 @@
 
 (def ^:private toolbar-hidden-ref
   (l/derived (fn [state]
-               (let [visibility      (get state :hide-toolbar)
-                     path-edit-state (get state :edit-path)
-                     selected        (get state :selected)
-                     edition         (get state :edition)
+               (let [visibility      (get-in state [:workspace-local :hide-toolbar])
+                     selected        (get-in state [:workspace-local :selected])
 
                      is-single       (= (count selected) 1)
-                     is-path-editing (and is-single (some? (get path-edit-state edition)))]
+                     ;; The path edition bar replaces this toolbar.
+                     is-path-editing (and is-single (pst/editing? state))
+                     is-path-drawing (pst/drawing? state)]
 
-                 (if is-path-editing true visibility)))
-             refs/workspace-local))
+                 (if (or is-path-editing is-path-drawing) true visibility)))
+             st/state))
 
 (def grouped-tools
   {:shapes {:default-tool :rect

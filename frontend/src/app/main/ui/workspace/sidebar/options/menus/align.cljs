@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.icons :as deprecated-icon]
@@ -16,30 +17,44 @@
    [rumext.v2 :as mf]))
 
 (mf/defc align-options*
-  [{:keys [shapes objects]}]
-  (let [disabled-align
-        (not (dw/can-align? shapes objects))
+  ;; Align path nodes or whole shapes for the current edit mode.
+  [{:keys [shapes objects path-edit? node-count]}]
+  (let [node-count (or node-count 0)
+
+        disabled-align
+        (if path-edit?
+          (< node-count 2)
+          (not (dw/can-align? shapes objects)))
 
         disabled-distribute
-        (not (dw/can-distribute? shapes))
+        (if path-edit?
+          (< node-count 3)
+          (not (dw/can-distribute? shapes)))
 
         align-objects
         (mf/use-fn
+         (mf/deps path-edit?)
          (fn [event]
            (let [value (-> (dom/get-current-target event)
                            (dom/get-data "value")
                            (keyword))]
-             (st/emit! (dw/align-objects value)))))
+             (st/emit! (if path-edit?
+                         (dwdp/align-nodes value)
+                         (dw/align-objects value))))))
 
         distribute-objects
         (mf/use-fn
+         (mf/deps path-edit?)
          (fn [event]
            (let [value (-> (dom/get-current-target event)
                            (dom/get-data "value")
                            (keyword))]
-             (st/emit! (dw/distribute-objects value)))))]
+             (st/emit! (if path-edit?
+                         (dwdp/distribute-nodes value)
+                         (dw/distribute-objects value))))))]
 
-    (when-not (and disabled-align disabled-distribute)
+    ;; Keep path controls visible while their actions are disabled.
+    (when (or path-edit? (not (and disabled-align disabled-distribute)))
       [:div {:class (stl/css :align-options)}
        [:div {:class (stl/css :align-group-horizontal)}
         [:button {:class (stl/css-case :align-button true
@@ -106,4 +121,3 @@
                   :data-value "vertical"
                   :on-click distribute-objects}
          deprecated-icon/distribute-vertical-spacing]]])))
-

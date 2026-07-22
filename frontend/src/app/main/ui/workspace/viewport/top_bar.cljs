@@ -56,3 +56,23 @@
 (mf/defc grid-edition-bar*
   [{:keys [shape]}]
   [:> grid-edition-actions* {:shape shape}])
+
+(mf/defc edition-bars*
+  [{:keys [layout
+           path-editing
+           path-drawing
+           path-state
+           path-shape
+           grid-editing
+           grid-shape
+           single-select]}]
+  [:*
+   (when (or (and ^boolean path-editing ^boolean single-select)
+             (and ^boolean path-drawing (some? path-state)))
+     [:> path-edition-bar* {:shape path-shape
+                            :edit-path-state path-state
+                            :layout layout}])
+
+   (when (and ^boolean grid-editing ^boolean single-select)
+     [:> grid-edition-bar* {:shape grid-shape}])])
+

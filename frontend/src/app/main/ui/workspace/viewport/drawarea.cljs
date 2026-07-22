@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.types.path :as path]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :refer [path-shape]]
    [app.main.ui.workspace.shapes :as shapes]
@@ -19,6 +20,27 @@
 (defn- make-edit-path-ref [id]
   (let [get-fn #(dm/get-in % [:edit-path id])]
     (l/derived get-fn refs/workspace-local)))
+
+(def ^:private edit-fill-opacity
+  "Fill opacity used while editing a path."
+  0.8)
+
+(def ^:private synced-edit-attrs
+  "Visual attributes copied into the live editing shape."
+  [:strokes :shadow :blur :background-blur :opacity :blend-mode])
+
+(defn- dim-fills
+  [fills]
+  (mapv (fn [fill]
+          (update fill :fill-opacity #(* (or % 1) edit-fill-opacity)))
+        fills))
+
+(defn path-edit-shape
+  "Builds the path shape rendered during editing."
+  [drawing-obj stored]
+  (-> (cond-> (merge drawing-obj (select-keys stored synced-edit-attrs))
+        (seq (:fills stored)) (assoc :fills (:fills stored)))
+      (update :fills dim-fills)))
 
 (mf/defc generic-draw-area*
   {::mf/private true}
@@ -55,12 +77,36 @@
 
 (mf/defc draw-area*
   [{:keys [shape zoom tool] :as props}]
-  [:g.draw-area
-   [:g {:style {:pointer-events "none"}}
-    [:& shapes/shape-wrapper {:shape shape}]]
+  (let [shape-id
+        (dm/get-prop shape :id)
 
-   (case tool
-     :path      [:> path-draw-area* props]
-     :curve     [:& path-shape {:shape shape :zoom zoom}]
-     #_:default [:> generic-draw-area* props])])
+        edit-path-ref
+        (mf/with-memo [shape-id]
+          (make-edit-path-ref shape-id))
 
+        ;; Keep command indices unchanged while applying drag modifiers.
+        dragging?
+        (some? (:content-modifiers (mf/deref edit-path-ref)))
+
+        ;; Close rendered subpaths while keeping editor content untouched.
+        render-shape
+        (mf/with-memo [shape dragging?]
+          (if (and (= :path (dm/get-prop shape :type)) (not dragging?))
+            (update shape :content #(-> % path/close-subpaths path/close-loops))
+            shape))]
+    [:g.draw-area
+     [:g {:style {:pointer-events "none"}}
+      [:& shapes/shape-wrapper {:shape render-shape}]]
+
+     (cond
+       (= tool :path)
+       [:> path-draw-area* props]
+
+       (= tool :curve)
+       [:& path-shape {:shape shape :zoom zoom}]
+
+       (= (:type shape) :path)
+       nil
+
+       :else
+       [:> generic-draw-area* props])]))

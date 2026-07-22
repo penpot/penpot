@@ -5,22 +5,28 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .sub-actions {
   cursor: initial;
   pointer-events: initial;
   position: absolute;
-  top: deprecated.$s-12;
+  top: var(--sp-xl);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  height: deprecated.$s-56;
-  padding: deprecated.$s-8 deprecated.$s-16;
-  border-radius: deprecated.$s-8;
-  gap: deprecated.$s-16;
-  border: deprecated.$s-2 solid var(--panel-border-color);
-  z-index: deprecated.$z-index-3;
+  justify-content: flex-start;
+
+  // Keep the bar stable as actions change.
+  width: $sz-430;
+  height: $sz-48;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  gap: var(--sp-s);
+  border: $b-2 solid var(--panel-border-color);
+  z-index: var(--z-index-panels);
   background-color: var(--color-background-primary);
   transition:
     top 0.3s,
@@ -33,22 +39,88 @@
   display: flex;
   align-items: center;
   margin: 0;
-  opacity: deprecated.$op-10;
+  opacity: 1;
   transition: opacity 0.3s ease;
+}
+
+// Pin the snap toggle to the right.
+.snap-group {
+  margin-left: auto;
+}
+
+.separator {
+  flex-shrink: 0;
+  width: $sz-1;
+  height: $sz-24;
+  margin: 0 var(--sp-xs);
+  background-color: var(--panel-border-color);
+}
+
+.handler-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+// Handler behavior flyout trigger.
+.handler-trigger {
+  position: relative;
+}
+
+// Flyout corner indicator.
+.flyout-indicator {
+  position: absolute;
+  inset-block-end: var(--sp-xs);
+  inset-inline-end: var(--sp-xs);
+  inline-size: $sz-6;
+  block-size: $sz-6;
+  stroke: var(--pathbar-icon-color);
+  fill: none;
+  pointer-events: none;
+}
+
+.handler-popover {
+  position: absolute;
+  top: calc(100% + var(--sp-s));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  padding: var(--sp-xs);
+  gap: var(--sp-xxs);
+  border-radius: $br-8;
+  border: $b-2 solid var(--panel-border-color);
+  background-color: var(--color-background-primary);
+  z-index: var(--z-index-dropdown);
+
+  // Hidden until the flyout opens.
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 80ms ease-out,
+    visibility 80ms linear;
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
 }
 
 .topbar-btn {
   --pathbar-icon-color: var(--color-foreground-secondary);
+  --button-tertiary-background-color-hover: var(--color-background-tertiary);
 
   @extend %button-tertiary;
 
-  height: deprecated.$s-36;
-  width: deprecated.$s-36;
+  height: $sz-32;
+  width: $sz-32;
   flex-shrink: 0;
   background-color: transparent;
-  border-radius: deprecated.$s-8;
+  border-radius: $br-8;
   border: none;
-  margin: 0 deprecated.$s-2;
+  margin: 0 var(--sp-xxs);
 
   &.is-toggled {
     --pathbar-icon-color: var(--button-radio-foreground-color-active);

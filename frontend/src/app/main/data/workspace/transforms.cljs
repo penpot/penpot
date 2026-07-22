@@ -23,6 +23,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -363,6 +365,71 @@
                    (rx/of
                     (dwm/apply-modifiers)
                     (finish-transform))))))))))))
+
+(defn start-move-line-point
+  "Drags one endpoint of a straight path while keeping the other fixed."
+  [shape index]
+  (ptk/reify ::start-move-line-point
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id          (dm/get-prop shape :id)
+            page-id     (:current-page-id state)
+            objects     (dsh/lookup-page-objects state page-id)
+            zoom        (dm/get-in state [:workspace-local :zoom] 1)
+            layout      (:workspace-layout state)
+            focus       (:workspace-focus-selected state)
+
+            content     (dm/get-prop shape :content)
+            start-point (path.helpers/segment->point (nth content index))
+            other-point (path.helpers/segment->point (nth content (if (zero? index) 1 0)))
+
+            stopper     (mse/drag-stopper stream)
+
+            ;; Shift constrains the endpoint around the fixed point.
+            position-stream
+            (->> ms/mouse-position
+                 (rx/filter some?)
+                 (rx/with-latest-from ms/mouse-position-shift)
+                 (rx/switch-map
+                  (fn [[pos shift?]]
+                    (if ^boolean shift?
+                      (rx/of (path.helpers/position-fixed-angle pos other-point))
+                      (snap/closest-snap-point page-id [shape] objects layout zoom focus pos))))
+                 (rx/share))
+
+            move-endpoint
+            (fn [pos save-undo?]
+              (let [delta (gpt/to-vec start-point pos)]
+                (dwsh/update-shapes
+                 [id]
+                 (fn [_]
+                   (-> shape
+                       (assoc :content (path/apply-content-modifiers
+                                        content
+                                        {index {:x (dm/get-prop delta :x)
+                                                :y (dm/get-prop delta :y)}}))
+                       (path/update-geometry)))
+                 {:reg-objects? true :save-undo? save-undo?})))]
+
+        ;; Hide selection controls during the drag.
+        (rx/concat
+         (rx/of #(assoc-in % [:workspace-local :transform] :move))
+         ;; Subscribe the preview and commit branches together.
+         (rx/merge
+          ;; Preview without creating undo entries.
+          (->> position-stream
+               (rx/sample mconst/move-sample-time)
+               (rx/map #(move-endpoint % false))
+               (rx/take-until stopper))
+          ;; Commit the final position as one undo step.
+          (->> position-stream
+               (rx/take-until stopper)
+               (rx/last)
+               (rx/mapcat
+                (fn [pos]
+                  (rx/of (move-endpoint start-point false)
+                         (move-endpoint pos true))))))
+         (rx/of #(assoc-in % [:workspace-local :transform] nil)))))))
 
 (defn trigger-bounding-box-cloaking
   "Trigger the bounding box cloaking (with default timer of 1sec)
