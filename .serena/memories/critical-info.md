@@ -30,15 +30,15 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 
 This is a monorepo. Principles that apply to one module do *not* generally apply to others. Do not make assumptions.
 
-- `frontend/`: ClojureScript + SCSS SPA/design editor.
-- `backend/`: JVM Clojure HTTP/RPC server with PostgreSQL, Redis, storage, mail, and workers.Runtime services and the task-queue vs Pub/Sub topology that constrains horizontal scaling: `mem:prod-infra/core`.
-- `common/`: shared CLJC data types, geometry, schemas, file/change logic, and utilities.
-- `render-wasm/`: Rust -> WebAssembly Skia renderer consumed by frontend.
-- `exporter/`: ClojureScript/Node headless Playwright SVG/PDF export.
-- `mcp/`: TypeScript Model Context Protocol integration.
-- `plugins/`: TypeScript plugin runtime/examples and Plugin API types.
-- `library/`: design library workflows.
-- `docs/`: documentation site.
+- `frontend/`: ClojureScript + SCSS SPA/design editor; core conventions: `mem:frontend/core`.
+- `backend/`: JVM Clojure HTTP/RPC server with PostgreSQL, Redis, storage, mail, and workers; core conventions: `mem:backend/core`. Runtime services and the task-queue vs Pub/Sub topology that constrains horizontal scaling: `mem:prod-infra/core`.
+- `common/`: shared CLJC data types, geometry, schemas, file/change logic, and utilities; core conventions: `mem:common/core`.
+- `render-wasm/`: Rust -> WebAssembly Skia renderer consumed by frontend; core conventions: `mem:render-wasm/core`.
+- `exporter/`: ClojureScript/Node headless Playwright SVG/PDF export; core conventions: `mem:exporter/core`.
+- `mcp/`: TypeScript Model Context Protocol integration; core conventions: `mem:mcp/core`.
+- `plugins/`: TypeScript plugin runtime/examples and Plugin API types; core conventions: `mem:plugins/core`.
+- `library/`: design library workflows; core conventions: `mem:library/core`.
+- `docs/`: documentation site; core workflow and conventions: `mem:docs/core`.
 
 The memory is structured in a way that you can get the critical information about the
 module. You can read it from `mem:<MODULE>/core`
