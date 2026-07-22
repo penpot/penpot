@@ -705,16 +705,21 @@ impl Shape {
     }
 
     pub fn set_path_segments(&mut self, segments: Vec<Segment>) {
-        let path = Path::new(segments);
         match &mut self.shape_type {
             Type::Bool(Bool { bool_type, .. }) => {
+                let path = match bool_type {
+                    // Exclusion booleans are computed with even-odd semantics but
+                    // PathData uploads do not carry the fill rule.
+                    BoolType::Exclusion => Path::new(segments).with_even_odd(true),
+                    _ => Path::new(segments),
+                };
                 self.shape_type = Type::Bool(Bool {
                     bool_type: *bool_type,
                     path,
                 });
             }
             Type::Path(_) => {
-                self.shape_type = Type::Path(path);
+                self.shape_type = Type::Path(Path::new(segments));
             }
             _ => {}
         };
