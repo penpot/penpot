@@ -1,19 +1,19 @@
 ---
 name: nrepl-eval
-description: Evaluate Clojure code via nREPL using the standalone tools/nrepl-eval.mjs CLI tool.
+description: Evaluate Clojure code via nREPL using the standalone scripts/nrepl-eval.mjs CLI tool.
 ---
 
 # nREPL Eval
 
 Evaluate Clojure (or ClojureScript) code via a running nREPL server using
-`tools/nrepl-eval.mjs`.
+`scripts/nrepl-eval.mjs`.
 
-Full documentation: `mem:tools/nrepl-eval` (file: `.serena/memories/tools/nrepl-eval.md`)
+Full documentation: `mem:scripts/nrepl-eval` (file: `.serena/memories/scripts/nrepl-eval.md`)
 
 ## Quick Reference
 
 ```bash
-./tools/nrepl-eval.mjs [options] [<code>]
+./scripts/nrepl-eval.mjs [options] [<code>]
 ```
 
 | Flag | Description | Default |
@@ -30,8 +30,8 @@ Full documentation: `mem:tools/nrepl-eval` (file: `.serena/memories/tools/nrepl-
 ## Examples
 
 ```bash
-./tools/nrepl-eval.mjs '(+ 1 2 3)'
-./tools/nrepl-eval.mjs --backend '(+ 1 2 3)'
-./tools/nrepl-eval.mjs --frontend '(js/alert "hi")'
-./tools/nrepl-eval.mjs -e
+./scripts/nrepl-eval.mjs '(+ 1 2 3)'
+./scripts/nrepl-eval.mjs --backend '(+ 1 2 3)'
+./scripts/nrepl-eval.mjs --frontend '(js/alert "hi")'
+./scripts/nrepl-eval.mjs -e
 ```

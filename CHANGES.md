@@ -45,7 +45,7 @@
 - Remove unreachable try/catch in hex->hsl (by @Dexterity104) [#9244](https://github.com/penpot/penpot/issues/9244) (PR: [#9245](https://github.com/penpot/penpot/pull/9245))
 - Remove stray debug log in exporter upload-resource (by @iot2edge) [#9270](https://github.com/penpot/penpot/issues/9270) (PR: [#9272](https://github.com/penpot/penpot/pull/9272))
 - Release pool connection during font variant creation (by @Dexterity104) [#9286](https://github.com/penpot/penpot/issues/9286) (PR: [#9287](https://github.com/penpot/penpot/pull/9287))
-- Add autocomplete combobox to token creation and edition forms [#9899](https://github.com/penpot/penpot/issues/9899) (PR: [#9109](https://github.com/penpot/penpot/pull/9109))
+- Add autocomplete combobox to token creation and edition forms [#9899](https://github.com/penpot/penpot/issues/9899) (PR: [#9109](https://github.com/penpot/penpot/pull/9109), [#8294](https://github.com/penpot/penpot/pull/8294))
 - Add list view mode to color picker UI [#4420](https://github.com/penpot/penpot/issues/4420) (PR: [#9953](https://github.com/penpot/penpot/pull/9953))
 - Use Clipboard API consistently across the application (by @MilosM348) [#6514](https://github.com/penpot/penpot/issues/6514) (PR: [#9188](https://github.com/penpot/penpot/pull/9188))
 - Use `$` as DTCG token/group discriminator and make `$description` optional [#8342](https://github.com/penpot/penpot/issues/8342) (PR: [#9912](https://github.com/penpot/penpot/pull/9912))
@@ -57,7 +57,6 @@
 - Add composite typography token input to the Design sidebar [#9932](https://github.com/penpot/penpot/issues/9932) (PR: [#9128](https://github.com/penpot/penpot/pull/9128), [#9375](https://github.com/penpot/penpot/pull/9375), [#8749](https://github.com/penpot/penpot/pull/8749))
 - Avoid deduplicating temporary export files to prevent stale content (by @yong2bba) [#9970](https://github.com/penpot/penpot/issues/9970) (PR: [#9959](https://github.com/penpot/penpot/pull/9959))
 - Add layer blur effect [#9844](https://github.com/penpot/penpot/issues/9844) (PR: [#10034](https://github.com/penpot/penpot/pull/10034))
-- Show and manage comments while designing in the workspace [#10239](https://github.com/penpot/penpot/issues/10239) (PR: [#10275](https://github.com/penpot/penpot/pull/10275))
 - Add concurrency limiter for MCP Server Plugin Communications [#9493](https://github.com/penpot/penpot/issues/9493) (PR: [#9748](https://github.com/penpot/penpot/pull/9748))
 - Render guides in WebGL [#10068](https://github.com/penpot/penpot/issues/10068) (PR: [#10014](https://github.com/penpot/penpot/pull/10014))
 - Add configurable resource limits to ImageMagick image processing [#10223](https://github.com/penpot/penpot/issues/10223) (PR: [#10240](https://github.com/penpot/penpot/pull/10240))
@@ -65,6 +64,7 @@
 - Add color variants and positioning to selection size badge (by @bittoby) [#10258](https://github.com/penpot/penpot/issues/10258) (PR: [#9210](https://github.com/penpot/penpot/pull/9210))
 - Use hard reload for render engine switching in the workspace menu [#10441](https://github.com/penpot/penpot/issues/10441) (PR: [#10444](https://github.com/penpot/penpot/pull/10444))
 - Rotate size badge when shape is rotated [#10386](https://github.com/penpot/penpot/issues/10386) (PR: [#10393](https://github.com/penpot/penpot/pull/10393))
+- Add separate internal URI for exporter to handle Docker deployments where internal and public URIs differ [#10627](https://github.com/penpot/penpot/issues/10627) (PR: [#10630](https://github.com/penpot/penpot/pull/10630))
 
 ### :bug: Bugs fixed
 
@@ -180,6 +180,16 @@
 - Fix SVG raw caching prevented by unnecessary Cow wrapping [#10488](https://github.com/penpot/penpot/issues/10488) (PR: [#10492](https://github.com/penpot/penpot/pull/10492))
 - Add component reset operation to plugin API [#10561](https://github.com/penpot/penpot/issues/10561) (PR: [#10533](https://github.com/penpot/penpot/pull/10533))
 - Fix blur menu alignment in Firefox [#10576](https://github.com/penpot/penpot/issues/10576) (PR: [#10575](https://github.com/penpot/penpot/pull/10575))
+- Fix sidebar not showing all elements with grid layout [#10539](https://github.com/penpot/penpot/issues/10539) (PR: [#10600](https://github.com/penpot/penpot/pull/10600))
+- Fix sidebar getting stuck when selecting shapes that haven't loaded yet [#10599](https://github.com/penpot/penpot/issues/10599) (PR: [#10600](https://github.com/penpot/penpot/pull/10600))
+- Fix text shape bounding boxes not updating after remote fonts finish loading [#10585](https://github.com/penpot/penpot/issues/10585) (PR: [#10566](https://github.com/penpot/penpot/pull/10566))
+- Fix text editor crash from Draft.js selection offset exceeding DOM node length [#10607](https://github.com/penpot/penpot/issues/10607) (PR: [#10608](https://github.com/penpot/penpot/pull/10608))
+- Fix workspace crash when converting SVG-raw shape to path [#10612](https://github.com/penpot/penpot/issues/10612) (PR: [#10613](https://github.com/penpot/penpot/pull/10613))
+- Fix component variant panel crash when selecting multiple copies with mismatched property counts [#10615](https://github.com/penpot/penpot/issues/10615) (PR: [#10616](https://github.com/penpot/penpot/pull/10616))
+- Fix workspace crash from recursion when clicking shape in comments mode [#10620](https://github.com/penpot/penpot/issues/10620) (PR: [#10622](https://github.com/penpot/penpot/pull/10622))
+- Fix Plugin API validation error when listing shared plugin data keys [#10628](https://github.com/penpot/penpot/issues/10628) (PR: [#10632](https://github.com/penpot/penpot/pull/10632))
+- Fix Plugin API silently dropping plugin data written to shared library [#10629](https://github.com/penpot/penpot/issues/10629) (PR: [#10632](https://github.com/penpot/penpot/pull/10632))
+- Fix workspace crash when event target is a DOM text node [#10640](https://github.com/penpot/penpot/issues/10640) (PR: [#10641](https://github.com/penpot/penpot/pull/10641))
 
 ## 2.16.2
 
