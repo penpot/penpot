@@ -44,8 +44,10 @@
                   :size "m"}]]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
-        ;; TODO this svg is a placeholder. Use the proper one when created
-        [:> raw-svg* {:id "nitrate-welcome"}]]
+        [:> raw-svg* {:id "nitrate-welcome-light"
+                      :class (stl/css :welcome-illustration-light)}]
+        [:> raw-svg* {:id "nitrate-welcome"
+                      :class (stl/css :welcome-illustration-dark)}]]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
