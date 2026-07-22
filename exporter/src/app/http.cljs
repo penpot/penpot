@@ -15,6 +15,7 @@
    [app.common.transit :as t]
    [app.config :as cf]
    [app.handlers :as handlers]
+   [app.metrics :as mtx]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [promesa.core :as p]))
@@ -135,6 +136,21 @@
              :response/body "OK")
       (handler exchange))))
 
+(defn- wrap-metrics
+  "Serve in-process render metrics on /metrics (Prometheus text format).
+  Unauthenticated, so it is opt-in via the `:metrics` config (PENPOT_METRICS
+  env var); when disabled the handler chain is left untouched."
+  [handler]
+  (if-not (cf/get :metrics)
+    handler
+    (fn [{:keys [:request/path] :as exchange}]
+      (if (= path "/metrics")
+        (assoc exchange
+               :response/status 200
+               :response/headers {"content-type" "text/plain; version=0.0.4"}
+               :response/body (mtx/export-text))
+        (handler exchange)))))
+
 (defn- create-adapter
   [handler]
   (fn [req res]
@@ -161,6 +177,7 @@
   []
   (let [handler (-> handlers/handler
                     (wrap-health)
+                    (wrap-metrics)
                     (wrap-auth "auth-token")
                     (wrap-response-format)
                     (wrap-params)

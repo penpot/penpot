@@ -50,7 +50,11 @@
    [:wasm-dir {:optional true} :string]
    ;; Byte budget (in MB) for the WASM image cache; least-recently-used
    ;; images are evicted between requests once the store exceeds it.
-   [:wasm-image-cache-mb {:optional true} ::sm/int]])
+   [:wasm-image-cache-mb {:optional true} ::sm/int]
+   ;; Expose unauthenticated /metrics (Prometheus text format) with
+   ;; per-render instrumentation. Development/measurement aid; off by
+   ;; default so production deployments are unaffected.
+   [:metrics {:optional true} :boolean]])
 
 (def ^:private decode-config
   (sm/decoder schema:config sm/string-transformer))

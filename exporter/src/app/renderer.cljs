@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.metrics :as mtx]
    [app.renderer.bitmap :as rb]
    [app.renderer.pdf :as rp]
    [app.renderer.svg :as rs]
@@ -45,18 +46,21 @@
   ;; Opt-in headless path: when an export is flagged `:is-wasm` AND the
   ;; `:wasm-headless` config is enabled, render with the in-process Skia/WASM
   ;; pipeline (no browser). Off by default, so existing behavior is unchanged.
-  (let [headless? (and is-wasm (cf/get :wasm-headless))]
+  (let [headless? (and is-wasm (cf/get :wasm-headless))
+        backend   (if headless? "wasm" "browser")]
     (l/info :hint "render"
             :type type
             :is-wasm (boolean is-wasm)
             :wasm-headless (boolean (cf/get :wasm-headless))
-            :backend (if headless? "wasm" "browser"))
-    (if headless?
-      (rw/render params on-object)
-      (case type
-        :png  (rb/render params on-object)
-        :jpeg (rb/render params on-object)
-        :webp (rb/render params on-object)
-        :pdf  (rp/render params on-object)
-        :svg  (rs/render params on-object)))))
+            :backend backend)
+    (mtx/with-render-metrics backend type
+      (fn []
+        (if headless?
+          (rw/render params on-object)
+          (case type
+            :png  (rb/render params on-object)
+            :jpeg (rb/render params on-object)
+            :webp (rb/render params on-object)
+            :pdf  (rp/render params on-object)
+            :svg  (rs/render params on-object)))))))
 
