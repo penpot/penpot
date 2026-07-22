@@ -17,7 +17,7 @@
    [potok.v2.core :as ptk]))
 
 (def valid-types
-  (d/ordered-set :all :merge :detach))
+  (d/ordered-set :all :merge :detach :link-later))
 
 (def valid-formats
   #{:binfile-v1 :binfile-v3 :legacy-zip})
