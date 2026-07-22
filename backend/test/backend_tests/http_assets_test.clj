@@ -8,6 +8,7 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token :as actoken]
@@ -137,6 +138,26 @@
 ;; Tests: objects-handler — non-public buckets (auth required)
 ;; ----------------------------------------------------------------
 
+(t/deftest objects-handler-file-thumbnail-bucket-link-unfurl-flag
+  ;; Objects in the file-thumbnail bucket are public only when the
+  ;; link-unfurl flag is enabled.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "file-thumbnail" "thumbnail data")
+        request  {:path-params {:id (str (:id object))}}]
+
+    (t/testing "flag enabled"
+      (with-redefs [cf/flags (conj cf/flags :link-unfurl)]
+        (let [response (assets/objects-handler cfg request)]
+          (t/is (not= 401 (::yres/status response)))
+          (t/is (not= 404 (::yres/status response))))))
+
+    (t/testing "flag disabled"
+      (with-redefs [cf/flags (disj cf/flags :link-unfurl)]
+        (let [response (assets/objects-handler cfg request)]
+          (t/is (= 401 (::yres/status response))))))))
+
 (t/deftest objects-handler-non-public-bucket-no-auth
   ;; Objects in non-public buckets should return 401 without authentication.
   (let [storage  (-> (:app.storage/storage th/*system*)
@@ -198,10 +219,12 @@
         cfg      (make-handler-cfg storage)
         profile  (th/create-profile* 1)]
 
+    ;; NOTE: file-thumbnail is not included here because it is public
+    ;; when the link-unfurl flag is enabled; see
+    ;; objects-handler-file-thumbnail-bucket-link-unfurl-flag.
     (doseq [bucket ["profile"
                     "tempfile"
                     "file-data"
-                    "file-thumbnail"
                     "file-change"]]
       (t/testing (str "bucket: " bucket)
         (let [object   (create-storage-object! storage bucket "some data")

@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
@@ -74,11 +75,19 @@
     (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
     (:fs :assets-fs) (serve-object-from-fs cfg obj)))
 
+(defn- public-bucket?
+  [bucket]
+  (or (contains? public-buckets bucket)
+      ;; Dashboard file thumbnails become public when link unfurling
+      ;; is enabled, so link preview crawlers can fetch them.
+      (and (= "file-thumbnail" bucket)
+           (contains? cf/flags :link-unfurl))))
+
 (defn- requires-auth?
   "Check if the storage object requires authentication based on its bucket."
   [obj]
   (let [bucket (-> obj meta :bucket)]
-    (not (contains? public-buckets bucket))))
+    (not (public-bucket? bucket))))
 
 (defn- authenticated?
   "Check if the request has an authenticated profile, either via session

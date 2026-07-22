@@ -46,6 +46,7 @@
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
+   [frontend-tests.router-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -120,6 +121,7 @@
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.router-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
