@@ -39,8 +39,8 @@ Backend RPC command areas without focused memories include access tokens, binfil
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 
-For interactive PostgreSQL access with correct dev defaults, use `tools/psql`; to dump
-the current DDL schema, use `tools/db-schema` (see `mem:tools/psql`).
+For interactive PostgreSQL access with correct dev defaults, use `scripts/psql`; to dump
+the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
 
 For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/rpc-db-worker-subtleties`.
 
@@ -56,14 +56,14 @@ In devenv, backend nREPL is exposed on port 6064.
 
 ### Non-interactive eval (preferred for agents)
 
-`./tools/nrepl-eval.mjs` connects to an already-running nREPL server and evaluates code. Session state (defs, `in-ns`) persists across invocations via a stored session ID in `/tmp/penpot-nrepl-session-<host>-<port>`.
+`./scripts/nrepl-eval.mjs` connects to an already-running nREPL server and evaluates code. Session state (defs, `in-ns`) persists across invocations via a stored session ID in `/tmp/penpot-nrepl-session-<host>-<port>`.
 
 ```bash
-./tools/nrepl-eval.mjs '(+ 1 2)'                            # single expression
-./tools/nrepl-eval.mjs "(require '[my.ns :as ns] :reload)"  # reload after edits
-./tools/nrepl-eval.mjs -e                                   # inspect last exception (*e)
-./tools/nrepl-eval.mjs --reset-session '(def x 0)'          # discard session, start fresh
-./tools/nrepl-eval.mjs <<'EOF'                              # multi-expression heredoc
+./scripts/nrepl-eval.mjs '(+ 1 2)'                            # single expression
+./scripts/nrepl-eval.mjs "(require '[my.ns :as ns] :reload)"  # reload after edits
+./scripts/nrepl-eval.mjs -e                                   # inspect last exception (*e)
+./scripts/nrepl-eval.mjs --reset-session '(def x 0)'          # discard session, start fresh
+./scripts/nrepl-eval.mjs <<'EOF'                              # multi-expression heredoc
 (def x 10)
 (+ x 20)
 EOF
@@ -92,12 +92,12 @@ Fixtures can populate local data for manual testing/perf work. From the backend 
 
 IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
 
-* **Linting:** `pnpm run lint` from the repository root.
-* **Formatting:** `pnpm run check-fmt`. Use `pnpm run fmt` to fix. Avoid unrelated whitespace diffs.
+* **Linting:** `clj-kondo --lint ../common/src/ src/`.
+* **Formatting:** `cljfmt check src/ test/` to check, `cljfmt fix src/ test/` to fix. Avoid unrelated whitespace diffs.
 
 **Before linting:** if delimiter errors are suspected (after LLM edits), run
-`tools/paren-repair.bb` on the affected files first. Delimiter errors produce
-misleading linter/compiler output. See `mem:tools/paren-repair`.
+`scripts/paren-repair` on the affected files first. Delimiter errors produce
+misleading linter/compiler output. See `mem:scripts/paren-repair`.
 
 ## Testing
 

@@ -171,6 +171,62 @@
     (t/is (= #{(:id team1) (:id team2)}
              (->> out :result :teams (map :id) set)))))
 
+(t/deftest get-teams-detail-last-activity-reflects-file-modifications
+  (let [profile       (th/create-profile* 1 {:is-active true})
+        team          (th/create-team* 1 {:profile-id (:id profile)})
+        organization-id (uuid/random)
+        org-summary   {:id organization-id
+                       :teams [{:id (:id team)}]}
+        params        {::th/type :get-teams-detail
+                       ::rpc/profile-id (:id profile)
+                       :organization-id organization-id}
+
+        call!         (fn []
+                        (with-redefs [nitrate/call (fn [_cfg method _params]
+                                                     (case method
+                                                       :get-org-summary org-summary
+                                                       nil))]
+                          (management-command-with-nitrate! params)))
+
+        empty-out     (call!)
+        empty-team    (-> empty-out :result first)
+
+        project       (th/create-project* 1 {:profile-id (:id profile)
+                                             :team-id (:id team)})
+        file          (th/create-file* 1 {:profile-id (:id profile)
+                                          :project-id (:id project)})
+        file-after-create (th/db-get :file {:id (:id file)})
+        project-after-create (th/db-get :project {:id (:id project)})
+        expected-activity-create (if (.isAfter (:modified-at file-after-create)
+                                               (:modified-at project-after-create))
+                                   (:modified-at file-after-create)
+                                   (:modified-at project-after-create))
+
+        with-file-out (call!)
+        with-file     (-> with-file-out :result first)
+
+        new-activity  (ct/in-future "1h")
+        _             (th/db-update! :file
+                                     {:modified-at new-activity}
+                                     {:id (:id file)})
+        file-after-update (th/db-get :file {:id (:id file)})
+
+        updated-out   (call!)
+        updated-team  (-> updated-out :result first)]
+
+    (t/is (th/success? empty-out))
+    (t/is (= (:id team) (:id empty-team)))
+    (t/is (nil? (:last-activity-at empty-team)))
+
+    (t/is (th/success? with-file-out))
+    (t/is (= (:id team) (:id with-file)))
+    (t/is (= expected-activity-create (:last-activity-at with-file)))
+
+    (t/is (th/success? updated-out))
+    (t/is (= (:id team) (:id updated-team)))
+    (t/is (= (:modified-at file-after-update) (:last-activity-at updated-team)))
+    (t/is (not= (:last-activity-at with-file) (:last-activity-at updated-team)))))
+
 (t/deftest notify-organization-deletion-prefixes-teams-and-publishes-org-deleted-event
   (let [profile           (th/create-profile* 1 {:is-active true})
         ;; One team will have files -> it will be kept and renamed.

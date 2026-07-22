@@ -70,6 +70,9 @@
               (= (:code error) :media-type-mismatch)
               (tr "errors.media-type-mismatch")
 
+              (= (:code error) :invalid-image)
+              (tr "errors.media-type-not-allowed")
+
               :else
               (tr "errors.unexpected-error"))]
     (rx/of (ntf/error msg))))

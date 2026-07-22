@@ -106,6 +106,7 @@ impl DocAtlas {
         })
     }
 
+    // TODO: delete one docatlas is optional
     pub fn is_empty(&self) -> bool {
         self.size.width <= 0 || self.size.height <= 0
     }

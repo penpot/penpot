@@ -4,15 +4,15 @@ Taiga API client — fetch public issues, user stories, and tasks from the
 Penpot project (id 345963) without authentication.
 
 Usage:
-  python3 tools/taiga.py <taiga-url>
-  python3 tools/taiga.py <type> <ref>
-  python3 tools/taiga.py [--json] <taiga-url>
-  python3 tools/taiga.py [--json] <type> <ref>
+  python3 scripts/taiga.py <taiga-url>
+  python3 scripts/taiga.py <type> <ref>
+  python3 scripts/taiga.py [--json] <taiga-url>
+  python3 scripts/taiga.py [--json] <type> <ref>
 
 Examples:
-  python3 tools/taiga.py https://tree.taiga.io/project/penpot/issue/13714
-  python3 tools/taiga.py --json https://tree.taiga.io/project/penpot/us/14128
-  python3 tools/taiga.py task 13648
+  python3 scripts/taiga.py https://tree.taiga.io/project/penpot/issue/13714
+  python3 scripts/taiga.py --json https://tree.taiga.io/project/penpot/us/14128
+  python3 scripts/taiga.py task 13648
 """
 
 import argparse
