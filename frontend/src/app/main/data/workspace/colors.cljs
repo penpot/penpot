@@ -332,6 +332,11 @@
   [:stroke-style
    :stroke-alignment
    :stroke-width
+   :stroke-per-side
+   :stroke-width-top
+   :stroke-width-right
+   :stroke-width-bottom
+   :stroke-width-left
    :stroke-cap-start
    :stroke-cap-end])
 
