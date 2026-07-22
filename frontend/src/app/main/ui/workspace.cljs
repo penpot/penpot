@@ -196,10 +196,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [team-id project-id file-id page-id layout-name]}]
 
-  (let [file-id          (hooks/use-equal-memo file-id)
-        page-id          (hooks/use-equal-memo page-id)
-
-        layout           (mf/deref refs/workspace-layout)
+  (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
 
         team-ref         (mf/with-memo [team-id]
@@ -287,6 +284,12 @@
 
 (mf/defc workspace-page*
   {::mf/lazy-load true}
-  [props]
-  [:> workspace* props])
+  [{:keys [file-id page-id] :as props}]
+  (let [file-id (hooks/use-equal-memo file-id)
+        page-id (hooks/use-equal-memo page-id)
+        props   (mf/spread-props props {:file-id file-id
+                                        :page-id page-id})]
+
+    (when (uuid? file-id)
+      [:> workspace* props])))
 
