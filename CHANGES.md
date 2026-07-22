@@ -1,8 +1,6 @@
 # CHANGELOG
 
-## 2.17.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
+## 2.17.0
 
 ### :rocket: Epics and highlights
 
