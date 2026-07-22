@@ -251,6 +251,9 @@ impl Path {
 
     pub fn to_skia_path(&self, svg_attrs: Option<&SvgAttrs>) -> skia::Path {
         let mut path = self.skia_path.snapshot();
+        if self.is_even_odd() {
+            path.set_fill_type(skia::PathFillType::EvenOdd);
+        }
         if let Some(attrs) = svg_attrs {
             if attrs.fill_rule == FillRule::Evenodd {
                 path.set_fill_type(skia::PathFillType::EvenOdd);
