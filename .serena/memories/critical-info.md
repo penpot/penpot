@@ -52,7 +52,7 @@ module. You can read it from `mem:<MODULE>/core`
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.
 
-# Dev tools
+# Dev Scripts (scripts/)
 
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL.
   Supports `--backend` (port 6064) and `--frontend` (port 3447) aliases.
