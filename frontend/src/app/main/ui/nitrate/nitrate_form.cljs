@@ -58,7 +58,7 @@
          (tr "nitrate.form.title")]
 
         [:p {:class (stl/css :modal-text-large)}
-         (tr "nitrate.form.enterprise-intro")]
+         (tr "nitrate.form.enterprise-intro" ":")]
         [:ul
          [:li {:class (stl/css :modal-text-large)}
           "- " (tr "nitrate.form.enterprise-feature-1")]
@@ -78,7 +78,7 @@
                           :on-click on-click
                           :class (stl/css :modal-button)}
               (if (:subscription profile)
-                (tr "nitrate.form.upgrade")
+                (tr "nitrate.form.start-enterprise")
                 (tr "nitrate.form.try-free"))]
              [:div {:class (stl/css :modal-text-small :modal-info)}
               (tr "nitrate.form.cancel-anytime")]]]
