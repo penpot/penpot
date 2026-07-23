@@ -81,6 +81,7 @@ export PENPOT_INTERNAL_URI=http://localhost:3450
 # defaulting to ../frontend/resources/public/js (render-wasm.js/.wasm).
 # export PENPOT_WASM_HEADLESS=true
 # export PENPOT_WASM_DIR=../frontend/resources/public/js
+# export PENPOT_WASM_IMAGE_CACHE_MB=256
 
 export JAVA_OPTS="\
        -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
