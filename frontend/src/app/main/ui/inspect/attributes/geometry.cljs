@@ -22,6 +22,10 @@
    :left
    :top
    :border-radius
+   :border-block-start-width   ; top
+   :border-inline-end-width    ; right
+   :border-block-end-width     ; bottom
+   :border-inline-start-width  ; left
    :transform])
 
 (mf/defc geometry-block

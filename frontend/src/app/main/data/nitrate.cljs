@@ -6,6 +6,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dt]
@@ -54,22 +55,35 @@
             (rx/map (fn [connectivity]
                       (modal/show popup-type (merge (or connectivity {}) extra-props)))))))))
 
+(defn build-admin-console-url
+  ([path]
+   (build-admin-console-url cf/public-uri path nil))
+  ([path query-params]
+   (build-admin-console-url cf/public-uri path query-params))
+  ([public-uri path query-params]
+   (dm/str
+    (cond-> (u/join public-uri "admin-console/" path)
+      (seq query-params) (assoc :query (u/map->query-string query-params))))))
+
 (defn go-to-nitrate-ac
   ([]
-   (st/emit! (rt/nav-raw :href "/admin-console/")))
+   (st/emit! (rt/nav-raw :href (build-admin-console-url ""))))
   ([{:keys [organization-id organization-slug]}]
    (if (and organization-id organization-slug)
-     (let [href (dm/str "/admin-console/org/"
+     (let [path (dm/str "organization/"
                         (u/percent-encode organization-slug)
                         "/"
                         (u/percent-encode (str organization-id))
-                        "/people/")]
+                        "/people/")
+           href (build-admin-console-url path)]
        (st/emit! (rt/nav-raw :href href)))
-     (st/emit! (rt/nav-raw :href "/admin-console/")))))
+     (st/emit! (rt/nav-raw :href (build-admin-console-url ""))))))
 
-(defn go-to-nitrate-ac-create-org
-  []
-  (st/emit! (rt/nav-raw :href "/admin-console/?action=create-org")))
+(defn go-to-nitrate-ac-create-organization
+  [event-origin]
+  (let [href (build-admin-console-url "" {:action "create-organization"
+                                          :origin event-origin})]
+    (st/emit! (rt/nav-raw :href href))))
 
 (defn can-send-invitations?
   [{:keys [organization profile-id team-permissions]}]
@@ -81,11 +95,12 @@
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
-(def go-to-ac-url "/admin-console/")
+(def go-to-ac-url (build-admin-console-url ""))
 
 (defn go-to-nitrate-billing
   []
-  (let [href (dm/str "/admin-console/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
+  (let [href (build-admin-console-url "licenses/billing"
+                                      {:callback go-to-subscription-url})]
     (st/emit! (rt/nav-raw :href href))))
 
 (def nitrate-checkout-error-token "nitrate-checkout-error")
@@ -104,7 +119,7 @@
      :cancel-callback       (build nitrate-checkout-cancelled-token)}))
 
 (defn go-to-buy-nitrate-license
-  [subscription base-url]
+  [subscription base-url event-origin subscription-mode]
   (let [{:keys [success-callback error-callback finish-error-callback cancel-callback]}
         (build-nitrate-callback-urls base-url)
         params {:subscription subscription
@@ -112,8 +127,19 @@
                 :error_callback error-callback
                 :finish_error_callback finish-error-callback
                 :cancel_callback cancel-callback}
-        href   (dm/str "/admin-console/licenses/start?" (u/map->query-string params))]
-    (st/emit! (rt/nav-raw :href href))))
+        href   (build-admin-console-url "licenses/start" params)
+        event  (ev/event {::ev/name "start-nitrate-checkout"
+                          ::ev/origin event-origin
+                          :product "nitrate:enterprise"
+                          :billing-period subscription
+                          :subscription-mode subscription-mode})]
+    (->> st/stream
+         (rx/filter (ptk/type? ::ev/chunk-persisted))
+         (rx/take 1)
+         (rx/timeout 2000 (rx/of :timeout))
+         (rx/subs! (fn [_]
+                     (st/emit! (rt/nav-raw :href href)))))
+    (st/emit! event (ptk/data-event ::ev/force-persist {}))))
 
 (defn fetch-connectivity
   []

@@ -253,6 +253,10 @@
 (def editing-page-item
   (l/derived :page-item workspace-local))
 
+;; set of pages selected in the sitemap (multi-selection)
+(def selected-pages
+  (l/derived :selected-pages workspace-local))
+
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
 

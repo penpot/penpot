@@ -13,10 +13,26 @@
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
+   [app.util.code-gen.style-css-values :as cssv]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private properties [:border-style :border-width])
+
+(def ^:private per-side-properties
+  [:border-style
+   :border-block-start-width
+   :border-inline-end-width
+   :border-block-end-width
+   :border-inline-start-width])
+
+(defn- stroke-properties
+  "Logical per-side width properties when the stroke uses differing
+  per-side widths; the regular border-style/width pair otherwise."
+  [stroke]
+  (if (some? (cssv/stroke-per-side-widths stroke))
+    per-side-properties
+    properties))
 
 (defn- stroke->color [shape]
   {:color (:stroke-color shape)
@@ -41,7 +57,7 @@
          (fn [format]
            (reset! format* format)))]
     [:div {:class (stl/css :attributes-fill-block)}
-     (for [property properties]
+     (for [property (stroke-properties stroke)]
        (let [property-name (cmm/get-css-rule-humanized property)
              property-value (css/get-css-value objects stroke property)]
          [:div {:class (stl/css :stroke-row) :key   (str "stroke-" (:id shape) "-" property)}
@@ -56,7 +72,7 @@
        :property "Border color"
        :format format
        :on-change-format on-change
-       :copy-data (css/get-shape-properties-css objects {:strokes [shape]} properties)}]]))
+       :copy-data (css/get-shape-properties-css objects {:strokes [shape]} (stroke-properties stroke))}]]))
 
 ;; New implementation of stroke-block using the new color format selector
 ;; This component is used when the flag :inspect-styles is enabled. Update when flag no longer needed.
@@ -64,7 +80,7 @@
   [{:keys [objects shape stroke color-space]}]
   (let [color     (stroke->color stroke)]
     [:div {:class (stl/css :attributes-fill-block)}
-     (for [property properties]
+     (for [property (stroke-properties stroke)]
        (let [property-name (cmm/get-css-rule-humanized property)
              property-value (css/get-css-value objects stroke property)]
          [:div {:class (stl/css :stroke-row) :key   (str "stroke-" (:id shape) "-" property)}
@@ -78,7 +94,7 @@
       {:color color
        :property "Border color"
        :format (d/nilv (keyword color-space) :hex)
-       :copy-data (css/get-shape-properties-css objects {:strokes [shape]} properties {:format (keyword color-space)})}]]))
+       :copy-data (css/get-shape-properties-css objects {:strokes [shape]} (stroke-properties stroke) {:format (keyword color-space)})}]]))
 
 (mf/defc stroke-panel*
   [{:keys [shapes color-space]}]

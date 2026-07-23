@@ -18,6 +18,10 @@ Body explaining what changed and why.
 AI-assisted-by: model-name
 ```
 
+**AI-assisted-by trailer rules:**
+- Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`
+- Do NOT add prefixes like `opencode-go/` — use the bare model name
+
 ## Commit Type Emojis
 
 `:bug:` bug fix · `:sparkles:` enhancement · `:tada:` new feature · `:recycle:` refactor · `:lipstick:` cosmetic · `:ambulance:` critical fix · `:books:` docs · `:construction:` WIP · `:boom:` breaking · `:wrench:` config · `:zap:` perf · `:whale:` docker · `:paperclip:` other · `:arrow_up:` dep upgrade · `:arrow_down:` dep downgrade · `:fire:` removal · `:globe_with_meridians:` translations · `:rocket:` epic/highlight

@@ -7,6 +7,8 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
+pub mod raster;
+mod resources;
 mod shadows;
 pub mod shape_renderer;
 mod strokes;
@@ -34,10 +36,11 @@ use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
-use crate::{get_gpu_state, performance};
+use crate::{get_gpu_state, get_resources, performance};
 
 pub use fonts::*;
 pub use images::*;
+pub(crate) use resources::RenderResources;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -348,15 +351,12 @@ pub(crate) struct RenderState {
     pub options: RenderOptions,
     stats: RenderStats,
     pub surfaces: Surfaces,
-    pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub cached_viewbox: Viewbox,
-    pub images: ImageStore,
     pub background_color: skia::Color,
     // Stack of nodes pending to be rendered.
     pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
-    pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
     // render_area expanded by surface margins — used for visibility checks so that
     // shapes in the margin zone are rendered (needed for background blur sampling).
@@ -546,19 +546,18 @@ impl RenderState {
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
-        let sampling_options =
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+        let sampling_options = get_resources().sampling_options;
 
-        let fonts = FontStore::try_new()?;
         let surfaces = Surfaces::try_new(
             (width, height),
             sampling_options,
             tiles::get_tile_dimensions(),
         )?;
 
-        // This is used multiple times everywhere so instead of creating new instances every
-        // time we reuse this one.
+        Self::assemble(width, height, surfaces)
+    }
 
+    fn assemble(width: i32, height: i32, surfaces: Surfaces) -> Result<RenderState> {
         let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
         let options = RenderOptions::default();
@@ -567,14 +566,11 @@ impl RenderState {
             options,
             stats: RenderStats::new(),
             surfaces,
-            fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
             pending_nodes: vec![],
             current_tile: None,
-            sampling_options,
             render_area: Rect::new_empty(),
             render_area_with_margins: Rect::new_empty(),
             tiles,
@@ -653,6 +649,44 @@ impl RenderState {
         shape.frame_clip_layer_blur()
     }
 
+    /// Builds the background-blur clip region for a shape whose strokes
+    /// extend beyond the fill geometry: the fill path expanded (via union)
+    /// with a solid stroke coverage of the maximum outward stroke reach.
+    /// Dash/dot stroke styles are treated as solid, so dash gaps also get
+    /// a blurred backdrop.
+    fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
+        let base = match &shape.shape_type {
+            Type::Rect(data) if data.corners.is_some() => {
+                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                skia::Path::rrect(rrect, None)
+            }
+            Type::Frame(data) if data.corners.is_some() => {
+                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                skia::Path::rrect(rrect, None)
+            }
+            Type::Rect(_) | Type::Frame(_) => skia::Path::rect(shape.selrect, None),
+            Type::Circle => skia::Path::oval(shape.selrect, None),
+            _ => shape
+                .get_skia_path()
+                .unwrap_or_else(|| skia::Path::rect(shape.selrect, None)),
+        };
+
+        // Expand outward by the max stroke reach: a centered stroke of
+        // 2× the outset covers exactly `stroke_outset` beyond the path
+        // (the inward half disappears in the union with the fill).
+        let mut paint = skia::Paint::default();
+        paint.set_style(skia::PaintStyle::Stroke);
+        paint.set_stroke_width(stroke_outset * 2.0);
+
+        let mut outline = skia::Path::default();
+        if skia::path_utils::fill_path_with_paint(&base, &paint, &mut outline, None, None) {
+            if let Some(united) = base.op(&outline, skia::PathOp::Union) {
+                return united;
+            }
+        }
+        base
+    }
+
     /// Renders background blur effect directly to the given target surface.
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
@@ -660,8 +694,7 @@ impl RenderState {
         if self.options.is_fast_mode() {
             return;
         }
-        if matches!(shape.shape_type, Type::Text(_)) || matches!(shape.shape_type, Type::SVGRaw(_))
-        {
+        if matches!(shape.shape_type, Type::SVGRaw(_)) {
             return;
         }
         let blur = match shape.visible_background_blur() {
@@ -707,29 +740,81 @@ impl RenderState {
         canvas.translate(translation);
         canvas.concat(&matrix);
 
-        // Clip to shape's path based on shape type
-        match &shape.shape_type {
-            Type::Rect(data) if data.corners.is_some() => {
-                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
-                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+        if matches!(shape.shape_type, Type::Text(_)) {
+            // Outset the clip by the max outward stroke reach so the mask
+            // (which includes stroke coverage) isn't cut off at the shape rect.
+            let mut clip_rect = shape.selrect;
+            let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+            if stroke_outset > 0.0 {
+                clip_rect.outset((stroke_outset, stroke_outset));
             }
-            Type::Frame(data) if data.corners.is_some() => {
-                let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
-                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
-            }
-            Type::Rect(_) | Type::Frame(_) => {
-                canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
-            }
-            Type::Circle => {
-                let mut pb = skia::PathBuilder::new();
-                pb.add_oval(shape.selrect, None, None);
-                canvas.clip_path(&pb.detach(), skia::ClipOp::Intersect, true);
-            }
-            _ => {
-                if let Some(path) = shape.get_skia_path() {
-                    canvas.clip_path(&path, skia::ClipOp::Intersect, true);
-                } else {
+            canvas.clip_rect(clip_rect, skia::ClipOp::Intersect, true);
+            // Blur in device space
+            canvas.reset_matrix();
+
+            // Save the layer rect to the shape's selection rect
+            // so the blur is only applied inside the glyphs.
+            let layer_rec = skia::canvas::SaveLayerRec::default()
+                .backdrop(&blur_filter)
+                .backdrop_tile_mode(skia::TileMode::Clamp);
+
+            canvas.save_layer(&layer_rec);
+
+            // Reset
+            canvas.scale((scale, scale));
+            canvas.translate(translation);
+            canvas.concat(&matrix);
+
+            // Keep the blurred backdrop only where the glyphs are
+            let mut mask_paint = skia::Paint::default();
+            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+            let mask_layer_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+            canvas.save_layer(&mask_layer_rec);
+
+            text::paint_text_mask(canvas, shape);
+
+            // Restore the mask layer, then the blur layer,
+            // then the shape transform
+            canvas.restore();
+            canvas.restore();
+            canvas.restore();
+            return;
+        }
+
+        // Clip to shape's path based on shape type. When the shape has
+        // strokes that extend beyond the fill geometry (center/outer), the
+        // clip is expanded with the stroke coverage so the backdrop is also
+        // blurred under the stroke (visible when the stroke is translucent).
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+        if stroke_outset > 0.0 {
+            let clip_path = Self::background_blur_clip_path(shape, stroke_outset);
+            canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
+        } else {
+            match &shape.shape_type {
+                Type::Rect(data) if data.corners.is_some() => {
+                    let rrect =
+                        RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                    canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                }
+                Type::Frame(data) if data.corners.is_some() => {
+                    let rrect =
+                        RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
+                    canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
+                }
+                Type::Rect(_) | Type::Frame(_) => {
                     canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+                }
+                Type::Circle => {
+                    let mut pb = skia::PathBuilder::new();
+                    pb.add_oval(shape.selrect, None, None);
+                    canvas.clip_path(&pb.detach(), skia::ClipOp::Intersect, true);
+                }
+                _ => {
+                    if let Some(path) = shape.get_skia_path() {
+                        canvas.clip_path(&path, skia::ClipOp::Intersect, true);
+                    } else {
+                        canvas.clip_rect(shape.selrect, skia::ClipOp::Intersect, true);
+                    }
                 }
             }
         }
@@ -778,35 +863,6 @@ impl RenderState {
         Ok(result)
     }
 
-    pub fn fonts(&self) -> &FontStore {
-        &self.fonts
-    }
-
-    pub fn fonts_mut(&mut self) -> &mut FontStore {
-        &mut self.fonts
-    }
-
-    pub fn add_image(&mut self, id: Uuid, is_thumbnail: bool, image_data: &[u8]) -> Result<()> {
-        self.images.add(id, is_thumbnail, image_data)
-    }
-
-    /// Adds an image from an existing WebGL texture, avoiding re-decoding
-    pub fn add_image_from_gl_texture(
-        &mut self,
-        id: Uuid,
-        is_thumbnail: bool,
-        texture_id: u32,
-        width: i32,
-        height: i32,
-    ) -> Result<()> {
-        self.images
-            .add_image_from_gl_texture(id, is_thumbnail, texture_id, width, height)
-    }
-
-    pub fn has_image(&self, id: &Uuid, is_thumbnail: bool) -> bool {
-        self.images.contains(id, is_thumbnail)
-    }
-
     pub fn set_debug_flags(&mut self, debug: u32) {
         self.options.flags = debug;
     }
@@ -821,7 +877,7 @@ impl RenderState {
                 self.viewbox.width().floor() as i32,
                 self.viewbox.height().floor() as i32,
             )?;
-            self.fonts.set_scale_debug_font(dpr);
+            get_resources().fonts.set_scale_debug_font(dpr);
             self.viewbox.set_dpr(dpr);
             self.surfaces.set_dpr(dpr);
         }
@@ -969,7 +1025,7 @@ impl RenderState {
         text_paint.set_color(skia::Color::GRAY);
         text_paint.set_anti_alias(true);
 
-        let font = self.fonts.debug_font();
+        let font = get_resources().fonts.debug_font();
         // FIXME
         let text = "Loading…";
         let (text_width, _) = font.measure_str(text, None);
@@ -1398,7 +1454,7 @@ impl RenderState {
         }
 
         match &shape.shape_type {
-            Type::SVGRaw(_) => {
+            Type::SVGRaw(sr) => {
                 if let Some(svg_transform) = shape.svg_transform() {
                     matrix.pre_concat(&svg_transform);
                 }
@@ -1410,7 +1466,18 @@ impl RenderState {
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
-                    panic!("SVG should be available");
+                    let font_manager =
+                        skia::FontMgr::from(get_resources().fonts.font_provider().clone());
+                    let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
+                    match dom_result {
+                        Ok(dom) => {
+                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
+                            shape.to_mut().set_svg(dom);
+                        }
+                        Err(e) => {
+                            eprintln!("Error parsing SVG. Error: {}", e);
+                        }
+                    }
                 }
             }
 
@@ -2987,7 +3054,7 @@ impl RenderState {
                 surface.draw(
                     drop_canvas,
                     (0.0, 0.0),
-                    self.sampling_options,
+                    get_resources().sampling_options,
                     Some(&drop_paint),
                 );
                 drop_canvas.restore();
@@ -2997,7 +3064,7 @@ impl RenderState {
                 surface.draw(
                     drop_canvas,
                     (0.0, 0.0),
-                    self.sampling_options,
+                    get_resources().sampling_options,
                     Some(&drop_paint),
                 );
                 drop_canvas.restore();

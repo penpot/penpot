@@ -66,7 +66,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.17.16
+ENV OPENCODE_VERSION=1.18.2
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -217,7 +217,7 @@ ENV CLJKONDO_VERSION=2026.05.25 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.5.0
+    SERENA_VERSION=1.6.1
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
+   [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions*]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -55,4 +55,4 @@
 
 (mf/defc grid-edition-bar*
   [{:keys [shape]}]
-  [:& grid-edition-actions {:shape shape}])
+  [:> grid-edition-actions* {:shape shape}])

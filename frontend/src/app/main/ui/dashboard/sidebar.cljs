@@ -320,7 +320,8 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
 
              (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-ac-create-org)
+             (dnt/go-to-nitrate-ac-create-organization
+              "dashboard:organization-switcher")
 
              :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
@@ -348,7 +349,7 @@
 
      [:> dropdown-menu-item* {:on-click    on-org-click
                               :data-value  default-team-id
-                              :class       (stl/css :org-dropdown-item)}
+                              :class       (stl/css :org-dropdown-item :org-dropdown-item-default-logo)}
       [:span {:class (stl/css :my-teams-icon)}
        [:> raw-svg* {:id penpot-logo-icon-subtle}]]
       [:span {:class (stl/css :team-text)
@@ -412,12 +413,21 @@
     [:> dropdown-menu* props
      [:> dropdown-menu-item* {:on-click    on-team-click
                               :data-value  default-team-id
-                              :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :penpot-icon)} (if (contains? cf/flags :nitrate) deprecated-icon/logo-files deprecated-icon/logo-icon)]
+                              :class       (stl/css-case :team-dropdown-item true
+                                                         :team-dropdown-item-no-logo (contains? cf/flags :nitrate))}
+      (when-not (contains? cf/flags :nitrate)
+        [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
 
       [:span {:class (stl/css :team-text)} (if (contains? cf/flags :nitrate) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
       (when (= default-team-id (:id team))
         tick-icon)]
+
+     (when (and (contains? cf/flags :nitrate)
+                (seq (remove :is-default (vals teams))))
+       [:*
+        [:hr {:role "separator" :class (stl/css :team-separator)}]
+        [:li {:role "presentation" :class (stl/css :org-section-label)}
+         (tr "dashboard.section.teams")]])
 
      (for [team-item (remove :is-default (vals teams))]
        [:> dropdown-menu-item* {:on-click    on-team-click
@@ -766,7 +776,8 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
 
              (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-ac-create-org)
+             (dnt/go-to-nitrate-ac-create-organization
+              "dashboard:organization-switcher")
 
              :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
@@ -778,7 +789,8 @@
                   :on-key-down on-show-orgs-keydown
                   :aria-expanded show-orgs-menu?
                   :aria-haspopup "menu"}
-         [:div {:class (stl/css :team-name)}
+         [:div {:class (stl/css-case :team-name true
+                                     :team-name-default-logo default-org?)}
           (if default-org?
             [:*
              [:span {:class (stl/css :my-teams-icon-xxxl)}
@@ -917,8 +929,10 @@
                 :aria-haspopup "menu"}
        (cond
          is-default?
-         [:div {:class (stl/css :team-name)}
-          [:span {:class (stl/css :penpot-icon)} (if nitrate? deprecated-icon/logo-files deprecated-icon/logo-icon)]
+         [:div {:class (stl/css-case :team-name true
+                                     :team-name-no-logo nitrate?)}
+          (when-not nitrate?
+            [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
           [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.my-files") (tr "dashboard.default-team-name"))]]
 
          (and (contains? cf/flags :subscriptions)
