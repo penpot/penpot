@@ -51,7 +51,7 @@
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
-         (tr "nitrate.activation-success.title")]
+         (tr "nitrate.modal-success.title")]
 
         (when (and manual? date-str)
           [:p {:class (stl/css :modal-text-primary)}

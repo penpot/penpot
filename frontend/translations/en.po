@@ -4352,12 +4352,12 @@ msgstr "Enjoy your plan!"
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
-"You can manage your subscription anytime from the Subscription page in your "
-"account settings."
+"You can edit your subscription at any time from the 'Subscription' page in your "
+"account details."
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "You are Business Nitrate!"
+msgid "nitrate.modal-success.title"
+msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
 msgid "nitrate.code-activation.footer"
@@ -4383,37 +4383,30 @@ msgstr "Activate"
 msgid "nitrate.code-activation.title"
 msgstr "Activate Nitrate"
 
-#, unused
 msgid "nitrate.contact-sales.button"
 msgstr "Contact sales"
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
 "To switch to this plan, please contact our sales team. We'll help you "
 "update your subscription and ensure everything is set up correctly."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-org-deleted"
 msgstr "Your organization will be deleted."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
 "Your total storage, auto-version history, and file recovery period will be "
 "limited."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr ""
 "The teams, projects and files will no longer be part of any organization "
 "but they will remain available."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-title"
 msgstr "When you downgrade:"
 
-#, unused
 msgid "nitrate.contact-sales.title"
 msgstr "Switch to %s plan?"
 
@@ -4449,7 +4442,19 @@ msgstr "Full open-source freedom, with the governance your org needs"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
 msgid "nitrate.form.enterprise-intro"
-msgstr "Everything your teams need to work securely at scale:"
+msgstr "Everything your teams need to work securely at scale%s"
+
+msgid "nitrate.form.enterprise-description"
+msgstr "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."
+
+msgid "nitrate.form.contact-us-free-trial"
+msgstr "Contact us to try the Enterprise plan for 14 days:"
+
+msgid "nitrate.form.contact-us-upgrade"
+msgstr "Contact us to upgrade to the Enterprise plan:"
+
+msgid "nitrate.form.free-trial-button"
+msgstr "Try 14 days for free"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
@@ -4463,7 +4468,6 @@ msgstr "Have an activation code?"
 msgid "nitrate.form.see-plan"
 msgstr "See my current plan"
 
-#, unused
 msgid "nitrate.form.start-enterprise"
 msgstr "Get started with Enterprise"
 
@@ -4474,11 +4478,6 @@ msgstr "Unlock Enterprise features"
 #: src/app/main/ui/dashboard/subscription.cljs:209, src/app/main/ui/nitrate/nitrate_form.cljs:75
 msgid "nitrate.form.try-free"
 msgstr "Try it free for 14 days"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:74
-#, fuzzy
-msgid "nitrate.form.upgrade"
-msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:575
 msgid "nitrate.subscription.active-until"
@@ -4491,6 +4490,9 @@ msgstr "Your Nitrate subscription has been renewed."
 #: src/app/main/ui/settings/subscription.cljs:584
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "Cancel subscription"
+
+msgid "nitrate.subscription.settings.manual-contact-us"
+msgstr "To cancel your Nitrate subscription, please contact us at:"
 
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
@@ -5947,6 +5949,9 @@ msgstr "All Professional plan benefits and:"
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
 
+msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
+msgstr "All Unlimited plan benefits, plus:"
+
 #: src/app/main/ui/settings/subscription.cljs:62
 msgid "subscription.settings.editors"
 msgstr "(x %s editors)"
@@ -5970,6 +5975,27 @@ msgstr "Flat monthly bill"
 #: src/app/main/ui/settings/subscription.cljs:631, src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:710
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "Unlimited storage"
+
+msgid "subscription.settings.enterprise.nitrate.multi-org-management"
+msgstr "Multi-Org Management:"
+
+msgid "subscription.settings.enterprise.nitrate.support-team"
+msgstr "Support for complex team hierarchies and separate sub-organizations."
+
+msgid "subscription.settings.enterprise.nitrate.enterprise-security"
+msgstr "Enterprise Security:"
+
+msgid "subscription.settings.enterprise.nitrate.native-sso"
+msgstr "Native SAML/​​SSO and full Audit Trail logging for compliance reporting."
+
+msgid "subscription.settings.enterprise.nitrate.advanced-control"
+msgstr "Advanced Control:"
+
+msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
+msgstr "Granular plugin whitelisting, including our secure, isolated MCP Server for AI connectivity."
+
+msgid "subscription.settings.admin-console"
+msgstr "Admin Console"
 
 #: src/app/main/ui/dashboard/subscription.cljs:287, src/app/main/ui/settings/subscription.cljs:583, src/app/main/ui/settings/subscription.cljs:610, src/app/main/ui/settings/subscription.cljs:622, src/app/main/ui/settings/subscription.cljs:634, src/app/main/ui/settings/subscription.cljs:644
 msgid "subscription.settings.manage-your-subscription"
@@ -6050,15 +6076,15 @@ msgstr "More information"
 
 #: src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.organization-member-month"
-msgstr "org member per month"
+msgstr "org member / month"
 
 #: src/app/main/ui/settings/subscription.cljs:665
 msgid "subscription.settings.other-plans"
 msgstr "Other penpot plans"
 
 #: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per month"
+msgid "subscription.settings.price-user-month"
+msgstr "user / month"
 
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
@@ -6126,10 +6152,9 @@ msgstr "Thank your for chosing the Penpot %s plan!"
 msgid "subscription.settings.success.dialog.title"
 msgstr "You are %s!"
 
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "You've been supporting us with this plan since: %s"
+#: src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.subscribed-since"
+msgstr "You've been on the %s plan since %s."
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
