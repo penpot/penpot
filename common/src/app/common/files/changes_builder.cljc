@@ -1089,17 +1089,17 @@
                                     :base-font-size previous-font-size})
         (apply-changes-local))))
 
-(defn set-tokens-file
+(defn set-tokens-source
   [changes library-id]
   (assert-file-data! changes)
   (let [file-data (::file-data (meta changes))
         file-id   (:id file-data)
-        prev-val  (:tokens-file file-data)]
+        prev-val  (:tokens-source file-data)]
     (-> changes
-        (update :redo-changes conj {:type :set-tokens-file
+        (update :redo-changes conj {:type :set-tokens-source
                                     :file-id file-id
                                     :library-id library-id})
-        (update :undo-changes conj {:type :set-tokens-file
+        (update :undo-changes conj {:type :set-tokens-source
                                     :file-id file-id
                                     :library-id prev-val})
         (apply-changes-local))))

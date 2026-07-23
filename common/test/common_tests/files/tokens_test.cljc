@@ -234,26 +234,26 @@
       (t/is (contains? file-data' :tokens-status))
       (t/is (ctos/tokens-status? (:tokens-status file-data')))))
 
-  (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-file"
-    (let [tokens-file   (uuid/next)
+  (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-source"
+    (let [tokens-source  (uuid/next)
           tokens-status (ctos/make-tokens-status)
           file          (-> (thf/sample-file :file1)
-                            (assoc-in [:data :tokens-file] tokens-file)
+                            (assoc-in [:data :tokens-source] tokens-source)
                             (assoc-in [:data :tokens-status] tokens-status))
           file-data     (ctf/file-data file)
           file-data'    (cfo/ensure-tokens-lib file-data)]
       (t/is (not (contains? file-data' :tokens-lib)))
-      (t/is (= tokens-file (:tokens-file file-data')))
+      (t/is (= tokens-source (:tokens-source file-data')))
       (t/is (= tokens-status (:tokens-status file-data')))))
 
-  (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-file, but should add a tokens-status if it's missing"
-    (let [tokens-file (uuid/next)
+  (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-source, but should add a tokens-status if it's missing"
+    (let [tokens-source (uuid/next)
           file        (-> (thf/sample-file :file1)
-                          (assoc-in [:data :tokens-file] tokens-file))
+                          (assoc-in [:data :tokens-source] tokens-source))
           file-data   (ctf/file-data file)
           file-data'  (cfo/ensure-tokens-lib file-data)]
       (t/is (not (contains? file-data' :tokens-lib)))
-      (t/is (= tokens-file (:tokens-file file-data')))
+      (t/is (= tokens-source (:tokens-source file-data')))
       (t/is (contains? file-data' :tokens-status))
       (t/is (ctos/tokens-status? (:tokens-status file-data'))))))
 
@@ -266,21 +266,21 @@
   (t/testing "returns nil when no tokens-lib"
     (t/is (nil? (cfo/get-tokens-lib {})))))
 
-(t/deftest test-get-tokens-file
-  (t/testing "returns tokens-file from file data"
-    (let [file-id   (thi/new-id! :tokens-file)
-          file-data {:tokens-file file-id}]
-      (t/is (= file-id (cfo/get-tokens-file file-data)))))
+(t/deftest test-get-tokens-source
+  (t/testing "returns tokens-source from file data"
+    (let [file-id   (thi/new-id! :tokens-source)
+          file-data {:tokens-source file-id}]
+      (t/is (= file-id (cfo/get-tokens-source file-data)))))
 
-  (t/testing "returns nil when no tokens-file"
-    (t/is (nil? (cfo/get-tokens-file {})))))
+  (t/testing "returns nil when no tokens-source"
+    (t/is (nil? (cfo/get-tokens-source {})))))
 
-(t/deftest test-set-tokens-file
-  (t/testing "sets tokens-file on file data"
-    (let [file-id    (thi/new-id! :tokens-file)
+(t/deftest test-set-tokens-source
+  (t/testing "sets tokens-source on file data"
+    (let [file-id    (thi/new-id! :tokens-source)
           file-data  {:other :data}
-          file-data' (cfo/set-tokens-file file-data file-id)]
-      (t/is (= file-id (:tokens-file file-data')))
+          file-data' (cfo/set-tokens-source file-data file-id)]
+      (t/is (= file-id (:tokens-source file-data')))
       (t/is (= :data (:other file-data'))))))
 
 (t/deftest test-get-tokens-status

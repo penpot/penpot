@@ -1631,7 +1631,7 @@
          (when (contains? cf/flags :token-lib-sync)
            (rx/of (dch/commit-changes (-> (pcb/empty-changes nil)
                                           (pcb/with-file-data file-data)
-                                          (pcb/set-tokens-file library-id)))))
+                                          (pcb/set-tokens-source library-id)))))
          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
               (rx/merge-map (fn [libraries-to-load]
                               (as-> libraries-to-load $

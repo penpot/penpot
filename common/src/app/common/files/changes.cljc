@@ -432,9 +432,9 @@
      [:type [:= :set-base-font-size]]
      [:base-font-size :string]]]
 
-   [:set-tokens-file
-    [:map {:title "SetTokensFile"}
-     [:type [:= :set-tokens-file]]
+   [:set-tokens-source
+    [:map {:title "SetTokensSource"}
+     [:type [:= :set-tokens-source]]
      [:file-id ::sm/uuid]
      [:library-id [:maybe ::sm/uuid]]]]])
 
@@ -1070,9 +1070,9 @@
   [data {:keys [base-font-size]}]
   (ctf/set-base-font-size data base-font-size))
 
-(defmethod process-change :set-tokens-file
+(defmethod process-change :set-tokens-source
   [data {:keys [library-id]}]
-  (cfo/set-tokens-file data library-id))
+  (cfo/set-tokens-source data library-id))
 
 ;; === Operations
 
