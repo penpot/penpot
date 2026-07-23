@@ -8,7 +8,6 @@
   "Generic error handling"
   (:require
    [app.common.exceptions :as ex]
-   [app.common.pprint :as pp]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.auth :as da]
