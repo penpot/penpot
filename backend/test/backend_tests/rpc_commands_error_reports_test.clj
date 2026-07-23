@@ -170,23 +170,23 @@
     (insert-report! th/*system* {:id (uuid/next) :source 3 :content {:hint "2"} :created-at t2})
     (insert-report! th/*system* {:id (uuid/next) :source 3 :content {:hint "3"} :created-at t3})
     (insert-report! th/*system* {:id (uuid/next) :source 3 :content {:hint "4"} :created-at t4})
-    ;; Page 1: newest 2
+    ;; Page 1: oldest 2 (ASC order)
     (let [out (token-cmd profile {::th/type :get-error-reports :limit 2})]
       (t/is (th/success? out))
       (let [{:keys [items next-since next-id]} (:result out)]
         (t/is (= 2 (count items)))
         (t/is (some? next-since))
         (t/is (some? next-id))
-        (t/is (= "4" (:hint (first items))))
-        (t/is (= "3" (:hint (second items))))
+        (t/is (= "1" (:hint (first items))))
+        (t/is (= "2" (:hint (second items))))
         ;; Page 2: next 2, using since and since-id from page 1
         (let [out2 (token-cmd profile {::th/type :get-error-reports :limit 2 :since next-since :since-id next-id})]
           (t/is (th/success? out2))
           (let [{:keys [items next-since]} (:result out2)]
             (t/is (= 2 (count items)))
             (t/is (nil? next-since))
-            (t/is (= "2" (:hint (first items))))
-            (t/is (= "1" (:hint (second items))))))))))
+            (t/is (= "3" (:hint (first items))))
+            (t/is (= "4" (:hint (second items))))))))))
 
 (t/deftest get-error-reports-pagination-same-timestamp
   (let [profile (th/create-profile* 1 {:is-active true})

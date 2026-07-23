@@ -6,7 +6,8 @@
 
 - Querying error reports from the database for debugging or analysis
 - Filtering errors by source, kind, tenant, or backend version
-- Exporting error data in JSON or table format
+- Exporting error data in JSON, NDJSON, or table format
+- Computing error statistics (top signatures, per-host breakdown, hourly distribution)
 - Investigating specific error reports by ID
 
 ## Prerequisites
@@ -52,18 +53,24 @@ WHERE id = '<token-uuid>';
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-l, --limit <n>` | Max items per page (max: 200) | `50` |
-| `--since <date>` | ISO timestamp (fetch errors before this date) | — |
-| `--since-id <uuid>` | Fetch errors before this ID (cursor pagination) | — |
+| `--from <date>` | ISO timestamp — oldest boundary (items after this) | — |
+| `--to <date>` | ISO timestamp — newest boundary (items before this) | — |
+| `--since <date>` | ISO timestamp — explicit cursor for manual pagination | — |
+| `--since-id <uuid>` | Fetch errors after this ID (cursor pagination) | — |
 | `-s, --source <name>` | Filter by source (see source names below) | — |
 | `-p, --profile-id <uuid>` | Filter by profile ID | — |
 | `-k, --kind <kind>` | Filter by kind (string) | — |
 | `-t, --tenant <tenant>` | Filter by tenant (string) | — |
 | `--version <version>` | Filter by version | — |
 | `--hint <text>` | Filter by hint (ILIKE match) | — |
-| `-a, --all` | Fetch all pages automatically | `false` |
-| `-f, --format <type>` | Output format: `json` or `table` | `json` |
+| `-a, --all` | Fetch all pages automatically (streams output) | `false` |
+| `-f, --format <type>` | Output format: `json`, `table`, or `ndjson` | `table` |
+| `--normalize-hints` | Normalize hints by stripping dynamic values | `false` |
+| `-o, --output <file>` | Write output to file instead of stdout | — |
 | `--env <path>` | Custom .env file path | `.env` |
 | `-h, --help` | Show help message | — |
+
+**Streaming behavior:** With `--all` or `--format ndjson`, items are printed as they arrive (no buffering). `--all` + `table` prints rows immediately. `--all` + `json` streams NDJSON (one JSON object per line).
 
 #### `get` - Get a single error report by ID
 
@@ -77,9 +84,28 @@ WHERE id = '<token-uuid>';
 |------|-------------|----------|
 | `--id <uuid>` | Error report ID | Yes (or --error-id) |
 | `--error-id <id>` | Error report error-id | Yes (or --id) |
-| `-f, --format <type>` | Output format: `json` or `table` | No (default: `json`) |
+| `-f, --format <type>` | Output format: `json` or `table` | No (default: `table`) |
 | `--env <path>` | Custom .env file path | No (default: `.env`) |
 | `-h, --help` | Show help message | No |
+
+#### `stats` - Compute error report statistics
+
+```bash
+./scripts/error-reports.mjs stats [options]
+```
+
+Reads from `--input <file>`, stdin (piped), or fetches from API. Computes aggregations by signature, host, tenant, version, source, kind, and hour.
+
+**Options:**
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--from <date>` | Start of interval (ISO timestamp) | — |
+| `--to <date>` | End of interval (ISO timestamp) | — |
+| `--limit <n>` | Items per page when fetching from API | `200` |
+| `--input <file>` | Read from local JSON/NDJSON file instead of API | — |
+| `-f, --format <type>` | Output format: `json` or `table` | `table` |
+| `--env <path>` | Custom .env file path | `.env` |
 
 ## Source Names
 
@@ -89,11 +115,36 @@ The `--source` filter accepts these values:
 - `audit-log`
 - `rlimit`
 
+## Hint Normalization
+
+With `--normalize-hints` (or always in `stats`), hints are normalized by stripping dynamic values:
+
+1. URIs (`https://...`) → `<uri>`
+2. UUIDs (8-4-4-4-12 hex) → `<uuid>`
+3. Elapsed times (`7.5s`, `2m3.027s`) → `<elapsed>`
+4. Numeric IDs in parentheses `(12345)` → `(<id>)`
+
 ## Examples
 
 ### List recent errors
 ```bash
 ./scripts/error-reports.mjs list --limit 10
+```
+
+### Time-range query (today)
+```bash
+./scripts/error-reports.mjs list --from 2026-07-23T00:00:00Z --to 2026-07-23T23:59:59Z --all
+```
+
+### Stream all errors as NDJSON
+```bash
+./scripts/error-reports.mjs list --all --format ndjson > errors.ndjson
+```
+
+### Save to file with --output
+```bash
+./scripts/error-reports.mjs list --all --format json -o errors.json
+./scripts/error-reports.mjs list --all --format ndjson -o errors.ndjson
 ```
 
 ### Filter by source
@@ -123,7 +174,7 @@ The `--source` filter accepts these values:
 
 ### Fetch all errors with pagination
 ```bash
-./scripts/error-reports.mjs list --all --format json
+./scripts/error-reports.mjs list --all
 ```
 
 ### Get specific error by ID
@@ -141,45 +192,35 @@ The `--source` filter accepts these values:
 ./scripts/error-reports.mjs list --source audit-log --kind exception-page --tenant production --limit 50
 ```
 
+### Stats from API
+```bash
+./scripts/error-reports.mjs stats --from 2026-07-23T00:00:00Z --to 2026-07-23T23:59:59Z
+```
+
+### Stats from file
+```bash
+./scripts/error-reports.mjs stats --input errors.json
+```
+
+### Stats from pipe
+```bash
+./scripts/error-reports.mjs list --all --format json | ./scripts/error-reports.mjs stats
+```
+
 ## Output Formats
 
 ### Table (default)
-Human-readable table format for terminal display:
-
-```
-Found 15 error reports
-
-ID                                   | Created At          | Source    | Profile ID                           | Kind           | Hint
--------------------------------------+---------------------+-----------+--------------------------------------+----------------+------------------
-550e8400-e29b-41d4-a716-446655440000 | 2026-01-20 10:30:00 | audit-log | e98bb95f-573d-8137-8008-252580aa456d | exception-page | Error description
-abc12345-e29b-41d4-a716-446655440001 | 2026-01-20 10:29:00 | logging   | -                                    | error          | Another error that is very long and ne...
-
-More results: use --since 2026-01-20T10:28:00Z --since-id def45678-e29b-41d4-a716-446655440002
-```
+Human-readable table format for terminal display. With `--all`, rows stream as they arrive.
 
 ### JSON
-Returns structured JSON with error details and pagination metadata:
+Single page: `{items: [...], nextSince, nextId}`. With `--all`: NDJSON (one JSON object per line).
 
-```json
-{
-  "items": [
-    {
-      "id": "uuid",
-      "createdAt": "2026-01-20T10:30:00Z",
-      "source": "audit-log",
-      "profileId": "e98bb95f-573d-8137-8008-252580aa456d",
-      "kind": "exception-page",
-      "tenant": "production",
-      "version": "2.1.0",
-      "hint": "Error description"
-    }
-  ],
-  "nextSince": "2026-01-20T10:29:00Z",
-  "nextId": "next-uuid"
-}
-```
+### NDJSON
+One JSON object per line, always streaming. Pipe-friendly: `| jq -c '.hint'`, `| wc -l`.
 
 ## Pagination
+
+The server returns items in **ascending** order (oldest first). Cursor pagination uses `--since` / `--since-id` to fetch the next page of newer items.
 
 ### Manual pagination
 Use `--since` and `--since-id` with values from `nextSince` and `nextId` in the response:
@@ -191,20 +232,28 @@ Use `--since` and `--since-id` with values from `nextSince` and `nextId` in the 
 ```
 
 ### Automatic pagination
-Use `--all` to fetch all pages automatically:
+Use `--all` to fetch all pages automatically (streams output):
 
 ```bash
 ./scripts/error-reports.mjs list --all
+```
+
+### Time-range queries
+Use `--from` and `--to` to bound the query. These map to the server's `--since` and `--until` parameters:
+
+```bash
+./scripts/error-reports.mjs list --from 2026-07-20T00:00:00Z --to 2026-07-23T23:59:59Z --all
 ```
 
 ## Key principles
 
 - **Authentication required** - Uses access token with `error-reports:read` permission
 - **API endpoint configurable** - Set via `PENPOT_API_URI` in `.env` file
-- **Table is default format** - Use `--format json` for structured JSON output
-- **Pagination is automatic with --all** - Fetches all pages without manual cursor management
+- **Table is default format** - Use `--format json` for structured JSON, `--format ndjson` for streaming
+- **Streaming with --all** - Items print as they arrive, no buffering
 - **Filters are combinable** - All filter options can be used together
 - **Both flag formats supported** - `--option=value` and `--option value` both work
+- **Ascending order** - Server returns oldest items first (changed from DESC)
 
 ## Error handling
 
@@ -217,12 +266,21 @@ The tool provides helpful error messages for common issues:
 
 ## Integration with other scripts
 
-- **jq**: Pipe JSON output to `jq` for further processing
+- **jq**: Pipe NDJSON output to `jq` for further processing
   ```bash
-  ./scripts/error-reports.mjs list --all --format json | jq '.items[] | {id, kind, hint}'
+  ./scripts/error-reports.mjs list --all --format ndjson | jq -c '{id, hint}'
+  ```
+- **stats from pipe**: Fetch data once, compute stats
+  ```bash
+  ./scripts/error-reports.mjs list --all --format json -o errors.json
+  ./scripts/error-reports.mjs stats --input errors.json
+  ```
+- **stats from NDJSON pipe**: Works with NDJSON format too
+  ```bash
+  ./scripts/error-reports.mjs list --all --format ndjson | ./scripts/error-reports.mjs stats
   ```
 - **grep/search**: Filter output by specific patterns
-- **Redirect**: Save output to files for analysis
+- **--output**: Save to file without shell redirection
   ```bash
-  ./scripts/error-reports.mjs list --all --format json > errors.json
+  ./scripts/error-reports.mjs list --all --format ndjson -o errors.ndjson
   ```

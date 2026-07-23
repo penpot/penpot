@@ -68,7 +68,8 @@
    [:kind {:optional true} ::sm/text]
    [:tenant {:optional true} ::sm/text]
    [:version {:optional true} ::sm/text]
-   [:hint {:optional true} ::sm/text]])
+   [:hint {:optional true} ::sm/text]
+   [:until {:optional true} ct/schema:inst]])
 
 (def ^:private schema:get-error-reports-result
   [:map
@@ -104,7 +105,7 @@
        "FROM server_error_report"))
 
 (defn- build-list-query
-  [{:keys [since since-id source profile-id kind tenant version hint limit]
+  [{:keys [since since-id source profile-id kind tenant version hint until limit]
     :or {limit default-limit}}]
   (let [source-id (when source (name->source source))
         clauses (keep identity
@@ -126,14 +127,17 @@
                          {:where "content->>'~:hint' ILIKE ?"
                           :params [(str "%" hint "%")]})
                        (when since
+                         {:where "(created_at, id) > (?::timestamptz, ?::uuid)"
+                          :params [since (or since-id uuid/zero)]})
+                       (when until
                          {:where "(created_at, id) < (?::timestamptz, ?::uuid)"
-                          :params [since (or since-id uuid/zero)]})])
+                          :params [until uuid/zero]})])
         sql-parts  (map :where clauses)
         sql-params (mapcat :params clauses)
         sql        (str base-list-sql
                         (when (seq sql-parts)
                           (str " WHERE " (str/join " AND " sql-parts)))
-                        " ORDER BY created_at DESC, id DESC"
+                        " ORDER BY created_at ASC, id ASC"
                         " LIMIT ?")]
     (into [sql] (concat sql-params [limit]))))
 
@@ -169,13 +173,13 @@
   [cfg {:keys [id]}]
   (if-let [report (db/get-by-id cfg :server-error-report id {::db/check-deleted false})]
     (let [content (db/decode-transit-pgobject (:content report))]
-       (-> report
-           (dissoc :content)
-           (merge content)
-           (update :source source->name)
-           (assoc :kind (or (:kind content) (:origin content)))
-           (assoc :version (:version content))
-           (d/without-nils)))
+      (-> report
+          (dissoc :content)
+          (merge content)
+          (update :source source->name)
+          (assoc :kind (or (:kind content) (:origin content)))
+          (assoc :version (:version content))
+          (d/without-nils)))
     (ex/raise :type :not-found
               :code :report-not-found
               :hint (str "error report " id " not found"))))
