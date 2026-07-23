@@ -489,7 +489,7 @@
                (tr "media.choose-image")
                [:& file-uploader
                 {:input-id "fill-image-upload"
-                 :accept "image/jpeg,image/png"
+                 :accept dwm/accept-image-types
                  :multi false
                  :ref fill-image-ref
                  :on-selected on-fill-image-selected}]]])
@@ -607,7 +607,7 @@
              :top top-offset
              :maxHeight max-height-top}))))
 
-(defn- group-sets
+(defn group-sets
   "Groups sets by their parent path (everything before the last '/') if present.
    The set name is always the last part of the path.
 
@@ -777,6 +777,10 @@
         (mf/with-memo [tokens-lib active-sets-names color-tokens]
           (some-> tokens-lib
                   (ctob/get-sets)
+                  ;; Show highest-precedence (last-defined) sets first in the
+                  ;; picker; the Tokens panel itself keeps definition order.
+                  ;; https://github.com/penpot/penpot/issues/10552
+                  (reverse)
                   (add-tokens-to-sets)
                   (filter-active-sets active-sets-names)
                   (filter-non-empty-sets)

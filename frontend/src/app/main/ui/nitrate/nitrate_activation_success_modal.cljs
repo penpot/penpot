@@ -36,7 +36,8 @@
         (mf/use-fn
          (fn []
            (modal/hide!)
-           (dnt/go-to-nitrate-ac-create-org)))]
+           (dnt/go-to-nitrate-ac-create-organization
+            "admin-console:after-payment-organization-naming-form")))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}

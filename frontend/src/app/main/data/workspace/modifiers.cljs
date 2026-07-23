@@ -117,28 +117,54 @@
 ;; geometric attributes of the shapes.
 
 (defn- check-delta
-  "If the shape is a component instance, check its relative position and rotation respect
-  the root of the component, and see if it changes after applying a transformation."
-  [shape root transformed-shape transformed-root]
-  (let [shape-delta
-        (when root
-          (gpt/point (- (gsh/left-bound shape) (gsh/left-bound root))
-                     (- (gsh/top-bound shape) (gsh/top-bound root))))
+  "If the shape is a component instance, check whether the transformation is a
+  free change that must not mark the shape as touched.
 
-        transformed-shape-delta
-        (when transformed-root
-          (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
-                     (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
+  For the instance ROOT, position is free placement, but its rotation and flips
+  are inherited content: transforming the copy as a whole overrides them, so a
+  change there marks the root as touched.
+
+  For DESCENDANTS, position, size, rotation and flips are compared RELATIVE TO
+  THE ROOT: a transformation of the whole instance preserves them all and does
+  not mark the descendants as touched; editing an individual shape does."
+  [shape root transformed-shape transformed-root]
+  (let [is-root?     (and (some? root)
+                          (= (dm/get-prop shape :id) (dm/get-prop root :id)))
+
+        center       (fn [shape]
+                       (grc/rect->center (:selrect shape)))
+
+        rel-pos      (fn [shape root]
+                       (when root
+                         ;; vector from the root center to the shape center,
+                         ;; expressed in the root's local (untransformed) axes
+                         (-> (gpt/subtract (center shape) (center root))
+                             (gpt/transform (:transform-inverse root (gmt/matrix))))))
+
+        orientation  (fn [shape root]
+                       ;; the shape's rotation/flip orientation taken from its
+                       ;; transform matrix, so it is reliable regardless of how the
+                       ;; transform was applied (the WASM apply-transform path does
+                       ;; not refresh the :rotation attribute). For the ROOT the
+                       ;; absolute orientation; for a DESCENDANT the orientation
+                       ;; relative to the root — invariant when the whole instance
+                       ;; is rotated or flipped as a unit.
+                       (let [t (:transform shape (gmt/matrix))]
+                         (if is-root?
+                           t
+                           (gmt/multiply (:transform-inverse root (gmt/matrix)) t))))
+
+        pos-before   (rel-pos shape root)
+        pos-after    (rel-pos transformed-shape transformed-root)
 
         distance
-        (if (and shape-delta transformed-shape-delta)
-          (gpt/distance-vector shape-delta transformed-shape-delta)
+        (if (and pos-before pos-after)
+          (gpt/distance-vector pos-before pos-after)
           (gpt/point 0 0))
 
-        rotation-delta
-        (if (and (some? (:rotation shape)) (some? (:rotation shape)))
-          (- (:rotation transformed-shape) (:rotation shape))
-          0)
+        orientation-unchanged?
+        (gmt/close? (orientation shape root)
+                    (orientation transformed-shape transformed-root))
 
         selrect (:selrect shape)
         transformed-selrect (:selrect transformed-shape)]
@@ -152,7 +178,7 @@
     (and (and (< (:x distance) 1) (< (:y distance) 1))
          (mth/close? (:width selrect) (:width transformed-selrect))
          (mth/close? (:height selrect) (:height transformed-selrect))
-         (mth/close? rotation-delta 0))))
+         orientation-unchanged?)))
 
 (defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
@@ -838,8 +864,13 @@
             (dwsh/update-shapes ids update-shape options)
 
             ;; The update to the bool path needs to be in a different operation because it
-            ;; needs to have the updated children info
-            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
+            ;; needs to have the updated children info.
+            ;; `update-layout? false`: recalculating a bool path can never change
+            ;; `:hidden`, and the layout check would recompute the whole boolean
+            ;; path in WASM once per bool shape just to find that out.
+            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options
+                                                                       :with-objects? true
+                                                                       :update-layout? false)))
 
            (if undo-transation?
              (rx/of (dwu/commit-undo-transaction undo-id))

@@ -20,6 +20,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
@@ -45,6 +46,7 @@
   {:id            (:id profile)
    :name          (:fullname profile)
    :email         (:email profile)
+   :created-at    (:created-at profile)
    :photo-url     (files/resolve-public-uri (get profile :photo-id))})
 
 ;; ---- API: authenticate
@@ -112,24 +114,24 @@
     (->> (db/exec! cfg [sql:get-teams current-user-id])
          (map #(select-keys % [:id :name])))))
 
-;; ---- API: upload-org-logo
+;; ---- API: upload-organization-logo
 
-(def ^:private schema:upload-org-logo
+(def ^:private schema:upload-organization-logo
   [:map
    [:content media/schema:upload]
    [:organization-id ::sm/uuid]
    [:previous-id {:optional true} ::sm/uuid]])
 
-(def ^:private schema:upload-org-logo-result
+(def ^:private schema:upload-organization-logo-result
   [:map [:id ::sm/uuid]])
 
-(sv/defmethod ::upload-org-logo
+(sv/defmethod ::upload-organization-logo
   "Store an organization logo in penpot storage and return its ID.
   Accepts an optional previous-id to mark the old logo for garbage
   collection when replacing an existing one."
   {::doc/added "2.17"
-   ::sm/params schema:upload-org-logo
-   ::sm/result schema:upload-org-logo-result
+   ::sm/params schema:upload-organization-logo
+   ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
   (when previous-id
@@ -441,9 +443,9 @@ RETURNING id, deleted_at;")
     (profile-to-map profile)))
 
 
-;; ---- API: get-org-member-team-counts
+;; ---- API: get-organization-member-team-counts
 
-(def ^:private sql:get-org-member-team-counts
+(def ^:private sql:get-organization-member-team-counts
   "SELECT tpr.profile_id, COUNT(DISTINCT t.id) AS team_count
      FROM team_profile_rel AS tpr
      JOIN team AS t ON t.id = tpr.team_id
@@ -452,19 +454,19 @@ RETURNING id, deleted_at;")
       AND t.is_default IS FALSE
     GROUP BY tpr.profile_id;")
 
-(def ^:private schema:get-org-member-team-counts-params
+(def ^:private schema:get-organization-member-team-counts-params
   [:map [:team-ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
 
-(def ^:private schema:get-org-member-team-counts-result
+(def ^:private schema:get-organization-member-team-counts-result
   [:vector [:map
             [:profile-id ::sm/uuid]
             [:team-count ::sm/int]]])
 
-(sv/defmethod ::get-org-member-team-counts
+(sv/defmethod ::get-organization-member-team-counts
   "Get the number of non-default teams each profile belongs to within a set of teams."
   {::doc/added "2.15"
-   ::sm/params schema:get-org-member-team-counts-params
-   ::sm/result schema:get-org-member-team-counts-result
+   ::sm/params schema:get-organization-member-team-counts-params
+   ::sm/result schema:get-organization-member-team-counts-result
    ::rpc/auth false}
   [cfg {:keys [team-ids]}]
   (let [team-ids (cond
@@ -480,12 +482,12 @@ RETURNING id, deleted_at;")
       []
       (db/run! cfg (fn [{:keys [::db/conn]}]
                      (let [ids-array (db/create-array conn "uuid" team-ids)]
-                       (db/exec! conn [sql:get-org-member-team-counts ids-array])))))))
+                       (db/exec! conn [sql:get-organization-member-team-counts ids-array])))))))
 
 
-;; API: invite-to-org
+;; API: invite-to-organization
 
-(sv/defmethod ::invite-to-org
+(sv/defmethod ::invite-to-organization
   "Invite to organization"
   {::doc/added "2.15"
    ::sm/params [:map
@@ -497,13 +499,13 @@ RETURNING id, deleted_at;")
   nil)
 
 
-;; API: get-org-invitations
+;; API: get-organization-invitations
 
-(def ^:private schema:get-org-invitations-params
+(def ^:private schema:get-organization-invitations-params
   [:map
    [:organization-id ::sm/uuid]])
 
-(def ^:private schema:get-org-invitations-result
+(def ^:private schema:get-organization-invitations-result
   [:vector
    [:map
     [:id ::sm/uuid]
@@ -514,11 +516,11 @@ RETURNING id, deleted_at;")
     [:profile-id {:optional true} [:maybe ::sm/uuid]]
     [:photo-url {:optional true} ::sm/uri]]])
 
-(sv/defmethod ::get-org-invitations
+(sv/defmethod ::get-organization-invitations
   "Get valid invitations for an organization, returning at most one invitation per email."
   {::doc/added "2.16"
-   ::sm/params schema:get-org-invitations-params
-   ::sm/result schema:get-org-invitations-result
+   ::sm/params schema:get-organization-invitations-params
+   ::sm/result schema:get-organization-invitations-result
    ::nitrate/sso false}
   [cfg {:keys [organization-id]}]
   (let [team-ids (noh/get-org-team-ids cfg organization-id)]
@@ -530,59 +532,59 @@ RETURNING id, deleted_at;")
                                   (assoc :photo-url (files/resolve-public-uri photo-id))))))))))
 
 
-;; API: delete-org-invitations
+;; API: delete-organization-invitations
 
-(def ^:private sql:delete-org-invitations
+(def ^:private sql:delete-organization-invitations
   "DELETE FROM team_invitation AS ti
     WHERE ti.email_to = ?
       AND (ti.org_id = ? OR ti.team_id = ANY(?));")
 
-(def ^:private schema:delete-org-invitations-params
+(def ^:private schema:delete-organization-invitations-params
   [:map
    [:organization-id ::sm/uuid]
    [:email ::sm/email]])
 
-(sv/defmethod ::delete-org-invitations
+(sv/defmethod ::delete-organization-invitations
   "Delete all invitations for one email in an organization scope (org + org teams)."
   {::doc/added "2.16"
-   ::sm/params schema:delete-org-invitations-params
+   ::sm/params schema:delete-organization-invitations-params
    ::nitrate/sso false}
   [cfg {:keys [organization-id email]}]
   (let [clean-email (profile/clean-email email)
         team-ids    (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
-                     (db/exec! conn [sql:delete-org-invitations clean-email organization-id ids-array]))))
+                     (db/exec! conn [sql:delete-organization-invitations clean-email organization-id ids-array]))))
     nil))
 
 
-;; API: delete-all-org-invitations
+;; API: delete-all-organization-invitations
 
-(def ^:private sql:delete-all-org-invitations
+(def ^:private sql:delete-all-organization-invitations
   "DELETE FROM team_invitation AS ti
     WHERE ti.org_id = ?
        OR ti.team_id = ANY(?);")
 
-(def ^:private schema:delete-all-org-invitations-params
+(def ^:private schema:delete-all-organization-invitations-params
   [:map
    [:organization-id ::sm/uuid]])
 
-(sv/defmethod ::delete-all-org-invitations
+(sv/defmethod ::delete-all-organization-invitations
   "Delete every pending invitation associated with an organization (org-level + team-level).
    Called from Nitrate when an organization is about to be deleted, so users that click
    their invitation token hit the existing invalid-token landing page."
   {::doc/added "2.18"
-   ::sm/params schema:delete-all-org-invitations-params
+   ::sm/params schema:delete-all-organization-invitations-params
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
   (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
-                     (db/exec! conn [sql:delete-all-org-invitations organization-id ids-array]))))
+                     (db/exec! conn [sql:delete-all-organization-invitations organization-id ids-array]))))
     nil))
 
 
-;; API: remove-from-org
+;; API: remove-from-organization
 
 (def ^:private sql:get-reassign-to
   "SELECT tpr.profile_id
@@ -607,7 +609,7 @@ RETURNING id, deleted_at;")
 
     (assoc team-to-transfer :reassign-to reassign-to)))
 
-(sv/defmethod ::remove-from-org
+(sv/defmethod ::remove-from-organization
   "Remove an user from an organization"
   {::doc/added "2.17"
    ::sm/params [:map
@@ -635,16 +637,16 @@ RETURNING id, deleted_at;")
     (notifications/notify-user-org-change cfg profile-id organization-id organization-name "dashboard.user-no-longer-belong-org")
     nil))
 
-;; API: get-remove-from-org-summary
+;; API: get-remove-from-organization-summary
 
-(def ^:private schema:get-remove-from-org-summary-result
+(def ^:private schema:get-remove-from-organization-summary-result
   [:map
    [:teams-to-delete ::sm/int]
    [:teams-to-transfer ::sm/int]
    [:teams-to-exit ::sm/int]
    [:teams-to-detach ::sm/int]])
 
-(sv/defmethod ::get-remove-from-org-summary
+(sv/defmethod ::get-remove-from-organization-summary
   "Get a summary of the teams that would be deleted, transferred, or exited
    if the user were removed from the organization"
   {::doc/added "2.17"
@@ -652,7 +654,7 @@ RETURNING id, deleted_at;")
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]
                 [:default-team-id ::sm/uuid]]
-   ::sm/result schema:get-remove-from-org-summary-result
+   ::sm/result schema:get-remove-from-organization-summary-result
    ::db/transaction true
    ::nitrate/sso false}
   [cfg {:keys [profile-id organization-id default-team-id]}]
@@ -701,8 +703,8 @@ RETURNING id, deleted_at;")
                                   :organizations organizations}))))
   nil)
 
-;; API: exists-org-team-invitations-for-non-members /
-;;      delete-org-team-invitations-for-non-members
+;; API: exists-organization-team-invitations-for-non-members /
+;;      delete-organization-team-invitations-for-non-members
 
 (def ^:private sql:get-profile-emails-by-ids
   "SELECT email
@@ -729,7 +731,7 @@ RETURNING id, deleted_at;")
    [:team-ids [:vector ::sm/uuid]]
    [:member-ids [:vector ::sm/uuid]]])
 
-(def ^:private schema:exists-org-team-invitations-for-non-members-result
+(def ^:private schema:exists-organization-team-invitations-for-non-members-result
   [:map [:exists ::sm/boolean]])
 
 (defn- org-team-invitations-for-non-members-arrays
@@ -751,17 +753,17 @@ RETURNING id, deleted_at;")
                             emails-array])
         :non-member)))
 
-(sv/defmethod ::exists-org-team-invitations-for-non-members
+(sv/defmethod ::exists-organization-team-invitations-for-non-members
   "Return if there are any team invitations for emails that are not organization members."
   {::doc/added "2.18"
    ::sm/params schema:org-team-invitations-for-non-members-params
-   ::sm/result schema:exists-org-team-invitations-for-non-members-result
+   ::sm/result schema:exists-organization-team-invitations-for-non-members-result
    ::nitrate/sso false}
   [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  {:exists (boolean (non-member-org-team-invitations-exist? conn params))})))
 
-(sv/defmethod ::delete-org-team-invitations-for-non-members
+(sv/defmethod ::delete-organization-team-invitations-for-non-members
   "Delete team invitations for emails that are not organization members."
   {::doc/added "2.18"
    ::sm/params schema:org-team-invitations-for-non-members-params
@@ -782,38 +784,42 @@ RETURNING id, deleted_at;")
   [:map {:title "NitrateAuditEvent"}
    [:name [:and [:string {:max 250}]
            [:re #"[\d\w-]{1,50}"]]]
+   [:type {:optional true} ::sm/text]
    [:profile-id ::sm/uuid]
-   [:props {:optional true} [:map-of :keyword :any]]])
+   [:props {:optional true} [:map-of :keyword :any]]
+   [:context {:optional true} [:map-of :keyword :any]]])
 
 (def ^:private schema:push-audit-events-params
   [:map {:title "PushAuditEventsParams"}
    [:events [:vector schema:nitrate-audit-event]]])
 
-(defn- submit-nitrate-audit-event
-  [cfg {:keys [name profile-id props]}]
-  (let [now (ct/now)]
-    (audit/submit* cfg {:type "action"
-                        :name name
-                        :profile-id profile-id
-                        :props (or props {})
-                        :context {}
-                        :tracked-at now
-                        :created-at now
-                        :source "nitrate"
-                        :ip-addr "0.0.0.0"})))
-
 (sv/defmethod ::push-audit-events
-  "Push audit events from Nitrate to Penpot audit log"
+  "Push audit events from nitrate (strictly for nitrate backend
+  events)"
+
   {::doc/added "2.19"
+   ::audit/skip true
    ::sm/params schema:push-audit-events-params
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [events]}]
-  (let [telemetry? (contains? cf/flags :telemetry)
-        audit-log? (contains? cf/flags :audit-log)
-        enabled?   (and (not (db/read-only? pool))
-                        (or audit-log? telemetry?))]
-    (when (and enabled? (seq events))
-      (run! (partial submit-nitrate-audit-event cfg) events))
+  [cfg {:keys [::rpc/request-at events] :as params}]
+  (let [request  (-> params meta ::http/request)
+        context' (-> (audit/prepare-context-from-request request)
+                     (assoc :request-id (::rpc/request-id params)))
+
+        ip-addr  (::rpc/ip-addr params)]
+
+    (run! (fn [{:keys [type name profile-id props context] :as event}]
+            (let [context (-> (merge context context')
+                              (d/without-nils))]
+              (audit/submit cfg {:type (d/nilv type "action")
+                                 :name name
+                                 :profile-id profile-id
+                                 :props (or props {})
+                                 :context context
+                                 :tracked-at request-at
+                                 :ip-addr ip-addr})))
+          events)
+
     nil))
 
 
@@ -825,11 +831,21 @@ RETURNING id, deleted_at;")
      t.name,
      t.photo_id,
      t.created_at,
-      (SELECT MAX(p2.modified_at)
-         FROM project AS p2
-        WHERE p2.team_id = t.id
-          AND p2.deleted_at IS NULL
-          AND p2.is_default IS FALSE) AS last_activity_at,
+       (SELECT MAX(activity.modified_at)
+          FROM (
+            SELECT p2.modified_at
+              FROM project AS p2
+             WHERE p2.team_id = t.id
+               AND p2.deleted_at IS NULL
+               AND p2.is_default IS FALSE
+            UNION ALL
+            SELECT f.modified_at
+              FROM file AS f
+              JOIN project AS p ON p.id = f.project_id
+             WHERE p.team_id = t.id
+               AND p.deleted_at IS NULL
+               AND f.deleted_at IS NULL
+          ) AS activity) AS last_activity_at,
      owner_tpr.profile_id AS owner_profile_id,
      owner_p.fullname AS owner_name,
      owner_p.photo_id AS owner_photo_id,
@@ -914,8 +930,8 @@ RETURNING id, deleted_at;")
   [cfg params]
   {:valid (oidc/is-organization-sso-config-valid? cfg params)})
 
-;; ---- API: notify-org-sso-change
-(sv/defmethod ::notify-org-sso-change
+;; ---- API: notify-organization-sso-change
+(sv/defmethod ::notify-organization-sso-change
   "Nitrate notifies that an organization sso values have changed"
   {::doc/added "2.19"
    ::sm/params [:map
@@ -964,12 +980,19 @@ RETURNING id, deleted_at;")
    created users skip email verification and onboarding. Emails that already
    belong to an existing profile are skipped. Intended for the Nitrate admin
    bulk-creation screen; access is gated by the shared key and, in Nitrate, an
-   email allow-list."
+   email allow-list. Requires the `nitrate-bulk-create-profiles` flag, disabled
+   by default so it is only available on test environments."
   {::doc/added "2.19"
    ::sm/params schema:bulk-create-profiles-params
    ::sm/result schema:bulk-create-profiles-result
    ::rpc/auth false}
   [cfg {:keys [password emails]}]
+
+  (when-not (contains? cf/flags :nitrate-bulk-create-profiles)
+    (ex/raise :type :restriction
+              :code :nitrate-bulk-create-profiles-not-allowed
+              :hint "Bulk profile creation is disabled by config."))
+
   (let [derived (aauth/derive-password password)]
     (db/tx-run!
      cfg

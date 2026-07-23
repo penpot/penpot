@@ -1,6 +1,6 @@
 # AI AGENT GUIDE
 
-## Hard rules (always apply — no exceptions)
+## HARD RULES (always apply — no exceptions)
 
 - **Never `git push`, force-push, or modify `git origin`** (or any other remote).
   The user pushes from their own shell. If a push is required to surface the
@@ -92,3 +92,21 @@ precision while maintaining a strong focus on maintainability and performance.
    down into atomic steps.
 2. Be concise and autonomous.
 3. Do **not** touch unrelated modules unless the task explicitly requires it.
+
+---
+
+# Available Scripts & Tools
+
+## Native opencode Tools (callable directly by the LLM)
+
+- `paren-repair` — Fix mismatched delimiters + reformat Clojure files. Example: `paren-repair(files="src/foo.clj, src/bar.cljs")`
+- `penpot-psql` — Execute SQL against the Penpot database. Example: `penpot-psql(sql="SELECT version();")`
+
+## Scripts (from repo root via `scripts/<name>`)
+
+- `scripts/paren-repair` — Fix mismatched delimiters in Clojure/CLJS files + reformat with cljfmt. See `mem:scripts/paren-repair`.
+- `scripts/psql` — Connect to the Penpot PostgreSQL database (wraps `psql` with env-var defaults). See `mem:scripts/psql`.
+- `scripts/nrepl-eval.mjs` — Evaluate Clojure code via nREPL (backend + frontend).
+- `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
+- `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
+

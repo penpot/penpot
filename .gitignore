@@ -9,6 +9,7 @@
 .clj-kondo
 .cpcache
 .lsp
+.env
 .nrepl-port
 .nyc_output
 .rebel_readline_history
@@ -73,8 +74,6 @@ opencode.json
 /frontend/target/
 /frontend/test-results/
 /frontend/.shadow-cljs
-/other/
-/scripts/
 /nexus/
 /tmp/
 /vendor/**/target
@@ -99,5 +98,8 @@ opencode.json
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
+/.opencode/plans
+/.opencode/reports
+/.opencode/prompts
 /.codex/
 /tools/__pycache__

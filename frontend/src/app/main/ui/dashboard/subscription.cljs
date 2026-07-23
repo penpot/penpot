@@ -162,14 +162,16 @@
 
         handle-click
         (mf/use-fn
-         (mf/deps nitrate-license subscription-type)
+         (mf/deps subscription-type)
          (fn []
-           (if (= subscription-type "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+           (st/emit! (dnt/show-nitrate-popup :nitrate-form
+                                             (when (= subscription-type "unlimited")
+                                               {:show-contact-sales-option true})))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-ac-create-org)
+        (mf/use-fn
+         #(dnt/go-to-nitrate-ac-create-organization
+           "dashboard:first-organization-promotional-banner"))
 
         handle-open-renew-modal
         (mf/use-fn #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))]
@@ -200,7 +202,7 @@
           [:div {:class (stl/css :nitrate-content)}
            [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
           [:div {:class (stl/css :nitrate-content)}
-           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
+           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description-text")]
            [:> button* {:variant "primary"
                         :type "button"
                         :class (stl/css :nitrate-bottom-button)

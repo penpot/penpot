@@ -20,7 +20,7 @@ primary link, with the fix PR inline on the same line.
 
 - `gh` CLI authenticated (`gh auth status`)
 - Python 3.8+
-- `tools/gh.py` helper script available
+- `scripts/gh.py` helper script available
 
 ## Workflow
 
@@ -36,13 +36,13 @@ Use the helper script. It uses GraphQL for efficient single-pass fetching
 
 ```bash
 # All closed issues (default)
-python3 tools/gh.py issues "2.16.0"
+python3 scripts/gh.py issues "2.16.0"
 
 # Include open issues too
-python3 tools/gh.py issues "2.16.0" --state all
+python3 scripts/gh.py issues "2.16.0" --state all
 
 # Exclude entries that should not go in the changelog
-python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
 ```
 
 **Exclusion rules (issue-level):**
@@ -68,7 +68,7 @@ If updating from an existing `CHANGES.md`, find issues in the milestone that
 are NOT yet referenced in the changelog:
 
 ```bash
-python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog" --compare CHANGES.md
+python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog" --compare CHANGES.md
 ```
 
 This returns a filtered JSON array with only the missing issues.
@@ -85,23 +85,23 @@ community contribution attribution, or to read the PR body for
 
 ```bash
 # One or more PR numbers
-python3 tools/gh.py prs 9179 9204 9311
+python3 scripts/gh.py prs 9179 9204 9311
 
 # From a file
-python3 tools/gh.py prs --file prs.txt
+python3 scripts/gh.py prs --file prs.txt
 
 # From stdin
-cat prs.txt | python3 tools/gh.py prs --stdin
+cat prs.txt | python3 scripts/gh.py prs --stdin
 ```
 
 The `prs` command also supports listing all PRs in a milestone in one call:
 
 ```bash
 # All merged PRs in a milestone (default)
-python3 tools/gh.py prs --milestone "2.16.0"
+python3 scripts/gh.py prs --milestone "2.16.0"
 
 # All states (merged, open, closed)
-python3 tools/gh.py prs --milestone "2.16.0" --state all
+python3 scripts/gh.py prs --milestone "2.16.0" --state all
 ```
 
 The `prs` command returns JSON with `number`, `title`, `body`, `state`,
@@ -113,13 +113,13 @@ You can also list all PRs in a milestone in a single call:
 
 ```bash
 # All merged PRs in a milestone (default)
-python3 tools/gh.py prs --milestone "2.16.0"
+python3 scripts/gh.py prs --milestone "2.16.0"
 
 # All states (merged, open, closed)
-python3 tools/gh.py prs --milestone "2.16.0" --state all
+python3 scripts/gh.py prs --milestone "2.16.0" --state all
 
 # Open PRs only
-python3 tools/gh.py prs --milestone "2.16.0" --state open
+python3 scripts/gh.py prs --milestone "2.16.0" --state open
 ```
 
 The milestone path uses paginated GraphQL on the milestone's `pullRequests`
@@ -147,6 +147,12 @@ belongs to.
 The `gh.py` issues command already includes `issue_type` in every entry's
 output. **No separate GraphQL query is needed.**
 
+**Preserve highlighted entries:** If an entry is already featured in
+`### :rocket: Epics and highlights`, keep it in that section when refreshing a
+changelog version. Do not remove a highlighted entry just because issue type
+categorization would otherwise place it under `### :sparkles: New features &
+Enhancements`.
+
 **Community contribution attribution:** If the issue or its fix PR has the
 `community contribution` label, add an attribution `(by @<github_username>)`
 on the changelog entry line, **before** the GitHub issue/PR references.
@@ -155,7 +161,7 @@ The attribution should reference the **PR author**, not the issue author.
 The `prs` subcommand includes the `author` field — use that:
 
 ```bash
-python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['author'])"
+python3 scripts/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['author'])"
 ```
 
 Placement in the entry line:
@@ -190,7 +196,7 @@ only reference **merged** PRs. Verify before writing:
 
 ```bash
 # Collect all PR numbers from the candidate entries and check them
-python3 tools/gh.py prs <ALL_PR_NUMBERS> | python3 -c "
+python3 scripts/gh.py prs <ALL_PR_NUMBERS> | python3 -c "
 import json, sys
 for pr in json.load(sys.stdin):
     if pr['state'] != 'MERGED':
@@ -265,7 +271,7 @@ section) or in the candidate set for the current milestone, check:
    current milestone since the changelog was last updated (e.g., a fix
    arrived late and the issue was reassigned to a future milestone)?
    - Verify the issue is still in the current milestone via
-     `python3 tools/gh.py issues <MILESTONE> --state all`. If it's no
+     `python3 scripts/gh.py issues <MILESTONE> --state all`. If it's no
      longer there, remove the entry from the current section. (If the
      target section doesn't exist yet, the entry is simply dropped.)
 
@@ -337,7 +343,7 @@ cross-reference to catch gaps:
 
 ```bash
 # List all merged PRs in the milestone
-python3 tools/gh.py prs --milestone "<MILESTONE>" --state merged > /tmp/milestone-prs.json
+python3 scripts/gh.py prs --milestone "<MILESTONE>" --state merged > /tmp/milestone-prs.json
 
 # Extract PR numbers from the changelog section
 python3 -c "
@@ -378,7 +384,7 @@ changelog or is legitimately excluded (check its labels).
 Also verify that no closed-unmerged PRs remain in the changelog:
 
 ```bash
-python3 tools/gh.py prs --milestone "<MILESTONE>" --state all | python3 -c "
+python3 scripts/gh.py prs --milestone "<MILESTONE>" --state all | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 closed = [p for p in data if p['state'] == 'CLOSED']
@@ -483,13 +489,13 @@ def fmt_issue_list(nums):
 
 # --- Fetch milestone data ---
 result = subprocess.run(
-    ["python3", "tools/gh.py", "issues", MILESTONE, "--state", "all"],
+    ["python3", "scripts/gh.py", "issues", MILESTONE, "--state", "all"],
     capture_output=True, text=True)
 all_issues = json.loads(result.stdout)
 issue_by_num = {i['number']: i for i in all_issues}
 
 result = subprocess.run(
-    ["python3", "tools/gh.py", "prs", "--milestone", MILESTONE, "--state", "all"],
+    ["python3", "scripts/gh.py", "prs", "--milestone", MILESTONE, "--state", "all"],
     capture_output=True, text=True)
 all_prs = json.loads(result.stdout)
 pr_by_num = {p['number']: p for p in all_prs}
@@ -728,7 +734,7 @@ self-contained and clickable in any Markdown viewer.
   reference if applicable.
 - **Re-fetch before editing.** Milestones can change — always re-fetch issues
   before making edits, don't rely on cached data.
-- **Use `tools/gh.py`.** Prefer the helper script over raw `gh api` calls for
+- **Use `scripts/gh.py`.** Prefer the helper script over raw `gh api` calls for
   milestone issue listing and PR detail fetching. It handles GraphQL
   pagination, batching, and label filtering automatically.
 - **Verify PR merge status.** Not all closing PRs are merged — community PRs
@@ -739,7 +745,7 @@ self-contained and clickable in any Markdown viewer.
   labels. Check both.
 - **Cross-reference milestone PRs, not just issues.** The `--compare` flag on
   the `issues` command only compares issue numbers. Merged PRs not linked to
-  any milestone issue can be missed. Use `python3 tools/gh.py prs --milestone`
+  any milestone issue can be missed. Use `python3 scripts/gh.py prs --milestone`
   for a full PR cross-reference.
 - **False-positive PR-to-issue associations.** A PR may claim to close an
   issue from a different project or context. If the PR title and issue title

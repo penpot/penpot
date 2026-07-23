@@ -116,25 +116,6 @@
            (tr "integrations.mcp-key.will-not-expire")
            (tr "integrations.token.will-not-expire")))]]
 
-     (when is-mcp
-       [:div {:class (stl/css :modal-content)}
-        [:> text* {:as "div"
-                   :typography t/body-small
-                   :class (stl/css :color-primary)}
-         (tr "integrations.info.mcp-client-config")]
-        [:textarea {:class (stl/css :textarea)
-                    :wrap "off"
-                    :rows 7
-                    :read-only true
-                    :value (dm/str
-                            "{\n"
-                            "  \"mcpServers\": {\n"
-                            "    \"penpot\": {\n"
-                            "      \"url\": \"" cf/mcp-server-url "?userToken=" (:token token-created "") "\"\n"
-                            "    }\n"
-                            "  }"
-                            "\n}")}]])
-
      [:div {:class (stl/css :modal-footer)}
       [:> button* {:variant "secondary"
                    :on-click modal/hide!}
@@ -390,7 +371,7 @@
             :id      "token-delete"
             :handler handle-open-confirm-modal}])]
 
-    [:div {:class (stl/css :item)}
+    [:div {:class (stl/css :item) :data-id (str id)}
      [:> text* {:as "div"
                 :typography t/body-medium
                 :title name

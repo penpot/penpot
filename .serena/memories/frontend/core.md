@@ -27,9 +27,9 @@ From `frontend/`:
 - Translation formatting after i18n edits: `pnpm run translations`.
 
 **Before linting:** if delimiter errors are suspected (after LLM edits, or
-lint/compiler reports syntax errors), run `tools/paren-repair.bb` on the
+lint/compiler reports syntax errors), run `scripts/paren-repair` on the
 affected files first. Delimiter errors produce misleading linter output.
-See `mem:tools/paren-repair`.
+See `mem:scripts/paren-repair`.
 
 ## Focused memory routing
 
@@ -52,7 +52,7 @@ Diagnostics and validation:
 - Source-edit compile/hot-reload diagnostics: `mem:frontend/compile-diagnostics`.
 - Runtime crash recovery: `mem:frontend/handling-crashes`.
 - Tests and live verification: `mem:frontend/testing`.
-- Cross-cutting testing principles and anti-patterns: `mem:common/testing-principles`.
+- Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Real pointer/keyboard gesture reproduction: `mem:frontend/playwright-gestures`.
 
 ## Areas without focused memories

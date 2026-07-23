@@ -167,10 +167,15 @@
     ;; Activates the nitrate module
     :nitrate
 
+    ;; disabled by default. When enabled, allows the nitrate
+    ;; `bulk-create-profiles` method to create batches of already
+    ;; active profiles. Only intended for test environments.
+    :nitrate-bulk-create-profiles
+
     :mcp
     :background-blur
     :available-viewer-wasm
-    :stroke-path})
+    :stroke-per-side})
 
 (def all-flags
   (set/union email login varia))
