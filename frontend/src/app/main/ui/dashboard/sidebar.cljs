@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -303,7 +304,20 @@
 (mf/defc organizations-selector-dropdown*
   {::mf/private true}
   [{:keys [organization organizations profile] :rest props}]
-  (let [on-org-click
+  (let [teams (mf/deref refs/teams)
+
+        subscription-type (get-subscription-type (-> profile :props :subscription))
+
+        team-count (count teams)
+
+        account-age-days
+        (when (ct/inst? (:created-at profile))
+          (-> (ct/diff-ms (:created-at profile) (ct/now))
+              (/ (* 24 60 60 1000))
+              js/Math.floor
+              (max 0)))
+
+        on-org-click
         (mf/use-fn
          (fn [event]
            (let [team-id (-> (dom/get-current-target event)
@@ -313,18 +327,26 @@
 
         on-create-org-click
         (mf/use-fn
-         (mf/deps profile)
+         (mf/deps account-age-days profile subscription-type team-count)
          (fn []
-           (cond
-             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
-
-             (dnt/is-valid-license? profile)
+           (if (and (not= subscription-type "unlimited")
+                    (dnt/is-valid-license? profile))
              (dnt/go-to-nitrate-ac-create-organization
               "dashboard:organization-switcher")
-
-             :else
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+             (st/emit!
+              (ev/event
+               (cond-> {::ev/name "open-subscription-modal"
+                        ::ev/origin "dashboard:organization_switcher"
+                        :product "nitrate:enterprise"
+                        :source "frontend"
+                        :hasTeams (pos? team-count)
+                        :teamCount team-count}
+                 (some? account-age-days)
+                 (assoc :accountAgeDays account-age-days)))
+              (dnt/show-nitrate-popup
+               :nitrate-form
+               (when (= subscription-type "unlimited")
+                 {:show-contact-sales-option true}))))))
 
         on-go-to-cc-click
         (mf/use-fn
@@ -692,6 +714,17 @@
   [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
 
+        subscription-type (get-subscription-type (-> profile :props :subscription))
+
+        team-count (count teams)
+
+        account-age-days
+        (when (ct/inst? (:created-at profile))
+          (-> (ct/diff-ms (:created-at profile) (ct/now))
+              (/ (* 24 60 60 1000))
+              js/Math.floor
+              (max 0)))
+
         current-org (dtm/team->organization team)
 
         ;; Find the "your-penpot" teams, and transform them in orgs. When
@@ -769,18 +802,26 @@
 
         on-create-org-click
         (mf/use-fn
-         (mf/deps profile)
+         (mf/deps account-age-days profile subscription-type team-count)
          (fn []
-           (cond
-             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
-
-             (dnt/is-valid-license? profile)
+           (if (and (not= subscription-type "unlimited")
+                    (dnt/is-valid-license? profile))
              (dnt/go-to-nitrate-ac-create-organization
               "dashboard:organization-switcher")
-
-             :else
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
+             (st/emit!
+              (ev/event
+               (cond-> {::ev/name "open-subscription-modal"
+                        ::ev/origin "dashboard:create_organization_button"
+                        :product "nitrate:enterprise"
+                        :source "frontend"
+                        :hasTeams (pos? team-count)
+                        :teamCount team-count}
+                 (some? account-age-days)
+                 (assoc :accountAgeDays account-age-days)))
+              (dnt/show-nitrate-popup
+               :nitrate-form
+               (when (= subscription-type "unlimited")
+                 {:show-contact-sales-option true}))))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
        [:div {:class (stl/css :org-switch-content)}

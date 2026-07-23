@@ -152,6 +152,15 @@
         subscription-type
         (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
 
+        team-count (count teams)
+
+        account-age-days
+        (when (ct/inst? (:created-at profile))
+          (-> (ct/diff-ms (:created-at profile) (ct/now))
+              (/ (* 24 60 60 1000))
+              js/Math.floor
+              (max 0)))
+
         teams-loaded? (seq teams)
 
         no-orgs-created? (mf/with-memo [teams]
@@ -162,11 +171,21 @@
 
         handle-click
         (mf/use-fn
-         (mf/deps subscription-type)
+         (mf/deps account-age-days subscription-type team-count)
          (fn []
-           (st/emit! (dnt/show-nitrate-popup :nitrate-form
-                                             (when (= subscription-type "unlimited")
-                                               {:show-contact-sales-option true})))))
+           (st/emit!
+            (ev/event
+             (cond-> {::ev/name "open-subscription-modal"
+                      ::ev/origin "dashboard:promotional_banner"
+                      :product "nitrate:enterprise"
+                      :source "frontend"
+                      :hasTeams (pos? team-count)
+                      :teamCount team-count}
+               (some? account-age-days)
+               (assoc :accountAgeDays account-age-days)))
+            (dnt/show-nitrate-popup :nitrate-form
+                                    (when (= subscription-type "unlimited")
+                                      {:show-contact-sales-option true})))))
 
         handle-go-to-cc
         (mf/use-fn
