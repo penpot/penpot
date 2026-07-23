@@ -532,8 +532,9 @@
   {:type :path
    :name "Path"
    :fills []
+   ;; Paths use centered strokes by default.
    :strokes [{:stroke-style :solid
-              :stroke-alignment :inner
+              :stroke-alignment :center
               :stroke-width 1
               :stroke-color clr/black
               :stroke-opacity 1}]})

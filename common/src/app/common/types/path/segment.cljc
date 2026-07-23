@@ -13,8 +13,10 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.math :as mth]
+   [app.common.types.path.fit :as fit]
    [app.common.types.path.helpers :as helpers]
    [app.common.types.path.impl :as impl]
+   [app.common.types.path.subpath :as subpath]
    [clojure.set :as set]))
 
 #?(:clj (set! *warn-on-reflection* true))
@@ -138,6 +140,42 @@
                   (when (not= type :close-path)
                     (gpt/point x y)))
                 [])))
+
+(defn segment-entries
+  "Returns selectable segments with their command index and endpoints."
+  [content]
+  (loop [index               0
+         pending             (seq content)
+         previous            nil
+         previous-index      nil
+         subpath-start       nil
+         subpath-start-index nil
+         result              []]
+    (if-let [{:keys [command] :as segment} (first pending)]
+      (let [close-path?         (= command :close-path)
+            move-to?            (= command :move-to)
+            point               (if close-path?
+                                  subpath-start
+                                  (helpers/segment->point segment))
+            point-index         (if close-path? subpath-start-index index)
+            result              (cond-> result
+                                  (and previous point (not move-to?))
+                                  (conj {:index index
+                                         :from previous
+                                         :from-index previous-index
+                                         :to point
+                                         :to-index point-index
+                                         :segment segment}))
+            subpath-start       (if move-to? point subpath-start)
+            subpath-start-index (if move-to? index subpath-start-index)]
+        (recur (inc index)
+               (next pending)
+               point
+               point-index
+               subpath-start
+               subpath-start-index
+               result))
+      result)))
 
 ;; FIXME: incorrect API, don't need full shape
 (defn path->lines
@@ -312,34 +350,6 @@
 
     (impl/from-plain content)))
 
-(defn- line->curve
-  [from-p segment]
-
-  (let [to-p (helpers/segment->point segment)
-
-        v (gpt/to-vec from-p to-p)
-        d (gpt/distance from-p to-p)
-
-        dv1 (-> (gpt/normal-left v)
-                (gpt/scale (/ d 3)))
-
-        h1 (gpt/add from-p dv1)
-
-        dv2 (-> (gpt/to-vec to-p h1)
-                (gpt/unit)
-                (gpt/scale (/ d 3)))
-
-        h2 (gpt/add to-p dv2)]
-    (-> segment
-        (assoc :command :curve-to)
-        (update :params (fn [params]
-                          ;; ensure plain map
-                          (-> (into {} params)
-                              (assoc :c1x (:x h1))
-                              (assoc :c1y (:y h1))
-                              (assoc :c2x (:x h2))
-                              (assoc :c2y (:y h2))))))))
-
 ;; FIXME: optimize
 (defn is-curve?
   [content point]
@@ -353,111 +363,123 @@
    (mapcat #(list (:next-p %) (:prev-p %)))
    (remove nil?)))
 
+(defn- curve-neighbourhood
+  "Returns the adjacent segments and points for one node."
+  [content index]
+  (let [segment (get content index)
+        prev-i  (dec index)
+        prev    (when (not= :move-to (:command segment))
+                  (get content prev-i))
+        next-i  (inc index)
+        next    (get content next-i)
+        next    (when (not= :move-to (:command next)) next)]
+    {:index index
+     :prev-i (when (some? prev) prev-i)
+     :prev-c prev
+     :prev-p (helpers/segment->point prev)
+     :next-i (when (some? next) next-i)
+     :next-c next
+     :next-p (helpers/segment->point next)
+     :segment segment}))
+
+(defn- smooth-tangent
+  "Returns tangent data for a smooth curve node."
+  [content point indices neighbourhoods neighbour-points]
+  (let [[first-point second-point] (vec neighbour-points)
+        prev-neighbour (some :prev-p neighbourhoods)
+        next-neighbour (some :next-p neighbourhoods)
+        seam?          (and (= 2 (count indices))
+                            (= :move-to (:command (get content (first indices))))
+                            (let [end-index (last indices)]
+                              (or (= end-index (dec (count content)))
+                                  (= :close-path
+                                     (:command (get content (inc end-index)))))))
+        first-unit     (gpt/unit (gpt/to-vec point first-point))
+        second-unit    (gpt/unit (gpt/to-vec point second-point))
+        angle-tangent  (let [delta (gpt/subtract second-unit first-unit)]
+                         (if (mth/almost-zero? (gpt/length delta))
+                           (gpt/perpendicular first-unit)
+                           (gpt/unit delta)))
+        tangent        (if seam?
+                         (let [chord (gpt/to-vec prev-neighbour next-neighbour)]
+                           (if (mth/almost-zero? (gpt/length chord))
+                             angle-tangent
+                             (gpt/unit chord)))
+                         angle-tangent)
+        length         (/ (min (gpt/distance point first-point)
+                               (gpt/distance point second-point))
+                          3)]
+    {:tangent tangent
+     :length length
+     :seam? seam?
+     :prev-neighbour prev-neighbour
+     :next-neighbour next-neighbour}))
+
+(defn- smooth-handle
+  "Returns a smooth handle toward `neighbour`."
+  [point {:keys [tangent length seam? prev-neighbour next-neighbour]} neighbour]
+  (when (some? neighbour)
+    (let [direction (gpt/unit (gpt/to-vec point neighbour))
+          side      (cond
+                      (and seam? (= neighbour prev-neighbour)) -1
+                      (and seam? (= neighbour next-neighbour)) 1
+                      :else (if (neg? (gpt/dot direction tangent)) -1 1))]
+      (gpt/add point (gpt/scale tangent (* side length))))))
+
+(defn- apply-smooth-neighbour
+  "Adds smooth handles around one matching node."
+  [content point tangent-data {:keys [index prev-p next-p next-i]}]
+  (let [curr-command (:command (get content index))
+        next-command (:command (get content next-i))
+        prev-h       (smooth-handle point tangent-data prev-p)
+        next-h       (smooth-handle point tangent-data next-p)]
+    (cond-> content
+      (and (= :line-to curr-command) (some? prev-p))
+      (update index helpers/update-curve-to prev-p prev-h)
+
+      (and (= :line-to next-command) (some? next-p))
+      (update next-i helpers/update-curve-to next-h next-p)
+
+      (and (= :curve-to curr-command) (some? prev-p))
+      (update index update-handler :c2 prev-h)
+
+      (and (= :curve-to next-command) (some? next-p))
+      (update next-i update-handler :c1 next-h))))
+
+(defn- corner-handle
+  [point neighbour]
+  (gpt/add point (gpt/scale (gpt/to-vec point neighbour) (/ 1 3))))
+
+(defn- apply-corner-neighbour
+  "Adds independent handles around one matching node."
+  [content point {:keys [index segment prev-p next-c next-i next-p]}]
+  (cond-> content
+    (and (= :line-to (:command segment)) (some? prev-p))
+    (update index helpers/update-curve-to prev-p (corner-handle point prev-p))
+
+    (and (= :curve-to (:command segment)) (some? prev-p))
+    (update index update-handler :c2 (corner-handle point prev-p))
+
+    (and (= :line-to (:command next-c)) (some? next-p))
+    (update next-i helpers/update-curve-to (corner-handle point next-p) next-p)
+
+    (and (= :curve-to (:command next-c)) (some? next-p))
+    (update next-i update-handler :c1 (corner-handle point next-p))))
+
 (defn make-curve-point
-  "Changes the content to make the point a 'curve'. The handlers will be
-  positioned in the same vector that results from the previous->next
-  points but with fixed length; return a plain segments vector"
+  "Adds curve handles to every node at `point`."
   [content point]
-
-  (let [;; We perform this operation before because it can be
-        ;; optimized with internal reduction so is better to use the
-        ;; PathData type before converting it to plain vector.
-        indices
-        (point-indices content point)
-
-        ;; We transform content to a plain format for execute the
-        ;; algorithm because right now is the only way to execute it
-        content
-        (vec content)
-
-        vectors
-        (map (fn [index]
-               (let [segment (get content index)
-                     prev-i  (dec index)
-                     prev    (when (not (= :move-to (:command segment)))
-                               (get content prev-i))
-                     next-i  (inc index)
-                     next    (get content next-i)
-                     next    (when (not (= :move-to (:command next)))
-                               next)]
-                 {:index index
-                  :prev-i (when (some? prev) prev-i)
-                  :prev-c prev
-                  :prev-p (helpers/segment->point prev)
-                  :next-i (when (some? next) next-i)
-                  :next-c next
-                  :next-p (helpers/segment->point next)
-                  :segment segment}))
-             indices)
-
-        points
-        (into #{} xf:mapcat-points vectors)]
-
-    (if (= (count points) 2)
-      (let [[fpoint spoint] (vec points)
-            v1 (gpt/to-vec fpoint point)
-            v2 (gpt/to-vec fpoint spoint)
-            vp (gpt/project v1 v2)
-            vh (gpt/subtract v1 vp)
-
-            add-curve
-            (fn [content {:keys [index prev-p next-p next-i]}]
-              (let [curr-segment (get content index)
-                    curr-command (get curr-segment :command)
-
-                    next-segment (get content next-i)
-                    next-command (get next-segment :command)
-
-                    ;; New handlers for prev-point and next-point
-                    prev-h
-                    (when (some? prev-p) (gpt/add prev-p vh))
-
-                    next-h
-                    (when (some? next-p) (gpt/add next-p vh))
-
-                    ;; Correct 1/3 to the point improves the curve
-                    prev-correction
-                    (when (some? prev-h) (gpt/scale (gpt/to-vec prev-h point) (/ 1 3)))
-
-                    next-correction
-                    (when (some? next-h) (gpt/scale (gpt/to-vec next-h point) (/ 1 3)))
-
-                    prev-h
-                    (when (some? prev-h) (gpt/add prev-h prev-correction))
-
-                    next-h
-                    (when (some? next-h) (gpt/add next-h next-correction))]
-
-                (cond-> content
-                  (and (= :line-to curr-command) (some? prev-p))
-                  (update index helpers/update-curve-to prev-p prev-h)
-
-                  (and (= :line-to next-command) (some? next-p))
-                  (update next-i helpers/update-curve-to next-h next-p)
-
-                  (and (= :curve-to curr-command) (some? prev-p))
-                  (update index update-handler :c2 prev-h)
-
-                  (and (= :curve-to next-command) (some? next-p))
-                  (update next-i update-handler :c1 next-h))))]
-
-        (reduce add-curve content vectors))
-
-      (let [add-curve
-            (fn [content {:keys [index segment prev-p next-c next-i]}]
-              (cond-> content
-                (= :line-to (:command segment))
-                (update index #(line->curve prev-p %))
-
-                (= :curve-to (:command segment))
-                (update index #(line->curve prev-p %))
-
-                (= :line-to (:command next-c))
-                (update next-i #(line->curve point %))
-
-                (= :curve-to (:command next-c))
-                (update next-i #(line->curve point %))))]
-        (reduce add-curve content vectors)))))
+  (let [indices        (vec (point-indices content point))
+        content        (vec content)
+        neighbourhoods (mapv #(curve-neighbourhood content %) indices)
+        neighbour-points (into #{} xf:mapcat-points neighbourhoods)]
+    (if (= (count neighbour-points) 2)
+      (let [tangent-data (smooth-tangent
+                          content point indices neighbourhoods neighbour-points)]
+        (reduce #(apply-smooth-neighbour %1 point tangent-data %2)
+                content
+                neighbourhoods))
+      (reduce #(apply-corner-neighbour %1 point %2) content neighbourhoods))))
 
 (defn get-segments-with-points
   "Given a content and a set of points return all the segments in the path
@@ -528,6 +550,103 @@
 
     (into [] (mapcat process-segments) (d/enumerate content))))
 
+(defn collapse-handler
+  "Collapses a handler onto its node and simplifies flat curves to lines."
+  [content index prefix]
+  (let [content (vec content)
+        node    (handler->node content index prefix)
+        [cx cy] (helpers/prefix->coords prefix)]
+    (if (and (some? node)
+             (= :curve-to (dm/get-in content [index :command])))
+      (impl/from-plain
+       (-> content
+           (assoc-in [index :params cx] (:x node))
+           (assoc-in [index :params cy] (:y node))
+           (remove-line-curves)))
+      (impl/from-plain content))))
+
+(def ^:private curve-toggle-bow
+  "Perpendicular handle offset used when curving a line."
+  0.25)
+
+(defn toggle-segment-curve
+  "Toggles a segment between a line and a bowed curve."
+  [content index]
+  (let [content (vec content)
+        segment (get content index)
+        from    (helpers/segment->point (get content (dec index)))
+        to      (helpers/segment->point segment)]
+    (impl/from-plain
+     (case (:command segment)
+       :line-to
+       (if (some? from)
+         (let [v    (gpt/to-vec from to)
+               perp (gpt/scale (gpt/point (- (:y v)) (:x v)) curve-toggle-bow)
+               h1   (-> from (gpt/add (gpt/scale v (/ 1 3))) (gpt/add perp))
+               h2   (-> from (gpt/add (gpt/scale v (/ 2 3))) (gpt/add perp))]
+           (update content index helpers/update-curve-to h1 h2))
+         content)
+
+       :curve-to
+       (assoc content index {:command :line-to
+                             :params (select-keys (:params segment) [:x :y])})
+
+       content))))
+
+(defn- subpath-start-indices
+  "Returns the starting command index for every command in `content`."
+  [content]
+  (loop [i      0
+         start  0
+         result (transient [])]
+    (if (>= i (count content))
+      (persistent! result)
+      (let [start (if (= :move-to (:command (nth content i))) i start)]
+        (recur (inc i) start (conj! result start))))))
+
+(defn remove-segments
+  "Removes segments and opens their subpaths. Closing segments become
+   lines when needed to preserve geometry."
+  [content indices]
+  (let [content (vec content)
+        indices (set indices)
+        starts  (subpath-start-indices content)
+
+        broken  (into #{} (keep #(nth starts % nil)) indices)
+
+        content
+        (into []
+              (comp
+               (map-indexed
+                (fn [i cmd]
+                  (cond
+                    (contains? indices i)
+                    (when-not (= :close-path (:command cmd))
+                      {:command :move-to
+                       :params (select-keys (:params cmd) [:x :y])})
+
+                    ;; Preserve the closing edge of broken subpaths.
+                    (and (= :close-path (:command cmd))
+                         (contains? broken (nth starts i)))
+                    {:command :line-to
+                     :params (-> (nth content (nth starts i))
+                                 (get :params)
+                                 (select-keys [:x :y]))}
+
+                    :else cmd)))
+               (remove nil?))
+              content)
+
+        subpaths
+        (reduce (fn [acc cmd]
+                  (if (or (= :move-to (:command cmd)) (empty? acc))
+                    (conj acc [cmd])
+                    (update acc (dec (count acc)) conj cmd)))
+                []
+                content)]
+    (impl/from-plain
+     (into [] (comp (filter #(> (count %) 1)) cat) subpaths))))
+
 ;; FIXME: rename to next-segment
 (defn next-node
   "Calculates the next-node to be inserted."
@@ -543,78 +662,237 @@
                    :params (helpers/make-curve-params position prev-handler)}
       :else       {:command :move-to
                    :params position})))
-(defn remove-nodes
-  "Removes from content the points given. Will try to reconstruct the paths
-  to keep everything consistent"
-  [content points]
+(def ^:private ^:const chain-samples-per-segment 8)
 
+(defn- chain-samples
+  "Returns ordered samples along a segment chain."
+  [chain]
+  (into [(:start (first chain))]
+        (mapcat
+         (fn [{:keys [start end segment]}]
+           (let [ts (map #(/ (double %) chain-samples-per-segment)
+                         (range 1 (inc chain-samples-per-segment)))]
+             (if (= :curve-to (:command segment))
+               (let [curve (helpers/command->bezier segment start)]
+                 (map #(helpers/curve-values curve %) ts))
+               (map #(helpers/line-values [start end] %) ts)))))
+        chain))
+
+(defn- chain-tangent
+  "Returns an inward unit tangent at one end of a chain."
+  [{:keys [start end segment]} at-start? origin samples]
+  (let [tangent
+        (if (= :curve-to (:command segment))
+          (let [curve (helpers/command->bezier segment start)]
+            (cond-> (helpers/curve-tangent curve (if at-start? 0 1))
+              (not at-start?) (gpt/negate)))
+          (if at-start?
+            (gpt/to-vec start end)
+            (gpt/to-vec end start)))
+        tangent (gpt/unit tangent)]
+    (if (gpt/almost-zero? tangent)
+      (->> samples
+           (map #(gpt/to-vec origin %))
+           (remove gpt/almost-zero?)
+           (map gpt/unit)
+           (first))
+      tangent)))
+
+(defn- flat-chain?
+  "True when a sampled chain is nearly straight."
+  [start end samples]
+  (or (mth/almost-zero? (gpt/distance start end))
+      (every? #(< (gpt/point-line-distance % start end) 0.01) samples)))
+
+(defn- restore-split-curve
+  "Rejoins two untouched De Casteljau pieces into one cubic."
+  [chain]
+  (when (= 2 (count chain))
+    (let [{left-segment :segment left-start :start} (first chain)
+          {right-segment :segment}                 (second chain)]
+      (when (and (= :curve-to (:command left-segment))
+                 (= :curve-to (:command right-segment)))
+        (let [[start split left-h1 left-h2 :as left-curve]
+              (helpers/command->bezier left-segment left-start)
+              [_ end right-h1 right-h2 :as right-curve]
+              (helpers/command->bezier right-segment split)
+              left-length  (gpt/distance left-h2 split)
+              right-length (gpt/distance split right-h1)]
+          (when (and (not (mth/almost-zero? left-length))
+                     (not (mth/almost-zero? right-length)))
+            (let [t            (/ left-length (+ left-length right-length))
+                  original-h1  (-> (gpt/to-vec start left-h1)
+                                   (gpt/scale (/ 1.0 t))
+                                   (gpt/add start))
+                  original-h2  (-> (gpt/to-vec end right-h2)
+                                   (gpt/scale (/ 1.0 (- 1.0 t)))
+                                   (gpt/add end))
+                  candidate    [start end original-h1 original-h2]
+                  [left' right'] (helpers/curve-split candidate t)]
+              (when (every? true?
+                            (map gpt/close?
+                                 (concat left-curve right-curve)
+                                 (concat left' right')))
+                (helpers/make-curve-to end original-h1 original-h2)))))))))
+
+(defn- approximate-chain
+  "Replaces a segment chain with a line or fitted curve."
+  [chain]
+  (or (restore-split-curve chain)
+      (let [start   (:start (first chain))
+            end     (:end (peek chain))
+            samples (chain-samples chain)
+            tan1    (chain-tangent (first chain) true start (rest samples))
+            tan2    (chain-tangent (peek chain) false end (rest (rseq samples)))]
+        (if (or (flat-chain? start end samples)
+                (nil? tan1)
+                (nil? tan2))
+          (helpers/make-line-to end)
+          (let [[h1 h2] (fit/fit-cubic samples tan1 tan2)]
+            (helpers/make-curve-to end h1 h2))))))
+
+(defn- split-content-subpaths
+  "Splits plain path commands into subpath command vectors."
+  [content]
+  (reduce
+   (fn [subpaths segment]
+     (if (= :move-to (:command segment))
+       (conj subpaths [segment])
+       (if (seq subpaths)
+         (update subpaths (dec (count subpaths)) conj segment)
+         subpaths)))
+   []
+   content))
+
+(defn- removed-point-joins-subpaths?
+  "True when a removed point is an endpoint shared by open subpaths."
+  [subpaths points]
+  (let [open-endpoints
+        (keep (fn [subpath]
+                (let [start (some-> subpath first helpers/segment->point)
+                      end   (some-> subpath peek helpers/segment->point)]
+                  (when (and (some? start)
+                             (some? end)
+                             (not (subpath/pt= start end)))
+                    #{start end})))
+              subpaths)]
+    (some (fn [point]
+            (< 1 (count (filter (fn [endpoints]
+                                  (some #(subpath/pt= point %) endpoints))
+                                open-endpoints))))
+          points)))
+
+(defn- rotate-removed-closed-start
+  "Rotates a closed subpath so a removed seam becomes an interior node."
+  [subpath points]
+  (let [subpath  (vec subpath)
+        close?   (= :close-path (:command (peek subpath)))
+        body      (cond-> subpath close? pop)
+        start     (some-> body first helpers/segment->point)
+        end       (some-> body peek helpers/segment->point)
+        closed?   (or close? (= start end))]
+    (if-not (and closed? (contains? points start))
+      subpath
+      (let [segments (subvec body 1)
+            ;; Materialize an implicit close segment before rotating.
+            segments (cond-> segments
+                       (and close? (not= start end))
+                       (conj (helpers/make-line-to start)))
+            new-start-index
+            (first
+             (keep-indexed
+              (fn [index segment]
+                (when-not (contains? points (helpers/segment->point segment))
+                  index))
+              segments))]
+        (if (nil? new-start-index)
+          []
+          (let [new-start (helpers/segment->point
+                           (nth segments new-start-index))
+                rotated   (into []
+                                (concat
+                                 (subvec segments (inc new-start-index))
+                                 (subvec segments 0 (inc new-start-index))))]
+            (cond-> (into [(helpers/make-move-to new-start)] rotated)
+              close? (conj {:command :close-path :params {}}))))))))
+
+(defn- remove-nodes*
+  "Removes interior nodes from prepared content."
+  [content points]
+  (loop [result []
+         pending []
+         subpath-start nil
+         prev-point nil
+         segments (seq content)]
+
+    (if (nil? segments)
+      ;; Drop subpaths left with only a start point.
+      (into [] (comp (filter #(> (count %) 1)) cat) result)
+
+      (let [segment (first segments)
+            move?   (= :move-to (:command segment))
+            close?  (= :close-path (:command segment))
+            point   (if close? subpath-start (helpers/segment->point segment))
+            remove? (and (not close?) (contains? points point))
+
+            ;; Start a result subpath for each move command.
+            result  (if move? (conj result []) result)
+            head    (dec (count result))
+            subpath (peek result)
+
+            [result pending]
+            (cond
+              ;; Collect removed interior nodes until the next kept node.
+              remove?
+              [result (if (seq subpath)
+                        (conj pending {:start prev-point :end point :segment segment})
+                        [])]
+
+              move?
+              [(update result head conj segment) []]
+
+              ;; Promote the first kept node to the subpath start.
+              (empty? subpath)
+              [(update result head conj (helpers/make-move-to point)) []]
+
+              (seq pending)
+              (if (and close? (contains? points subpath-start))
+                ;; Close straight onto the new start.
+                [(update result head conj segment) []]
+                (let [chain  (conj pending {:start prev-point :end point :segment segment})
+                      approx (approximate-chain chain)
+                      ;; The close command already draws a zero-length replacement.
+                      skip?  (and close?
+                                  (= :line-to (:command approx))
+                                  (< (gpt/distance (:start (first chain)) point) 0.01))
+                      result (cond-> result
+                               (not skip?) (update head conj approx)
+                               close?      (update head conj segment))]
+                  [result []]))
+
+              :else
+              [(update result head conj segment) []])]
+
+        (recur result
+               pending
+               (if move? point subpath-start)
+               point
+               (next segments))))))
+
+(defn remove-nodes
+  "Removes nodes and joins surrounding segments with a fitted replacement."
+  [content points]
   (if (empty? points)
     content
-
-    (let [content (d/with-prev content)]
-
-      (loop [result []
-             last-handler nil
-             [cur-segment prev-segment] (first content)
-             content (rest content)]
-
-        (if (nil? cur-segment)
-          ;; The result with be an array of arrays were every entry is a subpath
-          (->> result
-               ;; remove empty and only 1 node subpaths
-               (filter #(> (count %) 1))
-               ;; flatten array-of-arrays plain array
-               (flatten)
-               (into []))
-
-          (let [move? (= :move-to (:command cur-segment))
-                curve? (= :curve-to (:command cur-segment))
-
-                ;; When the old command was a move we start a subpath
-                result (if move? (conj result []) result)
-
-                subpath (peek result)
-
-                point (helpers/segment->point cur-segment)
-
-                old-prev-point (helpers/segment->point prev-segment)
-                new-prev-point (helpers/segment->point (peek subpath))
-
-                remove? (contains? points point)
-
-
-                ;; We store the first handler for the first curve to be removed to
-                ;; use it for the first handler of the regenerated path
-                cur-handler (cond
-                              (and (not last-handler) remove? curve?)
-                              (select-keys (:params cur-segment) [:c1x :c1y])
-
-                              (not remove?)
-                              nil
-
-                              :else
-                              last-handler)
-
-                cur-segment (cond-> cur-segment
-                              ;; If we're starting a subpath and it's not a move make it a move
-                              (and (not move?) (empty? subpath))
-                              (assoc :command :move-to
-                                     :params (select-keys (:params cur-segment) [:x :y]))
-
-                              ;; If have a curve the first handler will be relative to the previous
-                              ;; point. We change the handler to the new previous point
-                              (and curve? (seq subpath) (not= old-prev-point new-prev-point))
-                              (update :params merge last-handler))
-
-                head-idx (dec (count result))
-
-                result (cond-> result
-                         (not remove?)
-                         (update head-idx conj cur-segment))]
-            (recur result
-                   cur-handler
-                   (first content)
-                   (rest content))))))))
+    (let [subpaths (split-content-subpaths content)
+          content  (if (removed-point-joins-subpaths? subpaths points)
+                     (subpath/close-subpaths content)
+                     content)
+          content  (into []
+                         (mapcat #(rotate-removed-closed-start % points))
+                         (split-content-subpaths
+                          content))]
+      (remove-nodes* content points))))
 
 (defn join-nodes
   "Creates new segments between points that weren't previously.
@@ -649,41 +927,119 @@
 
     (into content new-content)))
 
+(def ^:private separate-node-offset (gpt/point 8 8))
+
+(defn- separate-node
+  "Splits a node into offset open ends, preserving adjacent handles."
+  [content point offset]
+  (let [content (vec content)
+        n       (count content)
+        {ox :x oy :y} offset
+        seg?    (fn [c] (and (some? c)
+                             (not= :move-to (:command c))
+                             (not= :close-path (:command c))))]
+    (loop [i      0
+           k      0
+           result (transient [])]
+      (if (>= i n)
+        (persistent! result)
+        (let [cmd   (nth content i)
+              nxt   (nth content (inc i) nil)
+              at-p? (and (not= :close-path (:command cmd))
+                         (= point (helpers/segment->point cmd)))]
+          (cond
+            ;; Offset a subpath start.
+            (and at-p? (= :move-to (:command cmd)))
+            (let [off (gpt/point (* k ox) (* k oy))]
+              (recur (inc i) (inc k)
+                     (conj! result (-> cmd
+                                       (update-in [:params :x] + (:x off))
+                                       (update-in [:params :y] + (:y off))))))
+
+            ;; Split an interior node into two subpaths.
+            (and at-p? (seg? cmd) (seg? nxt))
+            (let [off  (gpt/point (* k ox) (* k oy))
+                  cmd' (cond-> (-> cmd
+                                   (update-in [:params :x] + (:x off))
+                                   (update-in [:params :y] + (:y off)))
+                         (= :curve-to (:command cmd))
+                         (-> (update-in [:params :c2x] + (:x off))
+                             (update-in [:params :c2y] + (:y off))))
+                  k2   (inc k)
+                  off2 (gpt/point (* k2 ox) (* k2 oy))
+                  mv   (helpers/make-move-to (gpt/add point off2))
+                  nxt' (cond-> nxt
+                         (= :curve-to (:command nxt))
+                         (-> (update-in [:params :c1x] + (:x off2))
+                             (update-in [:params :c1y] + (:y off2))))]
+              (recur (+ i 2) (inc k2)
+                     (-> result (conj! cmd') (conj! mv) (conj! nxt'))))
+
+            ;; Open and offset a closed seam.
+            (and at-p? (seg? cmd) (= :close-path (:command nxt)))
+            (let [off  (gpt/point (* k ox) (* k oy))
+                  cmd' (cond-> (-> cmd
+                                   (update-in [:params :x] + (:x off))
+                                   (update-in [:params :y] + (:y off)))
+                         (= :curve-to (:command cmd))
+                         (-> (update-in [:params :c2x] + (:x off))
+                             (update-in [:params :c2y] + (:y off))))]
+              ;; Drop the close command so the seam stays open.
+              (recur (+ i 2) (inc k) (conj! result cmd')))
+
+            ;; Offset the end of an open subpath.
+            (and at-p? (seg? cmd) (not= :close-path (:command nxt)))
+            (let [off (gpt/point (* k ox) (* k oy))]
+              (recur (inc i) (inc k)
+                     (conj! result (cond-> (-> cmd
+                                               (update-in [:params :x] + (:x off))
+                                               (update-in [:params :y] + (:y off)))
+                                     (= :curve-to (:command cmd))
+                                     (-> (update-in [:params :c2x] + (:x off))
+                                         (update-in [:params :c2y] + (:y off)))))))
+
+            :else
+            (recur (inc i) k (conj! result cmd))))))))
+
 (defn separate-nodes
-  "Removes the segments between the points given"
-  [content points]
+  "Removes segments between points or splits one node into offset open ends."
+  ([content points]
+   (separate-nodes content points separate-node-offset))
+  ([content points offset]
+   (if (= 1 (count points))
+     (separate-node (vec content) (first points) offset)
 
-  (let [content (d/with-prev content)]
-    (loop [result []
-           [cur-segment prev-segment] (first content)
-           content (rest content)]
+     (let [content (d/with-prev content)]
+       (loop [result []
+              [cur-segment prev-segment] (first content)
+              content (rest content)]
 
-      (if (nil? cur-segment)
-        (->> result
-             (filter #(> (count %) 1))
-             (flatten)
-             (into []))
+         (if (nil? cur-segment)
+           (->> result
+                (filter #(> (count %) 1))
+                (flatten)
+                (into []))
 
-        (let [prev-point (helpers/segment->point prev-segment)
-              cur-point (helpers/segment->point cur-segment)
+           (let [prev-point (helpers/segment->point prev-segment)
+                 cur-point (helpers/segment->point cur-segment)
 
-              cur-segment (cond-> cur-segment
-                            (and (contains? points prev-point)
-                                 (contains? points cur-point))
+                 cur-segment (cond-> cur-segment
+                               (and (contains? points prev-point)
+                                    (contains? points cur-point))
 
-                            (assoc :command :move-to
-                                   :params (select-keys (:params cur-segment) [:x :y])))
+                               (assoc :command :move-to
+                                      :params (select-keys (:params cur-segment) [:x :y])))
 
-              move? (= :move-to (:command cur-segment))
+                 move? (= :move-to (:command cur-segment))
 
-              result (if move? (conj result []) result)
-              head-idx (dec (count result))
+                 result (if move? (conj result []) result)
+                 head-idx (dec (count result))
 
-              result (-> result
-                         (update head-idx conj cur-segment))]
-          (recur result
-                 (first content)
-                 (rest content)))))))
+                 result (-> result
+                            (update head-idx conj cur-segment))]
+             (recur result
+                    (first content)
+                    (rest content)))))))))
 
 
 (defn- add-to-set
@@ -753,9 +1109,10 @@
          (mapv replace-command))))
 
 (defn merge-nodes
-  "Reduces the contiguous segments in points to a single point"
+  "Joins and merges `points` into one point."
   [content points]
-  (let [segments (get-segments-with-points content points)]
+  (let [content  (join-nodes content points)
+        segments (get-segments-with-points content points)]
     (if (seq segments)
       (let [point->merge-point (-> segments
                                    (group-segments)
@@ -889,3 +1246,16 @@
                        (conj result {:command :close-path})
                        result)]
           (impl/from-plain result))))))
+
+(defn smooth-points->content
+  "Fits smooth path content through `points`, falling back to lines."
+  [points tolerance]
+  (let [curves (when (>= (count points) 3)
+                 (fit/fit-curve points tolerance))]
+    (if (empty? curves)
+      (points->content points)
+      (impl/from-plain
+       (into [(helpers/make-move-to (ffirst curves))]
+             (map (fn [[_ end h1 h2]]
+                    (helpers/make-curve-to end h1 h2)))
+             curves)))))

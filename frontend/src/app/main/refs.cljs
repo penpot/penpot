@@ -219,6 +219,9 @@
 (def selected-edition
   (l/derived :edition workspace-local))
 
+(def workspace-edit-path
+  (l/derived :edit-path workspace-local))
+
 (def current-transform
   (l/derived :transform workspace-local))
 

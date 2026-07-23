@@ -7,8 +7,13 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.path
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
+   [app.common.types.path :as cpath]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace.path :as drp]
+   [app.main.data.workspace.path.helpers :as path.helpers]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
@@ -17,7 +22,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu* node-position-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu*]]
@@ -144,3 +149,96 @@
                         :page-id page-id
                         :file-id file-id}]]))
 
+(mf/defc path-edition-options*
+  "Options shown while editing a path."
+  [{:keys [shape]}]
+  (let [id     (dm/get-prop shape :id)
+        type   (dm/get-prop shape :type)
+        ids    (mf/with-memo [id] [id])
+        shapes (mf/with-memo [shape] [shape])
+
+        applied-tokens
+        (get shape :applied-tokens)
+
+        measure-values
+        (select-keys shape measure-attrs)
+
+        stroke-values
+        (select-keys shape stroke-attrs)
+
+        ;; Read coordinates from the live editing content.
+        edit-path (mf/deref refs/workspace-edit-path)
+        drawing   (mf/deref refs/current-drawing-shape)
+        objects   (mf/deref refs/workspace-page-objects)
+        selection (get-in edit-path [id :selection])
+        modifiers (get-in edit-path [id :content-modifiers])
+
+        content
+        (mf/with-memo [drawing modifiers]
+          (when-let [base (get drawing :content)]
+            (cpath/apply-content-modifiers base modifiers)))
+
+        ;; Show coordinates relative to the parent frame.
+        frame    (cfh/get-parent-frame objects shape)
+        in-frame? (and (some? frame) (not (cfh/root? frame)))
+        ox       (if in-frame? (dm/get-prop frame :x) 0)
+        oy       (if in-frame? (dm/get-prop frame :y) 0)
+
+        ;; Segments use selection bounds; nodes and handlers use their positions.
+        node-values
+        (mf/with-memo [content selection ox oy]
+          (when (and (some? content) (some? selection))
+            (let [segments (get selection :segments)
+                  handlers (get selection :handlers)
+                  nodes    (get selection :nodes)]
+              (cond
+                (seq segments)
+                (when-let [rect (path.helpers/selection-coordinate-rect
+                                 content selection)]
+                  {:x (- (dm/get-prop rect :x) ox)
+                   :y (- (dm/get-prop rect :y) oy)})
+
+                (or (seq nodes) (seq handlers))
+                (let [positions (into (path.helpers/node-positions content (set nodes))
+                                      (keep (fn [[i p]] (cpath/get-handler-point content i p)))
+                                      handlers)]
+                  (when (seq positions)
+                    (let [xs (into #{} (map #(- (:x %) ox)) positions)
+                          ys (into #{} (map #(- (:y %) oy)) positions)]
+                      {:x (if (= 1 (count xs)) (first xs) :multiple)
+                       :y (if (= 1 (count ys)) (first ys) :multiple)})))))))
+
+        on-node-x-change
+        (mf/use-fn (mf/deps ox)
+                   (fn [value] (when (some? value) (st/emit! (drp/set-selection-coordinate :x (+ value ox))))))
+
+        on-node-y-change
+        (mf/use-fn (mf/deps oy)
+                   (fn [value] (when (some? value) (st/emit! (drp/set-selection-coordinate :y (+ value oy))))))]
+
+    [:*
+     (when (some? node-values)
+       [:> node-position-menu* {:values node-values
+                                :on-x-change on-node-x-change
+                                :on-y-change on-node-y-change}])
+     ;; Show read-only shape measures when no path element is selected.
+     (when (nil? node-values)
+       [:div {:style {:pointer-events "none" :opacity 0.6}}
+        [:> measures-menu* {:ids ids
+                            :type type
+                            :applied-tokens applied-tokens
+                            :values measure-values
+                            :shapes shapes}]])
+     [:> fill/fill-menu*
+      {:ids ids
+       :type type
+       :values shape
+       :applied-tokens applied-tokens}]
+     [:> stroke-menu* {:ids ids
+                       :type type
+                       :show-caps true
+                       :values stroke-values
+                       :applied-tokens applied-tokens}]
+     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+     [:> blur-menu* {:ids ids
+                     :values (select-keys shape [:blur :background-blur])}]]))

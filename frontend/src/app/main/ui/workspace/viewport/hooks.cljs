@@ -25,6 +25,7 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.css-cursors :as cur]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as sfd]
    [app.main.ui.workspace.viewport.actions :as actions]
@@ -91,9 +92,9 @@
       (when (not= size vport)
         (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))))))
 
-(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
+(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only?]
   (mf/use-effect
-   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?)
+   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only?)
    (fn []
      (let [show-pen? (or (= drawing-tool :path)
                          (and drawing-path?
@@ -108,18 +109,20 @@
            (cond
              (and @mod? @space?)             (utils/get-cursor :zoom)
              (or panning @space?)            (utils/get-cursor :hand)
+             ;; Keep the drag cursor across the viewport.
+             (some? path-drag-cursor)        (cur/get-static path-drag-cursor)
              (= drawing-tool :comments)      (utils/get-cursor :comments)
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
              (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)
              (= drawing-tool :circle)        (utils/get-cursor :create-ellipse)
              (and show-zoom? (not @alt?))    (utils/get-cursor :zoom-in)
              (and show-zoom? @alt?)          (utils/get-cursor :zoom-out)
-             show-pen?                       (utils/get-cursor :pen)
+             show-pen?                       (utils/get-cursor :draw-path)
              (= drawing-tool :curve)         (utils/get-cursor :pencil)
              drawing-tool                    (utils/get-cursor :create-shape)
+             path-editing?                   (utils/get-cursor :edit-path)
              (and
               @alt?
-              (not path-editing?)
               (not workspace-read-only?))    (utils/get-cursor :duplicate)
              :else                           (utils/get-cursor :pointer-inner))]
 

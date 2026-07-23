@@ -20,6 +20,11 @@
 (defonce current-observer (atom nil))
 (defonce viewport-brect (atom nil))
 
+(defn capture-pointer
+  [event]
+  (when-let [viewport @viewport-ref]
+    (.setPointerCapture viewport (.-pointerId event))))
+
 (defn init-observer
   [node on-change-bounds]
 
