@@ -56,51 +56,52 @@
 
 (defn process-pointer-move
   [viewport-node canvas canvas-image-data zoom-view-context last-picked-color client-x client-y]
-  (when-let [image-data (mf/ref-val canvas-image-data)]
-    (when-let [zoom-view-node (dom/get-element "picker-detail")]
-      (when-not (mf/ref-val zoom-view-context)
-        (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
-      (let [canvas-width  260
-            canvas-height 140
-            {brx :left bry :top} (dom/get-bounding-rect viewport-node)
+  (when viewport-node
+    (when-let [image-data (mf/ref-val canvas-image-data)]
+      (when-let [zoom-view-node (dom/get-element "picker-detail")]
+        (when-not (mf/ref-val zoom-view-context)
+          (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
+        (let [canvas-width  260
+              canvas-height 140
+              {brx :left bry :top} (dom/get-bounding-rect viewport-node)
 
-            x (mth/floor (- client-x brx))
-            y (mth/floor (- client-y bry))
+              x (mth/floor (- client-x brx))
+              y (mth/floor (- client-y bry))
 
-            img-width  (unchecked-get image-data "width")
-            img-height (unchecked-get image-data "height")
+              img-width  (unchecked-get image-data "width")
+              img-height (unchecked-get image-data "height")
 
-            zoom-context (mf/ref-val zoom-view-context)
+              zoom-context (mf/ref-val zoom-view-context)
 
-            sx (- x 32)
-            sy (if (cfg/check-browser? :safari) y (- y 17))
-            sw 65
-            sh 35
-            dx 0
-            dy 0
-            dw canvas-width
-            dh canvas-height]
+              sx (- x 32)
+              sy (if (cfg/check-browser? :safari) y (- y 17))
+              sw 65
+              sh 35
+              dx 0
+              dy 0
+              dw canvas-width
+              dh canvas-height]
 
-        (when (obj/get zoom-context "imageSmoothingEnabled")
-          (obj/set! zoom-context "imageSmoothingEnabled" false))
-        (.clearRect zoom-context 0 0 canvas-width canvas-height)
-        (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
+          (when (obj/get zoom-context "imageSmoothingEnabled")
+            (obj/set! zoom-context "imageSmoothingEnabled" false))
+          (.clearRect zoom-context 0 0 canvas-width canvas-height)
+          (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
 
-        ;; Only pick color when cursor is within canvas bounds to avoid garbage pixels
-        (when (and (>= x 0) (< x img-width) (>= y 0) (< y img-height))
-          (let [offset (* (+ (* y img-width) x) 4)
-                rgba   (unchecked-get image-data "data")
-                r      (d/check-num (obj/get rgba (+ 0 offset)) 255)
-                g      (d/check-num (obj/get rgba (+ 1 offset)) 255)
-                b      (d/check-num (obj/get rgba (+ 2 offset)) 255)
-                a      (d/check-num (obj/get rgba (+ 3 offset)) 255)
-                color  [r g b a]]
-            ;; Store latest color synchronously so the click handler always reads
-            ;; the correct pixel even before the rAF fires (fixes race condition)
-            (mf/set-ref-val! last-picked-color color)
-            (timers/raf
-             (fn []
-               (st/emit! (dwc/pick-color color))))))))))
+          ;; Only pick color when cursor is within canvas bounds to avoid garbage pixels
+          (when (and (>= x 0) (< x img-width) (>= y 0) (< y img-height))
+            (let [offset (* (+ (* y img-width) x) 4)
+                  rgba   (unchecked-get image-data "data")
+                  r      (d/check-num (obj/get rgba (+ 0 offset)) 255)
+                  g      (d/check-num (obj/get rgba (+ 1 offset)) 255)
+                  b      (d/check-num (obj/get rgba (+ 2 offset)) 255)
+                  a      (d/check-num (obj/get rgba (+ 3 offset)) 255)
+                  color  [r g b a]]
+              ;; Store latest color synchronously so the click handler always reads
+              ;; the correct pixel even before the rAF fires (fixes race condition)
+              (mf/set-ref-val! last-picked-color color)
+              (timers/raf
+               (fn []
+                 (st/emit! (dwc/pick-color color)))))))))))
 
 
 (mf/defc pixel-overlay*
@@ -260,18 +261,19 @@
 (defn- viewport->canvas-coords
   "Maps client (viewport) coordinates to device-pixel canvas coordinates."
   [viewport-node client-x client-y]
-  (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)
-        dpr (wasm.api/get-dpr)
-        x (mth/floor (- client-x brx))
-        y (mth/floor (- client-y bry))]
-    [(mth/floor (* x dpr))
-     (mth/floor (* y dpr))]))
+  (when viewport-node
+    (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)
+          dpr (wasm.api/get-dpr)
+          x (mth/floor (- client-x brx))
+          y (mth/floor (- client-y bry))]
+      [(mth/floor (* x dpr))
+       (mth/floor (* y dpr))])))
 
 (defn process-pointer-move-wasm
   "Updates the magnifier loupe with the canvas region under the cursor. The
    actual color is only read on click (see `pick-color-at-wasm`)."
   [viewport-node canvas zoom-view-context client-x client-y]
-  (when canvas
+  (when (and canvas viewport-node)
     (when-let [zoom-view-node (dom/get-element "picker-detail")]
       (when-not (mf/ref-val zoom-view-context)
         (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
@@ -309,7 +311,7 @@
    the correct color even on GPUs where a raw WebGL `readPixels` returned
    values with their byte order swapped."
   [viewport-node canvas client-x client-y]
-  (when canvas
+  (when (and canvas viewport-node)
     (let [[canvas-x canvas-y] (viewport->canvas-coords viewport-node client-x client-y)
           img-width  (.-width canvas)
           img-height (.-height canvas)]
@@ -370,7 +372,7 @@
         handle-draw-picker-canvas
         (mf/use-callback
          (fn []
-           (when canvas
+           (when (and canvas viewport-node)
              ;; Read current mouse position from ref so the loupe refreshes on
              ;; each render even without a mouse-move.
              (let [{mx :x my :y} (mf/ref-val initial-mouse-pos)]
