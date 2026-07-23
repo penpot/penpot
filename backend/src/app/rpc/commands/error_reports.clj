@@ -169,12 +169,13 @@
   [cfg {:keys [id]}]
   (if-let [report (db/get-by-id cfg :server-error-report id {::db/check-deleted false})]
     (let [content (db/decode-transit-pgobject (:content report))]
-      (-> report
-          (dissoc :content)
-          (merge content)
-          (update :source source->name)
-          (assoc :kind (or (:kind content) (:origin content)))
-          (d/without-nils)))
+       (-> report
+           (dissoc :content)
+           (merge content)
+           (update :source source->name)
+           (assoc :kind (or (:kind content) (:origin content)))
+           (assoc :version (:version content))
+           (d/without-nils)))
     (ex/raise :type :not-found
               :code :report-not-found
               :hint (str "error report " id " not found"))))
