@@ -291,7 +291,8 @@
 
 (defn leave-org
   [{:keys [::db/conn] :as cfg}
-   {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?]}]
+   {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?
+           user-who-delete-member deleted-by-role event-origin]}]
   (let [org-prefix (str "[" (d/sanitize-string name) "] ")
         {:keys [deletable-team-ids
                 keep-default-team?
@@ -326,7 +327,12 @@
                                                :organization-id id}))
 
     ;; Api call to nitrate
-    (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :organization-id id})
+    (nitrate/call cfg :remove-profile-from-org
+                  {:profile-id profile-id
+                   :organization-id id
+                   :user-who-delete-member user-who-delete-member
+                   :deleted-by-role deleted-by-role
+                   :event-origin event-origin})
 
     nil))
 
@@ -337,7 +343,11 @@
    ::sm/params schema:leave-org
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (leave-org cfg (assoc params :profile-id profile-id)))
+  (leave-org cfg (assoc params
+                        :profile-id profile-id
+                        :user-who-delete-member profile-id
+                        :deleted-by-role "organization_member"
+                        :event-origin "dashboard")))
 
 
 (sv/defmethod ::get-leave-org-summary
@@ -446,6 +456,7 @@
 
   (when (contains? cf/flags :nitrate)
     (let [org-member-ids-before (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+          team-created-at       (:created-at (db/get-by-id cfg :team team-id {:columns [:created-at]}))
           team-with-org         (nitrate/call cfg :get-team-org {:team-id team-id})
           source-org-id         (get-in team-with-org [:organization :id])
           source-org-perms      (when source-org-id
@@ -494,7 +505,12 @@
           (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
       ;; Api call to nitrate
-      (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
+      (let [team (nitrate/call cfg :set-team-org {:team-id team-id
+                                                  :organization-id organization-id
+                                                  :is-default false
+                                                  :event-origin "dashboard:move_team_to_organization"
+                                                  :add-method "move_existing_team_to_organization"
+                                                  :team-created-at team-created-at})]
         ;; Notify connected users
         (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
 

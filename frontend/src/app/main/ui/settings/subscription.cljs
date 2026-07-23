@@ -218,7 +218,10 @@
         handle-close-dialog
         (mf/use-fn
          (fn []
-           (st/emit! (ev/event {::ev/name "close-subscription-modal"}))
+           (when (= subscription-type "unlimited")
+             (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                  ::ev/origin "subscriptions:unlimited"
+                                  :product "unlimited"})))
            (modal/hide!)))
 
         on-submit
@@ -470,6 +473,14 @@
                  href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
              (st/emit! (rt/nav-raw :href href)))))
 
+        go-to-nitrate-payments
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "settings"
+                                :section "nitrate:enterprise"}))
+           (dnt/go-to-nitrate-billing)))
+
         open-subscription-modal
         (mf/use-fn
          (mf/deps subscription-editors nitrate-license)
@@ -480,7 +491,8 @@
              (st/emit! (dnt/show-nitrate-popup
                         :nitrate-dialog
                         {:nitrate-license nitrate-license
-                         :event-origin "settings:plan-confirmation-modal"}))
+                         :event-origin "settings:plan_confirmation_modal"
+                         :subscription-start-origin "settings"}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
@@ -588,7 +600,7 @@
                                      (tr "subscription.settings.manage-your-subscription")
                                      (tr "nitrate.subscription.settings.manual-cancel"))
                          :cta-link (if (and (:licenses connectivity) (not (:manual nitrate-license)))
-                                     dnt/go-to-nitrate-billing
+                                     go-to-nitrate-payments
                                      open-cancel-contact-sales-modal)
                          :code-action (when (:manual nitrate-license) :renovate)
                          :current-plan true}]
@@ -752,12 +764,15 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [{:keys [nitrate-license show-contact-sales-option event-origin] :as connectivity}]
+  [{:keys [nitrate-license show-contact-sales-option event-origin subscription-start-origin] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         handle-close-dialog
         (mf/use-fn
          (fn []
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                ::ev/origin "nitrate:plan_confirmation_modal"
+                                :product "nitrate:enterprise"}))
            (modal/hide!)))
 
         on-subscribe-click
@@ -767,7 +782,8 @@
             "monthly"
             (rt/get-current-href)
             event-origin
-            (if nitrate-license "paid" "trial"))))]
+            (if nitrate-license "paid" "trial")
+            subscription-start-origin)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
