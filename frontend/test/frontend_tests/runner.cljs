@@ -60,6 +60,7 @@
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
+   [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
@@ -136,6 +137,7 @@
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
+   'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
