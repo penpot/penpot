@@ -701,10 +701,8 @@
                                       (tr "subscription.settings.professional.teams-editors-benefit")
                                       (tr "subscription.settings.professional.selfhost.community-support"))]
                          :cta-text (tr "subscription.settings.subscribe")
-                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate? (= subscription-type "nitrate"))
-                                     (if (and (:licenses connectivity) (not (:manual nitrate-license)))
-                                       dnt/go-to-nitrate-billing
-                                       open-cancel-contact-sales-modal)
+                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?)
+                                     #(open-contact-sales-modal subscription-type "Professional")
                                      go-to-payments)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page

@@ -64,3 +64,19 @@
                      (u/uri "https://localhost:3449/#/settings/subscriptions"))]
       (t/is (= "https://localhost:3449/#/settings/subscriptions?subscription=nitrate-checkout-error"
                (:error-callback callbacks))))))
+
+(t/deftest go-to-subscription-url-is-a-string
+  (t/testing "must be a string so licenses/billing?callback=... survives query encoding"
+    (t/is (string? dnt/go-to-subscription-url))
+    (t/is (not (u/uri? dnt/go-to-subscription-url)))))
+
+(t/deftest build-admin-console-billing-url-encodes-string-callback
+  (t/testing "billing callback query param round-trips as a real URL string"
+    (let [public-uri (u/uri "https://localhost:3449/")
+          callback   "https://localhost:3449/#/settings/subscriptions"
+          href       (dnt/build-admin-console-url
+                      public-uri
+                      "licenses/billing"
+                      {:callback callback})
+          parsed     (-> href u/uri :query u/query-string->map :callback)]
+      (t/is (= callback parsed)))))
