@@ -278,7 +278,7 @@
   (ptk/reify ::toggle-token-theme-active
     ptk/WatchEvent
     (watch [it state _]
-      (let [data          (dsh/lookup-tokens-file-data state)
+      (let [data          (dsh/lookup-tokens-source-data state)
             tokens-status (dsh/lookup-tokens-status state)
             tokens-lib    (dsh/lookup-tokens-lib state)
             changes       (-> (pcb/empty-changes it)
