@@ -502,10 +502,11 @@
         open-contact-sales-modal
         (mf/use-fn
          (mf/deps nitrate-license)
-         (fn [current-subscription subscription-type]
+         (fn [current-subscription subscription-type & [has-billing-access?]]
            (if (= current-subscription "unlimited")
              (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))
+             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type
+                                                                  :has-billing-access? has-billing-access?})))))
 
         open-cancel-contact-sales-modal
         (mf/use-fn
@@ -702,7 +703,8 @@
                                       (tr "subscription.settings.professional.selfhost.community-support"))]
                          :cta-text (tr "subscription.settings.subscribe")
                          :cta-link (if (and (contains? cf/flags :nitrate) nitrate?)
-                                     #(open-contact-sales-modal subscription-type "Professional")
+                                     #(open-contact-sales-modal subscription-type "Professional"
+                                                                (and (:licenses connectivity) (not (:manual nitrate-license))))
                                      go-to-payments)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
@@ -825,11 +827,17 @@
 (mf/defc nitrate-contact-sales-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-contact-sales-dialog}
-  [{:keys [subscription-type]}]
+  [{:keys [subscription-type has-billing-access?]}]
   (let [handle-close-dialog
         (mf/use-fn
          (fn []
-           (modal/hide!)))]
+           (modal/hide!)))
+
+        handle-continue-click
+        (mf/use-fn
+         (fn []
+           (modal/hide!)
+           (dnt/go-to-nitrate-billing)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -846,15 +854,24 @@
         [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-teams-available")]
         [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-storage-limited")]]
 
-       [:div {:class (stl/css :downgrade-warning)}
-        (tr "nitrate.contact-sales.downgrade-contact-info")]
-       [:div {:class (stl/css :action-buttons)}
-        [:> button* {:variant "secondary"
-                     :type "button"
-                     :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
-        [:> button* {:variant "primary"
-                     :type "button"
-                     :on-click #(dom/open-new-window "mailto:sales@penpot.app?subject=Switch%20to%20the%20Unlimited%20plan")} (tr "nitrate.contact-sales.button")]]]]]))
+       (if has-billing-access?
+         [:div {:class (stl/css :action-buttons)}
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :on-click handle-continue-click} (tr "labels.continue")]]
+         [:*
+          [:div {:class (stl/css :downgrade-warning)}
+           (tr "nitrate.contact-sales.downgrade-contact-info")]
+          [:div {:class (stl/css :action-buttons)}
+           [:> button* {:variant "secondary"
+                        :type "button"
+                        :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
+           [:> button* {:variant "primary"
+                        :type "button"
+                        :on-click #(dom/open-new-window (dm/str "mailto:sales@penpot.app?subject=Switch%20to%20the%20" subscription-type "%20plan"))} (tr "nitrate.contact-sales.button")]]])]]]))
 
 (mf/defc nitrate-cancel-contact-sales-dialog
   {::mf/register modal/components
