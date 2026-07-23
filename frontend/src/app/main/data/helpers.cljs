@@ -38,10 +38,11 @@
   ([state file-id]
    (dm/get-in state [:files file-id :data])))
 
+;; TODO perhaps this is not necessary, lookup-tokens-lib should be enough
 (defn lookup-tokens-source-data
   [state]
   (let [current-file-data (lookup-file-data state)
-        tokens-source-id (or (cfo/get-tokens-source current-file-data) (:id current-file-data))]
+        tokens-source-id (cfo/get-tokens-source current-file-data)]
     (lookup-file-data state tokens-source-id)))
 
 (defn lookup-tokens-lib

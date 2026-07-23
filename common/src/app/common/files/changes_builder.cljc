@@ -1091,10 +1091,10 @@
 
 (defn set-tokens-source
   [changes library-id]
-  (assert-file-data! changes)
-  (let [file-data (::file-data (meta changes))
-        file-id   (:id file-data)
-        prev-val  (:tokens-source file-data)]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        file-id      (:id library-data)
+        prev-val     (:tokens-source library-data)]
     (-> changes
         (update :redo-changes conj {:type :set-tokens-source
                                     :file-id file-id

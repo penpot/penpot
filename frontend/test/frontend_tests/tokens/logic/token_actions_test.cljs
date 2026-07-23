@@ -6,7 +6,6 @@
 
 (ns frontend-tests.tokens.logic.token-actions-test
   (:require
-   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]

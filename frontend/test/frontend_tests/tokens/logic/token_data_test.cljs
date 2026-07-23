@@ -13,6 +13,7 @@
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.undo :as dwu]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -124,3 +125,31 @@
 
            (t/testing "Set has been deleted"
              (t/is (= (count sets') 0)))))))))
+
+(t/deftest set-tokens-source
+  (t/async
+    done
+    (let [file       (setup-file-with-token-lib)
+          store      (ths/setup-store file)
+          library-id (uuid/next)]
+
+      ;; Phase 1: set tokens-source with undo watcher active
+      (tohs/run-store
+       store identity
+       [(tohs/watch-undo-stack)
+        (dwtl/set-tokens-source library-id)]
+       (fn [new-state]
+         (let [file-data' (-> (ths/get-file-from-state new-state) :data)]
+           (t/testing "tokens-source is set to the library id"
+             (t/is (= library-id (:tokens-source file-data'))))))
+       (tohs/stop-on ::dwtl/set-tokens-source))
+
+      ;; Phase 2: undo and verify restoration
+      (tohs/run-store
+       store done
+       [dwu/undo]
+       (fn [undone-state]
+         (let [file-data'' (-> (ths/get-file-from-state undone-state) :data)]
+           (t/testing "tokens-source is restored to nil"
+             (t/is (nil? (:tokens-source file-data''))))))
+       (tohs/stop-on ::dwu/undo)))))
