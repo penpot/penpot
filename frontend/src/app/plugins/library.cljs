@@ -1043,7 +1043,12 @@
               ids (into #{} (map #(obj/get % "$id")) shapes)]
           (st/emit! (-> (dwl/add-component id-ref ids)
                         (se/add-event plugin-id)))
-          (lib-component-proxy plugin-id file-id @id-ref))))
+          ;; add-component only sets id-ref when it actually creates a
+          ;; component; an empty selection or shapes that can't form one
+          ;; leave it nil, so reject instead of returning a broken proxy.
+          (if-let [id @id-ref]
+            (lib-component-proxy plugin-id file-id id)
+            (u/not-valid plugin-id :createComponent "Cannot create a component from the given shapes")))))
 
     ;; Plugin data
     :getPluginData

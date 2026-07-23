@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@playwright/mcp':
+        specifier: ^0.0.76
+        version: 0.0.76
+      '@playwright/test':
+        specifier: ^1.61.1
+        version: 1.61.1
       '@types/node':
         specifier: ^26.0.1
         version: 26.0.1
@@ -20,9 +26,9 @@ importers:
       nrepl-client:
         specifier: ^0.3.0
         version: 0.3.0
-      opencode-ai:
-        specifier: ^1.17.11
-        version: 1.17.11
+      playwright:
+        specifier: ^1.61.1
+        version: 1.61.1
 
 packages:
 
@@ -187,6 +193,16 @@ packages:
 
   '@kwsites/promise-deferred@1.1.1':
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
+
+  '@playwright/mcp@0.0.76':
+    resolution: {integrity: sha512-ICcW6wAV+HoNEco19eni+JTVylCIIedruWkrRl2Rsv/qcGhBZLT/c0I1VounjIjSVSupw3pHmcr3CNCikTHTBQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  '@playwright/test@1.61.1':
+    resolution: {integrity: sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@simple-git/args-pathspec@1.0.3':
     resolution: {integrity: sha512-ngJMaHlsWDTfjyq9F3VIQ8b7NXbBLq5j9i5bJ6XLYtD6qlDXT7fdKY2KscWWUF8t18xx052Y/PUO1K1TRc9yKA==}
@@ -364,6 +380,11 @@ packages:
   fresh@2.0.0:
     resolution: {integrity: sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A==}
     engines: {node: '>= 0.8'}
+
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
@@ -545,75 +566,6 @@ packages:
     resolution: {integrity: sha512-smsWv2LzFjP03xmvFoJ331ss6h+jixfA4UUV/Bsiyuu4YJPfN+FIQGOIiv4w9/+MoHkfkJ22UIaQWRVFRfH6Vw==}
     engines: {node: '>=20'}
 
-  opencode-ai@1.17.11:
-    resolution: {integrity: sha512-a4331YhfsIiDSve0YRP2eNdlY1iDqhzw979Ky66XWiKDA8jeykfsqGUDAmKYKjS3hLV8U8+krFBuMFVO7p5ptQ==}
-    cpu: [arm64, x64]
-    os: [darwin, linux, win32]
-    hasBin: true
-
-  opencode-darwin-arm64@1.17.11:
-    resolution: {integrity: sha512-WpBokL8RL8BvdPKzJhQlLbVigz4jT0uESDWgwLcsU2JAP8hOWc/bMgzf87C7VtJlcjUY9ao60UzbPlsUffb/0g==}
-    cpu: [arm64]
-    os: [darwin]
-
-  opencode-darwin-x64-baseline@1.17.11:
-    resolution: {integrity: sha512-hay37M7ALa4/4RrtJDggnOOCL226+cgQQQ0KiBFWNMDhygtwBszQnZmNxWxZtoRNIr3sIIS8JNsuBfhG4OwXYg==}
-    cpu: [x64]
-    os: [darwin]
-
-  opencode-darwin-x64@1.17.11:
-    resolution: {integrity: sha512-ZxQzLT92FT96Y8ahpHZiejD+m7vQYhAfskfzMwc0baDjkctEXy6UkZT5gY5jTDl+Bb74xgmKYJK6Lz20luhOXA==}
-    cpu: [x64]
-    os: [darwin]
-
-  opencode-linux-arm64-musl@1.17.11:
-    resolution: {integrity: sha512-haM+NZ/CC14VdHSi81pRlYDbLvu3sXAQF8HH1t7yi0YpH3wLibq0Ms8prM0809Sza+30pyUIxH6aoYghnr2Juw==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [musl]
-
-  opencode-linux-arm64@1.17.11:
-    resolution: {integrity: sha512-CN3LSlqSrC1LbYHXZs21B8hIB951ebCRowwC+p4SDwPPUKknRzGYi5V7FjXAp8xq5hx27/QGgmGjfauv6RbAiA==}
-    cpu: [arm64]
-    os: [linux]
-
-  opencode-linux-x64-baseline-musl@1.17.11:
-    resolution: {integrity: sha512-AR3soQ1kYquD+QHaNDcWhHxd6lT8yUZJ2jsnls+7oOTisQWUspi5TpFD5FL4Et1MMtoJx63CAySDTzUpRXUO9Q==}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  opencode-linux-x64-baseline@1.17.11:
-    resolution: {integrity: sha512-y0sibv7zg0KDLD7hdMCLe4+YYP6t5PQmqTV88KR7jWIU7qvl1hyuIAI84QLCt+7DACpNsFsUfofu6Hib051jZw==}
-    cpu: [x64]
-    os: [linux]
-
-  opencode-linux-x64-musl@1.17.11:
-    resolution: {integrity: sha512-cl2SMRa1c6dJMxvs5BQMy7Q2LVBwGXbLHpjc0OaeMkdORwdBfwCXfW1GNA61pNR4mMHMKrbFEV6dETqCDuIaWQ==}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  opencode-linux-x64@1.17.11:
-    resolution: {integrity: sha512-at2oODO6N4yMTlvtKOFECVDvj4Nz3iFygmSKyoVdokgpMhYt6l9ta63pEp1jAaTxLpjQGbCzpRYbY/QqRAeB9Q==}
-    cpu: [x64]
-    os: [linux]
-
-  opencode-windows-arm64@1.17.11:
-    resolution: {integrity: sha512-pWOT/Ml4e3S12BQTmw8i+CsQ7QF0kI6Z//9z/N60gLW1U5afVYQpHkT1pT5RVjysPVHP8G4TN7Rbyi8m+fapCQ==}
-    cpu: [arm64]
-    os: [win32]
-
-  opencode-windows-x64-baseline@1.17.11:
-    resolution: {integrity: sha512-RkJX3S77bzFZOHyQsqBqkI567hGHiTGU2TTIkBphYvRNxCQy+ZDjn3QAh+h7zyCHfieeWRKA96kl9ycKaJGO4A==}
-    cpu: [x64]
-    os: [win32]
-
-  opencode-windows-x64@1.17.11:
-    resolution: {integrity: sha512-4ON++fPbRVhLpYvy6j0RolFstU1OncbqZ4FLFeAkC4L6CNO06kHEwmwRfEVcGo+zFpug/ljdW2T0W+sYBw20SA==}
-    cpu: [x64]
-    os: [win32]
-
   parseurl@1.3.3:
     resolution: {integrity: sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==}
     engines: {node: '>= 0.8'}
@@ -634,6 +586,26 @@ packages:
 
   plantuml@0.0.2:
     resolution: {integrity: sha512-3YzQJUO1Yg+mDckTm3Ht5Q8bmtN8g3M9LD8fXqiqHDW3vzUpHrUe9lxVY6AT1I50w7FdOned0hhJno4JBIku2g==}
+
+  playwright-core@1.61.0-alpha-1781023400000:
+    resolution: {integrity: sha512-UdtUd9qnCO0zvb8p3OvOZpelY6mA40mTb3NmWGuMtrD+hqqWuorWCPlSGwj7jw/LEB9AxvYLHTL1CJi2flvksg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright-core@1.61.1:
+    resolution: {integrity: sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.61.0-alpha-1781023400000:
+    resolution: {integrity: sha512-8TRUG3IvwaAhuVm6k3C5vB7CwC5Fxq76DCCxOgPr6r1dpTedDwxlmdOBUkSZ0zxfxP14jcuPxi86/Trq4eA03w==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.61.1:
+    resolution: {integrity: sha512-DWnY5o3YbLWK4GovuAVwpqL+1VwGNdUGrRr++8j8PtQQzvAVZUIMjKQ90fY689sEJZJBbZVw1rXaOKSTitkzPQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   powershell-utils@0.1.0:
     resolution: {integrity: sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A==}
@@ -864,6 +836,15 @@ snapshots:
 
   '@kwsites/promise-deferred@1.1.1': {}
 
+  '@playwright/mcp@0.0.76':
+    dependencies:
+      playwright: 1.61.0-alpha-1781023400000
+      playwright-core: 1.61.0-alpha-1781023400000
+
+  '@playwright/test@1.61.1':
+    dependencies:
+      playwright: 1.61.1
+
   '@simple-git/args-pathspec@1.0.3': {}
 
   '@simple-git/argv-parser@1.1.1':
@@ -1079,6 +1060,9 @@ snapshots:
 
   fresh@2.0.0: {}
 
+  fsevents@2.3.2:
+    optional: true
+
   function-bind@1.1.2: {}
 
   get-intrinsic@1.3.0:
@@ -1263,57 +1247,6 @@ snapshots:
       powershell-utils: 0.1.0
       wsl-utils: 0.3.1
 
-  opencode-ai@1.17.11:
-    optionalDependencies:
-      opencode-darwin-arm64: 1.17.11
-      opencode-darwin-x64: 1.17.11
-      opencode-darwin-x64-baseline: 1.17.11
-      opencode-linux-arm64: 1.17.11
-      opencode-linux-arm64-musl: 1.17.11
-      opencode-linux-x64: 1.17.11
-      opencode-linux-x64-baseline: 1.17.11
-      opencode-linux-x64-baseline-musl: 1.17.11
-      opencode-linux-x64-musl: 1.17.11
-      opencode-windows-arm64: 1.17.11
-      opencode-windows-x64: 1.17.11
-      opencode-windows-x64-baseline: 1.17.11
-
-  opencode-darwin-arm64@1.17.11:
-    optional: true
-
-  opencode-darwin-x64-baseline@1.17.11:
-    optional: true
-
-  opencode-darwin-x64@1.17.11:
-    optional: true
-
-  opencode-linux-arm64-musl@1.17.11:
-    optional: true
-
-  opencode-linux-arm64@1.17.11:
-    optional: true
-
-  opencode-linux-x64-baseline-musl@1.17.11:
-    optional: true
-
-  opencode-linux-x64-baseline@1.17.11:
-    optional: true
-
-  opencode-linux-x64-musl@1.17.11:
-    optional: true
-
-  opencode-linux-x64@1.17.11:
-    optional: true
-
-  opencode-windows-arm64@1.17.11:
-    optional: true
-
-  opencode-windows-x64-baseline@1.17.11:
-    optional: true
-
-  opencode-windows-x64@1.17.11:
-    optional: true
-
   parseurl@1.3.3: {}
 
   path-key@3.1.1: {}
@@ -1331,6 +1264,22 @@ snapshots:
     dependencies:
       execa: 4.1.0
       get-stream: 5.2.0
+
+  playwright-core@1.61.0-alpha-1781023400000: {}
+
+  playwright-core@1.61.1: {}
+
+  playwright@1.61.0-alpha-1781023400000:
+    dependencies:
+      playwright-core: 1.61.0-alpha-1781023400000
+    optionalDependencies:
+      fsevents: 2.3.2
+
+  playwright@1.61.1:
+    dependencies:
+      playwright-core: 1.61.1
+    optionalDependencies:
+      fsevents: 2.3.2
 
   powershell-utils@0.1.0: {}
 

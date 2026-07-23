@@ -20,6 +20,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
@@ -45,6 +46,7 @@
   {:id            (:id profile)
    :name          (:fullname profile)
    :email         (:email profile)
+   :created-at    (:created-at profile)
    :photo-url     (files/resolve-public-uri (get profile :photo-id))})
 
 ;; ---- API: authenticate
@@ -782,38 +784,42 @@ RETURNING id, deleted_at;")
   [:map {:title "NitrateAuditEvent"}
    [:name [:and [:string {:max 250}]
            [:re #"[\d\w-]{1,50}"]]]
+   [:type {:optional true} ::sm/text]
    [:profile-id ::sm/uuid]
-   [:props {:optional true} [:map-of :keyword :any]]])
+   [:props {:optional true} [:map-of :keyword :any]]
+   [:context {:optional true} [:map-of :keyword :any]]])
 
 (def ^:private schema:push-audit-events-params
   [:map {:title "PushAuditEventsParams"}
    [:events [:vector schema:nitrate-audit-event]]])
 
-(defn- submit-nitrate-audit-event
-  [cfg {:keys [name profile-id props]}]
-  (let [now (ct/now)]
-    (audit/submit* cfg {:type "action"
-                        :name name
-                        :profile-id profile-id
-                        :props (or props {})
-                        :context {}
-                        :tracked-at now
-                        :created-at now
-                        :source "nitrate"
-                        :ip-addr "0.0.0.0"})))
-
 (sv/defmethod ::push-audit-events
-  "Push audit events from Nitrate to Penpot audit log"
+  "Push audit events from nitrate (strictly for nitrate backend
+  events)"
+
   {::doc/added "2.19"
+   ::audit/skip true
    ::sm/params schema:push-audit-events-params
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [events]}]
-  (let [telemetry? (contains? cf/flags :telemetry)
-        audit-log? (contains? cf/flags :audit-log)
-        enabled?   (and (not (db/read-only? pool))
-                        (or audit-log? telemetry?))]
-    (when (and enabled? (seq events))
-      (run! (partial submit-nitrate-audit-event cfg) events))
+  [cfg {:keys [::rpc/request-at events] :as params}]
+  (let [request  (-> params meta ::http/request)
+        context' (-> (audit/prepare-context-from-request request)
+                     (assoc :request-id (::rpc/request-id params)))
+
+        ip-addr  (::rpc/ip-addr params)]
+
+    (run! (fn [{:keys [type name profile-id props context] :as event}]
+            (let [context (-> (merge context context')
+                              (d/without-nils))]
+              (audit/submit cfg {:type (d/nilv type "action")
+                                 :name name
+                                 :profile-id profile-id
+                                 :props (or props {})
+                                 :context context
+                                 :tracked-at request-at
+                                 :ip-addr ip-addr})))
+          events)
+
     nil))
 
 
@@ -825,11 +831,21 @@ RETURNING id, deleted_at;")
      t.name,
      t.photo_id,
      t.created_at,
-      (SELECT MAX(p2.modified_at)
-         FROM project AS p2
-        WHERE p2.team_id = t.id
-          AND p2.deleted_at IS NULL
-          AND p2.is_default IS FALSE) AS last_activity_at,
+       (SELECT MAX(activity.modified_at)
+          FROM (
+            SELECT p2.modified_at
+              FROM project AS p2
+             WHERE p2.team_id = t.id
+               AND p2.deleted_at IS NULL
+               AND p2.is_default IS FALSE
+            UNION ALL
+            SELECT f.modified_at
+              FROM file AS f
+              JOIN project AS p ON p.id = f.project_id
+             WHERE p.team_id = t.id
+               AND p.deleted_at IS NULL
+               AND f.deleted_at IS NULL
+          ) AS activity) AS last_activity_at,
      owner_tpr.profile_id AS owner_profile_id,
      owner_p.fullname AS owner_name,
      owner_p.photo_id AS owner_photo_id,
@@ -964,12 +980,19 @@ RETURNING id, deleted_at;")
    created users skip email verification and onboarding. Emails that already
    belong to an existing profile are skipped. Intended for the Nitrate admin
    bulk-creation screen; access is gated by the shared key and, in Nitrate, an
-   email allow-list."
+   email allow-list. Requires the `nitrate-bulk-create-profiles` flag, disabled
+   by default so it is only available on test environments."
   {::doc/added "2.19"
    ::sm/params schema:bulk-create-profiles-params
    ::sm/result schema:bulk-create-profiles-result
    ::rpc/auth false}
   [cfg {:keys [password emails]}]
+
+  (when-not (contains? cf/flags :nitrate-bulk-create-profiles)
+    (ex/raise :type :restriction
+              :code :nitrate-bulk-create-profiles-not-allowed
+              :hint "Bulk profile creation is disabled by config."))
+
   (let [derived (aauth/derive-password password)]
     (db/tx-run!
      cfg

@@ -495,6 +495,14 @@ msgstr "Cuando un miembro del equipo cree algún archivo, este aparecerá aquí.
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Aún no hay archivos."
 
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Vista de cuadrícula"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "Vista de lista"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:117
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
@@ -869,7 +877,7 @@ msgstr "Mover a otro equipo"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
-msgstr "Mis equipos"
+msgstr "Mis Equipos"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1087,6 +1095,9 @@ msgstr "Buscando “%s“…"
 #: src/app/main/ui/dashboard/sidebar.cljs:354
 msgid "dashboard.section.organizations"
 msgstr "Organizaciones"
+
+msgid "dashboard.section.teams"
+msgstr "Equipos"
 
 #, unused
 msgid "dashboard.select-org-modal.accept"
@@ -3802,6 +3813,14 @@ msgstr "¿Seguro que quieres borrar esta página?"
 msgid "modals.delete-page.title"
 msgstr "Borrar página"
 
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "¿Seguro que quieres borrar las páginas seleccionadas?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Borrar páginas"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
 msgstr "Eliminar proyecto"
@@ -6309,6 +6328,10 @@ msgstr ""
 msgid "workspace.assets.delete"
 msgstr "Borrar"
 
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Borrar páginas"
+
 #: src/app/main/ui/workspace/context_menu.cljs:721, src/app/main/ui/workspace/sidebar/assets/colors.cljs:262, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:471, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:537
 msgid "workspace.assets.duplicate"
 msgstr "Duplicar"
@@ -8159,6 +8182,30 @@ msgstr "Color del trazo"
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:268, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:291
 msgid "workspace.options.stroke-width"
 msgstr "Ancho del trazo"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-top"
+msgstr "Superior (block start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-right"
+msgstr "Derecha (inline end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-bottom"
+msgstr "Inferior (block end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-left"
+msgstr "Izquierda (inline start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side"
+msgstr "Trazo Por Lado"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side-disabled"
+msgstr "Strokes per side feature is only available in the new render. Switch render to use it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:209
 msgid "workspace.options.stroke.add-stroke"

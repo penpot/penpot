@@ -30,7 +30,11 @@
         on-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-ac-url)))
+           (dnt/go-to-buy-nitrate-license
+            "monthly"
+            dnt/go-to-ac-url
+            "dashboard:plan-confirmation-modal"
+            (if (:subscription profile) "paid" "trial"))))
 
         on-activate-click
         (mf/use-fn
@@ -44,8 +48,10 @@
                   :size "m"}]]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
-        ;; TODO this svg is a placeholder. Use the proper one when created
-        [:> raw-svg* {:id "nitrate-welcome"}]]
+        [:> raw-svg* {:id "nitrate-welcome-light"
+                      :class (stl/css :welcome-illustration-light)}]
+        [:> raw-svg* {:id "nitrate-welcome"
+                      :class (stl/css :welcome-illustration-dark)}]]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
@@ -101,5 +107,3 @@
              [:a {:class (stl/css :link)
                   :on-click on-activate-click}
               (tr "nitrate.form.enter-code")]]]])]]]]))
-
-

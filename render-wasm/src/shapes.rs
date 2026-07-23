@@ -679,18 +679,25 @@ impl Shape {
     pub fn visible_strokes(&self) -> impl DoubleEndedIterator<Item = &Stroke> {
         self.strokes
             .iter()
-            .filter(|stroke| stroke.width > MIN_STROKE_WIDTH)
+            .filter(|stroke| stroke.max_width() > MIN_STROKE_WIDTH)
     }
 
     pub fn has_visible_strokes(&self) -> bool {
         self.strokes
             .iter()
-            .any(|stroke| stroke.width > MIN_STROKE_WIDTH)
+            .any(|stroke| stroke.max_width() > MIN_STROKE_WIDTH)
     }
 
     pub fn add_stroke(&mut self, s: Stroke) {
         self.invalidate_extrect();
         self.strokes.push(s)
+    }
+
+    pub fn set_last_stroke_widths(&mut self, widths: [f32; 4]) -> Result<(), String> {
+        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
+        stroke.widths = Some(widths);
+        self.invalidate_extrect();
+        Ok(())
     }
 
     pub fn set_stroke_fill(&mut self, f: Fill) -> Result<(), String> {
@@ -1287,6 +1294,15 @@ impl Shape {
                 }
                 BlurType::BackgroundBlur => None,
             })
+    }
+
+    /// Font families used by this shape (the text spans' families), or an
+    /// empty vec for non-text shapes.
+    pub fn font_families(&self) -> Vec<FontFamily> {
+        match &self.shape_type {
+            Type::Text(content) => content.font_families(),
+            _ => Vec::new(),
+        }
     }
 
     #[allow(dead_code)]

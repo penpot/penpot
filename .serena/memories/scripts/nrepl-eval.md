@@ -1,7 +1,7 @@
 # nREPL Eval
 
 Evaluate Clojure (or ClojureScript) code via a running nREPL server using
-`tools/nrepl-eval.mjs` — a standalone CLI application.
+`scripts/nrepl-eval.mjs` — a standalone CLI application.
 
 Session state (defs, in-ns, etc.) persists across invocations via a stored
 session ID, so you can build up state incrementally.
@@ -9,9 +9,9 @@ session ID, so you can build up state incrementally.
 ## Usage
 
 ```bash
-node tools/nrepl-eval.mjs [options] [<code>]
+node scripts/nrepl-eval.mjs [options] [<code>]
 # or
-./tools/nrepl-eval.mjs [options] [<code>]
+./scripts/nrepl-eval.mjs [options] [<code>]
 ```
 
 ## Options
@@ -47,37 +47,37 @@ Sessions are persisted to `/tmp/penpot-nrepl-session-<host>-<port>`. State
 carries across calls automatically:
 
 ```bash
-./tools/nrepl-eval.mjs '(def x 42)'
-./tools/nrepl-eval.mjs 'x'
+./scripts/nrepl-eval.mjs '(def x 42)'
+./scripts/nrepl-eval.mjs 'x'
 # => 42
 ```
 
 Reset the session to start fresh:
 
 ```bash
-./tools/nrepl-eval.mjs --reset-session '(def x 0)'
+./scripts/nrepl-eval.mjs --reset-session '(def x 0)'
 ```
 
 ### Evaluate code
 
 **Single expression (inline) — uses default port 6064:**
 ```bash
-./tools/nrepl-eval.mjs '(+ 1 2 3)'
+./scripts/nrepl-eval.mjs '(+ 1 2 3)'
 ```
 
 **Backend nREPL (explicit):**
 ```bash
-./tools/nrepl-eval.mjs --backend '(+ 1 2 3)'
+./scripts/nrepl-eval.mjs --backend '(+ 1 2 3)'
 ```
 
 **Frontend nREPL:**
 ```bash
-./tools/nrepl-eval.mjs --frontend '(js/alert "hi")'
+./scripts/nrepl-eval.mjs --frontend '(js/alert "hi")'
 ```
 
 **Multiple expressions via heredoc (recommended — avoids escaping issues):**
 ```bash
-./tools/nrepl-eval.mjs <<'EOF'
+./scripts/nrepl-eval.mjs <<'EOF'
 (def x 10)
 (+ x 20)
 EOF
@@ -85,7 +85,7 @@ EOF
 
 **Override with a different port:**
 ```bash
-./tools/nrepl-eval.mjs -p 7888 '(+ 1 2 3)'
+./scripts/nrepl-eval.mjs -p 7888 '(+ 1 2 3)'
 ```
 
 ### Inspect last exception
@@ -93,25 +93,47 @@ EOF
 After code throws an error, retrieve the full exception details:
 
 ```bash
-./tools/nrepl-eval.mjs -e
+./scripts/nrepl-eval.mjs -e
 ```
 
 ## Common Patterns
 
 **Require a namespace with reload:**
 ```bash
-./tools/nrepl-eval.mjs "(require '[my.namespace :as ns] :reload)"
+./scripts/nrepl-eval.mjs "(require '[my.namespace :as ns] :reload)"
 ```
 
 **Test a function:**
 ```bash
-./tools/nrepl-eval.mjs "(ns/my-function arg1 arg2)"
+./scripts/nrepl-eval.mjs "(ns/my-function arg1 arg2)"
 ```
 
 **Long-running operation with custom timeout:**
 ```bash
-./tools/nrepl-eval.mjs -t 300000 "(long-running-fn)"
+./scripts/nrepl-eval.mjs -t 300000 "(long-running-fn)"
 ```
+
+### Accessing Private Functions
+
+Private functions (declared with `^:private` or `defn-`) cannot be called 
+directly from outside their namespace. Use the var quote syntax `#'` to 
+access the underlying var:
+
+**This fails:**
+```bash
+./scripts/nrepl-eval.mjs "(app.rpc.commands.error-reports/build-list-query {})"
+# => Syntax error: app.rpc.commands.error-reports/build-list-query is not public
+```
+
+**This works:**
+```bash
+./scripts/nrepl-eval.mjs "(#'app.rpc.commands.error-reports/build-list-query {})"
+# => Returns the result
+```
+
+The `#'` reader macro resolves to `(var ...)`, giving you direct access to 
+the var regardless of its visibility modifier. The syntax is `#'` followed 
+by the fully qualified symbol.
 
 ## Key Principles
 

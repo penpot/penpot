@@ -9,20 +9,20 @@ Subcommands:
   prs      Fetch details for one or more PRs (by number or milestone)
 
 Usage:
-  python3 tools/gh.py issues <milestone-title>            (default: state=closed)
-  python3 tools/gh.py issues "2.16.0" --state all
-  python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
-  python3 tools/gh.py issues "2.16.0" --label "bug"       (include only issues with label)
-  python3 tools/gh.py issues "2.16.0" --label "bug,regression" --exclude "no changelog"
-  python3 tools/gh.py issues "2.16.0" --compare CHANGES.md
-  python3 tools/gh.py issues none                         (issues with no milestone)
-  python3 tools/gh.py issues none --label "enhancement"
-  python3 tools/gh.py issues none --state open
-  python3 tools/gh.py prs 9179 9204 9311
-  python3 tools/gh.py prs --file prs.txt
-  cat prs.txt | python3 tools/gh.py prs --stdin
-  python3 tools/gh.py prs --milestone "2.16.0"            (default: state=merged)
-  python3 tools/gh.py prs --milestone "2.16.0" --state all
+  python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
+  python3 scripts/gh.py issues "2.16.0" --state all
+  python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+  python3 scripts/gh.py issues "2.16.0" --label "bug"       (include only issues with label)
+  python3 scripts/gh.py issues "2.16.0" --label "bug,regression" --exclude "no changelog"
+  python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
+  python3 scripts/gh.py issues none                         (issues with no milestone)
+  python3 scripts/gh.py issues none --label "enhancement"
+  python3 scripts/gh.py issues none --state open
+  python3 scripts/gh.py prs 9179 9204 9311
+  python3 scripts/gh.py prs --file prs.txt
+  cat prs.txt | python3 scripts/gh.py prs --stdin
+  python3 scripts/gh.py prs --milestone "2.16.0"            (default: state=merged)
+  python3 scripts/gh.py prs --milestone "2.16.0" --state all
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)

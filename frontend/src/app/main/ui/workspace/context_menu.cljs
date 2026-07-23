@@ -454,8 +454,7 @@
                         :on-click do-transform-to-path}])
 
      (when (and has-strokes?
-                (features/active-feature? @st/state "render-wasm/v1")
-                (contains? cf/flags :stroke-path))
+                (features/active-feature? @st/state "render-wasm/v1"))
        [:> menu-entry* {:title (tr "workspace.shape.menu.stroke-to-path")
                         :on-click do-strokes-to-path}])
 
@@ -705,6 +704,8 @@
   [{:keys [mdata]}]
   (let [page (:page mdata)
         deletable? (:deletable? mdata)
+        selected-pages (:selected-pages mdata)
+        multi? (> (count selected-pages) 1)
         id (:id page)
         delete-fn #(st/emit! (dw/delete-page id))
         do-delete #(st/emit! (modal/show
@@ -712,20 +713,31 @@
                                :title (tr "modals.delete-page.title")
                                :message (tr "modals.delete-page.body")
                                :on-accept delete-fn}))
+        delete-many-fn #(st/emit! (dw/delete-pages selected-pages))
+        do-delete-many #(st/emit! (modal/show
+                                   {:type :confirm
+                                    :title (tr "modals.delete-pages.title")
+                                    :message (tr "modals.delete-pages.body")
+                                    :on-accept delete-many-fn}))
         do-duplicate #(st/emit!
                        (dw/duplicate-page id)
                        (ev/event {::ev/name "duplicate-page"}))
         do-rename #(st/emit! (dw/start-rename-page-item id))]
 
-    [:*
-     (when deletable?
-       [:> menu-entry* {:title (tr "workspace.assets.delete")
-                        :on-click do-delete}])
+    (if multi?
+      ;; When several pages are selected, the only available action is
+      ;; deleting all of them at once.
+      [:> menu-entry* {:title (tr "workspace.assets.delete-pages")
+                       :on-click do-delete-many}]
+      [:*
+       (when deletable?
+         [:> menu-entry* {:title (tr "workspace.assets.delete")
+                          :on-click do-delete}])
 
-     [:> menu-entry* {:title (tr "workspace.assets.rename")
-                      :on-click do-rename}]
-     [:> menu-entry* {:title (tr "workspace.assets.duplicate")
-                      :on-click do-duplicate}]]))
+       [:> menu-entry* {:title (tr "workspace.assets.rename")
+                        :on-click do-rename}]
+       [:> menu-entry* {:title (tr "workspace.assets.duplicate")
+                        :on-click do-duplicate}]])))
 
 (mf/defc viewport-context-menu*
   []
