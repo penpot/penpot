@@ -214,11 +214,30 @@ function formatGetTable(data) {
   lines.push(`Version:         ${data.version || "(none)"}`);
   lines.push(`Hint:            ${data.hint || "(none)"}`);
   lines.push(`HREF:            ${data.href || "(none)"}`);
+
+  if (data.context) {
+    lines.push(`--- Context ---`);
+    const indented = data.context.split("\n").map(line => `  ${line}`).join("\n");
+    lines.push(indented);
+  }
+
+  if (data.params && data.params !== "{}") {
+    lines.push(`--- Params ---`);
+    const indented = data.params.split("\n").map(line => `  ${line}`).join("\n");
+    lines.push(indented);
+  }
+
+  if (data.props && data.props !== "{}") {
+    lines.push(`--- Props ---`);
+    const indented = data.props.split("\n").map(line => `  ${line}`).join("\n");
+    lines.push(indented);
+  }
+
+  const body = data.trace || data.report;
   lines.push(`--- Report ---`);
-  
-  if (data.report) {
-    const indentedReport = data.report.split("\n").map(line => `  ${line}`).join("\n");
-    lines.push(indentedReport);
+  if (body) {
+    const indented = body.split("\n").map(line => `  ${line}`).join("\n");
+    lines.push(indented);
   } else {
     lines.push("  (none)");
   }
