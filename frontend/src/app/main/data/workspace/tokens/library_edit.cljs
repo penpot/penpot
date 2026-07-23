@@ -420,6 +420,17 @@
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
+(defn set-tokens-source
+  [library-id]
+  (ptk/reify ::set-tokens-source
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/set-tokens-source library-id))]
+        (rx/of (dch/commit-changes changes))))))
+
 (defn delete-token-set
   [id]
   (ptk/reify ::delete-token-set
