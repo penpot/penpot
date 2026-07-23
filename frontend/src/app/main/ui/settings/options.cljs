@@ -7,6 +7,7 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
@@ -30,6 +31,10 @@
   [:map {:title "OptionsForm"}
    [:lang {:optional true} [:string {:max 20}]]
    [:theme {:optional true} [:string {:max 250}]]])
+
+(def ^:private schema:ui-scale-form
+  [:map {:title "UiScaleForm"}
+   [:ui-scale [::sm/one-of #{:compact :comfortable}]]])
 
 (defn- on-success
   [_]
@@ -115,10 +120,46 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
+(mf/defc ui-scale-settings*
+  [{:keys [ui-scale]}]
+  (let [initial (mf/with-memo [ui-scale]
+                  {:ui-scale (if (= ui-scale refs/ui-scale-comfortable)
+                               "comfortable"
+                               "compact")})
+
+        ;; The form only holds the radio group state: there is no submit step,
+        ;; the change is applied (and persisted) as soon as an option is picked.
+        form    (fm/use-form :schema schema:ui-scale-form
+                             :initial initial)
+
+        handle-scale-change
+        (mf/use-fn
+         (fn [_ value]
+           (let [scale (if (= value "comfortable")
+                         refs/ui-scale-comfortable
+                         refs/ui-scale-compact)]
+             (st/emit! (ev/event {::ev/name "change-ui-scale"
+                                  ::ev/origin "settings"
+                                  :scale scale})
+                       (du/update-profile-props {:ui-scale scale})
+                       (ntf/success (tr "dashboard.ui-scale.updated"))))))]
+    [:section {:class (stl/css :ui-scale-container)}
+     [:header {:class (stl/css :ui-scale-header)}
+      [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.ui-scale.title")]]
+     [:> text* {:class (stl/css :description) :typography t/body-medium} (tr "dashboard.ui-scale.description")]
+     [:& fm/radio-buttons
+      {:options [{:label (tr "dashboard.ui-scale.compact") :value "compact"}
+                 {:label (tr "dashboard.ui-scale.comfortable") :value "comfortable"}]
+       :name :ui-scale
+       :form form
+       :on-change handle-scale-change
+       :class (stl/css :ui-scale-radio-btns)}]]))
+
 (mf/defc options-page*
   []
-  (let [profile (mf/deref refs/profile)
-        renderer (or (-> profile :props :renderer) :svg)]
+  (let [profile  (mf/deref refs/profile)
+        renderer (or (-> profile :props :renderer) :svg)
+        ui-scale (or (-> profile :props :ui-scale) 1.0)]
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 
@@ -128,4 +169,6 @@
        [:h2 (tr "labels.settings")]
        [:> options-form*]]
       (when (contains? cf/flags :render-switch)
-        [:> webgl-settings* {:renderer renderer}])]]))
+        [:> webgl-settings* {:renderer renderer}])
+      (when (contains? cf/flags :ui-scale)
+        [:> ui-scale-settings* {:ui-scale ui-scale}])]]))

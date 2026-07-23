@@ -1339,6 +1339,26 @@ msgstr "No limits on creativity"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
+#: src/app/main/ui/settings/options.cljs:148
+msgid "dashboard.ui-scale.comfortable"
+msgstr "Comfortable"
+
+#: src/app/main/ui/settings/options.cljs:147
+msgid "dashboard.ui-scale.compact"
+msgstr "Compact (default)"
+
+#: src/app/main/ui/settings/options.cljs:145
+msgid "dashboard.ui-scale.description"
+msgstr "Scale the Penpot interface. This does not affect the workspace canvas."
+
+#: src/app/main/ui/settings/options.cljs:144
+msgid "dashboard.ui-scale.title"
+msgstr "UI scale"
+
+#: src/app/main/ui/settings/options.cljs:141
+msgid "dashboard.ui-scale.updated"
+msgstr "UI scale was updated"
+
 #, unused
 msgid "dashboard.user-no-longer-belong-org"
 msgstr "You are no longer a member of the organization %s"
@@ -6920,6 +6940,14 @@ msgstr "Switch to light theme"
 #: src/app/main/ui/workspace/main_menu.cljs:324
 msgid "workspace.header.menu.toggle-system-theme"
 msgstr "Switch to system theme"
+
+#: src/app/main/ui/workspace/main_menu.cljs:342
+msgid "workspace.header.menu.ui-scale-comfortable"
+msgstr "Switch to comfortable UI scale"
+
+#: src/app/main/ui/workspace/main_menu.cljs:341
+msgid "workspace.header.menu.ui-scale-compact"
+msgstr "Switch to compact UI scale"
 
 #: src/app/main/ui/workspace/main_menu.cljs:548
 msgid "workspace.header.menu.undo"

@@ -91,35 +91,44 @@
            (reset! search-term* "")
            (reset! search-open* false)))
 
-        offset-step  (cond
-                       (<= size 64) 40
-                       (<= size 80) 72
-                       :else 72)
+        ;; Everything below is expressed in real (rendered) pixels: the swatch
+        ;; sizes and the horizontal paging math are all multiplied by `ui-scale`
+        ;; so they stay coupled with the (measured, already-scaled) `width`.
+        ui-scale     (mf/deref refs/ui-scale)
+
+        offset-step  (* ui-scale
+                        (cond
+                          (<= size 64) 40
+                          (<= size 80) 72
+                          :else 72))
         ;; Reserve room for the search bar, icon button, or nothing
         search-width   (cond (not has-colors?) 0
                              search-open? 192
                              :else 32)
-        buttons-size (cond
-                       (<= size 64) (+ 164 search-width)
-                       :else (+ 132 search-width))
+        buttons-size (* ui-scale
+                        (cond
+                          (<= size 64) (+ 164 search-width)
+                          :else (+ 132 search-width)))
         width          (- width buttons-size)
         visible        (int (/ width offset-step))
         show-arrows?   (> (count filtered-colors) visible)
         visible        (if show-arrows?
-                         (int (/ (- width 48) offset-step))
+                         (int (/ (- width (* ui-scale 48)) offset-step))
                          visible)
         offset         (:offset @state 0)
         max-offset     (- (count filtered-colors)
                           visible)
         container      (mf/use-ref nil)
-        bullet-size  (cond
-                       (<= size 64) "32"
-                       (<= size 72) "28"
-                       (<= size 80) "32"
-                       :else "32")
-        color-cell-width (cond
-                           (<= size 64) 32
-                           :else 64)
+        bullet-size  (* ui-scale
+                        (cond
+                          (<= size 64) 32
+                          (<= size 72) 28
+                          (<= size 80) 32
+                          :else 32))
+        color-cell-width (* ui-scale
+                            (cond
+                              (<= size 64) 32
+                              :else 64))
 
         on-left-arrow-click
         (mf/use-fn

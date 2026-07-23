@@ -42,7 +42,14 @@
   }
 
   &.hidden {
-    --toolbar-offset-y: -4px;
+    // Tighten the gap between the collapsed handle and the top ruler.
+    --toolbar-offset-y: -5px;
+
+    // With rulers visible, pin the collapsed handle to a fixed offset (px, not
+    // rem) so its gap to the unscaled ruler stays constant across UI scales.
+    &:not(.no-rulers) {
+      --toolbar-position-y: 28px;
+    }
 
     block-size: $sz-16;
     z-index: 1;

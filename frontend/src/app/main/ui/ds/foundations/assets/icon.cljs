@@ -333,10 +333,15 @@
         offset  (if (or (= size "s") (= size "m"))
                   (/ (- icon-size-m size-px) 2)
                   0)
+        box     (max icon-size-m size-px)
+        ;; The intrinsic size is expressed in rem (via a viewBox so the glyph
+        ;; scales with the box) so icons track the UI scale like the rest of the
+        ;; DS, instead of staying fixed while their scaled containers grow.
         props   (mf/spread-props props
                                  {:class [class (stl/css :icon)]
-                                  :width (max icon-size-m size-px)
-                                  :height (max icon-size-m size-px)})]
+                                  :viewBox (dm/str "0 0 " box " " box)
+                                  :width (dm/str (/ box 16.0) "rem")
+                                  :height (dm/str (/ box 16.0) "rem")})]
     [:> :svg props
      [:use {:href (dm/str "#icon-" icon-id)
             :x offset

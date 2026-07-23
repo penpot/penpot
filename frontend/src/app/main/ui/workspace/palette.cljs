@@ -10,7 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
-   [app.main.constants :refer [left-sidebar-default-width]]
+   [app.main.constants :refer [left-sidebar-default-width
+                               right-sidebar-default-width]]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -43,11 +44,16 @@
                                    (d/parse-integer))
         rulers-width           (if rulers? 22 0)
         min-left-sidebar-width left-sidebar-default-width
-        left-padding           4
-        calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)]
+        left-padding           3
+        sidebar-width          (or left-sidebar-size min-left-sidebar-width)
+        ;; The sidebars render scaled by `--ui-scale`, but the rulers live in the
+        ;; viewport (not scaled), so only the sidebar portions are multiplied.
+        fixed-left             (+ rulers-width left-padding 1)]
 
-    #js {"paddingLeft" (dm/str calculate-padding-left "px")
-         "paddingRight" "322px"}))
+    ;; round() matches the sidebars, which snap their scaled width to whole
+    ;; pixels — so the palette clears them without a sub-pixel gap/overlap.
+    #js {"paddingLeft" (dm/str "calc(round(" sidebar-width "px * var(--ui-scale), 1px) + " fixed-left "px)")
+         "paddingRight" (dm/str "calc(round(" right-sidebar-default-width "px * var(--ui-scale), 1px) + 4px)")}))
 
 (mf/defc palette*
   [{:keys [layout on-change-size]}]
@@ -170,7 +176,7 @@
               :class (dm/str size-classname " " (stl/css-case :palettes true
                                                               :wide any-palette?
                                                               :hidden-bts hide-palettes?))
-              :style #js {"--height" (dm/str size "px")}}
+              :style #js {"--height" (dm/str "calc(" size "px * var(--ui-scale))")}}
 
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-pointer-down

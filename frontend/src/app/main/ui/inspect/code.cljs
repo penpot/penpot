@@ -316,7 +316,7 @@
 
       (when-not collapsed-css?
         [:div {:class (stl/css :code-row-display)
-               :style {:--code-height (dm/str (or style-size 400) "px")}}
+               :style {:--code-height (dm/str "calc(" (or style-size 400) "px * var(--ui-scale))")}}
          [:> code-block* {:type style-type
                           :code style-code}]])
 
@@ -357,7 +357,7 @@
 
       (when-not collapsed-markup?
         [:div {:class (stl/css :code-row-display)
-               :style {:--code-height (dm/str (or markup-size 400) "px")}}
+               :style {:--code-height (dm/str "calc(" (or markup-size 400) "px * var(--ui-scale))")}}
          [:> code-block* {:type markup-type
                           :code markup-code}]])
 

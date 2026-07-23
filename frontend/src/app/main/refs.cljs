@@ -32,6 +32,23 @@
 (def profile
   (l/derived (l/key :profile) st/state))
 
+(def ui-scale-compact
+  "UI scale factor for the default, compact interface."
+  1.0)
+
+(def ui-scale-comfortable
+  "UI scale factor for the enlarged, comfortable interface."
+  1.15)
+
+(def ui-scale
+  "Effective UI scale factor, gated by the `:ui-scale` flag. Returns the compact
+   scale when the flag is disabled or the profile prop has never been set."
+  (l/derived (fn [state]
+               (if (contains? cf/flags :ui-scale)
+                 (or (get-in state [:profile :props :ui-scale]) ui-scale-compact)
+                 ui-scale-compact))
+             st/state))
+
 (def current-page-id
   (l/derived (l/key :current-page-id) st/state))
 

@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.refs :as refs]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
@@ -66,13 +67,15 @@
         nitems    (if (array? children)
                     (count (keep identity children))
                     1)
+        ui-scale  (mf/deref refs/ui-scale)
         ;; FIXME: we should handle this with CSS
-        width     (mf/with-memo [nitems]
+        width     (mf/with-memo [nitems ui-scale]
                     (if (= wide true)
                       "unset"
                       (fmt/format-pixels
-                       (+ (* 4 (- nitems 1))
-                          (* 32 nitems)))))
+                       (* ui-scale
+                          (+ (* 4 (- nitems 1))
+                             (* 32 nitems))))))
 
         on-change'
         (mf/use-fn

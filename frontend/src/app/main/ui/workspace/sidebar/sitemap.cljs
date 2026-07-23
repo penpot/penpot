@@ -307,7 +307,7 @@
         permissions    (mf/use-ctx ctx/permissions)]
 
     [:div {:class (stl/css :sitemap)
-           :style {:--height (dm/str height "px")}}
+           :style {:--height (dm/str "calc(" height "px * var(--ui-scale))")}}
 
      [:> title-bar* {:collapsable   true
                      :collapsed     collapsed

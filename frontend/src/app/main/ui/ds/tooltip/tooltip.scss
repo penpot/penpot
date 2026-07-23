@@ -6,10 +6,13 @@
 
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/z-index.scss" as *;
 @use "ds/typography.scss" as t;
 
-$arrow-side: 12px;
+// Expressed in rem so the arrow (and its offsets below) scale with the UI like
+// the tooltip body it points from.
+$arrow-side: px2rem(12);
 
 .tooltip {
   position: fixed;
@@ -45,7 +48,7 @@ $arrow-side: 12px;
   justify-self: center;
   border-radius: 0 0 var(--sp-xs) 0;
   transform-origin: 0 0;
-  transform: rotate(45deg) translate(-2px, -10px);
+  transform: rotate(45deg) translate(px2rem(-2), px2rem(-10));
   border-block-end: $b-1 solid var(--color-accent-primary-muted);
   border-inline-end: $b-1 solid var(--color-accent-primary-muted);
 }
@@ -60,7 +63,7 @@ $arrow-side: 12px;
   justify-self: center;
   border-radius: var(--sp-xs) 0;
   transform-origin: 0 0;
-  transform: rotate(45deg) translate(7px, -2px);
+  transform: rotate(45deg) translate(px2rem(7), px2rem(-2));
   border-block-start: $b-1 solid var(--color-accent-primary-muted);
   border-inline-start: $b-1 solid var(--color-accent-primary-muted);
 }
@@ -73,7 +76,7 @@ $arrow-side: 12px;
   align-self: center;
   border-radius: 0 var(--sp-xs);
   transform-origin: 0 0;
-  transform: rotate(45deg) translate(-2px, -1px);
+  transform: rotate(45deg) translate(px2rem(-2), px2rem(-1));
   border-block-start: $b-1 solid var(--color-accent-primary-muted);
   border-inline-end: $b-1 solid var(--color-accent-primary-muted);
 }
@@ -86,7 +89,7 @@ $arrow-side: 12px;
   align-self: center;
   border-radius: 0 var(--sp-xs);
   transform-origin: 0 0;
-  transform: rotate(45deg) translate(7px, -10px);
+  transform: rotate(45deg) translate(px2rem(7), px2rem(-10));
   border-block-end: $b-1 solid var(--color-accent-primary-muted);
   border-inline-start: $b-1 solid var(--color-accent-primary-muted);
 }

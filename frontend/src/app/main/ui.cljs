@@ -370,12 +370,18 @@
 
 (mf/defc app
   []
-  (let [route   (mf/deref refs/route)
-        edata   (mf/deref refs/exception)
-        profile (mf/deref refs/profile)]
+  (let [route    (mf/deref refs/route)
+        edata    (mf/deref refs/exception)
+        profile  (mf/deref refs/profile)
+        ui-scale (mf/deref refs/ui-scale)]
 
     ;; initialize themes
     (theme/use-initialize profile)
+
+    ;; Apply the UI scale by exposing it as the `--ui-scale` custom property
+    ;; on the root element, which drives the root font-size (see base.scss).
+    (mf/with-effect [ui-scale]
+      (dom/set-css-property! (.-documentElement js/document) "--ui-scale" (str ui-scale)))
 
     (dom/prevent-browser-gesture-navigation!)
 

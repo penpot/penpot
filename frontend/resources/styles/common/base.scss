@@ -18,6 +18,15 @@ $lh-115: 1.15;
 $lh-133: 1.33;
 $size-4: 1rem;
 
+// UI scale: `--ui-scale` is driven from the user profile prop `:ui-scale`
+// (see app.main.ui/app). Because DS tokens are `rem`-based, scaling the root
+// font-size uniformly scales the whole UI. The viewport/rulers are excluded
+// separately (they don't rely on this root font-size).
+:root {
+  --ui-scale: 1;
+  font-size: calc(100% * var(--ui-scale));
+}
+
 body {
   background-color: var(--color-background-primary);
   color: var(--color-foreground-primary);
