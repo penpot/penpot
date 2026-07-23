@@ -14,7 +14,6 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
-   [clojure.datafy :refer [datafy]]
    [clojure.test :as t]))
 
 ;; Helper functions
@@ -235,25 +234,25 @@
       (t/is (ctos/tokens-status? (:tokens-status file-data')))))
 
   (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-source"
-    (let [tokens-source  (uuid/next)
+    (let [source-id     (uuid/next)
           tokens-status (ctos/make-tokens-status)
           file          (-> (thf/sample-file :file1)
-                            (assoc-in [:data :tokens-source] tokens-source)
+                            (assoc-in [:data :tokens-source] source-id)
                             (assoc-in [:data :tokens-status] tokens-status))
           file-data     (ctf/file-data file)
           file-data'    (cfo/ensure-tokens-lib file-data)]
       (t/is (not (contains? file-data' :tokens-lib)))
-      (t/is (= tokens-source (:tokens-source file-data')))
+      (t/is (= source-id (:tokens-source file-data')))
       (t/is (= tokens-status (:tokens-status file-data')))))
 
   (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-source, but should add a tokens-status if it's missing"
-    (let [tokens-source (uuid/next)
+    (let [source-id   (uuid/next)
           file        (-> (thf/sample-file :file1)
-                          (assoc-in [:data :tokens-source] tokens-source))
+                          (assoc-in [:data :tokens-source] source-id))
           file-data   (ctf/file-data file)
           file-data'  (cfo/ensure-tokens-lib file-data)]
       (t/is (not (contains? file-data' :tokens-lib)))
-      (t/is (= tokens-source (:tokens-source file-data')))
+      (t/is (= source-id (:tokens-source file-data')))
       (t/is (contains? file-data' :tokens-status))
       (t/is (ctos/tokens-status? (:tokens-status file-data'))))))
 
@@ -268,20 +267,224 @@
 
 (t/deftest test-get-tokens-source
   (t/testing "returns tokens-source from file data"
-    (let [file-id   (thi/new-id! :tokens-source)
-          file-data {:tokens-source file-id}]
-      (t/is (= file-id (cfo/get-tokens-source file-data)))))
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (assoc-in [:data :tokens-source] source-id))]
+      (t/is (= source-id (cfo/get-tokens-source (:data file))))))
 
-  (t/testing "returns nil when no tokens-source"
-    (t/is (nil? (cfo/get-tokens-source {})))))
+  (t/testing "returns file id when no tokens-source"
+    (let [file (thf/sample-file :file1)]
+      (t/is (= (:id file) (cfo/get-tokens-source file))))))
 
 (t/deftest test-set-tokens-source
   (t/testing "sets tokens-source on file data"
-    (let [file-id    (thi/new-id! :tokens-source)
-          file-data  {:other :data}
-          file-data' (cfo/set-tokens-source file-data file-id)]
-      (t/is (= file-id (:tokens-source file-data')))
-      (t/is (= :data (:other file-data'))))))
+    (let [source-id  (thi/new-id! :tokens-source)
+          file       (thf/sample-file :file1)
+          file-data  (:data file)
+          file-data' (cfo/set-tokens-source file-data source-id)]
+      (t/is (= source-id (:tokens-source file-data'))))))
+
+(t/deftest test-tokens-source?
+  (t/testing "no tokens, no tokens-source, ask for file id -> false"
+    (let [file      (thf/sample-file :file1)
+          file-data (:data file)]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "empty tokens-lib, no tokens-source, ask for file id -> false"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (:data file)]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "tokens, no tokens-source, ask for file id -> true"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (:data file)]
+      (t/is (true? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "no tokens, no tokens source, ask for other id -> false"
+    (let [file      (thf/sample-file :file1)
+          file-data (:data file)]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  (t/testing "empty tokens-lib, no tokens source, ask for other id -> false"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (:data file)]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  (t/testing "tokens, no tokens source, ask for other id -> false"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (:data file)]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  ;; ---
+
+  (t/testing "no tokens, tokens source = file id, ask for file id -> false"  ;; This case should not occur
+    (let [file      (thf/sample-file :file1)
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "empty tokens-lib, tokens source = file id, ask for file id -> false"  ;; This case should not occur
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "tokens, tokens source = file id, ask for file id -> true"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (true? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "no tokens, tokens source = file id, ask for other id -> false"  ;; This case should not occur
+    (let [file      (thf/sample-file :file1)
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  (t/testing "empty tokens-lib, tokens source = file id, ask for other id -> false"  ;; This case should not occur
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  (t/testing "tokens, tokens source = file id, ask for other id -> false"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  ;; ---
+
+  (t/testing "no tokens, tokens source = other id, ask for file id -> false"
+    (let [source-id  (thi/new-id! :tokens-source)
+          file       (thf/sample-file :file1)
+          file-data  (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "empty tokens-lib, tokens source = other id, ask for file id -> false"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "tokens, tokens source = other id, ask for file id -> false"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/tokens-source? file-data (:id file-data))))))
+
+  (t/testing "no tokens, tokens source = other id, ask for this same id -> true"
+    (let [source-id  (thi/new-id! :tokens-source)
+          file       (thf/sample-file :file1)
+          file-data  (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (true? (cfo/tokens-source? file-data source-id)))))
+
+  (t/testing "empty tokens-lib, tokens source = other id, ask for this same id -> true"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (true? (cfo/tokens-source? file-data source-id)))))
+
+  (t/testing "tokens, tokens source = other id, ask for this same id -> true"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (true? (cfo/tokens-source? file-data source-id)))))
+
+  (t/testing "no tokens, tokens source = other id, ask for a different id -> false"
+    (let [source-id  (thi/new-id! :tokens-source)
+          file       (thf/sample-file :file1)
+          file-data  (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  (t/testing "empty tokens-lib, tokens source = other id, ask for a different id -> false"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next))))))
+
+  (t/testing "tokens, tokens source = other id, ask for a different id -> false"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib)
+                        (tht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a) :name "set-a"))
+                              (ctob/add-token (thi/id :set-a) (ctob/make-token :id (thi/new-id! :tok1) :name "spacing" :type :spacing :value "8px")))))
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/tokens-source? file-data (uuid/next)))))))
+
+(t/deftest test-tokens-provider?
+  (t/testing "returns false if it has no tokens"
+    (let [file      (thf/sample-file :file1)
+          file-data (:data file)]
+      (t/is (false? (cfo/tokens-provider? file-data)))))
+
+  (t/testing "returns true if it has tokens and no tokens-source"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (:data file)]
+      (t/is (true? (cfo/tokens-provider? file-data)))))
+
+  (t/testing "returns true if it has tokens and tokens-source is its own id"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) (:id file))]
+      (t/is (true? (cfo/tokens-provider? file-data)))))
+
+  (t/testing "returns false if it has tokens and tokens-source is other id"
+    (let [file      (-> (thf/sample-file :file1)
+                        (tht/add-tokens-lib))
+          file-data (cfo/set-tokens-source (:data file) (uuid/next))]
+      (t/is (false? (cfo/tokens-provider? file-data))))))
+ 
+(t/deftest test-editable-tokens?
+  (t/testing "returns true when file-data has no tokens-source"
+    (let [file      (thf/sample-file :file1)
+          file-data (:data file)]
+      (t/is (true? (cfo/editable-tokens? file-data)))))
+
+  (t/testing "returns true when tokens-source is the file's own id"
+    (let [file      (thf/sample-file :file1)
+          file-data (cfo/set-tokens-source (:data file) (:id (:data file)))]
+      (t/is (true? (cfo/editable-tokens? file-data)))))
+
+  (t/testing "returns false when tokens-source is a different uuid"
+    (let [source-id (thi/new-id! :tokens-source)
+          file      (thf/sample-file :file1)
+          file-data (cfo/set-tokens-source (:data file) source-id)]
+      (t/is (false? (cfo/editable-tokens? file-data))))))
 
 (t/deftest test-get-tokens-status
   (t/testing "returns tokens-status from file data"

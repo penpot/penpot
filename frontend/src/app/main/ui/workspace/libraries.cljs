@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.files.variant :as cfv]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
@@ -24,6 +25,7 @@
    [app.main.data.team :as dtm]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg]]
    [app.main.store :as st]
@@ -262,7 +264,7 @@
 
         unlink-library
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file-id local-library)
          (fn [event]
            (let [library-id (some-> (dom/get-current-target event)
                                     (dom/get-data "library-id")
@@ -270,7 +272,11 @@
              (when (= library-id @selected)
                (reset! selected :file))
              (st/emit! (dwl/unlink-file-from-library file-id library-id)
-                       (dwl/sync-file file-id library-id)))))
+                       (dwl/sync-file file-id library-id))
+             ;; When the unlinked library is the current tokens source,
+             ;; we must reset it to the local library.
+             (when (cfo/tokens-source? local-library library-id)
+               (st/emit! (dwtl/set-tokens-source (:id local-library)))))))
 
         import-tokens
         (mf/use-fn
@@ -282,6 +288,14 @@
              (st/emit! (modal/show
                         :tokens/import-from-library {:file-id file-id
                                                      :library-id library-id})))))
+
+        set-as-tokens-source
+        (mf/use-fn
+         (fn [event]
+           (let [library-id (some-> (dom/get-current-target event)
+                                    (dom/get-data "library-id")
+                                    (uuid/parse))]
+             (st/emit! (dwtl/set-tokens-source library-id)))))
 
         on-delete-accept
         (mf/use-fn
@@ -335,7 +349,16 @@
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
-          [:> library-description* {:summary summary}]]]
+          [:> library-description* {:summary summary}]]
+         (when (contains? cf/flags :token-lib-sync)
+           (if (cfo/tokens-source? local-library (:id local-library))
+             [:div (tr "workspace.libraries.tokens-source")]
+             (when (not= (cfo/get-tokens-source local-library) (:id local-library))
+               [:> button* {:variant "secondary"
+                            :type "button"
+                            :data-library-id (dm/str (:id local-library))
+                            :on-click set-as-tokens-source}
+                (tr "workspace.libraries.set-as-tokens-source")])))]
 
         (if ^boolean is-shared
           [:> button* {:variant "secondary"
@@ -366,16 +389,28 @@
                    [:div {:class (stl/css :connected-to-wrapper)}
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
-                    [:span ")"]])])]]
+                    [:span ")"]])])]
+             (when (contains? cf/flags :token-lib-sync)
+               (when (cfo/tokens-source? local-library id)
+                 [:div (tr "workspace.libraries.tokens-source")]))]
+
             [:div {:class (stl/css :library-actions)}
-             (when ^boolean has-tokens?
-               [:> icon-button*
-                {:type "button"
-                 :aria-label (tr "workspace.tokens.import-tokens")
-                 :icon i/import-export
-                 :data-library-id (dm/str id)
-                 :variant "secondary"
-                 :on-click import-tokens}])
+             (if (contains? cf/flags :token-lib-sync)
+               (when (and (cfo/tokens-provider? (:data library))
+                          (not (cfo/tokens-source? local-library id)))
+                 [:> button* {:variant "secondary"
+                              :type "button"
+                              :data-library-id (dm/str id)
+                              :on-click set-as-tokens-source}
+                  (tr "workspace.libraries.set-as-tokens-source")])
+               (when ^boolean has-tokens?
+                 [:> icon-button*
+                  {:type "button"
+                   :aria-label (tr "workspace.tokens.import-tokens")
+                   :icon i/import-export
+                   :data-library-id (dm/str id)
+                   :variant "secondary"
+                   :on-click import-tokens}]))
 
              [:> icon-button* {:type "button"
                                :aria-label (tr "workspace.libraries.unlink-library-btn")
