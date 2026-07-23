@@ -453,22 +453,22 @@
                              :active-set-ids active-set-ids)))
 
 (defn ensure-tokens-lib
-  "Ensure file-data has a :tokens-lib or :tokens-file, and also a :tokens-status, creating them if necessary."
+  "Ensure file-data has a :tokens-lib or :tokens-source, and also a :tokens-status, creating them if necessary."
   [file-data]
   (cond-> file-data
-    (nil? (:tokens-file file-data))
+    (nil? (:tokens-source file-data))
     (update :tokens-lib #(or % (ctob/make-tokens-lib)))
 
     :always
     (update :tokens-status #(or % (ctos/make-tokens-status)))))
 
-(defn get-tokens-file
+(defn get-tokens-source
   [file-data]
-  (:tokens-file file-data))
+  (:tokens-source file-data))
 
-(defn set-tokens-file
-  [file-data tokens-file]
-  (assoc file-data :tokens-file tokens-file))
+(defn set-tokens-source
+  [file-data tokens-source]
+  (assoc file-data :tokens-source tokens-source))
 
 (defn get-tokens-lib
   [file-data]

@@ -38,16 +38,16 @@
   ([state file-id]
    (dm/get-in state [:files file-id :data])))
 
-(defn lookup-tokens-file-data
+(defn lookup-tokens-source-data
   [state]
   (let [current-file-data (lookup-file-data state)
-        tokens-file-id (or (cfo/get-tokens-file current-file-data) (:id current-file-data))]
-    (lookup-file-data state tokens-file-id)))
+        tokens-source-id (or (cfo/get-tokens-source current-file-data) (:id current-file-data))]
+    (lookup-file-data state tokens-source-id)))
 
 (defn lookup-tokens-lib
   [state]
-  (let [tokens-file-data (lookup-tokens-file-data state)]
-    (cfo/get-tokens-lib tokens-file-data)))
+  (let [tokens-source-data (lookup-tokens-source-data state)]
+    (cfo/get-tokens-lib tokens-source-data)))
 
 (defn lookup-tokens-status
   [state]
