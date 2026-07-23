@@ -489,7 +489,7 @@
                (tr "media.choose-image")
                [:& file-uploader
                 {:input-id "fill-image-upload"
-                 :accept "image/jpeg,image/png"
+                 :accept dwm/accept-image-types
                  :multi false
                  :ref fill-image-ref
                  :on-selected on-fill-image-selected}]]])
