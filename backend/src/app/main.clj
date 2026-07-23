@@ -49,10 +49,6 @@
    [promesa.exec :as px])
   (:gen-class))
 
-(repl/disable-reload! (find-ns 'integrant.core))
-(repl/disable-reload! (find-ns 'app.system))
-(repl/disable-reload! (find-ns 'app.common.debug))
-
 (def default-metrics
   {:update-file-changes
    {::mdef/name "penpot_rpc_update_file_changes_total"
@@ -685,6 +681,13 @@
 (defn -main
   [& _args]
   (try
+    (try
+      (repl/disable-reload! (find-ns 'integrant.core))
+      (repl/disable-reload! (find-ns 'app.system))
+      (repl/disable-reload! (find-ns 'app.common.debug))
+      (catch Throwable cause
+        (ex/print-throwable cause)))
+
     (let [p (promise)]
       (start)
       (deref p))
