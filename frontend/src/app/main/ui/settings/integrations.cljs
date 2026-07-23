@@ -371,7 +371,7 @@
             :id      "token-delete"
             :handler handle-open-confirm-modal}])]
 
-    [:div {:class (stl/css :item)}
+    [:div {:class (stl/css :item) :data-id (str id)}
      [:> text* {:as "div"
                 :typography t/body-medium
                 :title name

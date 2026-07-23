@@ -30,7 +30,7 @@
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:js": "prettier -c src/**/*.stories.jsx -c playwright/**/*.js -c scripts/**/*.js -c text-editor/**/*.js -w",
     "fmt:scss": "prettier -c resources/styles -c src/**/*.scss -w",
-    "lint:clj": "clj-kondo --parallel --lint ../common/src src/",
+    "lint:clj": "clj-kondo --config-dir ../.clj-kondo --lint ../common/src src/",
     "lint:js": "exit 0",
     "lint:scss": "pnpm exec stylelint '{src,resources}/**/*.scss'",
     "build:test": "pnpm run build:wasm && clojure -M:dev:shadow-cljs compile test",

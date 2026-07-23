@@ -10,9 +10,10 @@ penpot - error list
       <a href="/dbg"> [BACK]</a>
       <h1>Error reports (last 300)</h1>
 
-      <a class="{% if version = 3 %}strong{% endif %}" href="?version=3">[BACKEND ERRORS]</a>
-      <a class="{% if version = 4 %}strong{% endif %}" href="?version=4">[FRONTEND ERRORS]</a>
-      <a class="{% if version = 5 %}strong{% endif %}" href="?version=5">[RLIMIT REPORTS]</a>
+      <a class="{% if source = 0 %}strong{% endif %}" href="?source=0">[ALL ERRORS]</a>
+      <a class="{% if source = 3 %}strong{% endif %}" href="?source=3">[BACKEND ERRORS]</a>
+      <a class="{% if source = 4 %}strong{% endif %}" href="?source=4">[FRONTEND ERRORS]</a>
+      <a class="{% if source = 5 %}strong{% endif %}" href="?source=5">[RLIMIT REPORTS]</a>
     </div>
   </nav>
   <main class="horizontal-list">

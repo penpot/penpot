@@ -496,7 +496,10 @@
     :fn (mg/resource "app/migrations/sql/0151-mod-file-tagged-object-thumbnail-table.sql")}
 
    {:name "0152-improve-uuid-defaults-and-drop-extension"
-    :fn (mg/resource "app/migrations/sql/0152-improve-uuid-defaults-and-drop-extension.sql")}])
+    :fn (mg/resource "app/migrations/sql/0152-improve-uuid-defaults-and-drop-extension.sql")}
+
+   {:name "0152-rename-version-and-add-indexes-to-server-error-report"
+    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
