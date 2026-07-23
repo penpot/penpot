@@ -467,6 +467,7 @@
       "strokeColorGradient",
       "strokeColorRefFile",
       "strokeColorRefId",
+      "strokeImage",
       "strokeOpacity",
       "strokeStyle",
       "strokeWidth"
@@ -7790,6 +7791,12 @@
         "decl": "Stroke",
         "kind": "getset",
         "type": "Gradient",
+        "array": false
+      },
+      "strokeImage": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": "ImageData",
         "array": false
       }
     },

@@ -378,9 +378,11 @@
 
             shapes          (mapv maybe-translate selected)
             svg-formatted   (svg/generate-formatted-markup objects shapes)]
-        (clipboard/to-clipboard-multi
-         {"image/svg+xml" svg-formatted
-          "text/plain"    svg-formatted})))))
+        (-> (clipboard/to-clipboard-multi
+             {"image/svg+xml" svg-formatted
+              "text/plain"    svg-formatted})
+            (p/catch (fn [cause]
+                       (js/console.error "clipboard error:" cause))))))))
 
 (defn copy-selected-css
   []
@@ -1137,6 +1139,15 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (clipboard/to-clipboard (rt/get-current-href)))))
+
+(defn copy-id-to-clipboard
+  [id]
+  (ptk/reify ::copy-id-to-clipboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/from (clipboard/to-clipboard id))
+           (rx/map (fn [_]
+                     (ntf/info "The id has been copied to the clipboard")))))))
 
 (defn copy-as-image
   []

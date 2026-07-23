@@ -1207,9 +1207,20 @@
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (show-context-menu
-              (-> params (assoc :kind :page :selected (:id page))))))))
+    (watch [_ state _]
+      (let [id       (:id page)
+            selected (dm/get-in state [:workspace-local :selected-pages])
+            ;; When the right-clicked page is part of a multi-selection we
+            ;; keep it; otherwise the menu targets just that page.
+            multi?   (and (contains? selected id) (> (count selected) 1))]
+        (rx/concat
+         (if multi?
+           (rx/empty)
+           (rx/of (dwpg/select-page id)))
+         (rx/of (show-context-menu
+                 (-> params (assoc :kind :page
+                                   :selected id
+                                   :selected-pages (if multi? selected #{id}))))))))))
 
 (defn show-track-context-menu
   [{:keys [grid-id type index] :as params}]
@@ -1568,6 +1579,7 @@
 (dm/export dwcp/paste-shapes)
 (dm/export dwcp/paste-data-valid?)
 (dm/export dwcp/copy-link-to-clipboard)
+(dm/export dwcp/copy-id-to-clipboard)
 (dm/export dwcp/copy-as-image)
 
 ;; Drawing
@@ -1650,3 +1662,11 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
+(dm/export dwpg/delete-pages)
+(dm/export dwpg/select-page)
+(dm/export dwpg/toggle-page-selection)
+(dm/export dwpg/select-pages-range)
+(dm/export dwpg/clear-page-selection)
+
+;; Shapes
+(dm/export dwsh/delete-shapes)

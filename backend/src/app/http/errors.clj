@@ -31,7 +31,7 @@
         (assoc :request/user-agent (yreq/get-header request "user-agent"))
         (assoc :request/ip-addr (inet/parse-request request))
         (assoc :request/profile-id (get claims :uid))
-        (assoc :request/auth-data auth)
+        (assoc :request/auth-data (dissoc auth :token))
         (assoc :frontend/version (or (yreq/get-header request "x-frontend-version") "unknown")))))
 
 (defmulti handle-error

@@ -139,6 +139,12 @@
    [:stroke-style {:optional true}
     [::sm/one-of #{:solid :dotted :dashed :mixed}]]
    [:stroke-width {:optional true} ::sm/safe-number]
+   ;; wasm-render only, backwards compatible
+   [:stroke-per-side {:optional true} :boolean]
+   [:stroke-width-top {:optional true} ::sm/safe-number]
+   [:stroke-width-right {:optional true} ::sm/safe-number]
+   [:stroke-width-bottom {:optional true} ::sm/safe-number]
+   [:stroke-width-left {:optional true} ::sm/safe-number]
    [:stroke-dash {:optional true} ::sm/safe-number]
    [:stroke-gap {:optional true} ::sm/safe-number]
    [:stroke-alignment {:optional true}

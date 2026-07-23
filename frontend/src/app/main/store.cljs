@@ -7,6 +7,7 @@
 (ns app.main.store
   (:require
    [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
@@ -94,6 +95,7 @@
          (rx/filter #(not (contains? omitset %)))
          (rx/map str)
          (rx/pipe (rxo/distinct-contiguous))
+         (rx/map (fn [event] {:name event :t (ct/now)}))
          (rx/scan (fn [buffer event]
                     (cond-> (conj buffer event)
                       (> (count buffer) 50)
@@ -101,6 +103,29 @@
                   #queue [])
          (rx/subs! #(reset! buffer (vec %))))
     buffer))
+
+(defn format-last-events
+  "Render the `last-events` buffer as a multi-line string with the
+  wall-clock time of each event and the delta (ms) since the previous
+  entry. The first entry has no delta. Useful for embedding in error
+  reports."
+  ([] (format-last-events @last-events))
+  ([events]
+   (let [lines
+         (loop [prev-t nil
+                xs     (seq events)
+                out    (transient [])]
+           (if xs
+             (let [{:keys [name t]} (first xs)
+                   iso  (ct/format-inst t :iso)
+                   tail (if prev-t
+                          (str "  (+" (ct/diff-ms prev-t t) "ms)")
+                          "")]
+               (recur t
+                      (next xs)
+                      (conj! out (str iso tail "  " name))))
+             (persistent! out)))]
+     (str/join "\n" lines))))
 
 (defn emit!
   ([] nil)

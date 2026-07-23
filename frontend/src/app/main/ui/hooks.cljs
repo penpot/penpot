@@ -438,8 +438,8 @@
        [th-size]
        (when th-size
          (let [node (mf/ref-val rowref)]
-           (.setProperty (.-style node) "--th-width" (str th-size "px"))
-           (.setProperty (.-style node) "--th-height" (str (mth/ceil (* th-size (/ 2 3))) "px")))))
+           (.setProperty (.-style node) "--thumbnail-width" (str th-size "px"))
+           (.setProperty (.-style node) "--thumbnail-height" (str (mth/ceil (* th-size (/ 2 3))) "px")))))
 
      (mf/with-effect []
        (let [node (mf/ref-val rowref)

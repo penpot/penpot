@@ -104,24 +104,20 @@
   []
   (try
     (main/start)
-    :started
     (catch Throwable cause
       (ex/print-throwable cause))))
 
 (defn- stop
   []
-  (main/stop)
-  :stopped)
+  (main/stop))
 
 (defn restart
   []
-  (stop)
-  (repl/refresh :after 'user/start))
+  (main/restart))
 
 (defn restart-all
   []
-  (stop)
-  (repl/refresh-all :after 'user/start))
+  (main/restart-all))
 
 ;; (defn compression-bench
 ;;   [data]

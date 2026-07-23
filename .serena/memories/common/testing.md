@@ -4,20 +4,22 @@
 
 ## Unit tests
 
+READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee to file, preferred commands) that applies to all CLJS/JS and JVM test runs.
+
 Common tests live under `common/test/common_tests/` and use `clojure.test`.
 They are CLJC and run on both JVM and JS.
 
 From `common/`:
 - Full JVM test run: `clojure -M:dev:test`
-- Full JS test run: `pnpm run test:quiet`
+- Full JS test run (always builds, suppressed output): `pnpm run test:quiet`
+- Full JS test run (always builds, build output visible): `pnpm run test`
 - Focus a JVM test namespace: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test`
 - Focus a JVM test var: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch`
 - Focus a JS test namespace: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test`
 - Focus a JS test var: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute`
 - Quiet logging during a JS run: append `--log-level warn` (or `trace|debug|info|warn|error`)
-- Build JS test target only: `pnpm run build:test`
-- After `pnpm run build:test`, direct compiled runner: `node target/tests/test.js --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn`
-- Watch tests: `pnpm run watch:test`
+- Build JS test target only (no run): `pnpm run build:test`
+- After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 
 New common JS test namespaces must be required/listed in `common_tests/runner.cljc`;
 new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags
