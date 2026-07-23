@@ -344,6 +344,7 @@ test("Preserves empty fill after editing text without changes", async ({ page })
 
   await workspace.createTextShape(190, 150, 300, 200, initialText);
   await workspace.textEditor.stopEditing();
+  await workspace.page.getByRole('button', { name: 'Fill', exact: true }).click();
 
   const fillColorButton = workspace.page.getByRole("button", {
     name: "#000000",
