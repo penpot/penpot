@@ -181,6 +181,14 @@
     (.set heap img-u8 (+ ptr 36))
     (h/call module "_store_image")))
 
+(defn evict-images!
+  "Evicts least-recently-used images until the module's image store retains at
+  most `max-mb` megabytes. Called between requests, so an image can never
+  disappear under a running render; evicted images are re-provisioned by any
+  later request that needs them. Returns the number of evicted images."
+  [max-mb]
+  (h/call wasm/internal-module "_evict_images_to_budget" max-mb))
+
 (defn provision-fonts!
   "Resolves and uploads every font needed by `shape-id`. `resolve-font` is an
   injected fn of the family map -> promise of TTF bytes (or nil to skip). This

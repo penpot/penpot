@@ -47,7 +47,10 @@
    ;; via the in-process Skia/WASM pipeline. `:wasm-dir` points at the built
    ;; render-wasm artifact (render-wasm.js/.wasm).
    [:wasm-headless {:optional true} :boolean]
-   [:wasm-dir {:optional true} :string]])
+   [:wasm-dir {:optional true} :string]
+   ;; Byte budget (in MB) for the WASM image cache; least-recently-used
+   ;; images are evicted between requests once the store exceeds it.
+   [:wasm-image-cache-mb {:optional true} ::sm/int]])
 
 (def ^:private decode-config
   (sm/decoder schema:config sm/string-transformer))
