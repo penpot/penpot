@@ -151,7 +151,7 @@
 
         (println "Last events:")
         (println "--------------------")
-        (pp/pprint @st/last-events {:length 200})
+        (println (st/format-last-events))
         (println)))
     (catch :default cause
       (.error js/console "error on generating report" cause)
