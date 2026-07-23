@@ -90,11 +90,15 @@ export class ShapePropFillColor extends ShapePropBase<Color> {
  * `write`.
  */
 export abstract class ShapePropNumberBase extends ShapePropBase<number> {
-    /** The tolerance within which two values count as equal. */
-    private static readonly EPSILON = 1e-6;
+    // Tolerance combining an absolute floor with a magnitude-scaled relative
+    // term, wide enough to absorb float32 geometry noise in values read back.
+    private static readonly ABS_EPSILON = 1e-4;
+    private static readonly REL_EPSILON = 1e-5;
 
     equals(a: number, b: number): boolean {
-        return Math.abs(a - b) <= ShapePropNumberBase.EPSILON;
+        const tolerance =
+            ShapePropNumberBase.ABS_EPSILON + ShapePropNumberBase.REL_EPSILON * Math.max(Math.abs(a), Math.abs(b));
+        return Math.abs(a - b) <= tolerance;
     }
 
     protected render(value: number): string {
