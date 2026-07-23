@@ -98,7 +98,7 @@
                                      (if (= (:type manifest) "penpot/export-files")
                                        (let [manifest (decode-manifest manifest)]
                                          (assoc file :type :binfile-v3 :files (:files manifest)))
-                                       (assoc file :type :legacy-zip :body body))))
+                                       (assoc file :type :unknown))))
                                   (rx/finalize (partial uz/close zip-reader))))
 
                            (= "application/octet-stream" mtype)
