@@ -65,12 +65,25 @@
                 :else
                 request)))
 
+          ;; The specific-exception branches below (IAE,
+          ;; RequestTooBigException, EOFException) raise with
+          ;; `ex/raise` rather than calling `errors/handle` directly.
+          ;; This is intentional: the throw is caught by the
+          ;; top-level error handler in `app.http/router-handler`
+          ;; (`backend/src/app/http.clj`), which routes every
+          ;; uncaught exception through `errors/handle`. The
+          ;; per-route `wrap-errors` middleware in the route list
+          ;; is a defensive layer; correctness does not depend on
+          ;; it. Raising here keeps the cond uniform with the
+          ;; existing RequestTooBigException / EOFException
+          ;; branches.
           (handle-error [cause request]
             (cond
-              (instance? RuntimeException cause)
-              (if-let [cause (ex-cause cause)]
-                (handle-error cause request)
-                (errors/handle cause request))
+              (instance? IllegalArgumentException cause)
+              (ex/raise :type :validation
+                        :code :malformed-json
+                        :hint (ex-message cause)
+                        :cause cause)
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
@@ -82,6 +95,11 @@
                         :code :malformed-json
                         :hint (ex-message cause)
                         :cause cause)
+
+              (instance? RuntimeException cause)
+              (if-let [cause (ex-cause cause)]
+                (handle-error cause request)
+                (errors/handle cause request))
 
               :else
               (errors/handle cause request)))]
