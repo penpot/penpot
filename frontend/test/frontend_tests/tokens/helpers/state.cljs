@@ -8,8 +8,10 @@
   (:require
    [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -52,6 +54,31 @@
 (def stop-on-send-update-indices
   "Stops on `send-update-indices` function being called, which should be the last function of an event chain."
   (stop-on ::end))
+
+(defn watch-undo-stack
+  "Maintain the workspace undo stack by watching for commit events.
+   Must be emitted before the events under test so undo entries are populated."
+  []
+  (ptk/reify ::watch-undo-stack
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper-s (->> stream (rx/filter (ptk/type? ::watch-undo-stack)))]
+        (->> stream
+             (rx/filter dch/commit?)
+             (rx/map deref)
+             (rx/filter #(= :local (:source %)))
+             (rx/mapcat
+              (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
+                (if (and save-undo? (seq undo-changes))
+                  (rx/of (dwu/append-undo
+                          {:undo-changes undo-changes
+                           :redo-changes redo-changes
+                           :undo-group undo-group
+                           :tags tags
+                           :selected-before selected-before}
+                          stack-undo?))
+                  (rx/empty))))
+             (rx/take-until stopper-s))))))
 
 ;; Support for async events in tests
 ;; https://chat.kaleidos.net/penpot-partners/pl/tz1yoes3w3fr9qanxqpuhoz3ch
