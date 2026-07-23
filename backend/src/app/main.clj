@@ -681,12 +681,10 @@
 (defn -main
   [& _args]
   (try
-    (try
-      (repl/disable-reload! (find-ns 'integrant.core))
-      (repl/disable-reload! (find-ns 'app.system))
-      (repl/disable-reload! (find-ns 'app.common.debug))
-      (catch Throwable cause
-        (ex/print-throwable cause)))
+    (ex/ignoring
+     (repl/disable-reload! (find-ns 'integrant.core))
+     (repl/disable-reload! (find-ns 'app.system))
+     (repl/disable-reload! (find-ns 'app.common.debug)))
 
     (let [p (promise)]
       (start)
