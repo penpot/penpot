@@ -10,7 +10,7 @@
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.media :refer [schema:upload]]
+   [app.media.validation :refer [schema:upload]]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.storage :as sto]

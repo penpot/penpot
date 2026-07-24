@@ -199,6 +199,25 @@
       (let [res (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"])]
         (t/is (= 0 (:count res)))))))
 
+(defn- upload-font-chunked!
+  "Splits `font-bytes` into a single chunk, creates an upload session,
+   uploads the chunk, and returns the session-id UUID."
+  [prof ^bytes font-bytes mtype]
+  (let [tmp        (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-font-chunk-")
+        _          (io/write* tmp font-bytes)
+        mfile      {:filename "chunk" :path tmp :mtype mtype :size (alength font-bytes)}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})]
+    (assert (nil? (:error out)))
+    session-id))
+
 (t/deftest touched-gc-task-2
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -229,6 +248,8 @@
                  :name "testfile"
                  :content mfile}
 
+        session-id (upload-font-chunked! prof ttfdata "font/ttf")
+
         params2 {::th/type :create-font-variant
                  ::rpc/profile-id (:id prof)
                  :team-id team-id
@@ -236,7 +257,7 @@
                  :font-family "somefont"
                  :font-weight 400
                  :font-style "normal"
-                 :data {"font/ttf" ttfdata}}
+                 :uploads {"font/ttf" session-id}}
 
         out1     (th/command! params1)
         out2     (th/command! params2)]
@@ -250,7 +271,7 @@
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 5 (:freeze res)))
-      (t/is (= 0 (:delete res)))
+      (t/is (= 1 (:delete res)))
 
       (let [result-1 (:result out1)
             result-2 (:result out2)]
@@ -271,7 +292,7 @@
         (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                     (th/run-task! :storage-gc-touched {}))]
           (t/is (= 2 (:freeze res)))
-          (t/is (= 3 (:delete res))))
+          (t/is (= 4 (:delete res))))
 
         ;; now check that there are no touched objects
         (let [res (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"])]
@@ -279,7 +300,7 @@
 
         ;; now check that all objects are marked to be deleted
         (let [res (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"])]
-          (t/is (= 3 (:count res))))))))
+          (t/is (= 4 (:count res))))))))
 
 (t/deftest touched-gc-task-3
   (let [storage (-> (:app.storage/storage th/*system*)

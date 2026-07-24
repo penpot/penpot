@@ -22,7 +22,7 @@
    [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -947,7 +947,7 @@
 (def ^:private schema:update-team-photo
   [:map {:title "update-team-photo"}
    [:team-id ::sm/uuid]
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"
@@ -955,8 +955,8 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

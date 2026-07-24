@@ -4,6 +4,7 @@ export PENPOT_NITRATE_SHARED_KEY=super-secret-nitrate-api-key
 export PENPOT_EXPORTER_SHARED_KEY=super-secret-exporter-api-key
 export PENPOT_NEXUS_SHARED_KEY=super-secret-nexus-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
+export PENPOT_MEDIA_PROCESSOR_SECRET_KEY=super-secret-media-processor-key
 
 # DEPRECATED: only used for subscriptions
 export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
@@ -21,6 +22,8 @@ if [[ "${PENPOT_BACKEND_WORKER:-true}" == "true" ]]; then
     __worker_flag="enable-backend-worker"
 fi
 
+export PENPOT_MEDIA_PROCESSING_SERVICE_URI=http://localhost:6065
+
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-login-with-password \
@@ -36,6 +39,7 @@ export PENPOT_FLAGS="\
        enable-feature-fdata-objects-map \
        enable-audit-log \
        enable-transit-readable-response \
+       disable-remote-media-processing \
        enable-demo-users \
        enable-user-feedback \
        disable-secure-session-cookies \

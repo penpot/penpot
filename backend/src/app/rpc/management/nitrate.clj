@@ -20,7 +20,7 @@
    [app.email :as eml]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
    [app.rpc.commands.files :as files]
@@ -109,7 +109,7 @@
 
 (def ^:private schema:upload-org-logo
   [:map
-   [:content media/schema:upload]
+   [:content media.v/schema:upload]
    [:organization-id ::sm/uuid]
    [:previous-id {:optional true} ::sm/uuid]])
 

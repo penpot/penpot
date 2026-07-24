@@ -24,7 +24,7 @@
 # WARNING: if you're exposing Penpot to the internet, you should remove the flags
 # 'disable-secure-session-cookies' and 'disable-email-verification'
 x-flags: &penpot-flags
-  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp
+  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-remote-media-processing
 
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
@@ -157,6 +157,9 @@ services:
       # PENPOT_OBJECTS_STORAGE_S3_ENDPOINT: <ENDPOINT>
       # PENPOT_OBJECTS_STORAGE_S3_BUCKET: <BUKET_NAME>
 
+      ## Media processor service
+      PENPOT_MEDIA_PROCESSING_SERVICE_URI: http://penpot-media-processor:6065
+
       ## Telemetry. When enabled, a periodical process will send anonymous data about this
       ## instance. Telemetry data will enable us to learn how the application is used,
       ## based on real scenarios. If you want to help us, please leave it enabled. You can
@@ -204,6 +207,17 @@ services:
 
       ## Valkey (or previously Redis) is used for the websockets notifications.
       PENPOT_REDIS_URI: redis://penpot-valkey/0
+
+  penpot-media-processor:
+    image: "penpotapp/media-processor:${PENPOT_VERSION:-2.16}"
+    restart: always
+    networks:
+      - penpot
+    environment:
+      << : [*penpot-secret-key]
+      PENPOT_MEDIA_PROCESSOR_PORT: "6065"
+      PENPOT_MEDIA_PROCESSOR_MAX_CONCURRENT_REQUESTS: "10"
+      PENPOT_MEDIA_PROCESSOR_REQUEST_TIMEOUT: "60000"
 
   penpot-postgres:
     image: "postgres:15"

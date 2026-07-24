@@ -19,7 +19,7 @@
    [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.media :as media-cmd]
@@ -124,7 +124,7 @@
     [:project-id ::sm/uuid]
     [:file-id {:optional true} ::sm/uuid]
     [:version {:optional true} ::sm/int]
-    [:file {:optional true} media/schema:upload]
+    [:file {:optional true} media.v/schema:upload]
     [:upload-id {:optional true} ::sm/uuid]]
    [:fn {:error/message "one of :file or :upload-id is required"}
     (fn [{:keys [file upload-id]}]

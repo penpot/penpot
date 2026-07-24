@@ -88,6 +88,7 @@ opencode.json
 /blob-report/
 /playwright/.cache/
 /render-wasm/target/
+/media-processor/dist/
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
