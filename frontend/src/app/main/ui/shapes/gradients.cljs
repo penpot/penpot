@@ -28,8 +28,7 @@
       (obj/set! "penpot:end-y"   (:end-y gradient))
       (obj/set! "penpot:width"   (:width gradient))))
 
-(mf/defc linear-gradient
-  {::mf/wrap-props false}
+(mf/defc linear-gradient*
   [{:keys [id gradient shape force-transform]}]
   (let [transform (mf/with-memo [shape]
                     (when force-transform
@@ -53,8 +52,7 @@
                :stop-color color
                :stop-opacity opacity}])]))
 
-(mf/defc radial-gradient
-  {::mf/wrap-props false}
+(mf/defc radial-gradient*
   [{:keys [id gradient shape]}]
   (let [path?         (cfh/path-shape? shape)
 
@@ -115,25 +113,18 @@
                :stop-color color
                :stop-opacity opacity}])]))
 
-(mf/defc gradient
-  {::mf/wrap-props false}
-  [props]
-  (let [attr     (unchecked-get props "attr")
-        shape    (unchecked-get props "shape")
-        id       (unchecked-get props "id")
-        rid      (mf/use-ctx muc/render-id)
+(mf/defc gradient*
+  [{:keys [attr shape id]}]
+  (let [rid      (mf/use-ctx muc/render-id)
 
         id       (if (some? id)
                    id
                    (dm/str (name attr) "-" rid))
 
-        gradient (get shape attr)
-        props    #js {:id id
-                      :gradient gradient
-                      :shape shape}]
+        gradient (get shape attr)]
 
     (when (some? gradient)
       (case (:type gradient)
-        :linear [:> linear-gradient props]
-        :radial [:> radial-gradient props]
+        :linear [:> linear-gradient* {:id id :gradient gradient :shape shape}]
+        :radial [:> radial-gradient* {:id id :gradient gradient :shape shape}]
         nil))))
