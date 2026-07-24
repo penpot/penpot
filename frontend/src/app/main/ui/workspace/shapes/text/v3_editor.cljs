@@ -105,14 +105,14 @@
         (mf/use-fn
          (fn [^js event]
            (dom/prevent-default event)
-           (let [clipboard-data (.-clipboardData event)
-                 text (.getData clipboard-data "text/plain")]
-             (when (and text (seq text))
-               (text-editor/text-editor-insert-text text)
-               (sync-wasm-text-editor-content!)
-               (wasm.api/request-render "text-paste"))
-             (when-let [node (mf/ref-val contenteditable-ref)]
-               (set! (.-textContent node) "")))))
+           (when-let [clipboard-data (.-clipboardData event)]
+             (let [text (.getData clipboard-data "text/plain")]
+               (when (and text (seq text))
+                 (text-editor/text-editor-insert-text text)
+                 (sync-wasm-text-editor-content!)
+                 (wasm.api/request-render "text-paste"))))
+           (when-let [node (mf/ref-val contenteditable-ref)]
+             (set! (.-textContent node) ""))))
 
         on-copy
         (mf/use-fn

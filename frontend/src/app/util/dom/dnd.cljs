@@ -115,13 +115,13 @@
   ([e]
    (get-data e "penpot/data"))
   ([e data-type]
-   (let [dt (.-dataTransfer e)
-         data (.getData dt data-type)]
-     (cond-> data
-       (and (some? data) (not= data "")
-            (or (str/starts-with? data-type "penpot")
-                (= data-type "application/json")))
-       (t/decode-str)))))
+   (when-let [dt (.-dataTransfer e)]
+     (let [data (.getData dt data-type)]
+       (cond-> data
+         (and (some? data) (not= data "")
+              (or (str/starts-with? data-type "penpot")
+                  (= data-type "application/json")))
+         (t/decode-str))))))
 
 (defn get-files
   [e]

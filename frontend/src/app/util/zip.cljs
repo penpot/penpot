@@ -82,6 +82,10 @@
 
 (defn read-as-text
   [entry]
+  (when (nil? entry)
+    (ex/raise :type :assertion
+              :code :invalid-entry
+              :hint "cannot read zip entry: entry is nil"))
   (let [writer (new zip/TextWriter)]
     (.getData entry writer)))
 
