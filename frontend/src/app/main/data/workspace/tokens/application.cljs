@@ -848,7 +848,7 @@
   [{:keys [token attrs shape-ids expand-with-children]}]
   (ptk/reify ::apply-token-from-input
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [objects (dsh/lookup-page-objects state)
             shapes (into [] (keep (d/getf objects)) shape-ids)
 
@@ -874,15 +874,17 @@
          (cond
            (and (= (:type token) :spacing)
                 (nil? attrs))
-           (apply-spacing-token-separated {:token token
-                                           :attr attrs
-                                           :shapes shapes})
+           (-> (apply-spacing-token-separated {:token token
+                                               :attr attrs
+                                               :shapes shapes})
+               (with-meta (meta it)))
 
            :else
-           (apply-token {:attributes (if (empty? attrs) attributes attrs)
-                         :token token
-                         :shape-ids shape-ids
-                         :on-update-shape on-update-shape})))))))
+           (-> (apply-token {:attributes (if (empty? attrs) attributes attrs)
+                             :token token
+                             :shape-ids shape-ids
+                             :on-update-shape on-update-shape})
+               (with-meta (meta it)))))))))
 
 
 (defn apply-token-on-color-selected

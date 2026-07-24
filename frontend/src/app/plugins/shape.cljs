@@ -1680,14 +1680,15 @@
                      [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
             :fn (fn [token attrs]
                   (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                        kw-attrs (when (seq attrs)
+                                   (into #{} (map token-attr-plugin->token-attr) attrs))]
                     (if (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
                       (st/emit!
-                       (-> (dwta/toggle-token {:token token
-                                               :attrs kw-attrs
-                                               :shape-ids [id]
-                                               :expand-with-children false})
+                       (-> (dwta/apply-token-from-input {:token token
+                                                         :attrs kw-attrs
+                                                         :shape-ids [id]
+                                                         :expand-with-children false})
                            (se/add-event plugin-id))))))}
 
            :isVariantHead
