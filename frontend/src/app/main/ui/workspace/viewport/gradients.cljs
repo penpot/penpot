@@ -447,12 +447,38 @@
                    :r (/ 4 zoom)
                    :fill "var(--app-white)"}]))]))
 
+;; The gradient geometry is defined in objectBoundingBox units, so the
+;; perpendicular of the gradient vector has to be taken in that normalized
+;; space and only afterwards mapped to the shape dimensions. Doing it the other
+;; way around blows the handler up by the shape aspect ratio (see #10069).
+
+(defn radial-width-point
+  "Position, in shape local coordinates, of the radial gradient width handler."
+  [{:keys [x y width height]} gradient]
+  (let [{:keys [start-x start-y end-x end-y] gwidth :width} gradient
+        vx (- end-x start-x)
+        vy (- end-y start-y)]
+    (gpt/point (+ x (* width (+ start-x (* gwidth vy))))
+               (+ y (* height (- start-y (* gwidth vx)))))))
+
+(defn point->gradient-width
+  "Inverse of `radial-width-point`: the radial gradient `:width` factor that
+  places its width handler on the given shape local coordinates point."
+  [{:keys [x y width height]} gradient point]
+  (let [{:keys [start-x start-y end-x end-y]} gradient
+        dx (- (/ (- (:x point) x) width) start-x)
+        dy (- (/ (- (:y point) y) height) start-y)]
+    (/ (mth/hypot dx dy)
+       (mth/hypot (- end-x start-x) (- end-y start-y)))))
+
 (mf/defc gradient-handlers-impl*
   [{:keys [zoom stops gradient editing shape]}]
   (let [transform         (gsh/transform-matrix shape)
         transform-inverse (gsh/inverse-transform-matrix shape)
 
-        {:keys [x y width height] :as sr} (:selrect shape)
+        selrect (:selrect shape)
+
+        {:keys [x y width height]} selrect
 
         from-p (-> (gpt/point (+ x (* width (:start-x gradient)))
                               (+ y (* height (:start-y gradient))))
@@ -461,15 +487,9 @@
                               (+ y (* height (:end-y gradient))))
                    (gpt/transform transform))
 
-        gradient-vec    (gpt/to-vec from-p to-p)
-        gradient-length (gpt/length gradient-vec)
-
-        width-v (-> gradient-vec
-                    (gpt/normal-right)
-                    (gpt/multiply (gpt/point (* (:width gradient) (/ gradient-length (/ height 2)))))
-                    (gpt/multiply (gpt/point (/ width 2))))
-
-        width-p (gpt/add from-p width-v)
+        width-p (when (= :radial (:type gradient))
+                  (-> (radial-width-point selrect gradient)
+                      (gpt/transform transform)))
 
         change!
         (mf/use-fn
@@ -496,19 +516,18 @@
 
         on-change-width
         (mf/use-fn
-         (mf/deps gradient-length width height)
+         (mf/deps transform-inverse selrect gradient)
          (fn [point]
-           (let [scale-factor-y (/ gradient-length (/ height 2))
-                 norm-dist (/ (gpt/distance point from-p)
-                              (* (/ width 2) scale-factor-y))]
-             (when (and norm-dist (d/num? norm-dist))
+           (let [point     (gpt/transform point transform-inverse)
+                 norm-dist (point->gradient-width selrect gradient point)]
+             (when (d/num? norm-dist)
                (change! {:width norm-dist})))))]
 
     [:> gradient-handler-transformed*
      {:editing editing
       :from-p from-p
       :to-p to-p
-      :width-p (when (= :radial (:type gradient)) width-p)
+      :width-p width-p
       :stops stops
       :zoom zoom
       :on-change-start on-change-start
