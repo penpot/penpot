@@ -212,6 +212,7 @@
    :enable-render-wasm-info
    :enable-available-viewer-wasm
    :enable-background-blur
+   :enable-stroke-path
    :enable-token-combobox])
 
 (defn parse
