@@ -122,7 +122,7 @@
 
 (defn text-editor-focus
   [id]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [buffer (uuid/get-u32 id)]
       (when-not (h/call wasm/internal-module "_text_editor_focus"
                         (aget buffer 0)
@@ -134,49 +134,49 @@
 (defn text-editor-set-cursor-from-offset
   "Sets caret position from shape relative coordinates"
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_set_cursor_from_offset" x y)))
 
 (defn text-editor-set-cursor-from-point
   "Sets caret position from screen (canvas) coordinates"
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
 
 (defn text-editor-toggle-overtype-mode
   "Toggles overtype mode"
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_toggle_overtype_mode")))
 
 (defn text-editor-pointer-down
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
 
 (defn text-editor-pointer-move
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_move" x y)))
 
 (defn text-editor-pointer-up
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_up" x y)))
 
 (defn text-editor-update-blink
   [timestamp-ms]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_update_blink" timestamp-ms)))
 
 (defn text-editor-render-overlay
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_render_overlay")))
 
 (defn text-editor-poll-event
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [res (h/call wasm/internal-module "_text_editor_poll_event")]
       res)))
 
@@ -247,7 +247,7 @@
 
 (defn text-editor-get-current-styles
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_get_current_styles")]
       (when (and ptr (not (zero? ptr)))
         (let [heap-u8 (mem/get-heap-u8)
@@ -327,7 +327,7 @@
 (defn text-editor-encode-text-pre
   [text]
   (when (and (not (empty? text))
-             wasm/context-initialized?)
+             (wasm/ready?))
     (let [encoder (js/TextEncoder.)
           buf (.encode encoder text)
           heapu8 (mem/get-heap-u8)
@@ -338,31 +338,31 @@
 (defn text-editor-encode-text-post
   [text]
   (when (and (not (empty? text))
-             wasm/context-initialized?)
+             (wasm/ready?))
     (mem/free)))
 
 (defn text-editor-composition-start
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_composition_start")))
 
 (defn text-editor-composition-update
   [text]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_composition_update")
     (text-editor-encode-text-post text)))
 
 (defn text-editor-composition-end
   [text]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_composition_end")
     (text-editor-encode-text-post text)))
 
 (defn text-editor-insert-text
   [text]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_insert_text")
     (text-editor-encode-text-post text)))
@@ -371,62 +371,62 @@
   ([]
    (text-editor-delete-backward false))
   ([word-boundary]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (h/call wasm/internal-module "_text_editor_delete_backward" word-boundary))))
 
 (defn text-editor-delete-forward
   ([]
    (text-editor-delete-forward false))
   ([word-boundary]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (h/call wasm/internal-module "_text_editor_delete_forward" word-boundary))))
 
 (defn text-editor-insert-paragraph []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_insert_paragraph")))
 
 (defn text-editor-move-cursor
   [direction word-boundary extend-selection]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_move_cursor" direction word-boundary (if extend-selection 1 0))))
 
 (defn text-editor-select-all
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_select_all")))
 
 (defn text-editor-select-word-boundary
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
 
 (defn text-editor-blur
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (when-not (h/call wasm/internal-module "_text_editor_blur")
       (throw (js/Error. "TextEditor blur failed")))))
 
 (defn text-editor-dispose
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_dispose")))
 
 (defn text-editor-has-focus?
   ([id]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (not (zero? (h/call wasm/internal-module "_text_editor_has_focus_with_id" id)))))
   ([]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (not (zero? (h/call wasm/internal-module "_text_editor_has_focus"))))))
 
 (defn text-editor-has-selection?
   ([]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (not (zero? (h/call wasm/internal-module "_text_editor_has_selection"))))))
 
 (defn text-editor-export-content
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_export_content")]
       (when (and ptr (not (zero? ptr)))
         (let [json-str (mem/read-string ptr)]
@@ -436,7 +436,7 @@
 (defn text-editor-export-selection
   "Export only the currently selected text as plain text from the WASM editor. Requires WASM support (_text_editor_export_selection)."
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_export_selection")]
       (when (and ptr (not (zero? ptr)))
         (let [text (mem/read-string ptr)]
@@ -445,7 +445,7 @@
 
 (defn text-editor-get-active-shape-id
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (try
       (let [byte-offset (mem/alloc 16)
             u32-offset (mem/->offset-32 byte-offset)
@@ -465,7 +465,7 @@
 
 (defn text-editor-get-selection
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [byte-offset     (mem/alloc 16)
           u32-offset      (mem/->offset-32 byte-offset)
           heap            (mem/get-heap-u32)
@@ -543,7 +543,7 @@
   shape-id and the fully merged content map ready for
   v2-update-text-shape-content."
   []
-  (when (and wasm/context-initialized? (text-editor-has-focus?))
+  (when (and (wasm/ready?) (text-editor-has-focus?))
     (let [shape-id  (text-editor-get-active-shape-id)
           new-texts (text-editor-export-content)]
       (when (and shape-id new-texts)
@@ -603,7 +603,7 @@
 
 (defn apply-styles-to-selection
   [attrs use-shape-fn set-shape-text-content-fn]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
 

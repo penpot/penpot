@@ -111,7 +111,7 @@
 
 (defn update-text-layout
   [id]
-  (when wasm/context-initialized?
+  (when (wasm/live?)
     (let [shape-id-buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_update_shape_text_layout_for"
               (aget shape-id-buffer 0)
@@ -121,7 +121,7 @@
 
 (defn force-update-text-layout
   [id]
-  (when wasm/context-initialized?
+  (when (wasm/live?)
     (let [shape-id-buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_force_update_shape_text_layout_for"
               (aget shape-id-buffer 0)
@@ -132,7 +132,7 @@
 ;; IMPORTANT: Only TTF fonts can be stored.
 (defn- store-font-buffer
   [font-data font-array-buffer emoji? fallback?]
-  (when wasm/context-initialized?
+  (when (wasm/live?)
     (let [font-id-buffer  (:family-id-buffer font-data)
           size (.-byteLength font-array-buffer)
           ptr  (h/call wasm/internal-module "_alloc_bytes" size)

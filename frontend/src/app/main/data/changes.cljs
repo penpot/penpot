@@ -20,7 +20,6 @@
    [app.main.worker :as mw]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
-   [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -90,8 +89,7 @@
   (ptk/reify ::sync-wasm-structural-changes
     ptk/EffectEvent
     (effect [_ state _]
-      (when (and wasm/context-initialized?
-                 (not @wasm/context-lost?))
+      (when (wasm.api/initialized?)
         (let [objects (dsh/lookup-page-objects state)
               shapes
               (into []
