@@ -6,6 +6,7 @@ use crate::error::Result;
 use crate::get_gpu_state;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
 use skia_safe::{self as skia, Codec, ISize, Size};
+use std::cell::Cell;
 use std::collections::HashMap;
 
 pub type Image = skia::Image;
@@ -66,8 +67,19 @@ enum StoredImage {
     },
 }
 
+struct StoredEntry {
+    image: StoredImage,
+    /// Approximate retained cost: encoded byte length (raw/svg) or the
+    /// decoded RGBA size for images registered from a GL texture.
+    bytes: usize,
+    /// LRU tick; `Cell` so read paths can touch it without `&mut self`.
+    last_used: Cell<u64>,
+}
+
 pub struct ImageStore {
-    images: HashMap<(Uuid, bool), StoredImage>,
+    images: HashMap<(Uuid, bool), StoredEntry>,
+    total_bytes: usize,
+    tick: Cell<u64>,
     /// gpu-only
     context: Option<Box<DirectContext>>,
 }
@@ -212,6 +224,8 @@ impl ImageStore {
         let context = &gpu_state.context;
         Self {
             images: HashMap::with_capacity(2048),
+            total_bytes: 0,
+            tick: Cell::new(0),
             context: Some(Box::new(context.clone())),
         }
     }
@@ -222,8 +236,55 @@ impl ImageStore {
     pub fn new_without_gpu() -> Self {
         Self {
             images: HashMap::with_capacity(16),
+            total_bytes: 0,
+            tick: Cell::new(0),
             context: None,
         }
+    }
+
+    /// Bumps the LRU clock and returns the new tick.
+    fn next_tick(&self) -> u64 {
+        let t = self.tick.get() + 1;
+        self.tick.set(t);
+        t
+    }
+
+    fn insert_entry(&mut self, key: (Uuid, bool), image: StoredImage, bytes: usize) {
+        let last_used = Cell::new(self.next_tick());
+        self.total_bytes += bytes;
+        self.images.insert(
+            key,
+            StoredEntry {
+                image,
+                bytes,
+                last_used,
+            },
+        );
+    }
+
+    /// Evicts least-recently-used images until the store retains at most
+    /// `max_bytes`. Meant to be called by the headless exporter *between*
+    /// requests, so an image can never disappear under a running render;
+    /// evicted images are simply re-provisioned by a later request that
+    /// needs them (`is_image_cached` reports them as missing). Returns the
+    /// number of evicted images.
+    pub fn evict_to_budget(&mut self, max_bytes: usize) -> usize {
+        let mut evicted = 0;
+        while self.total_bytes > max_bytes {
+            let Some(key) = self
+                .images
+                .iter()
+                .min_by_key(|(_, entry)| entry.last_used.get())
+                .map(|(key, _)| *key)
+            else {
+                break;
+            };
+            if let Some(entry) = self.images.remove(&key) {
+                self.total_bytes -= entry.bytes;
+                evicted += 1;
+            }
+        }
+        evicted
     }
 
     pub fn add(
@@ -239,40 +300,43 @@ impl ImageStore {
         }
 
         let raw_data = image_data.to_vec();
+        let bytes = raw_data.len();
 
         match self.context.as_mut() {
             Some(context) => {
                 if let Some(gpu_image) = decode_image(context, &raw_data) {
-                    self.images.insert(key, StoredImage::Gpu(gpu_image));
+                    self.insert_entry(key, StoredImage::Gpu(gpu_image), bytes);
                 } else if let Some((dom, size)) = parse_svg(&raw_data) {
-                    self.images.insert(
+                    self.insert_entry(
                         key,
                         StoredImage::Svg {
                             dom,
                             size,
                             raster: None,
                         },
+                        bytes,
                     );
                 } else {
                     // The lazy re-decode in `get_internal` only retries raster codecs,
                     // so SVGs that fail to parse here stay raw.
-                    self.images.insert(key, StoredImage::Raw(raw_data));
+                    self.insert_entry(key, StoredImage::Raw(raw_data), bytes);
                 }
             }
             // GPU-free: keep the encoded bytes; decoded on the CPU at draw time.
             // SVGs still get parsed up front since that needs no GPU context.
             None => {
                 if let Some((dom, size)) = parse_svg(&raw_data) {
-                    self.images.insert(
+                    self.insert_entry(
                         key,
                         StoredImage::Svg {
                             dom,
                             size,
                             raster: None,
                         },
+                        bytes,
                     );
                 } else {
-                    self.images.insert(key, StoredImage::Raw(raw_data));
+                    self.insert_entry(key, StoredImage::Raw(raw_data), bytes);
                 }
             }
         }
@@ -303,7 +367,8 @@ impl ImageStore {
             ));
         };
         let image = create_image_from_gl_texture(context, texture_id, width, height)?;
-        self.images.insert(key, StoredImage::Gpu(image));
+        let bytes = (width as usize) * (height as usize) * 4;
+        self.insert_entry(key, StoredImage::Gpu(image), bytes);
 
         Ok(())
     }
@@ -337,7 +402,9 @@ impl ImageStore {
     }
 
     fn decode_raw_cpu_image(&self, id: &Uuid, is_thumbnail: bool) -> Option<Image> {
-        match self.images.get(&(*id, is_thumbnail))? {
+        let entry = self.images.get(&(*id, is_thumbnail))?;
+        entry.last_used.set(self.next_tick());
+        match &entry.image {
             StoredImage::Raw(raw_data) => {
                 let data = unsafe { skia::Data::new_bytes(raw_data) };
                 Image::from_encoded(&data)
@@ -361,7 +428,8 @@ impl ImageStore {
             .images
             .get(&(*id, false))
             .or_else(|| self.images.get(&(*id, true)))?;
-        match entry {
+        entry.last_used.set(self.next_tick());
+        match &entry.image {
             StoredImage::Svg { dom, size, .. } => Some((dom, *size)),
             _ => None,
         }
@@ -369,16 +437,19 @@ impl ImageStore {
 
     fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {
         let key = (*id, is_thumbnail);
+        let tick = self.tick.get() + 1;
+        self.tick.set(tick);
         // Use entry API to mutate the HashMap in-place if needed
         if let Some(entry) = self.images.get_mut(&key) {
-            match entry {
+            entry.last_used.set(tick);
+            match &mut entry.image {
                 StoredImage::Gpu(ref img) => Some(img),
                 StoredImage::Raw(raw_data) => {
                     let context = self.context.as_mut()?;
                     let gpu_image = decode_image(context, raw_data)?;
-                    *entry = StoredImage::Gpu(gpu_image);
+                    entry.image = StoredImage::Gpu(gpu_image);
 
-                    if let StoredImage::Gpu(ref img) = entry {
+                    if let StoredImage::Gpu(ref img) = entry.image {
                         Some(img)
                     } else {
                         None
