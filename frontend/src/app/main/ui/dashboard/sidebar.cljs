@@ -345,8 +345,9 @@
                  (assoc :accountAgeDays account-age-days)))
               (dnt/show-nitrate-popup
                :nitrate-form
-               (when (= subscription-type "unlimited")
-                 {:show-contact-sales-option true}))))))
+               (cond-> {:subscription-start-origin "dashboard:organization_switcher"}
+                 (= subscription-type "unlimited")
+                 (assoc :show-contact-sales-option true)))))))
 
         on-go-to-cc-click
         (mf/use-fn
@@ -820,8 +821,9 @@
                  (assoc :accountAgeDays account-age-days)))
               (dnt/show-nitrate-popup
                :nitrate-form
-               (when (= subscription-type "unlimited")
-                 {:show-contact-sales-option true}))))))]
+               (cond-> {:subscription-start-origin "dashboard:create_organization_button"}
+                 (= subscription-type "unlimited")
+                 (assoc :show-contact-sales-option true)))))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
        [:div {:class (stl/css :org-switch-content)}

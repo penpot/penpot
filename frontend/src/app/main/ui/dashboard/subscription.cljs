@@ -184,8 +184,9 @@
                (some? account-age-days)
                (assoc :accountAgeDays account-age-days)))
             (dnt/show-nitrate-popup :nitrate-form
-                                    (when (= subscription-type "unlimited")
-                                      {:show-contact-sales-option true})))))
+                                    (cond-> {:subscription-start-origin "dashboard:promotional_banner"}
+                                      (= subscription-type "unlimited")
+                                      (assoc :show-contact-sales-option true))))))
 
         handle-go-to-cc
         (mf/use-fn

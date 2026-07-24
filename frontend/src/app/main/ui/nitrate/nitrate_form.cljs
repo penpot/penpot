@@ -7,6 +7,7 @@
 (ns app.main.ui.nitrate.nitrate-form
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
    [app.main.refs :as refs]
@@ -25,6 +26,7 @@
   [connectivity]
 
   (let [show-contact-sales-option (:show-contact-sales-option connectivity)
+        subscription-start-origin (:subscription-start-origin connectivity)
         online? (and (:licenses connectivity) (not show-contact-sales-option))
         profile  (mf/deref refs/profile)
         on-click
@@ -33,13 +35,20 @@
            (dnt/go-to-buy-nitrate-license
             "monthly"
             dnt/go-to-ac-url
-            "dashboard:plan-confirmation-modal"
-            (if (:subscription profile) "paid" "trial"))))
+            "dashboard:plan_confirmation_modal"
+            (if (:subscription profile) "paid" "trial")
+            subscription-start-origin)))
 
         on-activate-click
         (mf/use-fn
          (fn []
-           (st/emit! (modal/show {:type :nitrate-code-activation}))))]
+           (st/emit! (modal/show {:type :nitrate-code-activation}))))
+
+        on-see-plan-click
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-current-subscription"
+                                ::ev/origin "dashboard:plan_confirmation_modal"}))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
@@ -89,7 +98,9 @@
                                                (tr "nitrate.form.enter-code")]]
 
            [:p {:class (stl/css :modal-text-medium)}
-            [:a {:class (stl/css :link) :href dnt/go-to-subscription-url}
+            [:a {:class (stl/css :link)
+                 :href dnt/go-to-subscription-url
+                 :on-click on-see-plan-click}
              (tr "nitrate.form.see-plan")]]]
 
           [:div {:class (stl/css :contact)}

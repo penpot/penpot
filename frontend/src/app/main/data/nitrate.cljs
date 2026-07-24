@@ -119,7 +119,7 @@
      :cancel-callback       (build nitrate-checkout-cancelled-token)}))
 
 (defn go-to-buy-nitrate-license
-  [subscription base-url event-origin subscription-mode]
+  [subscription base-url event-origin subscription-mode subscription-start-origin]
   (let [{:keys [success-callback error-callback finish-error-callback cancel-callback]}
         (build-nitrate-callback-urls base-url)
         params {:subscription subscription
@@ -131,8 +131,9 @@
         event  (ev/event {::ev/name "start-nitrate-checkout"
                           ::ev/origin event-origin
                           :product "nitrate:enterprise"
-                          :billing-period subscription
-                          :subscription-mode subscription-mode})]
+                          :billingPeriod subscription
+                          :subscriptionMode subscription-mode
+                          :subscription_start_origin subscription-start-origin})]
     (->> st/stream
          (rx/filter (ptk/type? ::ev/chunk-persisted))
          (rx/take 1)
