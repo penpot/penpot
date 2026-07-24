@@ -258,7 +258,6 @@
     margin-left: var(--sp-m);
   }
 }
-
 .dashboard-fonts-hero {
   @include t.use-typography("body-medium");
 
@@ -266,10 +265,12 @@
   margin-top: px2rem(80);
   display: flex;
   justify-content: space-between;
+  max-width: px2rem(1000);
+  width: 100%;
 
   .btn-primary {
     height: $sz-40;
-    width: 100%;
+    width: px2rem(200);  
   }
 
   .desc {
@@ -277,7 +278,7 @@
     flex-direction: column;
     gap: var(--sp-xxl);
     color: var(--color-background-secondary);
-    width: $sz-500;
+    flex: 1;  
 
     h2 {
       color: var(--color-foreground-primary);
