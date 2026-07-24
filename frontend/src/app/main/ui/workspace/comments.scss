@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .comments-section {
@@ -112,7 +113,12 @@
 }
 
 .separator {
-  height: deprecated.$s-12;
+  position: relative;
+  block-size: var(--sp-xs);
+  inline-size: calc(100% + var(--sp-s));
+  border-top: $b-1 solid var(--color-background-quaternary);
+  left: calc(-1 * var(--sp-xs));
+  margin-top: var(--sp-s);
 }
 
 .comments-section-content {
