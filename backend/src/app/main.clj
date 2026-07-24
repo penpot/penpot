@@ -391,6 +391,8 @@
 
      :delete-object
      (ig/ref :app.tasks.delete-object/handler)
+     :demo-purge
+     (ig/ref :app.tasks.demo-purge/handler)
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
@@ -426,6 +428,9 @@
     ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.delete-object/handler
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.demo-purge/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler

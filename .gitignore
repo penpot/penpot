@@ -50,6 +50,7 @@ opencode.json
 /backend/target/
 /backend/experiments
 /backend/scripts/_env.local
+/backend/performance/results/
 /bundle*
 /clj-profiler/
 /common/coverage
@@ -103,3 +104,4 @@ opencode.json
 /.opencode/prompts
 /.codex/
 /tools/__pycache__
+/performance/results/

@@ -212,6 +212,7 @@ ENV CLJKONDO_VERSION=2026.05.25 \
     BABASHKA_VERSION=1.12.218 \
     CLJFMT_VERSION=0.16.4 \
     PIXI_VERSION=0.67.2 \
+    K6_VERSION=2.0.0 \
     GITHUB_CLI_VERSION=2.96.0 \
     UV_VERSION=0.11.9 \
     UV_TOOL_DIR=/opt/uv/tools \
@@ -340,6 +341,28 @@ RUN set -ex; \
     wget -O /tmp/mc ${BINARY_URL}; \
     mv /tmp/mc /opt/utils/bin/; \
     chmod +x /opt/utils/bin/mc;
+
+# Install k6
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/grafana/k6/releases/download/v$K6_VERSION/k6-v$K6_VERSION-linux-arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/grafana/k6/releases/download/v$K6_VERSION/k6-v$K6_VERSION-linux-amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/k6.tar.gz ${BINARY_URL}; \
+    cd /tmp; \
+    tar -xf /tmp/k6.tar.gz; \
+    mv /tmp/k6-v$K6_VERSION-linux-*/k6 /opt/utils/bin/; \
+    chmod +x /opt/utils/bin/k6; \
+    rm -rf /tmp/k6.tar.gz /tmp/k6-v$K6_VERSION-linux-*;
 
 # Install uv
 RUN set -ex; \
