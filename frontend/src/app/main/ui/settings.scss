@@ -4,16 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 @use "ds/mixins.scss" as *;
 
 .dashboard {
-  background-color: var(--app-background);
+  background-color: var(--color-background-primary);
   display: grid;
-  grid-template-rows: deprecated.$s-48 1fr;
-  grid-template-columns: deprecated.$s-40 deprecated.$s-256 1fr;
-  height: 100vh;
+  grid-template-rows: $sz-48 1fr;
+  grid-template-columns: $sz-40 px2rem(256) 1fr;
+  block-size: 100vh;
 }
 
 .dashboard-content {
@@ -23,273 +25,13 @@
   flex-direction: column;
   position: relative;
   grid-row: 1 / span 2;
-  padding: deprecated.$s-16 deprecated.$s-16 0 0;
+  padding: var(--sp-l) var(--sp-l) 0 0;
 }
 
 .dashboard-container {
   flex: 1 0 0;
-  margin-right: deprecated.$s-16;
+  margin-inline-end: var(--sp-l);
   overflow-y: auto;
-  width: 100%;
-  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
-
-  &.dashboard-projects {
-    user-select: none;
-  }
-
-  &.dashboard-shared {
-    width: calc(100vw - deprecated.$s-320);
-    margin-right: deprecated.$s-52;
-  }
-
-  &.search {
-    margin-top: deprecated.$s-12;
-  }
-}
-
-.dashboard-settings {
-  display: flex;
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-
-  a {
-    color: var(--color-foreground-secondary);
-  }
-}
-
-.form-container {
-  margin: deprecated.$s-48 auto deprecated.$s-32 deprecated.$s-120;
-  display: flex;
-  max-width: deprecated.$s-368;
-  width: 100%;
-
-  &.two-columns {
-    max-width: deprecated.$s-520;
-    justify-content: space-between;
-    flex-direction: row;
-  }
-
-  h2 {
-    margin-bottom: deprecated.$s-16;
-  }
-
-  form {
-    width: deprecated.$s-468;
-
-    .custom-input,
-    .custom-select {
-      flex-direction: column-reverse;
-
-      label {
-        position: relative;
-        text-transform: uppercase;
-        color: var(--color-foreground-primary);
-        font-size: deprecated.$fs-11;
-        margin-bottom: deprecated.$s-12;
-        margin-left: calc(-1 * deprecated.$s-4);
-      }
-
-      input,
-      select {
-        background-color: var(--color-background-tertiary);
-        border-radius: deprecated.$s-8;
-        border-color: transparent;
-        color: var(--color-foreground-primary);
-        padding: 0 deprecated.$s-16;
-
-        &:focus {
-          outline: deprecated.$s-1 solid var(--color-accent-primary);
-        }
-
-        ::placeholder {
-          color: var(--color-foreground-secondary);
-        }
-      }
-
-      .help-icon {
-        bottom: deprecated.$s-12;
-        top: auto;
-
-        svg {
-          fill: var(--color-foreground-secondary);
-        }
-      }
-
-      &.disabled {
-        input {
-          background-color: var(--input-background-color-disabled);
-          border-color: var(--color-background-quaternary);
-          color: var(--color-foreground-secondary);
-        }
-      }
-
-      .input-container {
-        background-color: var(--color-background-tertiary);
-        border-radius: deprecated.$s-8;
-        border-color: transparent;
-        margin-top: deprecated.$s-24;
-
-        .main-content {
-          label {
-            position: absolute;
-            top: calc(-1 * deprecated.$s-24);
-          }
-
-          span {
-            color: var(--color-foreground-primary);
-          }
-        }
-
-        &:focus {
-          border: deprecated.$s-1 solid var(--color-accent-primary);
-        }
-      }
-
-      textarea {
-        border-radius: deprecated.$s-8;
-        padding: deprecated.$s-12 deprecated.$s-16;
-        background-color: var(--color-background-tertiary);
-        color: var(--color-foreground-primary);
-        border: none;
-
-        &:focus {
-          outline: deprecated.$s-1 solid var(--color-accent-primary);
-        }
-      }
-    }
-
-    .field-title {
-      color: var(--color-foreground-primary);
-    }
-
-    .field-title:not(:first-child) {
-      margin-top: deprecated.$s-64;
-    }
-
-    .field-text {
-      color: var(--color-foreground-secondary);
-    }
-
-    button,
-    .btn-secondary {
-      width: 100%;
-      font-size: deprecated.$fs-11;
-      text-transform: uppercase;
-      background-color: var(--color-background-tertiary);
-      color: var(--color-foreground-primary);
-
-      &:hover {
-        color: var(--color-accent-primary);
-        background-color: var(--color-background-quaternary);
-      }
-    }
-
-    hr {
-      display: none;
-    }
-  }
-
-  .links {
-    margin-top: deprecated.$s-12;
-  }
-}
-
-.profile-form {
-  display: flex;
-  flex-direction: column;
-  max-width: deprecated.$s-368;
-  width: 100%;
-
-  .newsletter-subs {
-    border-bottom: deprecated.$s-1 solid var(--color-foreground-secondary);
-    border-top: deprecated.$s-1 solid var(--color-foreground-secondary);
-    padding: deprecated.$s-32 0;
-    margin-bottom: deprecated.$s-32;
-
-    .newsletter-title {
-      font-family: "worksans", "vazirmatn", sans-serif;
-      color: var(--color-foreground-secondary);
-      font-size: deprecated.$fs-14;
-    }
-
-    label {
-      font-family: "worksans", "vazirmatn", sans-serif;
-      color: var(--color-background-primary);
-      font-size: deprecated.$fs-12;
-      margin-right: calc(-1 * deprecated.$s-16);
-      margin-bottom: deprecated.$s-12;
-    }
-
-    .info {
-      font-family: "worksans", "vazirmatn", sans-serif;
-      color: var(--color-foreground-secondary);
-      font-size: deprecated.$fs-12;
-      margin-bottom: deprecated.$s-8;
-    }
-
-    .input-checkbox label {
-      align-items: flex-start;
-    }
-  }
-}
-
-.avatar-form {
-  display: flex;
-  flex-direction: column;
-  width: deprecated.$s-120;
-  min-width: deprecated.$s-120;
-
-  img {
-    border-radius: 50%;
-    flex-shrink: 0;
-    height: deprecated.$s-120;
-    margin-right: deprecated.$s-16;
-    width: deprecated.$s-120;
-  }
-
-  .image-change-field {
-    position: relative;
-    width: deprecated.$s-120;
-    height: deprecated.$s-120;
-
-    .update-overlay {
-      opacity: 0;
-      cursor: pointer;
-      position: absolute;
-      width: deprecated.$s-120;
-      height: deprecated.$s-120;
-      border-radius: 50%;
-      font-size: deprecated.$fs-24;
-      color: var(--color-foreground-primary);
-      line-height: 5;
-      text-align: center;
-      background: var(--color-accent-tertiary);
-      z-index: 14;
-    }
-
-    input[type="file"] {
-      width: deprecated.$s-120;
-      height: deprecated.$s-120;
-      position: absolute;
-      opacity: 0;
-      cursor: pointer;
-      top: 0;
-      z-index: 15;
-    }
-
-    &:hover {
-      .update-overlay {
-        opacity: 0.8;
-      }
-    }
-  }
-}
-
-.options-form,
-.password-form {
-  h2 {
-    font-size: deprecated.$fs-14;
-    margin-bottom: deprecated.$s-20;
-  }
+  inline-size: 100%;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
 }

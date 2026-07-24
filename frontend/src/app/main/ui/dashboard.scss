@@ -4,24 +4,26 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .dashboard {
-  @extend %new-scrollbar;
+  @include custom-scrollbar($include-selection: false, $include-placeholder: false);
 
-  background-color: var(--app-background);
+  background-color: var(--color-background-primary);
   display: grid;
-  grid-template-columns: deprecated.$s-40 deprecated.$s-256 1fr;
-  grid-template-rows: deprecated.$s-52 1fr;
-  height: 100vh;
+  grid-template-columns: $sz-40 px2rem(256) 1fr;
+  grid-template-rows: px2rem(52) 1fr;
+  block-size: 100vh;
 }
 
 .dashboard-content {
   display: grid;
-  grid-template-rows: deprecated.$s-64 1fr;
+  grid-template-rows: $sz-64 1fr;
   position: relative;
   grid-row: 1 / span 2;
-  padding: deprecated.$s-16 deprecated.$s-16 0 0;
+  padding: var(--sp-l) var(--sp-l) 0 0;
   overflow: hidden;
-  width: 100%;
+  inline-size: 100%;
 }

@@ -4,63 +4,63 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
-  @extend %modal-overlay-base;
-
-  &.transparent {
-    background-color: transparent;
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
 }
 
 .modal-container {
-  @extend %modal-container-base;
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-inline-size: px2rem(364);
+  min-block-size: $sz-192;
+  max-inline-size: $sz-512;
+  max-block-size: $sz-512;
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.headline-medium-typography;
-
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: px2rem(6);
 }
 
 .modal-content {
-  @include deprecated.body-large-typography;
+  @include use-typography("body-large");
 
-  margin-bottom: deprecated.$s-24;
+  line-height: 1.5;
+  margin-block-end: var(--sp-xxl);
 }
 
-.action-buttons {
-  @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .modal-scd-msg,
-.modal-subtitle,
 .modal-msg {
-  @include deprecated.body-large-typography;
-
-  color: var(--modal-text-foreground-color);
   line-height: 1.5;
+  color: var(--color-foreground-secondary);
 }
 
 .link {

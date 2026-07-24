@@ -4,9 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "./common";
 
 .submit-btn {
-  margin-top: deprecated.$s-16;
+  margin-block-start: var(--sp-l);
 }

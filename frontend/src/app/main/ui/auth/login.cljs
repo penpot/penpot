@@ -18,8 +18,8 @@
    [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
+   [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*] :as raw-icons]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.storage :as s]
@@ -220,25 +220,29 @@
     [:div {:class (stl/css :auth-buttons)}
      (when (contains? cf/flags :login-with-google)
        [:> bl/button-link* {:on-click login-with-google
-                            :icon deprecated-icon/brand-google
+                            :icon (mf/html
+                                   [:> raw-svg* {:id raw-icons/brand-google :class (stl/css :sso-icon)}])
                             :label (tr "auth.login-with-google-submit")
                             :class (stl/css :login-btn :btn-google-auth)}])
 
      (when (contains? cf/flags :login-with-github)
        [:> bl/button-link* {:on-click login-with-github
-                            :icon deprecated-icon/brand-github
+                            :icon (mf/html
+                                   [:> raw-svg* {:id raw-icons/brand-github :class (stl/css :sso-icon)}])
                             :label (tr "auth.login-with-github-submit")
                             :class (stl/css :login-btn :btn-github-auth)}])
 
      (when (contains? cf/flags :login-with-gitlab)
        [:> bl/button-link* {:on-click login-with-gitlab
-                            :icon deprecated-icon/brand-gitlab
+                            :icon (mf/html
+                                   [:> raw-svg* {:id raw-icons/brand-gitlab :class (stl/css :sso-icon)}])
                             :label (tr "auth.login-with-gitlab-submit")
                             :class (stl/css :login-btn :btn-gitlab-auth)}])
 
      (when (contains? cf/flags :login-with-oidc)
        [:> bl/button-link* {:on-click login-with-oidc
-                            :icon deprecated-icon/brand-openid
+                            :icon (mf/html
+                                   [:> raw-svg* {:id raw-icons/brand-openid :class (stl/css :sso-icon)}])
                             :label (or (not-empty cf/oidc-name) (tr "auth.login-with-oidc-submit"))
                             :class (stl/css :login-btn :btn-oidc-auth)}])]))
 
