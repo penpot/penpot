@@ -14,7 +14,7 @@
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"
   []
-  (when wasm/context-initialized?
+  (when (wasm/live?)
     (let [gl-obj (unchecked-get wasm/internal-module "GL")]
       (when gl-obj
         ;; Get the current WebGL context from Emscripten

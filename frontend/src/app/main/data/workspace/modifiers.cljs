@@ -657,7 +657,7 @@
         ty (.-f first-matrix)]
     (if-let [base @cache]
       (translate-selrect base tx ty)
-      (let [computed (wasm.api/get-selection-rect ids)]
+      (when-let [computed (wasm.api/get-selection-rect ids)]
         (vreset! cache (translate-selrect computed (- tx) (- ty)))
         computed))))
 
@@ -703,15 +703,27 @@
             (vreset! wasm-structure-modifiers-active? true)))
         (let [geometry-entries (parse-geometry-modifiers modif-tree)
               root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
+              wasm-ready?      (wasm.api/initialized?)
+              ;; While the GL context is down (lost / mid-reload), keep the
+              ;; root transforms so SVG selection/preview can still move.
+              ;; `propagate-modifiers` returns [] when not ready, do not
+              ;; treat that as "no modifiers".
               modifiers
-              (if (and translation? (not snap-pixel?))
+              (cond
+                (or (not wasm-ready?)
+                    (and translation? (not snap-pixel?)))
                 root-modifiers
-                (wasm.api/propagate-modifiers geometry-entries snap-pixel?))]
-          (wasm.api/set-modifiers modifiers)
+
+                :else
+                (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
+                  (if (seq propagated) propagated root-modifiers)))]
+          (when wasm-ready?
+            (wasm.api/set-modifiers modifiers))
           (let [ids     (into [] xf:map-key geometry-entries)
-                selrect (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
-                          (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
-                          (wasm.api/get-selection-rect ids))]
+                selrect (when wasm-ready?
+                          (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
+                            (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
+                            (wasm.api/get-selection-rect ids)))]
             (rx/of (set-temporary-selrect selrect)
                    (set-temporary-modifiers modifiers))))))))
 
@@ -769,7 +781,8 @@
               (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
               transforms
-              (if (and translation? (not snap-pixel?))
+              (cond
+                (and translation? (not snap-pixel?))
                 ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
                 ;; translation matrix onto every descendant. Without
                 ;; this step the commit would only touch the dragged
@@ -789,6 +802,26 @@
                      (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
                  {}
                  geometry-entries)
+
+                ;; Context lost / mid-reload: do not call into WASM. Use
+                ;; root transforms (and splat translation onto descendants
+                ;; when we can) so the commit still lands in file data.
+                (not (wasm.api/initialized?))
+                (if translation?
+                  (reduce
+                   (fn [acc [id data]]
+                     (let [t (:transform data)
+                           subtree-ids
+                           (or (get subtree-ids-by-id id)
+                               (cfh/get-children-ids-with-self objects id))]
+                       (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
+                   {}
+                   geometry-entries)
+                  (into {}
+                        (map (fn [[id data]] [id (:transform data)]))
+                        geometry-entries))
+
+                :else
                 (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
 
               ignore-tree
