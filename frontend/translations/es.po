@@ -2808,6 +2808,10 @@ msgstr "Crea un nuevo equipo"
 msgid "labels.create-team.placeholder"
 msgstr "Introduce un nuevo nombre de equipo"
 
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.current"
+msgstr "Valor Actual"
+
 #, unused
 msgid "labels.custom-fonts"
 msgstr "Fuentes personalizadas"
@@ -2815,6 +2819,11 @@ msgstr "Fuentes personalizadas"
 #: src/app/main/ui/settings/sidebar.cljs:82
 msgid "labels.dashboard"
 msgstr "Panel"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.default"
+msgstr "Valor por defecto"
+
 
 #: src/app/main/ui/dashboard/file_menu.cljs:337, src/app/main/ui/dashboard/fonts.cljs:286, src/app/main/ui/dashboard/fonts.cljs:363, src/app/main/ui/dashboard/fonts.cljs:397, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1379, src/app/main/ui/settings/integrations.cljs:389, src/app/main/ui/settings/profile.cljs:117, src/app/main/ui/settings/profile.cljs:128, src/app/main/ui/settings/profile.cljs:129, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:258, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:378
 msgid "labels.delete"
@@ -4943,6 +4952,7 @@ msgstr "Seleccionar elementos que usan este estilo"
 msgid "shortcut-section.basics"
 msgstr "Básicos"
 
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:418
 msgid "shortcut-section.dashboard"
 msgstr "Panel"
@@ -4965,11 +4975,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Editar"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Genérico"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Genérico"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -5475,9 +5481,77 @@ msgstr "Terminar medida"
 msgid "shortcuts.thumbnail-set"
 msgstr "Activar miniaturas"
 
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Página de atajos"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Atajos de teclado"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reset"
+msgstr "Restablecer valor por defecto"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disable"
+msgstr "Deshabilitar atajo"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled-shortcut"
+msgstr "Atajo deshabilitado"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.overwritten-by"
+msgstr "Este atajo ha sido reasignado a %s"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "Dirígete a TODO para personalizar tus atajos."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-disabled"
+msgstr "No hay atajos deshabilitados."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reload-hint"
+msgstr "Después de editar un atajo, recarga cualquier pestaña de Penpot para aplicar los cambios."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "No hay atajos que coincidan con tu búsqueda."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalizados"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled"
+msgstr "Deshabilitado"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-arrow"
+msgstr "Flecha"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-line"
+msgstr "Linea"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Importar/Exportar"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Pulsa la combinación de teclas deseada"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Combinación usada en \"%s\". Guardar este atajo hará que se elimine allí."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr "Esta combinación de teclas está disponible y puede asignarse sin conflictos."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
 msgid "shortcuts.toggle-alignment"
@@ -5490,6 +5564,10 @@ msgstr "Mostrar/ocultar recursos"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Mostrar/ocultar paleta de colores"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.toggle-comments-visibility"
+msgstr "Activar/desactivar visibilidad de comentarios"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
 msgid "shortcuts.toggle-focus-mode"
@@ -5586,6 +5664,26 @@ msgstr "Incrementar zoom a objetivo"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:211
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.edit-on-settings"
+msgstr "Personalízalos en ajustes"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-title"
+msgstr "Restaurar la configuración predeterminada"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-text"
+msgstr "Los siguientes atajos de teclado se restaurarán a sus valores predeterminados."
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.acction"
+msgstr "Acción"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.restore"
+msgstr "Restaurar"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
 msgid "subscription.banner.create-org-info"

@@ -98,7 +98,8 @@
                  :form form}
 
      ;; --- Feedback section
-     [:h2 {:class (stl/css :field-title :feedback-title)} (tr "feedback.title-contact-us")]
+     [:h2 {:class (stl/css :field-title :feedback-title)
+           :id "feedback-section-title"} (tr "feedback.title-contact-us")]
      [:p {:class (stl/css :field-text :feedback-title)} (tr "feedback.subtitle")]
 
      [:div {:class (stl/css :fields-row)}
@@ -164,6 +165,7 @@
                  (:content errors/last-report))
         props  (mf/spread-props props {:error-report report})]
 
-    [:div {:class (stl/css :dashboard-settings)}
+    [:section {:class (stl/css :dashboard-settings)
+               :aria-labelledby "feedback-section-title"}
      [:div {:class (stl/css :form-container)}
       [:> feedback-form* props]]]))

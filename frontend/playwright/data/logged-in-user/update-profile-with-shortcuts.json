@@ -1,0 +1,27 @@
+{
+    "~:v2-info-shown": true,
+    "~:newsletter-updates": false,
+    "~:onboarding-viewed": true,
+    "~:onboarding-questions": {
+        "~:role": "ux",
+        "~:start-with": "wireframing",
+        "~:expected-use": "personal",
+        "~:experience-design-tool": "sketch"
+    },
+    "~:onboarding-questions-answered": true,
+    "~:workspace-visited": true,
+    "~:custom-shortcuts": {
+        "~:workspace": {
+            "~:align-bottom": "ctrl+y",
+            "~:redo": ""
+        }
+    },
+    "~:renderer": "~:wasm",
+    "~:viewed-tutorial?": false,
+    "~:viewed-walkthrough?": false,
+    "~:release-notes-viewed": "0.0",
+    "~:nudge": {
+        "~:big": 10,
+        "~:small": 1
+    }
+}

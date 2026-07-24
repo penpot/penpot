@@ -369,7 +369,7 @@
       (st/emit! (dd/fetch-recent-files team-id)
                 (dd/clear-selected-files)))
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts-projects)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-projects :dashboard)
 
     (when (seq projects)
       [:*

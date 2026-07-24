@@ -2113,17 +2113,10 @@ msgstr "مساحة العمل"
 msgid "shortcut-subsection.alignment"
 msgstr "محاذاة"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
-msgid "shortcut-subsection.edit"
-msgstr "عدّل"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
+msgid "shortcut-subsection.generic"
 msgstr "عام"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
-msgstr "عام"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"

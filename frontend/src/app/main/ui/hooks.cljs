@@ -42,13 +42,14 @@
     state))
 
 (defn use-shortcuts
-  [key shortcuts]
-  (mf/use-effect
-   #js [(str key) shortcuts]
-   (fn []
-     (st/emit! (dsc/push-shortcuts key shortcuts))
+  [key shortcuts group-key]
+  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)]
+    (mf/use-effect
+     #js [(str key) shortcuts custom-shortcuts]
      (fn []
-       (st/emit! (dsc/pop-shortcuts key))))))
+       (st/emit! (dsc/push-shortcuts key shortcuts group-key))
+       (fn []
+         (st/emit! (dsc/pop-shortcuts key)))))))
 
 (defn- set-timer
   [state ms func]
