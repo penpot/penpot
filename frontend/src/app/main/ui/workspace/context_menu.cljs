@@ -506,7 +506,8 @@
                         :on-click do-transform-to-path}])
 
      (when (and has-strokes?
-                (features/active-feature? @st/state "render-wasm/v1"))
+                (features/active-feature? @st/state "render-wasm/v1")
+                (contains? cf/flags :stroke-path))
        [:> menu-entry* {:title (tr "workspace.shape.menu.stroke-to-path")
                         :on-click do-strokes-to-path}])
 
