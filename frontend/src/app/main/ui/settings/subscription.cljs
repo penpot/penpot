@@ -473,6 +473,14 @@
                  href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
              (st/emit! (rt/nav-raw :href href)))))
 
+        go-to-nitrate-payments
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "settings"
+                                :section "nitrate:enterprise"}))
+           (dnt/go-to-nitrate-billing)))
+
         open-subscription-modal
         (mf/use-fn
          (mf/deps subscription-editors nitrate-license)
@@ -592,7 +600,7 @@
                                      (tr "subscription.settings.manage-your-subscription")
                                      (tr "nitrate.subscription.settings.manual-cancel"))
                          :cta-link (if (and (:licenses connectivity) (not (:manual nitrate-license)))
-                                     dnt/go-to-nitrate-billing
+                                     go-to-nitrate-payments
                                      open-cancel-contact-sales-modal)
                          :code-action (when (:manual nitrate-license) :renovate)
                          :current-plan true}]

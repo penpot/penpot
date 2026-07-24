@@ -446,6 +446,7 @@
 
   (when (contains? cf/flags :nitrate)
     (let [org-member-ids-before (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+          team-created-at       (:created-at (db/get-by-id cfg :team team-id {:columns [:created-at]}))
           team-with-org         (nitrate/call cfg :get-team-org {:team-id team-id})
           source-org-id         (get-in team-with-org [:organization :id])
           source-org-perms      (when source-org-id
@@ -494,7 +495,12 @@
           (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
       ;; Api call to nitrate
-      (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
+      (let [team (nitrate/call cfg :set-team-org {:team-id team-id
+                                                  :organization-id organization-id
+                                                  :is-default false
+                                                  :event-origin "dashboard:move_team_to_organization"
+                                                  :add-method "move_existing_team_to_organization"
+                                                  :team-created-at team-created-at})]
         ;; Notify connected users
         (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
 

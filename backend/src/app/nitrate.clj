@@ -333,9 +333,14 @@
                       nil params))
 
 (defn- set-team-org-api
-  [cfg {:keys [organization-id team-id is-default] :as params}]
-  (let [params (assoc params :request-params {:team-id team-id
-                                              :is-your-penpot (true? is-default)})
+  [cfg {:keys [organization-id team-id is-default event-origin add-method team-created-at] :as params}]
+  (let [request-params (cond-> {:team-id team-id
+                                :is-your-penpot (true? is-default)}
+                         (some? event-origin)
+                         (assoc :event-origin event-origin
+                                :add-method add-method
+                                :team-created-at team-created-at))
+        params (assoc params :request-params request-params)
         team (request-to-nitrate cfg :post
                                  (generate-nitrate-uri
                                   "api/organizations/"
@@ -609,10 +614,14 @@
   Requires organization-id and is-default in params.
   Throws an exception if the request fails."
   [cfg team params]
-  (let [params (assoc (or params {})
-                      :team-id (:id team)
-                      :organization-id (:organization-id params)
-                      :is-default (:is-default params))
+  (let [params (cond-> (assoc (or params {})
+                              :team-id (:id team)
+                              :organization-id (:organization-id params)
+                              :is-default (:is-default params))
+                 (false? (:is-default params))
+                 (assoc :event-origin "dashboard:create_team_in_organization"
+                        :add-method "create_team_in_organization"
+                        :team-created-at (:created-at team)))
         result (call cfg :set-team-org params)]
     (when (nil? result)
       (ex/raise :type :internal

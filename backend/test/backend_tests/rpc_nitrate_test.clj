@@ -820,7 +820,7 @@
         (t/is (= :not-valid-teams (th/ex-code (:error out))))))))
 
 (defn- add-team-to-org-nitrate-mock
-  [{:keys [org-id org-summary org-perms owner-id team-id sso-active?]}]
+  [{:keys [org-id org-summary org-perms owner-id team-id sso-active? set-team-params]}]
   (fn [_cfg method params]
     (case method
       :get-org-membership (if (= (:profile-id params) owner-id)
@@ -829,7 +829,10 @@
       :get-org-members [owner-id]
       :get-team-org {:organization nil}
       :get-org-permissions org-perms
-      :set-team-org {:id team-id}
+      :set-team-org (do
+                      (when set-team-params
+                        (reset! set-team-params params))
+                      {:id team-id})
       :get-org-sso {:active sso-active?}
       :get-org-summary (assoc org-summary :teams [{:id team-id}])
       :add-profile-to-org {:is-member true}
@@ -856,7 +859,8 @@
                     :permissions {:create-teams "any"
                                   :move-teams "always"
                                   :new-team-members "members"}}
-        sent       (atom [])]
+        sent       (atom [])
+        set-team-params (atom nil)]
 
     (th/db-insert! :team-invitation
                    {:id (uuid/random)
@@ -874,7 +878,8 @@
                                  :org-perms org-perms
                                  :owner-id (:id owner)
                                  :team-id (:id team)
-                                 :sso-active? true})
+                                 :sso-active? true
+                                 :set-team-params set-team-params})
                   teams/initialize-user-in-nitrate-org (fn [& _] nil)
                   eml/send! (fn [params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
@@ -883,12 +888,41 @@
                               :organization-id org-id})]
         (t/is (th/success? out))))
 
+    (t/is (= "dashboard:move_team_to_organization"
+             (:event-origin @set-team-params)))
+    (t/is (= "move_existing_team_to_organization"
+             (:add-method @set-team-params)))
+    (t/is (= (:created-at team)
+             (:team-created-at @set-team-params)))
+
     (let [emails (->> @sent (map :to) set)]
       (t/is (= 2 (count @sent)))
       (t/is (= #{"member302@example.com" "external301@example.com"} emails))
       (doseq [email-params @sent]
         (t/is (= org-name (:organization-name email-params)))
         (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+
+(t/deftest create-team-in-organization-passes-audit-context-to-nitrate
+  (let [organization-id (uuid/random)
+        team            {:id (uuid/random)
+                         :created-at (ct/now)}
+        params*         (atom nil)]
+    (with-redefs [nitrate/call (fn [_cfg method params]
+                                 (when (= method :set-team-org)
+                                   (reset! params* params))
+                                 {:id (:id team)})]
+      (nitrate/set-team-organization
+       {}
+       team
+       {:organization-id organization-id
+        :is-default false}))
+
+    (t/is (= "dashboard:create_team_in_organization"
+             (:event-origin @params*)))
+    (t/is (= "create_team_in_organization"
+             (:add-method @params*)))
+    (t/is (= (:created-at team)
+             (:team-created-at @params*)))))
 
 (t/deftest add-team-to-organization-skips-sso-emails-when-sso-inactive
   (let [owner      (th/create-profile* 303 {:is-active true :email "owner303@example.com"})
