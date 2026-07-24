@@ -38,19 +38,19 @@ Include concise sections covering:
 PR descriptions follow this structure:
 
 ```markdown
-**Note:** This PR was created with AI assistance.
+**Note:** This PR was created with AI assistance as part of the Penpot self-improvement initiative.
 
 ## What
 
-<one paragraph: the problem or feature, user-facing impact>
+<the problem or feature and its user-facing impact — short bullet items where there is more than one point>
 
 ## Why
 
-<root cause or motivation, why this change was necessary>
+<root cause or motivation — a short paragraph or bullets>
 
 ## How
 
-<high-level approach, key technical decisions>
+<high-level approach and key decisions — bullet items, grouped by area (bold lead-ins) for larger PRs>
 ```
 
 The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
@@ -59,6 +59,8 @@ The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 
 - **Write for humans.** The diff shows what changed. The description explains why.
 - **Be concise.** Focus on reasoning: What was the problem? Why did it happen? How did you solve it?
+- **Prefer bullets over paragraphs.** Short bullet items, grouped by area with bold lead-ins where helpful, are far easier to digest than prose; keep any remaining paragraph to a few sentences.
+- **No manual line wraps.** Markdown renders adapting to the viewport; hard-wrapped lines degrade rendering. One line per paragraph or bullet, however long.
 - **Skip the obvious.** Don't explain what `git diff` already shows.
 
 ### What NOT to Include

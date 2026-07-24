@@ -1,0 +1,190 @@
+@import "@penpot/plugin-styles/styles.css";
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.plugin-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-8);
+    padding: var(--spacing-12) var(--spacing-8);
+    box-sizing: border-box;
+    color: var(--foreground-primary);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ── toolbar + summary ──────────────────────────────────────────── */
+
+.toolbar {
+    display: flex;
+    gap: var(--spacing-8);
+}
+
+.summary {
+    font-weight: 600;
+    color: var(--foreground-secondary);
+}
+
+/* ── tree / groups ──────────────────────────────────────────────── */
+
+.tree {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-8);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+.group-header,
+.row-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-8);
+    padding: var(--spacing-8);
+    border-radius: var(--spacing-8);
+    background-color: var(--background-tertiary);
+}
+
+.group-header {
+    background-color: var(--background-quaternary);
+    font-weight: 600;
+}
+
+.caret {
+    flex: 0 0 auto;
+    width: 8px;
+    color: var(--foreground-secondary);
+    transition: transform 0.1s ease;
+}
+
+.caret::before {
+    content: "▸";
+}
+
+.group[data-expanded="true"] .caret {
+    transform: rotate(90deg);
+}
+
+.row-header {
+    cursor: pointer;
+}
+
+.row-header:hover {
+    background-color: var(--background-quaternary);
+}
+
+.group-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    padding-left: var(--spacing-16);
+}
+
+/* the [hidden] attribute must win over the display rules above */
+.group-rows[hidden],
+.row-details[hidden] {
+    display: none;
+}
+
+.row-name {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group-name {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* passed / failed counts, at the right edge of the group header */
+.group-passfail {
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-weight: 400;
+    color: var(--foreground-secondary);
+}
+
+/* the full description in the unfolded section: its own box, wrapping freely
+   and growing to whatever height the text needs */
+.group-description {
+    padding: var(--spacing-8);
+    border-radius: var(--spacing-8);
+    background-color: var(--background-tertiary);
+    color: var(--foreground-secondary);
+    white-space: normal;
+}
+
+.group-count,
+.row-status {
+    flex: 0 0 auto;
+    color: var(--foreground-secondary);
+}
+
+.row-status {
+    font-style: italic;
+}
+
+/* ── status circle ──────────────────────────────────────────────── */
+
+.status-circle {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--background-quaternary);
+    border: 1px solid var(--foreground-secondary);
+}
+
+/* "in progress": the theme's accent (as used by the buttons) — neutral between
+   passed (green) and failed (red); the palette's --warning-500 is a red-orange
+   that reads as a failure */
+.status-circle[data-state="running"] {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.status-circle[data-state="passed"] {
+    background-color: var(--success-500);
+    border-color: var(--success-500);
+}
+
+.status-circle[data-state="failed"] {
+    background-color: var(--error-500);
+    border-color: var(--error-500);
+}
+
+/* ── fold-out details ───────────────────────────────────────────── */
+
+.row-details {
+    padding: var(--spacing-8) var(--spacing-8) var(--spacing-8) var(--spacing-24);
+    color: var(--foreground-secondary);
+}
+
+.details-hint {
+    color: var(--foreground-secondary);
+    font-style: italic;
+}
+
+.details-error {
+    color: var(--error-500);
+    white-space: pre-wrap;
+    margin-bottom: var(--spacing-8);
+}
+
+.details-steps {
+    margin: 0;
+    padding-left: var(--spacing-16);
+}
+
+.details-steps li {
+    margin: 0;
+}

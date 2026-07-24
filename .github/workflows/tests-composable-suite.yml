@@ -1,0 +1,69 @@
+name: "CI: Composable Test Suite"
+
+# Runs the composable component test suite (it exercises component semantics
+# through the real Plugin API against the full frontend, so it needs the
+# frontend bundle + the plugin runtime, but no backend): the driver serves the
+# prebuilt frontend bundle and intercepts every backend RPC with Playwright
+# fixtures. See plugins/apps/composable-test-suite/README.md ("Running in CI").
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/**'
+      - 'frontend/**'
+      - 'common/**'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+    paths:
+      - 'plugins/**'
+      - 'frontend/**'
+      - 'common/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  composable-test-suite:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Run composable test suite (mocked backend)"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # The driver serves the prebuilt bundle from frontend/resources/public.
+      - name: Build frontend bundle
+        working-directory: ./frontend
+        run: ./scripts/build
+
+      - name: Install deps
+        working-directory: ./plugins
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+
+      - name: Install Playwright Chromium
+        working-directory: ./plugins
+        run: pnpm --filter composable-test-suite exec playwright install --with-deps chromium
+
+      - name: Run composable test suite (mocked)
+        working-directory: ./plugins
+        run: pnpm --filter composable-test-suite run test:ci
