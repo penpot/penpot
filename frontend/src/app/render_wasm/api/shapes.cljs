@@ -94,7 +94,7 @@
 
    Returns nil."
   [shape]
-  (when wasm/context-initialized?
+  (when (wasm/live?)
     (let [id           (dm/get-prop shape :id)
           parent-id    (get shape :parent-id)
           shape-type   (dm/get-prop shape :type)

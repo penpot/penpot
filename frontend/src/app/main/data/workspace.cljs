@@ -354,8 +354,7 @@
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
             render-wasm-ready?   #(and render-wasm-enabled?
-                                       wasm-state/context-initialized?
-                                       (not @wasm-state/context-lost?))]
+                                       (wasm-state/ready?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
