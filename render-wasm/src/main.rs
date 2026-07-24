@@ -238,6 +238,23 @@ pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn render_from_backbuffer() -> Result<()> {
+    with_state!(state, {
+        // Re-present the last fully rendered frame from the Backbuffer with the
+        // UI overlay (rulers) redrawn on top. Unlike `render_from_cache`, it does
+        // NOT rebuild the Backbuffer from the document tile atlas — that atlas is
+        // capped at scale <= 1.0, so on a zoomed-in view its blit is a blurry
+        // upscale and swapping it in reads as a flash. Reusing the Backbuffer is
+        // pixel-identical at any zoom. Only valid on a stable viewbox (the
+        // Backbuffer must still match the current view); pan/zoom keeps using
+        // `render_from_cache`.
+        state.present_frame();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_preview_mode(enabled: bool) -> Result<()> {
     get_render_state().set_preview_mode(enabled);
     Ok(())

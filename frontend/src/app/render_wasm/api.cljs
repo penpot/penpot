@@ -351,6 +351,8 @@
 (declare request-render)
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
+(declare request-render-preserving-target)
+(declare render-pending?)
 
 ;; These are the type of frames we have in our
 ;; render pipeline.
@@ -419,32 +421,52 @@
   (when (initialized?)
     (h/call wasm/internal-module "_free_gpu_resources")))
 
+;; When set, the next render keeps the previously presented frame on screen
+;; while the new tiles are rasterized, instead of clearing the canvas first.
+;; See `request-render-preserving-target`.
+(defonce ^:private preserve-target-render? (atom false))
+
+(defn- drain-text-editor-events!
+  "Pop and handle every pending text-editor event.
+
+   StylesChanged syncs the caret's current styles to the toolbar. Returns true
+   when some event needs a full shape re-render (content or layout changed)."
+  []
+  (loop [needs-render? false]
+    (let [ev (text-editor/text-editor-poll-event)]
+      (if (or (nil? ev) (= ev TEXT_EDITOR_EVENT_NONE))
+        needs-render?
+        (do
+          (when (= ev TEXT_EDITOR_EVENT_STYLES_CHANGED)
+            (let [current-styles (text-editor/text-editor-get-current-styles)
+                  shape-id (text-editor/text-editor-get-active-shape-id)]
+              (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles))))
+          (recur (or needs-render?
+                     (= ev TEXT_EDITOR_EVENT_CONTENT_CHANGED)
+                     (= ev TEXT_EDITOR_EVENT_NEEDS_LAYOUT))))))))
+
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (internal-render timestamp)
+    ;; SYNC-TILES makes WASM keep the last presented frame while the new tiles
+    ;; are rasterized, rather than clearing to the background first. The flag is
+    ;; one-shot on both sides: WASM clears it when the render loop starts, so
+    ;; the progressive continuation frames behave normally.
+    (if (compare-and-set! preserve-target-render? true false)
+      (internal-render timestamp (bit-or wasm/internal-frame-type RENDER-FLAG-SYNC-TILES))
+      (internal-render timestamp))
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
       (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
         (text-editor/text-editor-render-overlay)
-        ;; Poll for editor events; if any event occurs, trigger a re-render
-        (let [ev (text-editor/text-editor-poll-event)]
-          (when (and ev (not= ev TEXT_EDITOR_EVENT_NONE))
-            ;; When StylesChanged, get the current styles.
-            (case ev
-              ;; StylesChanged Event
-              TEXT_EDITOR_EVENT_STYLES_CHANGED
-              (let [current-styles (text-editor/text-editor-get-current-styles)
-                    shape-id (text-editor/text-editor-get-active-shape-id)]
-                (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles)))
-
-              ;; Default case
-              nil)
-
-            (request-render "text-editor-event"))))
+        ;; Drain editor events. Only content/layout changes need a full shape
+        ;; re-render; selection/style changes are already reflected by the
+        ;; overlay redrawn just above.
+        (when (drain-text-editor-events!)
+          (request-render-preserving-target "text-editor-content")))
       (catch :default e
         (js/console.error "text-editor overlay/update failed:" e)))
 
@@ -459,19 +481,51 @@
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_ui_only")))
 
-(defn render-from-cache!
-  "Blit the shapes from the cached tile atlas and redraw the UI overlay
-   (rulers, selection band) fresh on top, in a single atomic frame. The
-   *shapes* are the cached part (already-rasterized tiles, not rebuilt); the UI
-   is re-rendered every call, which is what lets it reflect a new selection.
+(defn render-from-backbuffer!
+  "Re-present the last fully rendered frame with the UI overlay (rulers,
+   selection band) redrawn on top, reusing the crisp Backbuffer instead of
+   rebuilding it from the scale-capped document atlas.
 
-   Use for UI-only updates that don't change shapes (e.g. the ruler selection
-   band): unlike `request-render`, it never kicks off a progressive,
-   tile-by-tile shape re-render, so it does not flash on zoomed-in views where
-   the scene spans multiple tiles."
+   For UI-only updates that must not kick off a progressive shape re-render. The
+   alternative — blitting shapes from the cached tile atlas (WASM
+   `_render_from_cache`, what pan/zoom uses in `set-view-box`) — is fine at
+   normal zoom, but on a zoomed-in view (>1000%) it is a heavy upscale that
+   flashes crisp->blurry->crisp. Reusing the Backbuffer is pixel-identical at
+   any zoom. Only valid on a stable viewbox; pan/zoom must keep using the atlas
+   blit, whose preview tracks the moving viewport."
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render_from_cache" 0)))
+    (h/call wasm/internal-module "_render_from_backbuffer")))
+
+(defn render-text-editor-overlay!
+  "Repaint the text-editor caret and selection over the last fully rendered
+   frame, without a full (tile-rebuilding) render.
+
+   Caret/selection changes — the blink, clicks, drag-selection, arrow-key
+   navigation — never alter the shapes. `text-editor-render-caret` re-composes
+   the frame from the Backbuffer (which still holds the last complete render)
+   and draws the caret/selection overlay on top, so the shapes are pixel
+   identical to the last full render at any zoom level. A full `request-render`
+   would instead blank the canvas and re-rasterize tiles progressively, which
+   flashes on zoomed-in views; blitting from the cached tile atlas
+   (`_render_from_cache`) would instead look softer when upscaled (the atlas is
+   scale-capped), so the blink would alternate crisp/soft — a subtler flash.
+   Pending editor events are still drained so the style toolbar stays in sync; a
+   full render is only requested when content or layout actually changed."
+  []
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?)
+             ;; Skip when a render is already pending: `text-editor-render-caret`
+             ;; composes from the Backbuffer, but a progressive render (multiple
+             ;; rAF frames at high zoom) is still rebuilding it. Compositing then
+             ;; would show a half-built frame — a sparse, timing-dependent flash.
+             ;; The in-flight render draws the overlay itself when it completes.
+             (not (render-pending?)))
+    (when (is-text-editor-wasm-enabled @st/state)
+      (text-editor/text-editor-update-blink (js/performance.now))
+      (text-editor/text-editor-render-caret)
+      (when (drain-text-editor-events!)
+        (request-render-preserving-target "text-editor-content")))))
 
 ;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
 (def ^:private TRANSITION_BLUR_RADIUS 4.0)
@@ -512,6 +566,12 @@
 (defonce shapes-loading? (atom false))
 (defonce deferred-render? (atom false))
 
+(defn render-pending?
+  "True while a render has been scheduled but not yet completed — including the
+   frames of an in-progress progressive render."
+  []
+  @pending-render)
+
 (defn- register-deferred-render!
   []
   (reset! deferred-render? true))
@@ -537,6 +597,23 @@
                      (end-page-transition!)
                      (throw e)))))]
           (set! wasm/internal-frame-id frame-id))))))
+
+(defn request-render-preserving-target
+  "Like `request-render`, but keeps the previously presented frame on screen
+   while the new tiles are rasterized instead of blanking the canvas first.
+
+   A plain `request-render` goes through WASM's `reset_canvas`, which clears to
+   the background colour and then fills the viewport tile by tile. When that
+   rasterization spans more than one frame — as it does on zoomed-in views,
+   where glyphs are expensive to raster — the cleared canvas is visible as a
+   flash. Preserving the target is what the renderer already does after a
+   pan/zoom gesture for exactly this reason.
+
+   Use for shape edits on a stable viewbox (typing in the text editor), where
+   the previous frame is a good stand-in until the new one is ready."
+  [requester]
+  (reset! preserve-target-render? true)
+  (request-render requester))
 
 (defn- begin-shapes-loading!
   []
@@ -1271,7 +1348,16 @@
   "Ends the view interaction and triggers a full-quality render."
   []
   (view-interaction-end!)
-  (internal-render 0 0))
+  ;; Preserve the last presented frame while the new one renders. A plain render
+  ;; goes through WASM `reset_canvas`, which clears to the background and
+  ;; re-rasterizes the viewport tile by tile — a visible flash on zoomed-in
+  ;; views. The content is unchanged across a view-interaction end (only the
+  ;; view moved), so there is nothing to clear; SYNC-TILES sets `preserve_target`
+  ;; and lets the new tiles replace the old frame in place. Zoom-end already did
+  ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
+  ;; ends (e.g. selecting a shape opens the options panel and resizes the
+  ;; viewport), which previously blanked.
+  (internal-render 0 RENDER-FLAG-SYNC-TILES))
 
 (def render-finish
   (letfn [(do-render []

@@ -942,6 +942,18 @@ impl RenderState {
     /// on top of Target, then present. Backbuffer is left clean so it can be reused
     /// as-is across interactive-transform frames without stale overlay pixels.
     pub fn present_frame(&mut self, tree: ShapesPoolRef) {
+        self.compose_frame(tree);
+        self.surfaces.flush_and_submit(SurfaceId::Target);
+    }
+
+    /// Compose the frame on Target — the already-rendered Backbuffer plus the
+    /// UI/debug overlays — *without* submitting it, so a caller can draw extra
+    /// overlays into the same frame and present them atomically.
+    ///
+    /// Unlike `render_from_cache`, this reuses the Backbuffer as-is instead of
+    /// rebuilding it from the document atlas, so the result is pixel-identical
+    /// to the last full render at any zoom level.
+    pub fn compose_frame(&mut self, tree: ShapesPoolRef) {
         // Viewer masked passes render a partial scene onto a transparent backbuffer.
         // SrcOver would keep pass-1 pixels wherever the backbuffer stays transparent.
         if self.viewer_masked_pass() {
@@ -959,7 +971,6 @@ impl RenderState {
             ui::render(self, tree);
         }
         debug::render_wasm_label(self);
-        self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 
     /// Renders only the canvas background and UI surface (rulers/frame), without
