@@ -234,7 +234,7 @@ Replace `REMOTE_OR_LOCAL_URL` with the URL for your mode.
 {
   "mcpServers": {
     "penpot": {
-      "transport": "http",
+      "type": "http",
       "url": "REMOTE_OR_LOCAL_URL"
     }
   }
