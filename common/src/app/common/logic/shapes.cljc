@@ -261,6 +261,143 @@
                  []
                  (into ids-to-delete descendants-to-delete))
 
+         ;; --- Propagation of main-side deletions to copies ---------------
+         ;; Deleting shapes from INSIDE a component main (without deleting
+         ;; the main root itself) leaves every copy shape that references
+         ;; them dangling: it can no longer sync and fails referential
+         ;; integrity. Those copy shapes are deleted as well, transitively
+         ;; (copies of copies), across all pages of the file. Whole-main
+         ;; deletions are excluded: their copies keep working against the
+         ;; component stored as deleted.
+
+         all-deleted-ids
+         (into (set ids-to-delete) descendants-to-delete)
+
+         mutilates-main?
+         (fn [id]
+           (->> (cfh/get-parent-ids objects id)
+                (some (fn [parent-id]
+                        (let [parent (get objects parent-id)]
+                          (and (:main-instance parent)
+                               (not (contains? all-deleted-ids parent-id))))))))
+
+         pages-index
+         (when data
+           (or (:pages-index data)
+               (dm/get-in data [:data :pages-index])))
+
+         page-objects
+         (fn [page-id]
+           (if (= page-id (:id page))
+             objects
+             (dm/get-in pages-index [page-id :objects])))
+
+         ;; page-id -> [ids...] of copy shapes to delete (descendants
+         ;; leaf-first, then the referencing heads, mirroring the main
+         ;; deletion flow). Skipped for allow-altering-copies flows (like
+         ;; component swap): there the deletion is part of a replacement
+         ;; and the component sync reconciles the copies itself.
+         copy-deletions
+         (loop [dangling (if allow-altering-copies
+                           #{}
+                           (into #{} (filter mutilates-main?) all-deleted-ids))
+                seen     #{}
+                result   {}]
+           (if (or (empty? dangling) (nil? pages-index))
+             result
+             (let [hits
+                   (for [page-id (keys pages-index)
+                         :let [pobjects (page-objects page-id)]
+                         shape (vals pobjects)
+                         :when (and (contains? dangling (:shape-ref shape))
+                                    (not (contains? seen (:id shape)))
+                                    (not (contains? all-deleted-ids (:id shape))))]
+                     [page-id (:id shape)])
+
+                   descendants-of
+                   (fn [page-id id]
+                     (cfh/get-children-ids (page-objects page-id) id))]
+               (recur
+                (into #{}
+                      (mapcat (fn [[page-id id]]
+                                (cons id (descendants-of page-id id))))
+                      hits)
+                (into seen (map second) hits)
+                (reduce (fn [result [page-id id]]
+                          (update result page-id
+                                  (fnil into [])
+                                  (concat (reverse (descendants-of page-id id)) [id])))
+                        result
+                        hits)))))
+
+         ;; Parents of same-page deleted copy shapes must be resized too
+         all-parents
+         (reduce (fn [res id]
+                   (into res (cfh/get-parent-ids objects id)))
+                 all-parents
+                 (get copy-deletions (:id page)))
+
+         ;; Like `pcb/remove-objects` but for a page that is not the one
+         ;; mounted in the changes builder: redo/undo changes are built
+         ;; against that page's objects and carry its page-id.
+         remove-copy-objects-on-page
+         (fn [changes page-id ids]
+           (let [pobjects (page-objects page-id)
+
+                 add-redo-change
+                 (fn [change-set id]
+                   (conj change-set
+                         {:type :del-obj
+                          :page-id page-id
+                          :id id
+                          :ignore-touched true}))
+
+                 add-undo-change-shape
+                 (fn [change-set id]
+                   (let [shape (get pobjects id)]
+                     (cond-> change-set
+                       (some? shape)
+                       (conj {:type :add-obj
+                              :id id
+                              :page-id page-id
+                              :parent-id (:parent-id shape)
+                              :frame-id (:frame-id shape)
+                              :index (cfh/get-position-on-parent pobjects id)
+                              :obj (cond-> shape
+                                     (contains? shape :shapes)
+                                     (assoc :shapes []))}))))
+
+                 add-undo-change-parent
+                 (fn [change-set id]
+                   (let [shape (get pobjects id)
+                         prev-sibling (cfh/get-prev-sibling pobjects id)]
+                     (cond-> change-set
+                       (some? shape)
+                       (conj {:type :mov-objects
+                              :page-id page-id
+                              :parent-id (:parent-id shape)
+                              :shapes [id]
+                              :after-shape prev-sibling
+                              :index 0
+                              :ignore-touched true
+                              :allow-altering-copies true}))))]
+             (-> changes
+                 (update :redo-changes #(reduce add-redo-change % ids))
+                 (update :undo-changes #(as-> % $
+                                          (reduce add-undo-change-parent $ ids)
+                                          (reduce add-undo-change-shape $ ids))))))
+
+         generate-copy-deletions
+         (fn [changes]
+           (reduce-kv (fn [changes page-id ids]
+                        (if (= page-id (:id page))
+                          ;; current page: go through the builder so the
+                          ;; local working state stays consistent
+                          (pcb/remove-objects changes ids {:ignore-touched true})
+                          (remove-copy-objects-on-page changes page-id ids)))
+                      changes
+                      copy-deletions))
+
 
          ids-set (set ids-to-delete)
 
@@ -289,6 +426,7 @@
                      (pcb/remove-objects descendants-to-delete {:ignore-touched true})
                      (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
+                     (generate-copy-deletions)
                      (pcb/resize-parents all-parents)
                      (pcb/update-shapes groups-to-unmask
                                         (fn [shape]

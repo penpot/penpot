@@ -15,26 +15,22 @@ const NESTED_COUNT = 3;
 /**
  * Case E — reordering a sub-head IN THE MAIN must not break copies.
  *
- * This is the ACTUAL cause of the referential-integrity crash (:missing-slot).
- * `find-near-match` matches a copy's nested sub-heads to the main's children BY
- * POSITION. Reordering a sub-head inside the MAIN changes that order, but the
- * copies keep their shape-refs and are NOT given swap slots — so every copy is
- * now "swapped" relative to its position without a slot -> validation fails.
+ * Regression test for the referential-integrity crash (:missing-slot).
+ * Copy sub-heads used to be matched to the main's children purely BY POSITION
+ * (`find-near-match`): reordering a sub-head inside the MAIN changed that
+ * order while the copies kept their shape-refs, so every copy sub-head was
+ * "swapped" relative to its position without a slot -> validation failed, and
+ * the reorder through the Plugin API hung the app (in the workspace UI it
+ * crashed the document). Validation now treats a ref that is still a child of
+ * the near main parent as a reorder (no slot required), and the component sync
+ * realigns the copies' order — which this case asserts end to end: after the
+ * main-side reorder settles, every copy sub-head must again reference its
+ * positional slot in the main.
  *
- * The layout is irrelevant (the equivalent clj test reproduces it with no layout);
- * the trigger is purely the main-side reorder. The copy-side edits in case D are
- * correct — it's this main-side edit that corrupts.
- *
- * ⚠ WARNING — this case reproduces the bug through the LIVE app, and the app
- * currently CHOKES on the corrupt state: reordering a main sub-head via the Plugin
- * API hangs (and in the workspace UI it crashes the document). Because the test
- * runner lives inside that same app, running this case will HANG the panel — it
- * cannot report a normal pass/fail until the underlying bug is fixed. It is
- * included as an executable, documented reproduction, NOT as a routine test; do
- * NOT include it in a "run all". The reliable, non-hanging capture of this exact
- * bug is the clj test `common/test/.../comp_main_edit_breaks_copy_slots_test.cljc`.
- * Once Penpot propagates swap slots to copies on a main reorder, this case will
- * complete and the assertion will pass.
+ * The layout is irrelevant (the equivalent clj test reproduces it with no
+ * layout); the trigger is purely the main-side reorder. The copy-side edits in
+ * case D were always correct. The clj regression tests for the same bug family
+ * live in `common/test/.../comp_main_edit_breaks_copy_slots_test.cljc`.
  */
 export function createTestCaseMainReorderKeepsCopySlots(): TestCase {
     // layout "none": the bug does not depend on the layout, only on the main reorder
