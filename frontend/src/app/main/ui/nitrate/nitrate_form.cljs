@@ -48,11 +48,19 @@
         (mf/use-fn
          (fn []
            (st/emit! (ev/event {::ev/name "open-current-subscription"
-                                ::ev/origin "dashboard:plan_confirmation_modal"}))))]
+                                ::ev/origin "dashboard:plan_confirmation_modal"}))))
+
+        on-close
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                ::ev/origin "nitrate:plan_confirmation_modal"
+                                :product "nitrate:enterprise"}))
+           (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
-      [:button {:class (stl/css :close-btn) :on-click modal/hide!}
+      [:button {:class (stl/css :close-btn) :on-click on-close}
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-success-content)}

@@ -218,7 +218,10 @@
         handle-close-dialog
         (mf/use-fn
          (fn []
-           (st/emit! (ev/event {::ev/name "close-subscription-modal"}))
+           (when (= subscription-type "unlimited")
+             (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                  ::ev/origin "subscriptions:unlimited"
+                                  :product "unlimited"})))
            (modal/hide!)))
 
         on-submit
@@ -759,6 +762,9 @@
         handle-close-dialog
         (mf/use-fn
          (fn []
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                ::ev/origin "nitrate:plan_confirmation_modal"
+                                :product "nitrate:enterprise"}))
            (modal/hide!)))
 
         on-subscribe-click
