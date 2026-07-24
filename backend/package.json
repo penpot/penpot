@@ -10,6 +10,7 @@
     "url": "https://github.com/penpot/penpot"
   },
   "dependencies": {
+    "eventsource-parser": "^3.0.6",
     "luxon": "^3.4.4",
     "sax": "^1.6.0"
   },
@@ -21,6 +22,7 @@
   "scripts": {
     "lint": "clj-kondo --parallel --lint ../common/src src/",
     "check-fmt": "cljfmt check --parallel=true src/ test/",
-    "fmt": "cljfmt fix --parallel=true src/ test/"
+    "fmt": "cljfmt fix --parallel=true src/ test/",
+    "test:e2e": "node --test --test-concurrency=1 test/e2e/*.test.mjs"
   }
 }
