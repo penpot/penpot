@@ -901,8 +901,10 @@
   (let [shape (get objects shape-id)]
     (println (str/pad (str (str/repeat "  " level)
                            (when (:main-instance shape) "{")
+                           (when (:is-variant-container shape) "{{")
                            (:name shape)
                            (when (:main-instance shape) "}")
+                           (when (:is-variant-container shape) "}}")
                            (when (seq (:touched shape)) "*")
                            (when show-ids (str/format " %s" (:id shape))))
                       {:length 20
