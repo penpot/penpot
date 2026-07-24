@@ -1,0 +1,152 @@
+---
+title: Enterprise plan
+order: 2
+desc: Learn how the Enterprise plan works in Penpot. Discover its features and how to use it within your organization.
+---
+
+<h1 id="enterprise">Enterprise plan</h1>
+<p class="main-paragraph">Penpot Enterprise gives organizations the tools to govern how design work happens across their teams: from creating a structured org and managing members, to applying fine-grained permissions and configuration through the Admin Console.</p>
+
+<h3 id="what-is-penpot-enterprise">What is Penpot Enterprise?
+</h3>
+<p>Penpot Enterprise is the plan that unlocks organizational governance features. While Penpot remains free and unlimited as an open-source platform, Enterprise adds a layer of control on top: the ability to create Organizations, manage teams under it, and apply configuration settings that define what members can and cannot do.</p>
+<p>The key concepts you'll work with:</p>
+<ul>
+  <li><strong>Organization:</strong> the top-level structure that groups one or more Teams under a shared governance layer.</li>
+  <li><strong>Admin Console:</strong> the back-office interface where the org owner manages settings, teams and members.</li>
+  <li><strong>Modules:</strong> the paid, configurable capabilities applied to an organization. Each Module consists of individual Controls (specific settings or restrictions).</li>
+  <li><strong>Organization owner:</strong> the user who creates the organization. They have exclusive access to the Admin Console and are responsible for configuring Modules.</li>
+</ul>
+
+<h3 id="subscribing-to-enterprise">Subscribing to Enterprise
+  <a class="direct-link" href="#subscribing-to-enterprise">#</a>
+</h3>
+<p>To create an organization, you first need to upgrade to the <a href="https://penpot.app/pricing" target="_blank">Enterprise plan</a>. Click "Create Organization" to begin. Once the subscription process is complete, you'll be redirected to the Admin Console to finish creating your organization.</p>
+
+<h3 id="creating-an-organization">Creating an organization
+  <a class="direct-link" href="#creating-an-organization">#</a>
+</h3>
+<p>Creating an organization is as easy as giving it a name.</p>
+<p>Once the organization is created, you'll be taken to the Admin Console. At this point, the organization has one member: you, the owner.</p>
+
+<h3 id="the-admin-console">The Admin Console
+  <a class="direct-link" href="#the-admin-console">#</a>
+</h3>
+<p>The Admin Console is the admin interface for your organization. Only the organization owner can access it.</p>
+<p>The Admin Console includes:</p>
+
+<ol>
+  <li><strong>Switch organization menu: </strong> To navigate between the organizations you own.</li>
+  <li><strong>Organization settings: </strong> To change basic settings, such as renaming it or deleting it.</li>
+  <li><strong>A "Back to Files" button </strong> that returns you to a team dashboard.</li>
+  <li><strong>Your user avatar</strong>, that expands into a full user menu.</li>
+  <li><strong>Module Category: </strong> A group of modules that share a topic. Sometimes they are modules themselves, as in Advanced Permissions.</li>
+  <li><strong>Module: </strong> The feature itself to configure.</li>
+</ol>
+
+<figure>
+  <img alt="Admin Console" src="/img/enterprise/enterprise-admin-console.webp"/>
+</figure>
+
+<h3 id="organizations-and-teams">Organizations and teams
+  <a class="direct-link" href="#organizations-and-teams">#</a>
+</h3>
+<p>An organization groups one or more Teams under a shared governance structure. Teams continue to work just as they do in standard Penpot, with the added layer that the org owner can apply configuration that affects all members across the organization's teams.</p>
+<h4>How teams relate to organizations</h4>
+
+<p>Teams inside an organization inherit the governance settings applied at the org level via the Admin Console. The structure is:</p>
+
+<figure>
+  <img alt="organization-hierarchy" src="/img/enterprise/enterprise-organization-hierarchy-w.webp"/>
+</figure>
+
+<p>Team members work within projects and files as usual. What changes under Enterprise is the org owner's ability to restrict or govern that work from the Admin Console.</p>
+<p>Within each team, the <a href="https://help.penpot.app/user-guide/account-teams/teams/" target="_blank">standard Penpot roles</a> apply.</p>
+
+<h3 id="managing-organization-membership">Managing organization membership
+  <a class="direct-link" href="#managing-organization-membership">#</a>
+</h3>
+<p>At launch, an organization has a single member: the owner. Additional members are brought in by being part of a team added to the organization, being invited to teams within the organization, or being directly invited to the organization by the owner.</p>
+<p>The Admin Console provides a unified view of all members across teams within the organization.</p>
+
+<figure>
+  <img alt="Admin-Console Members page" src="/img/enterprise/enterprise-membership-w.webp"/>
+</figure>
+
+<h3 id="modules-and-controls">Modules and Controls
+  <a class="direct-link" href="#modules-and-controls">#</a>
+</h3>
+
+<p>Modules are the configurable governance capabilities available to Enterprise organizations. Each Module is made up of one or more Controls: the individual settings that define who can do what, and where.</p>
+<p>Modules are configured from the Admin Console and apply organization-wide. </p>
+
+<table cellspacing="0" cellpadding="1" border="1" width="100%">
+  <thead>
+    <tr>
+      <th valign="top" class="cellrowborder">Modules</th>
+      <th valign="top" class="cellrowborder" style="text-align: center;">What it does</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Single Sign-On (SSO)</td>
+      <td>Requires all org members to authenticate through a private auth system. Refines Penpot's existing SSO support.</td>
+    </tr>
+    <tr>
+      <td>Advanced permissions</td>
+      <td>Defines who can create, view, edit, administer, or share teams, projects, and files. Also controls who can invite new members to teams.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="module-advanced-permissions">Module: Advanced permissions
+  <a class="direct-link" href="#module-advanced-permissions">#</a>
+</h3>
+
+  <p>Advanced Permissions gives the organization owner fine-grained control over what members can do across all teams in the organization. Rather than relying on the default Penpot team roles alone, this module lets you restrict or open up specific actions at the organization level.</p>
+
+  <h4>What it controls</h4>
+
+  <p>The Advanced Permissions module is made up of individual Controls. Each Control governs a specific action, and each has a set of options to choose from. The selected option becomes the rule for the entire organization.</p>
+
+  <h4>How to configure it</h4>
+
+  <p>Advanced Permissions is configured from the Admin Console. Changes apply to all teams within the organization immediately.</p>
+  <ol>
+    <li>Open the Admin Console.</li>
+    <li>Select Advanced Permissions from the left sidebar.</li>
+    <li>For each Control, select the option that fits your governance policy.</li>
+    <li>Changes take effect right away. There is no publish or save step.</li>
+  </ol>
+
+  <h4>How it relates to team roles</h4>
+
+  <p>Advanced Permissions works on top of the standard Penpot team roles (Viewer, Editor, Admin, Owner). It does not replace them. Think of it as a ceiling: even if a member's team role would normally allow an action, an Advanced Permissions Control can prevent it organization-wide.</p>
+  <p>For example, if “New team members” is set to "Organization members only," a team owner who would normally be able to invite anyone will find that option restricted to people who are already part of the organization.</p>
+
+  <h4>Default behavior</h4>
+
+  <p>When an organization is first created, all controls are configured with the most permissive setting; the same setting is used by all teams that are not part of any organization. No behavior changes until you actively configure a Control.</p>
+
+<h3 id="frequently-asked-questions"> Frequently asked questions
+  <a class="direct-link" href="#frequently-asked-questions">#</a>
+</h3>
+
+  <h4>Can I have multiple organizations?</h4>
+  <p>Yes. You can create more than one organization under a single Enterprise subscription. Each has its own Admin Console.</p>
+  
+  <h4>What happens if I cancel my Enterprise subscription?</h4>
+  <p>Your organization and its teams remain accessible, but governance features (Modules and Controls) will no longer be enforced.</p>
+
+  <h4>Can a team belong to more than one organization?</h4>
+  <p>No. A team belongs to a single organization.</p>
+
+  <h4>Can non-owners access the Admin Console?</h4>
+  <p>No. Access to the Admin Console is currently exclusive to the organization owner. If another user attempts to access the Admin Console URL, they will see a 404 page.</p>
+
+  <h4>What is the organization name used for?</h4>
+  <p>It's the human-readable name used to identify your organization in the UI, in emails, and in URLs. It is not your official billing name. You can change it at any time without affecting navigation or functionality.</p>
+
+
+
+
