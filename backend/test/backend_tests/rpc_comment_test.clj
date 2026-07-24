@@ -216,7 +216,7 @@
       (t/testing "get profiles"
         (let [data {::th/type :get-profiles-for-file-comments
                     ::rpc/profile-id (:id profile-1)
-                    :file-id (:id file-1)}
+                    :file-id #{(:id file-1)}}
               out  (th/command! data)]
           ;; (th/print-result! out)
           (t/is (th/success? out))
@@ -227,11 +227,62 @@
       (t/testing "get profiles 2"
         (let [data {::th/type :get-profiles-for-file-comments
                     ::rpc/profile-id (:id profile-2)
-                    :file-id (:id file-1)}
+                    :file-id #{(:id file-1)}}
               out  (th/command! data)]
           ;; (th/print-result! out)
           (t/is (not (th/success? out)))
           (t/is (= :not-found (th/ex-type (:error out))))))
+
+      (t/testing "get profiles batch"
+        (let [data {::th/type :get-profiles-for-file-comments
+                    ::rpc/profile-id (:id profile-1)
+                    :file-id #{(:id file-1) (:id file-2)}}
+              out  (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (th/success? out))
+          (let [profiles (:result out)]
+            (t/is (= 1 (count profiles)))
+            (t/is (= (:id profile-1) (-> profiles first :id))))))
+
+      (t/testing "get profiles batch - permission denied"
+        (let [data {::th/type :get-profiles-for-file-comments
+                    ::rpc/profile-id (:id profile-2)
+                    :file-id #{(:id file-1) (:id file-2)}}
+              out  (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (not (th/success? out)))
+          (t/is (= :not-found (th/ex-type (:error out))))))
+
+      (t/testing "get profiles batch - across multiple files"
+        ;; Create a second comment thread on file-2 as profile-1, then
+        ;; verify the batch query unions commenters across both files.
+        (let [page-id-2 (get-in file-2 [:data :pages 0])
+              _         (th/command! {::th/type :create-comment-thread
+                                      ::rpc/profile-id (:id profile-1)
+                                      :file-id (:id file-2)
+                                      :page-id page-id-2
+                                      :position (gpt/point 0)
+                                      :content "second file"
+                                      :frame-id uuid/zero})
+              data      {::th/type :get-profiles-for-file-comments
+                         ::rpc/profile-id (:id profile-1)
+                         :file-id #{(:id file-1) (:id file-2)}}
+              out       (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (th/success? out))
+          (let [profiles (:result out)]
+            (t/is (= 1 (count profiles)))
+            (t/is (= (:id profile-1) (-> profiles first :id))))))
+
+      (t/testing "get profiles batch - rejects more than 100 file-ids"
+        (let [ids (set (repeatedly 101 #(random-uuid)))
+              data {::th/type :get-profiles-for-file-comments
+                    ::rpc/profile-id (:id profile-1)
+                    :file-id ids}
+              out  (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (not (th/success? out)))
+          (t/is (th/ex-of-code? (:error out) :params-validation))))
 
       (t/testing "delete comment"
         (let [thread  (-> (th/db-query :comment-thread {:file-id (:id file-1)}) first)
