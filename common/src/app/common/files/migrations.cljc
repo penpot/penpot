@@ -1874,6 +1874,52 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0025-repair-empty-text-content"
+  ;; Repair text shapes whose :content is a root with no paragraph-set
+  ;; (nil/empty :children). Such shapes fail the backend `validate-shape`
+  ;; schema and would also break the v2 editor's `cljs->dom` roundtrip.
+  ;; Re-seed the canonical root -> paragraph-set -> paragraph -> span
+  ;; tree, preserving the original root-level attributes (e.g.
+  ;; :vertical-align) when present. Idempotent on healthy content.
+  [data _]
+  (let [default-root [{:type "paragraph-set"
+                       :children [{:type "paragraph"
+                                   :children [{:text ""
+                                               :fills types.text/default-text-fills}]}]}]
+
+        needs-repair? (fn [content]
+                        (and (map? content)
+                             (= "root" (:type content))
+                             (or (nil? (:children content))
+                                 (and (vector? (:children content))
+                                      (empty? (:children content))))))
+
+        repair-content (fn [content]
+                         (if (needs-repair? content)
+                           ;; Apply order: defaults first, then the canonical
+                           ;; skeleton, then any root-level attrs preserved
+                           ;; from the broken content. `merge` puts later
+                           ;; args on top, so the preserved attrs win over
+                           ;; the defaults without dropping the skeleton.
+                           (merge types.text/default-root-attrs
+                                  {:type "root"
+                                   :children default-root}
+                                  (select-keys content types.text/root-attrs))
+                           content))
+
+        fix-shape (fn [shape]
+                    (cond-> shape
+                      (and (cfh/text-shape? shape)
+                           (needs-repair? (:content shape)))
+                      (update :content repair-content)))
+
+        update-container (fn [container]
+                           (d/update-when container :objects d/update-vals fix-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1955,4 +2001,5 @@
          "0021-fix-shape-svg-attrs"
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
-         "0024b-fix-stroke-cap-placement"]))
+         "0024b-fix-stroke-cap-placement"
+         "0025-repair-empty-text-content"]))
