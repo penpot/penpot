@@ -18,11 +18,11 @@
 ;; Before changing these values also check:
 ;; frontend/src/app/main/ui/workspace/sidebar/common/sidebar.scss
 
-(def right-sidebar-default-width 318)
-(def right-sidebar-default-max-width 768)
+(def right-sidebar-default-width 300)
+(def right-sidebar-default-max-width 400)
 
-(def left-sidebar-default-width 318)
-(def left-sidebar-default-max-width 500)
+(def left-sidebar-default-width 277)
+(def left-sidebar-default-max-width 350)
 
 (def page-metadata
   "Default data for page metadata."
