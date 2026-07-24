@@ -10,6 +10,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -3101,3 +3102,82 @@
     (t/is (= 150 (:width rect02')))
     (t/is (= (+ (:y copy02') 70) (:y rect02')))
     (t/is (= (:y rect02') (get-in rect02' [:selrect :y])))))
+
+;; ============================================================
+;; PRESERVE TEXT SUB-TOUCHED FLAGS ACROSS VARIANT SWITCH
+;; ============================================================
+
+(t/deftest test-switch-preserves-text-sub-touched-flags
+  ;; 1. Creates a component with text "hello world" + font-size "14", variant with font-size "20"
+  ;; 2. Overrides only text on the copy → verifies :text-content-text in touched
+  ;; 3. Switches to variant → verifies text override preserved, font-size updated, :text-content-text preserved
+  ;; 4. Updates main font-size to "30" and syncs → verifies font-size synced but text override preserved
+  (let [;; ==== Setup
+        file (-> (thf/sample-file :file1)
+                 ;; c01 has text "hello world" font-size "14"
+                 ;; c02 has text "hello world" font-size "20" (same text, different font-size)
+                 (thv/add-variant-with-text
+                  :v01 :c01 :m01 :c02 :m02 :t01 :t02 "hello world" "hello world")
+                 (update-attr :t02 font-size-path-0 "20")
+                 (thc/instantiate-component :c01
+                                            :copy01
+                                            :children-labels [:copy-t01]))
+
+        ;; Override only the TEXT on the copy (not font-size)
+        file       (update-attr file :copy-t01 text-path-0 "custom text")
+        copy-t01   (ths/get-shape file :copy-t01)]
+
+    ;; Verify the copy has the text override and correct touched flags
+    (t/is (= (get-in copy-t01 text-path-0) "custom text"))
+    (t/is (= (get-in copy-t01 font-size-path-0) "14"))
+    (t/is (contains? (:touched copy-t01) :content-group))
+    (t/is (contains? (:touched copy-t01) :text-content-text))
+    (t/is (not (contains? (:touched copy-t01) :text-content-attribute)))
+    (t/is (not (contains? (:touched copy-t01) :text-content-structure)))
+
+    ;; ==== Action: Switch copy to c02 variant (same text, different font-size)
+    (let [file' (tho/swap-component-in-shape file :copy01 :c02
+                                             {:new-shape-label :copy02
+                                              :keep-touched? true})
+          page'       (thf/current-page file')
+          copy02'     (ths/get-shape file' :copy02)
+          copy-t02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+      ;; After switch: text override preserved (same text between variants),
+      ;; font-size updated from variant, touched preserves text-content-text
+      (t/is (= (get-in copy-t02' text-path-0) "custom text"))
+      (t/is (= (get-in copy-t02' font-size-path-0) "20"))
+      (t/is (contains? (:touched copy-t02') :content-group))
+      (t/is (contains? (:touched copy-t02') :text-content-text))
+      (t/is (not (contains? (:touched copy-t02') :text-content-attribute)))
+
+      ;; ==== Now test subsequent component sync
+      ;; Modify the main component's font-size to "30" (keeping text "hello world")
+      (let [main-text  (ths/get-shape file' :t02)
+            changes1   (cls/generate-update-shapes (pcb/empty-changes nil (:id page'))
+                                                   #{(:id main-text)}
+                                                   (fn [shape]
+                                                     (assoc-in shape font-size-path-0 "30"))
+                                                   (:objects page')
+                                                   {})
+            updated-file (thf/apply-changes file' changes1)
+
+            changes2     (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                         nil
+                                                         :components
+                                                         (:id updated-file)
+                                                         (thi/id :c02)
+                                                         (:id updated-file)
+                                                         {(:id updated-file) updated-file}
+                                                         (:id updated-file))
+
+            synced-file   (thf/apply-changes updated-file changes2)
+            synced-copy   (ths/get-shape synced-file :copy02)
+            synced-t      (get-in (thf/current-page synced-file)
+                                  [:objects (-> synced-copy :shapes first)])]
+
+        ;; The text override is preserved and font-size is synced
+        (t/is (= (get-in synced-t text-path-0) "custom text"))
+        (t/is (= (get-in synced-t font-size-path-0) "30"))
+        (t/is (contains? (:touched synced-t) :content-group))
+        (t/is (contains? (:touched synced-t) :text-content-text))))))
