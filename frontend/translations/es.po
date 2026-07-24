@@ -7072,6 +7072,14 @@ msgstr "algunas plantillas aquí"
 msgid "workspace.libraries.file-library"
 msgstr "Biblioteca del archivo"
 
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.tokens-source"
+msgstr "Fuente de tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Activar fuente de tokens"
+
 #: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:124
 msgid "workspace.libraries.graphics"
 msgid_plural "workspace.libraries.graphics"

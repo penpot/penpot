@@ -8,9 +8,12 @@
   (:require
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.tokens :as ctho]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.undo :as dwu]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -25,11 +28,12 @@
 
 (defn setup-file-with-token-lib
   []
-  (-> (setup-file)
-      (assoc-in [:data :tokens-lib]
-                (-> (ctob/make-tokens-lib)
-                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
-                                                       :name "Set A"))))))
+  (ctho/sample-file-with-tokens
+   :file-id :file-1
+   :page-label :page-1
+   :lib-fn #(ctob/add-set % (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                 :name "Set A"))
+   :status-fn #(ctos/set-tokens-status % #{} #{cthi/id :test-token-set})))
 
 (t/deftest add-set
   (t/async
@@ -103,21 +107,49 @@
                sets      (ctob/get-sets token-lib)]
 
            (t/testing "Token lib contains one set"
-             (t/is (= (count sets) 1))))))))
+             (t/is (= (count sets) 1)))))))))
 
-  (t/deftest delete-set
-    (t/async
-      done
-      (let [file       (setup-file-with-token-lib)
-            store      (ths/setup-store file)
-            events     [(dwtl/delete-token-set (cthi/id :test-token-set))]]
+(t/deftest delete-set
+  (t/async
+    done
+    (let [file       (setup-file-with-token-lib)
+          store      (ths/setup-store file)
+          events     [(dwtl/delete-token-set (cthi/id :test-token-set))]]
 
-        (tohs/run-store-async
-         store done events
-         (fn [new-state]
-           (let [file'       (ths/get-file-from-state new-state)
-                 tokens-lib' (toht/get-tokens-lib file')
-                 sets'       (ctob/get-sets tokens-lib')]
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [file'       (ths/get-file-from-state new-state)
+               tokens-lib' (toht/get-tokens-lib file')
+               sets'       (ctob/get-sets tokens-lib')]
 
-             (t/testing "Set has been deleted"
-               (t/is (= (count sets') 0))))))))))
+           (t/testing "Set has been deleted"
+             (t/is (= (count sets') 0)))))))))
+
+(t/deftest set-tokens-source
+  (t/async
+    done
+    (let [file       (setup-file-with-token-lib)
+          store      (ths/setup-store file)
+          library-id (uuid/next)]
+
+      ;; Phase 1: set tokens-source with undo watcher active
+      (tohs/run-store
+       store identity
+       [(tohs/watch-undo-stack)
+        (dwtl/set-tokens-source library-id)]
+       (fn [new-state]
+         (let [file-data' (-> (ths/get-file-from-state new-state) :data)]
+           (t/testing "tokens-source is set to the library id"
+             (t/is (= library-id (:tokens-source file-data'))))))
+       (tohs/stop-on ::dwtl/set-tokens-source))
+
+      ;; Phase 2: undo and verify restoration
+      (tohs/run-store
+       store done
+       [dwu/undo]
+       (fn [undone-state]
+         (let [file-data'' (-> (ths/get-file-from-state undone-state) :data)]
+           (t/testing "tokens-source is restored to nil"
+             (t/is (nil? (:tokens-source file-data''))))))
+       (tohs/stop-on ::dwu/undo)))))

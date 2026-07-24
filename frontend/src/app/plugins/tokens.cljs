@@ -12,6 +12,7 @@
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -243,7 +244,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+             tokens-status   (u/locate-tokens-status file-id)
+             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
          (get-resolved-value token tokens-tree)))}
 
     :resolvedValueString
@@ -253,7 +255,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+             tokens-status   (u/locate-tokens-status file-id)
+             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
          (str (get-resolved-value token tokens-tree))))}
 
     :description
@@ -345,19 +348,16 @@
       :enumerable false
       :get
       (fn [_]
-        (let [tokens-lib (u/locate-tokens-lib file-id)
-              set        (u/locate-token-set file-id id)]
-          (ctob/token-set-active? tokens-lib (ctob/get-name set))))
+        (let [tokens-status (u/locate-tokens-status file-id)]
+          (ctos/set-active? tokens-status id)))
       :schema ::sm/boolean
       :set
       (fn [_ value]
-        (let [set (u/locate-token-set file-id id)]
-          (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value))))}
+        (st/emit! (dwtl/set-enabled-token-set id value)))}
 
      :toggleActive
      (fn [_]
-       (let [set (u/locate-token-set file-id id)]
-         (st/emit! (dwtl/toggle-token-set (ctob/get-name set)))))
+       (st/emit! (dwtl/toggle-token-set id)))
 
      :tokens
      {:this true
@@ -526,8 +526,8 @@
      :enumerable false
      :get
      (fn [_]
-       (let [tokens-lib (u/locate-tokens-lib file-id)]
-         (ctob/theme-active? tokens-lib id)))
+       (let [tokens-status (u/locate-tokens-status file-id)]
+         (ctos/theme-active? tokens-status id)))
      :schema ::sm/boolean
      :set
      (fn [_ value]

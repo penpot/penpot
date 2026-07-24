@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctl]
@@ -111,11 +112,14 @@
         panels             (type->panel-group shape-type)
 
         tokens-lib         (mf/deref refs/tokens-lib)
-        active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
-        active-sets        (mf/with-memo [tokens-lib]
-                             (some-> tokens-lib (ctob/get-active-themes-set-names)))
-        active-tokens      (mf/with-memo [tokens-lib]
-                             (some-> tokens-lib (ctob/get-tokens-in-active-sets)))
+        tokens-status      (mf/deref refs/tokens-status)
+        active-themes      (mf/deref refs/workspace-active-theme-paths)
+        active-sets        (mf/with-memo [tokens-status tokens-lib]
+                             (when (and tokens-status tokens-lib)
+                               (cfo/get-active-sets tokens-status tokens-lib)))
+        active-tokens      (mf/with-memo [tokens-status tokens-lib]
+                             (when (and tokens-status tokens-lib)
+                               (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
         resolved-active-tokens (sd/use-resolved-tokens* active-tokens)
         has-visibility-props? (mf/use-fn
                                (fn [shape]
@@ -152,7 +156,7 @@
       (when (or (seq active-themes) (seq active-sets))
         [:li
          [:> style-box* {:panel :token}
-          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
+          [:> tokens-panel* {:theme-paths active-themes :set-names (map ctob/get-name active-sets)}]]])
       (for [panel panels]
         [:li {:key (d/name panel)}
          (case panel

@@ -12,83 +12,333 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
-   [clojure.datafy :refer [datafy]]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
 
-(defn- setup-file [lib-fn]
-  (-> (thf/sample-file :file1)
-      (tht/add-tokens-lib)
-      (tht/update-tokens-lib lib-fn)))
+;; Tokens lib
 
-(t/deftest generate-toggle-token-set-test
-  (t/testing "toggling an active set will switch to hidden theme without user sets"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                (ctob/add-theme (ctob/make-token-theme :name "theme"
-                                                                       :sets #{"foo/bar"}))
-                                (ctob/set-active-themes #{"/theme"})))
+(t/deftest generate-move-token-set-test
+  (t/testing "Ignore dropping set to the same position:"
+    (let [file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :name "foo"))
+                             (ctob/add-set (ctob/make-token-set :name "bar/baz"))))
+          drop (partial clt/generate-move-token-set (pcb/empty-changes) (tht/get-tokens-lib file))]
+      (t/testing "on top of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 0
+                        :to-index 0
+                        :position :top}))))
+      (t/testing "on bottom of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 0
+                        :to-index 0
+                        :position :bot}))))
+      (t/testing "on top of next to identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 0
+                        :to-index 1
+                        :position :top}))))))
+
+  (t/testing "Reorder sets when dropping next to a set:"
+    (t/testing "at top"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo"))
+                               (ctob/add-set (ctob/make-token-set :name "bar"))
+                               (ctob/add-set (ctob/make-token-set :name "baz"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 1
+                                                                          :to-index 0
+                                                                          :position :top})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["bar" "foo" "baz"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
+
+    (t/testing "at bottom"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo"))
+                               (ctob/add-set (ctob/make-token-set :name "bar"))
+                               (ctob/add-set (ctob/make-token-set :name "baz"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 0
+                                                                          :to-index 2
+                                                                          :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["bar" "baz" "foo"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
+
+    (t/testing "dropping out of set group"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo/bar"))
+                               (ctob/add-set (ctob/make-token-set :name "foo"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 1
+                                                                          :to-index 0
+                                                                          :position :top})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["bar" "foo"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
+
+    (t/testing "into set group"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo/bar"))
+                               (ctob/add-set (ctob/make-token-set :name "foo"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
+                                                                          :to-index 1
+                                                                          :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["foo/bar" "foo/foo"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
+
+    (t/testing "edge-cases:"
+      (t/testing "prevent overriding set to identical path"
+        (let [file (tht/sample-file-with-tokens
+                    :lib-fn #(-> %
+                                 (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                                 (ctob/add-set (ctob/make-token-set :name "foo"))))
+              lib (tht/get-tokens-lib file)]
+          (t/is (thrown?
+                 #?(:cljs js/Error :clj Exception)
+                 (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
+                                                                       :to-index 0
+                                                                       :position :bot})
+                 #"move token set error: path exists"))
+          (t/is (thrown?
+                 #?(:cljs js/Error :clj Exception)
+                 (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
+                                                                       :to-index 1
+                                                                       :position :bot})
+                 #"move token set error: path exists"))))
+
+      (t/testing "dropping below collapsed group doesnt add as child"
+        (let [file (tht/sample-file-with-tokens
+                    :lib-fn #(-> %
+                                 (ctob/add-set (ctob/make-token-set :name "foo"))
+                                 (ctob/add-set (ctob/make-token-set :name "foo/bar"))))
+              lib (tht/get-tokens-lib file)
+              changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 0
+                                                                            :to-index 1
+                                                                            :position :bot
+                                                                            :collapsed-paths #{["foo"]}})
+              redo (thf/apply-changes file changes)
+              redo-sets (-> (tht/get-tokens-lib redo)
+                            (ctob/get-set-names))
+              undo (thf/apply-undo-changes redo changes)
+              undo-sets (-> (tht/get-tokens-lib undo)
+                            (ctob/get-set-names))]
+          (t/is (= ["foo/bar" "foo"] (vec redo-sets)))
+          (t/testing "undo"
+            (t/is (= (ctob/get-set-names lib) undo-sets))))))))
+
+(t/deftest generate-move-token-group-test
+  (t/testing "Ignore dropping set group to the same position"
+    (let [file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :name "foo"))
+                             (ctob/add-set (ctob/make-token-set :name "bar/baz"))))
+          drop (partial clt/generate-move-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file))]
+      (t/testing "on top of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 1
+                        :to-index 1
+                        :position :top}))))
+      (t/testing "on bottom of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 1
+                        :to-index 1
+                        :position :bot}))))
+      (t/testing "on top of next to identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 1
+                        :to-index 1
+                        :position :top}))))))
+
+  (t/testing "Move set groups"
+    (t/testing "to top"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                               (ctob/add-set (ctob/make-token-set :name "bar/bar"))
+                               (ctob/add-set (ctob/make-token-set :name "baz/baz"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 2
+                                                                                :to-index 0
+                                                                                :position :top})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["bar/bar" "foo/foo" "baz/baz"] (vec redo-sets)))
+
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
+
+    (t/testing "to bottom"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                               (ctob/add-set (ctob/make-token-set :name "bar"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
+                                                                                :to-index 2
+                                                                                :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["bar" "foo/foo"] (vec redo-sets)))
+
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
+
+    (t/testing "into set group"
+      (let [file (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                               (ctob/add-set (ctob/make-token-set :name "bar/bar"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
+                                                                                :to-index 2
+                                                                                :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-set-names))]
+        (t/is (= ["bar/foo/foo" "bar/bar"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-set-names lib) undo-sets))))
+
+      (t/testing "edge-cases:"
+        (t/testing "prevent overriding set to identical path"
+          (let [file (tht/sample-file-with-tokens
+                      :lib-fn #(-> %
+                                   (ctob/add-set (ctob/make-token-set :name "foo/identical/foo"))
+                                   (ctob/add-set (ctob/make-token-set :name "identical/bar"))))
+                lib (tht/get-tokens-lib file)]
+            (t/is (thrown?
+                   #?(:cljs js/Error :clj Exception)
+                   (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 3
+                                                                               :to-index 1
+                                                                               :position :top})
+                   #"move token set error: path exists"))))
+
+        (t/testing "prevent dropping parent to child"
+          (let [file (tht/sample-file-with-tokens
+                      :lib-fn #(-> %
+                                   (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))))
+                lib (tht/get-tokens-lib file)]
+            (t/is (thrown?
+                   #?(:cljs js/Error :clj Exception)
+                   (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
+                                                                               :to-index 1
+                                                                               :position :bot})
+                   #"move token set error: parent-to-child"))))))))
+
+(t/deftest generate-delete-token-set-group-test
+  (t/testing "deletes all sets under the given group path"
+    (let [set-a-id (thi/new-id! :set-a)
+          set-b-id (thi/new-id! :set-b)
+          set-c-id (thi/new-id! :set-c)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-a-id :name "group/set-a"))
+                             (ctob/add-set (ctob/make-token-set :id set-b-id :name "group/set-b"))
+                             (ctob/add-set (ctob/make-token-set :id set-c-id :name "other/set-c"))))
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
+                      (clt/generate-delete-token-set-group tokens-lib ["group"]))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)
           undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-      (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
+      ;; Redo: group sets deleted, other set remains
+      (t/is (not (ctob/set-path-exists? redo-lib ["group" "set-a"])))
+      (t/is (not (ctob/set-path-exists? redo-lib ["group" "set-b"])))
+      (t/is (ctob/set-path-exists? redo-lib ["other" "set-c"]))
+      ;; Undo: group sets restored
+      (t/is (ctob/set-path-exists? undo-lib ["group" "set-a"]))
+      (t/is (ctob/set-path-exists? undo-lib ["group" "set-b"]))))
 
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib)))))
-
-  (t/testing "toggling an inactive set will switch to hidden theme without user sets"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                (ctob/add-theme (ctob/make-token-theme :name "theme"
-                                                                       :sets #{"foo/bar"}))
-                                (ctob/set-active-themes #{"/theme"})))
+  (t/testing "deleting a group with nested subgroups deletes all descendant sets"
+    (let [set-a-id (thi/new-id! :set-a)
+          set-b-id (thi/new-id! :set-b)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-a-id :name "group/sub/set-a"))
+                             (ctob/add-set (ctob/make-token-set :id set-b-id :name "group/set-b"))))
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
+                      (clt/generate-delete-token-set-group tokens-lib ["group"]))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)
           undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-      (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
+      ;; Redo: all group sets deleted
+      (t/is (not (ctob/set-path-exists? redo-lib ["group" "sub" "set-a"])))
+      (t/is (not (ctob/set-path-exists? redo-lib ["group" "set-b"])))
+      ;; Undo: all restored
+      (t/is (ctob/set-path-exists? undo-lib ["group" "sub" "set-a"]))
+      (t/is (ctob/set-path-exists? undo-lib ["group" "set-b"]))))
 
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib)))))
-
-  (t/testing "toggling an set with hidden theme already active will toggle set in hidden theme"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                (ctob/add-theme (ctob/make-hidden-theme))
-                                (ctob/set-active-themes #{ctob/hidden-theme-path})))
-
+  (t/testing "deleting an empty group produces no changes"
+    (let [file (tht/sample-file-with-tokens
+                :lib-fn #(ctob/add-set % (ctob/make-token-set :name "other/set-a")))
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo"]))
-
-          redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
-          undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= (ctob/get-active-theme-paths redo-lib) (ctob/get-active-theme-paths undo-lib)))
-
-      (t/is (= #{"foo/bar"} (:sets (ctob/get-hidden-theme redo-lib)))))))
+                      (clt/generate-delete-token-set-group tokens-lib ["nonexistent"]))]
+      (t/is (= [] (:redo-changes changes))))))
 
 (t/deftest set-token-theme-test
   (t/testing "delete token theme"
     (let [theme-id (uuid/next)
-          file (setup-file #(-> %
-                                (ctob/add-theme (ctob/make-token-theme :id theme-id
-                                                                       :name "foo"
-                                                                       :group "main"))))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "foo"
+                                                                    :group "main"))))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token-theme theme-id nil))
@@ -107,7 +357,7 @@
           theme (ctob/make-token-theme :id theme-id
                                        :name "foo"
                                        :group "main")
-          file (setup-file identity)
+          file (tht/sample-file-with-tokens)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token-theme theme-id theme))
@@ -126,7 +376,8 @@
           prev-theme (ctob/make-token-theme :id theme-id
                                             :name prev-theme-name
                                             :group "main")
-          file (setup-file #(ctob/add-theme % prev-theme))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(ctob/add-theme % prev-theme))
           new-theme-name "foo1"
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
@@ -149,9 +400,10 @@
                                        :group "main")
           set-name "bar-set"
           token-set (ctob/make-token-set :name set-name)
-          file (setup-file #(-> %
-                                (ctob/add-theme theme)
-                                (ctob/add-set token-set)))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme theme)
+                             (ctob/add-set token-set)))
           theme' (assoc theme :sets #{set-name})
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
@@ -169,13 +421,14 @@
     (let [set-name "foo"
           set-id (uuid/next)
           token-id (uuid/next)
-          file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :id set-id
-                                                                   :name set-name))
-                                (ctob/add-token set-id (ctob/make-token {:name "to.delete.color.red"
-                                                                         :id token-id
-                                                                         :value "red"
-                                                                         :type :color}))))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id
+                                                                :name set-name))
+                             (ctob/add-token set-id (ctob/make-token {:name "to.delete.color.red"
+                                                                      :id token-id
+                                                                      :value "red"
+                                                                      :type :color}))))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token set-id token-id nil))
@@ -194,8 +447,9 @@
           token (ctob/make-token {:name "to.add.color.red"
                                   :value "red"
                                   :type :color})
-          file (setup-file #(-> % (ctob/add-set (ctob/make-token-set :id set-id
-                                                                     :name set-name))))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> % (ctob/add-set (ctob/make-token-set :id set-id
+                                                                  :name set-name))))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token set-id (:id token) token))
@@ -217,10 +471,11 @@
           token (-> prev-token
                     (assoc :name "color.red.changed")
                     (assoc :value "blue"))
-          file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :id set-id
-                                                                   :name set-name))
-                                (ctob/add-token set-id prev-token)))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id
+                                                                :name set-name))
+                             (ctob/add-token set-id prev-token)))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token set-id (:id prev-token) token))
@@ -237,7 +492,8 @@
   (t/testing "delete token set"
     (let [set-name "foo"
           set-id (uuid/next)
-          file (setup-file #(ctob/add-set % (ctob/make-token-set :id set-id :name set-name)))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(ctob/add-set % (ctob/make-token-set :id set-id :name set-name)))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token-set set-id nil))
@@ -254,7 +510,7 @@
     (let [set-name "foo"
           set-id (uuid/next)
           token-set (ctob/make-token-set :id set-id :name set-name)
-          file (setup-file identity)
+          file (tht/sample-file-with-tokens)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
                       (pcb/set-token-set set-id token-set))
@@ -271,7 +527,8 @@
     (let [set-name "foo"
           set-id (uuid/next)
           token-set (ctob/make-token-set :id set-id :name set-name)
-          file (setup-file #(-> (ctob/add-set % token-set)))
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> (ctob/add-set % token-set)))
           new-set-name "foo1"
 
           changes (-> (pcb/empty-changes)
@@ -290,286 +547,344 @@
       ;; Undo
       (t/is (= (ctob/get-name undo-token-set) set-name)))))
 
+;; Tokens Status
+
+(t/deftest generate-activate-theme-test
+  (t/testing "activating an inactive theme creates changes"
+    (let [set-id (uuid/next)
+          theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id
+                                                                :name "s1"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{"s1"}))))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-activate-theme tokens-status tokens-lib theme-id))
+          file' (thf/apply-changes file changes)
+          tokens-status' (tht/get-tokens-status file')
+          file'' (thf/apply-undo-changes file' changes)
+          tokens-status'' (tht/get-tokens-status file'')]
+      ;; Redo: theme and set are active
+      (t/is (ctos/theme-active? tokens-status' theme-id))
+      (t/is (ctos/set-active? tokens-status' set-id))
+      ;; Undo: theme and set are inactive
+      (t/is (not (ctos/theme-active? tokens-status'' theme-id)))
+      (t/is (not (ctos/set-active? tokens-status'' set-id)))))
+
+  (t/testing "activating an already-active theme returns same changes"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{"s1"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-activate-theme tokens-status tokens-lib theme-id))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
+
+(t/deftest generate-deactivate-theme-test
+  (t/testing "deactivating an active theme creates changes"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-deactivate-theme tokens-status tokens-lib theme-id))
+          file' (thf/apply-changes file changes)
+          tokens-status' (tht/get-tokens-status file')
+          file'' (thf/apply-undo-changes file' changes)
+          tokens-status'' (tht/get-tokens-status file'')]
+      ;; Redo: theme is inactive
+      (t/is (not (ctos/theme-active? tokens-status' theme-id)))
+      ;; Undo: theme is active again
+      (t/is (ctos/theme-active? tokens-status'' theme-id))))
+
+  (t/testing "deactivating an inactive theme returns same changes"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :name "s1"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{"s1"}))))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-deactivate-theme tokens-status tokens-lib theme-id))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
+
+(t/deftest generate-set-theme-status-test
+  (t/testing "setting active? to true activates the theme"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{}))))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-set-theme-status tokens-status tokens-lib theme-id true))
+          file' (thf/apply-changes file changes)
+          tokens-status' (tht/get-tokens-status file')
+          file'' (thf/apply-undo-changes file changes)
+          tokens-status'' (tht/get-tokens-status file'')]
+      ;; Redo: theme is active
+      (t/is (ctos/theme-active? tokens-status' theme-id))
+      ;; Undo: theme is inactive
+      (t/is (not (ctos/theme-active? tokens-status'' theme-id)))))
+
+  (t/testing "setting active? to same state returns same changes"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{}))))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-set-theme-status tokens-status tokens-lib theme-id false))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
+
+(t/deftest generate-toggle-theme-test
+  (t/testing "toggling an active theme deactivates it"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-theme tokens-status tokens-lib theme-id))
+          file' (thf/apply-changes file changes)
+          tokens-status' (tht/get-tokens-status file')
+          file'' (thf/apply-undo-changes file' changes)
+          tokens-status'' (tht/get-tokens-status file'')]
+      ;; Redo: theme is inactive
+      (t/is (not (ctos/theme-active? tokens-status' theme-id)))
+      ;; Undo: theme is active again
+      (t/is (ctos/theme-active? tokens-status'' theme-id))))
+
+  (t/testing "toggling an inexistent theme returns same changes"
+    (let [theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{}))))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-theme tokens-status tokens-lib (uuid/next)))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
+
+(t/deftest generate-set-enabled-token-set-test
+  (t/testing "enabling an inactive set creates changes that activate it and clear themes"
+    (let [set-id (thi/new-id! :set-a)
+          theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "set-a"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"set-a"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-set-enabled-token-set tokens-status tokens-lib set-id true))
+
+          redo (thf/apply-changes file changes)
+          redo-status (tht/get-tokens-status redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: set active, themes cleared
+      (t/is (ctos/set-active? redo-status set-id))
+      (t/is (= #{} (ctos/get-active-theme-ids redo-status)))
+      ;; Undo: set inactive, themes restored
+      (t/is (not (ctos/set-active? undo-status set-id)))
+      (t/is (= #{theme-id} (ctos/get-active-theme-ids undo-status)))))
+
+  (t/testing "enabling an already-active set returns no changes"
+    (let [set-id (thi/new-id! :set-a)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(ctob/add-set % (ctob/make-token-set :id set-id :name "set-a"))
+                :status-fn #(ctos/set-tokens-status % #{} #{set-id}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-set-enabled-token-set tokens-status tokens-lib set-id true))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
+
+(t/deftest generate-toggle-token-set-test
+  (t/testing "toggling an active set will deactivate it"
+    (let [theme-id (uuid/next)
+          set-id (thi/new-id! :foo-bar)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "foo/bar"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"foo/bar"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set tokens-status tokens-lib set-id))
+
+          redo (thf/apply-changes file changes)
+          redo-status (tht/get-tokens-status redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: set is deactivated, all themes deactivated
+      (t/is (not (ctos/set-active? redo-status set-id)))
+      (t/is (= #{} (ctos/get-active-theme-ids redo-status)))
+      ;; Undo: set is active again, themes restored
+      (t/is (ctos/set-active? undo-status set-id))
+      (t/is (= #{theme-id} (ctos/get-active-theme-ids undo-status)))))
+
+  (t/testing "toggling an inexistent set will return no changes"
+    (let [theme-id (uuid/next)
+          set-id (thi/new-id! :foo-bar)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "foo/bar"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"foo/bar"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-toggle-token-set tokens-status tokens-lib (uuid/next)))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
+
 (t/deftest generate-toggle-token-set-group-test
   (t/testing "toggling set group with no active sets inside will activate all child sets"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child"))
-                                (ctob/add-theme (ctob/make-token-theme :name "theme"))
-                                (ctob/set-active-themes #{"/theme"})))
+    (let [set-bar-id (thi/new-id! :foo-bar)
+          set-baz-id (thi/new-id! :foo-bar-baz)
+          set-child-id (thi/new-id! :baz-child)
+          theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-bar-id :name "foo/bar"))
+                             (ctob/add-set (ctob/make-token-set :id set-baz-id :name "foo/bar/baz"))
+                             (ctob/add-set (ctob/make-token-set :id set-child-id :name "foo/bar/baz/baz-child"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id :name "theme")))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo" "bar"]))
+                      (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo" "bar"]))
 
           redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
+          redo-status (tht/get-tokens-status redo)
           undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-      (t/is (= #{"foo/bar/baz" "foo/bar/baz/baz-child"} (:sets (ctob/get-hidden-theme redo-lib))))
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: all child sets activated, all themes deactivated
+      (t/is (ctos/set-active? redo-status set-baz-id))
+      (t/is (ctos/set-active? redo-status set-child-id))
+      (t/is (= #{} (ctos/get-active-theme-ids redo-status)))
+      ;; Undo: child sets deactivated, themes restored
+      (t/is (not (ctos/set-active? undo-status set-baz-id)))
+      (t/is (not (ctos/set-active? undo-status set-child-id)))
+      (t/is (= #{theme-id} (ctos/get-active-theme-ids undo-status)))))
 
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib)))))
+  (t/testing "toggling an inexistent set group will return no changes"
+    (let [set-bar-id (thi/new-id! :foo-bar)
+          set-baz-id (thi/new-id! :foo-bar-baz)
+          set-child-id (thi/new-id! :baz-child)
+          theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-bar-id :name "foo/bar"))
+                             (ctob/add-set (ctob/make-token-set :id set-baz-id :name "foo/bar/baz"))
+                             (ctob/add-set (ctob/make-token-set :id set-child-id :name "foo/bar/baz/baz-child"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"foo/bar/baz"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-baz-id}))
 
-  (t/testing "toggling set group with partially active sets inside will deactivate all child sets"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
-                                (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child"))
-                                (ctob/add-theme (ctob/make-token-theme :name "theme"
-                                                                       :sets #{"foo/bar/baz"}))
-                                (ctob/set-active-themes #{"/theme"})))
-
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo" "bar"]))
+                      (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo" "nonexistent"]))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))
 
-          redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
-          undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
+(t/deftest generate-sync-tokens-status-with-lib-test
+  (t/testing "sync removes stale theme and set ids from status"
+    (let [stale-theme-id (uuid/next)
+          stale-set-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn identity
+                :status-fn #(ctos/set-tokens-status % #{stale-theme-id} #{stale-set-id}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-sync-tokens-status-with-lib tokens-status tokens-lib))
+          file' (thf/apply-changes file changes)
+          tokens-status' (tht/get-tokens-status file')
+          file'' (thf/apply-undo-changes file' changes)
+          tokens-status'' (tht/get-tokens-status file'')]
+      ;; Redo: stale ids are removed
+      (t/is (= #{} (ctos/get-active-theme-ids tokens-status')))
+      (t/is (= #{} (ctos/get-active-set-ids tokens-status')))
+      ;; Undo: stale ids are restored
+      (t/is (= #{stale-theme-id} (ctos/get-active-theme-ids tokens-status'')))
+      (t/is (= #{stale-set-id} (ctos/get-active-set-ids tokens-status'')))))
 
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib))))))
-
-(t/deftest generate-move-token-set-test
-  (t/testing "Ignore dropping set to the same position:"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo"))
-                                (ctob/add-set (ctob/make-token-set :name "bar/baz"))))
-          drop (partial clt/generate-move-token-set (pcb/empty-changes) (tht/get-tokens-lib file))]
-      (t/testing "on top of identical"
-        (t/is (= (pcb/empty-changes)
-                 (drop {:from-index 0
-                        :to-index 0
-                        :position :top}))))
-      (t/testing "on bottom of identical"
-        (t/is (= (pcb/empty-changes)
-                 (drop {:from-index 0
-                        :to-index 0
-                        :position :bot}))))
-      (t/testing "on top of next to identical"
-        (t/is (= (pcb/empty-changes)
-                 (drop {:from-index 0
-                        :to-index 1
-                        :position :top}))))))
-
-  (t/testing "Reorder sets when dropping next to a set:"
-    (t/testing "at top"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo"))
-                                  (ctob/add-set (ctob/make-token-set :name "bar"))
-                                  (ctob/add-set (ctob/make-token-set :name "baz"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 1
-                                                                          :to-index 0
-                                                                          :position :top})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["bar" "foo" "baz"] (vec redo-sets)))
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets)))))
-
-    (t/testing "at bottom"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo"))
-                                  (ctob/add-set (ctob/make-token-set :name "bar"))
-                                  (ctob/add-set (ctob/make-token-set :name "baz"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 0
-                                                                          :to-index 2
-                                                                          :position :bot})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["bar" "baz" "foo"] (vec redo-sets)))
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets)))))
-
-    (t/testing "dropping out of set group"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                  (ctob/add-set (ctob/make-token-set :name "foo"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 1
-                                                                          :to-index 0
-                                                                          :position :top})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["bar" "foo"] (vec redo-sets)))
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets)))))
-
-    (t/testing "into set group"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                                  (ctob/add-set (ctob/make-token-set :name "foo"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
-                                                                          :to-index 1
-                                                                          :position :bot})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["foo/bar" "foo/foo"] (vec redo-sets)))
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets)))))
-
-    (t/testing "edge-cases:"
-      (t/testing "prevent overriding set to identical path"
-        (let [file (setup-file #(-> %
-                                    (ctob/add-set (ctob/make-token-set :name "foo/foo"))
-                                    (ctob/add-set (ctob/make-token-set :name "foo"))))
-              lib (tht/get-tokens-lib file)]
-          (t/is (thrown?
-                 #?(:cljs js/Error :clj Exception)
-                 (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
-                                                                       :to-index 0
-                                                                       :position :bot})
-                 #"move token set error: path exists"))
-          (t/is (thrown?
-                 #?(:cljs js/Error :clj Exception)
-                 (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
-                                                                       :to-index 1
-                                                                       :position :bot})
-                 #"move token set error: path exists"))))
-
-      (t/testing "dropping below collapsed group doesnt add as child"
-        (let [file (setup-file #(-> %
-                                    (ctob/add-set (ctob/make-token-set :name "foo"))
-                                    (ctob/add-set (ctob/make-token-set :name "foo/bar"))))
-              lib (tht/get-tokens-lib file)
-              changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 0
-                                                                            :to-index 1
-                                                                            :position :bot
-                                                                            :collapsed-paths #{["foo"]}})
-              redo (thf/apply-changes file changes)
-              redo-sets (-> (tht/get-tokens-lib redo)
-                            (ctob/get-set-names))
-              undo (thf/apply-undo-changes redo changes)
-              undo-sets (-> (tht/get-tokens-lib undo)
-                            (ctob/get-set-names))]
-          (t/is (= ["foo/bar" "foo"] (vec redo-sets)))
-          (t/testing "undo"
-            (t/is (= (ctob/get-set-names lib) undo-sets))))))))
-
-(t/deftest generate-move-token-group-test
-  (t/testing "Ignore dropping set group to the same position"
-    (let [file (setup-file #(-> %
-                                (ctob/add-set (ctob/make-token-set :name "foo"))
-                                (ctob/add-set (ctob/make-token-set :name "bar/baz"))))
-          drop (partial clt/generate-move-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file))]
-      (t/testing "on top of identical"
-        (t/is (= (pcb/empty-changes)
-                 (drop {:from-index 1
-                        :to-index 1
-                        :position :top}))))
-      (t/testing "on bottom of identical"
-        (t/is (= (pcb/empty-changes)
-                 (drop {:from-index 1
-                        :to-index 1
-                        :position :bot}))))
-      (t/testing "on top of next to identical"
-        (t/is (= (pcb/empty-changes)
-                 (drop {:from-index 1
-                        :to-index 1
-                        :position :top}))))))
-
-  (t/testing "Move set groups"
-    (t/testing "to top"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo/foo"))
-                                  (ctob/add-set (ctob/make-token-set :name "bar/bar"))
-                                  (ctob/add-set (ctob/make-token-set :name "baz/baz"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 2
-                                                                                :to-index 0
-                                                                                :position :top})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["bar/bar" "foo/foo" "baz/baz"] (vec redo-sets)))
-
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets)))))
-
-    (t/testing "to bottom"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo/foo"))
-                                  (ctob/add-set (ctob/make-token-set :name "bar"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
-                                                                                :to-index 2
-                                                                                :position :bot})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["bar" "foo/foo"] (vec redo-sets)))
-
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets)))))
-
-    (t/testing "into set group"
-      (let [file (setup-file #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "foo/foo"))
-                                  (ctob/add-set (ctob/make-token-set :name "bar/bar"))))
-            lib (tht/get-tokens-lib file)
-            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
-                                                                                :to-index 2
-                                                                                :position :bot})
-            redo (thf/apply-changes file changes)
-            redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-set-names))
-            undo (thf/apply-undo-changes redo changes)
-            undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-set-names))]
-        (t/is (= ["bar/foo/foo" "bar/bar"] (vec redo-sets)))
-        (t/testing "undo"
-          (t/is (= (ctob/get-set-names lib) undo-sets))))
-
-      (t/testing "edge-cases:"
-        (t/testing "prevent overriding set to identical path"
-          (let [file (setup-file #(-> %
-                                      (ctob/add-set (ctob/make-token-set :name "foo/identical/foo"))
-                                      (ctob/add-set (ctob/make-token-set :name "identical/bar"))))
-                lib (tht/get-tokens-lib file)]
-            (t/is (thrown?
-                   #?(:cljs js/Error :clj Exception)
-                   (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 3
-                                                                               :to-index 1
-                                                                               :position :top})
-                   #"move token set error: path exists"))))
-
-        (t/testing "prevent dropping parent to child"
-          (let [file (setup-file #(-> %
-                                      (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))))
-                lib (tht/get-tokens-lib file)]
-            (t/is (thrown?
-                   #?(:cljs js/Error :clj Exception)
-                   (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
-                                                                               :to-index 1
-                                                                               :position :bot})
-                   #"move token set error: parent-to-child"))))))))
+  (t/testing "sync with status already in sync returns same changes"
+    (let [theme-id (uuid/next)
+          set-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "s1"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "t1"
+                                                                    :sets #{"s1"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (clt/generate-sync-tokens-status-with-lib tokens-status tokens-lib))]
+      (t/is (= [] (:redo-changes changes)))
+      (t/is (= [] (:undo-changes changes))))))

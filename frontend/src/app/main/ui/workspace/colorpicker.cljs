@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.types.color :as cc]
@@ -762,10 +763,15 @@
         tokens-lib
         (mf/deref refs/tokens-lib)
 
+        tokens-status
+        (mf/deref refs/tokens-status)
+
         active-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib
-                  (ctob/get-active-themes-set-names)))
+        (mf/with-memo [tokens-status tokens-lib]
+          (when (and tokens-status tokens-lib)
+            (into #{}
+                  (map ctob/get-name)
+                  (cfo/get-active-sets tokens-status tokens-lib))))
 
         active-tokens (if (delay? active-tokens)
                         @active-tokens
@@ -785,7 +791,7 @@
                   (filter-active-sets active-sets-names)
                   (filter-non-empty-sets)
                   (group-sets)
-                  (combine-groups-with-resolved  color-tokens)))]
+                  (combine-groups-with-resolved color-tokens)))]
 
     (mf/with-effect []
       (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts :workspace)))

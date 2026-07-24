@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -19,16 +20,22 @@
   (st/emit! (dwtl/clear-tokens-paths)
             (dwtl/set-selected-token-set-id id)))
 
-(defn- on-toggle-token-set-click [name]
-  (st/emit! (dwtl/toggle-token-set name)))
+(defn- on-toggle-token-set-click [id]
+  (st/emit! (dwtl/toggle-token-set id)))
 
 (defn- on-toggle-token-set-group-click [path]
   (st/emit! (dwtl/toggle-token-set-group path)))
 
 (mf/defc sets-list*
-  [{:keys [tokens-lib selected new-path edition-id]}]
+  [{:keys [selected new-path edition-id]}]
 
-  (let [token-sets
+  (let [tokens-lib
+        (mf/use-ctx ctx/tokens-lib)
+
+        tokens-status
+        (mf/use-ctx ctx/tokens-status)
+
+        token-sets
         (some-> tokens-lib (ctob/get-set-tree))
 
         can-edit?
@@ -36,10 +43,9 @@
 
         token-set-active?
         (mf/use-fn
-         (mf/deps tokens-lib)
-         (fn [name]
-           (when tokens-lib
-             (ctob/token-set-active? tokens-lib name))))
+         (mf/deps tokens-status)
+         (fn [set-id]
+           (ctos/set-active? tokens-status set-id)))
 
         token-set-group-active?
         (mf/use-fn

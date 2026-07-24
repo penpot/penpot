@@ -7,83 +7,12 @@
 (ns app.common.logic.tokens
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]))
 
-(defn- generate-update-active-sets
-  "Copy the active sets from the currently active themes and move them
-  to the hidden token theme and update the theme with
-  `update-theme-fn`.
+;; Tokens lib
 
-  Use this for managing sets active state without having to modify a
-  user created theme (\"no themes selected\" state in the ui)."
-  [changes tokens-lib update-theme-fn]
-  (let [active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
-
-        hidden-theme  (ctob/get-hidden-theme tokens-lib)
-        hidden-theme' (-> (some-> hidden-theme
-                                  (ctob/set-sets active-token-set-names))
-                          (update-theme-fn))]
-    (-> changes
-        (pcb/set-active-token-themes #{(ctob/get-theme-path hidden-theme')})
-        (pcb/set-token-theme (ctob/get-id hidden-theme)
-                             hidden-theme'))))
-
-(defn generate-set-enabled-token-set
-  "Enable or disable a token set at `set-name` in `tokens-lib` without modifying a user theme."
-  [changes tokens-lib set-name enabled?]
-  (if enabled?
-    (generate-update-active-sets changes tokens-lib #(ctob/enable-set % set-name))
-    (generate-update-active-sets changes tokens-lib #(ctob/disable-set % set-name))))
-
-(defn generate-toggle-token-set
-  "Toggle a token set at `set-name` in `tokens-lib` without modifying a user theme."
-  [changes tokens-lib set-name]
-  (generate-update-active-sets changes tokens-lib #(ctob/toggle-set % set-name)))
-
-(defn- generate-update-active-token-theme
-  "Change the active state of a theme in `tokens-lib`. If after the change there is
-   any active theme other than the hidden one, deactivate the hidden theme."
-  [changes tokens-lib update-fn]
-  (let [active-token-themes (some-> tokens-lib
-                                    (update-fn)
-                                    (ctob/get-active-theme-paths))
-        active-token-themes' (if (= active-token-themes #{ctob/hidden-theme-path})
-                               active-token-themes
-                               (disj active-token-themes ctob/hidden-theme-path))]
-    (pcb/set-active-token-themes changes active-token-themes')))
-
-(defn generate-set-active-token-theme
-  "Activate or deactivate a token theme in `tokens-lib`."
-  [changes tokens-lib id active?]
-  (if active?
-    (generate-update-active-token-theme changes tokens-lib
-                                        #(ctob/activate-theme % id))
-    (generate-update-active-token-theme changes tokens-lib
-                                        #(ctob/deactivate-theme % id))))
-
-(defn generate-toggle-token-theme
-  "Toggle the active state of a token theme in `tokens-lib`."
-  [changes tokens-lib id]
-  (generate-update-active-token-theme changes tokens-lib
-                                      #(ctob/toggle-theme-active % id)))
-
-(defn toggle-token-set-group
-  "Toggle a token set group at `group-path` in `tokens-lib` for a `tokens-lib-theme`."
-  [group-path tokens-lib tokens-lib-theme]
-  (let [deactivate? (contains? #{:all :partial} (ctob/sets-at-path-all-active? tokens-lib group-path))
-        sets-names  (->> (ctob/get-sets-at-path tokens-lib group-path)
-                         (map ctob/get-name)
-                         (into #{}))]
-    (if deactivate?
-      (ctob/disable-sets tokens-lib-theme sets-names)
-      (ctob/enable-sets tokens-lib-theme sets-names))))
-
-(defn generate-toggle-token-set-group
-  "Toggle a token set group at `group-path` in `tokens-lib` without modifying a user theme."
-  [changes tokens-lib group-path]
-  (generate-update-active-sets changes tokens-lib #(toggle-token-set-group group-path tokens-lib %)))
-
-(defn vec-starts-with? [v1 v2]
+(defn- vec-starts-with? [v1 v2]
   (= (subvec v1 0 (min (count v1) (count v2))) v2))
 
 (defn- calculate-move-token-set-or-set-group
@@ -179,3 +108,44 @@
               (pcb/set-token-set changes (ctob/get-id set) nil))
             changes
             sets)))
+
+;; Tokens Status
+
+(defn- update-tokens-status
+  [changes tokens-status update-fn & args]
+  (let [tokens-status' (apply update-fn tokens-status args)]
+    (if (not= tokens-status tokens-status')
+      (pcb/set-tokens-status changes tokens-status')
+      changes)))
+
+(defn generate-activate-theme
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/activate-theme tokens-lib id))
+
+(defn generate-deactivate-theme
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/deactivate-theme tokens-lib id))
+
+(defn generate-set-theme-status
+  [changes tokens-status tokens-lib id active?]
+  (update-tokens-status changes tokens-status cfo/set-theme-active tokens-lib id active?))
+
+(defn generate-toggle-theme
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/toggle-theme-active tokens-lib id))
+
+(defn generate-set-enabled-token-set
+  [changes tokens-status tokens-lib id enabled?]
+  (update-tokens-status changes tokens-status cfo/set-set-active tokens-lib id enabled?))
+
+(defn generate-toggle-token-set
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/toggle-set-active tokens-lib id))
+
+(defn generate-toggle-token-set-group
+  [changes tokens-status tokens-lib group-path]
+  (update-tokens-status changes tokens-status cfo/toggle-set-group-active tokens-lib group-path))
+
+(defn generate-sync-tokens-status-with-lib
+  [changes tokens-status tokens-lib]
+  (update-tokens-status changes tokens-status cfo/sync-tokens-status-with-lib tokens-lib))
