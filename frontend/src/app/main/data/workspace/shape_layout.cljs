@@ -26,6 +26,7 @@
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
@@ -98,26 +99,33 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [page-id ids undo-group]}]
+  [{:keys [page-id ids undo-group drain-ids]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (or page-id (:current-page-id state))
             objects (dsh/lookup-page-objects state page-id)
-            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))]
-        (if (d/not-empty? ids)
-          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (if (features/active-feature? state "render-wasm/v1")
-              (rx/of (dwm/apply-wasm-modifiers modif-tree
+            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+
+            update-positions-stream
+            (if (d/not-empty? ids)
+              (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+                (if (features/active-feature? state "render-wasm/v1")
+                  (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                                   :stack-undo? true
+                                                   :undo-group undo-group
+                                                   :ignore-touched true))
+                  (rx/of (dwm/apply-modifiers {:page-id page-id
+                                               :modifiers modif-tree
                                                :stack-undo? true
-                                               :undo-group undo-group
-                                               :ignore-touched true))
-              (rx/of (dwm/apply-modifiers {:page-id page-id
-                                           :modifiers modif-tree
-                                           :stack-undo? true
-                                           :ignore-touched true
-                                           :undo-group undo-group}))))
-          (rx/empty))))))
+                                               :ignore-touched true
+                                               :undo-group undo-group}))))
+              (rx/empty))]
+
+        (cond->> update-positions-stream
+          ;; Drain the pending-reflow marks only after the apply events above are processed
+          (d/not-empty? drain-ids)
+          (rx/finalize #(wrf/mark-done! :layout drain-ids)))))))
 
 (defn initialize-shape-layout
   []
@@ -130,6 +138,9 @@
              ;; we can just use a keyword for it
              (rx/filter (ptk/type? :layout/update))
              (rx/map deref)
+             ;; Mark the affected shapes as pending reflow so the plugin API
+             ;; `waitForLayoutUpdate` can wait until the buffered updates flush.
+             (rx/tap #(wrf/mark-pending! :layout (:ids %)))
              ;; We buffer the updates to the layout so if there are many changes at the same time
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
@@ -138,9 +149,14 @@
               (fn [data]
                 (->> (group-by :page-id data)
                      (map (fn [[page-id items]]
-                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
-                              (update-layout-positions {:page-id page-id :ids ids})))))))
-             (rx/take-until stopper))))))
+                            (let [ids       (reduce #(into %1 (:ids %2)) #{} items)
+                                  drain-ids (mapcat :ids items)]
+                              (update-layout-positions {:page-id page-id
+                                                        :ids ids
+                                                        :drain-ids drain-ids})))))))
+             (rx/take-until stopper)
+             ;; On workspace teardown clear everything still pending.
+             (rx/finalize wrf/reset-pending!))))))
 
 (defn finalize-shape-layout
   []

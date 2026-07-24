@@ -114,7 +114,8 @@
       "uploadMediaData",
       "uploadMediaUrl",
       "version",
-      "viewport"
+      "viewport",
+      "waitForLayoutUpdate"
     ],
     "ContextGeometryUtils": ["center"],
     "ContextTypesUtils": [
@@ -376,7 +377,7 @@
     "PreviousScreen": ["type"],
     "Push": ["direction", "duration", "easing", "type"],
     "Rectangle": ["fills", "type"],
-    "RulerGuide": ["board", "orientation", "position", "remove"],
+    "RulerGuide": ["board", "orientation", "position"],
     "Shadow": [
       "blur",
       "color",
@@ -454,6 +455,7 @@
       "switchVariant",
       "tokens",
       "visible",
+      "waitForLayoutUpdate",
       "width",
       "x",
       "y"
@@ -1213,6 +1215,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -1708,6 +1716,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -2312,6 +2326,12 @@
         "kind": "method",
         "type": "VariantContainer",
         "array": false
+      },
+      "waitForLayoutUpdate": {
+        "decl": "Context",
+        "kind": "method",
+        "type": null,
+        "array": false
       }
     },
     "ContextGeometryUtils": {
@@ -2840,6 +2860,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -4087,6 +4113,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -4666,6 +4698,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -6299,6 +6337,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -6619,6 +6663,12 @@
         "decl": "Context",
         "kind": "method",
         "type": "VariantContainer",
+        "array": false
+      },
+      "waitForLayoutUpdate": {
+        "decl": "Context",
+        "kind": "method",
+        "type": null,
         "array": false
       }
     },
@@ -7124,6 +7174,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -7652,6 +7708,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -8221,6 +8283,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -8782,6 +8850,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -11080,6 +11154,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,

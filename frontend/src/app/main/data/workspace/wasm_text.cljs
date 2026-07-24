@@ -17,6 +17,7 @@
    [app.common.types.modifiers :as ctm]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.render-wasm.api :as wasm.api]
@@ -118,6 +119,10 @@
              apply-opts (cond-> {}
                           (some? undo-group) (assoc :undo-group undo-group)
                           extend-tx? (assoc :undo-transation? false))]
+         ;; Balance the per-invocation `mark-pending!` done in
+         ;; resize-wasm-text-debounce-inner: the batch carries one entry per
+         ;; conj (duplicates included), so this exactly clears them.
+         (wrf/mark-done! :text-resize ids)
          (cond
            (not (empty? modifiers))
            (if extend-tx?
@@ -152,6 +157,12 @@
 
        ptk/WatchEvent
        (watch [_ state stream]
+         ;; One mark per invocation (1:1 with the conj in UpdateEvent above);
+         ;; balanced by `mark-done!` of the full batch in
+         ;; resize-wasm-text-debounce-commit. The stopper below is workspace
+         ;; teardown, which clears everything via shape-layout's finalize, so no
+         ;; extra decrement is needed when the wait is cut short.
+         (wrf/mark-pending! :text-resize [id])
          (if (= (::resize-wasm-text-debounce-event state) cur-event)
            (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
              (rx/concat
@@ -190,18 +201,24 @@
                   (every?
                    (fn [font]
                      (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))]
+                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))
 
-         (if fonts-loaded?
-           (let [pass-opts (when (or (some? undo-group) (some? undo-id))
-                             (cond-> {}
-                               (some? undo-group) (assoc :undo-group undo-group)
-                               (some? undo-id) (assoc :undo-id undo-id)))]
-             (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
 
-           ;; Fonts not loaded; retry after 20 msecs
-           (->> (rx/of (resize-wasm-text-debounce id opts))
-                (rx/delay 20))))))))
+             resize-wasm-stream
+             (if fonts-loaded?
+               (let [pass-opts (when (or (some? undo-group) (some? undo-id))
+                                 (cond-> {}
+                                   (some? undo-group) (assoc :undo-group undo-group)
+                                   (some? undo-id) (assoc :undo-id undo-id)))]
+                 (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
+
+               ;; Fonts not loaded; retry after 20 msecs
+               (->> (rx/of (resize-wasm-text-debounce id opts))
+                    (rx/delay 20)))]
+
+         (wrf/mark-pending! :text-resize [id])
+         (->> resize-wasm-stream
+              (rx/finalize #(wrf/mark-done! :text-resize [id]))))))))
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
