@@ -20,8 +20,8 @@
    :exclusions [funcool/beicon2]}
 
   funcool/beicon2
-  {:git/tag "v2.2"
-   :git/sha "8744c66"
+  {:git/tag "v2.3"
+   :git/sha "df7058a"
    :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext
