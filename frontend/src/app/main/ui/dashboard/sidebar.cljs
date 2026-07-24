@@ -40,6 +40,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.hooks :refer [use-focus-timer-ref]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
@@ -94,6 +95,14 @@
 (def ^:private ^:svg-id penpot-logo-icon "penpot-logo-icon")
 (def ^:private ^:svg-id penpot-logo-icon-subtle "penpot-logo-subtle")
 
+(defn schedule-focus-by-id!
+  [ref element-id]
+  (when-let [h (mf/ref-val ref)]
+    (ts/dispose! h))
+  (mf/set-ref-val! ref
+                   (ts/schedule
+                    #(dom/focus-and-untabbable! (dom/get-element element-id)))))
+
 (mf/defc sidebar-project*
   {::mf/private true}
   [{:keys [item is-selected]}]
@@ -112,6 +121,8 @@
 
         project-id       (get item :id)
 
+        focus-timer-ref  (use-focus-timer-ref)
+
         on-click
         (mf/use-fn
          (mf/deps project-id)
@@ -124,13 +135,8 @@
          (fn [event]
            (when (kbd/enter? event)
              (st/emit!
-              (dcm/go-to-dashboard-files :project-id project-id))
-             (ts/schedule
-              (fn []
-                (when-let [title (dom/get-element (str project-id))]
-                  (dom/set-attribute! title "tabindex" "0")
-                  (dom/focus! title)
-                  (dom/set-attribute! title "tabindex" "-1")))))))
+              (dcm/go-to-dashboard-files :project-id project-id)
+              (schedule-focus-by-id! focus-timer-ref (str project-id))))))
 
         on-menu-click
         (mf/use-fn
@@ -228,6 +234,8 @@
         focused?    (mf/use-state false)
         emit!       (mf/use-memo #(f/debounce st/emit! 500))
 
+        focus-timer-ref  (use-focus-timer-ref)
+
         on-search-blur
         (mf/use-fn
          (fn [_]
@@ -254,13 +262,7 @@
         (mf/use-fn
          (fn [e]
            (when (kbd/enter? e)
-             (ts/schedule
-              (fn []
-                (let [search-title (dom/get-element (str "dashboard-search-title"))]
-                  (when search-title
-                    (dom/set-attribute! search-title "tabindex" "0")
-                    (dom/focus! search-title)
-                    (dom/set-attribute! search-title "tabindex" "-1")))))
+             (schedule-focus-by-id! focus-timer-ref "dashboard-search-title")
              (dom/prevent-default e)
              (dom/stop-propagation e))))
 
@@ -948,6 +950,8 @@
 
         nitrate?    (contains? cf/flags :nitrate)
 
+        focus-timer-ref  (use-focus-timer-ref)
+
         go-projects
         (mf/use-fn #(st/emit! (dcm/go-to-dashboard-recent)))
 
@@ -957,12 +961,7 @@
          (fn []
            (st/emit!
             (dcm/go-to-dashboard-recent :team-id team-id))
-           (ts/schedule
-            (fn []
-              (when-let [projects-title (dom/get-element "dashboard-projects-title")]
-                (dom/set-attribute! projects-title "tabindex" "0")
-                (dom/focus! projects-title)
-                (dom/set-attribute! projects-title "tabindex" "-1"))))))
+           (schedule-focus-by-id! focus-timer-ref "dashboard-projects-title")))
 
         go-fonts
         (mf/use-fn
@@ -975,13 +974,7 @@
          (fn []
            (st/emit!
             (dcm/go-to-dashboard-fonts :team-id team-id))
-           (ts/schedule
-            (fn []
-              (let [font-title (dom/get-element "dashboard-fonts-title")]
-                (when font-title
-                  (dom/set-attribute! font-title "tabindex" "0")
-                  (dom/focus! font-title)
-                  (dom/set-attribute! font-title "tabindex" "-1")))))))
+           (schedule-focus-by-id! focus-timer-ref "dashboard-fonts-title")))
 
         go-drafts
         (mf/use-fn
@@ -994,12 +987,7 @@
          (mf/deps team-id default-project-id)
          (fn []
            (st/emit! (dcm/go-to-dashboard-files :team-id team-id :project-id default-project-id))
-           (ts/schedule
-            (fn []
-              (when-let [title (dom/get-element "dashboard-drafts-title")]
-                (dom/set-attribute! title "tabindex" "0")
-                (dom/focus! title)
-                (dom/set-attribute! title "tabindex" "-1"))))))
+           (schedule-focus-by-id! focus-timer-ref "dashboard-drafts-title")))
 
         go-libs
         (mf/use-fn
@@ -1012,13 +1000,7 @@
          (fn []
            (st/emit!
             (dcm/go-to-dashboard-libraries :team-id team-id))
-           (ts/schedule
-            (fn []
-              (let [libs-title (dom/get-element "dashboard-libraries-title")]
-                (when libs-title
-                  (dom/set-attribute! libs-title "tabindex" "0")
-                  (dom/focus! libs-title)
-                  (dom/set-attribute! libs-title "tabindex" "-1")))))))
+           (schedule-focus-by-id! focus-timer-ref "dashboard-libraries-title")))
 
         pinned-projects
         (mf/with-memo [projects]

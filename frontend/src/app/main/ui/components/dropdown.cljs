@@ -11,6 +11,7 @@
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
+   [beicon.v2.core :as rx]
    [goog.events :as events]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
@@ -45,9 +46,10 @@
         (fn []
           (let [keys [(events/listen globals/document EventType.CLICK on-click)
                       (events/listen globals/document EventType.CONTEXTMENU on-click)
-                      (events/listen globals/document EventType.KEYUP on-keyup)]]
-            (tm/schedule #(mf/set-ref-val! listening-ref true))
-            #(run! events/unlistenByKey keys)))]
+                      (events/listen globals/document EventType.KEYUP on-keyup)]
+                timer (tm/schedule #(mf/set-ref-val! listening-ref true))]
+            #(do (rx/dispose! timer)
+                 (run! events/unlistenByKey keys))))]
 
     (mf/use-effect on-mount)
     children))
