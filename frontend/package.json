@@ -15,8 +15,8 @@
   },
   "scripts": {
     "build:app:assets": "node ./scripts/build-app-assets.js",
+    "build:storybook": "(cd packages/ui && pnpm run build) && pnpm run build:storybook:assets && pnpm run build:storybook:cljs && storybook build",
     "build:fonts-preview": "node ./scripts/build-fonts-preview.js",
-    "build:storybook": "pnpm run build:storybook:assets && pnpm run build:storybook:cljs && storybook build",
     "build:storybook:assets": "node ./scripts/build-storybook-assets.js",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
     "build:wasm": "../render-wasm/build",
@@ -58,7 +58,6 @@
     "@penpot/text-editor": "link:text-editor",
     "@penpot/tokenscript": "link:packages/tokenscript",
     "@penpot/ua-parser": "penpot/ua-parser#1.0.0",
-    "@penpot/ui": "link:packages/ui",
     "@playwright/test": "1.61.1",
     "@storybook/addon-docs": "10.4.6",
     "@storybook/addon-themes": "10.4.6",
@@ -129,5 +128,9 @@
     "watcher": "^2.3.1",
     "workerpool": "^10.0.3",
     "xregexp": "^5.1.2"
+  },
+  "dependencies": {
+    "@penpot/ui": "link:packages/ui",
+    "react-aria-components": "^1.19.0"
   }
 }

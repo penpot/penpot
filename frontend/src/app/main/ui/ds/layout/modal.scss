@@ -1,0 +1,68 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/mixins" as *;
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.modal-header-title {
+  color: var(--color-foreground-primary);
+}
+
+.modal-close {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-s);
+}
+
+.modal-content {
+  @include custom-scrollbar;
+
+  padding: var(--sp-l);
+  overflow-block: auto;
+  color: var(--color-foreground-primary);
+}
+
+.modal-body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--sp-xxxl);
+  min-block-size: 0;
+  padding: var(--sp-xxxl);
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  flex-shrink: 0;
+  inline-size: 100%;
+}
+
+.modal-footer-base {
+  justify-content: flex-end;
+}
+
+.modal-footer-split {
+  justify-content: space-between;
+}
+
+.modal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.modal-footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}

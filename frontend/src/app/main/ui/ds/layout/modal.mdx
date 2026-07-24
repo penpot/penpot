@@ -1,0 +1,163 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as Modal from "./modal.stories";
+
+<Meta title="Layout/Modal" />
+
+# Modal
+
+A modal interrupts the current workflow to display critical information or require a user decision. While open, interaction with the rest of the interface is blocked.
+
+## Example
+
+### Default
+
+<Canvas of={Modal.Default} />
+
+---
+
+# Usage
+
+The modal is composed of optional layout components.
+
+```clojure
+[:> modal*
+ {:is-open open?
+  :on-open-change #(reset! open* %)}
+
+ [:> modal-header*
+  {:title "Dialog title"}]
+
+ [:> modal-content* {}
+  [:> :p {} "Content"]]
+
+ [:> modal-footer* {}
+  [:> button* {:variant "secondary"} "Cancel"]
+  [:> button* {:variant "primary"} "Save"]]]
+```
+
+The header, content and footer are optional. Use only the sections your dialog requires.
+
+---
+
+## Footer layouts
+
+### Simple
+
+Use when all actions belong together.
+
+```clojure
+[:> modal-footer* {}
+ [:> button* {:variant "secondary"} "Cancel"]
+ [:> button* {:variant "primary"} "Save"]]
+```
+
+Result:
+
+```
+.                Cancel   Save
+```
+
+### Split actions
+
+Use when a destructive or secondary action should be visually separated from the primary actions.
+
+```clojure
+[:> modal-footer*
+ {:variant "split"
+  :start
+  (mf/html
+    [:> button* {:variant "destructive"} "Delete"])
+
+  :end
+  (mf/html
+  [:*
+    [:> button* {:variant "secondary"} "Cancel"]
+    [:> button* {:variant "primary"} "Save"]])}]
+```
+
+Result:
+
+```
+Delete                 Cancel   Save
+```
+
+---
+
+# Modal props
+## is-open
+
+Controls whether the modal is open.
+
+Type: boolean
+
+## on-open-change
+
+Callback invoked whenever the open state changes.
+
+Type: function
+
+## trigger
+
+Element that opens the modal.
+
+Type: React element
+
+## is-dismissable
+
+Whether the modal can be closed by pressing Escape or clicking the backdrop.
+
+Default: true
+
+## hide-close
+
+Hides the default close button.
+
+Default: false
+
+## size
+
+Controls the modal width.
+
+Options
+
+"small"
+"medium" (default)
+"large"
+"xlarge"
+
+## class
+
+Additional CSS class applied to the modal.
+
+# Accessibility
+
+The modal automatically provides:
+
+- Accessible `dialog` semantics
+- Focus trapping
+- Focus restoration when closed
+- Keyboard support
+- Optional dismissal with **Escape** and backdrop click
+
+---
+
+# Best practices
+
+Use a modal for:
+
+- Confirming destructive actions
+- Collecting short forms
+- Displaying critical information
+- Requesting a decision before continuing
+
+Avoid using a modal for:
+
+- Long forms
+- Large amounts of content
+- Complex navigation
+- Non-critical information
