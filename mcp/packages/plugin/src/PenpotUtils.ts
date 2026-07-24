@@ -214,8 +214,6 @@ export class PenpotUtils {
     public static getBounds(shape: Shape): Bounds {
         if (shape.type === "text") {
             const text = shape as Text;
-            // TODO: Remove ts-ignore once type definitions are updated
-            // @ts-ignore
             return text.textBounds;
         } else {
             return shape.bounds;
@@ -473,7 +471,6 @@ export class PenpotUtils {
      */
     public static findTokensByName(name: string): any[] {
         const tokens: any[] = [];
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -494,7 +491,6 @@ export class PenpotUtils {
      * @returns The first matching token, or null if not found
      */
     public static findTokenByName(name: string): any | null {
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -515,7 +511,6 @@ export class PenpotUtils {
      * @returns The TokenSet containing this token, or null if not found
      */
     public static getTokenSet(token: any): any | null {
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -571,7 +566,6 @@ export class PenpotUtils {
         }
 
         // 1. Create the variant container
-        // @ts-ignore — createVariantFromComponents was added after plugin-types@1.4.1
         const container: VariantContainer = (penpot as any).createVariantFromComponents(components.map((c) => c.shape));
         const variants = container.variants;
         if (!variants) {
@@ -617,7 +611,6 @@ export class PenpotUtils {
      */
     public static tokenOverview(): Record<string, Record<string, string[]>> {
         const overview: Record<string, Record<string, string[]>> = {};
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
