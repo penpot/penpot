@@ -105,6 +105,11 @@
                  (when on-change
                    (on-change modifiers)))))))]
 
+    (mf/with-effect []
+      (fn []
+        (when @resizing?
+          (fcc/clear-transform-preview!))))
+
     [:rect.margin-rect
      {:x (:x rect-data)
       :y (:y rect-data)
