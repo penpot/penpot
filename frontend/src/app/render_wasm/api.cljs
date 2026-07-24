@@ -461,7 +461,15 @@
     (try
       (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
-        (text-editor/text-editor-render-overlay)
+        ;; Only repaint the overlay when this frame recomposited Target (a full
+        ;; frame). A partial frame is flushed but not presented — Target still
+        ;; shows the last presented frame with the overlay already on it — so
+        ;; repainting the translucent selection over it stacks another layer
+        ;; every progressive frame: it darkens, then snaps back when the final
+        ;; frame presents from the clean Backbuffer (the blink at the end of a
+        ;; zoom over a selection, gh-10709).
+        (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+          (text-editor/text-editor-render-overlay))
         ;; Drain editor events. Only content/layout changes need a full shape
         ;; re-render; selection/style changes are already reflected by the
         ;; overlay redrawn just above.
@@ -1344,6 +1352,28 @@
   (let [local (get @st/state :workspace-local)]
     (or (:panning local) (:zooming local))))
 
+(defn- render-text-editor-overlay-if-active!
+  "Redraw the editor caret/selection straight onto the current Target frame when
+   an editor is active (no-op otherwise). Used after the direct `_render_from_cache`
+   / `internal-render` calls of a view interaction, which bypass the rAF `render`
+   loop that normally repaints the overlay. Without it the selection blinks out
+   for the duration of a pan/zoom gesture over a text shape (gh-10709)."
+  []
+  (when (is-text-editor-wasm-enabled @st/state)
+    (text-editor/text-editor-render-overlay)))
+
+(defn- render-text-editor-overlay-after-frame!
+  "Repaint the overlay after a direct `internal-render`, but only when that
+   render recomposited Target (a full frame). A partial frame is only flushed —
+   Target keeps the last presented frame with the overlay already on it — so
+   repainting the translucent selection then stacks another layer and it visibly
+   darkens across the progressive frames before snapping back on the final
+   present (the blink at the end of a zoom over a selection, gh-10709). The
+   final full frame's own repaint keeps the overlay in place."
+  []
+  (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+    (render-text-editor-overlay-if-active!)))
+
 (defn finalize-view-interaction!
   "Ends the view interaction and triggers a full-quality render."
   []
@@ -1357,7 +1387,12 @@
   ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
   ;; ends (e.g. selecting a shape opens the options panel and resizes the
   ;; viewport), which previously blanked.
-  (internal-render 0 RENDER-FLAG-SYNC-TILES))
+  (internal-render 0 RENDER-FLAG-SYNC-TILES)
+  ;; The direct render above bypasses the rAF `render` loop, so repaint the
+  ;; editor overlay explicitly. Only when this was a full frame: a progressive
+  ;; render keeps painting through the rAF loop and its partial frames must not
+  ;; be over-stamped (see `render-text-editor-overlay-after-frame!`).
+  (render-text-editor-overlay-after-frame!))
 
 (def render-finish
   (letfn [(do-render []
@@ -1366,7 +1401,9 @@
             (when (initialized?)
               (if (view-gesture-active?)
                 ;; Pan/zoom pause: render without ending the interaction.
-                (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                (do
+                  (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                  (render-text-editor-overlay-after-frame!))
                 (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
@@ -1379,6 +1416,15 @@
 
   (perf/begin-measure "render-from-cache")
   (h/call wasm/internal-module "_render_from_cache" 0)
+  ;; Keep the text-editor caret/selection glued to the shapes while the view
+  ;; changes. `_render_from_cache` re-composites shapes + UI at the new viewbox
+  ;; but omits the editor overlay, so without this the selection would vanish for
+  ;; the whole pan/zoom gesture and only flash back when the debounced full
+  ;; render lands — the blink seen when zooming in/out over a selection at high
+  ;; zoom (gh-10709). `_text_editor_render_overlay` draws straight onto the
+  ;; freshly composited Target (no Backbuffer re-compose) and no-ops when no
+  ;; editor is active.
+  (render-text-editor-overlay-if-active!)
   (render-finish)
   (perf/end-measure "render-from-cache"))
 
