@@ -31,16 +31,17 @@ pub fn stroke_to_path(
     };
 
     let is_open = shape_path.is_open();
-    let mut paint = stroke.to_paint(selrect, svg_attrs, true);
+    // Use `to_stroked_paint` (not `to_paint`) so the outline expansion picks up
+    // the stroke's own line caps (`cap_start`/`cap_end`) via `to_skia_linecap()`,
+    // matching what the on-canvas render does. It also applies the 2×-width
+    // doubling for inner/outer strokes.
+    let mut paint = stroke.to_stroked_paint(is_open, selrect, svg_attrs, true);
 
     if solid_outline {
         paint.set_path_effect(None);
     }
 
     let render_kind = stroke.render_kind(is_open);
-    if render_kind != StrokeKind::Center {
-        paint.set_stroke_width(stroke.width * 2.0);
-    }
 
     let mut stroke_outline = skia::Path::default();
     let success = skia::path_utils::fill_path_with_paint(
