@@ -15,11 +15,12 @@
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
    [beicon.v2.core :as rx]
@@ -52,29 +53,27 @@
 (mf/defc export-entry*
   {::mf/private true}
   [{:keys [file]}]
-  [:div {:class (stl/css-case
-                 :file-entry true
-                 :loading  (:loading file)
-                 :success  (:export-success? file)
-                 :error    (:export-error? file))}
+  (let [level (cond
+                (:export-success? file) :success
+                (:export-error? file)   :error
+                :else                   :info)]
+    [:div {:class (stl/css-case
+                   :file-entry true
+                   :loading  (:loading file)
+                   :success  (:export-success? file)
+                   :error    (:export-error? file))}
 
-   [:div {:class (stl/css :file-name)}
-    (if (:loading file)
-      [:> loader*  {:width 26
-                    :title (tr "labels.loading")}]
-      (cond (:export-success? file)
-            [:> icon* {:icon-id i/tick
-                       :class (stl/css :file-icon)
-                       :size "s"}]
-            (:export-error? file)
-            [:> icon* {:icon-id i/close
-                       :class (stl/css :file-icon)
-                       :size "s"}]))
+     (if (:loading file)
+       [:div {:class (stl/css :file-name)}
+        [:> loader*  {:width 26
+                      :title (tr "labels.loading")}]
+        [:> text* {:class (stl/css :file-name-label)
+                   :as "span"
+                   :typography t/body-large}
+         (:name file)]]
 
-    [:> text* {:class (stl/css :file-name-label)
-               :as "span"
-               :typography t/body-large}
-     (:name file)]]])
+       [:> context-notification {:level level
+                                 :content (:name file)}])]))
 
 (mf/defc export-dialog
   {::mf/register modal/components

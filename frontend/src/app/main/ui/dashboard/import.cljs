@@ -18,11 +18,18 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.raw-svg :as rsvg :refer [raw-svg*]]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -57,7 +64,7 @@
   {::mf/forward-ref true}
   [{:keys [project-id on-finish-import]} external-ref]
   (let [on-file-selected (use-import-file project-id on-finish-import)]
-    [:form.import-file {:aria-hidden "true"}
+    [:form {:aria-hidden "true"}
      [:& file-uploader {:accept ".penpot,.zip"
                         :multi true
                         :ref external-ref
@@ -217,13 +224,21 @@
         ;; FIXME: rename to format
         format          (:type entry)
 
-        loading?        (or (= :analyze status)
+        loading?        false #_(or (= :analyze status)
                             (= :import-progress status)
                             (and is-progress (= :import-ready status)))
-        analyze-error?  (= :analyze-error status)
-        import-success? (= :import-success status)
-        import-error?   (= :import-error status)
-        import-ready?   (= :import-ready status)
+        analyze-error?  true #_(= :analyze-error status)
+        import-success? false #_(= :import-success status)
+        import-error?   false #_(= :import-error status)
+        import-ready?   false #_(= :import-ready status)
+
+        level (cond
+                import-success? :success
+                import-ready?   :success
+                import-error?   :error
+                analyze-error?  :error
+                loading?        nil
+                :else           :default)
 
         is-shared?      (:shared entry)
         progress        (:progress entry)
@@ -272,46 +287,64 @@
                    :editable (and import-ready? (not editing?)))}
 
      [:div {:class (stl/css :file-name)}
-      (if loading?
-        [:> loader* {:width 16 :title (tr "labels.loading")}]
-        [:div {:class (stl/css-case
-                       :file-icon true
-                       :icon-fill import-ready?)}
-         (cond
-           import-ready?   deprecated-icon/logo-icon
-           import-error?   deprecated-icon/close
-           import-success? deprecated-icon/tick
-           analyze-error?  deprecated-icon/close)])
+      (when loading? [:> loader* {:width 26 :title (tr "labels.loading")}])
 
       (if editing?
         [:div {:class (stl/css :file-name-edit)}
          [:input {:type "text"
                   :auto-focus true
+                  :class (stl/css :file-name-input)
+                  ;;TODO: Add translation for aria-label
+                  :aria-label "File name"
                   :default-value (:name entry)
                   :on-key-press on-edit-key-press
                   :on-blur on-edit-blur}]]
 
         [:div {:class (stl/css :file-name-label)}
-         (:name entry)
-         (when ^boolean is-shared?
-           [:span {:class (stl/css :icon)}
-            deprecated-icon/library])])
+         (if loading?
+           [:> text* {:class (stl/css :file-name-label)
+                      :as "span"
+                      :typography t/body-medium}
+            (:name entry)
+            (when ^boolean is-shared?
+              [:> icon* {:icon-id i/library :class (stl/css :icon)}])]
+           [:> context-notification*
+            {:level level
+             :appearance :ghost
+             :class (stl/css :file-name-notification)}
+            [:> text* {:class (stl/css :file-name-label)
+                       :as "span"
+                       :typography t/body-medium}
+             (:name entry)
+             (when ^boolean is-shared?
+               [:> icon* {:icon-id i/library :class (stl/css :icon)}])]])])
 
       [:div {:class (stl/css :edit-entry-buttons)}
        (when ^boolean editable?
-         [:button {:on-click on-edit'} deprecated-icon/curve])
+         [:> icon-button* {:on-click on-edit'
+                           :variant "ghost"
+                           :icon-size "s"
+                           :aria-label (tr "labels.edit")
+                           :icon i/curve}])
        (when ^boolean can-be-deleted
-         [:button {:on-click on-delete'} deprecated-icon/delete])]]
-
+         [:> icon-button* {:on-click on-delete'
+                           :variant "ghost"
+                           :icon-size "s"
+                           :aria-label (tr "labels.delete")
+                           :icon i/delete}])]]
      (cond
        analyze-error?
-       [:div {:class (stl/css :error-message)}
+       [:> text* {:class (stl/css :error-message)
+                  :as "span"
+                  :typography t/body-small}
         (if (some? (:error entry))
           (tr (:error entry))
           (tr "dashboard.import.analyze-error"))]
 
        import-error?
-       [:div {:class (stl/css :error-message)}
+       [:> text* {:class (stl/css :error-message)
+                  :as "span"
+                  :typography t/body-small}
         (if (some? (:error entry))
           (tr (:error entry))
           (tr "labels.error"))]
@@ -689,13 +722,17 @@
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
-       [:h2  {:class (stl/css :modal-title)} (tr "dashboard.import")]
-
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} deprecated-icon/close]]
+       [:> heading* {:level 2
+                     :typography t/headline-large
+                     :class (stl/css :modal-title)}
+        (tr "dashboard.import")]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "labels.close")
+                         :on-click on-cancel
+                         :class (stl/css :modal-close-btn)
+                         :icon i/close}]]
 
       [:div {:class (stl/css :modal-content)}
-
        (cond
          (and (= :analyze status) errors?)
          [:& context-notification

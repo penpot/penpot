@@ -4,153 +4,235 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .modal-overlay {
-  @extend %modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
 }
 
 .modal-container {
-  @extend %modal-container-base;
-
+  position: relative;
   display: flex;
   flex-direction: column;
-}
-
-.modal-header {
-  margin-bottom: deprecated.$s-24;
-}
-
-.modal-title {
-  @include deprecated.uppercase-title-typography;
-
-  color: var(--modal-title-foreground-color);
-}
-
-.modal-close-btn {
-  @extend %modal-close-btn-base;
+  gap: var(--sp-xxxl);
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-block-size: $sz-192;
+  inline-size: $sz-512;
+  max-block-size: calc(10 * px2rem(80));
 }
 
 .modal-content {
-  @include deprecated.body-small-typography;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  margin-block-end: var(--sp-xxl);
+}
 
+.modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.modal-close-btn {
+  // %button-tertiary essentials
+  border-radius: $br-8;
+  background-color: transparent;
+  border: $b-2 solid transparent;
+  color: var(--button-tertiary-foreground-color-rest);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: px2rem(6);
+  block-size: $sz-32;
+  inline-size: $sz-28;
+
+  svg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: $sz-16;
+    inline-size: $sz-16;
+    color: transparent;
+    fill: none;
+    stroke-width: 1px;
+    stroke: var(--button-tertiary-foreground-color-rest);
+  }
+
+  &:hover {
+    background-color: var(--button-tertiary-background-color-hover);
+    color: var(--button-tertiary-foreground-color-hover);
+    border-color: var(--button-secondary-border-color-hover);
+
+    svg {
+      stroke: var(--button-tertiary-foreground-color-hover);
+    }
+  }
+}
+
+.modal-content {
+  // TODO: Typography does not match any existing DS typography token.
+  // body-small-typography: line-height 1.4 (DS body-small has line-height 1.3)
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  font-weight: 400;
+  line-height: 1.4;
   flex: 1;
   overflow: hidden auto;
   display: grid;
   grid-template-columns: 1fr;
-  gap: deprecated.$s-16;
-  margin-bottom: deprecated.$s-24;
-  min-height: 40px;
+  gap: var(--sp-l);
+  margin-block-end: var(--sp-xxl);
+  min-block-size: px2rem(40);
 }
 
 .status-message {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-title-foreground-color);
+  // TODO: Typography does not match any existing DS typography token.
+  // body-small-typography: line-height 1.4 (DS body-small has line-height 1.3)
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-foreground-primary);
   font-style: italic;
 }
 
 .action-buttons {
-  @extend %modal-action-btns;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-l);
 }
 
 .cancel-button {
-  @extend %modal-cancel-btn;
+  // %modal-cancel-btn essentials (these are <input type=button> elements)
+  border-radius: $br-8;
+  background-color: var(--button-secondary-background-color-rest);
+  border: $b-1 solid var(--button-secondary-border-color-rest);
+  color: var(--button-secondary-foreground-color-rest);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--sp-s) var(--sp-xxl);
+  block-size: $sz-32;
+  margin: 0;
+  cursor: pointer;
+
+  // TODO: Typography does not match any existing DS typography token.
+  // uppercase-title-typography: 11px, weight 500, line-height 1.2, uppercase
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(11);
+  font-weight: 500;
+  line-height: 1.2;
+  text-transform: uppercase;
+
+  &:hover {
+    background-color: var(--button-secondary-background-color-hover);
+    border-color: var(--button-secondary-border-color-hover);
+    color: var(--button-secondary-foreground-color-hover);
+  }
+
+  &:active {
+    background-color: var(--button-secondary-background-color-active);
+    border-color: var(--button-secondary-border-color-active);
+    color: var(--button-secondary-foreground-color-active);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--button-background-color-disabled);
+    border-color: var(--button-border-color-disabled);
+    color: var(--button-foreground-color-disabled);
+    cursor: unset;
+  }
 }
 
 .accept-btn {
-  @extend %modal-accept-btn;
+  // %modal-accept-btn essentials
+  border-radius: $br-8;
+  background-color: var(--button-primary-background-color-rest);
+  border: $b-1 solid var(--button-primary-border-color-rest);
+  color: var(--button-primary-foreground-color-rest);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--sp-s) var(--sp-xxl);
+  block-size: $sz-32;
+  margin: 0;
+  cursor: pointer;
+
+  // TODO: Typography does not match any existing DS typography token.
+  // uppercase-title-typography: 11px, weight 500, line-height 1.2, uppercase
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(11);
+  font-weight: 500;
+  line-height: 1.2;
+  text-transform: uppercase;
+
+  &:hover {
+    background-color: var(--button-primary-background-color-hover);
+    border-color: var(--button-primary-border-color-hover);
+    color: var(--button-primary-foreground-color-hover);
+  }
+
+  &:active {
+    background-color: var(--button-primary-background-color-active);
+    border-color: var(--button-primary-border-color-active);
+    color: var(--button-primary-foreground-color-active);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--button-background-color-disabled);
+    border-color: var(--button-border-color-disabled);
+    color: var(--button-foreground-color-disabled);
+    cursor: unset;
+  }
 
   &.danger {
-    @extend %modal-danger-btn;
+    background-color: var(--modal-button-background-color-error);
+    border-color: var(--modal-button-background-color-error);
+    color: var(--modal-button-foreground-color-error);
   }
 }
 
-.modal-scd-msg,
-.modal-subtitle,
-.modal-msg {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-text-foreground-color);
-  line-height: 1.5;
-}
+// TODO: Verify before removal. These selectors appear to be unused.
+// .modal-scd-msg,
+// .modal-subtitle,
+// .modal-msg {
+//   ...
+// }
 
 .file-entry {
+  --file-entry-fg-color: var(--color-foreground-secondary);
+
   display: flex;
-
-  .file-name {
-    @include deprecated.flex-row;
-
-    .file-icon {
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-24;
-      width: deprecated.$s-16;
-
-      svg {
-        @extend %button-icon;
-
-        stroke: var(--icon-foreground);
-      }
-
-      &.icon-fill svg {
-        fill: var(--icon-foreground);
-      }
-    }
-
-    .file-name-edit {
-      @extend %input-element;
-      @include deprecated.body-small-typography;
-
-      flex-grow: 1;
-    }
-
-    .file-name-label {
-      @include deprecated.body-small-typography;
-
-      display: flex;
-      align-items: center;
-      gap: deprecated.$s-12;
-      flex-grow: 1;
-
-      .icon {
-        @include deprecated.flex-center;
-
-        height: deprecated.$s-16;
-        width: deprecated.$s-16;
-
-        svg {
-          @extend %button-icon-small;
-
-          stroke: var(--icon-foreground);
-        }
-      }
-    }
-
-    .edit-entry-buttons {
-      @include deprecated.flex-row;
-
-      button {
-        @extend %button-tertiary;
-
-        width: deprecated.$s-28;
-        height: deprecated.$s-32;
-
-        svg {
-          @extend %button-icon;
-
-          stroke: var(--icon-foreground);
-        }
-      }
-    }
-  }
+  flex-direction: column;
+  gap: var(--sp-m);
 
   .error-message,
   .progress-message {
     display: flex;
     align-items: center;
-    min-height: deprecated.$s-32;
-    color: var(--modal-text-foreground-color);
+    min-block-size: $sz-32;
+    color: var(--file-entry-fg-color);
   }
 
   .error-message {
@@ -162,19 +244,26 @@
   .linked-library {
     display: flex;
     align-items: center;
-    gap: deprecated.$s-12;
-    color: var(--modal-text-foreground-color);
+    gap: var(--sp-m);
+    color: var(--file-entry-fg-color);
 
     .linked-library-tag {
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-24;
-      width: deprecated.$s-24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      block-size: $sz-24;
+      inline-size: $sz-24;
 
       svg {
-        @extend %button-icon;
-
-        stroke: var(--icon-foreground);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        block-size: $sz-16;
+        inline-size: $sz-16;
+        color: transparent;
+        fill: none;
+        stroke-width: 1px;
+        stroke: var(--file-entry-fg-color);
       }
 
       &.error {
@@ -185,71 +274,124 @@
     }
   }
 
-  &.loading {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-    }
-  }
-
   &.warning {
-    .file-name {
-      color: var(--element-foreground-warning);
-
-      .file-icon svg {
-        stroke: var(--element-foreground-warning);
-      }
-
-      .file-icon.icon-fill svg {
-        fill: var(--element-foreground-warning);
-      }
-    }
+    --file-entry-fg-color: var(--color-accent-warning);
   }
 
   &.success {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-
-      .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
-      }
-
-      .file-icon.icon-fill svg {
-        fill: var(--modal-text-foreground-color);
-      }
-    }
+    --file-entry-fg-color: var(--color-accent-sucess);
   }
 
   &.error {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-
-      .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
-      }
-
-      .file-icon.icon-fill svg {
-        fill: var(--modal-text-foreground-color);
-      }
-    }
+    --file-entry-fg-color: var(--color-accent-error);
   }
 
   &.editable {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-
-      .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
-      }
-
-      .file-icon.icon-fill svg {
-        fill: var(--modal-text-foreground-color);
-      }
-    }
+    --file-entry-fg-color: var(--color-foreground-primary);
   }
 }
 
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
+  color: var(--file-entry-fg-color);
+}
+
+  .edit-entry-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xs);
+
+    // button {
+    //   display: flex;
+    //   justify-content: center;
+    //   align-items: center;
+    //   border-radius: $br-8;
+    //   background-color: transparent;
+    //   border: $b-2 solid transparent;
+    //   inline-size: $sz-28;
+    //   block-size: $sz-32;
+    //   cursor: pointer;
+    //   color: var(--button-tertiary-foreground-color-rest);
+    // }
+  }
+
+.file-name-edit {
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  border: $b-1 solid var(--color-background-tertiary);
+  color: var(--file-entry-fg-color);
+  flex-grow: 1;
+  position: relative;
+  border-radius: $br-4;
+  background-color: var(--color-background-tertiary);
+}
+
+
+.file-name-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+  flex-grow: 1;
+
+  .icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: $sz-16;
+    inline-size: $sz-16;
+    color: var(--file-entry-fg-color);
+  }
+}
+
+
+
+.file-name-input {
+  @include use-typography("body-medium");
+
+  --edit-input-background-color: var(--color-background-tertiary);
+  --edit-input-border-color: transparent;
+
+  block-size: $sz-32;
+  inline-size: 100%;
+  padding: px2rem(6);
+  margin: 0;
+  border-radius: $br-8;
+  border: $b-1 solid var(--edit-input-border-color);
+  color: var(--color-foreground-primary);
+  background-color: var(--edit-input-background-color);
+
+  &:focus-visible {
+    --edit-input-background-color: var(--color-background-primary);
+    --edit-input-border-color: var(--color-accent-primary);
+
+    outline: none;
+  }
+}
+
+
+.file-icon,
+.file-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-24;
+  inline-size: $sz-16;
+  color: var(--file-entry-fg-color);
+}
+
+.file-svg {
+  fill: var(--file-entry-fg-color);
+}
+
 .context-notification-error {
-  --context-notification-bg-color: var(--modal-background-color);
+  --context-notification-bg-color: var(--color-background-primary);
+}
+
+.file-name-notification {
+  flex-grow: 1;
 }
 
 .import-error-disclaimer {
@@ -266,10 +408,13 @@
 }
 
 .import-error-detail {
-  @include deprecated.body-small-typography;
-
-  margin-top: var(--sp-xs);
-  color: var(--modal-text-foreground-color);
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  font-weight: 400;
+  line-height: 1.4;
+  margin-block-start: var(--sp-xs);
+  color: var(--color-foreground-secondary);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -277,64 +422,69 @@
 .library-resolution {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
 }
 
 .library-resolution-message {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-text-foreground-color);
-  margin-bottom: deprecated.$s-8;
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-foreground-secondary);
+  margin-block-end: var(--sp-s);
 }
 
 .library-resolution-item {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-4;
-  padding: deprecated.$s-8 0;
+  gap: var(--sp-xs);
+  padding: var(--sp-s) 0;
 }
 
 .library-resolution-item-name {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-title-foreground-color);
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  line-height: 1.4;
+  color: var(--color-foreground-primary);
   font-weight: 700;
 }
 
 .library-resolution-summary-file {
-  margin-bottom: deprecated.$s-16;
-  padding-bottom: deprecated.$s-12;
-  border-bottom: 1px solid var(--color-foreground-secondary);
+  margin-block-end: var(--sp-l);
+  padding-block-end: var(--sp-m);
+  border-bottom: $b-1 solid var(--color-foreground-secondary);
 }
 
 .library-resolution-linked {
   color: var(--color-foreground-secondary);
-  font-size: deprecated.$fs-12;
+  font-size: px2rem(12);
 }
 
 .library-resolution-project {
   color: var(--color-foreground-secondary);
-  font-size: deprecated.$fs-12;
-  margin-bottom: deprecated.$s-8;
+  font-size: px2rem(12);
+  margin-block-end: var(--sp-s);
 }
 
 // Summary file card
 .summary-file {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-8;
-  padding: deprecated.$s-12;
-  border: 1px solid var(--color-background-quaternary);
-  border-radius: deprecated.$br-8;
+  gap: var(--sp-s);
+  padding: var(--sp-m);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
   background: var(--color-background-primary);
 }
 
 .summary-file-header {
   display: flex;
   align-items: center;
-  gap: deprecated.$s-8;
-  padding-bottom: deprecated.$s-8;
-  border-bottom: 1px solid var(--color-background-quaternary);
+  gap: var(--sp-s);
+  padding-block-end: var(--sp-s);
+  border-bottom: $b-1 solid var(--color-background-quaternary);
 }
 
 .summary-file-icon {
@@ -343,9 +493,9 @@
 }
 
 .summary-file-name {
-  @include deprecated.body-medium-typography;
+  @include use-typography("body-medium");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
   font-weight: 700;
 }
 
@@ -353,15 +503,15 @@
 .summary-section {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-4;
-  padding-left: deprecated.$s-8;
+  gap: var(--sp-xs);
+  padding-inline-start: var(--sp-s);
 }
 
 .summary-section-header {
   display: flex;
   align-items: center;
-  gap: deprecated.$s-6;
-  padding: deprecated.$s-4 0;
+  gap: px2rem(6);
+  padding: var(--sp-xs) 0;
 }
 
 .summary-section-icon {
@@ -372,7 +522,7 @@
 .summary-list {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-2;
+  gap: var(--sp-xxs);
   list-style: none;
   padding: 0;
   margin: 0;
@@ -382,9 +532,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: deprecated.$s-8;
-  padding: deprecated.$s-4 deprecated.$s-8;
-  border-radius: deprecated.$br-4;
+  gap: var(--sp-s);
+  padding: var(--sp-xs) var(--sp-s);
+  border-radius: $br-4;
 
   &:hover {
     background: var(--color-background-secondary);
@@ -392,26 +542,32 @@
 }
 
 .summary-item-name {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-title-foreground-color);
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-foreground-primary);
   flex: 1;
-  min-width: 0;
-
-  @include deprecated.text-ellipsis;
+  min-inline-size: 0;
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // Auto-linked badge
 .summary-linked-badge {
   display: inline-flex;
   align-items: center;
-  gap: deprecated.$s-4;
-  padding: deprecated.$s-2 deprecated.$s-8;
-  border-radius: deprecated.$br-12;
+  gap: var(--sp-xs);
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-12;
   background: var(--color-accent-success-bg);
   color: var(--color-accent-success);
-  font-size: deprecated.$fs-11;
-  font-weight: deprecated.$fw500;
+  font-size: px2rem(11);
+  font-weight: 500;
   flex-shrink: 0;
 }
 
@@ -423,31 +579,38 @@
 .summary-linked-info {
   display: flex;
   align-items: center;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
   flex-shrink: 0;
 }
 
 .summary-linked-name {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-text-foreground-color);
-  font-weight: deprecated.$fw500;
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  line-height: 1.4;
+  color: var(--color-foreground-secondary);
+  font-weight: 500;
 }
 
 .summary-linked-project {
-  @include deprecated.body-small-typography;
-
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-weight: 400;
+  line-height: 1.4;
   color: var(--color-foreground-secondary);
-  padding: deprecated.$s-2 deprecated.$s-8;
-  border-radius: deprecated.$br-12;
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-12;
   background: var(--color-background-quaternary);
-  font-size: deprecated.$fs-11;
+  font-size: px2rem(11);
 }
 
 // No selection state
 .summary-no-selection {
-  @include deprecated.body-small-typography;
-
+  // TODO: Typography does not match any existing DS typography token.
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: px2rem(12);
+  font-weight: 400;
+  line-height: 1.4;
   color: var(--color-foreground-secondary);
   font-style: italic;
   flex-shrink: 0;
