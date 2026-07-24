@@ -283,11 +283,17 @@
         :total total}]]
 
      (when (:left @can-move)
+       [:div {:class (stl/css :content-fade :content-fade-left)}])
+
+     (when (:left @can-move)
        [:button {:class (stl/css :move-button :move-left)
                  :tab-index (if ^boolean collapsed "-1" "0")
                  :on-click on-move-left
                  :on-key-down on-move-left}
         arrow-icon])
+
+     (when (:right @can-move)
+       [:div {:class (stl/css :content-fade :content-fade-right)}])
 
      (when (:right @can-move)
        [:button {:class (stl/css :move-button :move-right)

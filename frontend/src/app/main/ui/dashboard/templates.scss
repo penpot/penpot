@@ -147,6 +147,25 @@
   margin-inline-end: px2rem(44);
 }
 
+.content-fade {
+  position: absolute;
+  inset-block-start: 0;
+  inset-block-end: 0;
+  width: px2rem(90);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.content-fade-left {
+  inset-inline-start: 0;
+  background: linear-gradient(to left, transparent, var(--color-background-tertiary));
+}
+
+.content-fade-right {
+  inset-inline-end: 0;
+  background: linear-gradient(to right, transparent, var(--color-background-tertiary));
+}
+
 .content-description {
   @include t.use-typography("body-medium");
 
