@@ -80,25 +80,27 @@
 
 (defn parse-font-weight
   [variant]
-  (cond
-    (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b))" variant)               100
-    (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b))" variant) 200
-    (re-seq #"(?i)(?:^|[-_\s])(light)(?=(?:[-_\s]|$|italic\b))" variant)                       300
-    (re-seq #"(?i)(?:^|[-_\s])(normal|regular)(?=(?:[-_\s]|$|italic\b))" variant)              400
-    (re-seq #"(?i)(?:^|[-_\s])(medium)(?=(?:[-_\s]|$|italic\b))" variant)                      500
-    (re-seq #"(?i)(?:^|[-_\s])(semi\s*bold|demi\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)     600
-    (re-seq #"(?i)(?:^|[-_\s])(extra\s*bold|ultra\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)   800
-    (re-seq #"(?i)(?:^|[-_\s])(bold)(?=(?:[-_\s]|$|italic\b))" variant)                        700
-    (re-seq #"(?i)(?:^|[-_\s])(extra\s*black|ultra\s*black)(?=(?:[-_\s]|$|italic\b))" variant) 950
-    (re-seq #"(?i)(?:^|[-_\s])(black|heavy|solid)(?=(?:[-_\s]|$|italic\b))" variant)           900
-    :else                                                                                      400))
+  (let [variant-str (str variant)]
+    (cond
+      (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b))" variant-str)               100
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b))" variant-str) 200
+      (re-seq #"(?i)(?:^|[-_\s])(light)(?=(?:[-_\s]|$|italic\b))" variant-str)                       300
+      (re-seq #"(?i)(?:^|[-_\s])(normal|regular)(?=(?:[-_\s]|$|italic\b))" variant-str)              400
+      (re-seq #"(?i)(?:^|[-_\s])(medium)(?=(?:[-_\s]|$|italic\b))" variant-str)                      500
+      (re-seq #"(?i)(?:^|[-_\s])(semi\s*bold|demi\s*bold)(?=(?:[-_\s]|$|italic\b))" variant-str)     600
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*bold|ultra\s*bold)(?=(?:[-_\s]|$|italic\b))" variant-str)   800
+      (re-seq #"(?i)(?:^|[-_\s])(bold)(?=(?:[-_\s]|$|italic\b))" variant-str)                        700
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*black|ultra\s*black)(?=(?:[-_\s]|$|italic\b))" variant-str) 950
+      (re-seq #"(?i)(?:^|[-_\s])(black|heavy|solid)(?=(?:[-_\s]|$|italic\b))" variant-str)           900
+      :else 400))) 
 
 (defn parse-font-style
   [variant]
-  (if (or (re-seq #"(?i)(?:^|[-_\s])(italic)(?:[-_\s]|$)" variant)
-          (re-seq #"(?i)italic$" variant))
-    "italic"
-    "normal"))
+  (let [variant-str (str variant)]
+    (if (or (re-seq #"(?i)(?:^|[-_\s])(italic)(?:[-_\s]|$)" variant-str)
+            (re-seq #"(?i)italic$" variant-str))
+      "italic"
+      "normal")))
 
 (defn font-weight->name
   [weight]
