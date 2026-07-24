@@ -15,6 +15,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.migrations :as-alias fmg]
+   [app.common.files.shape-compact :as fsc]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.media :as cmedia]
@@ -45,6 +46,7 @@
    java.io.InputStream
    java.io.OutputStreamWriter
    java.lang.AutoCloseable
+   java.nio.charset.StandardCharsets
    java.util.zip.ZipEntry
    java.util.zip.ZipFile
    java.util.zip.ZipOutputStream))
@@ -217,6 +219,16 @@
     (.flush writer))
   (.closeEntry output))
 
+(defn- write-compact-entry!
+  [^ZipOutputStream output ^String path data]
+  (.putNextEntry output (ZipEntry. path))
+  (let [sw (java.io.StringWriter.)]
+    (json/write sw data :indent false :key-fn json/write-camel-key)
+    (.flush sw)
+    (let [^bytes bytes (.getBytes ^String (str sw) StandardCharsets/UTF_8)]
+      (.write output bytes 0 (alength bytes))))
+  (.closeEntry output))
+
 (defn- get-file
   [{:keys [::bfc/embed-assets ::bfc/include-libraries] :as cfg} file-id]
 
@@ -302,23 +314,29 @@
 
     (doseq [[index page-id] (d/enumerate pages)]
 
-      (let [path    (str "files/" file-id "/pages/" page-id ".json")
-            page    (get pages-index page-id)
-            objects (:objects page)
-            page    (-> page
-                        (dissoc :objects)
-                        (assoc :index index))
-            page    (encode-page page)]
-
-        (write-entry! output path page)
-
-        (events/tap :progress {:section :page :id page-id :name (:name page) :file-id file-id})
-
-        (doseq [[shape-id shape] objects]
-          (let [path  (str "files/" file-id "/pages/" page-id "/" shape-id ".json")
-                shape (assoc shape :page-id page-id)
-                shape (encode-shape shape)]
-            (write-entry! output path shape)))))
+      (let [page    (get pages-index page-id)
+            objects (:objects page)]
+        (if (contains? cf/flags :binfile-v3-compact)
+          (let [path    (str "files/" file-id "/pages/" page-id ".json")
+                objects (d/update-vals objects
+                                       (fn [shape]
+                                         (-> shape fsc/compact-shape fsc/round-values encode-shape)))
+                page    (-> page
+                            (assoc :objects objects :index index)
+                            (dissoc :options))]
+            (events/tap :progress {:section :page :id page-id :name (:name page) :file-id file-id})
+            (write-compact-entry! output path page))
+          (let [path    (str "files/" file-id "/pages/" page-id ".json")
+                page    (-> page
+                            (dissoc :objects)
+                            (assoc :index index))
+                page    (encode-page page)]
+            (write-entry! output path page)
+            (events/tap :progress {:section :page :id page-id :name (:name page) :file-id file-id})
+            (doseq [[shape-id shape] objects]
+              (let [path  (str "files/" file-id "/pages/" page-id "/" shape-id ".json")
+                    shape (encode-shape shape)]
+                (write-entry! output path shape)))))))
 
     (vswap! bfc/*state* bfc/collect-storage-objects media)
     (vswap! bfc/*state* bfc/collect-storage-objects thumbnails)
@@ -372,11 +390,12 @@
 
 (defn- export-files
   [{:keys [::bfc/ids ::bfc/include-libraries ::output] :as cfg}]
-  (let [ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
-        rels (if include-libraries
-               (->> (bfc/get-files-rels cfg ids)
-                    (mapv (juxt :file-id :library-file-id)))
-               [])]
+  (let [ids      (into ids (when include-libraries (bfc/get-libraries cfg ids)))
+        rels     (if include-libraries
+                   (->> (bfc/get-files-rels cfg ids)
+                        (mapv (juxt :file-id :library-file-id)))
+                   [])
+        compact? (contains? cf/flags :binfile-v3-compact)]
 
     (vswap! bfc/*state* assoc :files (d/ordered-map))
 
@@ -390,7 +409,7 @@
     ;; Write manifest file
     (let [files  (:files @bfc/*state*)
           params {:type "penpot/export-files"
-                  :version 1
+                  :version (if compact? 2 1)
                   :generated-by (str "penpot/" (:full cf/version))
                   :refer "penpot"
                   :files (vec (vals files))
@@ -686,7 +705,7 @@
        (not-empty)))
 
 (defn- read-file-pages
-  [{:keys [::bfc/input ::entries] :as cfg} file-id]
+  [{:keys [::bfc/input ::entries ::compact?] :as cfg} file-id]
   (->> (keep (match-page-entry-fn file-id) entries)
        (keep (fn [{:keys [id entry]}]
                (let [page (->> (read-entry input entry)
@@ -694,8 +713,17 @@
                      page (dissoc page :options)]
                  (events/tap :progress {:section :page :id id :file-id file-id})
                  (when (= id (:id page))
-                   (let [objects (read-file-shapes cfg file-id id)]
-                     (assoc page :objects objects))))))
+                   (if compact?
+                     (let [objects (d/update-vals (:objects page)
+                                                  (fn [shape]
+                                                    (-> shape
+                                                        (bfl/clean-shape-pre-decode)
+                                                        (decode-shape)
+                                                        (fsc/expand-shape)
+                                                        (bfl/clean-shape-post-decode))))]
+                       (assoc page :objects objects))
+                     (let [objects (read-file-shapes cfg file-id id)]
+                       (assoc page :objects objects)))))))
        (sort-by :index)
        (reduce (fn [result {:keys [id] :as page}]
                  (assoc result id (dissoc page :index)))
@@ -937,10 +965,12 @@
 
   (let [manifest (-> (read-manifest input)
                      (validate-manifest))
+        compact? (= 2 (:version manifest))
         entries  (read-zip-entries input)
         cfg      (-> cfg
                      (assoc ::entries entries)
                      (assoc ::manifest manifest)
+                     (assoc ::compact? compact?)
                      (assoc ::bfc/timestamp timestamp))]
 
     (when-not (= "penpot/export-files" (:type manifest))
