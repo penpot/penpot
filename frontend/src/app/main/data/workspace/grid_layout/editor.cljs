@@ -11,6 +11,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.viewport-wasm :as dwvw]
+   [app.main.streams :as ms]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (defn hover-grid-cell
@@ -88,7 +90,12 @@
   (ptk/reify ::stop-grid-layout-editing
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-grid-edition dissoc grid-id))))
+      (update state :workspace-grid-edition dissoc grid-id))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/wasm-modifiers nil)
+      (rx/push! ms/workspace-selrect nil))))
 
 (defn locate-board
   [grid-id]
