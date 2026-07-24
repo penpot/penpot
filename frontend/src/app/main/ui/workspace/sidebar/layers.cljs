@@ -307,9 +307,12 @@
 
         on-key-down
         (mf/use-fn
+         (mf/deps show-search?)
          (fn [event]
            (when (kbd/esc? event)
-             (hide-menu))))
+             (hide-menu)
+             (when show-search?
+               (st/emit! dw/close-layers-search))))))
 
         update-search-text
         (mf/use-fn
