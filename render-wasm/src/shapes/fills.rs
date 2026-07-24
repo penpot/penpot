@@ -51,12 +51,21 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::gradient_shader::linear(
-            (start, end),
-            self.colors.as_slice(),
+        let colors4f: Vec<skia::Color4f> = self.colors.iter().copied().map(Into::into).collect();
+        let colors = skia::gradient::Colors::new(
+            colors4f.as_slice(),
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
-            None,
+            None::<skia::ColorSpace>,
+        );
+        let gradient =
+            skia::gradient::Gradient::new(colors, skia::gradient::Interpolation::default());
+        skia::gradient::shaders::linear_gradient(
+            (
+                skia::Point::new(start.0, start.1),
+                skia::Point::new(end.0, end.1),
+            ),
+            &gradient,
             None,
         )
     }
@@ -83,15 +92,16 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::gradient_shader::radial(
-            center,
-            distance,
-            self.colors.as_slice(),
+        let colors4f: Vec<skia::Color4f> = self.colors.iter().copied().map(Into::into).collect();
+        let colors = skia::gradient::Colors::new(
+            colors4f.as_slice(),
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
-            None,
-            Some(&transform),
-        )
+            None::<skia::ColorSpace>,
+        );
+        let gradient =
+            skia::gradient::Gradient::new(colors, skia::gradient::Interpolation::default());
+        skia::gradient::shaders::radial_gradient((center, distance), &gradient, Some(&transform))
     }
 }
 
