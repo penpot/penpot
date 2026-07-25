@@ -146,13 +146,23 @@ async function rpcCall(config, method, params = {}) {
 
 function normalizeHint(hint) {
   if (!hint) return hint;
-  let h = hint;
+  let h = String(hint)
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\\"/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+
   h = h.replace(/https?:\/\/"[^"]*"/g, '<uri>');
   h = h.replace(/https?:\/\/\S+/g, '<uri>');
+
+  h = h.replace(/\b(?:file[-_]?id|file_id|file-id)\b\s*[=:]\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi, (match, id) => match.replace(id, '<file-id>'));
   h = h.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '<uuid>');
-  h = h.replace(/[\d.]+[smh](?:[\d.]+[smh])?/g, '<elapsed>');
   h = h.replace(/\(\d+\)/g, '(<id>)');
-  return h.trim();
+  h = h.replace(/\b\d+(?:\.\d+)?(?:ms|s|m|h|d)(?:\s*\d+(?:\.\d+)?(?:ms|s|m|h|d))*\b/g, '<elapsed>');
+  h = h.replace(/\s+/g, ' ').trim();
+
+  return h || '(empty)';
 }
 
 // ============================================================================
@@ -295,6 +305,12 @@ async function cmdList(config, args) {
 
   // --to maps to server's --until (newest boundary)
   if (args.to) params.until = args.to;
+
+  if (args.all && args.format === "json") {
+    console.error("Error: --all cannot be combined with --format json because --all streams output.");
+    console.error("Use --format ndjson for streaming, --format table for human-readable streaming, or omit --all for a single JSON page.");
+    process.exit(1);
+  }
 
   // Output target
   const out = args.output
@@ -452,10 +468,10 @@ async function cmdStats(config, args) {
     item._normHint = normalizeHint(item.hint) || "(empty)";
   }
 
+  const auditLogItems = items.filter((item) => item.source === "audit-log");
+
   // Aggregations
   const byHint = {};
-  const byHost = {};
-  const byTenant = {};
   const byVersion = {};
   const bySource = {};
   const byKind = {};
@@ -464,11 +480,8 @@ async function cmdStats(config, args) {
 
   for (const item of items) {
     count(byHint, item._normHint);
-    count(byHost, item.host || item.tenant || "(unknown)");
-    count(byTenant, item.tenant || "(unknown)");
     count(byVersion, item.version || "(unknown)");
     count(bySource, item.source || "(unknown)");
-    count(byKind, item.kind || "(none)");
 
     const hour = item.createdAt ? item.createdAt.substring(11, 13) : "??";
     count(byHour, hour);
@@ -476,18 +489,41 @@ async function cmdStats(config, args) {
     if (item.profileId) profiles.add(item.profileId);
   }
 
+  for (const item of auditLogItems) {
+    count(byKind, item.kind || "(none)");
+  }
+
+  const burstWindows = buildBurstWindows(items, 5 * 60 * 1000);
+  const heatmap = buildHeatmap(items);
+
   if (args.format === "json") {
-    console.log(formatJson({
+    const stats = {
       total: items.length,
       uniqueProfiles: profiles.size,
       byHint: sortDesc(byHint),
-      byHost: sortDesc(byHost),
-      byTenant: sortDesc(byTenant),
       byVersion: sortDesc(byVersion),
       bySource: sortDesc(bySource),
       byKind: sortDesc(byKind),
-      byHour: sortDesc(byHour)
-    }));
+      byHour: sortDesc(byHour),
+      kindScope: "audit-log"
+    };
+
+    if (args.burst) {
+      stats.bursts = burstWindows.map((burst) => ({
+        start: burst.start,
+        end: burst.end,
+        count: burst.count,
+        averagePerWindow: Number(burst.averagePerWindow.toFixed(2)),
+        ratio: Number(burst.ratio.toFixed(2)),
+        ids: burst.ids
+      }));
+    }
+
+    if (args.heatmap) {
+      stats.heatmap = heatmap;
+    }
+
+    console.log(formatJson(stats));
   } else {
     console.log(`=== Error Stats ===`);
     console.log(`Total: ${items.length}`);
@@ -496,11 +532,17 @@ async function cmdStats(config, args) {
 
     printTable("By Signature (normalized hint)", byHint, items.length);
     printTable("By Source", bySource, items.length);
-    printTable("By Kind", byKind, items.length);
-    printTable("By Host", byHost, items.length);
-    printTable("By Tenant", byTenant, items.length);
+    printTable("By Kind (audit-log only)", byKind, auditLogItems.length || 1);
     printTable("By Version", byVersion, items.length);
     printTable("By Hour (UTC)", byHour, items.length);
+
+    if (args.burst) {
+      printBurstTable(burstWindows);
+    }
+
+    if (args.heatmap) {
+      printHeatmapTable(heatmap);
+    }
   }
 }
 
@@ -523,6 +565,105 @@ function parseItems(raw) {
       .filter(line => line.trim())
       .map(line => JSON.parse(line));
   }
+}
+
+function buildBurstWindows(items, windowMs) {
+  const validItems = items
+    .filter((item) => item.createdAt && !Number.isNaN(Date.parse(item.createdAt)))
+    .map((item) => ({ ...item, _createdAtMs: Date.parse(item.createdAt) }))
+    .sort((a, b) => a._createdAtMs - b._createdAtMs);
+
+  if (validItems.length === 0) return [];
+
+  const startMs = validItems[0]._createdAtMs;
+  const endMs = validItems[validItems.length - 1]._createdAtMs;
+  const windowCount = Math.max(1, Math.ceil((endMs - startMs) / windowMs));
+  const averagePerWindow = validItems.length / windowCount;
+  const threshold = Math.max(1, averagePerWindow * 3);
+  const byWindow = new Map();
+
+  for (const item of validItems) {
+    const idx = Math.max(0, Math.min(windowCount - 1, Math.floor((item._createdAtMs - startMs) / windowMs)));
+    if (!byWindow.has(idx)) byWindow.set(idx, []);
+    byWindow.get(idx).push(item);
+  }
+
+  return Array.from(byWindow.entries())
+    .filter(([, windowItems]) => windowItems.length > threshold)
+    .map(([idx, windowItems]) => {
+      const start = new Date(startMs + idx * windowMs).toISOString();
+      const end = new Date(startMs + (idx + 1) * windowMs).toISOString();
+      return {
+        start,
+        end,
+        count: windowItems.length,
+        averagePerWindow,
+        ratio: windowItems.length / averagePerWindow,
+        ids: windowItems.map((item) => item.id).slice(0, 12)
+      };
+    })
+    .sort((a, b) => b.count - a.count || a.start.localeCompare(b.start));
+}
+
+function buildHeatmap(items) {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const heatmap = {};
+  for (const item of items) {
+    if (!item.createdAt || Number.isNaN(Date.parse(item.createdAt))) continue;
+    const date = new Date(item.createdAt);
+    const day = days[(date.getUTCDay() + 6) % 7];
+    const hour = String(date.getUTCHours()).padStart(2, "0");
+    const key = `${day}-${hour}`;
+    heatmap[key] = (heatmap[key] || 0) + 1;
+  }
+  return heatmap;
+}
+
+function printBurstTable(bursts) {
+  console.log("5-minute bursts (>3x average):");
+  if (!bursts.length) {
+    console.log("  No bursts detected.");
+    console.log("");
+    return;
+  }
+
+  const rows = bursts.map((burst) => [
+    `${burst.start} → ${burst.end}`,
+    burst.count,
+    burst.averagePerWindow.toFixed(2),
+    `${burst.ratio.toFixed(2)}x`,
+    burst.ids.join(", ")
+  ]);
+  const widths = computeColWidths(["Window", "Count", "Avg", "Ratio", "Error IDs"], rows);
+  console.log(padRow(["Window", "Count", "Avg", "Ratio", "Error IDs"], widths));
+  console.log(widths.map((w) => "-".repeat(w)).join("-+-"));
+  rows.forEach((row) => console.log(padRow(row, widths)));
+  console.log("");
+}
+
+function printHeatmapTable(heatmap) {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const hours = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0"));
+  const max = Math.max(...hours.flatMap((hour) => days.map((day) => heatmap[`${day}-${hour}`] || 0)), 1);
+
+  console.log("Heatmap (day-of-week × hour UTC):");
+  console.log(`Max bucket: ${max}`);
+  console.log("");
+  console.log("       " + hours.map((hour) => hour.slice(0, 1)).join(" "));
+  for (const day of days) {
+    const cells = hours.map((hour) => {
+      const value = heatmap[`${day}-${hour}`] || 0;
+      if (value === 0) return "·";
+      if (value / max >= 0.75) return "4";
+      if (value / max >= 0.5) return "3";
+      if (value / max >= 0.25) return "2";
+      return "1";
+    });
+    console.log(`${day.padEnd(6)} ${cells.join(" ")}`);
+  }
+  console.log("");
+  console.log("Legend: ·=0 1=low 2=medium 3=high 4=peak");
+  console.log("");
 }
 
 function count(map, key) {
@@ -577,7 +718,7 @@ program
   .option("--version <version>", "Filter by version")
   .option("--hint <text>", "Filter by hint (ILIKE match)")
   .option("-a, --all", "Fetch all pages automatically (streams output)", false)
-  .option("-f, --format <type>", "Output format (json|table|ndjson)", "table")
+  .option("-f, --format <type>", "Output format (json for one page, table, or ndjson for streaming)", "table")
   .option("--normalize-hints", "Normalize hints by stripping dynamic values", false)
   .option("-o, --output <file>", "Write output to file instead of stdout")
   .option("--env <path>", "Custom .env file path")
@@ -605,6 +746,8 @@ program
   .option("--to <date>", "End of interval (ISO timestamp)")
   .option("--limit <n>", "Items per page (default: 200)", (value) => parseInt(value, 10), 200)
   .option("--input <file>", "Read from local JSON/NDJSON file instead of API")
+  .option("--burst", "Detect 5-minute bursts above 3x the average window rate", false)
+  .option("--heatmap", "Show day-of-week × hour-of-day heatmap", false)
   .option("-f, --format <type>", "Output format (json|table)", "table")
   .option("--env <path>", "Custom .env file path")
   .action(async (options) => {
