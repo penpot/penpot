@@ -259,7 +259,14 @@
   [:map {:title "CircleAttrs"}])
 
 (def ^:private schema:svg-raw-attrs
-  [:map {:title "SvgRawAttrs"}])
+  [:map {:title "SvgRawAttrs"}
+   ;; An svg-raw shape can be a container: importing an SVG builds a
+   ;; tree of svg-raw shapes, and `cfh/group-like-shape?` treats an
+   ;; svg-raw with children as group-like. Declaring `:shapes` here
+   ;; keeps the child ids typed as uuid, so a JSON round trip (binfile
+   ;; export/import) decodes them back to uuids instead of leaving
+   ;; strings that no longer resolve against the objects map.
+   [:shapes {:optional true} [:vector {:gen/max 10} ::sm/uuid]]])
 
 (def schema:image-attrs
   [:map {:title "ImageAttrs"}
