@@ -21,6 +21,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
+   [app.graph.ladybug :as ladybug]
    [app.graph.schema.contract :as contract]
    [app.graph.schema.projection :as projection]
    [app.graph.schema.types :as types]
@@ -232,6 +233,21 @@
   "Backtick-wrapped beadpot column name for inline Cypher literals."
   [table k]
   (str "`" (column-name table k) "`"))
+
+(defn format-column-value
+  "Cypher literal for `v` in column `k` of `table`.
+
+  The single place that knows both the column's Ladybug type and the contract
+  detail that a MAP column may render its keys differently from `name` — used
+  by the bulk loader's post-COPY fixups and by the incremental sync alike, so
+  the two cannot disagree about a value's shape."
+  [table k v]
+  (let [ladybug-type (column-ladybug-type table k)]
+    (if (ladybug/map-type? ladybug-type)
+      (if (nil? v)
+        "NULL"
+        (ladybug/format-map v (contract/map-key-fn (column-name table k))))
+      (ladybug/format-typed-value ladybug-type v))))
 
 (defn- create-node-table-ddl
   [{:keys [table pk]}]

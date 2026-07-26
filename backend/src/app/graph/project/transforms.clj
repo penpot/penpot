@@ -32,14 +32,20 @@
 (defn- link-component-instances!
   "`IsInstanceOf` from Frame instance heads to their Component.
 
-  beadpot `graph/transform/assets.py::LinkComponentInstances`. An instance
-  head carries `:component-id` pointing at its component record (see
-  `app.common.types.component/instance-of?`); every such head is linked, the
-  main instance and any copy root alike."
+  beadpot `graph/transform/assets.py::LinkComponentInstances`. Every head is
+  linked, the main instance and any copy root alike.
+
+  `component-file` is what makes a head a head here, not `component-id` alone.
+  `app.common.types.component/instance-of?` requires both, and the projection
+  denormalizes `component-id` down the shape tree
+  (`app.graph.project.document`), so on its own it no longer distinguishes a
+  head from a shape that merely lives inside one. `component-file` is not
+  denormalized and remains the head marker Penpot itself uses."
   [^Connection conn]
   (run-scalar! conn
                (str "MATCH (f:Frame), (c:Component) "
                     "WHERE f.component_id = c.id "
+                    "AND f.component_file IS NOT NULL "
                     "AND NOT COALESCE(c.deleted, false) "
                     "MERGE (f)-[:IsInstanceOf]->(c) "
                     "RETURN count(*);")))
