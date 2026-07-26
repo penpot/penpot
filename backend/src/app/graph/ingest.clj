@@ -12,7 +12,7 @@
    [app.common.logging :as l]
    [app.common.types.file :as ctf]
    [app.db :as db]
-   [app.graph.bulk :as bulk]
+   [app.graph.arrow :as graph.arrow]
    [app.graph.ladybug :as ladybug]
    [app.graph.meta :as graph.meta]
    [app.graph.project.document :as project.document]
@@ -21,7 +21,8 @@
    [app.graph.stats :as stats]
    [app.srepl.helpers :as h])
   (:import
-   com.ladybugdb.Connection))
+   com.ladybugdb.Connection
+   org.apache.arrow.memory.BufferAllocator))
 
 (defn- fetch-file!
   [system file-id]
@@ -38,10 +39,9 @@
                 :file-id (str file-id)))
     [file-id file]))
 
-(defn ingest-on-connection!
-  "Project `file-id` into an already open Ladybug `conn`."
-  [system ^Connection conn file-id & {:keys [db-path skip-stats? skip-validation?]
-                                      :or   {skip-stats? true}}]
+(defn- ingest-on-connection*!
+  [system ^Connection conn file-id ^BufferAllocator allocator
+   {:keys [db-path skip-stats? skip-validation?] :or {skip-stats? true}}]
   (let [[file-id file] (fetch-file! system file-id)
         db-path        (or db-path (ladybug/db-path-for-file file-id))
         data           (:data file)]
@@ -52,12 +52,11 @@
            :revn (:revn file)
            :db-path db-path
            :schema schema/schema-version)
-    (let [ddl          (schema/ddl-statements)
+    (let [ddl (schema/ddl-statements)
           {:keys [nodes edges stats]}
-          (project.document/projection-data data file)
-          staging-path (bulk/staging-dir db-path file-id)]
+          (project.document/projection-data data file)]
       (ladybug/exec-on-connection! conn ddl)
-      (bulk/load-projection! conn {:nodes nodes :edges edges} staging-path)
+      (graph.arrow/load-projection! conn {:nodes nodes :edges edges} allocator)
       (ladybug/exec-on-connection! conn ["CHECKPOINT;"])
       (let [transforms (project.transforms/apply-transforms! system conn data file)]
         ;; Written last: its presence doubles as the build-complete marker.
@@ -75,15 +74,33 @@
          :stats          (when-not skip-stats?
                            (stats/summarize-connection conn))}))))
 
+(defn ingest-on-connection!
+  "Project `file-id` into an already open Ladybug `conn`.
+
+  Takes an `:arrow-alloc` when the caller already owns one; otherwise it makes
+  a short-lived allocator around this call. A caller that opened the connection
+  itself should pass its own, because the allocator has to be closed *after*
+  the connection — see `app.graph.arrow/with-allocator!`."
+  [system ^Connection conn file-id & {:keys [arrow-alloc] :as opts}]
+  (if arrow-alloc
+    (ingest-on-connection*! system conn file-id arrow-alloc opts)
+    (graph.arrow/with-allocator!
+      (fn [allocator] (ingest-on-connection*! system conn file-id allocator opts)))))
+
 (defn ingest-file!
   [system file-id & {:keys [db-path reset-db? skip-stats? skip-validation?]
                      :or   {reset-db? true}}]
   (let [db-path (or db-path (ladybug/db-path-for-file (h/parse-uuid file-id)))]
     (when reset-db?
       (ladybug/reset-db-path! db-path))
-    (ladybug/with-connection! db-path
-      (fn [conn]
-        (ingest-on-connection! system conn file-id
-                               :db-path db-path
-                               :skip-stats? skip-stats?
-                               :skip-validation? skip-validation?)))))
+    ;; Allocator outermost: Ladybug holds the staged Arrow buffers until its
+    ;; tables are dropped, which is no later than connection close, so the
+    ;; allocator must be closed after the connection and the database.
+    (graph.arrow/with-allocator!
+      (fn [allocator]
+        (ladybug/with-connection! db-path
+          (fn [conn]
+            (ingest-on-connection*! system conn file-id allocator
+                                    {:db-path db-path
+                                     :skip-stats? skip-stats?
+                                     :skip-validation? skip-validation?})))))))
