@@ -260,6 +260,15 @@
   [table k]
   (str "`" (column-name table k) "`"))
 
+(defn column-map-key-fn
+  "How a MAP column of `table` renders its keys.
+
+  A MAP's keys are values, not schema, so they keep the spelling their consumer
+  parsed — `applied_tokens` is keyed in camelCase. Both writers need this, so it
+  lives next to the column's type rather than in either of them."
+  [table k]
+  (contract/map-key-fn (column-name table k)))
+
 (defn format-column-value
   "Cypher literal for `v` in column `k` of `table`.
 
@@ -270,7 +279,7 @@
   [table k v]
   (ladybug/format-typed-value (column-ladybug-type table k)
                               v
-                              (contract/map-key-fn (column-name table k))))
+                              (column-map-key-fn table k)))
 
 (defn- create-node-table-ddl
   [{:keys [table pk]}]

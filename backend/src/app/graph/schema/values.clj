@@ -14,9 +14,9 @@
   what this namespace does: it turns records and maps into the numbers, vectors
   and plain maps the type names.
 
-  It deliberately stops there. Escaping — Cypher literals, CSV cells — belongs
-  to the writer (`app.graph.ladybug`, `app.graph.bulk`), so that shaping a
-  value and serializing it are separate concerns and each has one home.
+  It deliberately stops there. Serialization belongs to the writer — Cypher
+  literals in `app.graph.ladybug`, Arrow vectors in `app.graph.arrow` — so that
+  shaping a value and writing it are separate concerns and each has one home.
 
   The type language is the Ladybug one, read recursively: `T[]`, `T[n]`,
   `MAP(k, v)`, `STRUCT(name t, …)`. Anything else is passed through."
@@ -67,14 +67,15 @@
 (defn- parse-struct
   "`[[field-name field-type] …]` when `t` is a STRUCT type, else nil.
 
-  Field names arrive backtick-quoted (see `app.graph.schema.types`); the
-  quoting is syntax, so it is stripped here and re-applied by the writer."
-  [t]
+  Field names arrive backtick-quoted (see `app.graph.schema.types`). The
+  quoting is syntax, so it is stripped by default and re-applied by the writer —
+  except for the Arrow writer, which needs it kept (`keep-quotes?`)."
+  [t keep-quotes?]
   (when-let [[_ args] (re-matches #"STRUCT\((.*)\)$" t)]
     (for [arg (split-args args)
           :let [idx (str/index-of arg " ")]
           :when idx]
-      [(str/replace (subs arg 0 idx) "`" "")
+      [(cond-> (subs arg 0 idx) (not keep-quotes?) (str/replace "`" ""))
        (str/trim (subs arg (inc idx)))])))
 
 (def ^:private struct-field-keys
@@ -135,11 +136,24 @@
   "`[[field-name field-type] …]` for a STRUCT type, memoized.
 
   Public because the writers need the same field list to emit a literal."
-  (memoize (fn [ladybug-type] (vec (parse-struct ladybug-type)))))
+  (memoize (fn [ladybug-type] (vec (parse-struct ladybug-type false)))))
+
+(def struct-fields-quoted
+  "`struct-fields` with the DDL's backticks intact.
+
+  Only the Arrow writer wants this: Ladybug names a staged struct's fields from
+  the Arrow child names and quotes none of them, so a field whose name is a
+  reserved word — a layout grid cell's `column` — has to arrive already quoted
+  or `createArrowTable` fails outright."
+  (memoize (fn [ladybug-type] (vec (parse-struct ladybug-type true)))))
 
 (def map-types
   "`[key-type value-type]` for a MAP type, memoized."
   (memoize (fn [ladybug-type] (parse-map ladybug-type))))
+
+(def list-element
+  "Element type of a `T[]` / `T[n]` column, memoized; nil when not a list."
+  (memoize (fn [ladybug-type] (first (parse-list ladybug-type)))))
 
 (declare coerce)
 
@@ -183,6 +197,6 @@
           (into {}
                 (map (fn [[k mv]] [(coerce key-type k) (coerce value-type mv)]))
                 v))
-        (if-let [fields (seq (parse-struct ladybug-type))]
+        (if-let [fields (seq (parse-struct ladybug-type false))]
           (coerce-struct fields v)
           v)))))
