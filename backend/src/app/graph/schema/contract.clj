@@ -99,7 +99,21 @@
   moving the whole DDL onto the beadpot manifest."
   {;; `LinkAppliedTokens` (beadpot) reads this with `map_keys` /
    ;; `map_extract`; as JSON the transform cannot run at all.
-   "applied_tokens" "MAP(STRING, STRING)"})
+   "applied_tokens" "MAP(STRING, STRING)"
+
+   ;; `grc/schema:rect` is an inline `:and` over a map, not the registered
+   ;; `::grc/rect`, so `app.graph.schema.types` cannot recognize it by type.
+   ;; Four doubles rather than the eight-field struct: `x1`/`y1`/`x2`/`y2` are
+   ;; derivable from `x`/`y`/`width`/`height`, and a fixed-size array is a
+   ;; tensor row a consumer reads without parsing.
+   "selrect"     "DOUBLE[4]"
+   "svg_viewbox" "DOUBLE[4]"
+
+   ;; `:fills` is an `:or` — the packed `app.common.types.fills` value or a
+   ;; plain vector of fill maps — so the schema alone cannot say it is a
+   ;; collection. It always is one, and a fill has enough optional shape
+   ;; (solid, gradient, image) that JSON per element is the honest element type.
+   "fills" "JSON[]"})
 
 (def ^:private map-key-fns
   "How to render the *keys* of a MAP column, per column.

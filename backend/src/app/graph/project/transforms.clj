@@ -54,8 +54,9 @@
   "One statement per (from, to) shape-table pair.
 
   Ladybug cannot create a relationship bound by multiple node labels in a
-  single `MERGE` (kuzudb/kuzu#5841), which is why beadpot loops over label
-  pairs too; the loop is a dialect constraint, not a modelling choice."
+  single `MERGE` — inherited from Kùzu, which it forks (upstream issue
+  kuzudb/kuzu#5841). beadpot loops over label pairs for the same reason; the
+  loop is a dialect constraint, not a modelling choice."
   [f]
   (for [from nodes/shape-tables
         to   nodes/shape-tables]
