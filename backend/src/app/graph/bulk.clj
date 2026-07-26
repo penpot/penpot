@@ -99,7 +99,10 @@
   (let [columns (nodes/column-keys table)
         types   (mapv #(nodes/column-ladybug-type table %) columns)]
     (with-open [w (io/writer file :encoding "UTF-8")]
-      (.write w (str (str/join "," (map name columns)) "\n"))
+      ;; COPY binds columns positionally (HEADER=true only skips the row), so
+      ;; this header is documentation — but it carries the beadpot column
+      ;; names, so a staged CSV reads the same as the table it loads into.
+      (.write w (str (str/join "," (map #(nodes/column-name table %) columns)) "\n"))
       (doseq [row rows]
         (.write w (str (str/join "," (map (fn [k t] (csv-typed-cell t (get row k)))
                                           columns types))

@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.graph.bulk :as bulk]
    [app.graph.ladybug :as ladybug]
+   [app.graph.meta :as graph.meta]
    [app.graph.project.document :as project.document]
    [app.graph.project.transforms :as project.transforms]
    [app.graph.schema :as schema]
@@ -58,17 +59,21 @@
       (ladybug/exec-on-connection! conn ddl)
       (bulk/load-projection! conn {:nodes nodes :edges edges} staging-path)
       (ladybug/exec-on-connection! conn ["CHECKPOINT;"])
-      {:file-id        file-id
-       :revn           (:revn file)
-       :name           (or (:name data) (:name file))
-       :db-path        db-path
-       :schema-version schema/schema-version
-       :projection     {:stats stats
-                        :nodes nodes
-                        :edges edges}
-       :transforms     (project.transforms/apply-transforms! system conn data file)
-       :stats          (when-not skip-stats?
-                         (stats/summarize-connection conn))})))
+      (let [transforms (project.transforms/apply-transforms! system conn data file)]
+        ;; Written last: its presence doubles as the build-complete marker.
+        (graph.meta/write! conn {:file-id file-id
+                                 :revn    (:revn file)})
+        {:file-id        file-id
+         :revn           (:revn file)
+         :name           (or (:name data) (:name file))
+         :db-path        db-path
+         :schema-version schema/schema-version
+         :projection     {:stats stats
+                          :nodes nodes
+                          :edges edges}
+         :transforms     transforms
+         :stats          (when-not skip-stats?
+                           (stats/summarize-connection conn))}))))
 
 (defn ingest-file!
   [system file-id & {:keys [db-path reset-db? skip-stats? skip-validation?]

@@ -8,7 +8,18 @@
   "Project a Penpot file-data map into Ladybug nodes and structural edges.
 
   Projects Document, Page, Component, the full shape tree (skipping the root
-  frame), and `IsChildOf` edges from shapes/pages/components to their parent."
+  frame), and `IsChildOf` edges from shapes/pages/components to their parent.
+
+  Two of beadpot's denormalizing transforms happen here rather than in a later
+  pass, because the walk already has the answer in hand:
+
+  - `page-id` on every shape (beadpot `DenormalizePageId`), from the page the
+    walk is currently in;
+  - `component-id` propagated from an instance head down to its descendants
+    (beadpot `DenormalizeComponentId`), from the head context the walk carries.
+
+  Both ids are declared in `app.graph.meta/projection-transforms`, so beadpot
+  reads the graph's own provenance and does not redo them."
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
@@ -40,9 +51,38 @@
   [shape]
   (nodes/table-for-type (:type shape)))
 
+(defn denormalized-shape
+  "`shape` with `page-id` set and an inherited `component-id` filled in.
+
+  A shape that carries its own `component-id` keeps it; `component-ctx` only
+  fills the gap for descendants (see `descend-component-ctx`)."
+  [shape page-id component-ctx]
+  (cond-> (assoc shape :page-id page-id)
+    (and (uuid? component-ctx) (nil? (:component-id shape)))
+    (assoc :component-id component-ctx)))
+
 (defn- shape-node-attrs
-  [table shape]
-  (nodes/project-attrs table shape))
+  [table shape page-id component-ctx]
+  (nodes/project-attrs table (denormalized-shape shape page-id component-ctx)))
+
+(defn descend-component-ctx
+  "The component context to pass to `shape`'s children.
+
+  Mirrors beadpot `DenormalizeComponentId`, whose recursive match stops at the
+  nearest ancestor Frame carrying a `component-id` and treats any intermediate
+  node that carries one as a barrier:
+
+  - a Frame with its own `component-id` becomes the new context (it is an
+    instance head, and its descendants belong to *it*, not to an outer head);
+  - any other shape carrying a `component-id` blocks inheritance below it
+    without being able to supply one, since only Frames are heads;
+  - otherwise the context passes through unchanged."
+  [table shape ctx]
+  (let [own (:component-id shape)]
+    (cond
+      (and (some? own) (= table "Frame")) own
+      (some? own)                         ::blocked
+      :else                               ctx)))
 
 (defn- container-table?
   [table]
@@ -63,10 +103,11 @@
 (declare project-shape-ids)
 
 (defn- project-shape
-  [objects acc table shape parent-table parent-id position]
+  [objects acc table shape parent-table parent-id position page-id component-ctx]
   (let [shape-id (:id shape)
         acc'     (-> acc
-                     (update-in [:nodes table] (fnil conj []) (shape-node-attrs table shape))
+                     (update-in [:nodes table] (fnil conj [])
+                                (shape-node-attrs table shape page-id component-ctx))
                      (update :edges conj {:from-table table
                                           :from-id    shape-id
                                           :to-table   parent-table
@@ -75,16 +116,18 @@
                      (update-in [:stats :shapes] inc))]
     (if-let [child-ids (when (container-table? table)
                          (child-shape-ids shape))]
-      (project-shape-ids objects acc' table shape-id child-ids)
+      (project-shape-ids objects acc' table shape-id child-ids page-id
+                         (descend-component-ctx table shape component-ctx))
       acc')))
 
 (defn- project-shape-ids
-  [objects acc parent-table parent-id child-ids]
+  [objects acc parent-table parent-id child-ids page-id component-ctx]
   (reduce
    (fn [acc [position shape-id]]
      (if-let [shape (get objects shape-id)]
        (if-let [table (shape-table shape)]
-         (project-shape objects acc table shape parent-table parent-id position)
+         (project-shape objects acc table shape parent-table parent-id position
+                        page-id component-ctx)
          (do
            (l/wrn :hint "unsupported shape type for graph slice"
                   :shape-id (str shape-id)
@@ -112,7 +155,7 @@
                                              :position   position})
                         (update-in [:stats :pages] inc))]
     (if-let [top-level-ids (child-shape-ids root)]
-      (project-shape-ids objects acc' "Page" page-id top-level-ids)
+      (project-shape-ids objects acc' "Page" page-id top-level-ids page-id nil)
       acc')))
 
 (defn- project-component
