@@ -222,6 +222,7 @@ Debug Main Page
         </div>
       </form>
     </fieldset>
+    {% if graph-enabled %}
     <fieldset>
       <legend>Export graph (Ladybug):</legend>
       <desc>Given a FILE-ID, builds the graph projection and downloads
@@ -237,6 +238,7 @@ Debug Main Page
         </div>
       </form>
     </fieldset>
+    {% endif %}
     <fieldset>
       <legend>Import binfile:</legend>
       <desc>Import penpot file in binary format.</desc>
