@@ -198,9 +198,14 @@
                     :cause e))))))
 
 (defn- get-projected-attr
+  "The attribute under `k`, keyword or string key.
+
+  `if-some`, not `or`: `false` and `0` are values, and falling through on them
+  is how `opacity 0` became `nil` and then the column default."
   [attrs k]
-  (or (get attrs k)
-      (when (keyword? k) (get attrs (name k)))))
+  (if-some [v (get attrs k)]
+    v
+    (when (keyword? k) (get attrs (name k)))))
 
 (defn- raise-empty-projection!
   [table attrs]
@@ -213,10 +218,13 @@
 (defn project-attrs
   "Select and validate the projected columns for `table` from `attrs`."
   [table attrs]
+  ;; `some?`, not truthiness: `false` and `0` are values. Dropping them sent
+  ;; `opacity 0` to the column default of 1.0 — a fully transparent shape
+  ;; projected as opaque.
   (let [projected (into {}
                         (keep (fn [k]
-                                (when-let [v (get-projected-attr attrs k)]
-                                  [k v]))
+                                (let [v (get-projected-attr attrs k)]
+                                  (when (some? v) [k v])))
                               (column-keys table)))]
     (when (empty? projected)
       (raise-empty-projection! table attrs))
@@ -242,12 +250,9 @@
   by the bulk loader's post-COPY fixups and by the incremental sync alike, so
   the two cannot disagree about a value's shape."
   [table k v]
-  (let [ladybug-type (column-ladybug-type table k)]
-    (if (ladybug/map-type? ladybug-type)
-      (if (nil? v)
-        "NULL"
-        (ladybug/format-map v (contract/map-key-fn (column-name table k))))
-      (ladybug/format-typed-value ladybug-type v))))
+  (ladybug/format-typed-value (column-ladybug-type table k)
+                              v
+                              (contract/map-key-fn (column-name table k))))
 
 (defn- create-node-table-ddl
   [{:keys [table pk]}]

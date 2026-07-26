@@ -11,6 +11,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.json :as json]
+   [app.graph.schema.values :as values]
    [clojure.string :as str]
    [datoteka.fs :as fs])
   (:import
@@ -100,82 +101,111 @@
     (coll? v)    (format-json v)
     :else        (format-string (str v))))
 
-(defn- format-list-element
-  "Format one element of a Cypher LIST literal for typed `elem-type`."
-  [elem-type v]
-  (case elem-type
-    "UUID"      (format-uuid v)
-    ;; `name` for keywords, so a `:touched` entry reads `swap-slot-…` and not
-    ;; `:swap-slot-…` — see `app.graph.bulk/kuzu-list-element`.
-    "STRING"    (format-string (if (keyword? v) (name v) (str v)))
-    "JSON"      (format-json v)
-    "INT64"     (format-int v)
-    "DOUBLE"    (format-number v)
-    "BOOLEAN"   (if v "true" "false")
-    "TIMESTAMP" (format-timestamp v)
-    (format-value v)))
-
-(defn- format-list
-  "Cypher LIST literal for Ladybug LIST columns (`UUID[]`, `STRING[]`, …).
-
-  Must not use `json(...)`: assigning a JSON value to `UUID[]` yields
-  `Conversion exception: Invalid UUID` (e.g. Frame.`shapes` on component
-  instantiate via sync)."
-  [ladybug-type v]
-  (let [elem-type (subs ladybug-type 0 (- (count ladybug-type) 2))
-        elems     (if (coll? v) (seq v) [v])]
-    (str "["
-         (str/join ", " (map #(format-list-element elem-type %) elems))
-         "]")))
-
-(defn format-map
-  "Cypher literal for a `MAP(STRING, STRING)` column.
-
-  Ladybug's CSV reader parses map literals (`{k=v, …}`) with no escape
-  mechanism: a comma inside a value ends the entry, and quotes are kept as part
-  of the string. Nothing user-authored — a design-token name, say — survives
-  that round-trip, so map columns are written through Cypher instead, where
-  `map/2` takes two properly escaped lists (`app.graph.bulk`).
-
-  `key-fn` renders each key; the caller supplies it because the right form is
-  a property of the column, not of this function
-  (`app.graph.schema.contract/map-key-fn`)."
-  ([m] (format-map m name))
-  ([m key-fn]
-   (let [entries (seq m)]
-     (str "map([" (str/join ", " (map #(format-string (key-fn (key %))) entries)) "], "
-          "[" (str/join ", " (map #(format-string (str (val %))) entries)) "])"))))
-
 (defn map-type?
   "Is `ladybug-type` a MAP column? Those cannot be bulk-loaded from CSV."
   [ladybug-type]
-  (and (string? ladybug-type) (str/starts-with? ladybug-type "MAP(")))
+  (and (string? ladybug-type)
+       (str/starts-with? ladybug-type "MAP(")
+       (not (str/ends-with? ladybug-type "]"))))
+
+(defn list-type?
+  "Is this a list or fixed-size array type? Checked before MAP and STRUCT,
+  since `STRUCT(…)[]` starts with `STRUCT(` but is a list of them."
+  [ladybug-type]
+  (and (string? ladybug-type)
+       (some? (re-matches #".+\[\d*\]$" ladybug-type))))
+
+(defn struct-type?
+  [ladybug-type]
+  (and (string? ladybug-type)
+       (str/starts-with? ladybug-type "STRUCT(")
+       (not (list-type? ladybug-type))))
+
+(declare format-typed-value)
+
+(defn- format-typed-list
+  "Cypher LIST literal, elements formatted by the element type.
+
+  Handles `T[]` and the fixed-size `T[n]` alike: the size constrains the column,
+  not the literal."
+  [ladybug-type v]
+  (let [element (second (re-matches #"(.+?)\[\d*\]$" ladybug-type))
+        elems   (if (or (sequential? v) (set? v)) (seq v) [v])]
+    (str "[" (str/join ", " (map #(format-typed-value element %) elems)) "]")))
+
+(defn- format-struct
+  "Cypher STRUCT literal, `{field: value, …}`.
+
+  *Every* declared field is emitted, NULL where the value has none: a struct
+  literal's type is its field list, so omitting a field yields a different type
+  and Ladybug refuses the implicit cast (`STRUCT(m2 DOUBLE, m4 DOUBLE)` cannot
+  be assigned to `STRUCT(m1 …, m2 …, m3 …, m4 …)`). Penpot's layout margins are
+  exactly that case — a shape sets only the sides it overrides."
+  [ladybug-type v]
+  (let [fields (values/struct-fields ladybug-type)]
+    (str "{"
+         (str/join ", "
+                   (for [[field field-type] fields
+                         :let [fv (get v field)]]
+                     ;; Backticked for the same reason as in the DDL: a field
+                     ;; named `column` is a keyword and will not parse bare.
+                     ;; A bare NULL is typed STRING, which changes the struct's
+                     ;; type as surely as omitting the field would, so absent
+                     ;; fields get a NULL cast to their declared type.
+                     (str "`" field "`: "
+                          (if (nil? fv)
+                            (str "cast(NULL, '" field-type "')")
+                            (format-typed-value field-type fv)))))
+         "}")))
 
 (defn format-typed-value
-  [ladybug-type v]
-  (cond
-    (nil? v)
-    "NULL"
+  "Cypher literal for `v` in a column of `ladybug-type`.
 
-    (map-type? ladybug-type)
-    (format-map v)
+  Recursive over the type language, because the types are: a
+  `MAP(UUID, STRUCT(…))` needs its keys, its fields and each field's own type
+  honoured. `app.graph.schema.values/coerce` shapes the value first — turning a
+  matrix record into six doubles, a hex colour into a packed integer — so this
+  function only has to escape plain data.
 
-    (= ladybug-type "JSON")
-    (format-json v)
+  `map-key-fn` renders the keys of a `MAP(STRING, …)`; the caller supplies it
+  because the right form is a property of the column, not of this function
+  (`app.graph.schema.contract/map-key-fn`)."
+  ([ladybug-type v] (format-typed-value ladybug-type v nil))
+  ([ladybug-type v map-key-fn]
+   (let [v (values/coerce ladybug-type v)]
+    (cond
+      (nil? v)
+      "NULL"
 
-    ;; Coerce string ids from transit edge-cases into UUID literals.
-    (= ladybug-type "UUID")
-    (format-uuid v)
+      (list-type? ladybug-type)
+      (format-typed-list ladybug-type v)
 
-    (= ladybug-type "TIMESTAMP")
-    (format-timestamp v)
+      (map-type? ladybug-type)
+      (let [[key-type value-type] (values/map-types ladybug-type)
+            entries (seq v)
+            format-key (if (and map-key-fn (= "STRING" key-type))
+                         #(format-string (map-key-fn (key %)))
+                         #(format-typed-value key-type (key %)))]
+        (str "map([" (str/join ", " (map format-key entries))
+             "], ["
+             (str/join ", " (map #(format-typed-value value-type (val %)) entries))
+             "])"))
 
-    (and (string? ladybug-type)
-         (str/ends-with? ladybug-type "[]"))
-    (format-list ladybug-type v)
+      (struct-type? ladybug-type)
+      (format-struct ladybug-type v)
 
-    :else
-    (format-value v)))
+      (= ladybug-type "JSON")
+      (format-json v)
+
+      ;; Coerce string ids from transit edge-cases into UUID literals.
+      (= ladybug-type "UUID")
+      (format-uuid v)
+
+      (= ladybug-type "TIMESTAMP")
+      (format-timestamp v)
+
+      :else
+      (format-value v)))))
 
 (defn- ensure-semicolon
   [statement]

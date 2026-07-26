@@ -13,6 +13,7 @@
    [app.common.json :as json]
    [app.graph.ladybug :as ladybug]
    [app.graph.schema.nodes :as nodes]
+   [app.graph.schema.values :as values]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [datoteka.fs :as fs])
@@ -54,8 +55,8 @@
     (coll? v)     (csv-escape-string (json/encode v))
     :else         (csv-escape-string (str v))))
 
-(defn- kuzu-list-element
-  "Format one element of a Ladybug LIST column for CSV COPY. Kuzu parses
+(defn- ladybug-list-element
+  "Format one element of a Ladybug LIST column for CSV COPY. Ladybug parses
   the (CSV-unquoted) field as a list literal: bare values for UUID/number
   elements, single-quoted strings (backslash-escaped) for STRING/JSON."
   [elem-type v]
@@ -79,15 +80,34 @@
     :else
     (str v)))
 
-(defn- kuzu-list-cell
-  "CSV cell for a LIST-typed column (`UUID[]`, `STRING[]`, `JSON[]`, …).
-  JSON-encoding the collection (as `csv-cell` does) is wrong here: Kuzu
+(defn- ladybug-literal
+  "A coerced value as the list literal Ladybug's CSV reader expects.
+
+  Recursive, because the types are: `points` is a `DOUBLE[2][]`, and rendering
+  its elements with `str` would emit Clojure's space-separated `[1 2]`, which
+  Ladybug reads as a one-element array."
+  [ladybug-type v]
+  (if-let [[_ element] (and (string? ladybug-type)
+                            (re-matches #"(.+?)\[\d*\]$" ladybug-type))]
+    (str "[" (str/join "," (map #(ladybug-literal element %)
+                                (if (coll? v) (seq v) [v])))
+         "]")
+    (ladybug-list-element ladybug-type v)))
+
+(defn- ladybug-list-cell
+  "CSV cell for a LIST-typed column (`UUID[]`, `DOUBLE[4]`, `DOUBLE[2][]`, …).
+  JSON-encoding the collection (as `csv-cell` does) is wrong here: Ladybug
   expects its own list literal, e.g. `[id1,id2]` with bare elements."
   [ladybug-type v]
-  (let [elem-type (subs ladybug-type 0 (- (count ladybug-type) 2))
-        elems     (if (coll? v) (seq v) [v])]
-    (csv-escape-string
-     (str "[" (str/join "," (map #(kuzu-list-element elem-type %) elems)) "]"))))
+  (csv-escape-string (ladybug-literal ladybug-type v)))
+
+(defn- compound-type?
+  "A MAP or STRUCT, but not a *list* of them — a list is handled elementwise."
+  [ladybug-type]
+  (and (string? ladybug-type)
+       (not (ladybug/list-type? ladybug-type))
+       (or (str/starts-with? ladybug-type "MAP(")
+           (str/starts-with? ladybug-type "STRUCT("))))
 
 (defn- csv-representable?
   "Can a value of `ladybug-type` survive a CSV round-trip?
@@ -106,13 +126,16 @@
   writer, this is where the line falls."
   [ladybug-type]
   (cond
-    (not (string? ladybug-type))            true
-    (ladybug/map-type? ladybug-type)        false
-    (str/starts-with? ladybug-type "STRUCT") false
-    (str/ends-with? ladybug-type "[]")
-    (not (contains? #{"STRING" "JSON"}
-                    (subs ladybug-type 0 (- (count ladybug-type) 2))))
-    :else                                    true))
+    (not (string? ladybug-type))     true
+    (compound-type? ladybug-type)    false
+    :else
+    (if-let [[_ element] (re-matches #"(.+?)\[\d*\]$" ladybug-type)]
+      ;; A list is safe only if its elements are: no delimiter can occur inside
+      ;; a UUID or a number, and a nested list or struct reintroduces the
+      ;; problem one level down.
+      (and (not (contains? #{"STRING" "JSON"} element))
+           (csv-representable? element))
+      true)))
 
 (defn- defer-to-cypher?
   "Must this value be written after the COPY rather than in the CSV?
@@ -125,16 +148,20 @@
 
 (defn- csv-typed-cell
   [ladybug-type v]
-  (cond
-    ;; Written after the COPY, through Cypher — see `fixup-statements`.
-    (defer-to-cypher? ladybug-type v) ""
+  ;; Shape the value for its column first (a matrix into six doubles, a hex
+  ;; colour into a packed integer); the CSV cell then only has to escape plain
+  ;; data. Same first step as the Cypher path, so the two agree.
+  (let [v (values/coerce ladybug-type v)]
+    (cond
+      ;; Written after the COPY, through Cypher — see `fixup-statements`.
+      (defer-to-cypher? ladybug-type v) ""
 
-    (and (some? v)
-         (string? ladybug-type)
-         (str/ends-with? ladybug-type "[]"))
-    (kuzu-list-cell ladybug-type v)
+      (and (some? v)
+           (string? ladybug-type)
+           (re-matches #".+\[\d*\]$" ladybug-type))
+      (ladybug-list-cell ladybug-type v)
 
-    :else (csv-cell v)))
+      :else (csv-cell v))))
 
 (defn- fixup-statements
   "Cypher to set the values the CSV had to leave empty.
@@ -145,12 +172,14 @@
   [table rows]
   (let [columns (nodes/column-keys table)]
     (for [row rows
+          ;; An empty collection is a value, not an absence: a shape with no
+          ;; fills has `[]`, and writing NULL instead would tell a consumer the
+          ;; attribute is unknown rather than empty.
           :let [sets (for [k columns
                            :let [v (get row k)
                                  t (nodes/column-ladybug-type table k)]
                            :when (some? v)
-                           :when (defer-to-cypher? t v)
-                           :when (or (not (coll? v)) (seq v))]
+                           :when (defer-to-cypher? t v)]
                        (str "n." (nodes/cypher-property-key table k) " = "
                             (nodes/format-column-value table k v)))]
           :when (seq sets)]
