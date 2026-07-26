@@ -105,7 +105,9 @@
   [elem-type v]
   (case elem-type
     "UUID"      (format-uuid v)
-    "STRING"    (format-string (str v))
+    ;; `name` for keywords, so a `:touched` entry reads `swap-slot-…` and not
+    ;; `:swap-slot-…` — see `app.graph.bulk/kuzu-list-element`.
+    "STRING"    (format-string (if (keyword? v) (name v) (str v)))
     "JSON"      (format-json v)
     "INT64"     (format-int v)
     "DOUBLE"    (format-number v)
@@ -126,11 +128,37 @@
          (str/join ", " (map #(format-list-element elem-type %) elems))
          "]")))
 
+(defn format-map
+  "Cypher literal for a `MAP(STRING, STRING)` column.
+
+  Ladybug's CSV reader parses map literals (`{k=v, …}`) with no escape
+  mechanism: a comma inside a value ends the entry, and quotes are kept as part
+  of the string. Nothing user-authored — a design-token name, say — survives
+  that round-trip, so map columns are written through Cypher instead, where
+  `map/2` takes two properly escaped lists (`app.graph.bulk`).
+
+  `key-fn` renders each key; the caller supplies it because the right form is
+  a property of the column, not of this function
+  (`app.graph.schema.contract/map-key-fn`)."
+  ([m] (format-map m name))
+  ([m key-fn]
+   (let [entries (seq m)]
+     (str "map([" (str/join ", " (map #(format-string (key-fn (key %))) entries)) "], "
+          "[" (str/join ", " (map #(format-string (str (val %))) entries)) "])"))))
+
+(defn map-type?
+  "Is `ladybug-type` a MAP column? Those cannot be bulk-loaded from CSV."
+  [ladybug-type]
+  (and (string? ladybug-type) (str/starts-with? ladybug-type "MAP(")))
+
 (defn format-typed-value
   [ladybug-type v]
   (cond
     (nil? v)
     "NULL"
+
+    (map-type? ladybug-type)
+    (format-map v)
 
     (= ladybug-type "JSON")
     (format-json v)

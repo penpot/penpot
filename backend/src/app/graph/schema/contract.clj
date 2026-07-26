@@ -30,6 +30,7 @@
   account for. Schema drift becomes a failing test with a precise message
   instead of a silently renamed column in a training set."
   (:require
+   [app.common.json :as json]
    [clojure.string :as str]))
 
 (def ^:private renames
@@ -99,6 +100,23 @@
   {;; `LinkAppliedTokens` (beadpot) reads this with `map_keys` /
    ;; `map_extract`; as JSON the transform cannot run at all.
    "applied_tokens" "MAP(STRING, STRING)"})
+
+(def ^:private map-key-fns
+  "How to render the *keys* of a MAP column, per column.
+
+  Column names are snake_case because they are graph schema; the keys inside a
+  MAP are not — they are values, and beadpot models them as whatever it parsed
+  from the wire. `applied_tokens` is keyed by shape attribute in the camelCase
+  form Penpot's own JSON encoder produces (`app.common.json/write-camel-key`),
+  which is what beadpot's `AppliedTokenKey` holds and what
+  `UsesToken.for_property` therefore carries: `strokeWidth`, not
+  `stroke-width`."
+  {"applied_tokens" json/write-camel-key})
+
+(defn map-key-fn
+  "Key renderer for a MAP column; `name` unless the column says otherwise."
+  [column]
+  (get map-key-fns column name))
 
 (defn column-name
   "The beadpot column name for Penpot key `k`.

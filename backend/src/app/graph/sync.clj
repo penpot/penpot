@@ -154,7 +154,7 @@
 
 (defn- format-node-value
   [table k v]
-  (ladybug/format-typed-value (nodes/column-ladybug-type table k) v))
+  (nodes/format-column-value table k v))
 
 (defn- create-node-statement
   [table attrs]
