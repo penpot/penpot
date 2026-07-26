@@ -6,7 +6,8 @@
 
 (ns app.graph.report
   (:require
-   [clojure.core :as c]))
+   [clojure.core :as c]
+   [clojure.string :as str]))
 
 (defn- println!
   [& lines]
@@ -44,6 +45,10 @@
 
   (section-title "Transforms")
   (println! (kv-line "Applied" (or (:transforms transforms) 0)))
+  (doseq [[rel count] (sort-by key (:counts transforms))]
+    (println! (kv-line (c/name rel) count)))
+  (when-let [ids (seq (:ids transforms))]
+    (println! (kv-line "Recorded" (str/join ", " ids))))
 
   (when stats
     (section-title "Graph counts")

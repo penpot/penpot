@@ -9,19 +9,25 @@
 
   Each registry entry declares Penpot Malli sources plus projection
   options (`:drop`, optional `:extra`). Derived artifacts — Ladybug
-  DDL, CSV columns, validation, type dispatch — all flow from that."
+  DDL, CSV columns, validation, type dispatch — all flow from that.
+
+  Column *names* and *types* are not ours to choose: they are the
+  contract downstream consumers read, and beadpot owns it. Every
+  divergence between a Penpot key and its column lives in
+  `app.graph.schema.contract`."
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
+   [app.graph.schema.contract :as contract]
    [app.graph.schema.projection :as projection]
    [app.graph.schema.types :as types]
    [clojure.string :as str]))
 
 (def schema-version
-  "penpot-graph-slice-3")
+  "penpot-graph-slice-4")
 
 ;; beadpot/graph/schemas.py drop_fields
 (def ^:private document-projection
@@ -128,23 +134,35 @@
     (nth entry 2)
     (nth entry 1)))
 
+(defn column-name
+  "beadpot column name for projected key `k` on `table`."
+  [_table k]
+  (contract/column-name k))
+
 (defn column-ladybug-type
   "Ladybug column type for projected key `k` on `table`."
   [table k]
   (some (fn [entry]
           (when (= k (first entry))
-            (types/ladybug-type (entry-child-schema entry))))
+            (contract/ladybug-type (column-name table k)
+                                   (types/ladybug-type (entry-child-schema entry)))))
         (projection/schema-map-entries (:schema (node-entry table)))))
 
 (defn column-keys
-  "Projected column keys for `table`, in registry order."
+  "Projected column keys for `table`, in registry order.
+
+  Keys the beadpot contract drops on this table are omitted, so column
+  order, the CSV header and the DDL cannot disagree about what exists."
   [table]
-  (mapv first (projection/schema-map-entries (:schema (node-entry table)))))
+  (into []
+        (comp (map first)
+              (remove #(contract/drop-key? table %)))
+        (projection/schema-map-entries (:schema (node-entry table)))))
 
 (defn columns
   "Projected column names for `table`, in registry order."
   [table]
-  (mapv name (column-keys table)))
+  (mapv #(column-name table %) (column-keys table)))
 
 (def ^:private validate-node-fn
   (memoize
@@ -211,18 +229,17 @@
     table))
 
 (defn cypher-property-key
-  "Backtick-wrapped property key for inline Cypher literals."
-  [k]
-  (str "`" (name k) "`"))
+  "Backtick-wrapped beadpot column name for inline Cypher literals."
+  [table k]
+  (str "`" (column-name table k) "`"))
 
 (defn- create-node-table-ddl
-  [{:keys [table pk schema]}]
-  (let [cols (for [entry (projection/schema-map-entries schema)
-                   :let [k     (first entry)
-                         child (entry-child-schema entry)]]
-               (str "`" (name k) "` " (types/ladybug-type child)))]
+  [{:keys [table pk]}]
+  (let [cols (for [k (column-keys table)]
+               (str "`" (column-name table k) "` " (column-ladybug-type table k)))]
     (str "CREATE NODE TABLE `" table "` ("
-         (str/join ", " (concat cols [(str "PRIMARY KEY (`" (name pk) "`)")]))
+         (str/join ", " (concat cols
+                                [(str "PRIMARY KEY (`" (column-name table pk) "`)")]))
          ");")))
 
 (defn is-child-of-ddl
@@ -245,8 +262,36 @@
   []
   "CREATE REL TABLE `IsInstanceOf` (FROM `Frame` TO `Component`);")
 
+(defn- shape-to-shape-rel-ddl
+  "A rel table over the full shape × shape product.
+
+  Created up-front rather than on demand: the bulk loader must never race on
+  lazy table creation, and a consumer can then tell \"this producer cannot
+  emit that pair\" from \"this document happens to have none\" (beadpot
+  `graph.manifest/REL_FAMILIES`)."
+  [rel props]
+  (str "CREATE REL TABLE `" rel "` ("
+       (str/join ", " (for [from shape-tables
+                            to   shape-tables]
+                        (str "FROM `" from "` TO `" to "`")))
+       (when (seq props) (str ", " (str/join ", " props)))
+       ");"))
+
+(defn refers-to-ddl
+  "Instance shape → its homologue in the component main instance
+  (beadpot `RefersTo`, from `shape-ref`)."
+  []
+  (shape-to-shape-rel-ddl "RefersTo" nil))
+
+(defn fills-swap-slot-ddl
+  "Swapped-in shape → the slot shape it replaces (beadpot `FillsSwapSlot`)."
+  []
+  (shape-to-shape-rel-ddl "FillsSwapSlot" ["`slot_id` UUID"]))
+
 (defn ddl-statements
   []
-  (conj (mapv create-node-table-ddl node-types)
-        (is-child-of-ddl)
-        (is-instance-of-ddl)))
+  (-> (mapv create-node-table-ddl node-types)
+      (conj (is-child-of-ddl))
+      (conj (is-instance-of-ddl))
+      (conj (refers-to-ddl))
+      (conj (fills-swap-slot-ddl))))

@@ -15,6 +15,7 @@
    [app.graph.schema.nodes :as nodes]
    [app.graph.sync :as graph.sync]
    [app.msgbus :as mbus]
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [promesa.exec.csp :as sp])
   (:import
@@ -235,25 +236,44 @@
    {:nodes [] :truncated? false}
    nodes/node-types))
 
+(defn rel-tables
+  "Every relationship table in the open database, with whether it carries a
+  `position` property.
+
+  Read from the catalog rather than listed here, so a newly ported transform's
+  rel table appears in the graph view without the console being told about it."
+  [conn]
+  (for [[table] (:rows (ladybug/query-on-connection!
+                        conn "CALL show_tables() WHERE type = 'REL' RETURN name;"
+                        :max-rows 1000))
+        :let [props (->> (ladybug/query-on-connection!
+                          conn (str "CALL table_info('" table "') RETURN *;")
+                          :max-rows 1000)
+                         :rows
+                         (into #{} (map (comp str second))))]]
+    {:table table :position? (contains? props "position")}))
+
 (defn- export-edges
   [conn]
-  (let [child-stmt (str "MATCH (a)-[r:IsChildOf]->(b) "
-                        "RETURN a.id AS source, b.id AS target, r.position AS position, "
-                        "'IsChildOf' AS rel;")
-        inst-stmt  (str "MATCH (a)-[r:IsInstanceOf]->(b) "
-                        "RETURN a.id AS source, b.id AS target, NULL AS position, "
-                        "'IsInstanceOf' AS rel;")
-        child      (ladybug/query-on-connection! conn child-stmt :max-rows export-max-rows)
-        inst       (ladybug/query-on-connection! conn inst-stmt :max-rows export-max-rows)
-        ->edge     (fn [[source target position rel]]
-                     (cond-> {:source (str source)
-                              :target (str target)
-                              :rel    (str rel)}
-                       (some? position) (assoc :position position)))]
-    {:edges (into (mapv ->edge (:rows child))
-                  (map ->edge)
-                  (:rows inst))
-     :truncated? (boolean (or (:truncated? child) (:truncated? inst)))}))
+  (reduce
+   (fn [acc {:keys [table position?]}]
+     (let [stmt (str "MATCH (a)-[r:`" table "`]->(b) "
+                     "RETURN a.id AS source, b.id AS target, "
+                     (if position? "r.position" "NULL") " AS position, "
+                     "'" table "' AS rel;")
+           {:keys [rows truncated?]}
+           (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
+       (-> acc
+           (update :edges into
+                   (map (fn [[source target position rel]]
+                          (cond-> {:source (str source)
+                                   :target (str target)
+                                   :rel    (str rel)}
+                            (some? position) (assoc :position position))))
+                   rows)
+           (update :truncated? #(or % truncated?)))))
+   {:edges [] :truncated? false}
+   (rel-tables conn)))
 
 (defn- bm-usage-bytes
   "Buffer-manager memory in use by this session's in-memory database
@@ -279,6 +299,47 @@
          :bm-bytes  (bm-usage-bytes conn)
          :nodes     nodes
          :edges     edges}))))
+
+(defn- delete-tree!
+  [^java.io.File file]
+  (when (.exists file)
+    (doseq [f (reverse (file-seq file))]
+      (.delete ^java.io.File f))))
+
+(defn export-session-database!
+  "Materialize the in-memory session graph of `profile-id` as a `.lbug` file.
+
+  The console's graph is in-memory and live-synced, so it can differ from a
+  fresh projection of the same file — which is exactly when someone wants to
+  take it away and query it elsewhere. There is no \"save this database\"
+  primitive, so the transfer goes through Ladybug's `EXPORT DATABASE` (Parquet
+  per table) into a fresh on-disk database via `IMPORT DATABASE`.
+
+  Note the round-trip drops table comments; beadpot resolves such tables by
+  name (`beadpot.graph.context/_adopt_node_table`), so this is not load-bearing.
+
+  Returns the path of the written database, or nil when no session is loaded.
+  The caller owns the file and must delete it once streamed."
+  [profile-id]
+  (when-let [{:keys [conn lock file-id]} (get @sessions (session-key profile-id))]
+    (let [stamp       (System/nanoTime)
+          staging     (io/file (System/getProperty "java.io.tmpdir")
+                               (str "penpot-graph-session-" file-id "-" stamp))
+          db-path     (str (io/file (System/getProperty "java.io.tmpdir")
+                                    (str file-id "-session-" stamp ".lbug")))]
+      (try
+        (locking lock
+          (ladybug/exec-on-connection!
+           conn [(str "EXPORT DATABASE '" (.getAbsolutePath staging)
+                      "' (format='parquet');")]))
+        (ladybug/with-connection! db-path
+          (fn [target]
+            (ladybug/exec-on-connection!
+             target [(str "IMPORT DATABASE '" (.getAbsolutePath staging) "';")
+                     "CHECKPOINT;"])))
+        db-path
+        (finally
+          (delete-tree! staging))))))
 
 (defn- hide-filter-columns
   "Drop `filter_*` columns from a query result before HTML table render;

@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.graph.ladybug :as ladybug]
+   [app.graph.project.document :as project.document]
    [app.graph.schema.nodes :as nodes]
    [clojure.string :as str])
   (:import
@@ -111,7 +112,18 @@
                :parent-id     parent-id
                :parent-table  parent-table
                :position      (long (:position edge 0))
-               :page-id       (resolve-page-id shape-id parents pages)}]))
+               ;; The projection already denormalized these; re-deriving
+               ;; page-id from the parent chain would only be a second way to
+               ;; get the same answer. `:component-ctx` is what later
+               ;; `:add-obj` children inherit — it is the shape's effective
+               ;; component-id, which loses the barrier case of a *non-Frame*
+               ;; carrying its own `component-id` (indistinguishable once
+               ;; denormalized). Cold projection, which beadpot diffs against,
+               ;; keeps the distinction; only a graph synced across such a
+               ;; shape can drift, and a Reload rebuilds it.
+               :component-ctx (:component-id attrs)
+               :page-id       (or (:page-id attrs)
+                                  (resolve-page-id shape-id parents pages))}]))
 
 (defn- index-shapes
   [nodes edges parents pages]
@@ -150,7 +162,7 @@
         pairs (for [k (nodes/column-keys table)
                     :let [v (get attrs k)]
                     :when (some? v)]
-                (str (nodes/cypher-property-key k) ": "
+                (str (nodes/cypher-property-key table k) ": "
                      (format-node-value table k v)))]
     (str "CREATE (:" label " {" (str/join ", " pairs) "});")))
 
@@ -206,7 +218,7 @@
 (defn- set-node-attr-statement
   [table shape-id attr value]
   (str "MATCH (s:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
-       "SET s." (nodes/cypher-property-key attr) " = "
+       "SET s." (nodes/cypher-property-key table attr) " = "
        (format-node-value table attr value) ";"))
 
 (defn- set-page-name-statement
@@ -218,7 +230,7 @@
   "Clear a property. Ladybug has no Neo4j-style REMOVE; SET to NULL."
   [table shape-id attr]
   (str "MATCH (s:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
-       "SET s." (nodes/cypher-property-key attr) " = NULL;"))
+       "SET s." (nodes/cypher-property-key table attr) " = NULL;"))
 
 (defn- index-add-component!
   [index {:keys [id name doc-id]}]
@@ -401,7 +413,16 @@
         (if-not parent
           {:index index :statements [] :applied? false :reason :missing-parent}
           (let [position (long (or pos (default-position index (:parent-id parent))))
-                attrs    (nodes/project-attrs table (assoc obj :id id))
+                ;; The same denormalizations the cold projection performs, so
+                ;; a live-synced graph and a rebuilt one carry equal columns.
+                resolved-page-id
+                (or page-id
+                    (when (= (:parent-table parent) "Page") (:parent-id parent))
+                    (get-in index [:shapes (:parent-id parent) :page-id]))
+                parent-ctx (get-in index [:shapes (:parent-id parent) :component-ctx])
+                shape    (project.document/denormalized-shape
+                          (assoc obj :id id) resolved-page-id parent-ctx)
+                attrs    (nodes/project-attrs table shape)
                 edge     (merge {:from-table table
                                  :from-id    id
                                  :to-table   (:parent-table parent)
@@ -417,8 +438,9 @@
                                              :parent-id     (:parent-id parent)
                                              :parent-table  (:parent-table parent)
                                              :position      position
-                                             :page-id       (or page-id (when (= (:parent-table parent) "Page")
-                                                                          (:parent-id parent)))})
+                                             :component-ctx (project.document/descend-component-ctx
+                                                             table shape parent-ctx)
+                                             :page-id       resolved-page-id})
              :statements  stmts
              :applied?    true}))))))
 
