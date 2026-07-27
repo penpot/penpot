@@ -38,8 +38,6 @@ export class Task<TParams = any> {
 
         // Send to main.ts which will forward to MCP server via WebSocket
         try {
-            // TODO: Remove ts-ignore once Penpot types have been updated
-            // @ts-ignore
             penpot.ui.sendMessage(response, true);
         } catch (sendError) {
             console.error("Failed to transfer task response for transmission to MCP server", sendError);
