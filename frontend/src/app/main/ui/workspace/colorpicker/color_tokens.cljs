@@ -17,11 +17,13 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -267,31 +269,39 @@
 
 (mf/defc token-section*
   {}
-  [{:keys [combined-tokens color-origin on-token-change applied-token] :rest props}]
-  (let [sets (set (mapv label-group-or-set combined-tokens))
-        filter-term* (mf/use-state "")
-        filter-term (deref filter-term*)
-        open-sets* (mf/use-state sets)
-        open-sets  (deref open-sets*)
+  [{:keys [combined-tokens color-origin on-token-change applied-token]}]
+  (let [filter-term* (mf/use-state "")
+        filter-term  (deref filter-term*)
+
+        file-id      (mf/use-ctx ctx/current-file-id)
+
+        collapsed-sets* (hooks/use-persisted-state ::collapsed-sets {})
+        collapsed-sets  (get (deref collapsed-sets*) file-id #{})
 
         toggle-sets-open
         (mf/use-fn
-         (mf/deps open-sets)
+         (mf/deps collapsed-sets file-id)
          (fn [name]
-           (if (contains? open-sets name)
-             (swap! open-sets* disj name)
-             (swap! open-sets* conj name))))
+           (swap! collapsed-sets*
+                  (fn [m]
+                    (let [current (get m file-id #{})]
+                      (if (contains? current name)
+                        (update m file-id disj name)
+                        (update m file-id (fnil conj #{}) name)))))))
 
         on-filter-tokens
         (mf/use-fn
-         (mf/deps filter-term)
+         (mf/deps filter-term file-id)
          (fn [event]
-           (let [value (-> event (dom/get-target)
+           (let [value (-> event
+                           (dom/get-target)
                            (dom/get-value))]
              (reset! filter-term* value)
-             (reset! open-sets* sets))))
+             (swap! collapsed-sets* assoc file-id #{}))))
+
         filtered-combined (filter-combined-tokens combined-tokens filter-term)
         sorted-tokens     (sort-combined-tokens filtered-combined)]
+
     (if (seq combined-tokens)
       [:div {:class (stl/css :color-tokens-section)}
        [:> input* {:placeholder (tr "workspace.tokens.search-by-token")
@@ -306,7 +316,7 @@
           (for [combined-sets sorted-tokens]
             (let  [name (label-group-or-set combined-sets)]
               [:> set-section*
-               {:collapsed (not (contains?  open-sets name))
+               {:collapsed (contains? collapsed-sets name)
                 :key (str "set-" name)
                 :toggle-sets-open toggle-sets-open
                 :color-origin color-origin
@@ -316,4 +326,3 @@
                 :group-or-set combined-sets}]))]
          [:> token-empty-state*])]
       [:> token-empty-state*])))
-
