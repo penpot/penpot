@@ -143,8 +143,7 @@
 
     ptk/EffectEvent
     (effect [_ _ _]
-      (rx/push! ms/wasm-modifiers nil)
-      (rx/push! ms/workspace-selrect nil))))
+      (ms/clear-transform-preview!))))
 
 ;; -- Resize --------------------------------------------------------
 

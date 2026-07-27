@@ -98,6 +98,11 @@
                  (when on-change
                    (on-change modifiers)))))))]
 
+    (mf/with-effect []
+      (fn []
+        (when (some? @resizing)
+          (fcc/clear-transform-preview!))))
+
     [:g.gap-rect
      [:rect.info-area
       {:x (:x rect-data)
