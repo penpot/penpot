@@ -1,12 +1,3 @@
-import "@penpot/plugin-types";
-
-declare module "@penpot/plugin-types" {
-    interface Penpot {
-        /** The Penpot application version string. */
-        version: string;
-    }
-}
-
 interface McpOptions {
     getToken(): string;
     getServerUrl(): string;
