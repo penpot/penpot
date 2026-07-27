@@ -19,6 +19,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.util.clipboard :as clipboard]
@@ -346,31 +347,39 @@
 (defn default-actions
   [{:keys [token selected-token-set-id on-delete-token errors]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)
+
+        can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
+
         on-copy-name #(clipboard/to-clipboard (:name token))
         on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
-    [{:title (tr "workspace.tokens.edit")
-      :no-selectable true
-      :action (fn [event]
-                (let [{:keys [key fields]} modal]
-                  (dom/stop-propagation event)
-                  (st/emit! (dwtl/assign-token-context-menu nil)
-                            (modal/show key {:x (.-clientX ^js event)
-                                             :y (.-clientY ^js event)
-                                             :position :right
-                                             :fields fields
-                                             :initial-errors errors
-                                             :action "edit"
-                                             :selected-token-set-id selected-token-set-id
-                                             :token token}))))}
-     {:title (tr "workspace.tokens.duplicate")
-      :no-selectable true
-      :action on-duplicate-token}
-     {:title (tr "workspace.tokens.copy-name")
-      :no-selectable true
-      :action on-copy-name}
-     {:title (tr "workspace.tokens.delete")
-      :no-selectable true
-      :action #(on-delete-token token)}]))
+    (concat
+     []
+     (when can-edit-tokens?
+       [{:title (tr "workspace.tokens.edit")
+         :no-selectable true
+         :action (fn [event]
+                   (let [{:keys [key fields]} modal]
+                     (dom/stop-propagation event)
+                     (st/emit! (dwtl/assign-token-context-menu nil)
+                               (modal/show key {:x (.-clientX ^js event)
+                                                :y (.-clientY ^js event)
+                                                :position :right
+                                                :fields fields
+                                                :initial-errors errors
+                                                :action "edit"
+                                                :selected-token-set-id selected-token-set-id
+                                                :token token}))))}
+        {:title (tr "workspace.tokens.duplicate")
+         :no-selectable true
+         :action on-duplicate-token}])
+     [{:title (tr "workspace.tokens.copy-name")
+       :no-selectable true
+       :action on-copy-name}]
+     (when can-edit-tokens?
+       [{:title (tr "workspace.tokens.delete")
+         :no-selectable true
+         :action #(on-delete-token token)}]))))
 
 (defn- allowed-shape-attributes
   [shapes]

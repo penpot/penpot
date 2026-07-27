@@ -38,8 +38,8 @@
         token-sets
         (some-> tokens-lib (ctob/get-set-tree))
 
-        can-edit?
-        (mf/use-ctx ctx/can-edit?)
+        can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
 
         token-set-active?
         (mf/use-fn
@@ -55,17 +55,17 @@
 
         on-reset-edition
         (mf/use-fn
-         (mf/deps can-edit?)
+         (mf/deps can-edit-tokens?)
          (fn [_]
-           (when can-edit?
+           (when can-edit-tokens?
              (st/emit! (dwtl/clear-token-set-edition)
                        (dwtl/clear-token-set-creation)))))
 
         on-start-edition
         (mf/use-fn
-         (mf/deps can-edit?)
+         (mf/deps can-edit-tokens?)
          (fn [id]
-           (when can-edit?
+           (when can-edit-tokens?
              (st/emit! (dwtl/start-token-set-edition id)))))]
 
     [:> controlled-sets-list*
@@ -81,7 +81,6 @@
       :edition-id edition-id
 
       :origin "set-panel"
-      :can-edit can-edit?
       :on-start-edition on-start-edition
       :on-reset-edition on-reset-edition
 

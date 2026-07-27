@@ -28,7 +28,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]
-   [shadow.resource]))
+   [shadow.resource]
+   [app.common.files.tokens :as cfo]))
 
 ;; Components ------------------------------------------------------------------
 
@@ -62,9 +63,8 @@
   {::mf/private true}
   [{:keys [resize-height] :as props}]
 
-  (let [can-edit?
-        (mf/use-ctx ctx/can-edit?)]
-
+  (let [can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)]
     [:*
      [:> token-set-context-menu*]
      [:section {:data-testid "token-management-sidebar"
@@ -73,7 +73,7 @@
       [:> themes-header*]
       [:div {:class (stl/css :sidebar-header)}
        [:> title-bar* {:title (tr "labels.sets")}
-        (when can-edit?
+        (when can-edit-tokens?
           [:> tsetslist/add-button*])]]
 
       [:> token-sets-list* props]]]))
@@ -83,8 +83,8 @@
   (let [show-menu* (mf/use-state false)
         show-menu? (deref show-menu*)
 
-        can-edit?
-        (mf/use-ctx ctx/can-edit?)
+        can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
 
         open-menu
         (mf/use-fn
@@ -124,7 +124,7 @@
                          :on-close close-menu
                          :id "tokens-menu"
                          :class (stl/css :import-export-menu)}
-      (when can-edit?
+      (when can-edit-tokens?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-modal-show}
          [:div {:class (stl/css :import-menu-item)}
@@ -133,8 +133,7 @@
                                :on-click on-export}
        (tr "labels.export")]]
 
-
-     (when (and can-edit? (contains? cf/flags :token-base-font-size))
+     (when (and can-edit-tokens? (contains? cf/flags :token-base-font-size))
        [:> icon-button* {:variant "secondary"
                          :icon i/settings
                          :aria-label "Settings"
@@ -146,18 +145,30 @@
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
+        (use-resize-hook :tokens 200 38 "0.6" :y false nil)
 
-    [:div {:class (stl/css :sidebar-wrapper)}
-     [:> token-management-section*
-      {:resize-height size-pages-opened
-       :tokens-lib tokens-lib}]
-     [:article {:class (stl/css :tokens-section-wrapper)
-                :data-testid "tokens-sidebar"}
-      [:div {:class (stl/css :resize-area-horiz)
-             :on-pointer-down on-pointer-down-pages
-             :on-lost-pointer-capture on-lost-pointer-capture-pages
-             :on-pointer-move on-pointer-move-pages}
-       [:div {:class (stl/css :resize-handle-horiz)}]]
-      [:> tokens-section* props]]
-     [:> import-export-button*]]))
+        current-file-data
+        (mf/deref refs/workspace-data)
+
+        can-edit-file?
+        (mf/use-ctx ctx/can-edit?)
+
+        can-edit-tokens?
+        (mf/with-memo [can-edit-file? current-file-data]
+          (and can-edit-file?
+               (cfo/editable-tokens? current-file-data)))]
+
+    [:> (mf/provider ctx/can-edit-tokens?) {:value can-edit-tokens?}
+     [:div {:class (stl/css :sidebar-wrapper)}
+      [:> token-management-section*
+       {:resize-height size-pages-opened
+        :tokens-lib tokens-lib}]
+      [:article {:class (stl/css :tokens-section-wrapper)
+                 :data-testid "tokens-sidebar"}
+       [:div {:class (stl/css :resize-area-horiz)
+              :on-pointer-down on-pointer-down-pages
+              :on-lost-pointer-capture on-lost-pointer-capture-pages
+              :on-pointer-move on-pointer-move-pages}
+        [:div {:class (stl/css :resize-handle-horiz)}]]
+       [:> tokens-section* props]]
+      [:> import-export-button*]]]))
