@@ -140,14 +140,17 @@
            on-pill-context-menu
            on-node-context-menu]}]
   (let [separator "."
-        raw-tree      (mf/with-memo [tokens]
-                        (cpn/build-tree-root tokens separator))
-        permissions   (mf/use-ctx ctx/permissions)
-        can-edit?     (:can-edit permissions)
+        raw-tree
+        (mf/with-memo [tokens]
+          (cpn/build-tree-root tokens separator))
+
+        can-edit-file?
+        (mf/use-ctx ctx/can-edit?)
+
         on-node-context-menu (mf/use-fn
-                              (mf/deps can-edit? on-node-context-menu)
+                              (mf/deps can-edit-file? on-node-context-menu)
                               (fn [event node]
-                                (when can-edit?
+                                (when can-edit-file?
                                   (on-node-context-menu event node))))
 
         ordered-nodes (mf/with-memo [raw-tree]

@@ -5221,6 +5221,14 @@ export type Token =
  */
 export interface TokenCatalog {
   /**
+   * Returns true if the tokens can be edited (it can't
+   * if the tokens of the file are in an external library).
+   * Note that even in this case, Themes and Sets status still
+   * can be changed and tokens can be applied to shapes.
+   */
+  readonly isEditableTokens: boolean;
+
+  /**
    * The list of themes in this catalog, in creation order.
    */
   readonly themes: TokenTheme[];
