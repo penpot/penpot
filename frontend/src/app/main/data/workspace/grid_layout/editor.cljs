@@ -12,7 +12,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.streams :as ms]
-   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (defn hover-grid-cell
@@ -94,8 +93,7 @@
 
     ptk/EffectEvent
     (effect [_ _ _]
-      (rx/push! ms/wasm-modifiers nil)
-      (rx/push! ms/workspace-selrect nil))))
+      (ms/clear-transform-preview!))))
 
 (defn locate-board
   [grid-id]

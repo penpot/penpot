@@ -3,24 +3,16 @@
    [app.main.constants :as mconst]
    [app.main.streams :as ms]
    [app.main.ui.formats :as fmt]
-   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
 ;; INTERACTIVE TRANSFORM CLEANUP
 ;; ------------------------------------------------
 
-(defn clear-transform-preview!
-  "Reset the interactive-transform preview behaviour-subjects. Flex
-  spacing controls (padding/margin/gap) set these via
-  `set-wasm-modifiers` while dragging and only clear them through
-  `finish-transform` on `lost-pointer-capture`. If the control unmounts
-  mid-drag (e.g. the selection changes) that handler never fires and the
-  stale selrect keeps displacing the DOM selection overlay of the next
-  selection. Call from an unmount cleanup guarded on the resizing flag."
-  []
-  (rx/push! ms/wasm-modifiers nil)
-  (rx/push! ms/workspace-selrect nil))
+;; Flex spacing controls (padding/margin/gap) call this from their
+;; unmount cleanup, guarded on the resizing flag. See
+;; `ms/clear-transform-preview!` for the rationale.
+(def clear-transform-preview! ms/clear-transform-preview!)
 
 ;; ------------------------------------------------
 ;; CONSTANTS
