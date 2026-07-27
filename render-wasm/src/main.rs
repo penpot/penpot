@@ -976,6 +976,9 @@ pub extern "C" fn get_shape_extrect(a: u32, b: u32, c: u32, d: u32) -> Result<*m
     })
 }
 
+/// Raster image via the GPU surface. Returns `[len][width][height][bytes]`
+/// (LE). `format` selects the encoder: 0 = PNG, 1 = JPEG, 2 = WEBP (see
+/// `RasterFormat`).
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_shape_pixels(
@@ -984,6 +987,7 @@ pub extern "C" fn render_shape_pixels(
     c: u32,
     d: u32,
     scale: f32,
+    format: u32,
 ) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
 
@@ -991,9 +995,11 @@ pub extern "C" fn render_shape_pixels(
         return Err(Error::CriticalError("Scale is not finite".to_string()));
     }
 
+    let format = RasterFormat::from_u32(format)?;
+
     with_state!(state, {
         let (data, width, height) =
-            state.render_shape_pixels(&id, scale, performance::get_time())?;
+            state.render_shape_pixels(&id, scale, performance::get_time(), format)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());
