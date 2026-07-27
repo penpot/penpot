@@ -845,6 +845,15 @@ RETURNING id, deleted_at;")
              WHERE p.team_id = t.id
                AND p.deleted_at IS NULL
                AND f.deleted_at IS NULL
+            UNION ALL
+            SELECT tpr2.created_at
+              FROM team_profile_rel AS tpr2
+             WHERE tpr2.team_id = t.id
+               AND tpr2.is_owner IS NOT TRUE
+            UNION ALL
+            SELECT ti.updated_at
+              FROM team_invitation AS ti
+             WHERE ti.team_id = t.id
           ) AS activity) AS last_activity_at,
      owner_tpr.profile_id AS owner_profile_id,
      owner_p.fullname AS owner_name,
