@@ -178,6 +178,34 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
   <h4>What is the organization name used for?</h4>
   <p>It's the human-readable name used to identify your organization in the UI, in emails, and in URLs. It is not your official billing name. You can change it at any time without affecting navigation or functionality.</p>
 
+  <h4>Do Advanced Permissions replace the standard Penpot team roles?</h4>
+  <p>No. Advanced Permissions work on top of the existing roles (Viewer, Editor, Admin, Owner). They add an organization-wide ceiling on what any role can do, but they do not change how roles work within a team.</p>
+
+  <h4>What is the default behavior when I first create an organization?</h4>
+  <p>All Controls are set to their most permissive option. Nothing changes until you actively configure a Control.</p>
+
+  <h4>What happens to existing team admins if I change a Control that restricts their permissions?</h4>
+  <p>The restriction applies immediately. An admin who could previously perform an action will no longer be able to do so as soon as the Control is changed, with no grace period.</p>
+
+  <h4>Is this the same as the authentication providers in Penpot's self-hosting configuration?</h4>
+  <p>No. Penpot's self-hosted configuration lets server administrators enable login methods (Google, GitHub, GitLab, OIDC) at the instance level, so users can sign in to Penpot itself with those providers. That is a server-level setting managed by whoever runs the infrastructure.</p>
+  <p>The SSO module in Enterprise is different in scope and purpose. It is configured by you, the organization owner, from the Admin Console, and it governs access to your organization's teams and files specifically. It does not change how users log in to Penpot as a platform, only whether they need to pass through your corporate identity provider to reach your organization's content.</p>
+
+  <h4>Does SSO affect the Admin Console?</h4>
+  <p>No. The Admin Console is always accessible without SSO, regardless of your configuration. This ensures you can always reach your settings to adjust or deactivate SSO, even if something changes on the directory side.</p>
+
+  <h4>What happens if my identity provider goes down while SSO is active?</h4>
+  <p>Current sessions continue until they expire. The next time a member tries to authenticate through your IdP and the provider is unreachable, the login will fail. There is no automatic bypass. Since the Admin Console is outside SSO, you can still reach your configuration to deactivate SSO if needed.</p>
+
+  <h4>Can I use the same identity provider for more than one organization?</h4>
+  <p>Yes. Two different organizations, and the Penpot instance itself, can share the same IdP. A successful SSO login never grants org membership on its own, so there is no risk of cross-organization access. Membership always requires an explicit invitation.</p>
+
+  <h4>What if a member is not in my directory?</h4>
+  <p>They remain an org member and keep their Penpot account, but they cannot enter the organization's teams until they are added to the directory. We send them an email when SSO is first activated explaining the situation and telling them to contact you.</p>
+
+  <h4>Does accepting an invitation automatically give someone access to my org's teams?</h4>
+  <p>Only if they are also in your directory. An invitee can register and accept the invitation, but if they are not in the directory, they become an org member without being able to enter the teams. Acceptance is never blocked on that basis.</p>
+
 
 
 
