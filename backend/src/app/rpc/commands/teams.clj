@@ -951,12 +951,23 @@
 
     (db/delete! conn :team-profile-rel {:profile-id member-id
                                         :team-id team-id})
-    (mbus/pub! msgbus
-               :topic member-id
-               :message {:type :team-membership-change
-                         :change :removed
-                         :team-id team-id
-                         :team-name (:name team)})
+
+    ;; A removed member that owns the organization of this team keeps
+    ;; read-only access to it, so instead of kicking them out we degrade
+    ;; their session to viewer, same as any other role change.
+    (if (nitrate/organization-owner-of-team? cfg member-id team-id)
+      (mbus/pub! msgbus
+                 :topic member-id
+                 :message {:type :team-role-change
+                           :topic member-id
+                           :team-id team-id
+                           :role :viewer})
+      (mbus/pub! msgbus
+                 :topic member-id
+                 :message {:type :team-membership-change
+                           :change :removed
+                           :team-id team-id
+                           :team-name (:name team)}))
 
     nil))
 

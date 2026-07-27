@@ -8,6 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
@@ -51,6 +52,20 @@
                        :is-your-penpot false
                        :organization nil})))]
     (f)))
+
+(defn- with-captured-messages
+  "Runs `f` with the msgbus publications collected on `messages`."
+  [messages f]
+  (with-redefs [mbus/pub! (fn [_instance & {:keys [topic message]}]
+                            (swap! messages conj {:topic topic :message message})
+                            nil)]
+    (f)))
+
+(defn- messages-for
+  [messages profile-id]
+  (->> @messages
+       (filter #(= profile-id (:topic %)))
+       (mapv :message)))
 
 (t/deftest org-owner-access-disabled-without-nitrate-flag
   (let [team-owner  (th/create-profile* 1)
@@ -148,3 +163,78 @@
           (t/is (false? (get-in team [:permissions :is-owner])))
           (t/is (false? (get-in team [:permissions :is-admin])))
           (t/is (true? (get-in team [:permissions :can-edit]))))))))
+
+(t/deftest removed-org-owner-is-degraded-to-viewer
+  (let [team-owner  (th/create-profile* 1)
+        org-owner   (th/create-profile* 2)
+        target-team (th/create-team* 1 {:profile-id (:id team-owner)})
+        org-id      (uuid/next)
+        messages    (atom [])]
+
+    (th/create-team-role* {:team-id (:id target-team)
+                           :profile-id (:id org-owner)
+                           :role :editor})
+
+    (with-org-owner-access {:org-owner-id (:id org-owner)
+                            :org-id org-id
+                            :team-id (:id target-team)}
+      (fn []
+        (let [out (with-captured-messages messages
+                    #(th/command! {::th/type :delete-team-member
+                                   ::rpc/profile-id (:id team-owner)
+                                   :team-id (:id target-team)
+                                   :member-id (:id org-owner)}))]
+          (t/is (nil? (:error out))))
+
+        ;; The org owner keeps read-only access, so they are notified
+        ;; with a role change instead of being kicked out of the team.
+        (let [notified (messages-for messages (:id org-owner))]
+          (t/is (= 1 (count notified)))
+          (t/is (= :team-role-change (:type (first notified))))
+          (t/is (= :viewer (:role (first notified))))
+          (t/is (= (:id target-team) (:team-id (first notified))))
+          (t/is (not-any? #(= :team-membership-change (:type %)) notified)))
+
+        (let [out  (th/command! {::th/type :get-team
+                                 ::rpc/profile-id (:id org-owner)
+                                 :id (:id target-team)})
+              team (:result out)]
+          (t/is (nil? (:error out)))
+          (t/is (false? (get-in team [:permissions :is-owner])))
+          (t/is (false? (get-in team [:permissions :is-admin])))
+          (t/is (false? (get-in team [:permissions :can-edit]))))))))
+
+(t/deftest removed-regular-member-is-still-kicked-out
+  (let [team-owner  (th/create-profile* 1)
+        org-owner   (th/create-profile* 2)
+        member      (th/create-profile* 3)
+        target-team (th/create-team* 1 {:profile-id (:id team-owner)})
+        org-id      (uuid/next)
+        messages    (atom [])]
+
+    (th/create-team-role* {:team-id (:id target-team)
+                           :profile-id (:id member)
+                           :role :editor})
+
+    (with-org-owner-access {:org-owner-id (:id org-owner)
+                            :org-id org-id
+                            :team-id (:id target-team)}
+      (fn []
+        (let [out (with-captured-messages messages
+                    #(th/command! {::th/type :delete-team-member
+                                   ::rpc/profile-id (:id team-owner)
+                                   :team-id (:id target-team)
+                                   :member-id (:id member)}))]
+          (t/is (nil? (:error out))))
+
+        (let [notified (messages-for messages (:id member))]
+          (t/is (= 1 (count notified)))
+          (t/is (= :team-membership-change (:type (first notified))))
+          (t/is (= :removed (:change (first notified))))
+          (t/is (= (:id target-team) (:team-id (first notified)))))
+
+        (let [out (th/command! {::th/type :get-team
+                                ::rpc/profile-id (:id member)
+                                :id (:id target-team)})]
+          (t/is (th/ex-info? (:error out)))
+          (t/is (th/ex-of-type? (:error out) :not-found)))))))
