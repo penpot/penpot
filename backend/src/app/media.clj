@@ -184,8 +184,8 @@
                             :env (get-imagemagick-env)
                             :timeout 60)]
     (when (not= 0 (:exit result))
-      (ex/raise :type :internal
-                :code :imagemagick-error
+      (ex/raise :type :validation
+                :code :invalid-image
                 :hint (str "ImageMagick command failed: " (:err result))
                 :cmd cmd
                 :exit (:exit result)))

@@ -69,6 +69,7 @@ impl RenderOptions {
         self.fast_mode = enabled;
     }
 
+    #[cfg(target_arch = "wasm32")]
     pub fn set_capture_frames(&mut self, capture_frames: i32) {
         self.capture_frames = capture_frames;
     }

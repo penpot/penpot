@@ -378,9 +378,11 @@
 
             shapes          (mapv maybe-translate selected)
             svg-formatted   (svg/generate-formatted-markup objects shapes)]
-        (clipboard/to-clipboard-multi
-         {"image/svg+xml" svg-formatted
-          "text/plain"    svg-formatted})))))
+        (-> (clipboard/to-clipboard-multi
+             {"image/svg+xml" svg-formatted
+              "text/plain"    svg-formatted})
+            (p/catch (fn [cause]
+                       (js/console.error "clipboard error:" cause))))))))
 
 (defn copy-selected-css
   []

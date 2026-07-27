@@ -35,6 +35,10 @@
            on-color-detach
            on-remove
            on-stroke-width-change
+           per-side-available
+           per-side-disabled
+           on-stroke-per-side-toggle
+           on-stroke-width-side-change
            on-stroke-dash-change
            on-stroke-gap-change
            on-stroke-style-change
@@ -97,6 +101,42 @@
          #(on-remove index))
 
         stroke-width (:stroke-width stroke)
+
+        per-side? (and per-side-available
+                       (not per-side-disabled)
+                       (true? (:stroke-per-side stroke)))
+
+        per-side-toggle-label
+        (if per-side-disabled
+          (tr "workspace.options.stroke.per-side-disabled")
+          (tr "workspace.options.stroke.per-side"))
+
+        on-per-side-toggle
+        (mf/use-fn
+         (mf/deps index on-stroke-per-side-toggle)
+         (fn []
+           (when on-stroke-per-side-toggle
+             (on-stroke-per-side-toggle index))))
+
+        on-width-top-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-top %))
+
+        on-width-right-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-right %))
+
+        on-width-bottom-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-bottom %))
+
+        on-width-left-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-left %))
 
         on-width-change
         (mf/use-fn
@@ -264,7 +304,8 @@
 
      ;; Stroke Width, Alignment & Style
      (if token-numeric-inputs
-       [:div {:class (stl/css :stroke-options-tokens)}
+       [:div {:class (stl/css-case :stroke-options-tokens true
+                                   :stroke-options-tokens-with-toggle per-side-available)}
         [:> numeric-input-wrapper* {:on-change on-width-change
                                     :on-detach on-detach-token-width
                                     :icon i/stroke-size
@@ -275,6 +316,7 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width")
                                     :applied-token (get applied-tokens :stroke-width)
+                                    :disabled per-side?
                                     :value stroke-width}]
         [:> select* {:default-selected (d/name stroke-alignment)
                      :options stroke-alignment-options
@@ -292,7 +334,15 @@
                        :variant "icon-only"
                        :disabled (if (= :multiple hidden?) true hidden?)
                        :dropdown-alignment :right
-                       :on-change on-style-change}])]
+                       :on-change on-style-change}])
+        (when per-side-available
+          [:> icon-button* {:variant "ghost"
+                            :class (stl/css-case :per-side-toggle-selected per-side?)
+                            :aria-label per-side-toggle-label
+                            :disabled per-side-disabled
+                            :on-click on-per-side-toggle
+                            :icon i/stroke-extended
+                            :data-testid "stroke.per-side-toggle"}])]
 
        [:div {:class (stl/css :stroke-options)}
         [:div {:class (stl/css :stroke-width-input)
@@ -305,6 +355,7 @@
                                               :on-change on-width-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
+                                              :is-disabled per-side?
                                               :on-blur on-blur}]]
         [:div {:class (stl/css :stroke-alignment-select)
                :data-testid "stroke.alignment"}
@@ -314,12 +365,65 @@
                      :on-change on-alignment-change}]]
 
         (when-not disable-stroke-style
-          [:div {:class (stl/css :stroke-style-select)
+          [:div {:class (stl/css-case :stroke-style-select true
+                                      :stroke-style-select-compact per-side-available)
                  :data-testid "stroke.style"}
            [:& select {:default-value stroke-style
                        :options stroke-style-options
                        :disabled hidden?
-                       :on-change on-style-change}]])])
+                       :on-change on-style-change}]])
+        (when per-side-available
+          [:> icon-button* {:variant "ghost"
+                            :class (stl/css-case :per-side-toggle-selected per-side?)
+                            :aria-label per-side-toggle-label
+                            :disabled per-side-disabled
+                            :on-click on-per-side-toggle
+                            :icon i/stroke-extended
+                            :data-testid "stroke.per-side-toggle"}])])
+
+     (when per-side?
+       [:div {:class (stl/css :stroke-sides-options)
+              :data-testid "stroke.per-side-options"}
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-top")}
+         [:> icon* {:icon-id i/stroke-top
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-top stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-top-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-right")}
+         [:> icon* {:icon-id i/stroke-right
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-right stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-right-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-bottom")}
+         [:> icon* {:icon-id i/stroke-bottom
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-bottom stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-bottom-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-left")}
+         [:> icon* {:icon-id i/stroke-left
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-left stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-left-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]])
 
      ;; Stroke Dash / Gap (only visible for dashed style)
      (when (= stroke-style :dashed)

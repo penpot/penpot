@@ -206,6 +206,14 @@
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_render_overlay")))
 
+(defn text-editor-render-caret
+  "Re-compose the frame from the Backbuffer (the last full render) and draw the
+   caret/selection overlay on top, submitting one atomic frame. Pixel identical
+   to the last full render at any zoom, so the blink does not flash."
+  []
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_render_caret")))
+
 (defn text-editor-poll-event
   []
   (when wasm/context-initialized?

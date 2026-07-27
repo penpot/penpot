@@ -14,6 +14,7 @@
     "start:multi-user": "pnpm -r --parallel run start:multi-user",
     "bootstrap": "pnpm -r install && pnpm run build && pnpm run start",
     "bootstrap:multi-user": "pnpm -r install && pnpm run build && pnpm run start:multi-user",
+    "client-setup": "node bin/client-setup.js",
     "fmt": "prettier --write packages/",
     "fmt:check": "prettier --check packages/",
     "test": "pnpm -r run test"

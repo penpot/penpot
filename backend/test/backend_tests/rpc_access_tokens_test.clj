@@ -29,8 +29,7 @@
     (t/testing "create access token without expiration date"
       (let [params {::th/type :create-access-token
                     ::rpc/profile-id (:id prof)
-                    :name "token 1"
-                    :perms ["get-profile"]}
+                    :name "token 1"}
             out    (th/command! params)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -40,13 +39,25 @@
           (t/is (contains? result :id))
           (t/is (contains? result :created-at))
           (t/is (contains? result :updated-at))
-          (t/is (contains? result :token)))))
+          (t/is (contains? result :token))
+          (t/is (not (contains? result :perms))))))
+
+    (t/testing "create access token ignores client-supplied perms"
+      (let [params {::th/type :create-access-token
+                    ::rpc/profile-id (:id prof)
+                    :name "token ignored-perms"
+                    :perms ["error-reports:read"]}
+            out    (th/command! params)]
+        (t/is (nil? (:error out)))
+        (let [result (:result out)
+              row    (th/db-get :access-token {:id (:id result)})]
+          (t/is (not (contains? result :perms)))
+          (t/is (= [] (db/decode-pgarray (:perms row) []))))))
 
     (t/testing "create access token with expiration date in the future"
       (let [params {::th/type :create-access-token
                     ::rpc/profile-id (:id prof)
                     :name "token 1"
-                    :perms ["get-profile"]
                     :expiration "130h"}
             out    (th/command! params)]
         ;; (th/print-result! out)
@@ -64,7 +75,6 @@
       (let [params {::th/type :create-access-token
                     ::rpc/profile-id (:id prof)
                     :name "token 1"
-                    :perms ["get-profile"]
                     :expiration "-130h"}
             out    (th/command! params)]
         ;; (th/print-result! out)
@@ -85,11 +95,12 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [[result :as results] (:result out)]
-          (t/is (= 3 (count results)))
+          (t/is (= 4 (count results)))
           (t/is (contains? result :id))
           (t/is (contains? result :created-at))
           (t/is (contains? result :updated-at))
-          (t/is (not (contains? result :token))))))
+          (t/is (not (contains? result :token)))
+          (t/is (not (contains? result :perms))))))
 
     (t/testing "delete access token"
       (let [params {::th/type :delete-access-token
@@ -107,14 +118,13 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [results (:result out)]
-          (t/is (= 2 (count results))))))
+          (t/is (= 3 (count results))))))
 
     (t/testing "get mcp token"
       (let [_ (th/command! {::th/type :create-access-token
                             ::rpc/profile-id (:id prof)
                             :type "mcp"
-                            :name "token 1"
-                            :perms ["get-profile"]})
+                            :name "token 1"})
             {:keys [error result]}
             (th/command! {::th/type :get-current-mcp-token
                           ::rpc/profile-id (:id prof)})]
@@ -126,16 +136,14 @@
       (let [;; Create a regular token
             regular-out (th/command! {::th/type :create-access-token
                                       ::rpc/profile-id (:id prof)
-                                      :name "regular token"
-                                      :perms ["get-profile"]})
+                                      :name "regular token"})
             regular-token (:result regular-out)
 
             ;; Create an MCP token
             mcp-out (th/command! {::th/type :create-access-token
                                   ::rpc/profile-id (:id prof)
                                   :type "mcp"
-                                  :name "mcp token"
-                                  :perms []})
+                                  :name "mcp token"})
             mcp-token (:result mcp-out)
 
             ;; Fetch all tokens
@@ -163,24 +171,21 @@
             first-out (th/command! {::th/type :create-access-token
                                     ::rpc/profile-id (:id prof)
                                     :type "mcp"
-                                    :name "first mcp"
-                                    :perms []})
+                                    :name "first mcp"})
             first-mcp (:result first-out)
 
             ;; Create second MCP token
             second-out (th/command! {::th/type :create-access-token
                                      ::rpc/profile-id (:id prof)
                                      :type "mcp"
-                                     :name "second mcp"
-                                     :perms []})
+                                     :name "second mcp"})
             second-mcp (:result second-out)
 
             ;; Create third MCP token
             third-out (th/command! {::th/type :create-access-token
                                     ::rpc/profile-id (:id prof)
                                     :type "mcp"
-                                    :name "third mcp"
-                                    :perms []})
+                                    :name "third mcp"})
             third-mcp (:result third-out)
 
             ;; Fetch all tokens

@@ -29,7 +29,7 @@
 
 (defn- get-current-system
   []
-  (or (deref (requiring-resolve 'app.main/system))
+  (or (deref (requiring-resolve 'app.system/system))
       (deref (requiring-resolve 'user/system))))
 
 (defmulti ^:private exec-command ::cmd)

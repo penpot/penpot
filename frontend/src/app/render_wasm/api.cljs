@@ -17,7 +17,6 @@
    [app.common.math :as mth]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
-   [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.path :as path]
    [app.common.types.path.impl :as path.impl]
    [app.common.types.shape.layout :as ctl]
@@ -33,7 +32,7 @@
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.render-wasm.api.fonts :as f]
-   [app.render-wasm.api.shapes :as shapes]
+   [app.render-wasm.api.props :as props]
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
@@ -43,6 +42,7 @@
    [app.render-wasm.mem.heap32 :as mem.h32]
    [app.render-wasm.performance :as perf]
    [app.render-wasm.rulers-state :as rulers-state]
+   [app.render-wasm.serialize-shape :as serialize-shape]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
@@ -251,8 +251,6 @@
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
 
-(def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
-
 (def ^:const DEBOUNCE_DELAY_MS 100)
 
 (defonce ^:private view-interaction-active? (atom false))
@@ -353,6 +351,8 @@
 (declare request-render)
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
+(declare request-render-preserving-target)
+(declare render-pending?)
 
 ;; These are the type of frames we have in our
 ;; render pipeline.
@@ -421,32 +421,60 @@
   (when (initialized?)
     (h/call wasm/internal-module "_free_gpu_resources")))
 
+;; When set, the next render keeps the previously presented frame on screen
+;; while the new tiles are rasterized, instead of clearing the canvas first.
+;; See `request-render-preserving-target`.
+(defonce ^:private preserve-target-render? (atom false))
+
+(defn- drain-text-editor-events!
+  "Pop and handle every pending text-editor event.
+
+   StylesChanged syncs the caret's current styles to the toolbar. Returns true
+   when some event needs a full shape re-render (content or layout changed)."
+  []
+  (loop [needs-render? false]
+    (let [ev (text-editor/text-editor-poll-event)]
+      (if (or (nil? ev) (= ev TEXT_EDITOR_EVENT_NONE))
+        needs-render?
+        (do
+          (when (= ev TEXT_EDITOR_EVENT_STYLES_CHANGED)
+            (let [current-styles (text-editor/text-editor-get-current-styles)
+                  shape-id (text-editor/text-editor-get-active-shape-id)]
+              (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles))))
+          (recur (or needs-render?
+                     (= ev TEXT_EDITOR_EVENT_CONTENT_CHANGED)
+                     (= ev TEXT_EDITOR_EVENT_NEEDS_LAYOUT))))))))
+
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (internal-render timestamp)
+    ;; SYNC-TILES makes WASM keep the last presented frame while the new tiles
+    ;; are rasterized, rather than clearing to the background first. The flag is
+    ;; one-shot on both sides: WASM clears it when the render loop starts, so
+    ;; the progressive continuation frames behave normally.
+    (if (compare-and-set! preserve-target-render? true false)
+      (internal-render timestamp (bit-or wasm/internal-frame-type RENDER-FLAG-SYNC-TILES))
+      (internal-render timestamp))
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
       (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
-        (text-editor/text-editor-render-overlay)
-        ;; Poll for editor events; if any event occurs, trigger a re-render
-        (let [ev (text-editor/text-editor-poll-event)]
-          (when (and ev (not= ev TEXT_EDITOR_EVENT_NONE))
-            ;; When StylesChanged, get the current styles.
-            (case ev
-              ;; StylesChanged Event
-              TEXT_EDITOR_EVENT_STYLES_CHANGED
-              (let [current-styles (text-editor/text-editor-get-current-styles)
-                    shape-id (text-editor/text-editor-get-active-shape-id)]
-                (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles)))
-
-              ;; Default case
-              nil)
-
-            (request-render "text-editor-event"))))
+        ;; Only repaint the overlay when this frame recomposited Target (a full
+        ;; frame). A partial frame is flushed but not presented — Target still
+        ;; shows the last presented frame with the overlay already on it — so
+        ;; repainting the translucent selection over it stacks another layer
+        ;; every progressive frame: it darkens, then snaps back when the final
+        ;; frame presents from the clean Backbuffer (the blink at the end of a
+        ;; zoom over a selection, gh-10709).
+        (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+          (text-editor/text-editor-render-overlay))
+        ;; Drain editor events. Only content/layout changes need a full shape
+        ;; re-render; selection/style changes are already reflected by the
+        ;; overlay redrawn just above.
+        (when (drain-text-editor-events!)
+          (request-render-preserving-target "text-editor-content")))
       (catch :default e
         (js/console.error "text-editor overlay/update failed:" e)))
 
@@ -461,19 +489,51 @@
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_ui_only")))
 
-(defn render-from-cache!
-  "Blit the shapes from the cached tile atlas and redraw the UI overlay
-   (rulers, selection band) fresh on top, in a single atomic frame. The
-   *shapes* are the cached part (already-rasterized tiles, not rebuilt); the UI
-   is re-rendered every call, which is what lets it reflect a new selection.
+(defn render-from-backbuffer!
+  "Re-present the last fully rendered frame with the UI overlay (rulers,
+   selection band) redrawn on top, reusing the crisp Backbuffer instead of
+   rebuilding it from the scale-capped document atlas.
 
-   Use for UI-only updates that don't change shapes (e.g. the ruler selection
-   band): unlike `request-render`, it never kicks off a progressive,
-   tile-by-tile shape re-render, so it does not flash on zoomed-in views where
-   the scene spans multiple tiles."
+   For UI-only updates that must not kick off a progressive shape re-render. The
+   alternative — blitting shapes from the cached tile atlas (WASM
+   `_render_from_cache`, what pan/zoom uses in `set-view-box`) — is fine at
+   normal zoom, but on a zoomed-in view (>1000%) it is a heavy upscale that
+   flashes crisp->blurry->crisp. Reusing the Backbuffer is pixel-identical at
+   any zoom. Only valid on a stable viewbox; pan/zoom must keep using the atlas
+   blit, whose preview tracks the moving viewport."
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render_from_cache" 0)))
+    (h/call wasm/internal-module "_render_from_backbuffer")))
+
+(defn render-text-editor-overlay!
+  "Repaint the text-editor caret and selection over the last fully rendered
+   frame, without a full (tile-rebuilding) render.
+
+   Caret/selection changes — the blink, clicks, drag-selection, arrow-key
+   navigation — never alter the shapes. `text-editor-render-caret` re-composes
+   the frame from the Backbuffer (which still holds the last complete render)
+   and draws the caret/selection overlay on top, so the shapes are pixel
+   identical to the last full render at any zoom level. A full `request-render`
+   would instead blank the canvas and re-rasterize tiles progressively, which
+   flashes on zoomed-in views; blitting from the cached tile atlas
+   (`_render_from_cache`) would instead look softer when upscaled (the atlas is
+   scale-capped), so the blink would alternate crisp/soft — a subtler flash.
+   Pending editor events are still drained so the style toolbar stays in sync; a
+   full render is only requested when content or layout actually changed."
+  []
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?)
+             ;; Skip when a render is already pending: `text-editor-render-caret`
+             ;; composes from the Backbuffer, but a progressive render (multiple
+             ;; rAF frames at high zoom) is still rebuilding it. Compositing then
+             ;; would show a half-built frame — a sparse, timing-dependent flash.
+             ;; The in-flight render draws the overlay itself when it completes.
+             (not (render-pending?)))
+    (when (is-text-editor-wasm-enabled @st/state)
+      (text-editor/text-editor-update-blink (js/performance.now))
+      (text-editor/text-editor-render-caret)
+      (when (drain-text-editor-events!)
+        (request-render-preserving-target "text-editor-content")))))
 
 ;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
 (def ^:private TRANSITION_BLUR_RADIUS 4.0)
@@ -514,6 +574,12 @@
 (defonce shapes-loading? (atom false))
 (defonce deferred-render? (atom false))
 
+(defn render-pending?
+  "True while a render has been scheduled but not yet completed — including the
+   frames of an in-progress progressive render."
+  []
+  @pending-render)
+
 (defn- register-deferred-render!
   []
   (reset! deferred-render? true))
@@ -539,6 +605,23 @@
                      (end-page-transition!)
                      (throw e)))))]
           (set! wasm/internal-frame-id frame-id))))))
+
+(defn request-render-preserving-target
+  "Like `request-render`, but keeps the previously presented frame on screen
+   while the new tiles are rasterized instead of blanking the canvas first.
+
+   A plain `request-render` goes through WASM's `reset_canvas`, which clears to
+   the background colour and then fills the viewport tile by tile. When that
+   rasterization spans more than one frame — as it does on zoomed-in views,
+   where glyphs are expensive to raster — the cleared canvas is visible as a
+   flash. Preserving the target is what the renderer already does after a
+   pan/zoom gesture for exactly this reason.
+
+   Use for shape edits on a stable viewbox (typing in the text editor), where
+   the previous frame is a good stand-in until the new one is ready."
+  [requester]
+  (reset! preserve-target-render? true)
+  (request-render requester))
 
 (defn- begin-shapes-loading!
   []
@@ -634,7 +717,7 @@
 
 (defn set-masked
   [masked]
-  (h/call wasm/internal-module "_set_shape_masked_group" masked))
+  (props/set-masked masked))
 
 (defn set-shape-selrect
   [selrect]
@@ -728,10 +811,6 @@
         (h/call wasm/internal-module "_set_children"))))
   (perf/end-measure "set-shape-children")
   nil)
-
-(defn- get-string-length
-  [string]
-  (+ (count string) 1))
 
 
 (defn- get-texture-id-for-gl-object
@@ -864,124 +943,49 @@
 
 (defn set-shape-fills
   [shape-id fills thumbnail?]
-  (if (empty? fills)
-    (h/call wasm/internal-module "_clear_shape_fills")
-    (let [fills  (types.fills/coerce fills)
-          image-ids (types.fills/get-image-ids fills)
-          offset (mem/alloc->offset-32 (types.fills/get-byte-size fills))
-          heap   (mem/get-heap-u32)]
-
-      ;; write fills to the heap
-      (types.fills/write-to fills heap offset)
-
-      ;; send fills to wasm
-      (h/call wasm/internal-module "_set_shape_fills")
-
-      ;; load images for image fills if not cached
-      (keep (fn [id]
-              (let [buffer        (uuid/get-u32 id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                          (aget buffer 0)
-                                          (aget buffer 1)
-                                          (aget buffer 2)
-                                          (aget buffer 3)
-                                          thumbnail?)]
-                (when (zero? cached-image?)
-                  (fetch-image shape-id id thumbnail?))))
-
-            image-ids))))
+  ;; Record write is shared with the headless exporter; the image fetch below is
+  ;; browser-only (WebGL textures).
+  (when-let [fills (props/write-shape-fills! fills)]
+    (keep (fn [id]
+            (let [buffer        (uuid/get-u32 id)
+                  cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                        (aget buffer 0)
+                                        (aget buffer 1)
+                                        (aget buffer 2)
+                                        (aget buffer 3)
+                                        thumbnail?)]
+              (when (zero? cached-image?)
+                (fetch-image shape-id id thumbnail?))))
+          (types.fills/get-image-ids fills))))
 
 (defn set-shape-strokes
   [shape-id strokes thumbnail?]
-  (h/call wasm/internal-module "_clear_shape_strokes")
-  (keep (fn [stroke]
-          (when-not (:hidden stroke)
-            (let [opacity   (or (:stroke-opacity stroke) 1.0)
-                  color     (:stroke-color stroke)
-                  gradient  (:stroke-color-gradient stroke)
-                  image     (:stroke-image stroke)
-                  width     (:stroke-width stroke)
-                  align     (:stroke-alignment stroke)
-                  style     (-> stroke :stroke-style sr/translate-stroke-style)
-                  cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
-                  cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
-                  ;; Sentinel -1 means "unset" on the Rust side — keeps the
-                  ;; FFI signature flat while letting the renderer fall back
-                  ;; to its default dash pattern when no override is stored.
-                  dash      (or (:stroke-dash stroke) -1)
-                  gap       (or (:stroke-gap stroke) -1)
-                  offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
-                  heap      (mem/get-heap-u8)
-                  dview     (js/DataView. (.-buffer heap))]
-              (case align
-                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end dash gap)
-                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
-                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end dash gap))
-
-              (cond
-                (some? gradient)
-                (do
-                  (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  nil)
-
-                (some? image)
-                (let [image-id      (get image :id)
-                      buffer        (uuid/get-u32 image-id)
-                      cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                            (aget buffer 0) (aget buffer 1)
-                                            (aget buffer 2) (aget buffer 3)
-                                            thumbnail?)]
-                  (types.fills.impl/write-image-fill offset dview opacity image)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  (when (== cached-image? 0)
-                    (fetch-image shape-id image-id thumbnail?)))
-
-                (some? color)
-                (do
-                  (types.fills.impl/write-solid-fill offset dview opacity color)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  nil)))))
-
-        strokes))
+  ;; Record write is shared with the headless exporter; the image fetch below is
+  ;; browser-only (WebGL textures).
+  (keep (fn [image-id]
+          (let [buffer        (uuid/get-u32 image-id)
+                cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                      (aget buffer 0)
+                                      (aget buffer 1)
+                                      (aget buffer 2)
+                                      (aget buffer 3)
+                                      thumbnail?)]
+            (when (zero? cached-image?)
+              (fetch-image shape-id image-id thumbnail?))))
+        (props/write-shape-strokes! strokes)))
 
 (defn set-shape-svg-attrs
   [attrs]
-  (let [style (:style attrs)
-        fill-rule       (-> (or (:fillRule style) (:fillRule attrs)) sr/translate-fill-rule)
-        stroke-linecap  (-> (or (:strokeLinecap style) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
-        stroke-linejoin (-> (or (:strokeLinejoin style) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
-        fill-none       (= "none" (or (:fill style) (:fill attrs)))]
-    (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
+  (props/set-shape-svg-attrs attrs))
 
 (defn set-shape-path-content
   "Upload path content in chunks to WASM."
   [content]
-  (let [chunk-size (quot MAX_BUFFER_CHUNK_SIZE 4)
-        buffer-size (path/get-byte-size content)
-        padded-size (* 4 (mth/ceil (/ buffer-size 4)))
-        buffer (js/Uint8Array. padded-size)]
-    (path/write-to content (.-buffer buffer) 0)
-    (h/call wasm/internal-module "_start_shape_path_buffer")
-    (let [heapu32 (mem/get-heap-u32)]
-      (loop [offset 0]
-        (when (< offset padded-size)
-          (let [end (min padded-size (+ offset (* chunk-size 4)))
-                chunk (.subarray buffer offset end)
-                chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
-                offset-size (.-length chunk-u32)
-                heap-offset (mem/alloc->offset-32 (* 4 offset-size))]
-            (.set heapu32 chunk-u32 heap-offset)
-            (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
-            (recur end)))))
-    (h/call wasm/internal-module "_set_shape_path_buffer")))
+  (props/set-shape-path-content content))
 
 (defn set-shape-svg-raw-content
   [content]
-  (let [size (get-string-length content)
-        offset (mem/alloc size)]
-    (h/call wasm/internal-module "stringToUTF8" content offset size)
-    (h/call wasm/internal-module "_set_shape_svg_raw_content")))
+  (props/set-shape-svg-raw-content content))
 
 (defn set-shape-blend-mode
   [blend-mode]
@@ -1026,25 +1030,15 @@
 
 (defn set-shape-bool-type
   [bool-type]
-  (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
+  (props/set-shape-bool-type bool-type))
 
 (defn set-shape-blur
   [blur]
-  (let [type (sr/translate-blur-type :layer-blur)]
-    (if (some? blur)
-      (let [hidden (:hidden blur)
-            value  (:value blur)]
-        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-      (h/call wasm/internal-module "_clear_shape_blur" type))))
+  (props/set-shape-blur blur))
 
 (defn set-shape-background-blur
   [background-blur]
-  (let [type (sr/translate-blur-type :background-blur)]
-    (if (some? background-blur)
-      (let [hidden (:hidden background-blur)
-            value  (:value background-blur)]
-        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-      (h/call wasm/internal-module "_clear_shape_blur" type))))
+  (props/set-shape-background-blur background-blur))
 
 (defn set-shape-corners
   [corners]
@@ -1261,27 +1255,7 @@
 
 (defn set-shape-shadows
   [shadows]
-  (h/call wasm/internal-module "_clear_shape_shadows")
-
-  (run! (fn [shadow]
-          (let [color  (get shadow :color)
-                blur   (get shadow :blur)
-                rgba   (sr-clr/hex->u32argb (get color :color)
-                                            (get color :opacity))
-                hidden (get shadow :hidden)
-                x      (get shadow :offset-x)
-                y      (get shadow :offset-y)
-                spread (get shadow :spread)
-                style  (get shadow :style)]
-            (h/call wasm/internal-module "_add_shape_shadow"
-                    rgba
-                    blur
-                    spread
-                    x
-                    y
-                    (sr/translate-shadow-style style)
-                    hidden)))
-        shadows))
+  (props/set-shape-shadows shadows))
 
 (defn fonts-from-text-content [content fallback-fonts-only?]
   (let [paragraph-set (first (get content :children))
@@ -1320,7 +1294,7 @@
 
 (defn set-shape-grow-type
   [grow-type]
-  (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
+  (props/set-shape-grow-type grow-type))
 
 (defn get-text-dimensions
   ([id]
@@ -1378,11 +1352,47 @@
   (let [local (get @st/state :workspace-local)]
     (or (:panning local) (:zooming local))))
 
+(defn- render-text-editor-overlay-if-active!
+  "Redraw the editor caret/selection straight onto the current Target frame when
+   an editor is active (no-op otherwise). Used after the direct `_render_from_cache`
+   / `internal-render` calls of a view interaction, which bypass the rAF `render`
+   loop that normally repaints the overlay. Without it the selection blinks out
+   for the duration of a pan/zoom gesture over a text shape (gh-10709)."
+  []
+  (when (is-text-editor-wasm-enabled @st/state)
+    (text-editor/text-editor-render-overlay)))
+
+(defn- render-text-editor-overlay-after-frame!
+  "Repaint the overlay after a direct `internal-render`, but only when that
+   render recomposited Target (a full frame). A partial frame is only flushed —
+   Target keeps the last presented frame with the overlay already on it — so
+   repainting the translucent selection then stacks another layer and it visibly
+   darkens across the progressive frames before snapping back on the final
+   present (the blink at the end of a zoom over a selection, gh-10709). The
+   final full frame's own repaint keeps the overlay in place."
+  []
+  (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+    (render-text-editor-overlay-if-active!)))
+
 (defn finalize-view-interaction!
   "Ends the view interaction and triggers a full-quality render."
   []
   (view-interaction-end!)
-  (internal-render 0 0))
+  ;; Preserve the last presented frame while the new one renders. A plain render
+  ;; goes through WASM `reset_canvas`, which clears to the background and
+  ;; re-rasterizes the viewport tile by tile — a visible flash on zoomed-in
+  ;; views. The content is unchanged across a view-interaction end (only the
+  ;; view moved), so there is nothing to clear; SYNC-TILES sets `preserve_target`
+  ;; and lets the new tiles replace the old frame in place. Zoom-end already did
+  ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
+  ;; ends (e.g. selecting a shape opens the options panel and resizes the
+  ;; viewport), which previously blanked.
+  (internal-render 0 RENDER-FLAG-SYNC-TILES)
+  ;; The direct render above bypasses the rAF `render` loop, so repaint the
+  ;; editor overlay explicitly. Only when this was a full frame: a progressive
+  ;; render keeps painting through the rAF loop and its partial frames must not
+  ;; be over-stamped (see `render-text-editor-overlay-after-frame!`).
+  (render-text-editor-overlay-after-frame!))
 
 (def render-finish
   (letfn [(do-render []
@@ -1391,7 +1401,9 @@
             (when (initialized?)
               (if (view-gesture-active?)
                 ;; Pan/zoom pause: render without ending the interaction.
-                (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                (do
+                  (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                  (render-text-editor-overlay-after-frame!))
                 (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
@@ -1404,6 +1416,15 @@
 
   (perf/begin-measure "render-from-cache")
   (h/call wasm/internal-module "_render_from_cache" 0)
+  ;; Keep the text-editor caret/selection glued to the shapes while the view
+  ;; changes. `_render_from_cache` re-composites shapes + UI at the new viewbox
+  ;; but omits the editor overlay, so without this the selection would vanish for
+  ;; the whole pan/zoom gesture and only flash back when the debounced full
+  ;; render lands — the blink seen when zooming in/out over a selection at high
+  ;; zoom (gh-10709). `_text_editor_render_overlay` draws straight onto the
+  ;; freshly composited Target (no Backbuffer re-compose) and no-ops when no
+  ;; editor is active.
+  (render-text-editor-overlay-if-active!)
   (render-finish)
   (perf/end-measure "render-from-cache"))
 
@@ -1431,45 +1452,19 @@
           id           (dm/get-prop shape :id)
           type         (dm/get-prop shape :type)
 
-          masked       (get shape :masked-group)
-
           fills        (get shape :fills)
           strokes      (if (= type :group)
                          [] (get shape :strokes))
-          children     (get shape :shapes)
           content      (let [content (get shape :content)]
                          (if (= type :text)
                            (ensure-text-content content)
-                           content))
-          bool-type    (get shape :bool-type)
-          grow-type    (get shape :grow-type)
-          blur         (get shape :blur)
-          background-blur (get shape :background-blur)
-          svg-attrs    (get shape :svg-attrs)
-          shadows      (get shape :shadow)]
+                           content))]
 
-      (shapes/set-shape-base-props shape)
+      (serialize-shape/serialize-shape! shape)
 
-      ;; Remaining properties that need separate calls (variable-length or conditional)
-      (set-shape-children children)
-      (set-shape-blur blur)
-      (set-shape-background-blur background-blur)
-      (when (= type :group)
-        (set-masked (boolean masked)))
-      (when (= type :bool)
-        (set-shape-bool-type bool-type))
-      (when (and (some? content)
-                 (or (= type :path)
-                     (= type :bool)))
-        (set-shape-path-content content))
-      (when (some? svg-attrs)
-        (set-shape-svg-attrs svg-attrs))
+      ;; Browser-only: svg-raw markup (needs React) + workspace layout.
       (when (and (some? content) (= type :svg-raw))
         (set-shape-svg-raw-content (get-static-markup shape)))
-      (set-shape-shadows shadows)
-      (when (= type :text)
-        (set-shape-grow-type grow-type))
-
       (set-shape-layout shape)
       (set-layout-data shape)
       (let [is-text? (= type :text)
@@ -2207,6 +2202,9 @@
           browser (sr/translate-browser cf/browser)
           dpr     (get-dpr)
           [css-w css-h] (canvas-css-size canvas dpr)
+          ;; Avoid 0×0 Skia/GL surfaces (crashes on some browsers).
+          css-w (mth/max 1 css-w)
+          css-h (mth/max 1 css-h)
           can-listen? (fn? (.-addEventListener ^js canvas))]
       (when-not (nil? context)
         (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
@@ -2593,7 +2591,7 @@
                  (when (and element element-text)
                    (let [text (subs element-text start-pos end-pos)]
                      (d/patch-object
-                      txt/default-text-attrs
+                      (txt/get-default-text-attrs)
                       (d/without-nils
                        {:x x
                         :y (+ y height)

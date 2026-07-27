@@ -26,10 +26,11 @@ pub fn render_overlay(
     canvas.translate((-viewbox.area.left, -viewbox.area.top));
 
     if editor_state.selection.is_selection() {
+        // With an active selection there is no blinking caret (the caret is one
+        // end of the selection); drawing it would make it toggle on top of the
+        // highlight while the selection is held.
         render_selection(canvas, editor_state, text_content, shape);
-    }
-
-    if editor_state.cursor_visible {
+    } else if editor_state.cursor_visible {
         render_cursor(canvas, zoom, options.dpr, editor_state, text_content, shape);
     }
 

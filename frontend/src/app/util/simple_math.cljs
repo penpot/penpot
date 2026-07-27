@@ -9,17 +9,19 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [cljs.spec.alpha :as s]
-   [clojure.string :refer [index-of]]
    [cuerdas.core :as str]
    [instaparse.core :as insta]))
 
 (def parser
   (insta/parser
-   "opt-expr = '' | expr
-     expr = term (<spaces> ('+'|'-') <spaces> expr)* |
-            ('+'|'-'|'*'|'/') <spaces> factor
-     term = factor (<spaces> ('*'|'/') <spaces> term)*
-     factor = number | ('(' <spaces> expr <spaces> ')')
+   ;; Note that there is ambiguity, so we don't allow relative substraction,
+   ;; a leading '-' is always a negation.
+   "opt-expr = '' | rel-expr | expr
+     rel-expr = ('+'|'*'|'/') <spaces> factor
+     expr = term (<spaces> ('+'|'-') <spaces> term)*
+     term = factor (<spaces> ('*'|'/') <spaces> factor)*
+     factor = number | neg | ('(' <spaces> expr <spaces> ')')
+     neg = <'-'> <spaces> factor
      number = #'[0-9]*[.,]?[0-9]+%?'
      spaces = ' '*"))
 
@@ -31,26 +33,29 @@
       :opt-expr
       (if (empty? args) nil (interpret (first args) init-value))
 
+      :rel-expr
+      (let [operator     (first args)
+            second-value (interpret (second args) init-value)]
+        (case operator
+          "+" (+ init-value second-value)
+          "*" (* init-value second-value)
+          "/" (/ init-value second-value)))
+
+      :neg
+      (- (interpret (first args) init-value))
+
       :expr
-      (if (index-of "+-*/" (first args))
-        (let [operator     (first args)
-              second-value (interpret (second args) init-value)]
-          (case operator
-            "+" (+ init-value second-value)
-            "-" (- 0 second-value)          ;; Note that there is ambiguity, so we don't allow
-            "*" (* init-value second-value) ;; relative substraction, it's only a negative number
-            "/" (/ init-value second-value)))
-        (let [value (interpret (first args) init-value)]
-          (loop [value     value
-                 rest-expr (rest args)]
-            (if (empty? rest-expr)
-              value
-              (let [operator     (first rest-expr)
-                    second-value (interpret (second rest-expr) init-value)
-                    rest-expr    (-> rest-expr rest rest)]
-                (case operator
-                  "+" (recur (+ value second-value) rest-expr)
-                  "-" (recur (- value second-value) rest-expr)))))))
+      (let [value (interpret (first args) init-value)]
+        (loop [value     value
+               rest-expr (rest args)]
+          (if (empty? rest-expr)
+            value
+            (let [operator     (first rest-expr)
+                  second-value (interpret (second rest-expr) init-value)
+                  rest-expr    (-> rest-expr rest rest)]
+              (case operator
+                "+" (recur (+ value second-value) rest-expr)
+                "-" (recur (- value second-value) rest-expr))))))
 
       :term
       (let [value (interpret (first args) init-value)]

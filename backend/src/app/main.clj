@@ -38,6 +38,7 @@
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
+   [app.system :as sys]
    [app.util.cron]
    [app.worker :as-alias wrk]
    [app.worker.executor]
@@ -45,7 +46,6 @@
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [nrepl.server :as nrepl]
    [promesa.exec :as px])
   (:gen-class))
 
@@ -444,13 +444,17 @@
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/props        (ig/ref ::setup/props)}
 
-   [::srepl/urepl ::srepl/server]
-   {::srepl/port (cf/get :urepl-port 6062)
-    ::srepl/host (cf/get :urepl-host "localhost")}
+   ::srepl/urepl
+   {:port (cf/get :urepl-port 6062)
+    :host (cf/get :urepl-host "localhost")}
 
-   [::srepl/prepl ::srepl/server]
-   {::srepl/port (cf/get :prepl-port 6063)
-    ::srepl/host (cf/get :prepl-host "localhost")}
+   ::srepl/prepl
+   {:port (cf/get :prepl-port 6063)
+    :host (cf/get :prepl-host "localhost")}
+
+   ::srepl/nrepl
+   {:port (cf/get :nrepl-port 6064)
+    :host (cf/get :nrepl-host "localhost")}
 
    ::setup/templates {}
 
@@ -584,42 +588,70 @@
     ::db/pool         (ig/ref ::db/pool)}})
 
 
-(def system nil)
-
 (defn start
   []
   (cf/validate!)
   (ig/load-namespaces (merge system-config worker-config))
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             (-> system-config
-                                 (cond-> (contains? cf/flags :backend-worker)
-                                   (merge worker-config))
-                                 (ig/expand)
-                                 (ig/init))))
+  (alter-var-root #'app.system/system
+                  (fn [sys]
+                    (some-> sys not-empty ig/halt!)
+                    (-> system-config
+                        (cond-> (contains? cf/flags :backend-worker)
+                          (merge worker-config))
+                        (ig/expand)
+                        (ig/init))))
+
   (l/inf :hint "welcome to penpot"
          :flags (str/join "," (map name cf/flags))
          :worker? (contains? cf/flags :backend-worker)
-         :version (:full cf/version)))
+         :version (:full cf/version))
+  :start)
+
+(defn resume
+  []
+  (cf/validate!)
+  (ig/load-namespaces (merge system-config worker-config))
+  (alter-var-root #'app.system/system
+                  (fn [sys]
+                    (let [config (-> system-config
+                                     (cond-> (contains? cf/flags :backend-worker)
+                                       (merge worker-config))
+                                     (ig/expand))]
+                      (if-let [sys (not-empty sys)]
+                        (ig/resume config sys)
+                        (ig/init config)))))
+  :resume)
 
 (defn start-custom
   [config]
   (ig/load-namespaces config)
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             (-> config
-                                 (ig/expand)
-                                 (ig/init)))))
+  (alter-var-root #'app.system/system
+                  (fn [sys]
+                    (some-> sys not-empty ig/halt!)
+                    (-> config
+                        (ig/expand)
+                        (ig/init)))))
 
 (defn stop
   []
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             nil)))
+  (alter-var-root #'app.system/system
+                  (fn [sys]
+                    (some-> sys not-empty ig/halt!)
+                    {}))
+  :stop)
+
+(defn suspend
+  []
+  (alter-var-root #'app.system/system
+                  (fn [sys]
+                    (some-> sys not-empty ig/suspend!)
+                    sys))
+  :suspend)
+
 (defn restart
   []
-  (stop)
-  (repl/refresh :after 'app.main/start))
+  (suspend)
+  (repl/refresh :after 'app.main/resume))
 
 (defn restart-all
   []
@@ -646,15 +678,15 @@
            (test/test-vars [(resolve o)]))
        (test/test-ns o)))))
 
-(repl/disable-reload! (find-ns 'integrant.core))
-
 (defn -main
   [& _args]
   (try
-    (let [p (promise)]
-      (l/inf :hint "start nrepl server" :port 6064)
-      (nrepl/start-server :bind "0.0.0.0" :port 6064)
+    (ex/ignoring
+     (repl/disable-reload! (find-ns 'integrant.core))
+     (repl/disable-reload! (find-ns 'app.system))
+     (repl/disable-reload! (find-ns 'app.common.debug)))
 
+    (let [p (promise)]
       (start)
       (deref p))
     (catch Throwable cause

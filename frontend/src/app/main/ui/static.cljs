@@ -10,9 +10,7 @@
    ["rxjs" :as rxjs]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.errors :as errors]
@@ -347,53 +345,6 @@
      [:div {:class (stl/css :buttons-container)}
       [:> button* {:variant "primary" :on-click on-reload}
        (tr "labels.reload-page")]]]))
-
-(defn- generate-report
-  [data]
-  (try
-    (let [team-id    (:current-team-id @st/state)
-          profile-id (:profile-id @st/state)
-
-          trace      (:app.main.errors/trace data)
-          instance   (:app.main.errors/instance data)]
-      (with-out-str
-        (println "Hint:    " (or (:hint data) (ex-message instance) "--"))
-        (println "Prof ID: " (str (or profile-id "--")))
-        (println "Team ID: " (str (or team-id "--")))
-        (println "URI:     " cf/public-uri)
-
-        (when-let [file-id (:file-id data)]
-          (println "File ID:" (str file-id)))
-
-        (println)
-
-        (println "Data:")
-        (loop [data data]
-          (-> (d/without-qualified data)
-              (dissoc :explain)
-              (d/update-when :data (constantly "(...)"))
-              (pp/pprint {:level 8 :length 10}))
-
-          (println)
-
-          (when-let [explain (:explain data)]
-            (print explain))
-
-          (when (and (= :server-error (:type data))
-                     (contains? data :data))
-            (recur (:data data))))
-
-        (println "Trace:")
-        (println trace)
-        (println)
-
-        (println "Last events:")
-        (pp/pprint @st/last-events {:length 200})
-
-        (println)))
-    (catch :default cause
-      (.error js/console "error on generating report.txt" cause)
-      nil)))
 
 (mf/defc internal-error*
   [{:keys [on-reset report] :as props}]

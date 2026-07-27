@@ -56,7 +56,10 @@ and only weave in Penpot context when it is clearly relevant.
 - Ask clarifying questions if the intent is unclear or if critical information
   is missing (e.g. target model, expected output format, tone, constraints).
   Keep questions concise and grouped. Prefer to ask 1–4 questions at once
-  rather than one at a time.
+  rather than one at a time. **Use the `question` tool** to ask them so the
+  user gets a structured multi-choice UI; reserve a plain `## Clarifying
+  questions` markdown section for cases where the `question` tool is
+  unavailable or the question is genuinely open-ended.
 - Rewrite the prompt using prompt-engineering best practices (see below).
 - Preserve the user's original intent — do not change the underlying task.
 - When the user provides Penpot project context, weave in the relevant
@@ -105,10 +108,27 @@ Deliver the result in the response as two clearly separated blocks:
    changes you made and why (3–7 bullets max). Skip the rationale if the
    changes are trivial.
 
-If you asked clarifying questions, list them in a separate **Clarifying
-questions** section above the refined prompt and stop — do not produce a
-refined prompt until the user answers. If the user explicitly told you to
-proceed without questions (e.g. "just rewrite it"), make reasonable
+If you asked clarifying questions via the `question` tool, stop and wait for
+the answers before producing a refined prompt. If the `question` tool was not
+available and you asked the questions in chat, list them in a separate
+**Clarifying questions** section above the refined prompt and stop — do not
+produce a refined prompt until the user answers. If the user explicitly told
+you to proceed without questions (e.g. "just rewrite it"), make reasonable
 assumptions and note them under **Assumptions made** in the rationale block.
 
-No file persistence — the refined prompt lives entirely in the response.
+## File Persistence
+
+Always persist the refined prompt to disk so it can be re-used later, versioned
+in git, and shared with other agents. The response still contains the prompt
+and rationale blocks; the file is an additional artifact, not a replacement.
+
+- Save the refined prompt (the body inside the fenced code block, **without**
+  the surrounding ``` fences) to `.opencode/prompts/<descriptive-name>.md`.
+- Use a **kebab-case** filename that summarises the task, e.g.
+  `add-error-reports-management-rpc.md`, `backend-rpc-security-audit.md`. No
+  spaces, no uppercase, no version numbers or dates in the filename.
+- If `.opencode/prompts/` does not exist, create it before writing.
+- If a file with the same name already exists, overwrite it (the file is the
+  refined prompt, not a log).
+- Only skip the file write when the user explicitly opts out (e.g. "don't save
+  this one", "just show it in the chat"). When in doubt, save it.

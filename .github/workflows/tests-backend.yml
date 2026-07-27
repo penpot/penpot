@@ -62,14 +62,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Fmt
+        working-directory: ./backend
+        run: |
+          cljfmt check --parallel=true src/ test/
+
       - name: Lint
         working-directory: ./backend
         run: |
-          corepack enable;
-          corepack install;
-          pnpm install;
-          pnpm run check-fmt
-          pnpm run lint
+          clj-kondo --parallel --lint ../common/src/ src/
 
       - name: Tests
         working-directory: ./backend
@@ -81,4 +82,4 @@ jobs:
 
         run: |
           mkdir -p /tmp/penpot;
-          clojure -M:dev:test --reporter kaocha.report/documentation
+          clojure -M:dev:test

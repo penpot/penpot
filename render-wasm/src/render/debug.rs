@@ -6,6 +6,7 @@ use macros::wasm_error;
 
 #[cfg(target_arch = "wasm32")]
 use crate::get_render_state;
+use crate::get_resources;
 
 use skia_safe::{self as skia, Rect};
 
@@ -62,16 +63,16 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
         "WebGL rendering"
     };
     let dpr = render_state.options.dpr;
-    let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
+    let (scalar, _) = get_resources().fonts.debug_font().measure_str(str, None);
     let mut p = skia::Point::new(canvas_width - (20.0 * dpr) - scalar, 50.0 * dpr);
 
-    let debug_font = render_state.fonts.debug_font();
+    let debug_font = get_resources().fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
 
     if render_state.options.is_text_editor_v3() {
         str = "Text Editor v3";
 
-        let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
+        let (scalar, _) = get_resources().fonts.debug_font().measure_str(str, None);
         p.x = canvas_width - (20.0 * dpr) - scalar;
         p.y += 15.0 * dpr;
         canvas.draw_str(str, p, debug_font, &paint);
@@ -85,7 +86,7 @@ pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
     paint.set_color(skia::Color::RED);
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
 
-    let debug_font = render_state.fonts.debug_font();
+    let debug_font = get_resources().fonts.debug_font();
     canvas.draw_str(str_rect, skia::Point::new(100.0, 150.0), debug_font, &paint);
 }
 
@@ -104,7 +105,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
 
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
 
-    let debug_font = render_state.fonts.debug_font();
+    let debug_font = get_resources().fonts.debug_font();
     canvas.draw_str(str_rect, skia::Point::new(100.0, 100.0), debug_font, &paint);
 
     let tile_size = tiles::get_tile_size(scale);
@@ -114,7 +115,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
         let debug_rect = get_debug_rect(rect);
         let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
         let str = format!("{}:{}", x, y);
-        let debug_font = render_state.fonts.debug_font();
+        let debug_font = get_resources().fonts.debug_font();
         paint.set_style(skia::PaintStyle::Fill);
         canvas.draw_str(str, p, debug_font, &paint);
         canvas.draw_rect(debug_rect, &paint);
@@ -153,7 +154,7 @@ pub fn render_workspace_current_tile(
     let tile_position_origin = skia::Point::new(rect.x() + 10., rect.y() + 20.);
     p.set_style(skia::PaintStyle::Fill);
     let str = format!("{prefix} {}:{}", tile.x(), tile.y());
-    let mut debug_font = render_state.fonts.debug_font().clone();
+    let mut debug_font = get_resources().fonts.debug_font().clone();
     debug_font.set_size(16.);
     canvas.draw_str(str, tile_position_origin, &debug_font, &p);
 }

@@ -25,6 +25,7 @@
    [app.main.ui.hooks.resize :refer [use-resize-observer]]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.colorpicker]
+   [app.main.ui.workspace.components-debugger :refer [components-debugger*]]
    [app.main.ui.workspace.context-menu :refer [context-menu*]]
    [app.main.ui.workspace.coordinates :as coordinates]
    [app.main.ui.workspace.libraries]
@@ -198,10 +199,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [team-id project-id file-id page-id layout-name]}]
 
-  (let [file-id          (hooks/use-equal-memo file-id)
-        page-id          (hooks/use-equal-memo page-id)
-
-        layout           (mf/deref refs/workspace-layout)
+  (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
 
         team-ref         (mf/with-memo [team-id]
@@ -274,6 +272,7 @@
        [:> (mf/provider ctx/design-tokens) {:value design-tokens?}
         [:> (mf/provider ctx/workspace-read-only?) {:value read-only?}
          [:> modal-container*]
+         [:> components-debugger*]
          [:section {:class (stl/css :workspace)
                     :style {:background-color background-color
                             :touch-action "none"
@@ -296,6 +295,12 @@
 
 (mf/defc workspace-page*
   {::mf/lazy-load true}
-  [props]
-  [:> workspace* props])
+  [{:keys [file-id page-id] :as props}]
+  (let [file-id (hooks/use-equal-memo file-id)
+        page-id (hooks/use-equal-memo page-id)
+        props   (mf/spread-props props {:file-id file-id
+                                        :page-id page-id})]
+
+    (when (uuid? file-id)
+      [:> workspace* props])))
 

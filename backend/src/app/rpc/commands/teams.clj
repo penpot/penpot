@@ -628,7 +628,7 @@
               (some? (:organization-id membership)) ;; the team do belong to an organization
               (not (:is-member membership)))        ;; the user is not a member of the org yet
          (initialize-user-in-nitrate-org cfg profile-id (:organization-id membership)))))
-   (db/insert! conn :team-profile-rel params options)))
+   (db/insert! conn :team-profile-rel (assoc params :id (uuid/next)) options)))
 
 (defn create-team
   "This is a complete team creation process, it creates the team
@@ -699,7 +699,8 @@
 (defn create-project-role
   [conn profile-id project-id role]
   (let [params {:project-id project-id
-                :profile-id profile-id}]
+                :profile-id profile-id
+                :id (uuid/next)}]
     (->> (perms/assign-role-flags params role)
          (db/insert! conn :project-profile-rel))))
 

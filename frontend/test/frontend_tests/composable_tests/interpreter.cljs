@@ -44,6 +44,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwth]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
    [app.main.store :as st]
@@ -139,6 +140,19 @@
       ;; as the common ChangeProperty. The edit uses the SHARED `n/set-property`.
       [(dwsh/update-shapes #{(tm/target-shape-id situation target)}
                            (fn [shape] (n/set-property shape property value)))])
+
+    (instance? n/Rotate op)
+    ;; The real sidebar rotation event, absolute mode: rotates the shape (and its
+    ;; whole subtree) around its center. Its apply-modifiers step runs the
+    ;; placement-vs-override classification for component copies (check-delta),
+    ;; which is part of what a case using `rotate` exercises.
+    (let [{:keys [target angle]} op]
+      [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle)])
+
+    (instance? n/ChangeHeight op)
+    ;; The real sidebar dimension event.
+    (let [{:keys [target value]} op]
+      [(dwt/update-dimensions [(tm/target-shape-id situation target)] :height value)])
 
     (instance? n/SwapComponent op)
     ;; Swap lineage `name`'s nesting level `level` for lineage `target`'s component

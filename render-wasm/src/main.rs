@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use crate::error::{Error, Result};
 use crate::render::{FrameType, RenderFlag};
 
-use globals::{get_design_state, get_gpu_state, get_render_state};
+use globals::{get_design_state, get_gpu_state, get_render_state, get_resources, has_render_state};
 
 use macros::wasm_error;
 use math::{Bounds, Matrix};
@@ -232,6 +232,23 @@ pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
         // for the old viewport can be reused by the next full
         // render at the new viewport position.
         state.render_from_cache();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_from_backbuffer() -> Result<()> {
+    with_state!(state, {
+        // Re-present the last fully rendered frame from the Backbuffer with the
+        // UI overlay (rulers) redrawn on top. Unlike `render_from_cache`, it does
+        // NOT rebuild the Backbuffer from the document tile atlas — that atlas is
+        // capped at scale <= 1.0, so on a zoomed-in view its blit is a blurry
+        // upscale and swapping it in reads as a flash. Reusing the Backbuffer is
+        // pixel-identical at any zoom. Only valid on a stable viewbox (the
+        // Backbuffer must still match the current view); pan/zoom keeps using
+        // `render_from_cache`.
+        state.present_frame();
     });
     Ok(())
 }
@@ -720,7 +737,7 @@ pub extern "C" fn is_image_cached(
     is_thumbnail: bool,
 ) -> Result<bool> {
     let id = uuid_from_u32_quartet(a, b, c, d);
-    let result = get_render_state().has_image(&id, is_thumbnail);
+    let result = get_resources().images.contains(&id, is_thumbnail);
     Ok(result)
 }
 
@@ -734,8 +751,7 @@ pub extern "C" fn set_shape_svg_raw_content() -> Result<()> {
             .trim_end_matches('\0')
             .to_string();
 
-        let render_state = get_render_state();
-        let font_manager = skia::FontMgr::from(render_state.fonts().font_provider().clone());
+        let font_manager = skia::FontMgr::from(get_resources().fonts.font_provider().clone());
         shape.set_svg_raw_content(svg_raw_content);
         shape.update_svg_raw_content(font_manager);
     });
@@ -996,6 +1012,36 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());
         buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// PNG via CPU raster (no GPU/WebGL). Returns `[len][width][height][png]` (LE),
+/// same layout as `render_shape_pixels`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_raster(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    scale: f32,
+) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    if !scale.is_finite() {
+        return Err(Error::CriticalError("Scale is not finite".to_string()));
+    }
+
+    with_state!(state, {
+        let (data, width, height) = state.render_shape_raster(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(12 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&width.to_le_bytes());
+        buf.extend_from_slice(&height.to_le_bytes());
         buf.extend_from_slice(&data);
         Ok(mem::write_bytes(buf))
     })

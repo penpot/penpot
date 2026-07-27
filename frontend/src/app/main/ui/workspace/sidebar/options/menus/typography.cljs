@@ -253,7 +253,7 @@
       (on-select @selected))
 
     (mf/with-effect []
-      (st/emit! (dsc/push-shortcuts :typography {}))
+      (st/emit! (dsc/push-shortcuts :typography {} :workspace))
       (fn []
         (st/emit! (dsc/pop-shortcuts :typography))))
 

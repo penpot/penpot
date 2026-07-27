@@ -72,8 +72,14 @@
      (when benefits-title
        [:h5 {:class (stl/css :benefits-title)} benefits-title])
      [:ul {:class (stl/css :benefits-list)}
-      (for [benefit benefits]
-        [:li {:key (dm/str benefit) :class (stl/css :benefit)} benefit])]
+      (for [[index benefit] (map-indexed vector benefits)]
+        [:li {:key (dm/str index "-" benefit) :class (stl/css :benefit)}
+         (if (map? benefit)
+           [:*
+            [:span {:class (stl/css :benefit-label)} (:label benefit)]
+            " "
+            (:description benefit)]
+           benefit)])]
 
      (when has-cta-button
        [:> button* {:variant "primary"
@@ -440,6 +446,12 @@
         subscription-type
         (if (and (contains? cf/flags :nitrate) nitrate?) (:type nitrate-license) (get-subscription-type subscription))
 
+        subscription-name
+        (cond
+          nitrate?                         (tr "subscription.settings.enterprise")
+          (= subscription-type "unlimited") (tr "subscription.settings.unlimited")
+          (= subscription-type "enterprise") (tr "subscription.settings.enterprise"))
+
         subscription-is-trial?
         (= (:status subscription) "trialing")
 
@@ -477,7 +489,10 @@
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings"}))
            (if (= subscription-type "nitrate")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license}))
+             (st/emit! (dnt/show-nitrate-popup
+                        :nitrate-dialog
+                        {:nitrate-license nitrate-license
+                         :event-origin "settings:plan-confirmation-modal"}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
@@ -487,10 +502,11 @@
         open-contact-sales-modal
         (mf/use-fn
          (mf/deps nitrate-license)
-         (fn [current-subscription subscription-type]
+         (fn [current-subscription subscription-type & [has-billing-access?]]
            (if (= current-subscription "unlimited")
              (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))
+             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type
+                                                                  :has-billing-access? has-billing-access?})))))
 
         open-cancel-contact-sales-modal
         (mf/use-fn
@@ -562,24 +578,25 @@
                                                  (tr "subscription.settings.enterprise")))}))
            (rt/nav :settings-subscription {} {::rt/replace true})))))
 
-    [:section {:class (stl/css :dashboard-section)}
+    [:section {:class (stl/css :dashboard-section)
+               :aria-labelledby "subscription-section-title"}
      [:div {:class (stl/css :dashboard-content)}
-      [:h2 {:class (stl/css :title-section)} (tr "subscription.labels")]
-
+      [:h2 {:id "subscription-section-title" :class (stl/css :title-section)} (tr "subscription.labels")]
 
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (if nitrate?
-         ;; TODO add translations for this texts when we have the definitive ones
-         [:> plan-card* {:card-title "Enterprise"
-                         :card-title-icon i/character-b
+         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
-                         :benefits-title "Loren ipsum",
-                         :benefits ["Loren ipsum",
-                                    "Loren ipsum",
-                                    "Loren ipsum"]
-                         :cta-text-with-icon (when (not (:manual nitrate-license)) "Admin Console")
+                         :benefits-title (tr "subscription.settings.benefits.nitrate-unlimited-benefits")
+                         :benefits [{:label (tr "subscription.settings.enterprise.nitrate.multi-org-management")
+                                     :description (tr "subscription.settings.enterprise.nitrate.support-team")}
+                                    {:label (tr "subscription.settings.enterprise.nitrate.enterprise-security")
+                                     :description (tr "subscription.settings.enterprise.nitrate.native-sso")}
+                                    {:label (tr "subscription.settings.enterprise.nitrate.advanced-control")
+                                     :description (tr "subscription.settings.enterprise.nitrate.plugin-whitelisting")}]
+                         :cta-text-with-icon (when (not (:manual nitrate-license)) (tr "subscription.settings.admin-console"))
                          :cta-link-with-icon (when (not (:manual nitrate-license)) dnt/go-to-nitrate-ac)
                          :cta-text (if (and (:licenses connectivity) (not (:manual nitrate-license)))
                                      (tr "subscription.settings.manage-your-subscription")
@@ -660,7 +677,7 @@
                       :icon-id "crown"
                       :size "m"}]
            [:span {:class (stl/css :membership-date)}
-            (tr "subscription.settings.support-us-since" subscribed-since)]])
+            (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]])
 
         [:div {:class (stl/css :membership)}
          [:> icon* {:class (stl/css :penpot-member)
@@ -674,7 +691,7 @@
        (when (not= subscription-type "professional")
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
-                         :price-period (tr "subscription.settings.price-editor-month")
+                         :price-period (tr "subscription.settings.price-user-month")
                          :benefits [(if cf/saas?
                                       (tr "subscription.settings.professional.storage-benefit")
                                       (tr "subscription.settings.professional.selfhost.control-over-data")),
@@ -685,10 +702,9 @@
                                       (tr "subscription.settings.professional.teams-editors-benefit")
                                       (tr "subscription.settings.professional.selfhost.community-support"))]
                          :cta-text (tr "subscription.settings.subscribe")
-                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate? (= subscription-type "nitrate"))
-                                     (if (and (:licenses connectivity) (not (:manual nitrate-license)))
-                                       dnt/go-to-nitrate-billing
-                                       open-cancel-contact-sales-modal)
+                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?)
+                                     #(open-contact-sales-modal subscription-type "Professional"
+                                                                (and (:licenses connectivity) (not (:manual nitrate-license))))
                                      go-to-payments)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
@@ -698,7 +714,7 @@
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                          :card-title-icon i/character-u
                          :price-value "$7"
-                         :price-period (tr "subscription.settings.price-editor-month")
+                         :price-period (tr "subscription.settings.price-user-month")
                          :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
                          :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
                                     (tr "subscription.settings.unlimited.autosave-benefit"),
@@ -727,18 +743,21 @@
                          :show-button-cta (= subscription-type "professional")
                          :current-plan false}])
 
-       ;; TODO add translations for this texts when we have the definitive ones
        (when (and (contains? cf/flags :nitrate) (not nitrate?))
-         [:> plan-card* {:card-title "Enterprise"
-                         :card-title-icon i/character-n
+         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :price-value "$25"
                          :price-period (tr "subscription.settings.organization-member-month")
-                         :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
-                         :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
-                                    "Acceso exclusivo a la Admin Console"
-                                    "Lorem ipsum"]
-                         :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
-                         :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))
+                         :benefits-title (tr "subscription.settings.benefits.nitrate-unlimited-benefits")
+                         :benefits [{:label (tr "subscription.settings.enterprise.nitrate.multi-org-management")
+                                     :description (tr "subscription.settings.enterprise.nitrate.support-team")}
+                                    {:label (tr "subscription.settings.enterprise.nitrate.enterprise-security")
+                                     :description (tr "subscription.settings.enterprise.nitrate.native-sso")}
+                                    {:label (tr "subscription.settings.enterprise.nitrate.advanced-control")
+                                     :description (tr "subscription.settings.enterprise.nitrate.plugin-whitelisting")}]
+                         :cta-text (if nitrate-license (tr "subscription.settings.subscribe") (tr "nitrate.form.free-trial-button"))
+                         :cta-link (if (= subscription-type "unlimited")
+                                     #(open-contact-sales-modal subscription-type (tr "subscription.current-plan.nitrate"))
+                                     #(open-subscription-modal "nitrate" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :code-action :activate
@@ -749,7 +768,7 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [{:keys [nitrate-license show-contact-sales-option] :as connectivity}]
+  [{:keys [nitrate-license show-contact-sales-option event-origin] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         handle-close-dialog
@@ -760,7 +779,11 @@
         on-subscribe-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" (rt/get-current-href))))]
+           (dnt/go-to-buy-nitrate-license
+            "monthly"
+            (rt/get-current-href)
+            event-origin
+            (if nitrate-license "paid" "trial"))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -768,17 +791,18 @@
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title :nitrate-subscription)}
-       "Subscribe to the Enterprise plan"]
+       (tr "nitrate.form.title")]
 
       (if (and online? (not show-contact-sales-option))
         [:div {:class (stl/css :modal-content)}
 
          [:*
+          [:div {:class (stl/css :modal-text)} (tr "nitrate.form.enterprise-intro" ":")]
           [:div {:class (stl/css :modal-text :price-text)}
            [:span {:class (stl/css :price-value)} "25$"]
-           (tr "nitrate.form.enterprise.price")]
+           " / " (tr "subscription.settings.organization-member-month")]
           [:div {:class (stl/css :modal-text)}
-           "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."]
+           (tr "nitrate.form.enterprise-description")]
 
           [:div {:class (stl/css :modal-footer)}
            [:div {:class (stl/css :action-buttons)}
@@ -791,13 +815,11 @@
             [:input
              {:class (stl/css :primary-button)
               :type "button"
-              :value (if nitrate-license (tr "subscription.settings.subscribe") "TRY 14 DAYS FOR FREE")
+              :value (if nitrate-license (tr "subscription.settings.subscribe") (tr "nitrate.form.free-trial-button"))
               :on-click on-subscribe-click}]]]]]
         [:div {:class (stl/css :modal-content :modal-contact-content)}
          [:div {:class (stl/css :modal-text)}
-          "Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum"]
-         [:div {:class (stl/css :modal-text)}
-          (if nitrate-license "Contact us to upgrade to Nitrate:" "Contact us to try Nitrate for 14 days:")]
+          (tr "nitrate.form.enterprise-intro" ".") " " (if nitrate-license (tr "nitrate.form.contact-us-upgrade") (tr "nitrate.form.contact-us-free-trial"))]
          [:div {:class (stl/css :modal-text)}
           [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.app"}
            "sales@penpot.app"]]])]]))
@@ -805,11 +827,17 @@
 (mf/defc nitrate-contact-sales-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-contact-sales-dialog}
-  [{:keys [subscription-type]}]
+  [{:keys [subscription-type has-billing-access?]}]
   (let [handle-close-dialog
         (mf/use-fn
          (fn []
-           (modal/hide!)))]
+           (modal/hide!)))
+
+        handle-continue-click
+        (mf/use-fn
+         (fn []
+           (modal/hide!)
+           (dnt/go-to-nitrate-billing)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -817,25 +845,33 @@
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title)}
-       (dm/str "Switch to " subscription-type " plan?")]
+       (tr "nitrate.contact-sales.title" subscription-type)]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :modal-text-medium)}
-        "When you downgrade:"]
+        (tr "nitrate.contact-sales.downgrade-title")]
        [:ul {:class (stl/css :downgrade-list)}
-        [:li {:class (stl/css :downgrade-item)} "Your organization will be deleted."]
-        [:li {:class (stl/css :downgrade-item)} "The teams, projects and files will no longer be part of any organization but they will remain available."]
-        [:li {:class (stl/css :downgrade-item)} "Your total storage, auto-version history, and file recovery period will be limited."]]
+        [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-org-deleted")]
+        [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-teams-available")]
+        [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-storage-limited")]]
 
-       [:div {:class (stl/css :downgrade-warning)}
-        "To switch to this plan, please contact our sales team.
-We’ll help you update your subscription and ensure everything is set up correctly."]
-       [:div {:class (stl/css :action-buttons)}
-        [:> button* {:variant "secondary"
-                     :type "button"
-                     :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
-        [:> button* {:variant "primary"
-                     :type "button"
-                     :on-click #(dom/open-new-window "mailto:sales@penpot.app?subject=Switch%20to%20the%20Unlimited%20plan")} "Contact sales"]]]]]))
+       (if has-billing-access?
+         [:div {:class (stl/css :action-buttons)}
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :on-click handle-continue-click} (tr "labels.continue")]]
+         [:*
+          [:div {:class (stl/css :downgrade-warning)}
+           (tr "nitrate.contact-sales.downgrade-contact-info")]
+          [:div {:class (stl/css :action-buttons)}
+           [:> button* {:variant "secondary"
+                        :type "button"
+                        :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
+           [:> button* {:variant "primary"
+                        :type "button"
+                        :on-click #(dom/open-new-window (dm/str "mailto:sales@penpot.app?subject=Switch%20to%20the%20" subscription-type "%20plan"))} (tr "nitrate.contact-sales.button")]]])]]]))
 
 (mf/defc nitrate-cancel-contact-sales-dialog
   {::mf/register modal/components
@@ -846,7 +882,7 @@ We’ll help you update your subscription and ensure everything is set up correc
 
         mailto-url
         (dm/str "mailto:sales@penpot.net"
-                "?subject=Request%20to%20Cancel%20Nitrate%20Subscription"
+                "?subject=Request%20to%20Cancel%20Enterprise%20Subscription"
                 "&body=Hello%2C%0A%0A"
                 "I%20would%20like%20to%20cancel%20my%20Enterprise%20subscription.%0A"
                 "Account%20email%3A%20" encoded-email ".%0A%0AThank%20you.")
@@ -862,15 +898,15 @@ We’ll help you update your subscription and ensure everything is set up correc
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title)}
-       "Cancel subscription"]
+       (tr "nitrate.subscription.settings.manual-cancel")]
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :modal-text-medium)}
-        "To cancel your Nitrate subscription, please contact us at:"]
+        (tr "nitrate.subscription.settings.manual-contact-us")]
        [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.net"}
         "sales@penpot.net"]
        [:div {:class (stl/css :action-buttons)}
         [:> button* {:class (stl/css :button-full-width)
                      :variant "primary"
                      :type "button"
-                     :on-click #(dom/open-new-window mailto-url)} "Contact us"]]]]]))
+                     :on-click #(dom/open-new-window mailto-url)} (tr "labels.contact-us")]]]]]))

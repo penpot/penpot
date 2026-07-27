@@ -89,6 +89,9 @@
     ;; Show info about shapes
     :shape-panel
 
+    ;; Show the floating components debugger window
+    :components-debugger
+
     ;; Show what is touched in copies
     :display-touched
 

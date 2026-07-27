@@ -32,6 +32,9 @@
 (def profile
   (l/derived (l/key :profile) st/state))
 
+(def custom-shortcuts
+  (l/derived (fn [state] (get-in state [:profile :props :custom-shortcuts])) st/state))
+
 (def current-page-id
   (l/derived (l/key :current-page-id) st/state))
 
@@ -252,6 +255,10 @@
 ;; page item that it is being edited
 (def editing-page-item
   (l/derived :page-item workspace-local))
+
+;; set of pages selected in the sitemap (multi-selection)
+(def selected-pages
+  (l/derived :selected-pages workspace-local))
 
 (def current-hover-ids
   (l/derived :hover-ids context-menu))

@@ -337,7 +337,7 @@
     (when-not ^boolean read-only?
       [:div {:role "toolbar"
              :aria-label (tr "workspace.toolbar.label")
-             :tabindex "0"
+             :tab-index "0"
              :class (stl/css-case :toolbar true
                                   :no-rulers (not rulers-enabled)
                                   :hidden toolbar-hidden)}

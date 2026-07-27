@@ -2318,10 +2318,6 @@ msgstr "Titete"
 msgid "shortcut-subsection.edit"
 msgstr "Sàtunkọ"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
-msgstr "àbùdá"
-
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"
 msgstr "Akojọ ólórì aṣyn"

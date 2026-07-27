@@ -42,13 +42,14 @@
     state))
 
 (defn use-shortcuts
-  [key shortcuts]
-  (mf/use-effect
-   #js [(str key) shortcuts]
-   (fn []
-     (st/emit! (dsc/push-shortcuts key shortcuts))
+  [key shortcuts group-key]
+  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)]
+    (mf/use-effect
+     #js [(str key) shortcuts custom-shortcuts]
      (fn []
-       (st/emit! (dsc/pop-shortcuts key))))))
+       (st/emit! (dsc/push-shortcuts key shortcuts group-key))
+       (fn []
+         (st/emit! (dsc/pop-shortcuts key)))))))
 
 (defn- set-timer
   [state ms func]
@@ -438,8 +439,8 @@
        [th-size]
        (when th-size
          (let [node (mf/ref-val rowref)]
-           (.setProperty (.-style node) "--th-width" (str th-size "px"))
-           (.setProperty (.-style node) "--th-height" (str (mth/ceil (* th-size (/ 2 3))) "px")))))
+           (.setProperty (.-style node) "--thumbnail-width" (str th-size "px"))
+           (.setProperty (.-style node) "--thumbnail-height" (str (mth/ceil (* th-size (/ 2 3))) "px")))))
 
      (mf/with-effect []
        (let [node (mf/ref-val rowref)

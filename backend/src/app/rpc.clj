@@ -41,6 +41,7 @@
    [app.util.cache :as cache]
    [app.util.inet :as inet]
    [app.util.services :as sv]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -102,8 +103,10 @@
             session-id   (yreq/get-header request "x-session-id")
 
             key-id       (get request ::http/auth-key-id)
-            profile-id   (or (::session/profile-id request)
-                             (::actoken/profile-id request)
+            session-pid  (::session/profile-id request)
+            token-pid    (::actoken/profile-id request)
+            profile-id   (or session-pid
+                             token-pid
                              (if key-id uuid/zero nil))
 
             ip-addr      (inet/parse-request request)
@@ -116,7 +119,15 @@
                              (assoc ::session-id (some-> session-id uuid/parse*))
                              (assoc ::cond/key etag)
                              (cond-> (uuid? profile-id)
-                               (assoc ::profile-id profile-id)))
+                               (assoc ::profile-id profile-id))
+                             (cond-> (uuid? session-pid)
+                               (assoc ::auth-type :session))
+                             (cond-> (and (not (uuid? session-pid))
+                                          (uuid? token-pid))
+                               (-> (assoc ::auth-type :token)
+                                   (assoc ::token-perms (set (::actoken/perms request #{})))))
+                             (cond-> key-id
+                               (assoc ::auth-key-id key-id)))
 
             data         (with-meta data
                            {::http/request request})
@@ -151,13 +162,40 @@
 
 (defn- wrap-authentication
   [_ f mdata]
-  (fn [cfg params]
-    (let [profile-id (::profile-id params)]
-      (if (and (::auth mdata true) (not (uuid? profile-id)))
-        (ex/raise :type :authentication
-                  :code :authentication-required
-                  :hint "authentication required for this endpoint")
-        (f cfg params)))))
+  (let [required-auth?      (::auth mdata true)
+        required-auth-type  (::auth-type mdata)
+        required-perms      (into #{} (::perms mdata))]
+    (fn [cfg params]
+      (let [profile-id  (::profile-id params)
+            auth-type   (::auth-type params)
+            token-perms (set (::token-perms params #{}))]
+        (cond
+          (and required-auth? (not (uuid? profile-id)))
+          (ex/raise :type :authentication
+                    :code :authentication-required
+                    :hint "authentication required for this endpoint")
+
+          (and (= required-auth-type :token)
+               (not= auth-type :token))
+          (ex/raise :type :authorization
+                    :code :token-auth-required
+                    :hint "access token authentication required for this endpoint")
+
+          (and (seq required-perms)
+               (not= auth-type :token))
+          (ex/raise :type :authorization
+                    :code :token-auth-required
+                    :hint "access token authentication required for this endpoint")
+
+          (and (seq required-perms)
+               (not (set/subset? required-perms token-perms)))
+          (ex/raise :type :authorization
+                    :code :missing-perms
+                    :hint "missing required permissions"
+                    :required required-perms)
+
+          :else
+          (f cfg params))))))
 
 (defn- wrap-db-transaction
   [_ f mdata]
@@ -339,6 +377,7 @@
           'app.rpc.commands.binfile
           'app.rpc.commands.comments
           'app.rpc.commands.demo
+          'app.rpc.commands.error-reports
           'app.rpc.commands.files
           'app.rpc.commands.files-create
           'app.rpc.commands.files-share

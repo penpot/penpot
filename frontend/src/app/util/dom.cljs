@@ -795,10 +795,8 @@
 (defn trigger-download
   [filename blob]
   (let [uri (wapi/create-uri blob)]
-    (try
-      (trigger-download-uri filename (.-type ^js blob) uri)
-      (finally
-        (wapi/revoke-uri uri)))))
+    (trigger-download-uri filename (.-type ^js blob) uri)
+    (js/setTimeout #(wapi/revoke-uri uri) 1000)))
 
 (defn event
   "Create an instance of DOM Event"

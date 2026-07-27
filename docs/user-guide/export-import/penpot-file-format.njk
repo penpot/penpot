@@ -1,0 +1,155 @@
+---
+title: The .penpot file format
+order: 2
+desc: Understand the .penpot file format, what's inside, and how to inspect your design files.
+---
+
+<h1 id="penpot-file-format">The .penpot file format</h1>
+<p class="main-paragraph">Penpot's native file format is designed to be open, inspectable, and efficient. Unlike proprietary formats, you can always look inside a .penpot file to understand your design data.</p>
+
+<h2 id="what-is-penpot-format">What is a .penpot file?</h2>
+
+<p>A <code class="language-text">.penpot</code> file is a <strong>ZIP archive</strong> containing:</p>
+<ul>
+  <li><strong>JSON metadata</strong> — human-readable descriptions of your pages, shapes, colors, components, and more</li>
+  <li><strong>Binary media files</strong> — images, fonts, and other assets used in your design</li>
+</ul>
+
+<p>This means your design data is never locked in a proprietary format. You can always unzip a .penpot file and read the JSON to understand what's inside.</p>
+
+<h2 id="whats-inside">What's inside a .penpot file?</h2>
+
+<p>When you unzip a .penpot file, you'll find this structure:</p>
+
+<figure>
+<pre class="language-text"><code>your-design.penpot (ZIP archive)
+├── manifest.json          ← Table of contents
+├── files/                 ← Your design data
+│   ├── file-metadata.json
+│   └── file-data/
+│       ├── pages/         ← Each page of your design
+│       ├── colors/        ← Library colors
+│       ├── components/    ← Library components
+│       ├── typographies/  ← Library typographies
+│       ├── tokens.json    ← Design tokens
+│       └── media/         ← Media references
+└── objects/               ← Images and binary assets</code></pre>
+</figure>
+
+<h3>manifest.json</h3>
+<p>The manifest is the table of contents. It tells you:</p>
+<ul>
+  <li>Which version of the format is used</li>
+  <li>Which Penpot version created the file</li>
+  <li>What files are included</li>
+  <li>What features are enabled</li>
+</ul>
+
+<h3>File data</h3>
+<p>The <code class="language-text">files/</code> directory contains all your design data organized by type:</p>
+<ul>
+  <li><strong>Pages</strong> — Each page is split into individual shape files for efficiency</li>
+  <li><strong>Colors</strong> — Your color library with hex values, gradients, or image fills</li>
+  <li><strong>Components</strong> — Reusable component definitions</li>
+  <li><strong>Typographies</strong> — Text style definitions</li>
+  <li><strong>Tokens</strong> — Design tokens organized in sets and themes</li>
+  <li><strong>Media</strong> — References to images and other assets</li>
+</ul>
+
+<h3>Objects</h3>
+<p>The <code class="language-text">objects/</code> directory contains the actual binary files (PNG, JPG, SVG) referenced by your design. Each object has a JSON metadata file alongside the binary file.</p>
+
+<h2 id="how-to-inspect">How to inspect a .penpot file</h2>
+
+<p>Since .penpot files are just ZIP archives, you can inspect them with standard tools.</p>
+
+<h3>On macOS or Linux</h3>
+
+<p><strong>1. List the contents without extracting:</strong></p>
+<pre class="language-bash"><code>unzip -l your-design.penpot</code></pre>
+
+<p><strong>2. Extract to a temporary folder:</strong></p>
+<pre class="language-bash"><code>unzip your-design.penpot -d /tmp/penpot-inspect</code></pre>
+
+<p><strong>3. View the manifest:</strong></p>
+<pre class="language-bash"><code>cat /tmp/penpot-inspect/manifest.json | jq .</code></pre>
+
+<p><strong>4. Browse the structure:</strong></p>
+<pre class="language-bash"><code>tree /tmp/penpot-inspect</code></pre>
+
+<p><strong>5. View a specific shape:</strong></p>
+<pre class="language-bash"><code>cat /tmp/penpot-inspect/files/*/pages/*/*.json | jq .</code></pre>
+
+<h3>On Windows</h3>
+
+<p><strong>1. Right-click the .penpot file</strong> and select "Extract All..." or use 7-Zip.</p>
+
+<p><strong>2. Browse the extracted folder</strong> to see the structure.</p>
+
+<p><strong>3. Open any JSON file</strong> with a text editor or use a JSON viewer tool.</p>
+
+<h3>Using AI tools</h3>
+
+<p>You can use the <a href="/mcp/">Penpot MCP server</a> to inspect .penpot files with AI assistance. The MCP server can read and analyze your design files, making it easy to understand complex designs or automate tasks.</p>
+
+<h2 id="versioning">Format versions</h2>
+
+<p>The .penpot format has evolved over time:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Version</th>
+      <th>Description</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>v3</strong></td>
+      <td>ZIP + JSON format (current)</td>
+      <td>✅ Current</td>
+    </tr>
+    <tr>
+      <td>v1</td>
+      <td>Custom binary format</td>
+      <td>⚠️ Deprecated</td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="advice">All current Penpot versions export in v3 format. Old v1 files can still be imported, but new exports will use v3.</p>
+
+<h3>Version numbers inside the file</h3>
+
+<p>Inside a .penpot file, you'll see two different version numbers:</p>
+
+<ul>
+  <li><strong>Format version</strong> (in <code class="language-text">manifest.json</code>) — Tracks changes to the ZIP structure itself. Currently <code class="language-text">1</code>.</li>
+  <li><strong>Data version</strong> (in each file's JSON) — Tracks changes to the data model. This number increases as Penpot evolves.</li>
+</ul>
+
+<h3>Feature flags</h3>
+
+<p>Files also include a list of <strong>feature flags</strong> that indicate which capabilities are used. For example:</p>
+
+<ul>
+  <li><code class="language-text">design-tokens/v1</code> — Uses design tokens</li>
+  <li><code class="language-text">components/v2</code> — Uses the v2 component system</li>
+  <li><code class="language-text">variants/v1</code> — Uses component variants</li>
+  <li><code class="language-text">layout/grid</code> — Uses grid layouts</li>
+</ul>
+
+<p>These flags help Penpot know what features need to be supported when importing the file.</p>
+
+<h2 id="for-developers">For developers</h2>
+
+<p>If you're building tools or integrations that work with .penpot files, the <a href="/technical-guide/developer/data-model/penpot-file-format/">complete technical specification</a> provides detailed schema definitions for every JSON file in the archive.</p>
+
+<p>Key resources:</p>
+<ul>
+  <li><a href="/technical-guide/developer/data-model/penpot-file-format/">Technical specification</a> — Complete schema reference</li>
+  <li><a href="/technical-guide/developer/data-model/penpot-file-inspector/">File inspector</a> — Browser-based tool to interactively explore a .penpot file</li>
+  <li><a href="/mcp/">MCP Server</a> — AI-powered file inspection and manipulation</li>
+  <li><a href="/technical-guide/developer/data-model/">Data model</a> — Conceptual overview of Penpot's data structures</li>
+</ul>

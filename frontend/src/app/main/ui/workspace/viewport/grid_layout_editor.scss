@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/z-index.scss" as *;
 
 .grid-track-marker {
   .marker-shape {
@@ -123,7 +124,7 @@
   position: absolute;
   top: deprecated.$s-44;
   left: 50%;
-  z-index: deprecated.$z-index-20;
+  z-index: var(--z-index-notifications);
 }
 
 .grid-actions-container {
@@ -146,22 +147,6 @@
   font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
   padding-left: deprecated.$s-8;
-}
-
-.locate-btn {
-  @extend %button-secondary;
-
-  text-transform: uppercase;
-  padding: deprecated.$s-8 deprecated.$s-20;
-  font-size: deprecated.$fs-11;
-}
-
-.done-btn {
-  @extend %button-primary;
-
-  text-transform: uppercase;
-  padding: deprecated.$s-8 deprecated.$s-20;
-  font-size: deprecated.$fs-11;
 }
 
 .close-btn {

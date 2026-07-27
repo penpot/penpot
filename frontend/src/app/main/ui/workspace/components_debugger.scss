@@ -1,0 +1,224 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
+
+.wrapper {
+  position: fixed;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
+  box-shadow: 0 0 var(--sp-s) 0 var(--color-shadow-light);
+  overflow: hidden;
+  min-inline-size: $sz-24;
+  min-block-size: $sz-200;
+  max-inline-size: 90vw;
+  max-block-size: 90vh;
+  resize: both;
+  user-select: none;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-secondary);
+  z-index: var(--z-index-set);
+}
+
+.inner {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  block-size: 100%;
+  padding: var(--sp-s);
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+  padding-block-end: var(--sp-xxs);
+  cursor: grab;
+  touch-action: none;
+}
+
+.wrapper.is-dragging .header {
+  cursor: grabbing;
+}
+
+.title {
+  @include t.use-typography("body-small");
+
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+  margin-inline-end: var(--sp-xxs);
+}
+
+.canvas {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+  padding-block-start: var(--sp-s);
+}
+
+.canvas-svg {
+  display: block;
+  min-block-size: 100%;
+  min-inline-size: 100%;
+}
+
+.selection-preview-box {
+  --stroke-color: var(--color-background-quaternary);
+
+  fill: var(--color-background-primary);
+  stroke: var(--stroke-color);
+  stroke-width: $b-2;
+
+  &.selected {
+    --stroke-color: var(--color-accent-secondary);
+  }
+
+  &.swap {
+    --stroke-color: var(--color-accent-success);
+  }
+
+  &.deleted {
+    --stroke-color: var(--color-accent-error);
+  }
+}
+
+.selection-preview-icon {
+  --icon-stroke-color: var(--color-foreground-secondary);
+
+  display: block;
+
+  &.component {
+    --icon-stroke-color: var(--color-accent-secondary);
+  }
+}
+
+.selection-preview-text {
+  @include t.use-typography("body-small");
+
+  fill: var(--color-foreground-primary);
+  user-select: text;
+}
+
+.deleted-header-bg {
+  fill: var(--color-accent-error);
+}
+
+.deleted-header-text {
+  @include t.use-typography("body-small");
+
+  fill: var(--color-static-white);
+  font-weight: var(--font-weight-medium);
+}
+
+.info-labels-bg {
+  fill: var(--color-background-quaternary);
+}
+
+.info-text {
+  @include t.use-typography("body-small");
+
+  fill: var(--color-foreground-primary);
+  text-anchor: start;
+  user-select: text;
+}
+
+.shape-thumbnail-bg {
+  fill: var(--color-background-primary);
+  stroke: var(--color-background-quaternary);
+  stroke-width: $b-1;
+
+  &.is-loading {
+    animation: thumbnail-loading-pulse 1.2s ease-in-out infinite;
+  }
+
+  &.unavailable {
+    fill: var(--color-background-quaternary);
+  }
+}
+
+.shape-thumbnail-image {
+  opacity: 0.95;
+}
+
+.shape-thumbnail-loading {
+  @include t.use-typography("body-small");
+
+  fill: var(--color-foreground-secondary);
+  pointer-events: none;
+}
+
+.shape-thumbnail-unavailable {
+  @include t.use-typography("body-small");
+
+  fill: var(--color-foreground-secondary);
+  pointer-events: none;
+}
+
+@keyframes thumbnail-loading-pulse {
+  0%,
+  100% {
+    fill: var(--color-background-primary);
+  }
+
+  50% {
+    fill: var(--color-background-quaternary);
+  }
+}
+
+.highlight-arrows {
+  pointer-events: none;
+}
+
+.highlight-arrow {
+  stroke: var(--color-accent-secondary);
+  stroke-width: $b-2;
+}
+
+.highlight-arrow-marker-circle {
+  fill: var(--color-accent-secondary);
+}
+
+.highlight-arrow-marker-icon {
+  fill: var(--color-accent-secondary);
+  stroke: var(--color-background-primary);
+  stroke-width: $b-2;
+}
+
+.swap-arrow {
+  stroke: var(--color-accent-success);
+  stroke-width: $b-2;
+}
+
+.swap-arrow-marker-circle {
+  fill: var(--color-accent-success);
+}
+
+.swap-arrow-marker-icon {
+  fill: var(--color-accent-success);
+  stroke: var(--color-background-primary);
+  stroke-width: $b-2;
+}
+
+.legend-text {
+  @include t.use-typography("body-small");
+
+  fill: var(--color-foreground-primary);
+}
+
+.legend-bg {
+  fill: var(--color-background-quaternary);
+}
+
+::-webkit-resizer {
+  display: none;
+}
