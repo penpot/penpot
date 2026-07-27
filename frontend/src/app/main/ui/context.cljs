@@ -47,6 +47,7 @@
 
 (def permissions          (mf/create-context nil))
 (def can-edit?            (mf/create-context nil))
+(def can-edit-tokens?     (mf/create-context nil))
 
 (def active-tokens-by-type
   "Active tokens by type, used mainly for provide tokens data to the
