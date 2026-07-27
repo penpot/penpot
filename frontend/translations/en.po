@@ -490,6 +490,14 @@ msgstr "Once a project member creates a file, it will be displayed here."
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "No files yet."
 
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Grid view"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "List view"
+
 #: src/app/main/ui/dashboard/placeholder.cljs:117
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
@@ -861,7 +869,7 @@ msgstr "Move to other team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
-msgstr "My teams"
+msgstr "My Teams"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1077,6 +1085,9 @@ msgstr "Searching for “%s“…"
 #: src/app/main/ui/dashboard/sidebar.cljs:354
 msgid "dashboard.section.organizations"
 msgstr "Organizations"
+
+msgid "dashboard.section.teams"
+msgstr "Teams"
 
 #, unused
 msgid "dashboard.select-org-modal.accept"
@@ -2862,6 +2873,11 @@ msgstr "Create new team"
 msgid "labels.create-team.placeholder"
 msgstr "Enter new team name"
 
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.current"
+msgstr "Current"
+
 #, unused
 msgid "labels.custom-fonts"
 msgstr "Custom fonts"
@@ -2869,6 +2885,10 @@ msgstr "Custom fonts"
 #: src/app/main/ui/settings/sidebar.cljs:82
 msgid "labels.dashboard"
 msgstr "Dashboard"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.default"
+msgstr "Default"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:337, src/app/main/ui/dashboard/fonts.cljs:286, src/app/main/ui/dashboard/fonts.cljs:363, src/app/main/ui/dashboard/fonts.cljs:397, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1379, src/app/main/ui/settings/integrations.cljs:389, src/app/main/ui/settings/profile.cljs:117, src/app/main/ui/settings/profile.cljs:128, src/app/main/ui/settings/profile.cljs:129, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:258, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:378
 msgid "labels.delete"
@@ -3918,6 +3938,14 @@ msgstr "Are you sure you want to delete this page?"
 msgid "modals.delete-page.title"
 msgstr "Delete page"
 
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "Are you sure you want to delete the selected pages?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Delete pages"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
 msgstr "Delete project"
@@ -4333,12 +4361,12 @@ msgstr "Enjoy your plan!"
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
-"You can manage your subscription anytime from the Subscription page in your "
-"account settings."
+"You can edit your subscription at any time from the 'Subscription' page in your "
+"account details."
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "You are Business Nitrate!"
+msgid "nitrate.modal-success.title"
+msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
 msgid "nitrate.code-activation.footer"
@@ -4364,37 +4392,30 @@ msgstr "Activate"
 msgid "nitrate.code-activation.title"
 msgstr "Activate Nitrate"
 
-#, unused
 msgid "nitrate.contact-sales.button"
 msgstr "Contact sales"
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
 "To switch to this plan, please contact our sales team. We'll help you "
 "update your subscription and ensure everything is set up correctly."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-org-deleted"
 msgstr "Your organization will be deleted."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
 "Your total storage, auto-version history, and file recovery period will be "
 "limited."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr ""
 "The teams, projects and files will no longer be part of any organization "
 "but they will remain available."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-title"
 msgstr "When you downgrade:"
 
-#, unused
 msgid "nitrate.contact-sales.title"
 msgstr "Switch to %s plan?"
 
@@ -4430,7 +4451,19 @@ msgstr "Full open-source freedom, with the governance your org needs"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
 msgid "nitrate.form.enterprise-intro"
-msgstr "Everything your teams need to work securely at scale:"
+msgstr "Everything your teams need to work securely at scale%s"
+
+msgid "nitrate.form.enterprise-description"
+msgstr "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."
+
+msgid "nitrate.form.contact-us-free-trial"
+msgstr "Contact us to try the Enterprise plan for 14 days:"
+
+msgid "nitrate.form.contact-us-upgrade"
+msgstr "Contact us to upgrade to the Enterprise plan:"
+
+msgid "nitrate.form.free-trial-button"
+msgstr "Try 14 days for free"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
@@ -4444,7 +4477,6 @@ msgstr "Have an activation code?"
 msgid "nitrate.form.see-plan"
 msgstr "See my current plan"
 
-#, unused
 msgid "nitrate.form.start-enterprise"
 msgstr "Get started with Enterprise"
 
@@ -4455,11 +4487,6 @@ msgstr "Unlock Enterprise features"
 #: src/app/main/ui/dashboard/subscription.cljs:209, src/app/main/ui/nitrate/nitrate_form.cljs:75
 msgid "nitrate.form.try-free"
 msgstr "Try it free for 14 days"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:74
-#, fuzzy
-msgid "nitrate.form.upgrade"
-msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:575
 msgid "nitrate.subscription.active-until"
@@ -4472,6 +4499,9 @@ msgstr "Your Nitrate subscription has been renewed."
 #: src/app/main/ui/settings/subscription.cljs:584
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "Cancel subscription"
+
+msgid "nitrate.subscription.settings.manual-contact-us"
+msgstr "To cancel your Nitrate subscription, please contact us at:"
 
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
@@ -5026,9 +5056,17 @@ msgstr "This token does not exist or has been deleted."
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
-#: src/app/plugins/utils.cljs:318
+#: src/app/plugins/utils.cljs:533
+msgid "plugins.validation.invalid-value"
+msgstr "expected %s, got %s (%s)"
+
+#: src/app/plugins/utils.cljs:547
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
+
+#: src/app/plugins/utils.cljs:536
+msgid "plugins.validation.received-value"
+msgstr "got %s (%s)"
 
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
@@ -5072,16 +5110,12 @@ msgstr "Workspace"
 msgid "shortcut-subsection.alignment"
 msgstr "Alignment"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.edit"
 msgstr "Edit"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Generic"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Generic"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -5599,11 +5633,79 @@ msgstr "Stop measurement"
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
 
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Shortcuts page"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Keyboard shortcuts"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reset"
+msgstr "Reset to default"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disable"
+msgstr "Disable shortcut"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled-shortcut"
+msgstr "Disabled shortcut"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.overwritten-by"
+msgstr "This shortcut has been reassigned to %s"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "Head to All to start customizing your shortcuts."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-disabled"
+msgstr "There are not disabled shortcuts"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reload-hint"
+msgstr "After editing shortcuts, reload any other open Penpot tabs to apply the changes."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "There are no shortcuts that match your search"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalized"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled"
+msgstr "Disabled"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-arrow"
+msgstr "Arrow"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-line"
+msgstr "Line"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Import/Export"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Press the key combination"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Combination assigned to \"%s\". Saving will remove it there."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr "This key combination is available and can be assigned without conflicts."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.toggle-alignment"
 msgstr "Toggle dynamic alignment"
 
@@ -5614,6 +5716,10 @@ msgstr "Toggle assets"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Toggle color palette"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.toggle-comments-visibility"
+msgstr "Toggle comments visibility"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
 msgid "shortcuts.toggle-focus-mode"
@@ -5710,6 +5816,26 @@ msgstr "Zoom lense increase"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:211
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.edit-on-settings"
+msgstr "Customize on settings"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-title"
+msgstr "Restore to default configuration"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-text"
+msgstr "The following shortcuts will be restored to their default values."
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.acction"
+msgstr "Acction"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.restore"
+msgstr "Restore"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
 msgid "subscription.banner.create-org-info"
@@ -5920,6 +6046,9 @@ msgstr "All Professional plan benefits and:"
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
 
+msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
+msgstr "All Unlimited plan benefits, plus:"
+
 #: src/app/main/ui/settings/subscription.cljs:62
 msgid "subscription.settings.editors"
 msgstr "(x %s editors)"
@@ -5943,6 +6072,27 @@ msgstr "Flat monthly bill"
 #: src/app/main/ui/settings/subscription.cljs:631, src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:710
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "Unlimited storage"
+
+msgid "subscription.settings.enterprise.nitrate.multi-org-management"
+msgstr "Multi-Org Management:"
+
+msgid "subscription.settings.enterprise.nitrate.support-team"
+msgstr "Support for complex team hierarchies and separate sub-organizations."
+
+msgid "subscription.settings.enterprise.nitrate.enterprise-security"
+msgstr "Enterprise Security:"
+
+msgid "subscription.settings.enterprise.nitrate.native-sso"
+msgstr "Native SAML/​​SSO and full Audit Trail logging for compliance reporting."
+
+msgid "subscription.settings.enterprise.nitrate.advanced-control"
+msgstr "Advanced Control:"
+
+msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
+msgstr "Granular plugin whitelisting, including our secure, isolated MCP Server for AI connectivity."
+
+msgid "subscription.settings.admin-console"
+msgstr "Admin Console"
 
 #: src/app/main/ui/dashboard/subscription.cljs:287, src/app/main/ui/settings/subscription.cljs:583, src/app/main/ui/settings/subscription.cljs:610, src/app/main/ui/settings/subscription.cljs:622, src/app/main/ui/settings/subscription.cljs:634, src/app/main/ui/settings/subscription.cljs:644
 msgid "subscription.settings.manage-your-subscription"
@@ -6023,15 +6173,15 @@ msgstr "More information"
 
 #: src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.organization-member-month"
-msgstr "org member per month"
+msgstr "org member / month"
 
 #: src/app/main/ui/settings/subscription.cljs:665
 msgid "subscription.settings.other-plans"
 msgstr "Other penpot plans"
 
 #: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per month"
+msgid "subscription.settings.price-user-month"
+msgstr "user / month"
 
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
@@ -6099,10 +6249,9 @@ msgstr "Thank your for chosing the Penpot %s plan!"
 msgid "subscription.settings.success.dialog.title"
 msgstr "You are %s!"
 
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "You've been supporting us with this plan since: %s"
+#: src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.subscribed-since"
+msgstr "You've been on the %s plan since %s."
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -6432,6 +6581,10 @@ msgstr "Your items are going to be named automatically as \"group name / item na
 #: src/app/main/ui/workspace/context_menu.cljs:716, src/app/main/ui/workspace/sidebar/assets/colors.cljs:265, src/app/main/ui/workspace/sidebar/assets/components.cljs:670, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:541
 msgid "workspace.assets.delete"
 msgstr "Delete"
+
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Delete pages"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
 msgid "workspace.assets.delete-group"
@@ -8378,6 +8531,30 @@ msgstr "Gap"
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:268, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:291
 msgid "workspace.options.stroke-width"
 msgstr "Stroke width"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-top"
+msgstr "Top (block start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-right"
+msgstr "Right (inline end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-bottom"
+msgstr "Bottom (block end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-left"
+msgstr "Left (inline start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side"
+msgstr "Stroke per side"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side-disabled"
+msgstr "Strokes per side feature is only available in the new render. Switch render to use it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:209
 msgid "workspace.options.stroke.add-stroke"

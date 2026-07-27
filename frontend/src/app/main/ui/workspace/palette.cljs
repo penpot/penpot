@@ -51,9 +51,12 @@
 
 (mf/defc palette*
   [{:keys [layout on-change-size]}]
-  (let [color-palette? (:colorpalette layout)
-        text-palette?  (:textpalette layout)
-        hide-palettes? (:hide-palettes layout)
+  (let [color-palette?   (:colorpalette layout)
+        text-palette?    (:textpalette layout)
+        hide-palettes?   (:hide-palettes layout)
+
+        custom-shortcuts (mf/deref refs/custom-shortcuts)
+        get-tt           #(sc/get-effective-tooltip % custom-shortcuts)
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         container      (mf/use-ref nil)
@@ -179,16 +182,16 @@
         [:ul {:class (dm/str size-classname " " (stl/css-case :palette-btn-list true
                                                               :hidden-bts hide-palettes?))}
          [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+          [:button {:title (tr "workspace.toolbar.color-palette" (get-tt :toggle-colorpalette))
+                    :aria-label (tr "workspace.toolbar.color-palette" (get-tt :toggle-colorpalette))
                     :class (stl/css-case :palette-btn true
                                          :selected color-palette?)
                     :on-click on-select-color-palette}
            deprecated-icon/drop-icon]]
 
          [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+          [:button {:title (tr "workspace.toolbar.text-palette" (get-tt :toggle-textpalette))
+                    :aria-label (tr "workspace.toolbar.text-palette" (get-tt :toggle-textpalette))
                     :class (stl/css-case :palette-btn true
                                          :selected text-palette?)
                     :on-click on-select-text-palette}

@@ -13,7 +13,7 @@ Fetch information from Taiga public API for the **Penpot** project
 
 ## Prerequisites
 
-- `python3` — the `tools/taiga.py` CLI script is self-contained (stdlib only)
+- `python3` — the `scripts/taiga.py` CLI script is self-contained (stdlib only)
 
 ## Quick Start
 
@@ -21,17 +21,17 @@ The easiest way is to use the bundled Python script:
 
 ```bash
 # Pass a Taiga URL directly
-python3 tools/taiga.py https://tree.taiga.io/project/penpot/issue/13714
+python3 scripts/taiga.py https://tree.taiga.io/project/penpot/issue/13714
 
 # Or use "<type> <ref>" syntax
-python3 tools/taiga.py us 14128
-python3 tools/taiga.py task 13648
+python3 scripts/taiga.py us 14128
+python3 scripts/taiga.py task 13648
 
 # Add --json for raw output
-python3 tools/taiga.py --json issue 13714
+python3 scripts/taiga.py --json issue 13714
 
 # See full usage
-python3 tools/taiga.py --help
+python3 scripts/taiga.py --help
 ```
 
 ## URL Pattern Reference
@@ -51,30 +51,30 @@ To extract the **type** and **ref** from a URL:
 
 ## Python Script Reference
 
-The `tools/taiga.py` script wraps the Taiga API into a single convenient CLI
+The `scripts/taiga.py` script wraps the Taiga API into a single convenient CLI
 with sensible defaults.
 
 ### Usage
 
 ```
-python3 tools/taiga.py <taiga-url>
-python3 tools/taiga.py <type> <ref>
-python3 tools/taiga.py [--json] <taiga-url>
-python3 tools/taiga.py [--json] <type> <ref>
+python3 scripts/taiga.py <taiga-url>
+python3 scripts/taiga.py <type> <ref>
+python3 scripts/taiga.py [--json] <taiga-url>
+python3 scripts/taiga.py [--json] <type> <ref>
 ```
 
 ### Examples
 
 ```bash
 # By URL (recommended — no need to think about type/ref)
-python3 tools/taiga.py https://tree.taiga.io/project/penpot/issue/13714
+python3 scripts/taiga.py https://tree.taiga.io/project/penpot/issue/13714
 
 # By type and ref
-python3 tools/taiga.py us 14128
-python3 tools/taiga.py task 13648
+python3 scripts/taiga.py us 14128
+python3 scripts/taiga.py task 13648
 
 # Raw JSON output
-python3 tools/taiga.py --json issue 13714
+python3 scripts/taiga.py --json issue 13714
 ```
 
 ### Output

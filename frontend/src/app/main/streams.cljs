@@ -32,6 +32,17 @@
 (defonce workspace-selrect
   (rx/behavior-subject nil))
 
+(defn clear-transform-preview!
+  "Reset the interactive-transform preview behaviour-subjects. Controls
+  that drive a live preview (drag/resize/rotate, flex spacing handles,
+  grid track/cell gestures) set these via `set-wasm-modifiers` and clear
+  them at gesture end. If the control unmounts mid-gesture that clearing
+  never runs, so the stale selrect keeps displacing the DOM selection
+  overlay of the next selection. Call from gesture end / unmount cleanup."
+  []
+  (rx/push! wasm-modifiers nil)
+  (rx/push! workspace-selrect nil))
+
 ;; --- Derived streams
 
 (defonce ^:private pointer

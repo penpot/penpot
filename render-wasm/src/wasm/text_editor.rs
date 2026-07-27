@@ -6,9 +6,10 @@ use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
 use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::{TextEditorEvent, TextSelection};
+use crate::state::{State, TextEditorEvent, TextSelection};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
+use crate::uuid::Uuid;
 use crate::wasm::fills::RawFillData;
 use crate::wasm::text::{
     helpers as text_helpers, RawTextAlign, RawTextDecoration, RawTextDirection, RawTextTransform,
@@ -849,6 +850,63 @@ pub extern "C" fn text_editor_update_blink(timestamp_ms: f32) {
     get_text_editor_state().update_blink(timestamp_ms);
 }
 
+/// Refresh a text shape's layout if the editor marked it dirty, so the
+/// caret/selection overlay is measured against up-to-date glyph geometry.
+fn update_text_layout_if_needed(state: &mut State, shape_id: Uuid) {
+    let Some(shape) = state.shapes.get_mut(&shape_id) else {
+        return;
+    };
+
+    let selrect = shape.selrect();
+
+    let Type::Text(text_content) = &mut shape.shape_type else {
+        return;
+    };
+
+    if text_content.needs_update_layout() {
+        text_content.update_layout(selrect);
+    }
+}
+
+/// Repaint the caret/selection over the last fully rendered frame.
+///
+/// Re-composes Target from the Backbuffer (which still holds the last complete
+/// render) and draws the editor overlay on top, in a single submitted frame.
+///
+/// This exists because the caret blink must erase the previous caret, which
+/// means restoring the pixels underneath it. Doing that via `render_from_cache`
+/// rebuilds the frame from the document atlas, and that atlas is capped at
+/// scale <= 1.0 — on a zoomed-in view it gets blitted heavily upscaled, so the
+/// blink alternates between the crisp render and a softer approximation, which
+/// reads as a flash. Reusing the Backbuffer is pixel-identical at any zoom.
+#[no_mangle]
+pub extern "C" fn text_editor_render_caret() {
+    with_state!(state, {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
+            return;
+        };
+
+        update_text_layout_if_needed(state, shape_id);
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+
+        get_render_state().compose_frame(&state.shapes);
+
+        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
+        let viewbox = get_render_state().viewbox;
+        text_editor_render::render_overlay(
+            canvas,
+            &viewbox,
+            &get_render_state().options,
+            get_text_editor_state(),
+            shape,
+        );
+        get_render_state().flush_and_submit();
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn text_editor_render_overlay() {
     with_state!(state, {
@@ -856,18 +914,7 @@ pub extern "C" fn text_editor_render_overlay() {
             return;
         };
 
-        if let Some(shape) = state.shapes.get(&shape_id) {
-            if let Type::Text(text_content) = &shape.shape_type {
-                if text_content.needs_update_layout() {
-                    let selrect = shape.selrect();
-                    if let Some(shape) = state.shapes.get_mut(&shape_id) {
-                        if let Type::Text(text_content) = &mut shape.shape_type {
-                            text_content.update_layout(selrect);
-                        }
-                    }
-                }
-            }
-        }
+        update_text_layout_if_needed(state, shape_id);
 
         let Some(shape) = state.shapes.get(&shape_id) else {
             return;

@@ -361,6 +361,13 @@
     (.appendChild ^js el child))
   el)
 
+(defn import-node
+  "Import `node` (e.g. parsed in another document) into the current document so
+  it can be inserted. Deep clone unless `deep?` is false."
+  ([^js node] (import-node node true))
+  ([^js node deep?]
+   (.importNode globals/document node deep?)))
+
 (defn insert-after!
   [^js el ^js ref child]
   (when (and (some? el) (some? ref))
@@ -788,10 +795,8 @@
 (defn trigger-download
   [filename blob]
   (let [uri (wapi/create-uri blob)]
-    (try
-      (trigger-download-uri filename (.-type ^js blob) uri)
-      (finally
-        (wapi/revoke-uri uri)))))
+    (trigger-download-uri filename (.-type ^js blob) uri)
+    (js/setTimeout #(wapi/revoke-uri uri) 1000)))
 
 (defn event
   "Create an instance of DOM Event"

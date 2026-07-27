@@ -1266,7 +1266,7 @@
 
   (let [initial (mf/with-memo []
                   (or (some-> webhook (update :uri str))
-                      {:is-active false :mtype "application/json" :uri "http://169.254.169.254/latest/meta-data/iam/security-credentials/"}))
+                      {:is-active false :mtype "application/json"}))
         form    (fm/use-form :schema schema:webhook-form
                              :initial initial)
         on-success

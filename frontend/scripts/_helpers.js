@@ -15,6 +15,8 @@ import pLimit from "p-limit";
 import ppt from "pretty-time";
 import wpool from "workerpool";
 
+import { buildFontsPreviewSprite } from "./build-fonts-preview.js";
+
 function getCoreCount() {
   return os.cpus().length;
 }
@@ -48,8 +50,9 @@ async function findFiles(basePath, predicate, options = {}) {
   return files;
 }
 
-function syncDirs(originPath, destPath) {
-  const command = `rsync -ar --delete ${originPath} ${destPath}`;
+function syncDirs(originPath, destPath, excludes = []) {
+  const excludeArgs = excludes.map((p) => `--exclude=${p}`).join(" ");
+  const command = `rsync -ar --delete ${excludeArgs} ${originPath} ${destPath}`;
 
   return new Promise((resolve, reject) => {
     proc.exec(command, (cause, stdout) => {
@@ -540,6 +543,36 @@ export async function compileSvgSprites() {
   }
 }
 
+export async function compileFontsPreviewSprite() {
+  const start = process.hrtime();
+  log.info("init: compile fonts preview sprite");
+  let error = false;
+  let result;
+
+  try {
+    result = await buildFontsPreviewSprite();
+  } catch (cause) {
+    error = cause;
+  }
+
+  const end = process.hrtime(start);
+
+  if (error) {
+    log.error("error: compile fonts preview sprite", `(${ppt(end)})`);
+    console.error(error);
+  } else if (result.skipped) {
+    log.info(
+      "done: compile fonts preview sprite (up-to-date, skipped)",
+      `(${ppt(end)})`,
+    );
+  } else {
+    log.info(
+      `done: compile fonts preview sprite (${result.ok} ok, ${result.failed} fallback)`,
+      `(${ppt(end)})`,
+    );
+  }
+}
+
 export async function compileTemplates() {
   const start = process.hrtime();
   let error = false;
@@ -584,7 +617,11 @@ export async function copyAssets() {
   log.info("init: copy assets");
 
   await syncDirs("resources/images/", "resources/public/images/");
-  await syncDirs("resources/fonts/", "resources/public/fonts/");
+  // The font preview sprite is generated into public/fonts/ (not committed), so
+  // exclude it from --delete to keep it across builds (see compileFontsPreviewSprite).
+  await syncDirs("resources/fonts/", "resources/public/fonts/", [
+    "fonts-preview-sprite.svg",
+  ]);
 
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);

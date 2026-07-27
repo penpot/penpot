@@ -1,25 +1,24 @@
 {
   "name": "penpot",
-  "version": "1.20.0",
+  "version": "2.17.0",
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.10.0+sha512.0b7f8b98060031904c017e3a41eb187a16d40eeb829b95c4f8cb03681761fc4ab53dd219115b9b447f4dce1a05a214764461e7d3703392a9f32f9511ce8c86c8",
+  "packageManager": "pnpm@11.12.0+sha512.820a6fbd0d9f04c226638002aead1e45340a9139dd5dc077c1d83ef44aa2481c8eb6637b4c9aa696a3c7e35ba818e49cf27213e5f2b91138d09b7a3e26e898ba",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
   "type": "module",
-  "scripts": {
-    "lint": "./scripts/lint",
-    "check-fmt": "./scripts/check-fmt",
-    "fmt": "./scripts/fmt"
-  },
   "devDependencies": {
+    "@playwright/mcp": "^0.0.76",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^26.0.1",
+    "commander": "^14.0.1",
+    "dotenv": "^16.4.7",
     "esbuild": "^0.28.1",
     "mdts": "^0.20.3",
     "nrepl-client": "^0.3.0",
-    "opencode-ai": "^1.17.11"
+    "playwright": "^1.61.1"
   }
 }

@@ -49,8 +49,8 @@
     cursor: pointer;
     margin: deprecated.$s-8;
     border: deprecated.$s-2 solid transparent;
-    width: var(--th-width, #{g.$thumbnail-default-width});
-    height: var(--th-height, #{g.$thumbnail-default-height});
+    width: var(--thumbnail-width, #{g.$thumbnail-default-width});
+    height: var(--thumbnail-height, #{g.$thumbnail-default-height});
 
     svg {
       width: deprecated.$s-32;

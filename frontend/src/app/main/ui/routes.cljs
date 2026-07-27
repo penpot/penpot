@@ -41,7 +41,8 @@
     ["/options"       :settings-options]
     ["/subscriptions" :settings-subscription]
     ["/integrations"  :settings-integrations]
-    ["/notifications" :settings-notifications]]
+    ["/notifications" :settings-notifications]
+    ["/shortcuts"     :settings-shortcuts]]
 
    ["/frame-preview" :frame-preview]
 

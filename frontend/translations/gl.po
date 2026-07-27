@@ -1145,11 +1145,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Editar"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Xenérico"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Xenérico"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:64

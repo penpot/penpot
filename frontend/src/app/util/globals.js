@@ -22,6 +22,13 @@ goog.scope(function () {
 
   self.global = globalThis;
 
+  // Whether we are running in a real browser (has a window), as opposed to a
+  // worker or the test environment, where the objects below are mocked.
+  // Exposed to ClojureScript as `globals/browser?`.
+  self.browser_QMARK_ = function () {
+    return typeof goog.global.window !== "undefined";
+  };
+
   function createMockedEventEmitter(k) {
     /* Allow mocked objects to be event emitters, so other modules
      * may subscribe to them.

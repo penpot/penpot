@@ -2,40 +2,17 @@ use skia_safe::{self as skia, Paint, RRect};
 
 use super::{filters, RenderState, SurfaceId};
 use crate::error::Result;
+use crate::get_resources;
 use crate::render::get_source_rect;
 use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
-fn draw_image_fill(
-    render_state: &mut RenderState,
+// Set the clipping area to the shape outline within the container bounds
+fn clip_to_shape(
+    canvas: &skia::Canvas,
     shape: &Shape,
-    image_fill: &ImageFill,
-    paint: &Paint,
+    container: &crate::math::Rect,
     antialias: bool,
-    surface_id: SurfaceId,
 ) {
-    let Some(image) = render_state.images.get(&image_fill.id()) else {
-        return;
-    };
-
-    let size = image.dimensions();
-    let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
-    let container = &shape.selrect;
-    let path_transform = shape.to_path_transform();
-
-    let src_rect = get_source_rect(size, container, image_fill);
-    let dest_rect = container;
-
-    let mut image_paint = skia::Paint::default();
-    image_paint.set_anti_alias(antialias);
-    if let Some(filter) = shape.image_filter(1.) {
-        image_paint.set_image_filter(filter.clone());
-    }
-
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
-    // Save the current canvas state
-    canvas.save_layer(&layer_rec);
-
-    // Set the clipping rectangle to the container bounds
     match &shape.shape_type {
         Type::Rect(Rect {
             corners: Some(corners),
@@ -60,7 +37,7 @@ fn draw_image_fill(
         }
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(path) = shape_type.path() {
-                if let Some(path_transform) = path_transform {
+                if let Some(path_transform) = shape.to_path_transform() {
                     canvas.clip_path(
                         &path
                             .to_skia_path(shape.svg_attrs.as_ref())
@@ -77,18 +54,118 @@ fn draw_image_fill(
         Type::Group(_) => unreachable!("A group should not have fills"),
         Type::Text(_) => unimplemented!("TODO"),
     }
+}
+
+fn draw_image_fill(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    image_fill: &ImageFill,
+    paint: &Paint,
+    antialias: bool,
+    surface_id: SurfaceId,
+) {
+    if draw_svg_image_fill(
+        render_state,
+        shape,
+        image_fill,
+        paint,
+        antialias,
+        surface_id,
+    ) {
+        return;
+    }
+
+    let Some(image) = get_resources().images.get(&image_fill.id()) else {
+        return;
+    };
+
+    let size = image.dimensions();
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
+    let container = &shape.selrect;
+
+    let src_rect = get_source_rect(size, container, image_fill);
+    let dest_rect = container;
+
+    let mut image_paint = skia::Paint::default();
+    image_paint.set_anti_alias(antialias);
+    if let Some(filter) = shape.image_filter(1.) {
+        image_paint.set_image_filter(filter.clone());
+    }
+
+    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
+    // Save the current canvas state
+    canvas.save_layer(&layer_rec);
+
+    clip_to_shape(canvas, shape, container, antialias);
 
     // Draw the image with the calculated destination rectangle
     canvas.draw_image_rect_with_sampling_options(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        render_state.sampling_options,
+        get_resources().sampling_options,
         paint,
     );
 
     // Restore the canvas to remove the clipping
     canvas.restore();
+}
+
+// Draws an SVG image fill from its parsed DOM. The canvas transform carries
+// the current zoom, so the SVG rasterizes at display resolution instead of
+// being stretched from a fixed-size texture. Returns false when the stored
+// image is not an SVG.
+fn draw_svg_image_fill(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    image_fill: &ImageFill,
+    paint: &Paint,
+    antialias: bool,
+    surface_id: SurfaceId,
+) -> bool {
+    let Some((dom, size)) = get_resources().images.get_svg(&image_fill.id()) else {
+        return false;
+    };
+
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
+    let container = &shape.selrect;
+    let size = skia::ISize::new(size.width as i32, size.height as i32);
+    let src_rect = get_source_rect(size, container, image_fill);
+    if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
+        return true;
+    }
+
+    let mut image_paint = skia::Paint::default();
+    image_paint.set_anti_alias(antialias);
+    if let Some(filter) = shape.image_filter(1.) {
+        image_paint.set_image_filter(filter.clone());
+    }
+
+    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
+    canvas.save_layer(&layer_rec);
+
+    clip_to_shape(canvas, shape, container, antialias);
+
+    // Apply the fill paint (opacity/blend) to the whole SVG as one layer.
+    let fill_layer = skia::canvas::SaveLayerRec::default().paint(paint);
+    canvas.save_layer(&fill_layer);
+
+    // Map the cropped source rect onto the container: cover semantics when
+    // keep-aspect-ratio is set, stretch otherwise (same math as the raster
+    // path, expressed as a canvas transform).
+    let scale_x = container.width() / src_rect.width();
+    let scale_y = container.height() / src_rect.height();
+    canvas.translate((
+        container.left - src_rect.left * scale_x,
+        container.top - src_rect.top * scale_y,
+    ));
+    canvas.scale((scale_x, scale_y));
+    dom.render(canvas);
+
+    canvas.restore();
+    canvas.restore();
+
+    true
 }
 
 /**

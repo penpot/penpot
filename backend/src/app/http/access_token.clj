@@ -43,7 +43,6 @@
     (let [{:keys [type claims]} (get request ::http/auth-data)]
       (if (= :token type)
         (let [{:keys [perms profile-id expires-at]} (some->> claims (get-token-data pool))]
-          ;; FIXME: revisit this, this data looks unused
           (handler (cond-> request
                      (some? perms)
                      (assoc ::perms perms)

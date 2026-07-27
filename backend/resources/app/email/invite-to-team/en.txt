@@ -1,6 +1,6 @@
 Hello!
 
-{{invited-by|abbreviate:25}} has invited you to join the team "{{ team|abbreviate:25 }}"{% if organization %}, part of the organization "{{ organization.name|abbreviate:50 }}"{% endif %}.
+{{invited-by|abbreviate:25}} has invited you to join the team "{{ team|abbreviate:50 }}"{% if organization %}, part of the organization "{{ organization.name|abbreviate:50 }}"{% endif %}.
 
 {% if organization.sso-active %}
 "{{ organization.name|abbreviate:50 }}" has set up single sign-on (SSO) in Penpot. Access to its teams and files goes

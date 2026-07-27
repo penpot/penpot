@@ -121,6 +121,61 @@
       [sc]
       (str/split sc #"\+| "))))
 
+(defn command->tooltip
+  "Converts a Mousetrap command string (e.g. \"command+shift+z\") to
+  a human-readable display string in the same format used by :tooltip
+  fields (e.g. \"⌘⇧Z\" on macOS or \"Ctrl+Shift+Z\" on Windows).
+  Returns nil for empty or unbound commands."
+  [command]
+  (when (and command (not= command ""))
+    (let [is-macos?    (cf/check-platform? :macos)
+          parts        (str/split command #"\+")
+          display-part (fn [p]
+                         (case p
+                           "ctrl"      (if is-macos? mac-control "Ctrl+")
+                           "command"   (if is-macos? mac-command "Ctrl+")
+                           "alt"       (if is-macos? mac-option "Alt+")
+                           "shift"     (if is-macos? mac-shift "Shift+")
+                           "up"        up-arrow
+                           "down"      down-arrow
+                           "left"      left-arrow
+                           "right"     right-arrow
+                           "del"       (if is-macos? mac-delete "Del")
+                           "backspace" (if is-macos? mac-delete "Backspace")
+                           "escape"    (if is-macos? mac-esc "Escape")
+                           "enter"     (if is-macos? mac-enter "Enter")
+                           "space"     "Space"
+                           "tab"       tab
+                           (str/upper p)))]
+      (str/join "" (map display-part parts)))))
+
+(defn apply-custom-overrides
+  [shortcuts custom-overrides group-key]
+  (let [group-overrides (get custom-overrides group-key)]
+    (if (empty? group-overrides)
+      shortcuts
+      (reduce-kv
+       (fn [acc sc-key new-command]
+         (if (and (contains? acc sc-key)
+                  (not (:disabled (get acc sc-key))))
+           (-> acc
+               (assoc-in [sc-key :command] new-command)
+               (update sc-key dissoc :show-command))
+           acc))
+       shortcuts
+       group-overrides))))
+
+(defn build-command-index
+  [shortcuts]
+  (reduce-kv
+   (fn [acc sc-key sc-def]
+     (let [commands (:command sc-def)]
+       (if (vector? commands)
+         (reduce #(assoc %1 %2 sc-key) acc commands)
+         (assoc acc commands sc-key))))
+   {}
+   shortcuts))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -171,17 +226,34 @@
   (fnil conj (d/ordered-map)))
 
 (defn push-shortcuts
-  [key shortcuts]
+  [key shortcuts group-key & {:keys [merge-shortcuts]}]
   (assert (keyword? key) "expected a keyword for `key`")
   (let [shortcuts (check-shortcuts shortcuts)]
     (ptk/reify ::push-shortcuts
       ptk/UpdateEvent
       (update [_ state]
-        (update state :shortcuts conj* [key shortcuts]))
+        (let [custom-overrides (get-in state [:profile :props :custom-shortcuts])
+              group-key        (or group-key (:shortcuts-group-key state))
+              merge-sc         (cond
+                                 (= merge-shortcuts :auto)
+                                 (let [[_ sc] (last (:shortcuts state))]
+                                   sc)
+
+                                 (map? merge-shortcuts)
+                                 merge-shortcuts)
+
+              effective        (if merge-sc
+                                 (merge merge-sc shortcuts)
+                                 shortcuts)
+              effective        (apply-custom-overrides effective custom-overrides group-key)]
+          (-> state
+              (update :shortcuts conj* [key effective])
+              (assoc :shortcuts-group-key group-key))))
 
       ptk/EffectEvent
-      (effect [_ _ _]
-        (reset! shortcuts)))))
+      (effect [_ state _]
+        (let [[_ stored] (last (:shortcuts state))]
+          (reset! stored))))))
 
 (defn pop-shortcuts
   [key]
@@ -193,5 +265,19 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [[_key shortcuts] (last (:shortcuts state))]
-        (reset! shortcuts)))))
+      (let [[_key shortcuts] (last (:shortcuts state))
+            custom-overrides (get-in state [:profile :props :custom-shortcuts])
+            group-key        (:shortcuts-group-key state)
+            effective        (apply-custom-overrides shortcuts custom-overrides group-key)]
+        (reset! effective)))))
+
+(defn rebind-shortcuts
+  []
+  (ptk/reify ::rebind-shortcuts
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [custom-overrides (get-in state [:profile :props :custom-shortcuts])
+            group-key        (:shortcuts-group-key state)
+            merged           (reduce merge (map val (:shortcuts state)))
+            effective        (apply-custom-overrides merged custom-overrides group-key)]
+        (reset! effective)))))

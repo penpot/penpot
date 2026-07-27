@@ -10,10 +10,12 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.stroke :as cts]
+   [app.config :as cf]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -136,6 +138,53 @@
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (st/emit! (dc/change-stroke-attrs ids {:stroke-width value} index))))
 
+        wasm-render?
+        (features/use-feature "render-wasm/v1")
+
+        per-side-available?
+        (and (contains? cf/flags :stroke-per-side)
+             (or (= type :rect) (= type :frame)))
+
+        per-side-disabled?
+        (not wasm-render?)
+
+        on-stroke-per-side-toggle
+        (fn [index]
+          (let [stroke  (get-in values [:strokes index])
+                active? (:stroke-per-side stroke)
+                width   (:stroke-width stroke)
+                width   (if (number? width) width 1)]
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
+            (if active?
+              (st/emit! (dc/change-stroke-attrs ids {:stroke-per-side false} index))
+              ;; Entering per-side mode seeds any missing side from the
+              ;; uniform width, so previous per-side edits are preserved.
+              ;; The top value doubles as the global :stroke-width.
+              (let [top (d/nilv (:stroke-width-top stroke) width)]
+                (st/emit! (dc/change-stroke-attrs
+                           ids
+                           {:stroke-per-side true
+                            :stroke-width top
+                            :stroke-width-top top
+                            :stroke-width-right (d/nilv (:stroke-width-right stroke) width)
+                            :stroke-width-bottom (d/nilv (:stroke-width-bottom stroke) width)
+                            :stroke-width-left (d/nilv (:stroke-width-left stroke) width)}
+                           index))))))
+
+        on-stroke-width-side-change
+        (fn [index attr value]
+          (when (number? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
+            ;; Code paths that don't know about per-side data (old render,
+            ;; global width input, exports) keep reading :stroke-width, and
+            ;; per spec they must see the TOP side there. So editing the top
+            ;; side also writes :stroke-width; the other sides only write
+            ;; their own attr.
+            (let [attrs (cond-> {attr value}
+                          (= attr :stroke-width-top)
+                          (assoc :stroke-width value))]
+              (st/emit! (dc/change-stroke-attrs ids attrs index)))))
+
         on-stroke-dash-change
         (fn [index value]
           (when-not (str/empty? value)
@@ -237,6 +286,10 @@
                               :on-color-detach on-color-detach
                               :on-remove on-remove
                               :on-stroke-width-change on-stroke-width-change
+                              :per-side-available per-side-available?
+                              :per-side-disabled per-side-disabled?
+                              :on-stroke-per-side-toggle on-stroke-per-side-toggle
+                              :on-stroke-width-side-change on-stroke-width-side-change
                               :on-stroke-dash-change on-stroke-dash-change
                               :on-stroke-gap-change on-stroke-gap-change
                               :on-stroke-style-change on-stroke-style-change

@@ -94,6 +94,7 @@ http {
             proxy_buffering off;
 
             proxy_set_header Host "$redirect_host";
+            proxy_set_header Authorization "";
             proxy_hide_header etag;
             proxy_hide_header x-amz-id-2;
             proxy_hide_header x-amz-request-id;

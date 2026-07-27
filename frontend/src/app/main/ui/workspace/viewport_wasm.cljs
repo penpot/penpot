@@ -586,19 +586,22 @@
            (wasm.api/text-editor-apply-theme)
            (wasm.api/request-render "text-editor-colors-theme")))))
 
-    ;; Ruler overlay updates below only change the UI surface, not the shapes.
-    ;; They use `render-from-cache!` (cached tiles + UI, atomic) instead of a full
-    ;; `request-render`, which would kick off a progressive tile-by-tile shape
-    ;; re-render that flashes on zoomed-in views (see penpot ruler-selection flash).
+    ;; Ruler overlay updates below only change the UI surface, not the shapes,
+    ;; and they fire on a stable viewbox (toggles / selection changes, not pan).
+    ;; They re-present via `render-from-backbuffer!` — reusing the crisp last
+    ;; frame + fresh UI — instead of a full `request-render` (which would kick
+    ;; off a progressive tile-by-tile re-render that flashes) or a cached-atlas
+    ;; blit (whose scale-capped atlas flashes crisp->blurry on zoomed-in views,
+    ;; e.g. when the text editor opens at high zoom).
     (mf/with-effect [@canvas-init? frame-visible?]
       (when @canvas-init?
         (wasm.api/set-rulers-frame-visible! frame-visible?)
-        (wasm.api/render-from-cache!)))
+        (wasm.api/render-from-backbuffer!)))
 
     (mf/with-effect [@canvas-init? show-rulers?]
       (when @canvas-init?
         (wasm.api/set-rulers-visible! show-rulers?)
-        (wasm.api/render-from-cache!)))
+        (wasm.api/render-from-backbuffer!)))
 
     (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
       (when (and @canvas-init? show-rulers?)
@@ -609,7 +612,7 @@
                      (some-> ruler-selection :width) (some-> ruler-selection :height)]
       (when (and @canvas-init? show-rulers?)
         (wasm.api/set-rulers-selection! ruler-selection)
-        (wasm.api/render-from-cache!)))
+        (wasm.api/render-from-backbuffer!)))
 
     ;; Paint background + rulers instantly, before shapes finish loading. Runs
     ;; after the ruler push effects so the WASM ruler state is already set.

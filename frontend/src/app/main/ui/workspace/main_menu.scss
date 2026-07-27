@@ -182,3 +182,8 @@
   border-radius: $br-6;
   background-color: var(--menu-shortcut-background-color);
 }
+
+.customized-key {
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-primary);
+}

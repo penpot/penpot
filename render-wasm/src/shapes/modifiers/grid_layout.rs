@@ -884,9 +884,12 @@ pub fn reflow_grid_layout(
             transform.post_concat(&Matrix::translate(delta_v));
         }
 
-        result.push_back(Modifier::transform_propagate(child.id, transform));
-        if child.has_layout() {
-            result.push_back(Modifier::reflow(child.id, force_reflow));
+        // Skip identity: propagating it fans out through the whole subtree.
+        if !math::identitish(&transform) {
+            result.push_back(Modifier::transform_propagate(child.id, transform));
+            if child.has_layout() {
+                result.push_back(Modifier::reflow(child.id, force_reflow));
+            }
         }
     }
 

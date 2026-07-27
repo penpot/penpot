@@ -2505,15 +2505,49 @@
     (pcb/concat-changes changes new-changes)))
 
 (defn- reposition-shape
-  [shape origin-root dest-root]
-  (let [shape-pos (fn [shape]
-                    (gpt/point (get-in shape [:selrect :x])
-                               (get-in shape [:selrect :y])))
+  "Expresses the shape (belonging to the origin-root instance) in the frame of the
+  dest-root instance, making the geometry of both instances directly comparable —
+  and copyable.
 
-        origin-root-pos (shape-pos origin-root)
-        dest-root-pos   (shape-pos dest-root)
-        delta           (gpt/subtract dest-root-pos origin-root-pos)]
-    (gsh/move shape delta)))
+  If the dest root's geometry is NOT overridden (touched), the instance follows
+  the origin's transformation verbatim (including rotation and flips), so a
+  translation by the roots' (untransformed) position delta suffices — position is
+  free per-instance placement.
+
+  If the dest root's geometry IS overridden (e.g. the user rotated the copy as a
+  whole), the instance keeps its own placement transform, so the origin shape is
+  additionally transformed by the roots' relative transformation (rotation /
+  flips) around the dest root center — geometric changes then land expressed in
+  the dest instance's own frame instead of wiping its placement."
+  [shape origin-root dest-root]
+  (let [shape-pos        (fn [shape]
+                           (gpt/point (dm/get-in shape [:selrect :x])
+                                      (dm/get-in shape [:selrect :y])))
+
+        origin-root-pos  (shape-pos origin-root)
+        dest-root-pos    (shape-pos dest-root)
+        delta            (gpt/subtract dest-root-pos origin-root-pos)
+
+        shape            (gsh/move shape delta)]
+    (if-not (ctk/touched-group? dest-root :geometry-group)
+      shape
+      (let [origin-transform (d/nilv (:transform origin-root) (gmt/matrix))
+            dest-transform   (d/nilv (:transform dest-root) (gmt/matrix))
+            rel-transform    (gmt/multiply dest-transform (gmt/inverse origin-transform))]
+        (if ^boolean (gmt/unit? rel-transform)
+          shape
+          ;; The roots differ in rotation/flips: rotate the whole (already moved)
+          ;; shape around the dest root center by the roots' relative transform.
+          ;; The :rotation attribute delta is fed through the :modifiers path so
+          ;; apply-transform keeps it consistent with the resulting matrix.
+          (let [center       (grc/rect->center (:selrect dest-root))
+                rel-rotation (mod (- (d/nilv (:rotation dest-root) 0)
+                                     (d/nilv (:rotation origin-root) 0))
+                                  360)]
+            (-> shape
+                (assoc-in [:modifiers :rotation] rel-rotation)
+                (gsh/apply-transform (gmt/transform-in center rel-transform))
+                (dissoc :modifiers))))))))
 
 (defn- make-change
   [container change]

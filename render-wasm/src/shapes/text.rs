@@ -391,6 +391,20 @@ impl TextContent {
         self.bounds = Rect::from_xywh(x, y, w, h);
     }
 
+    /// Distinct font families referenced by this content's spans, in first-seen
+    /// order.
+    pub fn font_families(&self) -> Vec<FontFamily> {
+        let mut seen: Vec<FontFamily> = Vec::new();
+        for paragraph in &self.paragraphs {
+            for span in paragraph.children() {
+                if !seen.contains(&span.font_family) {
+                    seen.push(span.font_family);
+                }
+            }
+        }
+        seen
+    }
+
     pub fn add_paragraph(&mut self, paragraph: Paragraph) {
         self.paragraphs.push(paragraph);
         self.content_version = self.content_version.wrapping_add(1);

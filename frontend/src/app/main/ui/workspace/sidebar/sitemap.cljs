@@ -62,9 +62,10 @@
 
 ;; --- Page Item
 
-(mf/defc page-item
-  {::mf/wrap-props false}
-  [{:keys [page index deletable? selected? editing? hovering? current-page-id]}]
+(mf/defc page-item*
+  {::mf/private true
+   ::mf/wrap-props false}
+  [{:keys [page index is-deletable is-selected is-editing is-hovering current-page-id]}]
   (let [input-ref     (mf/use-ref)
         id            (:id page)
         name          (:name page "")
@@ -76,38 +77,53 @@
         on-click
         (mf/use-fn
          (mf/deps id current-page-id is-separator?)
-         (fn []
+         (fn [event]
            (when-not is-separator?
-             ;; WASM page transitions:
-             ;; - Capture the current page (A) once
-             ;; - Show a blurred snapshot while the target page (B/C/...) renders
-             ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
-             (if (and (features/active-feature? @st/state "render-wasm/v1")
-                      (not= id current-page-id))
-               (-> (if @wasm.api/page-transition?
-                     (p/resolved nil)
-                     ;; Blur with Skia, then capture the already-blurred frame.
-                     (do (wasm.api/render-blurred-snapshot!)
-                         (wasm.api/capture-canvas-snapshot)))
-                   (p/finally
-                     (fn []
-                       (wasm.api/apply-canvas-blur)
-                       ;; Two RAF so the overlay paints before navigation.
-                       (timers/raf
-                        (fn []
-                          (timers/raf navigate-fn))))))
-               (navigate-fn)))))
+             (cond
+               ;; Shift + click: select the range of pages from the anchor
+               ;; to this page (does not navigate).
+               (kbd/shift? event)
+               (st/emit! (dw/select-pages-range id))
+
+               ;; Ctrl/Cmd + click: add/remove this page to/from the
+               ;; multi-selection (does not navigate).
+               (kbd/mod? event)
+               (st/emit! (dw/toggle-page-selection id))
+
+               ;; Plain click: reset the selection to this page and
+               ;; navigate to it.
+               :else
+               (do
+                 (st/emit! (dw/select-page id))
+                 ;; WASM page transitions:
+                 ;; - Capture the current page (A) once
+                 ;; - Show a blurred snapshot while the target page (B/C/...) renders
+                 ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
+                 (if (and (features/active-feature? @st/state "render-wasm/v1")
+                          (not= id current-page-id))
+                   (-> (if @wasm.api/page-transition?
+                         (p/resolved nil)
+                         ;; Blur with Skia, then capture the already-blurred frame.
+                         (do (wasm.api/render-blurred-snapshot!)
+                             (wasm.api/capture-canvas-snapshot)))
+                       (p/finally
+                         (fn []
+                           (wasm.api/apply-canvas-blur)
+                           ;; Two RAF so the overlay paints before navigation.
+                           (timers/raf
+                            (fn []
+                              (timers/raf navigate-fn))))))
+                   (navigate-fn)))))))
 
         on-delete
         (mf/use-fn
          (mf/deps id)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-page.title")
-                       :message (tr "modals.delete-page.body")
-                       :on-accept delete-fn}))))
+           (st/emit! (modal/show {:type :confirm
+                                  :title (tr "modals.delete-page.title")
+                                  :message (tr "modals.delete-page.body")
+                                  :on-accept delete-fn}))))
 
         on-double-click
         (mf/use-fn
@@ -153,7 +169,7 @@
          :data {:id id
                 :index index
                 :name (:name page)}
-         :draggable? (and (not read-only?) (not editing?)))
+         :draggable? (and (not read-only?) (not is-editing)))
 
         on-context-menu
         (mf/use-fn
@@ -166,50 +182,49 @@
                (st/emit! (dw/show-page-item-context-menu
                           {:position position
                            :page page
-                           :deletable? deletable?}))))))]
+                           :deletable? is-deletable}))))))]
 
     (mf/use-effect
-     (mf/deps selected?)
+     (mf/deps is-selected)
      (fn []
-       (when selected?
+       (when is-selected
          (let [node (mf/ref-val dref)]
            (dom/scroll-into-view-if-needed! node)))))
 
     (mf/use-layout-effect
-     (mf/deps editing?)
+     (mf/deps is-editing)
      (fn []
-       (when editing?
+       (when is-editing
          (let [edit-input (mf/ref-val input-ref)]
            (dom/select-text! edit-input))
          nil)))
 
-    (let [selected? (and selected? (not is-separator?))]
-      [:li {:class (stl/css-case
-                    :page-element true
-                    :separator is-separator?
-                    :selected selected?
-                    :dnd-over-top (= (:over dprops) :top)
-                    :dnd-over-bot (= (:over dprops) :bot))
+    (let [selected? (and is-selected (not is-separator?))]
+      [:li {:class (stl/css-case :page-item true
+                                 :separator is-separator?
+                                 :selected selected?
+                                 :dnd-over-top (= (:over dprops) :top)
+                                 :dnd-over-bot (= (:over dprops) :bot))
             :ref dref}
-       [:div {:class (stl/css-case
-                      :element-list-body true
-                      :separator-body is-separator?
-                      :hover (and hovering? (not is-separator?))
-                      :selected selected?)
+       [:div {:class (stl/css-case :page-item-body true
+                                   :separator is-separator?
+                                   :hover (and is-hovering (not is-separator?))
+                                   :selected selected?)
               :data-testid (dm/str "page-" id)
               :tab-index "0"
               :on-click on-click
               :on-double-click on-double-click
               :on-context-menu on-context-menu}
-        (if (and is-separator? (not editing?))
-          [:div {:class (stl/css :page-separator)
+        (if (and is-separator? (not is-editing))
+          [:div {:class (stl/css :page-divider)
                  :data-testid "page-separator"}]
           [:*
            (when-not is-separator?
-             [:div {:class (stl/css :page-icon)}
-              [:> icon* {:icon-id i/document :size "s"}]])
-           (if editing?
-             [:input {:class        (stl/css :element-name)
+             [:div {:class (stl/css :page-item-icon)}
+              [:> icon* {:icon-id i/document
+                         :size "s"}]])
+           (if is-editing
+             [:input {:class        (stl/css :page-item-input)
                       :type         "text"
                       :ref          input-ref
                       :on-blur      on-blur
@@ -217,32 +232,35 @@
                       :auto-focus   true
                       :default-value name}]
              [:*
-              [:span {:class (stl/css :page-name) :title name :data-testid "page-name"}
+              [:span {:class (stl/css :page-item-label)
+                      :title name
+                      :data-testid "page-name"}
                name]
-              [:div {:class (stl/css :page-actions)}
-               (when (and deletable? (not read-only?))
+              [:div {:class (stl/css :page-item-actions)}
+               (when (and is-deletable (not read-only?))
                  [:> icon-button* {:variant "action"
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
                                    :icon-size "s"
-                                   :class (stl/css :page-delete-button)
-                                   :icon-class (stl/css :page-delete-button-icon)
+                                   :class (stl/css :page-delete-btn)
+                                   :icon-class (stl/css :page-delete-icon)
                                    :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper
 
-(mf/defc page-item-wrapper
-  {::mf/wrap-props false}
-  [{:keys [page-id index deletable? selected? editing? current-page-id]}]
+(mf/defc page-item-wrapper*
+  {::mf/private true
+   ::mf/wrap-props false}
+  [{:keys [page-id index is-deletable is-selected is-editing current-page-id]}]
   (let [page-ref (mf/with-memo [page-id]
                    (make-page-ref page-id))
         page     (mf/deref page-ref)]
-    [:& page-item {:page page
-                   :index index
-                   :current-page-id current-page-id
-                   :deletable? deletable?
-                   :selected? selected?
-                   :editing? editing?}]))
+    [:> page-item* {:page page
+                    :index index
+                    :current-page-id current-page-id
+                    :is-deletable is-deletable
+                    :is-selected is-selected
+                    :is-editing is-editing}]))
 
 ;; --- Pages List
 
@@ -252,18 +270,23 @@
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
         editing-page-id (mf/deref refs/editing-page-item)
-        current-page-id (mf/use-ctx ctx/current-page-id)]
-    [:ul {:class (stl/css :page-list)}
+        selected-pages  (mf/deref refs/selected-pages)
+        current-page-id (mf/use-ctx ctx/current-page-id)
+        ;; When there is no explicit multi-selection, the current page
+        ;; is the selected one.
+        selected-pages  (if (seq selected-pages)
+                          selected-pages
+                          #{current-page-id})]
+    [:ul
      [:> hooks/sortable-container* {}
       (for [[index page-id] (d/enumerate pages)]
-        [:& page-item-wrapper
-         {:page-id page-id
-          :index index
-          :deletable? deletable?
-          :editing? (= page-id editing-page-id)
-          :selected? (= page-id current-page-id)
-          :current-page-id current-page-id
-          :key page-id}])]]))
+        [:> page-item-wrapper* {:page-id page-id
+                                :index index
+                                :is-deletable deletable?
+                                :is-editing (= page-id editing-page-id)
+                                :is-selected (contains? selected-pages page-id)
+                                :current-page-id current-page-id
+                                :key page-id}])]]))
 
 ;; --- Sitemap Toolbox
 
@@ -276,7 +299,8 @@
         on-create      (mf/use-fn
                         (mf/deps file-id project-id)
                         (fn [event]
-                          (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
+                          (st/emit! (dw/create-page {:file-id file-id
+                                                     :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
@@ -289,7 +313,7 @@
                      :collapsed     collapsed
                      :on-collapsed  on-toggle-collapsed
                      :title         (tr "workspace.sidebar.sitemap")
-                     :class         (stl/css :title-spacing-sitemap)}
+                     :class         (stl/css :sitemap-title)}
 
       (if ^boolean read-only?
         (when ^boolean (:can-edit permissions)
@@ -297,12 +321,11 @@
                                   :size :small
                                   :content (tr "labels.view-only")}])
         [:> icon-button* {:variant "ghost"
-                          :class (stl/css :add-page)
                           :aria-label (tr "workspace.sidebar.sitemap.add-page")
                           :on-click on-create
                           :icon i/add}])]
 
      (when-not ^boolean collapsed
-       [:div {:class (stl/css :tool-window-content)}
-        [:> pages-list* {:file file :key (dm/str (:id file))}]])]))
-
+       [:div {:class (stl/css :sitemap-content)}
+        [:> pages-list* {:key (dm/str (:id file))
+                         :file file}]])]))

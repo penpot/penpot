@@ -971,7 +971,9 @@
 
       (catch Throwable cause
         (binding [l/*context* (errors/request->context request)]
-          (l/err :hint "error on process oidc callback" :cause cause)
+          (if (= :unable-to-retrieve-user-info (:code (ex-data cause)))
+            (l/wrn :hint "error on process oidc callback" :cause cause)
+            (l/err :hint "error on process oidc callback" :cause cause))
           (redirect-with-error "unable-to-auth" (ex-message cause)))))))
 
 (def ^:private schema:routes-params
