@@ -442,7 +442,7 @@
                  ;; Trim the image store AFTER the request (never mid-render, so
                  ;; an image can't disappear under a running export). Images the
                  ;; next request needs again are simply re-provisioned.
-                 (let [evicted (wasm/evict-images! (cf/get :wasm-image-cache-mb 256))]
+                 (let [evicted (wasm/evict-images! (wasm/image-cache-mb))]
                    (when (pos? evicted)
                      (l/info :hint "wasm render: evicted cached images" :count evicted)))
                  result))

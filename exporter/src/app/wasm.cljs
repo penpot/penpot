@@ -44,9 +44,19 @@
 ;; get_fonts_for_shape entry: [uuid 16 bytes][weight u32][style u32].
 (def ^:private FONT-ENTRY-BYTES 24)
 
-(defn- artifact-dir
+(defn artifact-dir
+  "Directory holding the built render-wasm artifact (render-wasm.js/.wasm).
+  The docker image points `PENPOT_WASM_DIR` at the copy shipped inside the
+  exporter bundle; the default is where `render-wasm/build` leaves it in
+  devenv."
   []
   (cf/get :wasm-dir "../frontend/resources/public/js"))
+
+(defn image-cache-mb
+  "Byte budget (in MB) the wasm image store is trimmed down to between
+  requests. See `evict-images!`."
+  []
+  (cf/get :wasm-image-cache-mb 256))
 
 (defn- read-result-bytes
   "Reads `len` bytes from the WASM heap starting at `offset`, copying them out
