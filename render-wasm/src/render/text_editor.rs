@@ -65,8 +65,8 @@ fn render_cursor(
         paint.set_blend_mode(BlendMode::Exclusion);
         paint.set_color(Color::WHITE);
     } else {
-        paint.set_blend_mode(BlendMode::SrcOver);
-        paint.set_color(editor_state.theme.cursor_color);
+        paint.set_blend_mode(BlendMode::Difference);
+        paint.set_color(Color::WHITE);
     }
 
     let shape_matrix = shape.get_matrix();
