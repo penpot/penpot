@@ -195,6 +195,10 @@ pub fn move_cursor_up(
     _text_content: &TextContent,
 ) -> TextPositionWithAffinity {
     // TODO: Implement proper line-based navigation using line metrics
+    if paragraphs.is_empty() || cursor.paragraph >= paragraphs.len() {
+        return *cursor;
+    }
+
     if cursor.paragraph > 0 {
         let prev_para = cursor.paragraph - 1;
         let char_count = paragraph_char_count(&paragraphs[prev_para]);
@@ -212,6 +216,10 @@ pub fn move_cursor_down(
     _text_content: &TextContent,
 ) -> TextPositionWithAffinity {
     // TODO: Implement proper line-based navigation using line metrics
+    if paragraphs.is_empty() || cursor.paragraph >= paragraphs.len() {
+        return *cursor;
+    }
+
     if cursor.paragraph < paragraphs.len() - 1 {
         let next_para = cursor.paragraph + 1;
         let char_count = paragraph_char_count(&paragraphs[next_para]);
