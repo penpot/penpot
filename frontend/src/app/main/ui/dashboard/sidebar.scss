@@ -109,10 +109,6 @@
   grid-template-columns: 1fr;
 }
 
-.team-name-default-logo {
-  gap: var(--sp-xs);
-}
-
 .team-text {
   @include deprecated.text-ellipsis;
   @include t.use-typography("title-small");
@@ -208,10 +204,6 @@
   gap: var(--sp-s);
   height: $sz-40;
   padding-inline-start: var(--sp-m);
-}
-
-.org-dropdown-item-default-logo {
-  gap: var(--sp-xs);
 }
 
 .action {
