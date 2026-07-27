@@ -24,7 +24,7 @@
 # WARNING: if you're exposing Penpot to the internet, you should remove the flags
 # 'disable-secure-session-cookies' and 'disable-email-verification'
 x-flags: &penpot-flags
-  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp
+  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-admin-console
 
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
@@ -44,6 +44,13 @@ x-body-size: &penpot-http-body-size
 ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
 x-secret-key: &penpot-secret-key
   PENPOT_SECRET_KEY: change-this-insecure-key
+
+## Single database configuration block, shared by backend and admin-console.
+## Don't touch them unless you are using custom postgresql connection parameters.
+x-database: &penpot-database
+  PENPOT_DATABASE_URI: postgresql://penpot-postgres/penpot
+  PENPOT_DATABASE_USERNAME: penpot
+  PENPOT_DATABASE_PASSWORD: penpot
 
 networks:
   penpot:
@@ -88,8 +95,9 @@ services:
 
     depends_on:
       - penpot-backend
-      - penpot-exporter
+      - penpot-admin-console
       - penpot-mcp
+      - penpot-exporter
 
     networks:
       - penpot
@@ -107,6 +115,11 @@ services:
 
     environment:
       << : [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
+
+      # Don't touch it; this uses an internal docker network to
+      # communicate with the admin-console.
+      PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
+
       # Set to "true" on hosts where IPv6 is disabled at kernel boot level.
       # PENPOT_DISABLE_IPV6_LISTEN: "true"
 
@@ -129,28 +142,22 @@ services:
     ## Configuration envronment variables for the backend container.
 
     environment:
-      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key]
+      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
 
-      ## Database connection parameters. Don't touch them unless you are using custom
-      ## postgresql connection parameters.
-
-      PENPOT_DATABASE_URI: postgresql://penpot-postgres/penpot
-      PENPOT_DATABASE_USERNAME: penpot
-      PENPOT_DATABASE_PASSWORD: penpot
+      # Don't touch it; this uses an internal docker network to
+      # communicate with the admin-console.
+      PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
 
       ## Valkey (or previously redis) is used for the websockets notifications. Don't touch
       ## unless the valkey container has different parameters or different name.
-
       PENPOT_REDIS_URI: redis://penpot-valkey/0
 
       ## Default configuration for assets storage: using filesystem based with all files
       ## stored in a docker volume.
-
       PENPOT_OBJECTS_STORAGE_BACKEND: fs
       PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
 
       ## Also can be configured to to use a S3 compatible storage.
-
       # AWS_ACCESS_KEY_ID: <KEY_ID>
       # AWS_SECRET_ACCESS_KEY: <ACCESS_KEY>
       # PENPOT_OBJECTS_STORAGE_BACKEND: s3
@@ -161,7 +168,6 @@ services:
       ## instance. Telemetry data will enable us to learn how the application is used,
       ## based on real scenarios. If you want to help us, please leave it enabled. You can
       ## audit what data we send with the code available on github.
-
       PENPOT_TELEMETRY_ENABLED: "true"
       PENPOT_TELEMETRY_REFERER: compose
 
@@ -169,7 +175,6 @@ services:
       ## service, but for production usage it is recommended to setup a real SMTP
       ## provider. Emails are used to confirm user registrations & invitations. Look below
       ## how the mailcatch service is configured.
-
       PENPOT_SMTP_DEFAULT_FROM: no-reply@example.com
       PENPOT_SMTP_DEFAULT_REPLY_TO: no-reply@example.com
       PENPOT_SMTP_HOST: penpot-mailcatch
@@ -178,6 +183,24 @@ services:
       PENPOT_SMTP_PASSWORD:
       PENPOT_SMTP_TLS: "false"
       PENPOT_SMTP_SSL: "false"
+
+  penpot-admin-console:
+    image: "penpotapp/admin-console:${PENPOT_VERSION:-2.16}"
+    restart: always
+
+    depends_on:
+      penpot-postgres:
+        condition: service_healthy
+
+    networks:
+      - penpot
+
+    environment:
+      << : [*penpot-public-uri, *penpot-secret-key, *penpot-database]
+
+      # Don't touch it; this uses an internal docker network to
+      # communicate with the frontend.
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 
   penpot-mcp:
     image: "penpotapp/mcp:${PENPOT_VERSION:-2.16}"
@@ -198,6 +221,7 @@ services:
 
     environment:
       << : [*penpot-secret-key, *penpot-public-uri]
+
       # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
       PENPOT_INTERNAL_URI: http://penpot-frontend:8080
@@ -244,6 +268,7 @@ services:
       - penpot
 
     environment:
+
       # You can increase the max memory size if you have sufficient resources,
       # although this should not be necessary.
       - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
