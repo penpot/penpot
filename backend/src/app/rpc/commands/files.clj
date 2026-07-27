@@ -1102,14 +1102,15 @@
               :code :invalid-library
               :hint "A file cannot be linked to itself"))
 
+  (check-edition-permissions! conn profile-id file-id)
+  (check-edition-permissions! conn profile-id library-id)
+
   (let [transitive-deps (bfc/get-libraries cfg [library-id])]
     (when (contains? transitive-deps file-id)
       (ex/raise :type :validation
                 :code :circular-library-reference
                 :hint "linking this library would create a circular dependency")))
 
-  (check-edition-permissions! conn profile-id file-id)
-  (check-edition-permissions! conn profile-id library-id)
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
 
