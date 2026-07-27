@@ -23,6 +23,18 @@
 - Refactor wasm rulers and UI state [#10116](https://github.com/penpot/penpot/issues/10116) (PR: [#10461](https://github.com/penpot/penpot/pull/10461))
 - Improve team invitations modal in the dashboard [#10484](https://github.com/penpot/penpot/issues/10484) (PR: [#10459](https://github.com/penpot/penpot/pull/10459))
 
+
+## 2.17.1 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix malformed get-font-variants request when team-id is missing from dashboard URL [#10644](https://github.com/penpot/penpot/issues/10644) (PR: [#10645](https://github.com/penpot/penpot/pull/10645))
+- Fix malformed get-profiles-for-file-comments request when file-id is missing from workspace URL [#10652](https://github.com/penpot/penpot/issues/10652) (PR: [#10655](https://github.com/penpot/penpot/pull/10655))
+- Fix workspace crash when holding an arrow key on a selection due to excessive re-renders [#10726](https://github.com/penpot/penpot/issues/10726) (PR: [#10736](https://github.com/penpot/penpot/pull/10736))
+- Fix asset download failing with S3 auth conflict when using access token [#10776](https://github.com/penpot/penpot/issues/10776) (PR: [#10777](https://github.com/penpot/penpot/pull/10777))
+- Fix internal error when dragging inner layout with Boolean operations [#10647](https://github.com/penpot/penpot/issues/10647) (PR: [#10778](https://github.com/penpot/penpot/pull/10778))
+- Fix viewer crash with WASM panic when opening URL with page-id [#10800](https://github.com/penpot/penpot/issues/10800) (PR: [#10805](https://github.com/penpot/penpot/pull/10805))
+
 ## 2.17.0
 
 ### :rocket: Epics and highlights
@@ -66,6 +78,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix Plugin API variant creation failing due to undocumented multi-step workflow [#10075](https://github.com/penpot/penpot/issues/10075) (PR: [#10149](https://github.com/penpot/penpot/pull/10149))
+- Fix workspace crash when editing text shapes with degenerate selrect [#10617](https://github.com/penpot/penpot/issues/10617) (PR: [#10618](https://github.com/penpot/penpot/pull/10618))
 - Fix SVG stroke line join not applied when pasting strokes [#4836](https://github.com/penpot/penpot/issues/4836) (PR: [#9982](https://github.com/penpot/penpot/pull/9982), [#10019](https://github.com/penpot/penpot/pull/10019))
 - Fix blend-mode hover preview on canvas not reverted when dismissing dropdown (by @davidv399) [#9235](https://github.com/penpot/penpot/issues/9235) (PR: [#9237](https://github.com/penpot/penpot/pull/9237))
 - Fix View Mode mouse-leave and click in combination not working [#4855](https://github.com/penpot/penpot/issues/4855) (PR: [#9991](https://github.com/penpot/penpot/pull/9991))

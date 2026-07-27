@@ -7,7 +7,7 @@
 - Querying error reports from the database for debugging or analysis
 - Filtering errors by source, kind, tenant, or backend version
 - Exporting error data in JSON, NDJSON, or table format
-- Computing error statistics (top signatures, per-host breakdown, hourly distribution)
+- Computing error statistics (top signatures, version, source, audit-log kind, hourly distribution, bursts, heatmap)
 - Investigating specific error reports by ID
 
 ## Prerequisites
@@ -70,7 +70,7 @@ WHERE id = '<token-uuid>';
 | `--env <path>` | Custom .env file path | `.env` |
 | `-h, --help` | Show help message | — |
 
-**Streaming behavior:** With `--all` or `--format ndjson`, items are printed as they arrive (no buffering). `--all` + `table` prints rows immediately. `--all` + `json` streams NDJSON (one JSON object per line).
+**Streaming behavior:** With `--all`, output must be `ndjson` or `table`; `--all --format json` is rejected because `--all` streams output. `--all --format table` prints rows immediately. `--format ndjson` always streams one JSON object per line.
 
 #### `get` - Get a single error report by ID
 
@@ -94,7 +94,7 @@ WHERE id = '<token-uuid>';
 ./scripts/error-reports.mjs stats [options]
 ```
 
-Reads from `--input <file>`, stdin (piped), or fetches from API. Computes aggregations by signature, host, tenant, version, source, kind, and hour.
+Reads from `--input <file>`, stdin (piped), or fetches from API. Computes aggregations by signature, version, source, audit-log kind, hour, optional 5-minute bursts, and optional day-of-week × hour heatmap.
 
 **Options:**
 
@@ -104,6 +104,8 @@ Reads from `--input <file>`, stdin (piped), or fetches from API. Computes aggreg
 | `--to <date>` | End of interval (ISO timestamp) | — |
 | `--limit <n>` | Items per page when fetching from API | `200` |
 | `--input <file>` | Read from local JSON/NDJSON file instead of API | — |
+| `--burst` | Detect 5-minute windows above 3× the average rate | `false` |
+| `--heatmap` | Show day-of-week × hour-of-day heatmap | `false` |
 | `-f, --format <type>` | Output format: `json` or `table` | `table` |
 | `--env <path>` | Custom .env file path | `.env` |
 
@@ -119,10 +121,12 @@ The `--source` filter accepts these values:
 
 With `--normalize-hints` (or always in `stats`), hints are normalized by stripping dynamic values:
 
-1. URIs (`https://...`) → `<uri>`
+1. File IDs in file-id context → `<file-id>`
 2. UUIDs (8-4-4-4-12 hex) → `<uuid>`
-3. Elapsed times (`7.5s`, `2m3.027s`) → `<elapsed>`
-4. Numeric IDs in parentheses `(12345)` → `(<id>)`
+3. Numeric IDs in parentheses `(12345)` → `(<id>)`
+4. Elapsed times (`7.5s`, `2m3.027s`) → `<elapsed>`
+5. URIs (`https://...`) → `<uri>`
+6. Unicode quotes and whitespace normalized
 
 ## Examples
 
@@ -143,8 +147,8 @@ With `--normalize-hints` (or always in `stats`), hints are normalized by strippi
 
 ### Save to file with --output
 ```bash
-./scripts/error-reports.mjs list --all --format json -o errors.json
 ./scripts/error-reports.mjs list --all --format ndjson -o errors.ndjson
+./scripts/error-reports.mjs list --format json -o errors.json
 ```
 
 ### Filter by source
@@ -192,9 +196,9 @@ With `--normalize-hints` (or always in `stats`), hints are normalized by strippi
 ./scripts/error-reports.mjs list --source audit-log --kind exception-page --tenant production --limit 50
 ```
 
-### Stats from API
+### Stats with burst and heatmap analysis
 ```bash
-./scripts/error-reports.mjs stats --from 2026-07-23T00:00:00Z --to 2026-07-23T23:59:59Z
+./scripts/error-reports.mjs stats --from 2026-07-23T00:00:00Z --to 2026-07-23T23:59:59Z --burst --heatmap
 ```
 
 ### Stats from file
@@ -213,7 +217,7 @@ With `--normalize-hints` (or always in `stats`), hints are normalized by strippi
 Human-readable table format for terminal display. With `--all`, rows stream as they arrive.
 
 ### JSON
-Single page: `{items: [...], nextSince, nextId}`. With `--all`: NDJSON (one JSON object per line).
+Single page: `{items: [...], nextSince, nextId}`. `--all` cannot be combined with `--format json`; use `--format ndjson` for streaming.
 
 ### NDJSON
 One JSON object per line, always streaming. Pipe-friendly: `| jq -c '.hint'`, `| wc -l`.
@@ -250,7 +254,7 @@ Use `--from` and `--to` to bound the query. These map to the server's `--since` 
 - **Authentication required** - Uses access token with `error-reports:read` permission
 - **API endpoint configurable** - Set via `PENPOT_API_URI` in `.env` file
 - **Table is default format** - Use `--format json` for structured JSON, `--format ndjson` for streaming
-- **Streaming with --all** - Items print as they arrive, no buffering
+- **Streaming with --all** - Items print as they arrive, no buffering. Use `--format ndjson` or `--format table`; `--all --format json` is rejected.
 - **Filters are combinable** - All filter options can be used together
 - **Both flag formats supported** - `--option=value` and `--option value` both work
 - **Ascending order** - Server returns oldest items first (changed from DESC)
@@ -272,8 +276,7 @@ The tool provides helpful error messages for common issues:
   ```
 - **stats from pipe**: Fetch data once, compute stats
   ```bash
-  ./scripts/error-reports.mjs list --all --format json -o errors.json
-  ./scripts/error-reports.mjs stats --input errors.json
+  ./scripts/error-reports.mjs list --all --format ndjson | ./scripts/error-reports.mjs stats
   ```
 - **stats from NDJSON pipe**: Works with NDJSON format too
   ```bash
