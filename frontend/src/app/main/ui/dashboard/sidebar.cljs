@@ -357,9 +357,11 @@
        (tr "dashboard.my-teams")]
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
-     [:hr {:role "separator" :class (stl/css :team-separator)}]
-     [:li {:role "presentation" :class (stl/css :org-section-label)}
-      (tr "dashboard.section.organizations")]
+     (when (seq organizations)
+       [:*
+        [:hr {:role "separator" :class (stl/css :team-separator)}]
+        [:li {:role "presentation" :class (stl/css :org-section-label)}
+         (tr "dashboard.section.organizations")]])
 
      (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
