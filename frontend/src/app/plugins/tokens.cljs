@@ -10,6 +10,7 @@
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.schema :as sm]
+   [app.common.types.file :as ctf]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -205,6 +206,7 @@
                       (ctob/get-tokens set-id)))
      :set
      (fn [_ value]
+       (u/check-editable-tokens file-id)
        (st/emit! (-> (dwtl/update-token set-id id {:name value})
                      (se/add-event plugin-id))))}
 
@@ -231,6 +233,7 @@
                  base))
      :set
      (fn [_ value]
+       (u/check-editable-tokens file-id)
        (let [token (u/locate-token file-id set-id id)
              value (cond-> value
                      (= :font-family (:type token))
@@ -268,6 +271,7 @@
      :schema cfo/schema:token-description
      :set
      (fn [_ value]
+       (u/check-editable-tokens file-id)
        (st/emit! (-> (dwtl/update-token set-id id {:description value})
                      (se/add-event :plugin-id))))}
 
@@ -278,6 +282,7 @@
       ;;  - use this function in dwtl/duplicate-token
       ;;  - return the new token proxy using the locally forced id
       ;;  - do the same with sets and themes
+      (u/check-editable-tokens file-id)
       (let [token  (u/locate-token file-id set-id id)
             token' (ctob/make-token (-> (datafy token)
                                         (dissoc :id
@@ -288,6 +293,7 @@
 
     :remove
     (fn []
+      (u/check-editable-tokens file-id)
       (st/emit! (-> (dwtl/delete-token set-id id)
                     (se/add-event plugin-id))))
 
@@ -340,6 +346,7 @@
                id)
       :set
       (fn [_ name]
+        (u/check-editable-tokens file-id)
         (let [set (u/locate-token-set file-id id)]
           (st/emit! (dwtl/rename-token-set set name))))}
 
@@ -353,7 +360,7 @@
       :schema ::sm/boolean
       :set
       (fn [_ value]
-        (st/emit! (dwtl/set-enabled-token-set id value)))}
+        (st/emit! (dwtl/set-enabled-token-set id value)))}  ;; This can be done even with tokens in an external library
 
      :toggleActive
      (fn [_]
@@ -416,6 +423,7 @@
                               (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))]))
       :decode/options {:key-fn identity}
       :fn (fn [attrs]
+            (u/check-editable-tokens file-id)
             (let [tokens-lib (u/locate-tokens-lib file-id)
                   token (ctob/make-token attrs)
                   ;; Resolve against all tokens in the library (including those
@@ -441,6 +449,7 @@
 
      :duplicate
      (fn []
+       (u/check-editable-tokens file-id)
        (let [id-ref (atom nil)]
          (st/emit! (dwtl/duplicate-token-set id {:id-ref id-ref}))
          (when (some? @id-ref)
@@ -448,6 +457,7 @@
 
      :remove
      (fn []
+       (u/check-editable-tokens file-id)
        (st/emit! (dwtl/delete-token-set id))))))
 
 (defn token-theme-proxy? [p]
@@ -501,6 +511,7 @@
                 (:id theme)))
      :set
      (fn [_ group]
+       (u/check-editable-tokens file-id)
        (let [theme (u/locate-token-theme file-id id)]
          (st/emit! (dwtl/update-token-theme id (assoc theme :group group)))))}
 
@@ -517,6 +528,7 @@
                 (:group theme)))
      :set
      (fn [_ name]
+       (u/check-editable-tokens file-id)
        (let [theme (u/locate-token-theme file-id id)]
          (when name
            (st/emit! (dwtl/update-token-theme id (assoc theme :name name))))))}
@@ -554,6 +566,7 @@
     {:enumerable false
      :schema [:tuple [:or [:fn token-set-proxy?] ::sm/uuid]]
      :fn (fn [set-arg]
+           (u/check-editable-tokens file-id)
            (let [set-name (token-set-name (resolve-token-set file-id set-arg))
                  theme    (u/locate-token-theme file-id id)]
              (when (and set-name theme)
@@ -563,6 +576,7 @@
     {:enumerable false
      :schema [:tuple [:or [:fn token-set-proxy?] ::sm/uuid]]
      :fn (fn [set-arg]
+           (u/check-editable-tokens file-id)
            (let [set-name (token-set-name (resolve-token-set file-id set-arg))
                  theme    (u/locate-token-theme file-id id)]
              (when (and set-name theme)
@@ -570,6 +584,7 @@
 
     :duplicate
     (fn []
+      (u/check-editable-tokens file-id)
       (let [theme  (u/locate-token-theme file-id id)
             theme' (ctob/make-token-theme (-> (datafy theme)
                                               (dissoc :id
@@ -579,6 +594,7 @@
 
     :remove
     (fn []
+      (u/check-editable-tokens file-id)
       (st/emit! (dwtl/delete-token-theme id)))))
 
 (defn tokens-catalog
@@ -587,6 +603,14 @@
               :on-error (u/handle-error plugin-id)}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly file-id)}
+
+    :isEditableTokens
+    {:this false
+     :enumerable false
+     :get
+     (fn []
+       (let [file (u/locate-file file-id)]
+         (cfo/editable-tokens? (ctf/file-data file))))}
 
     :themes
     {:this true
@@ -619,6 +643,7 @@
                             nil)
                            (sm/dissoc-key :id))]) ;; We don't allow plugins to set the id
      :fn (fn [attrs]
+           (u/check-editable-tokens file-id)
            (let [theme (ctob/make-token-theme attrs)]
              (st/emit! (dwtl/create-token-theme theme))
              (token-theme-proxy plugin-id file-id (:id theme))))}
@@ -638,6 +663,7 @@
                          (sm/merge [:map [:active {:optional true} ::sm/boolean]]))]
 
      :fn (fn [attrs]
+           (u/check-editable-tokens file-id)
            (let [active? (boolean (:active attrs))
                  attrs   (-> attrs
                              (dissoc :active)
