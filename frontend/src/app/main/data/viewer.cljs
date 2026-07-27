@@ -222,7 +222,12 @@
     (watch [_ state _]
       (if (and (features/active-feature? state "render-wasm/v1")
                (contains? cf/flags :available-viewer-wasm))
-        (let [objects (dsh/lookup-page-objects state file-id page-id)
+        ;; Fallback matches the viewer UI when the URL omits page-id.
+        (let [page-id (or page-id
+                          (-> (dsh/lookup-file-data state file-id)
+                              :pages
+                              first))
+              objects (dsh/lookup-page-objects state file-id page-id)
 
               shapes
               (reduce-kv
@@ -233,13 +238,12 @@
                []
                objects)
 
-              ;; Creates a stream from the async callback. This stream will only
-              ;; emit one single value after the objects have finished loading
-              ;; in the wasm memory.
+              ;; Positive size required: OffscreenCanvas(0, 0) crashes
+              ;; `_set_render_options` on some browsers.
               set-objects-stream
               (rx/create
                (fn [subs]
-                 (wasm.api/init-canvas-context (js/OffscreenCanvas. 0 0))
+                 (wasm.api/init-canvas-context (js/OffscreenCanvas. 64 64))
                  (wasm.api/set-objects-callback shapes #(rx/push! subs :done))
                  nil))]
 
