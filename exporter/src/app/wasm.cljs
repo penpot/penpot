@@ -23,11 +23,13 @@
   (:require
    ["node:fs" :as fs]
    ["node:path" :as path]
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
+   [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]
    [promesa.core :as p]
    [shadow.esm :refer [dynamic-import]]))
@@ -37,6 +39,8 @@
 
 ;; render_shape_raster / render_shape_pixels result header: [len u32][w u32][h u32].
 (def ^:private RASTER-HEADER-BYTES 12)
+;; render_shape_pdf result header: [len u32] only.
+(def ^:private PDF-HEADER-BYTES 4)
 ;; get_fonts_for_shape entry: [uuid 16 bytes][weight u32][style u32].
 (def ^:private FONT-ENTRY-BYTES 24)
 
@@ -110,6 +114,21 @@
                       :style  (u32 20)})))]
     (mem/free)
     entries))
+
+(defn- font-key
+  "Value key for a family map. Its `:id` is a JS array, so the map itself can't
+  be compared by value."
+  [{:keys [id weight style]}]
+  [(aget id 0) (aget id 1) (aget id 2) (aget id 3) weight style])
+
+(defn fonts-for-shapes
+  "Distinct font families needed by every subtree in `shape-ids`. Objects in a
+  partition overwhelmingly share families, so deduping here means one download
+  and one `_store_font` per family rather than one per object."
+  [shape-ids]
+  (into [] (comp (mapcat fonts-for-shape)
+                 (d/distinct-xf font-key))
+        shape-ids))
 
 (defn store-font!
   "Uploads one font's TTF bytes into the WASM font store, keyed by the family
@@ -191,12 +210,12 @@
   (h/call wasm/internal-module "_evict_images_to_budget" max-mb))
 
 (defn provision-fonts!
-  "Resolves and uploads every font needed by `shape-id`. `resolve-font` is an
-  injected fn of the family map -> promise of TTF bytes (or nil to skip). This
-  keeps the font *source* (gfonts proxy / custom assets / backend) out of the
-  driver."
-  [shape-id resolve-font]
-  (->> (fonts-for-shape shape-id)
+  "Resolves and uploads every font needed by `shape-ids`, each family fetched
+  once. `resolve-font` is an injected fn of the family map -> promise of TTF
+  bytes (or nil to skip). This keeps the font *source* (gfonts proxy / custom
+  assets / backend) out of the driver."
+  [shape-ids resolve-font]
+  (->> (fonts-for-shapes shape-ids)
        (map (fn [family]
               (->> (resolve-font family)
                    (p/fmap (fn [bytes] (when bytes (store-font! family bytes)))))))
@@ -204,35 +223,32 @@
 
 ;; --- RENDER
 
-(defn- render-call
-  [fn-name shape-id scale]
-  (let [module wasm/internal-module
-        buf    (uuid/get-u32 shape-id)
-        offset (h/call module fn-name
-                       (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
-                       scale)
-        heap32 (mem/get-heap-u32)
+(defn- read-render-result
+  "Copies the encoded payload out of a `_render_shape_*` result buffer and frees
+  it. `header-bytes` is the size of the header preceding the payload."
+  [offset header-bytes]
+  (let [heap32 (mem/get-heap-u32)
         len    (aget heap32 (mem/->offset-32 offset))
-        bytes  (read-result-bytes (+ offset RASTER-HEADER-BYTES) len)]
+        bytes  (read-result-bytes (+ offset header-bytes) len)]
     (mem/free)
     bytes))
 
 (defn render-shape-raster
-  "Renders the shape subtree to PNG bytes (Uint8Array) on a CPU surface."
-  [shape-id scale]
-  (render-call "_render_shape_raster" shape-id scale))
+  "Renders the shape subtree to encoded image bytes (Uint8Array) on a CPU
+  surface. `format` is :png, :jpeg or :webp; jpeg is flattened onto white on
+  the Rust side, since it has no alpha channel."
+  [shape-id scale format]
+  (let [buf (uuid/get-u32 shape-id)]
+    (-> (h/call wasm/internal-module "_render_shape_raster"
+                (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
+                scale (sr/translate-raster-format format))
+        (read-render-result RASTER-HEADER-BYTES))))
 
 (defn render-shape-pdf
   "Renders the shape subtree to PDF bytes (Uint8Array)."
   [shape-id scale]
-  ;; PDF result header is [len u32] only (no w/h); handled separately.
-  (let [module wasm/internal-module
-        buf    (uuid/get-u32 shape-id)
-        offset (h/call module "_render_shape_pdf"
-                       (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
-                       scale)
-        heap32 (mem/get-heap-u32)
-        len    (aget heap32 (mem/->offset-32 offset))
-        bytes  (read-result-bytes (+ offset 4) len)]
-    (mem/free)
-    bytes))
+  (let [buf (uuid/get-u32 shape-id)]
+    (-> (h/call wasm/internal-module "_render_shape_pdf"
+                (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
+                scale)
+        (read-render-result PDF-HEADER-BYTES))))

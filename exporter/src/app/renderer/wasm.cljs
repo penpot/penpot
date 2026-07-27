@@ -18,9 +18,12 @@
          enumerated by the host-agnostic app.render-wasm.{resources,fallback-fonts})
       -> relayout text (real font metrics) -> render each object -> tempfile
 
+  Handles png/jpeg/webp (Skia encodes all three natively) and pdf. `:svg` is
+  routed to the browser backend by `app.renderer` — it needs vector markup, not
+  a raster.
+
   NOTE (current slice): single shared WASM design state, so requests are
-  serialized one at a time (no pooling yet). PNG + PDF are wired; jpeg/webp
-  still need the PNG->format conversion that `bitmap` does."
+  serialized one at a time (no pooling yet)."
   (:require
    ["node:fs" :as fs]
    ["undici" :as http]
@@ -76,31 +79,54 @@
     (reset! queue (p/handle result (fn [_ _] nil)))
     result))
 
+;; --- backend endpoints
+;;
+;; Every fetch below targets the *internal* endpoint (`internal-uri`, falling
+;; back to `public-uri`), same as the Playwright backends and
+;; `handlers.resources`: in a real deployment the exporter reaches the backend
+;; over the container network, not through the public ingress.
+
+(defn- internal-uri
+  "Absolute URI for `path` on the internal (backend) endpoint."
+  [path]
+  (-> (cf/get-internal-uri)
+      (u/ensure-path-slash)
+      (u/join path)
+      (str)))
+
+(defn- rpc-headers
+  "Auth headers for backend RPC calls (management key + bearer)."
+  [token]
+  #js {"Content-Type"  "application/transit+json"
+       "X-Shared-Key"  (str "exporter " cf/management-key)
+       "Authorization" (str "Bearer " token)})
+
+(defn- asset-headers
+  "Auth headers for `/assets/*` downloads. Cookie, not Bearer: those endpoints
+  redirect to a presigned S3/minio URL, and a Bearer Authorization header makes
+  S3 400 (\"multiple authentication types\")."
+  [token]
+  #js {"X-Shared-Key" (str "exporter " cf/management-key)
+       "Cookie"       (str "auth-token=" token)})
+
 ;; --- shape bundle fetch (backend RPC)
 
 (defn- fetch-objects
   "Fetches the page's `objects` map from the backend via the `get-page` RPC,
   using the same auth the exporter uses elsewhere (management key + bearer)."
   [{:keys [file-id page-id share-id token]}]
-  (let [agent   (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-        headers #js {"Content-Type"  "application/transit+json"
-                     "X-Shared-Key"  (str "exporter " cf/management-key)
-                     "Authorization" (str "Bearer " token)}
+  (let [headers (rpc-headers token)
         ;; share-id is an OPTIONAL uuid on the backend; it must be omitted when
         ;; absent, not sent as nil (nil fails the uuid schema).
         body    (t/encode-str (cond-> {:file-id file-id
                                        :page-id page-id}
                                 share-id (assoc :share-id share-id)))
-        uri     (-> (cf/get :public-uri)
-                    (u/ensure-path-slash)
-                    (u/join "api/rpc/command/get-page")
-                    (str))]
-    (l/info :hint "wasm render: get-page"
+        uri     (internal-uri "api/rpc/command/get-page")]
+    (l/dbg :hint "wasm render: get-page"
             :uri uri
             :file-id (str file-id)
-            :page-id (str page-id)
-            :token-len (count (str token)))
-    (->> (http/fetch uri #js {:method "POST" :headers headers :body body :dispatcher agent})
+            :page-id (str page-id))
+    (->> (http/fetch uri #js {:method "POST" :headers headers :body body})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.text resp)
@@ -130,17 +156,11 @@
   Returns a promise of the variant vector (or nil on failure — fonts then just
   fall back, they don't fail the export)."
   [{:keys [file-id share-id token]}]
-  (let [agent   (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-        headers #js {"Content-Type"  "application/transit+json"
-                     "X-Shared-Key"  (str "exporter " cf/management-key)
-                     "Authorization" (str "Bearer " token)}
+  (let [headers (rpc-headers token)
         body    (t/encode-str (cond-> {:file-id file-id}
                                 share-id (assoc :share-id share-id)))
-        uri     (-> (cf/get :public-uri)
-                    (u/ensure-path-slash)
-                    (u/join "api/rpc/command/get-font-variants")
-                    (str))]
-    (->> (http/fetch uri #js {:method "POST" :headers headers :body body :dispatcher agent})
+        uri     (internal-uri "api/rpc/command/get-font-variants")]
+    (->> (http/fetch uri #js {:method "POST" :headers headers :body body})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.text resp)
@@ -154,17 +174,9 @@
   "Downloads a stored asset (font TTF) by id, returning a promise of an
   ArrayBuffer (or nil)."
   [asset-id {:keys [token]}]
-  (let [agent   (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-        ;; Cookie, not Bearer: /assets/* redirects to a presigned S3/minio URL,
-        ;; and a Bearer Authorization header makes S3 400 ("multiple
-        ;; authentication types").
-        headers #js {"X-Shared-Key" (str "exporter " cf/management-key)
-                     "Cookie" (str "auth-token=" token)}
-        uri     (-> (cf/get :public-uri)
-                    (u/ensure-path-slash)
-                    (u/join (str "assets/by-id/" asset-id))
-                    (str))]
-    (->> (http/fetch uri #js {:method "GET" :headers headers :dispatcher agent})
+  (let [headers (asset-headers token)
+        uri     (internal-uri (str "assets/by-id/" asset-id))]
+    (->> (http/fetch uri #js {:method "GET" :headers headers})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.arrayBuffer resp)
@@ -178,18 +190,14 @@
   "Rewrites a gstatic ttf url to the local gfonts proxy (mirrors the browser's
   `google-font-ttf-url`)."
   [ttf-url]
-  (let [proxy (-> (cf/get :public-uri)
-                  (u/ensure-path-slash)
-                  (u/join "internal/gfonts/font/")
-                  (str))]
+  (let [proxy (internal-uri "internal/gfonts/font/")]
     (str/replace ttf-url "https://fonts.gstatic.com/s/" proxy)))
 
 (defn- fetch-gfont-bytes
   "Downloads a google font TTF through the local gfonts proxy."
   [ttf-url]
-  (let [agent (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-        uri   (gfont-proxy-url ttf-url)]
-    (->> (http/fetch uri #js {:method "GET" :dispatcher agent})
+  (let [uri (gfont-proxy-url ttf-url)]
+    (->> (http/fetch uri #js {:method "GET"})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.arrayBuffer resp)
@@ -298,17 +306,9 @@
 (defn- fetch-file-media-bytes
   "Downloads an image fill's encoded bytes by file-media id."
   [media-id {:keys [token]}]
-  (let [agent   (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-        ;; Cookie, not Bearer: /assets/* redirects to a presigned S3/minio URL,
-        ;; and a Bearer Authorization header makes S3 400 ("multiple
-        ;; authentication types").
-        headers #js {"X-Shared-Key" (str "exporter " cf/management-key)
-                     "Cookie" (str "auth-token=" token)}
-        uri     (-> (cf/get :public-uri)
-                    (u/ensure-path-slash)
-                    (u/join (str "assets/by-file-media-id/" media-id))
-                    (str))]
-    (->> (http/fetch uri #js {:method "GET" :headers headers :dispatcher agent})
+  (let [headers (asset-headers token)
+        uri     (internal-uri (str "assets/by-file-media-id/" media-id))]
+    (->> (http/fetch uri #js {:method "GET" :headers headers})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.arrayBuffer resp)
@@ -335,7 +335,7 @@
   [scene params]
   (let [all-ids (resources/scene-image-ids scene)
         new-ids (remove wasm/image-cached? all-ids)]
-    (l/info :hint "wasm render: provisioning images"
+    (l/dbg :hint "wasm render: provisioning images"
             :total (count all-ids)
             :cached (- (count all-ids) (count new-ids)))
     (->> new-ids
@@ -344,7 +344,7 @@
                      (p/fmap (fn [buf]
                                (if buf
                                  (do
-                                   (l/info :hint "wasm render: image stored"
+                                   (l/dbg :hint "wasm render: image stored"
                                            :media-id (str image-id)
                                            :bytes (.-byteLength ^js buf))
                                    (wasm/store-image! image-id buf))
@@ -365,40 +365,47 @@
 
 (defn- render-object-bytes
   [type id scale]
-  (case type
-    :pdf (let [bytes (wasm/render-shape-pdf id scale)]
-           (l/info :hint "PDF generated via Skia (render-wasm headless)"
-                   :object-id (str id)
-                   :backend "skia-wasm"
-                   :bytes (.-length bytes))
-           bytes)
-    (wasm/render-shape-raster id scale)))
+  (if (= :pdf type)
+    (let [bytes (wasm/render-shape-pdf id scale)]
+      (l/dbg :hint "PDF generated via Skia (render-wasm headless)"
+             :object-id (str id)
+             :backend "skia-wasm"
+             :bytes (.-length bytes))
+      bytes)
+    ;; The export type doubles as the encoder format: Skia encodes png/jpeg/webp
+    ;; natively, so — unlike the Playwright backend — webp needs no imagemagick
+    ;; conversion pass. `:svg` never reaches here; it needs vector markup, so
+    ;; `app.renderer` keeps it on the browser path.
+    (wasm/render-shape-raster id scale type)))
+
+;; NOTE: `handlers.export-shapes/prepare-exports` splits an export into
+;; partitions of 50 objects, and each partition arrives here as its own
+;; request. Since the unit of work is the partition, every one of them
+;; re-fetches and re-serializes the *whole* page scene, and re-provisions its
+;; fonts. Exporting 200 frames therefore pays that setup 4x. Acceptable while
+;; the module is a single shared instance (`enqueue!` serializes requests
+;; anyway); revisit together with module pooling.
 
 (defn- render*
   [{:keys [scale type objects] :as params} on-object]
-  (l/info :hint "wasm render: start" :type type :scale scale :objects (count objects))
+  (l/dbg :hint "wasm render: start"
+         :type type
+         :scale scale
+         :objects (count objects)
+         :file-id (str (:file-id params))
+         :page-id (str (:page-id params)))
   (->> (ensure-module!)
-       (p/mcat (fn [_]
-                 (l/info :hint "wasm render: module ready, fetching scene"
-                         :file-id (str (:file-id params)) :page-id (str (:page-id params)))
-                 (fetch-objects params)))
+       (p/mcat (fn [_] (fetch-objects params)))
        (p/mcat (fn [scene]
-                 (let [sample (first (vals scene))]
-                   (l/info :hint "wasm render: scene fetched"
-                           :shapes (count scene)
-                           :map? (map? scene)
-                           :first-key (str (first (keys scene)))
-                           :sample-id (str (:id sample))
-                           :sample-type (str (:type sample))
-                           :sample-keys (pr-str (when (map? sample) (vec (keys sample))))))
+                 (l/dbg :hint "wasm render: scene fetched" :shapes (count scene))
                  (serialize/serialize-scene! scene)
-                 (l/info :hint "wasm render: scene serialized")
+                 (l/dbg :hint "wasm render: scene serialized")
                  ;; Reset the shared module's font store so fonts from a previous
                  ;; request don't accumulate / leak into this one.
                  (wasm/clear-fonts!)
                  ;; Fetch the file's custom (team) font variants once, provision
-                 ;; every referenced image once, then resolve/provision fonts per
-                 ;; rendered object.
+                 ;; every referenced image once, then resolve/provision the
+                 ;; deduped font set for all rendered objects.
                  (->> (p/all [(fetch-font-variants params)
                               (provision-images! scene params)
                               (provision-fallback-fonts! scene)])
@@ -407,9 +414,10 @@
                          (let [resolve-font (make-resolve-font (or variants []) params)]
                            ;; Provision every object's fonts BEFORE rendering, so
                            ;; the text relayout below sees real font metrics.
-                           (p/all (map (fn [{:keys [id]}]
-                                         (wasm/provision-fonts! id resolve-font))
-                                       objects)))))
+                           ;; Deduped across objects: a 50-frame partition that
+                           ;; shares one family downloads its TTF once, not 50
+                           ;; times.
+                           (wasm/provision-fonts! (map :id objects) resolve-font))))
                       (p/mcat
                        (fn [_]
                          ;; Serialize-time layout used the fallback font (fonts
@@ -421,7 +429,7 @@
                             (let [bytes (render-object-bytes type id scale)
                                   path  (sh/tempfile :prefix "penpot.tmp.wasm."
                                                      :suffix (mime/get-extension type))]
-                              (l/info :hint "wasm render: object rendered"
+                              (l/dbg :hint "wasm render: object rendered"
                                       :object-id (str id) :bytes (.-length bytes))
                               (fs/writeFileSync path bytes)
                               ;; `on-object` may return a plain value (zip append

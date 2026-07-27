@@ -78,7 +78,9 @@ export PENPOT_INTERNAL_URI=http://localhost:3450
 
 # Headless WASM export: render `:is-wasm` exports via the in-process Skia/WASM
 # pipeline (no browser). Reads the render-wasm artifact from PENPOT_WASM_DIR,
-# defaulting to ../frontend/resources/public/js (render-wasm.js/.wasm).
+# defaulting to ../frontend/resources/public/js (render-wasm.js/.wasm) — which
+# is where render-wasm/build leaves it in devenv. The docker image ships the
+# artifact inside the exporter bundle and points PENPOT_WASM_DIR at it.
 # export PENPOT_WASM_HEADLESS=true
 # export PENPOT_WASM_DIR=../frontend/resources/public/js
 # export PENPOT_WASM_IMAGE_CACHE_MB=256

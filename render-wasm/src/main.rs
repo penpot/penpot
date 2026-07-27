@@ -20,6 +20,7 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
+use crate::render::raster::RasterFormat;
 use crate::render::{FrameType, RenderFlag};
 
 use globals::{get_design_state, get_gpu_state, get_render_state, get_resources, has_render_state};
@@ -1030,8 +1031,9 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
     })
 }
 
-/// PNG via CPU raster (no GPU/WebGL). Returns `[len][width][height][png]` (LE),
-/// same layout as `render_shape_pixels`.
+/// Raster image via CPU (no GPU/WebGL). Returns `[len][width][height][bytes]`
+/// (LE), same layout as `render_shape_pixels`. `format` selects the encoder:
+/// 0 = PNG, 1 = JPEG, 2 = WEBP (see `RasterFormat`).
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_shape_raster(
@@ -1040,6 +1042,7 @@ pub extern "C" fn render_shape_raster(
     c: u32,
     d: u32,
     scale: f32,
+    format: u32,
 ) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
 
@@ -1047,8 +1050,10 @@ pub extern "C" fn render_shape_raster(
         return Err(Error::CriticalError("Scale is not finite".to_string()));
     }
 
+    let format = RasterFormat::from_u32(format)?;
+
     with_state!(state, {
-        let (data, width, height) = state.render_shape_raster(&id, scale)?;
+        let (data, width, height) = state.render_shape_raster(&id, scale, format)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(12 + data.len());

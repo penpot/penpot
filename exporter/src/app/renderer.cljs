@@ -45,12 +45,18 @@
   ;; Opt-in headless path: when an export is flagged `:is-wasm` AND the
   ;; `:wasm-headless` config is enabled, render with the in-process Skia/WASM
   ;; pipeline (no browser). Off by default, so existing behavior is unchanged.
-  (let [headless? (and is-wasm (cf/get :wasm-headless))]
-    (l/info :hint "render"
-            :type type
-            :is-wasm (boolean is-wasm)
-            :wasm-headless (boolean (cf/get :wasm-headless))
-            :backend (if headless? "wasm" "browser"))
+  ;;
+  ;; `:svg` stays on the browser path even when headless is enabled: it needs
+  ;; real vector markup from `app.renderer.svg`, which a raster/PDF backend
+  ;; cannot produce. Every other type is encoded natively by Skia.
+  (let [headless? (and is-wasm
+                       (cf/get :wasm-headless)
+                       (not= :svg type))]
+    (when is-wasm
+      (l/info :hint "render"
+              :type type
+              :wasm-headless (boolean (cf/get :wasm-headless))
+              :backend (if headless? "wasm" "browser")))
     (if headless?
       (rw/render params on-object)
       (case type

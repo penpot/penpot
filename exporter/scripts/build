@@ -18,6 +18,17 @@ cp pnpm-workspace.yaml target/;
 cp package.json target/;
 touch target/pnpm-workspace.yaml;
 
+# The headless renderer (PENPOT_WASM_HEADLESS) needs the render-wasm artifact.
+WASM_SRC="../frontend/resources/public/js";
+if [ ! -f "$WASM_SRC/render-wasm.wasm" ]; then
+    echo "ERROR: $WASM_SRC/render-wasm.wasm is missing." >&2;
+    echo "Build it first with: (cd render-wasm && ./build)" >&2;
+    exit 1;
+fi
+
+mkdir -p target/js;
+cp "$WASM_SRC/render-wasm.js" "$WASM_SRC/render-wasm.wasm" target/js/;
+
 cat <<EOF | tee target/setup
 #/usr/bin/env bash
 set -e;

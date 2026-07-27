@@ -6,6 +6,8 @@
   ;; api.shapes,...}), so the CLJS↔WASM binary protocol cannot drift from the
   ;; editor's. shadow-cljs compiles only the required dependency graph, so the
   ;; browser-coupled namespaces (api, api.webgl, api.fonts) are never pulled in.
+  ;; NOTE: `app.config` exists in both trees; the exporter's `:paths` come
+  ;; first, so its own wins.
   penpot/frontend     {:local/root "../frontend"}
   org.clojure/clojure {:mvn/version "1.12.2"}
   binaryage/devtools  {:mvn/version "1.0.7"}

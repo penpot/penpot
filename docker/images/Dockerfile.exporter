@@ -6,7 +6,8 @@ ENV LANG=en_US.UTF-8 \
     NODE_VERSION=v24.18.0 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:/opt/imagick/bin:$PATH \
-    PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers
+    PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers \
+    PENPOT_WASM_DIR=/opt/penpot/exporter/js
 
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
