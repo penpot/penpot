@@ -23,8 +23,8 @@
   (let [ordered-themes
         (mf/deref refs/workspace-token-themes-no-hidden)
 
-        can-edit?
-        (mf/use-ctx ctx/can-edit?)
+        can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
 
         open-modal
         (mf/use-fn
@@ -38,11 +38,11 @@
        [:div {:class (stl/css :empty-theme-wrapper)}
         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
          (tr "workspace.tokens.no-themes")]
-        (when can-edit?
+        (when can-edit-tokens?
           [:button {:on-click open-modal
                     :class (stl/css :create-theme-button)}
            (tr "workspace.tokens.create-one")])]
-       (if can-edit?
+       (if can-edit-tokens?
          [:div {:class (stl/css :theme-selector-wrapper)}
           [:> theme-selector*]
           [:> button* {:variant "secondary"
@@ -50,6 +50,6 @@
                        :class (stl/css :edit-theme-button)
                        :on-click open-modal}
            (tr "labels.edit")]]
-         [:div {:title (when-not can-edit?
+         [:div {:title (when-not can-edit-tokens?
                          (tr "workspace.tokens.no-permission-themes"))}
           [:> theme-selector*]]))]))
