@@ -134,9 +134,9 @@
          (mf/deps project-id)
          (fn [event]
            (when (kbd/enter? event)
-             (st/emit!
-              (dcm/go-to-dashboard-files :project-id project-id)
-              (schedule-focus-by-id! focus-timer-ref (str project-id))))))
+             (schedule-focus-by-id! focus-timer-ref (str project-id))
+             (st/emit! (dcm/go-to-dashboard-files :project-id project-id)))))
+
 
         on-menu-click
         (mf/use-fn
