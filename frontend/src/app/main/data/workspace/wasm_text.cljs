@@ -78,17 +78,20 @@
 (defn resize-wasm-text
   "Resize a single text shape (auto-width/auto-height) by id.
   No-op if the id is not a text shape or is :fixed."
-  [id]
-  (ptk/reify ::resize-wasm-text
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shape   (get objects id)]
-        (if (and (some? shape)
-                 (cfh/text-shape? shape)
-                 (not= :fixed (:grow-type shape)))
-          (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape)))
-          (rx/empty))))))
+  ([id]
+   (resize-wasm-text id nil))
+  ([id opts]
+   (ptk/reify ::resize-wasm-text
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects (dsh/lookup-page-objects state)
+             shape   (get objects id)]
+         (if (and (some? shape)
+                  (cfh/text-shape? shape)
+                  (not= :fixed (:grow-type shape)))
+           (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape) opts))
+           (rx/empty)))))))
+
 
 (defn resize-wasm-text-debounce-commit
   ([]
@@ -205,18 +208,21 @@
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
-  [ids]
-  (ptk/reify ::resize-wasm-text-all
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [resize-stream
-            (->> (rx/from ids)
-                 (rx/map resize-wasm-text-debounce))]
-        (if (::dwsh/update-shapes-buffer state)
-          ;; If we're in the middle of a token propagation we wait until is finished to
-          ;; recalculate the text sizes
-          (->> stream
-               (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
-               (rx/take 1)
-               (rx/mapcat (constantly resize-stream)))
-          resize-stream)))))
+  ([ids]
+   (resize-wasm-text-all ids nil))
+  ([ids opts]
+   (ptk/reify ::resize-wasm-text-all
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [resize-stream
+             (->> (rx/from ids)
+                  (rx/map #(resize-wasm-text-debounce % opts)))]
+         (if (::dwsh/update-shapes-buffer state)
+           ;; If we're in the middle of a token propagation we wait until is finished to
+           ;; recalculate the text sizes
+           (->> stream
+                (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+                (rx/take 1)
+                (rx/mapcat (constantly resize-stream)))
+           resize-stream))))))
+

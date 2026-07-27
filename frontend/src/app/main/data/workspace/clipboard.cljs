@@ -709,18 +709,27 @@
             (cfeat/check-paste-features! features (:features pdata))
             (case (:type pdata)
               :copied-props
-
-              (rx/concat
-               (->> (rx/of pdata)
-                    (rx/mapcat (partial upload-images (:current-file-id state)))
-                    (rx/map
-                     #(dwsh/update-shapes
-                       selected
-                       (fn [shape objects] (cts/patch-props shape (:props pdata) objects))
-                       {:with-objects? true})))
-               (rx/of (ptk/data-event :layout/update {:ids selected})))
-              ;;
+              (let [objects (dsh/lookup-page-objects state)
+                    ids     (seq (filter #(cfh/text-shape? (get objects %)) selected))
+                    undo-id (js/Symbol)]
+                (rx/concat
+                 (rx/of (dwu/start-undo-transaction undo-id))
+                 (->> (rx/of pdata)
+                      (rx/mapcat (partial upload-images (:current-file-id state)))
+                      (rx/map
+                       #(dwsh/update-shapes
+                         selected
+                         (fn [shape objects] (cts/patch-props shape (:props pdata) objects))
+                         {:with-objects? true
+                          :undo-transation? false})))
+                 (rx/of (ptk/data-event :layout/update {:ids selected}))
+                 ;; Re-measure text shapes in WASM renderer mode and commit single undo transaction
+                 (if (and (seq ids)
+                          (features/active-feature? state "render-wasm/v1"))
+                   (rx/of (dwwt/resize-wasm-text-all ids {:undo-id undo-id}))
+                   (rx/of (dwu/commit-undo-transaction undo-id)))))
               (rx/empty))))))))
+
 
 (defn paste-shapes
   [{in-viewport? :in-viewport :as pdata}]
