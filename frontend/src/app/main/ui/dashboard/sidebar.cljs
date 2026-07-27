@@ -349,7 +349,7 @@
 
      [:> dropdown-menu-item* {:on-click    on-org-click
                               :data-value  default-team-id
-                              :class       (stl/css :org-dropdown-item :org-dropdown-item-default-logo)}
+                              :class       (stl/css :org-dropdown-item)}
       [:span {:class (stl/css :my-teams-icon)}
        [:> raw-svg* {:id penpot-logo-icon-subtle}]]
       [:span {:class (stl/css :team-text)
@@ -791,8 +791,7 @@
                   :on-key-down on-show-orgs-keydown
                   :aria-expanded show-orgs-menu?
                   :aria-haspopup "menu"}
-         [:div {:class (stl/css-case :team-name true
-                                     :team-name-default-logo default-org?)}
+         [:div {:class (stl/css :team-name)}
           (if default-org?
             [:*
              [:span {:class (stl/css :my-teams-icon-xxxl)}
