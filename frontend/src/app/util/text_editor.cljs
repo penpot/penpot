@@ -60,12 +60,14 @@
 
 (defn get-editor-block-data
   [block]
-  (-> (.getData ^js block)
-      (immutable-map->map)))
+  (when (some? block)
+    (-> (.getData ^js block)
+        (immutable-map->map))))
 
 (defn get-editor-block-type
   [block]
-  (.getType ^js block))
+  (when (some? block)
+    (.getType ^js block)))
 
 (defn get-editor-current-block-data
   [state]
