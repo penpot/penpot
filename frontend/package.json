@@ -67,7 +67,7 @@
     "@tokens-studio/sd-transforms": "2.0.3",
     "@types/node": "^26.1.0",
     "@vitest/browser": "4.1.9",
-    "@vitest/browser-playwright": "^4.1.9",
+    "@vitest/browser-playwright": "4.1.9",
     "@vitest/coverage-v8": "4.1.9",
     "@zip.js/zip.js": "2.8.26",
     "autoprefixer": "^10.5.2",

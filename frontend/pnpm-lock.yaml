@@ -17,6 +17,7 @@ overrides:
   postcss@<8.4.31: ^8.4.31
   postcss@<8.5.10: ^8.5.10
   yaml@>=2.0.0 <2.8.3: ^2.8.3
+  playwright: 1.61.1
 
 patchedDependencies:
   '@zip.js/zip.js@2.8.26': 7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95
@@ -74,7 +75,7 @@ importers:
         specifier: 4.1.9
         version: 4.1.9(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1)(sass-embedded@1.100.0)(sass@1.101.0))(vitest@4.1.9)
       '@vitest/browser-playwright':
-        specifier: ^4.1.9
+        specifier: 4.1.9
         version: 4.1.9(playwright@1.61.1)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1)(sass-embedded@1.100.0)(sass@1.101.0))(vitest@4.1.9)
       '@vitest/coverage-v8':
         specifier: 4.1.9
@@ -2103,7 +2104,7 @@ packages:
   '@vitest/browser-playwright@4.1.9':
     resolution: {integrity: sha512-Bq1rOGf9waevzG3EOkO/dene6bvKTUsZMVg8S1i+WH3JcMjuXEjiahP9rAqZRELUqjBySOJsvvSWqK/B3wjKQw==}
     peerDependencies:
-      playwright: '*'
+      playwright: 1.61.1
       vitest: 4.1.9
 
   '@vitest/browser@4.1.9':
