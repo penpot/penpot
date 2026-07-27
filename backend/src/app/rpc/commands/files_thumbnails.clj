@@ -419,30 +419,30 @@
           revn    (:revn params)
 
           result  (db/tx-run! cfg
-                               (fn [{:keys [::db/conn]}]
-                                 (let [thumb (db/get* conn :file-thumbnail
+                              (fn [{:keys [::db/conn]}]
+                                (let [thumb (db/get* conn :file-thumbnail
                                                      {:file-id file-id :revn revn}
                                                      {::db/remove-deleted false
                                                       ::sql/for-update true})]
-                                   (if (some? thumb)
-                                     (do
-                                       (when (not= (:id media) (:media-id thumb))
-                                         (sto/touch-object! storage (:media-id thumb)))
-                                       (db/update! conn :file-thumbnail
-                                                   {:media-id (:id media)
-                                                    :deleted-at (:deleted-at file)
-                                                    :updated-at tnow
-                                                    :props props}
-                                                   {:file-id file-id :revn revn}))
-                                     (db/insert! conn :file-thumbnail
-                                                 {:file-id file-id
-                                                  :revn revn
-                                                  :created-at tnow
-                                                  :updated-at tnow
-                                                  :deleted-at (:deleted-at file)
-                                                  :props props
-                                                  :media-id (:id media)}))
-                                   media)))]
+                                  (if (some? thumb)
+                                    (do
+                                      (when (not= (:id media) (:media-id thumb))
+                                        (sto/touch-object! storage (:media-id thumb)))
+                                      (db/update! conn :file-thumbnail
+                                                  {:media-id (:id media)
+                                                   :deleted-at (:deleted-at file)
+                                                   :updated-at tnow
+                                                   :props props}
+                                                  {:file-id file-id :revn revn}))
+                                    (db/insert! conn :file-thumbnail
+                                                {:file-id file-id
+                                                 :revn revn
+                                                 :created-at tnow
+                                                 :updated-at tnow
+                                                 :deleted-at (:deleted-at file)
+                                                 :props props
+                                                 :media-id (:id media)}))
+                                  media)))]
 
       (when result
         {:uri (files/resolve-public-uri (:id result))
