@@ -33,17 +33,20 @@
     (pprint (sm/humanize-explain data))))
 
 (defn setup-store
-  [file]
-  (let [state (-> initial-state
-                  (assoc :current-file-id (:id file)
-                         :current-page-id (cthf/current-page-id file)
-                         :permissions {:can-edit true}
-                         :files {(:id file) file}))
-        store (ptk/store {:state state :on-error on-error})]
-    ;; Unit tests skip team/workspace bootstrap; mirror team init so
-    ;; :features is populated the same way as features/initialize does in app.
-    (ptk/emit! store (features/initialize #{}))
-    store))
+  ([file] (setup-store file nil))
+  ([file {:keys [renderer] :as _opts}]
+   (let [state (-> initial-state
+                   (assoc :current-file-id (:id file)
+                          :current-page-id (cthf/current-page-id file)
+                          :permissions {:can-edit true}
+                          :files {(:id file) file})
+                   (cond-> (some? renderer)
+                     (assoc-in [:profile :props :renderer] renderer)))
+         store (ptk/store {:state state :on-error on-error})]
+     ;; Unit tests skip team/workspace bootstrap; mirror team init so
+     ;; :features is populated the same way as features/initialize does in app.
+     (ptk/emit! store (features/initialize #{}))
+     store)))
 
 (defn run-store
   ([store done events completed-cb]

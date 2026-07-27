@@ -8,7 +8,7 @@
   "Generic error handling"
   (:require
    [app.common.exceptions :as ex]
-   [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
@@ -134,13 +134,14 @@
       (with-out-str
         (println "Context:")
         (println "--------------------")
-        (println "Hint:    " (or (:hint data) (ex-message cause) "--"))
-        (println "Prof ID: " (str (or profile-id "--")))
-        (println "Team ID: " (str (or team-id "--")))
+        (println "Timestamp:" (ct/format-inst (ct/now) :rfc1123))
+        (println "Hint:     " (or (:hint data) (ex-message cause) "--"))
+        (println "Prof ID:  " (str (or profile-id "--")))
+        (println "Team ID:  " (str (or team-id "--")))
         (when-let [file-id (or (:file-id data) file-id)]
-          (println "File ID: " (str file-id)))
-        (println "Version: " (:full cf/version))
-        (println "HREF:    " (rt/get-current-href))
+          (println "File ID:  " (str file-id)))
+        (println "Version:  " (:full cf/version))
+        (println "HREF:     " (rt/get-current-href))
         (println)
 
         (println
@@ -149,7 +150,7 @@
 
         (println "Last events:")
         (println "--------------------")
-        (pp/pprint @st/last-events {:length 200})
+        (println (st/format-last-events))
         (println)))
     (catch :default cause
       (.error js/console "error on generating report" cause)

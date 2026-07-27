@@ -8,18 +8,18 @@
   (:require
    [app.binfile.v2 :as binfile.v2]
    [app.db :as db]
-   [app.main :as main]
    [app.srepl.helpers :as h]
+   [app.system :as sys]
    [cuerdas.core :as str]))
 
 (defn export-team!
   [team-id]
   (let [team-id (h/parse-uuid team-id)]
-    (binfile.v2/export-team! main/system team-id)))
+    (binfile.v2/export-team! sys/system team-id)))
 
 (defn import-team!
   [path & {:keys [owner rollback?] :or {rollback? true}}]
-  (db/tx-run! (assoc main/system ::db/rollback rollback?)
+  (db/tx-run! (assoc sys/system ::db/rollback rollback?)
               (fn [cfg]
                 (let [team  (binfile.v2/import-team! cfg path)
                       owner (cond

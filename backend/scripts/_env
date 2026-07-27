@@ -42,6 +42,7 @@ export PENPOT_FLAGS="\
        enable-smtp \
        enable-prepl-server \
        enable-urepl-server \
+       enable-nrepl-server \
        enable-rpc-climit \
        enable-rpc-rlimit \
        enable-quotes \

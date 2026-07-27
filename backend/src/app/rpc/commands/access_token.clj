@@ -29,6 +29,10 @@
       AND type = 'mcp'")
 
 (defn create-access-token
+  "Create an access token with empty perms.
+
+  Elevated permissions (e.g. error-reports:read) are not assignable via
+  the public API; grant them with SQL or `repl:grant-access-token-perm`."
   [{:keys [::db/conn] :as cfg} profile-id name expiration type]
   (let [token-id   (uuid/next)
         expires-at (some-> expiration (ct/in-future))
@@ -60,6 +64,27 @@
 (defn repl:create-access-token
   [cfg profile-id name expiration]
   (db/tx-run! cfg create-access-token profile-id name expiration))
+
+(def ^:private sql:grant-access-token-perm
+  "UPDATE access_token
+      SET perms = (
+            SELECT ARRAY(
+              SELECT DISTINCT unnest(perms || ARRAY[?]::text[])
+            )
+          ),
+          updated_at = now()
+    WHERE id = ?
+RETURNING id, perms")
+
+(defn repl:grant-access-token-perm
+  "Append a permission string to an access token (operator/SQL path).
+
+  Example: (repl:grant-access-token-perm cfg token-id \"error-reports:read\")"
+  [cfg token-id perm]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (let [row (db/exec-one! conn [sql:grant-access-token-perm perm token-id])]
+                  (some-> row (update :perms db/decode-pgarray #{}))))))
 
 (def ^:private schema:create-access-token
   [:map {:title "create-access-token"}

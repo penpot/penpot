@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
@@ -30,11 +31,12 @@
 (defonce enabled (atom true))
 
 (defn- persist-on-database!
-  [pool id version report]
+  [pool id source report]
   (when-not (db/read-only? pool)
     (db/insert! pool :server-error-report
                 {:id id
-                 :version version
+                 :source source
+                 :version source ;; backward compatibility with old code that reads version column
                  :content (db/tjson report)})))
 
 (defn- concurrent-exception?
@@ -56,19 +58,27 @@
                  (assoc :backend/version (:full cf/version))
                  (assoc :logger/name logger)
                  (assoc :logger/level level)
-                 (dissoc :request/params :value :params :data))]
+                 (dissoc :request/params :value :params :data))
+
+        href (if-let [path (:request/path context)]
+               (str (u/join (cf/get :public-uri) path))
+               (str (cf/get :public-uri)))]
 
     (merge
-     {:context (-> (into (sorted-map) ctx)
-                   (pp/pprint-str :length 50))
-      :props   (pp/pprint-str props :length 50)
-      :hint    (or (when-let [message (ex-message cause)]
-                     (if-let [props-hint (:hint props)]
-                       (str props-hint ": " message)
-                       message))
-                   @message)
-      :trace   (or (::trace record)
-                   (some-> cause (ex/format-throwable :data? true :explain? false :header? false :summary? false)))}
+     {:context          (-> (into (sorted-map) ctx)
+                            (pp/pprint-str :length 50))
+      :props            (pp/pprint-str props :length 50)
+      :hint             (or (when-let [message (ex-message cause)]
+                              (if-let [props-hint (:hint props)]
+                                (str props-hint ": " message)
+                                message))
+                            @message)
+      :trace            (or (::trace record)
+                            (some-> cause (ex/format-throwable :data? true :explain? false :header? false :summary? false)))
+      :tenant           (cf/get :tenant)
+      :version          (:full cf/version)
+      :profile-id       (some-> (:request/profile-id context) str)
+      :href             href}
 
      (when-let [params (or (:request/params context) (:params context))]
        {:params (pp/pprint-str params :length 20 :level 20)})
@@ -97,7 +107,7 @@
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
 (defn- audit-event->report
-  [{:keys [context props ip-addr] :as record}]
+  [{:keys [context props ip-addr profile-id] :as record}]
   (let [context
         (reduce-kv (fn [context k v]
                      (let [k' (keyword "frontend" (name k))]
@@ -115,12 +125,15 @@
             (assoc :backend/version (:full cf/version))
             (assoc :frontend/ip-addr ip-addr))]
 
-    {:context (-> (into (sorted-map) context)
-                  (pp/pprint-str :length 50))
-     :origin  (:name record)
-     :href    (get props :href)
-     :hint    (get props :hint)
-     :report  (get props :report)}))
+    {:context          (-> (into (sorted-map) context)
+                           (pp/pprint-str :length 50))
+     :kind             (:name record)
+     :profile-id       (some-> profile-id str)
+     :href             (get props :href)
+     :hint             (get props :hint)
+     :trace            (get props :report)
+     :tenant           (cf/get :tenant)
+     :version          (:full cf/version)}))
 
 (defn- handle-audit-event
   "Convert the log record into a report object and persist it on the database"
@@ -153,10 +166,13 @@
                      (-> (into (sorted-map) result)
                          (dissoc ::rlimit/method)))))]
 
-    {:hint    (str "Rate Limit Rejection: " (::rlimit/method event) " for " (::rlimit/uid event))
-     :context (-> (into (sorted-map) context)
-                  (pp/pprint-str :length 50))
-     :result  (pp/pprint-str result :length 50)}))
+    {:hint             (str "Rate Limit Rejection: " (::rlimit/method event) " for " (::rlimit/uid event))
+     :context          (-> (into (sorted-map) context)
+                           (pp/pprint-str :length 50))
+     :value            (pp/pprint-str result :length 50)
+     :tenant           (cf/get :tenant)
+     :version          (:full cf/version)
+     :href             (str (cf/get :public-uri))}))
 
 (defn- handle-rlimit-event
   "Convert the log record into a report object and persist it on the database"

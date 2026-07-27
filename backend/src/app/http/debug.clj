@@ -230,25 +230,28 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :version 3)
+                                 (assoc :source 3)
                                  (assoc :created-at (ct/format-inst created-at :rfc1123))))))
 
           (render-template-v4 [{:keys [content id created-at]}]
             (-> (io/resource "app/templates/error-report.v4.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :version 4)
+                                 (assoc :source 4)
+                                 (assoc :kind (or (:kind content) (:origin content)))
+                                 (assoc :trace (or (:trace content) (:report content)))
                                  (assoc :created-at (ct/format-inst created-at :rfc1123))))))
 
           (render-template-v5 [{:keys [content id created-at]}]
             (-> (io/resource "app/templates/error-report.v5.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :version 5)
+                                 (assoc :source 5)
+                                 (assoc :value (or (:value content) (:result content)))
                                  (assoc :created-at (ct/format-inst created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
-      (let [result (case (:version report)
+      (let [result (case (:source report)
                      1 (render-template-v1 report)
                      2 (render-template-v2 report)
                      3 (render-template-v3 report)
@@ -265,18 +268,19 @@
   "SELECT id, created_at,
           content->>'~:hint' AS hint
      FROM server_error_report
-    WHERE version = ?
-    ORDER BY created_at DESC
-    LIMIT 300")
+     WHERE (version = ? OR source = ? OR ? = 0)
+     ORDER BY created_at DESC
+     LIMIT 300")
 
 (defn- error-list-handler
   [{:keys [::db/pool]} {:keys [params]}]
-  (let [version (or (some-> (get params :version) parse-long) 3)
-        items   (->> (db/exec! pool [sql:error-reports version])
-                     (map #(update % :created-at ct/format-inst :rfc1123)))]
+  (let [source (or (some-> (get params :source) parse-long) 3)
+        items  (->> (db/exec! pool [sql:error-reports source source source])
+                    (map #(update % :created-at ct/format-inst :rfc1123)))]
+
     {::yres/status 200
      ::yres/body (-> (io/resource "app/templates/error-list.tmpl")
-                     (tmpl/render {:items items :version version}))
+                     (tmpl/render {:items items :source source}))
      ::yres/headers {"content-type" "text/html; charset=utf-8"
                      "x-robots-tag" "noindex"}}))
 
