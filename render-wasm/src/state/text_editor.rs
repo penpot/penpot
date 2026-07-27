@@ -101,7 +101,7 @@ pub enum TextEditorEvent {
 
 /// FIXME: It should be better to get these constants from the frontend through the API.
 const SELECTION_COLOR: Color = Color::from_argb(127, 0, 209, 184);
-const CURSOR_COLOR: Color = Color::BLACK;
+const CURSOR_COLOR: Color = Color::WHITE;
 const CURSOR_WIDTH: f32 = 1.0;
 const CURSOR_BLINK_INTERVAL_MS: f32 = 530.0;
 
@@ -274,6 +274,10 @@ pub struct TextEditorTheme {
     pub selection_color: Color,
     pub cursor_color: Color,
     pub cursor_width: f32,
+    /// When true the caret is painted with a Difference blend mode, so it shows
+    /// as the inverted color of whatever is behind it. Used as the default when
+    /// the text has no solid fill whose color the caret can match.
+    pub cursor_invert: bool,
 }
 
 pub struct TextComposition {
@@ -364,6 +368,7 @@ impl TextEditorState {
                 selection_color: SELECTION_COLOR,
                 cursor_color: CURSOR_COLOR,
                 cursor_width: CURSOR_WIDTH,
+                cursor_invert: true,
             },
             selection: TextSelection::new(),
             composition: TextComposition::new(),

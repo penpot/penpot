@@ -66,6 +66,11 @@ fn render_cursor(
     if editor_state.is_overtype_mode {
         paint.set_blend_mode(BlendMode::Exclusion);
         paint.set_color(Color::WHITE);
+    } else if editor_state.theme.cursor_invert {
+        // Default (no solid fill to match): a white caret with a Difference
+        // blend renders the inverted color of whatever is behind it.
+        paint.set_blend_mode(BlendMode::Difference);
+        paint.set_color(editor_state.theme.cursor_color);
     } else {
         paint.set_blend_mode(BlendMode::SrcOver);
         paint.set_color(editor_state.theme.cursor_color);
