@@ -12,36 +12,36 @@
 
 (defn layout-content-points
   [bounds parent {:keys [row-tracks column-tracks]}]
-  (let [parent-id (:id parent)
-        parent-bounds @(get bounds parent-id)
-
-        hv #(gpo/start-hv parent-bounds %)
-        vv #(gpo/start-vv parent-bounds %)]
-    (d/concat-vec
-     (->> row-tracks
-          (mapcat #(vector (:start-p %)
-                           (gpt/add (:start-p %) (vv (:size %))))))
-     (->> column-tracks
-          (mapcat #(vector (:start-p %)
-                           (gpt/add (:start-p %) (hv (:size %)))))))))
+  (let [parent-id     (:id parent)
+        parent-bounds (get bounds parent-id)]
+    (when-let [parent-bounds (some-> parent-bounds deref)]
+      (let [hv #(gpo/start-hv parent-bounds %)
+            vv #(gpo/start-vv parent-bounds %)]
+        (d/concat-vec
+         (->> row-tracks
+              (mapcat #(vector (:start-p %)
+                               (gpt/add (:start-p %) (vv (:size %))))))
+         (->> column-tracks
+              (mapcat #(vector (:start-p %)
+                               (gpt/add (:start-p %) (hv (:size %)))))))))))
 
 (defn layout-content-bounds
   [bounds {:keys [layout-padding] :as parent} layout-data]
 
-  (let [parent-id (:id parent)
-        parent-bounds @(get bounds parent-id)
+  (let [parent-id     (:id parent)
+        parent-bounds (get bounds parent-id)]
+    (when-let [parent-bounds (some-> parent-bounds deref)]
+      (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
+            pad-top    (or pad-top 0)
+            pad-right  (or pad-right 0)
+            pad-bottom (or pad-bottom 0)
+            pad-left   (or pad-left 0)
 
-        {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
-        pad-top    (or pad-top 0)
-        pad-right  (or pad-right 0)
-        pad-bottom (or pad-bottom 0)
-        pad-left   (or pad-left 0)
+            layout-points (layout-content-points bounds parent layout-data)]
 
-        layout-points (layout-content-points bounds parent layout-data)]
-
-    (if (d/not-empty? layout-points)
-      (-> layout-points
-          (gpo/merge-parent-coords-bounds parent-bounds)
-          (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))
-      ;; Cannot create some bounds from the children so we return the parent's
-      parent-bounds)))
+        (if (d/not-empty? layout-points)
+          (-> layout-points
+              (gpo/merge-parent-coords-bounds parent-bounds)
+              (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))
+          ;; Cannot create some bounds from the children so we return the parent's
+          parent-bounds)))))
