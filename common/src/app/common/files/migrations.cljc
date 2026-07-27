@@ -1874,6 +1874,110 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0025-repair-empty-text-content"
+  ;; Repair text shapes whose :content tree has empty/missing :children
+  ;; at any of the three levels:
+  ;;   Level 1: root with no paragraph-set
+  ;;   Level 2: paragraph-set with no paragraph
+  ;;   Level 3: paragraph with no span
+  ;; Such shapes fail the backend `validate-shape` schema and would also
+  ;; break the v2 editor's `cljs->dom` roundtrip. Re-seed the canonical
+  ;; root -> paragraph-set -> paragraph -> span tree, preserving the
+  ;; original root-level attributes (e.g. :vertical-align) when present.
+  ;; Idempotent on healthy content.
+  [data _]
+  (let [default-span {:text "" :fills types.text/default-text-fills}
+        default-paragraph {:type "paragraph" :children [default-span]}
+        default-paragraph-set {:type "paragraph-set" :children [default-paragraph]}
+
+        ;; Level 3: repair paragraph with empty/missing children
+        repair-span (fn [span]
+                      (if (and (map? span)
+                               (string? (:text span)))
+                        span
+                        default-span))
+
+        repair-paragraph (fn [paragraph]
+                           (if (and (map? paragraph)
+                                    (= "paragraph" (:type paragraph)))
+                             (cond
+                               ;; Children is nil or empty vector - seed with default span
+                               (or (nil? (:children paragraph))
+                                   (and (vector? (:children paragraph))
+                                        (empty? (:children paragraph))))
+                               (assoc paragraph :children [default-span])
+
+                               ;; Children is a vector - repair any invalid spans
+                               (vector? (:children paragraph))
+                               (update paragraph :children
+                                       (fn [children]
+                                         (mapv repair-span children)))
+
+                               ;; Children is not a vector - replace with default
+                               :else
+                               (assoc paragraph :children [default-span]))
+                             default-paragraph))
+
+        ;; Level 2: repair paragraph-set with empty/missing children
+        repair-paragraph-set (fn [paragraph-set]
+                               (if (and (map? paragraph-set)
+                                        (= "paragraph-set" (:type paragraph-set)))
+                                 (cond
+                                   ;; Children is nil or empty vector - seed with default paragraph
+                                   (or (nil? (:children paragraph-set))
+                                       (and (vector? (:children paragraph-set))
+                                            (empty? (:children paragraph-set))))
+                                   (assoc paragraph-set :children [default-paragraph])
+
+                                   ;; Children is a vector - repair any invalid paragraphs
+                                   (vector? (:children paragraph-set))
+                                   (update paragraph-set :children
+                                           (fn [children]
+                                             (mapv repair-paragraph children)))
+
+                                   ;; Children is not a vector - replace with default
+                                   :else
+                                   (assoc paragraph-set :children [default-paragraph]))
+                                 default-paragraph-set))
+
+        ;; Repair content at all levels, handling all edge cases
+        repair-content (fn [content]
+                         (cond
+                           ;; Content is not a valid root map - create default
+                           ;; Preserve root-level attrs if content is a map
+                           (or (nil? content)
+                               (not (map? content))
+                               (not= "root" (:type content)))
+                           (merge types.text/default-root-attrs
+                                  {:type "root"
+                                   :children [default-paragraph-set]}
+                                  (when (map? content)
+                                    (select-keys content types.text/root-attrs)))
+
+                           ;; Content is a valid root - repair all levels
+                           :else
+                           (let [children (if (and (vector? (:children content))
+                                                   (seq (:children content)))
+                                            (:children content)
+                                            [default-paragraph-set])]
+                             (merge types.text/default-root-attrs
+                                    {:type "root"}
+                                    (select-keys content types.text/root-attrs)
+                                    {:children (mapv repair-paragraph-set children)}))))
+
+        ;; Simplified gatekeeper - just check if it's a text shape
+        fix-shape (fn [shape]
+                    (if (cfh/text-shape? shape)
+                      (update shape :content repair-content)
+                      shape))
+
+        update-container (fn [container]
+                           (d/update-when container :objects d/update-vals fix-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1955,4 +2059,5 @@
          "0021-fix-shape-svg-attrs"
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
-         "0024b-fix-stroke-cap-placement"]))
+         "0024b-fix-stroke-cap-placement"
+         "0025-repair-empty-text-content"]))

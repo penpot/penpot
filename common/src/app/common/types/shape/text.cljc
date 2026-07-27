@@ -20,44 +20,42 @@
    [:type [:= "root"]]
    [:key {:optional true} :string]
    [:children
-    {:optional true}
-    [:maybe
-     [:vector {:min 1 :gen/max 2 :gen/min 1}
-      [:map
-       [:type [:= "paragraph-set"]]
-       [:key {:optional true} :string]
-       [:children
-        [:vector {:min 1 :gen/max 2 :gen/min 1}
-         [:map
-          [:type [:= "paragraph"]]
-          [:key {:optional true} :string]
-          [:fills {:optional true}
-           [:maybe schema:fills]]
-          [:font-family {:optional true} ::sm/text]
-          [:font-size {:optional true} ::sm/text]
-          [:font-style {:optional true} ::sm/text]
-          [:font-weight {:optional true} ::sm/text]
-          [:direction {:optional true} ::sm/text]
-          [:text-decoration {:optional true} ::sm/text]
-          [:text-transform {:optional true} ::sm/text]
-          [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-          [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
-          [:children
-           [:vector {:min 1 :gen/max 2 :gen/min 1}
-            [:map
-             [:text :string]
-             [:key {:optional true} :string]
-             [:fills {:optional true}
-              [:maybe schema:fills]]
-             [:font-family {:optional true} ::sm/text]
-             [:font-size {:optional true} ::sm/text]
-             [:font-style {:optional true} ::sm/text]
-             [:font-weight {:optional true} ::sm/text]
-             [:direction {:optional true} ::sm/text]
-             [:text-decoration {:optional true} ::sm/text]
-             [:text-transform {:optional true} ::sm/text]
-             [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
-             [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
+    [:vector {:min 1 :gen/max 2 :gen/min 1}
+     [:map
+      [:type [:= "paragraph-set"]]
+      [:key {:optional true} :string]
+      [:children
+       [:vector {:min 1 :gen/max 2 :gen/min 1}
+        [:map
+         [:type [:= "paragraph"]]
+         [:key {:optional true} :string]
+         [:fills {:optional true}
+          [:maybe schema:fills]]
+         [:font-family {:optional true} ::sm/text]
+         [:font-size {:optional true} ::sm/text]
+         [:font-style {:optional true} ::sm/text]
+         [:font-weight {:optional true} ::sm/text]
+         [:direction {:optional true} ::sm/text]
+         [:text-decoration {:optional true} ::sm/text]
+         [:text-transform {:optional true} ::sm/text]
+         [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+         [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
+         [:children
+          [:vector {:min 1 :gen/max 2 :gen/min 1}
+           [:map
+            [:text :string]
+            [:key {:optional true} :string]
+            [:fills {:optional true}
+             [:maybe schema:fills]]
+            [:font-family {:optional true} ::sm/text]
+            [:font-size {:optional true} ::sm/text]
+            [:font-style {:optional true} ::sm/text]
+            [:font-weight {:optional true} ::sm/text]
+            [:direction {:optional true} ::sm/text]
+            [:text-decoration {:optional true} ::sm/text]
+            [:text-transform {:optional true} ::sm/text]
+            [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
+            [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]])
 
 (def valid-content?
   (sm/lazy-validator schema:content))
