@@ -107,7 +107,7 @@
 
         (t/is (= (:id profile-user)
                  (:user-who-delete-member @remove-profile-params)))
-        (t/is (= "organization_member"
+        (t/is (= "organization-member"
                  (:deleted-by-role @remove-profile-params)))
         (t/is (= "dashboard"
                  (:event-origin @remove-profile-params)))))))
@@ -900,9 +900,9 @@
                               :organization-id org-id})]
         (t/is (th/success? out))))
 
-    (t/is (= "dashboard:move_team_to_organization"
+    (t/is (= "dashboard:move-team-to-organization"
              (:event-origin @set-team-params)))
-    (t/is (= "move_existing_team_to_organization"
+    (t/is (= "move-existing-team-to-organization"
              (:add-method @set-team-params)))
     (t/is (= (:created-at team)
              (:team-created-at @set-team-params)))
@@ -929,9 +929,9 @@
        {:organization-id organization-id
         :is-default false}))
 
-    (t/is (= "dashboard:create_team_in_organization"
+    (t/is (= "dashboard:create-team-in-organization"
              (:event-origin @params*)))
-    (t/is (= "create_team_in_organization"
+    (t/is (= "create-team-in-organization"
              (:add-method @params*)))
     (t/is (= (:created-at team)
              (:team-created-at @params*)))))

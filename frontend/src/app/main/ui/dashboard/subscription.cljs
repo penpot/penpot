@@ -154,12 +154,7 @@
 
         team-count (count teams)
 
-        account-age-days
-        (when (ct/inst? (:created-at profile))
-          (-> (ct/diff-ms (:created-at profile) (ct/now))
-              (/ (* 24 60 60 1000))
-              js/Math.floor
-              (max 0)))
+        account-age-days (dnt/account-age-days profile)
 
         teams-loaded? (seq teams)
 
@@ -176,7 +171,7 @@
            (st/emit!
             (ev/event
              (cond-> {::ev/name "open-subscription-modal"
-                      ::ev/origin "dashboard:promotional_banner"
+                      ::ev/origin "dashboard:promotional-banner"
                       :product "nitrate:enterprise"
                       :source "frontend"
                       :has-teams (pos? team-count)
@@ -184,7 +179,7 @@
                (some? account-age-days)
                (assoc :account-age-days account-age-days)))
             (dnt/show-nitrate-popup :nitrate-form
-                                    (cond-> {:subscription-start-origin "dashboard:promotional_banner"}
+                                    (cond-> {:subscription-start-origin "dashboard:promotional-banner"}
                                       (= subscription-type "unlimited")
                                       (assoc :show-contact-sales-option true))))))
 

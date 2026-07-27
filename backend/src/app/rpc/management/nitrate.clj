@@ -641,8 +641,7 @@ RETURNING id, deleted_at;")
                                :skip-validation true
                                :user-who-delete-member actor-profile-id
                                :deleted-by-role (when actor-profile-id
-                                                  "organization_owner")
-                               :event-origin "admin-console:organization-members"))
+                                                  "organization-owner")))
     (notifications/notify-user-org-change cfg profile-id organization-id organization-name "dashboard.user-no-longer-belong-org")
     nil))
 

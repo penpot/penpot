@@ -1,6 +1,8 @@
 (ns app.main.data.nitrate
   (:require
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
+   [app.common.time :as ct]
    [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
@@ -22,6 +24,15 @@
 
 (def ^:private nitrate-entry-active-key ::nitrate-entry-active)
 (def ^:private nitrate-entry-pending-popup-key ::nitrate-entry-pending-popup)
+(def ^:private milliseconds-per-day (* 24 60 60 1000))
+
+(defn account-age-days
+  [profile]
+  (when (ct/inst? (:created-at profile))
+    (-> (ct/diff-ms (:created-at profile) (ct/now))
+        (/ milliseconds-per-day)
+        (mth/floor)
+        (mth/max 0))))
 
 (defn activate-nitrate-entry-popup!
   []

@@ -491,7 +491,7 @@
              (st/emit! (dnt/show-nitrate-popup
                         :nitrate-dialog
                         {:nitrate-license nitrate-license
-                         :event-origin "settings:plan_confirmation_modal"
+                         :event-origin "settings:plan-confirmation-modal"
                          :subscription-start-origin "settings"}))
              (st/emit!
               (modal/show :management-dialog
@@ -771,7 +771,7 @@
         (mf/use-fn
          (fn []
            (st/emit! (ev/event {::ev/name "close-subscription-modal"
-                                ::ev/origin "nitrate:plan_confirmation_modal"
+                                ::ev/origin "nitrate:plan-confirmation-modal"
                                 :product "nitrate:enterprise"}))
            (modal/hide!)))
 

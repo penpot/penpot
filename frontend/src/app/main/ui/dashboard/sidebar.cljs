@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -310,12 +309,7 @@
 
         team-count (count teams)
 
-        account-age-days
-        (when (ct/inst? (:created-at profile))
-          (-> (ct/diff-ms (:created-at profile) (ct/now))
-              (/ (* 24 60 60 1000))
-              js/Math.floor
-              (max 0)))
+        account-age-days (dnt/account-age-days profile)
 
         on-org-click
         (mf/use-fn
@@ -336,7 +330,7 @@
              (st/emit!
               (ev/event
                (cond-> {::ev/name "open-subscription-modal"
-                        ::ev/origin "dashboard:organization_switcher"
+                        ::ev/origin "dashboard:organization-switcher"
                         :product "nitrate:enterprise"
                         :source "frontend"
                         :has-teams (pos? team-count)
@@ -345,7 +339,7 @@
                  (assoc :account-age-days account-age-days)))
               (dnt/show-nitrate-popup
                :nitrate-form
-               (cond-> {:subscription-start-origin "dashboard:organization_switcher"}
+               (cond-> {:subscription-start-origin "dashboard:organization-switcher"}
                  (= subscription-type "unlimited")
                  (assoc :show-contact-sales-option true)))))))
 
@@ -719,12 +713,7 @@
 
         team-count (count teams)
 
-        account-age-days
-        (when (ct/inst? (:created-at profile))
-          (-> (ct/diff-ms (:created-at profile) (ct/now))
-              (/ (* 24 60 60 1000))
-              js/Math.floor
-              (max 0)))
+        account-age-days (dnt/account-age-days profile)
 
         current-org (dtm/team->organization team)
 
@@ -812,7 +801,7 @@
              (st/emit!
               (ev/event
                (cond-> {::ev/name "open-subscription-modal"
-                        ::ev/origin "dashboard:create_organization_button"
+                        ::ev/origin "dashboard:create-organization-button"
                         :product "nitrate:enterprise"
                         :source "frontend"
                         :has-teams (pos? team-count)
@@ -821,7 +810,7 @@
                  (assoc :account-age-days account-age-days)))
               (dnt/show-nitrate-popup
                :nitrate-form
-               (cond-> {:subscription-start-origin "dashboard:create_organization_button"}
+               (cond-> {:subscription-start-origin "dashboard:create-organization-button"}
                  (= subscription-type "unlimited")
                  (assoc :show-contact-sales-option true)))))))]
     (if show-dropdown?

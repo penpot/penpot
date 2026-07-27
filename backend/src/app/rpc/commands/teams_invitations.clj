@@ -224,7 +224,7 @@
                        :member-id (:id member)
                        :role role}
                 organization
-                (assoc :event-origin "admin-console:organization_members_invite_modal"
+                (assoc :event-origin "admin-console:organization-members-invite-modal"
                        :user-who-send-invitation (str profile-id))
 
                 (not organization)

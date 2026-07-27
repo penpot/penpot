@@ -6,9 +6,26 @@
 
 (ns frontend-tests.data.nitrate-test
   (:require
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.main.data.nitrate :as dnt]
    [cljs.test :as t :include-macros true]))
+
+(t/deftest account-age-days-test
+  (with-redefs [ct/now (constantly (ct/inst "2026-07-27T12:00:00Z"))]
+    (t/testing "returns the number of complete days since account creation"
+      (t/is (= 10
+               (dnt/account-age-days
+                {:created-at (ct/inst "2026-07-17T00:00:00Z")}))))
+
+    (t/testing "does not return negative ages"
+      (t/is (= 0
+               (dnt/account-age-days
+                {:created-at (ct/inst "2026-07-28T00:00:00Z")}))))
+
+    (t/testing "returns nil when the creation date is not an instant"
+      (t/is (nil? (dnt/account-age-days {})))
+      (t/is (nil? (dnt/account-age-days {:created-at "invalid"}))))))
 
 (t/deftest build-admin-console-url-preserves-public-uri-subpath
   (t/testing "builds admin console routes below the configured Penpot subpath"

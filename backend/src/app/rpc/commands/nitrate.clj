@@ -346,7 +346,7 @@
   (leave-org cfg (assoc params
                         :profile-id profile-id
                         :user-who-delete-member profile-id
-                        :deleted-by-role "organization_member"
+                        :deleted-by-role "organization-member"
                         :event-origin "dashboard")))
 
 
@@ -508,8 +508,8 @@
       (let [team (nitrate/call cfg :set-team-org {:team-id team-id
                                                   :organization-id organization-id
                                                   :is-default false
-                                                  :event-origin "dashboard:move_team_to_organization"
-                                                  :add-method "move_existing_team_to_organization"
+                                                  :event-origin "dashboard:move-team-to-organization"
+                                                  :add-method "move-existing-team-to-organization"
                                                   :team-created-at team-created-at})]
         ;; Notify connected users
         (notifications/notify-team-change cfg team "dashboard.team-belong-org"))

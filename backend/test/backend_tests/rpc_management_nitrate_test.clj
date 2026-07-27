@@ -78,7 +78,7 @@
         (t/is (th/success? external-out))
 
         (doseq [event [create-event update-event]]
-          (t/is (= "admin-console:organization_members_invite_modal"
+          (t/is (= "admin-console:organization-members-invite-modal"
                    (get-in event [:props :event-origin])))
           (t/is (= (str (:id owner))
                    (get-in event [:props :user-who-send-invitation])))
@@ -1137,10 +1137,9 @@
         (t/is (nil? (:result out)))
         (t/is (= (:id org-owner)
                  (:user-who-delete-member @remove-profile-params)))
-        (t/is (= "organization_owner"
+        (t/is (= "organization-owner"
                  (:deleted-by-role @remove-profile-params)))
-        (t/is (= "admin-console:organization-members"
-                 (:event-origin @remove-profile-params)))
+        (t/is (nil? (:event-origin @remove-profile-params)))
 
         ;; --- Verify: default team preserved, renamed and unset as default ---
         (let [team (th/db-get :team {:id (:id org-team)})]
@@ -1196,8 +1195,7 @@
         (t/is (th/success? out))
         (t/is (nil? (:user-who-delete-member @remove-profile-params)))
         (t/is (nil? (:deleted-by-role @remove-profile-params)))
-        (t/is (= "admin-console:organization-members"
-                 (:event-origin @remove-profile-params)))
+        (t/is (nil? (:event-origin @remove-profile-params)))
         ;; --- Verify: empty default team is soft-deleted ---
         (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
           (t/is (some? (:deleted-at team))))))))

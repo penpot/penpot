@@ -35,7 +35,7 @@
            (dnt/go-to-buy-nitrate-license
             "monthly"
             dnt/go-to-ac-url
-            "dashboard:plan_confirmation_modal"
+            "dashboard:plan-confirmation-modal"
             (if (:subscription profile) "paid" "trial")
             subscription-start-origin)))
 
@@ -48,13 +48,13 @@
         (mf/use-fn
          (fn []
            (st/emit! (ev/event {::ev/name "open-current-subscription"
-                                ::ev/origin "dashboard:plan_confirmation_modal"}))))
+                                ::ev/origin "dashboard:plan-confirmation-modal"}))))
 
         on-close
         (mf/use-fn
          (fn []
            (st/emit! (ev/event {::ev/name "close-subscription-modal"
-                                ::ev/origin "nitrate:plan_confirmation_modal"
+                                ::ev/origin "nitrate:plan-confirmation-modal"
                                 :product "nitrate:enterprise"}))
            (modal/hide!)))]
 

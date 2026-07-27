@@ -234,14 +234,14 @@
               organization-add-source
               (when organization-id-on-add
                 (if organization-id
-                  "direct_organization_invitation"
-                  "team_invitation"))
+                  "direct-organization-invitation"
+                  "team-invitation"))
 
               organization-event-origin
               (when organization-id-on-add
                 (if organization-id
-                  "organization_invitation_acceptance"
-                  "team_invitation_acceptance"))
+                  "organization-invitation-acceptance"
+                  "team-invitation-acceptance"))
 
               organization-member-count-before
               (when organization-id-on-add
@@ -273,19 +273,19 @@
               (audit/submit cfg
                             (-> (audit/event-from-rpc-params params)
                                 (assoc :name "accept-team-invitation")
-                                (assoc :props props))))
+                                (assoc :props props)))
 
-            ;; NOTE: Backward compatibility; old invitations can
-            ;; have the `created-by` to be nil; so in this case we
-            ;; don't submit this event to the audit-log
-            (when-let [created-by (:created-by invitation)]
-              (audit/submit cfg
-                            (-> (audit/event-from-rpc-params params)
-                                (assoc :profile-id created-by)
-                                (assoc :name "accept-team-invitation-from")
-                                (assoc :props (assoc props
-                                                     :profile-id (:id profile)
-                                                     :email (:email profile))))))
+              ;; NOTE: Backward compatibility; old invitations can
+              ;; have the `created-by` to be nil; so in this case we
+              ;; don't submit this event to the audit-log
+              (when-let [created-by (:created-by invitation)]
+                (audit/submit cfg
+                              (-> (audit/event-from-rpc-params params)
+                                  (assoc :profile-id created-by)
+                                  (assoc :name "accept-team-invitation-from")
+                                  (assoc :props (assoc props
+                                                       :profile-id (:id profile)
+                                                       :email (:email profile)))))))
 
             (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
               (when organization-id-on-add

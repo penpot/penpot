@@ -626,8 +626,8 @@
                               :organization-id (:organization-id params)
                               :is-default (:is-default params))
                  (false? (:is-default params))
-                 (assoc :event-origin "dashboard:create_team_in_organization"
-                        :add-method "create_team_in_organization"
+                 (assoc :event-origin "dashboard:create-team-in-organization"
+                        :add-method "create-team-in-organization"
                         :team-created-at (:created-at team)))
         result (call cfg :set-team-org params)]
     (when (nil? result)

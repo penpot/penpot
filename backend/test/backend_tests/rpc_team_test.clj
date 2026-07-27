@@ -477,6 +477,7 @@
                   :team-invitation
                   {:org-id organization-id
                    :email-to (:email invitee)
+                   :created-by (:id inviter)
                    :role "editor"
                    :valid-until (ct/in-future "48h")})
 
@@ -493,16 +494,18 @@
         (t/is (th/success? (verify! direct-token))))
 
       (let [event (organization-event)]
-        (t/is (= "organization_invitation_acceptance"
+        (t/is (= "organization-invitation-acceptance"
                  (get-in event [:context :event-origin])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
-        (t/is (= "direct_organization_invitation"
+        (t/is (= "direct-organization-invitation"
                  (get-in event [:props :organization-member-add-source])))
         (t/is (false? (get-in event [:props :belongs-to-team-on-add])))
         (t/is (= 3 (get-in event [:props :organization-member-count-before])))
         (t/is (= :editor (get-in event [:props :role])))
         (t/is (uuid? (get-in event [:props :invitation-id])))
-        (t/is (not-any? #(= "accept-team-invitation" (:name (second %)))
+        (t/is (not-any? #(contains? #{"accept-team-invitation"
+                                      "accept-team-invitation-from"}
+                                    (:name (second %)))
                         (:call-args-list @audit-mock))))
 
       (th/reset-mock! audit-mock)
@@ -510,6 +513,7 @@
                   :team-invitation
                   {:team-id (:id team)
                    :email-to (:email invitee)
+                   :created-by (:id inviter)
                    :role "editor"
                    :valid-until (ct/in-future "48h")})
 
@@ -528,11 +532,12 @@
       (let [events (mapv second (:call-args-list @audit-mock))
             event  (organization-event)]
         (t/is (some #(= "accept-team-invitation" (:name %)) events))
-        (t/is (= "team_invitation_acceptance"
+        (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
+        (t/is (= "team-invitation-acceptance"
                  (get-in event [:context :event-origin])))
         (t/is (= (:id team) (get-in event [:props :team-id])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
-        (t/is (= "team_invitation"
+        (t/is (= "team-invitation"
                  (get-in event [:props :organization-member-add-source])))
         (t/is (true? (get-in event [:props :belongs-to-team-on-add])))
         (t/is (= 5 (get-in event [:props :organization-member-count-before]))))
