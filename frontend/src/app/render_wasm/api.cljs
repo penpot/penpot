@@ -2587,6 +2587,12 @@
         (throw cause)))))
 
 (defn calculate-bool
+  "WASM implementation of `path/calc-bool-content`.
+
+  It must always return content: the result is stored as the bool shape's `:content`
+  and persisted as a file change, so returning `nil` would destroy the path.
+  When the render context is unusable, we fall back to the pure CLJS calculation,
+  which needs no render context."
   [shape objects]
 
   ;; We need to be able to calculate the boolean data but we cannot
@@ -2595,24 +2601,27 @@
   ;; temporary and then we serialize the objects needed to calculate the
   ;; boolean object.
   ;; After the content is returned we discard that temporary context
-  (h/call wasm/internal-module "_start_temp_objects")
+  (if-not (initialized?)
+    (path/calc-bool-content shape objects)
+    (do
+      (h/call wasm/internal-module "_start_temp_objects")
 
-  (try
-    (let [bool-type (get shape :bool-type)
-          ids (get shape :shapes)
-          all-children
-          (->> ids
-               (mapcat #(cfh/get-children-with-self objects %)))]
+      (try
+        (let [bool-type (get shape :bool-type)
+              ids (get shape :shapes)
+              all-children
+              (->> ids
+                   (mapcat #(cfh/get-children-with-self objects %)))]
 
-      (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-      (run! set-object all-children)
+          (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+          (run! set-object all-children)
 
-      (-> (calculate-bool* bool-type ids)
-          (path.impl/path-data)))
-    (finally
-      ;; Always restore the main shapes pool: leaving the temp pool
-      ;; active would make the next `_start_temp_objects` panic.
-      (h/call wasm/internal-module "_end_temp_objects"))))
+          (-> (calculate-bool* bool-type ids)
+              (path.impl/path-data)))
+        (finally
+          ;; Always restore the main shapes pool: leaving the temp pool
+          ;; active would make the next `_start_temp_objects` panic.
+          (h/call wasm/internal-module "_end_temp_objects"))))))
 
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
