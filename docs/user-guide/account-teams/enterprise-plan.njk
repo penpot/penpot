@@ -128,6 +128,37 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
 
   <p>When an organization is first created, all controls are configured with the most permissive setting; the same setting is used by all teams that are not part of any organization. No behavior changes until you actively configure a Control.</p>
 
+<h3 id="module-single-sign-on">Module: Single Sign-On (SSO)
+  <a class="direct-link" href="#module-single-sign-on">#</a>
+</h3>
+
+  <p>Single Sign-On lets you require all members of your organization to authenticate through your corporate identity provider (IdP) before accessing any of the organization's teams and files. Once SSO is active, anyone who is removed from your directory automatically loses access to the organization's teams, without you having to manage it manually in Penpot.</p>
+  <p>SSO applies to teams and files only. The Admin Console is always accessible without SSO, so you can always reach your configuration to adjust or deactivate it, even if your own directory entry changes.</p>
+
+  <h4>Supported identity providers</h4>
+  <p>You can configure SSO with any of the following:</p>
+  <ul>
+    <li>Generic authentication (OpenID Connect)</li>
+    <li>Azure Active Directory (OpenID Connect)</li>
+    <li>Google (OAuth)</li>
+  </ul>
+  <p>Clicking the <strong>Activate SSO</strong> button runs a test connection against your IdP. If the connection fails, your draft is kept and no changes are applied.</p>
+  <p>If the test passes, members who are not in your directory will lose access to the organization's teams the moment SSO is activated. Once confirmed, SSO becomes active immediately.</p>
+
+  <h4>What happens to existing sessions</h4>
+  <p>When SSO is activated, any member who is currently inside one of the organization's teams is cut off immediately and sent through the SSO login. This does not log them out of Penpot entirely. They can still reach teams that do not belong to your organization without re-authenticating.</p>
+
+  <h4>Editing an active configuration</h4>
+  <p>While SSO is active, you can edit any field. As soon as you make a change, <strong>Apply changes</strong> and <strong>Discard changes</strong> buttons appear. Discarding restores every field to the current live configuration. Applying runs the same test connection as the initial setup, without a confirmation dialog. If the connection fails, your live configuration is not touched.</p>
+
+  <h4>Deactivating SSO</h4>
+  <p>Click <strong>Deactivate SSO</strong> and confirm. The configuration is preserved as a draft so you can reactivate it later without re-entering your credentials. Members are notified by email the first time SSO is activated. If you deactivate and reactivate within 24 hours, the notification is not re-sent.</p>
+
+  <h4>For your members</h4>
+  <p>Members do not need to do anything to prepare. When they next try to access the organization's teams, they will be asked to authenticate through your IdP. If they are already signed in through that provider, the step is skipped automatically.</p>
+  <p>Org membership still requires an invitation from you. Being in the directory alone does not grant access to Penpot or to your organization.</p>
+  <p>If a member is not in your directory, they remain an org member but cannot enter the organization's teams until they are added. A single email is sent to all current members and pending invitees when SSO is first activated, explaining what changed and who to contact if they cannot get in.</p>
+
 <h3 id="frequently-asked-questions"> Frequently asked questions
   <a class="direct-link" href="#frequently-asked-questions">#</a>
 </h3>
