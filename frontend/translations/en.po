@@ -4372,8 +4372,14 @@ msgid "nitrate.modal-success.title"
 msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Need a code? Contact us:"
+msgid "nitrate.code-activation.footer-before"
+msgstr "Need a code? Download your "
+
+msgid "nitrate.code-activation.footer-link"
+msgstr "activation code request"
+
+msgid "nitrate.code-activation.footer-after"
+msgstr " and contact us:"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -4473,8 +4479,8 @@ msgid "nitrate.form.enterprise.price"
 msgstr "per member per month"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Have an activation code?"
+msgid "nitrate.form.subscribe-with-code"
+msgstr "Subscribe with an activation code"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"

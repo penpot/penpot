@@ -84,9 +84,9 @@
               (tr "nitrate.form.cancel-anytime")]]]
 
            [:p {:class (stl/css :modal-text-medium)}
-            (tr "nitrate.form.have-code") " " [:a {:class (stl/css :link)
-                                                   :on-click on-activate-click}
-                                               (tr "nitrate.form.enter-code")]]
+            (tr "nitrate.form.subscribe-with-code") " " [:a {:class (stl/css :link)
+                                                             :on-click on-activate-click}
+                                                         (tr "nitrate.form.enter-code")]]
 
            [:p {:class (stl/css :modal-text-medium)}
             [:a {:class (stl/css :link) :href dnt/go-to-subscription-url}
@@ -102,7 +102,7 @@
              "sales@penpot.app"]]
            [:div  {:class (stl/css :activation-code)}
             [:p {:class (stl/css :modal-text-large)}
-             (tr "nitrate.form.have-code")]
+             (tr "nitrate.form.subscribe-with-code")]
             [:p {:class (stl/css :modal-text-large)}
              [:a {:class (stl/css :link)
                   :on-click on-activate-click}

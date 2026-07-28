@@ -11,6 +11,7 @@
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.nitrate-permissions :as nitrate-perms]
@@ -24,7 +25,8 @@
    [app.rpc.nitrate.emails-helper :as neh]
    [app.rpc.nitrate.organization-helper :as noh]
    [app.rpc.notifications :as notifications]
-   [app.util.services :as sv]))
+   [app.util.services :as sv]
+   [buddy.core.codecs :as bc]))
 
 
 (defn assert-is-owner [cfg profile-id team-id]
@@ -113,6 +115,35 @@
                               :invalid-activation-code)
                       :cause cause)
             (throw cause)))))))
+
+(def ^:private activation-code-request-filename
+  "penpot-activation-code-request.txt")
+
+(sv/defmethod ::get-nitrate-activation-code-request
+  "Returns a Base64-encoded JSON file requesting a Nitrate activation code.
+  Payload includes nitrateId, publicKey, email and iat."
+  {::rpc/auth true
+   ::doc/added "2.20"
+   ::sm/params [:map]
+   ::sm/result ::sm/text}
+  [cfg {:keys [::rpc/profile-id]}]
+  (let [profile          (db/get cfg :profile {:id profile-id})
+        nitrate-identity (nitrate/call cfg :get-identity {})]
+    (when-not nitrate-identity
+      (ex/raise :type :validation
+                :code :nitrate-identity-unavailable
+                :hint "Unable to retrieve nitrate identity"))
+    (-> (json/encode {:nitrate-id (:nitrate-id nitrate-identity)
+                      :public-key (:public-key nitrate-identity)
+                      :email      (:email profile)
+                      :iat        (ct/seconds (ct/now))}
+                     :key-fn json/write-camel-key)
+        (bc/str->bytes)
+        (bc/bytes->b64-str)
+        (rph/wrap)
+        (rph/with-header "content-type" "text/plain")
+        (rph/with-header "content-disposition"
+          (str "attachment; filename=\"" activation-code-request-filename "\"")))))
 
 (def ^:private sql:prefix-team-name-and-unset-default
   "UPDATE team
