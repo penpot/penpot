@@ -179,7 +179,7 @@
         (dom/trigger-download-uri filename mtype resource-uri)))))
 
 ;; TODO: Remove once we support WASM SVG export
-(def ^:private wasm-export-types #{:jpeg :webp :png :pdf})
+(def ^:private wasm-export-types #{:jpeg :webp :png :pdf :svg})
 
 (defn- wasm-export-enabled?
   "WASM export is available when the `wasm-export/v1` feature is active AND
@@ -202,6 +202,7 @@
     (effect [_ _ _]
       (case (:type export)
         :pdf (wasm.exports/export-pdf export)
+        :svg (wasm.exports/export-svg export)
         (wasm.exports/export-image export)))))
 
 (defn request-simple-export

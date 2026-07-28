@@ -1037,6 +1037,22 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
     })
 }
 
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state!(state, {
+        let data = state.render_shape_svg(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
 /// Raster image via CPU (no GPU/WebGL). Returns `[len][width][height][bytes]`
 /// (LE), same layout as `render_shape_pixels`. `format` selects the encoder:
 /// 0 = PNG, 1 = JPEG, 2 = WEBP (see `RasterFormat`).
