@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.select :as cs]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
