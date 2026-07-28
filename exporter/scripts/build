@@ -8,6 +8,25 @@ export NODE_ENV=production;
 corepack enable;
 corepack install || exit 1;
 pnpm install || exit 1;
+
+# The exporter compiles against render-wasm's `shared.js` and ships its `.wasm`
+# in the bundle, so build it here rather than depending on some other module's
+# build having run first — same as `frontend/scripts/build` does.
+pnpm run build:wasm;
+
+# Both are produced by `render-wasm/build` and are git-ignored. Verify they
+# arrived where this build expects: `shared.js` is a compile dependency, so a
+# path drift would surface as an opaque dependency trace from `pnpm run build`
+# below rather than the message here.
+WASM_SRC="../frontend/resources/public/js";
+WASM_SHARED="../frontend/common/src/app/render_wasm_common/api/shared.js";
+if [ ! -f "$WASM_SRC/render-wasm.wasm" ] || [ ! -f "$WASM_SHARED" ]; then
+    echo "ERROR: the render-wasm build did not produce:" >&2;
+    echo "  $WASM_SRC/render-wasm.wasm" >&2;
+    echo "  $WASM_SHARED" >&2;
+    exit 1;
+fi
+
 rm -rf target
 
 # Build the application
@@ -17,6 +36,10 @@ cp pnpm-lock.yaml target/;
 cp pnpm-workspace.yaml target/;
 cp package.json target/;
 touch target/pnpm-workspace.yaml;
+
+# Ship the artifact in the bundle; the docker image points PENPOT_WASM_DIR here.
+mkdir -p target/js;
+cp "$WASM_SRC/render-wasm.js" "$WASM_SRC/render-wasm.wasm" target/js/;
 
 cat <<EOF | tee target/setup
 #/usr/bin/env bash

@@ -1,6 +1,9 @@
 {:paths ["src" "vendor" "resources" "test"]
  :deps
  {penpot/common       {:local/root "../common"}
+  ;; For the CLJS side of the render-wasm binary protocol (`app.render-wasm.*`),
+  ;; shared with the workspace so the two cannot drift.
+  penpot/frontend     {:local/root "../frontend"}
   org.clojure/clojure {:mvn/version "1.12.5"}
   binaryage/devtools  {:mvn/version "1.0.7"}
   metosin/reitit-core {:mvn/version "0.10.1"}

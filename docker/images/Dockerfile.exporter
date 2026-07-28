@@ -5,7 +5,8 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/imagick/bin:$PATH \
-    PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers
+    PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers \
+    PENPOT_WASM_DIR=/opt/penpot/exporter/js
 
 RUN set -ex; \
     apt-get -qq update; \
