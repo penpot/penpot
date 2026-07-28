@@ -109,4 +109,5 @@ precision while maintaining a strong focus on maintainability and performance.
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure code via nREPL (backend + frontend).
 - `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
 - `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
+- `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `scripts/ci --help`.
 
