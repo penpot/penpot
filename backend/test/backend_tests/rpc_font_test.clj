@@ -608,3 +608,43 @@
                     :name "Valid Font Name"}
             out    (th/command! params)]
         (t/is (th/success? out))))))
+
+(t/deftest create-font-variant-rejects-foreign-font-id
+  ;; N2-07: A user with edit permissions on their own team must not be
+  ;; able to create a font variant using a font-id that already belongs
+  ;; to another team (BOLA / CWE-639).
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof1   (th/create-profile* 1 {:is-active true})
+          prof2   (th/create-profile* 2 {:is-active true})
+          team1   (:default-team-id prof1)
+          team2   (:default-team-id prof2)
+          font-id (uuid/custom 10 999)
+          data    (-> (io/resource "backend_tests/test_files/font-1.ttf")
+                      (io/read*))]
+
+      ;; prof1 creates a font variant in team1 with font-id
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof1)
+                    :team-id     team1
+                    :font-id     font-id
+                    :font-family "SharedFont"
+                    :font-weight 400
+                    :font-style  "normal"
+                    :data        {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (nil? (:error out))))
+
+      ;; prof2 tries to create a variant using the same font-id but
+      ;; in team2 — must be rejected because font-id belongs to team1
+      (let [params {::th/type :create-font-variant
+                    ::rpc/profile-id (:id prof2)
+                    :team-id     team2
+                    :font-id     font-id
+                    :font-family "SharedFont"
+                    :font-weight 700
+                    :font-style  "normal"
+                    :data        {"font/ttf" data}}
+            out    (th/command! params)]
+        (t/is (some? (:error out)))
+        (t/is (= :not-found (-> out :error ex-data :type)))
+        (t/is (= :object-not-found (-> out :error ex-data :code)))))))
