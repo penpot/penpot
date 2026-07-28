@@ -1515,6 +1515,9 @@ msgstr "No se han podido cargar las fuentes %s"
 msgid "errors.cannot-upload"
 msgstr "No se puede cargar el archivo multimedia."
 
+msgid "errors.circular-library-reference"
+msgstr "No se puede añadir la biblioteca: crearía una dependencia circular"
+
 #: src/app/main/ui/comments.cljs:737, src/app/main/ui/comments.cljs:767, src/app/main/ui/comments.cljs:864
 msgid "errors.character-limit-exceeded"
 msgstr "Se ha superado el límite de caracteres"

@@ -1504,6 +1504,9 @@ msgstr "The fonts %s could not be loaded"
 msgid "errors.cannot-upload"
 msgstr "Cannot upload the media file."
 
+msgid "errors.circular-library-reference"
+msgstr "Cannot add library: this would create a circular dependency"
+
 #: src/app/main/ui/comments.cljs:737, src/app/main/ui/comments.cljs:767, src/app/main/ui/comments.cljs:864
 msgid "errors.character-limit-exceeded"
 msgstr "Character limit exceeded"
