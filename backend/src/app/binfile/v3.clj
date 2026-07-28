@@ -856,6 +856,15 @@
                     :expected-size (:size object)
                     :found-size (sto/get-size content)))
 
+        (when-let [max (::bfc/import-max-object-size cfg)]
+          (when (> (sto/get-size content) max)
+            (ex/raise :type :validation
+                      :code :max-file-size-reached
+                      :hint (str "storage object exceeds maximum size: " (sto/get-size content))
+                      :path path
+                      :max max
+                      :found (sto/get-size content))))
+
         (when-let [hash (get object :hash)]
           (when (not= hash (sto/get-hash content))
             (ex/raise :type :validation
@@ -938,6 +947,15 @@
   (let [manifest (-> (read-manifest input)
                      (validate-manifest))
         entries  (read-zip-entries input)
+
+        _        (when-let [max (::bfc/import-max-zip-entries cfg)]
+                   (when (> (count entries) max)
+                     (ex/raise :type :validation
+                               :code :too-many-zip-entries
+                               :hint (str "zip file has too many entries: " (count entries))
+                               :max max
+                               :found (count entries))))
+
         cfg      (-> cfg
                      (assoc ::entries entries)
                      (assoc ::manifest manifest)

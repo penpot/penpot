@@ -229,3 +229,31 @@
           ;; With the guard, it raises :validation :max-file-size-reached.
           (t/is (= :validation (:type out)))
           (t/is (= :max-file-size-reached (:code out))))))))
+
+(t/deftest import-rejects-too-many-zip-entries
+  ;; import must reject ZIP files exceeding max-zip-entries
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    ;; Import with max-zip-entries=1 — the exported ZIP has more entries
+    (let [cfg (-> th/*system*
+                  (assoc ::bfc/project-id (:default-project-id profile))
+                  (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/input output)
+                  (assoc ::bfc/import-max-zip-entries 1))
+          out (try
+                (v3/import-files! cfg)
+                :no-error
+                (catch Throwable e
+                  (let [d (or (ex-data e) (some-> (ex-cause e) ex-data))]
+                    d)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :too-many-zip-entries (:code out))))))
