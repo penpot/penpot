@@ -2629,7 +2629,10 @@
         (reset! transition-image* snapshot)))))
 
 (defn render-shape-pixels
-  [shape-id scale]
+  "Renders a shape subtree to encoded image bytes. `format` is :png, :jpeg or
+  :webp; jpeg is flattened onto white on the Rust side, since it has no alpha
+  channel."
+  [shape-id scale format]
   (let [buffer (uuid/get-u32 shape-id)
 
         offset
@@ -2638,7 +2641,8 @@
                 (aget buffer 1)
                 (aget buffer 2)
                 (aget buffer 3)
-                scale)
+                scale
+                (sr/translate-raster-format format))
 
         heap (mem/get-heap-u8)
         heapu32 (mem/get-heap-u32)

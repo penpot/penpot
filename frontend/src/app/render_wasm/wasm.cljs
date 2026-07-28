@@ -46,7 +46,8 @@
   (reset! context-lost? false))
 
 (defonce serializers
-  #js {:blur-type shared/RawBlurType
+  #js {:raster-format shared/RasterFormat
+       :blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode
        :bool-type shared/RawBoolType
        :font-style shared/RawFontStyle
