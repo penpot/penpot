@@ -237,7 +237,7 @@
                   "direct-organization-invitation"
                   "team-invitation"))
 
-              organization-event-origin
+              organization-client-event-origin
               (when organization-id-on-add
                 (if organization-id
                   "organization-invitation-acceptance"
@@ -293,7 +293,9 @@
                  cfg
                  (-> (audit/event-from-rpc-params params)
                      (assoc :name "accept-organization-invitation")
-                     (assoc-in [:context :event-origin] organization-event-origin)
+                     (update :context assoc
+                             :client-event-origin
+                             organization-client-event-origin)
                      (assoc :props
                             (-> props
                                 (assoc :organization-id organization-id-on-add

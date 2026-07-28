@@ -292,7 +292,7 @@
 (defn leave-org
   [{:keys [::db/conn] :as cfg}
    {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?
-           user-who-delete-member deleted-by-role event-origin]}]
+           user-who-delete-member deleted-by-role client-event-origin]}]
   (let [org-prefix (str "[" (d/sanitize-string name) "] ")
         {:keys [deletable-team-ids
                 keep-default-team?
@@ -332,7 +332,7 @@
                    :organization-id id
                    :user-who-delete-member user-who-delete-member
                    :deleted-by-role deleted-by-role
-                   :event-origin event-origin})
+                   :client-event-origin client-event-origin})
 
     nil))
 
@@ -347,7 +347,7 @@
                         :profile-id profile-id
                         :user-who-delete-member profile-id
                         :deleted-by-role "organization-member"
-                        :event-origin "dashboard")))
+                        :client-event-origin "dashboard")))
 
 
 (sv/defmethod ::get-leave-org-summary
@@ -508,7 +508,7 @@
       (let [team (nitrate/call cfg :set-team-org {:team-id team-id
                                                   :organization-id organization-id
                                                   :is-default false
-                                                  :event-origin "dashboard:move-team-to-organization"
+                                                  :client-event-origin "dashboard:move-team-to-organization"
                                                   :add-method "move-existing-team-to-organization"
                                                   :team-created-at team-created-at})]
         ;; Notify connected users

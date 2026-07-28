@@ -817,7 +817,7 @@ RETURNING id, deleted_at;")
         ip-addr  (::rpc/ip-addr params)]
 
     (run! (fn [{:keys [type name profile-id props context] :as event}]
-            (let [context (-> (merge context context')
+            (let [context (-> (merge context (d/without-nils context'))
                               (d/without-nils))]
               (audit/submit cfg {:type (d/nilv type "action")
                                  :name name

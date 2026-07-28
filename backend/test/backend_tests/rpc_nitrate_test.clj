@@ -110,7 +110,7 @@
         (t/is (= "organization-member"
                  (:deleted-by-role @remove-profile-params)))
         (t/is (= "dashboard"
-                 (:event-origin @remove-profile-params)))))))
+                 (:client-event-origin @remove-profile-params)))))))
 
 (t/deftest leave-org-deletes-org-default-team-when-empty
   (let [profile-owner   (th/create-profile* 1 {:is-active true})
@@ -901,7 +901,7 @@
         (t/is (th/success? out))))
 
     (t/is (= "dashboard:move-team-to-organization"
-             (:event-origin @set-team-params)))
+             (:client-event-origin @set-team-params)))
     (t/is (= "move-existing-team-to-organization"
              (:add-method @set-team-params)))
     (t/is (= (:created-at team)
@@ -930,7 +930,7 @@
         :is-default false}))
 
     (t/is (= "dashboard:create-team-in-organization"
-             (:event-origin @params*)))
+             (:client-event-origin @params*)))
     (t/is (= "create-team-in-organization"
              (:add-method @params*)))
     (t/is (= (:created-at team)

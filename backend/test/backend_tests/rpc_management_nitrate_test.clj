@@ -78,8 +78,8 @@
         (t/is (th/success? external-out))
 
         (doseq [event [create-event update-event]]
-          (t/is (= "admin-console:organization-members-invite-modal"
-                   (get-in event [:props :event-origin])))
+          (t/is (not (contains? (:props event) :event-origin)))
+          (t/is (nil? (get-in event [:context :client-event-origin])))
           (t/is (= (str (:id owner))
                    (get-in event [:props :user-who-send-invitation])))
           (t/is (= (:id organization)
@@ -1139,7 +1139,7 @@
                  (:user-who-delete-member @remove-profile-params)))
         (t/is (= "organization-owner"
                  (:deleted-by-role @remove-profile-params)))
-        (t/is (nil? (:event-origin @remove-profile-params)))
+        (t/is (nil? (:client-event-origin @remove-profile-params)))
 
         ;; --- Verify: default team preserved, renamed and unset as default ---
         (let [team (th/db-get :team {:id (:id org-team)})]
@@ -1195,7 +1195,7 @@
         (t/is (th/success? out))
         (t/is (nil? (:user-who-delete-member @remove-profile-params)))
         (t/is (nil? (:deleted-by-role @remove-profile-params)))
-        (t/is (nil? (:event-origin @remove-profile-params)))
+        (t/is (nil? (:client-event-origin @remove-profile-params)))
         ;; --- Verify: empty default team is soft-deleted ---
         (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
           (t/is (some? (:deleted-at team))))))))
@@ -1816,7 +1816,8 @@
                               :profile-id (:id prof)
                               :type "action"
                               :context {:custom-key "custom-val"
-                                        :foo "bar"}}]}
+                                        :foo "bar"
+                                        :client-event-origin "dashboard:test"}}]}
             params (with-meta params
                      {::http/request http-request})
             out    (th/management-command! params)]
@@ -1824,5 +1825,6 @@
         (let [[_ event] (:call-args @audit-mock)]
           (t/is (= "custom-val" (get-in event [:context :custom-key])))
           (t/is (= "bar" (get-in event [:context :foo])))
+          (t/is (= "dashboard:test" (get-in event [:context :client-event-origin])))
           (t/is (= (:full cf/version) (get-in event [:context :version])))
           (t/is (= "app" (get-in event [:context :initiator]))))))))

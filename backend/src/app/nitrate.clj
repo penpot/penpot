@@ -333,11 +333,11 @@
                       nil params))
 
 (defn- set-team-org-api
-  [cfg {:keys [organization-id team-id is-default event-origin add-method team-created-at] :as params}]
+  [cfg {:keys [organization-id team-id is-default client-event-origin add-method team-created-at] :as params}]
   (let [request-params (cond-> {:team-id team-id
                                 :is-your-penpot (true? is-default)}
-                         (some? event-origin)
-                         (assoc :event-origin event-origin
+                         (some? client-event-origin)
+                         (assoc :client-event-origin client-event-origin
                                 :add-method add-method
                                 :team-created-at team-created-at))
         params (assoc params :request-params request-params)
@@ -366,14 +366,14 @@
                         schema:profile-org params)))
 
 (defn- remove-profile-from-org-api
-  [cfg {:keys [profile-id organization-id user-who-delete-member deleted-by-role event-origin] :as params}]
+  [cfg {:keys [profile-id organization-id user-who-delete-member deleted-by-role client-event-origin] :as params}]
   (let [request-params (cond-> {:user-id profile-id}
                          (some? user-who-delete-member)
                          (assoc :user-who-delete-member user-who-delete-member)
                          (some? deleted-by-role)
                          (assoc :deleted-by-role deleted-by-role)
-                         (some? event-origin)
-                         (assoc :event-origin event-origin))
+                         (some? client-event-origin)
+                         (assoc :client-event-origin client-event-origin))
         params (assoc params :request-params request-params)]
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
@@ -626,7 +626,7 @@
                               :organization-id (:organization-id params)
                               :is-default (:is-default params))
                  (false? (:is-default params))
-                 (assoc :event-origin "dashboard:create-team-in-organization"
+                 (assoc :client-event-origin "dashboard:create-team-in-organization"
                         :add-method "create-team-in-organization"
                         :team-created-at (:created-at team)))
         result (call cfg :set-team-org params)]

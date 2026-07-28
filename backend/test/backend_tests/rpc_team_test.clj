@@ -495,7 +495,7 @@
 
       (let [event (organization-event)]
         (t/is (= "organization-invitation-acceptance"
-                 (get-in event [:context :event-origin])))
+                 (get-in event [:context :client-event-origin])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
         (t/is (= "direct-organization-invitation"
                  (get-in event [:props :organization-member-add-source])))
@@ -534,7 +534,7 @@
         (t/is (some #(= "accept-team-invitation" (:name %)) events))
         (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
         (t/is (= "team-invitation-acceptance"
-                 (get-in event [:context :event-origin])))
+                 (get-in event [:context :client-event-origin])))
         (t/is (= (:id team) (get-in event [:props :team-id])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
         (t/is (= "team-invitation"
