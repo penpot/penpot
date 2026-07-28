@@ -177,24 +177,24 @@
          (fn []
            (swap! handler-state assoc :display? false)))
 
-         points-on-pointer-down
-         (mf/use-fn
-          (mf/deps stops)
-          (fn [e]
-            (dom/prevent-default e)
-            (dom/stop-propagation e)
-            (when can-add-stop?
-              (let [raw-pt (dom/get-client-position e)
-                    position (uwvv/point->viewport raw-pt)
-                    lv (-> (gpt/to-vec from-p to-p) (gpt/unit))
-                    nv (gpt/normal-left lv)
-                    offset (-> (gsp/project-t position [from-p to-p] nv)
-                               (mth/clamp 0 1)
-                               (mth/precision 2))
-                    new-stop (cc/interpolate-gradient stops offset)
-                    stops (conj stops new-stop)
-                    stops (->> stops (sort-by :offset) (into []))]
-                (st/emit! (dc/update-colorpicker-stops stops))))))
+        points-on-pointer-down
+        (mf/use-fn
+         (mf/deps stops)
+         (fn [e]
+           (dom/prevent-default e)
+           (dom/stop-propagation e)
+           (when can-add-stop?
+             (let [raw-pt (dom/get-client-position e)
+                   position (uwvv/point->viewport raw-pt)
+                   lv (-> (gpt/to-vec from-p to-p) (gpt/unit))
+                   nv (gpt/normal-left lv)
+                   offset (-> (gsp/project-t position [from-p to-p] nv)
+                              (mth/clamp 0 1)
+                              (mth/precision 2))
+                   new-stop (cc/interpolate-gradient stops offset)
+                   stops (conj stops new-stop)
+                   stops (->> stops (sort-by :offset) (into []))]
+               (st/emit! (dc/update-colorpicker-stops stops))))))
 
         points-on-pointer-move
         (mf/use-fn

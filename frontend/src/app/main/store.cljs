@@ -121,7 +121,7 @@
                    delta      (if prev-t
                                 (str "(+" (ct/diff-ms prev-t t) "ms)")
                                 "(+0ms)")
-                    delta-pad  (str/pad delta {:length 10 :type :right})]
+                   delta-pad  (str/pad delta {:length 10 :type :right})]
                (recur t
                       (next xs)
                       (conj! out (str iso "  " delta-pad "  " name))))
