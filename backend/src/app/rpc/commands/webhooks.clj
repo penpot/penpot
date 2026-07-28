@@ -118,7 +118,7 @@
   {::doc/added "1.17"
    ::sm/params schema:create-webhook}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
-  (check-webhook-edition-permissions! pool profile-id team-id profile-id)
+  (t/check-edition-permissions! pool profile-id team-id)
   (validate-quotes! cfg params)
   (validate-webhook! cfg nil params)
   (insert-webhook! cfg params))
