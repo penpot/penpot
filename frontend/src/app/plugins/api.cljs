@@ -237,15 +237,7 @@
     :getTheme
     (fn []
       (let [theme (get-in @st/state [:profile :theme])]
-        (cond
-          (or (not theme) (= theme "system"))
-          (theme/get-system-theme)
-
-          (= theme "default")
-          "dark"
-
-          :else
-          theme)))
+        (theme/resolve-theme theme (theme/get-system-theme))))
 
     :getCurrentUser
     (fn []
