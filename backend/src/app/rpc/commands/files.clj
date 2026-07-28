@@ -14,6 +14,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.stats :as cfs]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
@@ -21,6 +22,7 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
@@ -505,12 +507,20 @@
 
         components-sample
         (-> (sample-assets components 4)
-            (update :sample load-objects))]
+            (update :sample load-objects))
+
+        tokens-lib         (cfo/get-tokens-lib data)
+        tokens-count       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
+        token-sets-count   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
+        token-themes-count (if (some? tokens-lib) (count (ctob/get-themes tokens-lib)) 0)]
 
     {:components components-sample
      :variants {:count (count variant-ids)}
      :colors (sample-assets (:colors data) 3)
-     :typographies (sample-assets (:typographies data) 3)}))
+     :typographies (sample-assets (:typographies data) 3)
+     :tokens-count tokens-count
+     :token-sets-count token-sets-count
+     :token-themes-count token-themes-count}))
 
 (def ^:private file-summary-cache-key-ttl
   (ct/duration {:days 30}))
