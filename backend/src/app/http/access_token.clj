@@ -24,7 +24,7 @@
              :cause cause))))
 
 (def sql:get-token-data
-  "SELECT perms, profile_id, expires_at
+  "SELECT perms, profile_id, expires_at, type
      FROM access_token
     WHERE id = ?
       AND (expires_at IS NULL
@@ -42,14 +42,19 @@
   (fn [request]
     (let [{:keys [type claims]} (get request ::http/auth-data)]
       (if (= :token type)
-        (let [{:keys [perms profile-id expires-at]} (some->> claims (get-token-data pool))]
+        (let [{:keys [perms profile-id expires-at type]} (some->> claims (get-token-data pool))
+              token-id (get claims :tid)]
           (handler (cond-> request
                      (some? perms)
                      (assoc ::perms perms)
                      (some? profile-id)
                      (assoc ::profile-id profile-id)
                      (some? expires-at)
-                     (assoc ::expires-at expires-at))))
+                     (assoc ::expires-at expires-at)
+                     (some? token-id)
+                     (assoc ::id token-id)
+                     (some? type)
+                     (assoc ::type type))))
 
         (handler request)))))
 
