@@ -5486,12 +5486,8 @@ msgid "shortcuts.start-editing"
 msgstr "Comenzar edición"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Comenzar medida"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Terminar medida"
+msgid "shortcuts.show-measure"
+msgstr "Mostrar medidas"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

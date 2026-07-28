@@ -148,19 +148,12 @@
                           :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/start-editing-selected))}
 
-   :start-measure        {:tooltip (ds/alt "")
-                          :command ["alt" "."]
-                          :type "keydown"
-                          :subsections [:edit]
-                          :section [:workspace]
-                          :fn #(emit-when-no-readonly (dw/toggle-distances-display true))}
-
-   :stop-measure         {:tooltip (ds/alt "")
-                          :command ["alt" "."]
-                          :type "keyup"
-                          :subsections [:edit]
-                          :section [:workspace]
-                          :fn #(emit-when-no-readonly (dw/toggle-distances-display false))}
+   :show-measure        {:tooltip (ds/alt "")
+                         :command ["alt" "."]
+                         :type "keydown"
+                         :subsections [:tools]
+                         :section [:workspace]
+                         :fn #(emit-when-no-readonly (dw/toggle-distances-display true))}
 
    :escape               {:tooltip (ds/esc)
                           :command "escape"
