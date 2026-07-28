@@ -174,6 +174,10 @@
     (assert-mark m :obj)
     (let [size (read-long! input)]
       (assert (pos? size) "incorrect header size found on reading header")
+      (when (> size bfc/max-object-size)
+        (ex/raise :type :validation
+                  :code :max-file-size-reached
+                  :hint (dm/str "unable to import object with size " size " bytes")))
       (let [buff (byte-array size)]
         (read-bytes! input buff)
         (fres/decode buff)))))
