@@ -128,7 +128,6 @@
       nil)))
 
 (def ^:private selection-color-css-var "--text-editor-selection-background-color")
-(def ^:private caret-color-css-var "--text-editor-caret-color")
 
 (defn- resolve-theme-color
   "Resolve a themed CSS color variable (read from the document body) into a
@@ -140,17 +139,54 @@
               (dom/get-css-variable css-var js/document.body))]
     (sr-clr/hex->u32argb color opacity)))
 
+;; ARGB u32 for opaque white, painted with a Difference blend mode so the caret
+;; always shows the inverted color of the background.
+(def ^:private caret-invert-color 0xffffffff)
+
 (defn text-editor-apply-theme
-  "Push the current theme's selection and caret colors (read from the CSS
-   custom properties on the document body) into the WASM text editor. The
-   editor theme is a persistent singleton, so call once after init and again
-   on every color-scheme change."
+  "Push the current theme's selection color (read from the CSS custom properties
+   on the document body) into the WASM text editor, together with the default
+   caret: white with invert, so it shows the inverted color of the background.
+   The caret only switches to a solid text color (invert off) via
+   `text-editor-apply-caret-color`. The editor theme is a persistent singleton,
+   so call once after init and again on every color-scheme change."
   []
   (when wasm/context-initialized?
+    (let [selection (resolve-theme-color selection-color-css-var)]
+      (when selection
+        (h/call wasm/internal-module "_text_editor_apply_theme" selection caret-invert-color true)))))
+
+(defn- solid-fill?
+  [fill]
+  (some? (:fill-color fill)))
+
+(defn resolve-caret-color
+  "Compute the caret color from the text `fills` at the caret (as returned by
+   `text-editor-get-current-styles`), as `{:color <argb-u32> :invert? bool}`:
+
+   - when there is at least one solid fill, match the topmost (visible) one,
+     painted normally (`:invert? false`);
+   - otherwise (no fill, gradient, image fills, mixed selection, …) use white
+     with `:invert? true`, which the renderer paints with a Difference blend so
+     the caret is the inverted color of whatever is behind it."
+  [fills]
+  (if-let [solid (and (sequential? fills)
+                      (some #(when (solid-fill? %) %) fills))]
+    {:color (sr-clr/hex->u32argb (:fill-color solid) (:fill-opacity solid))
+     :invert? false}
+    {:color caret-invert-color
+     :invert? true}))
+
+(defn text-editor-apply-caret-color
+  "Update the WASM text-editor caret color so it matches the text at the caret
+   (see `resolve-caret-color`). Re-applies the current theme selection color
+   unchanged, since the WASM theme is a singleton holding both."
+  [fills]
+  (when wasm/context-initialized?
     (let [selection (resolve-theme-color selection-color-css-var)
-          caret     (resolve-theme-color caret-color-css-var)]
-      (when (and selection caret)
-        (h/call wasm/internal-module "_text_editor_apply_theme" selection caret)))))
+          {:keys [color invert?]} (resolve-caret-color fills)]
+      (when selection
+        (h/call wasm/internal-module "_text_editor_apply_theme" selection color invert?)))))
 
 (defn text-editor-focus
   [id]

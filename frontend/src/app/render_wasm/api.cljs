@@ -440,6 +440,8 @@
           (when (= ev TEXT_EDITOR_EVENT_STYLES_CHANGED)
             (let [current-styles (text-editor/text-editor-get-current-styles)
                   shape-id (text-editor/text-editor-get-active-shape-id)]
+              ;; Keep the caret color matching the text at the caret position.
+              (text-editor/text-editor-apply-caret-color (:fills current-styles))
               (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles))))
           (recur (or needs-render?
                      (= ev TEXT_EDITOR_EVENT_CONTENT_CHANGED)
@@ -531,9 +533,13 @@
              (not (render-pending?)))
     (when (is-text-editor-wasm-enabled @st/state)
       (text-editor/text-editor-update-blink (js/performance.now))
-      (text-editor/text-editor-render-caret)
-      (when (drain-text-editor-events!)
-        (request-render-preserving-target "text-editor-content")))))
+      ;; Drain before painting so the caret color (updated on StylesChanged when
+      ;; the caret crosses into differently-colored text) is applied before the
+      ;; overlay is drawn, instead of lagging a frame behind.
+      (let [needs-render? (drain-text-editor-events!)]
+        (text-editor/text-editor-render-caret)
+        (when needs-render?
+          (request-render-preserving-target "text-editor-content"))))))
 
 ;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
 (def ^:private TRANSITION_BLUR_RADIUS 4.0)
