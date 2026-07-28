@@ -96,8 +96,9 @@ impl State {
         id: &Uuid,
         scale: f32,
         timestamp: i32,
+        format: RasterFormat,
     ) -> Result<(Vec<u8>, i32, i32)> {
-        get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp)
+        get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp, format)
     }
 
     pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
