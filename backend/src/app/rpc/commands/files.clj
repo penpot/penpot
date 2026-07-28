@@ -156,11 +156,13 @@
     (assoc mfile :permissions perms)))
 
 (defn get-file-etag
-  [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern permissions]}]
+  [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern deleted-at permissions]}]
   (str profile-id "/" revn "/" vern "/" (hash fmg/available-migrations) "/"
        (ct/format-inst modified-at :iso)
        "/"
-       (uri/map->query-string permissions)))
+       (uri/map->query-string permissions)
+       "/"
+       (some-> deleted-at (ct/format-inst :iso))))
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
@@ -1102,6 +1104,13 @@
 
   (check-edition-permissions! conn profile-id file-id)
   (check-edition-permissions! conn profile-id library-id)
+
+  (let [transitive-deps (bfc/get-libraries cfg [library-id])]
+    (when (contains? transitive-deps file-id)
+      (ex/raise :type :validation
+                :code :circular-library-reference
+                :hint "linking this library would create a circular dependency")))
+
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
 

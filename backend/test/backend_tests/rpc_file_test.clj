@@ -2319,3 +2319,75 @@
     (t/is (not (nil? (:error out))))
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
+
+;; --- Security Fix Tests ---
+
+(t/deftest link-file-to-library-circular-reference
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        file3   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+    (th/link-file-to-library* {:file-id (:id file3) :library-id (:id file2)})
+    (th/link-file-to-library* {:file-id (:id file2) :library-id (:id file1)})
+    (let [data {::th/type :link-file-to-library
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file1)
+                :library-id (:id file3)}
+          out  (th/command! data)]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :circular-library-reference (:code edata)))))))
+
+(t/deftest get-file-etag-includes-deleted-at
+  (let [profile-id (uuid/random)
+        file1      {:modified-at (ct/now)
+                    :revn 1
+                    :vern 0
+                    :deleted-at nil
+                    :permissions {:can-edit true}}
+        file2      (assoc file1 :deleted-at (ct/now))]
+    (t/is (not= (files/get-file-etag {::rpc/profile-id profile-id} file1)
+                (files/get-file-etag {::rpc/profile-id profile-id} file2)))))
+
+(t/deftest search-files-with-permission
+  (let [profile (th/create-profile* 1)
+        _       (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        data    {::th/type :search-files
+                 ::rpc/profile-id (:id profile)
+                 :team-id (:default-team-id profile)
+                 :search-term "test"}
+        out     (th/command! data)]
+    (t/is (nil? (:error out)))
+    (t/is (vector? (:result out)))))
+
+(t/deftest search-files-forbidden
+  (let [profile (th/create-profile* 1)
+        other   (th/create-profile* 2)
+        data    {::th/type :search-files
+                 ::rpc/profile-id (:id other)
+                 :team-id (:default-team-id profile)
+                 :search-term "test"}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))
+
+(t/deftest search-files-term-too-long
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :search-files
+                 ::rpc/profile-id (:id profile)
+                 :team-id (:default-team-id profile)
+                 :search-term (apply str (repeat 300 "x"))}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :validation (:type edata))))))
