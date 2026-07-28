@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.color :as ctc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
    [app.main.store :as st]
@@ -106,6 +107,20 @@
                        (not per-side-disabled)
                        (true? (:stroke-per-side stroke)))
 
+        per-side-expanded* (mf/use-state false)
+        per-side-expanded? (deref per-side-expanded*)
+
+        all-sides-equal?
+        (mf/with-memo [stroke]
+          (let [width  (:stroke-width stroke)
+                top    (d/nilv (:stroke-width-top stroke) width)
+                right  (d/nilv (:stroke-width-right stroke) width)
+                bottom (d/nilv (:stroke-width-bottom stroke) width)
+                left   (d/nilv (:stroke-width-left stroke) width)]
+            (= top right bottom left)))
+
+        show-multiple-placeholder? (or per-side-expanded? (not all-sides-equal?))
+
         per-side-toggle-label
         (if per-side-disabled
           (tr "workspace.options.stroke.per-side-disabled")
@@ -113,10 +128,14 @@
 
         on-per-side-toggle
         (mf/use-fn
-         (mf/deps index on-stroke-per-side-toggle)
+         (mf/deps per-side? on-stroke-per-side-toggle index)
          (fn []
-           (when on-stroke-per-side-toggle
-             (on-stroke-per-side-toggle index))))
+           (if per-side?
+             (swap! per-side-expanded* not)
+             (do
+               (when on-stroke-per-side-toggle
+                 (on-stroke-per-side-toggle index))
+               (reset! per-side-expanded* true)))))
 
         on-width-top-change
         (mf/use-fn
@@ -140,13 +159,22 @@
 
         on-width-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-change ids)
+         (mf/deps index on-stroke-width-change ids per-side?)
          (fn [value]
-           (soc/emit-value-or-token
-            value
-            #(on-stroke-width-change index %)
-            ids
-            #{:stroke-width})))
+           (if per-side?
+             (st/emit! (dc/change-stroke-attrs
+                        ids
+                        {:stroke-width value
+                         :stroke-width-top value
+                         :stroke-width-right value
+                         :stroke-width-bottom value
+                         :stroke-width-left value}
+                        index))
+             (soc/emit-value-or-token
+              value
+              #(on-stroke-width-change index %)
+              ids
+              #{:stroke-width}))))
 
         ;; The SVG renderer defaults dash and gap to `stroke-width + 10` when
         ;; unset. Showing that value as placeholder makes the override obvious.
@@ -316,8 +344,13 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width")
                                     :applied-token (get applied-tokens :stroke-width)
-                                    :disabled per-side?
-                                    :value stroke-width}]
+                                    :placeholder (if show-multiple-placeholder?
+                                                   (tr "settings.multiple")
+                                                   "--")
+                                    :nillable true
+                                    :value (if all-sides-equal?
+                                             stroke-width
+                                             nil)}]
         [:> select* {:default-selected (d/name stroke-alignment)
                      :options stroke-alignment-options
                      :variant "icon-only"
@@ -337,7 +370,7 @@
                        :on-change on-style-change}])
         (when per-side-available
           [:> icon-button* {:variant "ghost"
-                            :class (stl/css-case :per-side-toggle-selected per-side?)
+                            :aria-pressed per-side-expanded?
                             :aria-label per-side-toggle-label
                             :disabled per-side-disabled
                             :on-click on-per-side-toggle
@@ -349,13 +382,16 @@
                :title (tr "workspace.options.stroke-width")}
          [:> icon* {:icon-id i/stroke-size
                     :size "s"}]
-         [:> deprecated-input/numeric-input* {:value stroke-width
+         [:> deprecated-input/numeric-input* {:value (if show-multiple-placeholder?
+                                                       nil
+                                                       stroke-width)
                                               :min 0
-                                              :placeholder (tr "settings.multiple")
+                                              :placeholder (if show-multiple-placeholder?
+                                                             (tr "settings.multiple")
+                                                             "--")
                                               :on-change on-width-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
-                                              :is-disabled per-side?
                                               :on-blur on-blur}]]
         [:div {:class (stl/css :stroke-alignment-select)
                :data-testid "stroke.alignment"}
@@ -374,14 +410,14 @@
                        :on-change on-style-change}]])
         (when per-side-available
           [:> icon-button* {:variant "ghost"
-                            :class (stl/css-case :per-side-toggle-selected per-side?)
+                            :aria-pressed per-side-expanded?
                             :aria-label per-side-toggle-label
                             :disabled per-side-disabled
                             :on-click on-per-side-toggle
                             :icon i/stroke-extended
                             :data-testid "stroke.per-side-toggle"}])])
 
-     (when per-side?
+     (when per-side-expanded?
        [:div {:class (stl/css :stroke-sides-options)
               :data-testid "stroke.per-side-options"}
         [:div {:class (stl/css :stroke-side-input)
