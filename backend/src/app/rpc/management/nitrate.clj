@@ -946,14 +946,14 @@ RETURNING id, deleted_at;")
    ::sm/params [:map
                 [:organization-id ::sm/uuid]
                 [:updated-props ::sm/boolean]
-                [:became-active ::sm/boolean]]
+                [:announce-activation ::sm/boolean]]
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props became-active]}]
+  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props announce-activation]}]
   (when updated-props
     (rpc/invalidate-org-sso-cache-by-org! organization-id)
     (session/clear-org-sso-sessions! pool organization-id))
   (notifications/notify-organization-change-sso cfg organization-id)
-  (when became-active
+  (when announce-activation
     (neh/send-organization-setup-sso-emails! cfg organization-id))
   nil)
 

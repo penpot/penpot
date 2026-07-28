@@ -23,7 +23,7 @@
       AND deleted_at IS NULL")
 
 (def ^:private sql:get-profiles-by-emails
-  "SELECT id, email, fullname, is_muted
+  "SELECT id, email, is_muted
      FROM profile
     WHERE email = ANY(?)
       AND deleted_at IS NULL")
@@ -37,7 +37,7 @@
 (def ^:private xf:map-email (map :email))
 
 (defn- recipients-by-emails
-  "Build `{:email :user-name :profile}` maps for a deduplicated email list."
+  "Build `{:email :profile}` maps for a deduplicated email list."
   [conn emails]
   (let [profiles (if (seq emails)
                    (let [emails-array (db/create-array conn "text" emails)]
@@ -47,20 +47,18 @@
     (map (fn [email]
            (let [profile (get profile-by-email (str/lower email))]
              {:email email
-              :user-name (:fullname profile)
               :profile profile}))
          emails)))
 
 (defn- send-organization-setup-sso-email!
   "Send the organization SSO setup email to a single recipient, when allowed."
-  [conn organization-name {:keys [email user-name profile]}]
+  [conn organization-name {:keys [email profile]}]
   (when (or (nil? profile)
             (eml/allow-send-emails? conn profile))
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/organization-setup-sso
                 :public-uri (cf/get :public-uri)
                 :to email
-                :user-name user-name
                 :organization-name organization-name})))
 
 (defn- get-org-sso-notify-recipients
