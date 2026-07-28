@@ -286,3 +286,91 @@
         (t/is (th/ex-info? error))
         (t/is (= (:type error-data) :restriction))
         (t/is (= (:code error-data) :webhooks-quote-reached))))))
+
+(t/deftest removed-user-cannot-edit-webhook
+  (with-mocks [http-mock {:target 'app.http.client/req
+                          :return {:status 200}}]
+
+    (let [owner  (th/create-profile* 1 {:is-active true})
+          editor (th/create-profile* 2 {:is-active true})
+          team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+      (th/create-team-role* {:team-id (:id team)
+                             :profile-id (:id editor)
+                             :role :editor})
+
+      (let [params {::th/type :create-webhook
+                    ::rpc/profile-id (:id editor)
+                    :team-id (:id team)
+                    :uri (u/uri "http://example.com")
+                    :mtype "application/json"}
+            out    (th/command! params)]
+
+        (t/is (nil? (:error out)))
+        (let [whook (:result out)]
+
+          (th/reset-mock! http-mock)
+
+          (t/testing "owner can edit editor's webhook (team owns it)"
+            (let [params {::th/type :update-webhook
+                          ::rpc/profile-id (:id owner)
+                          :id (:id whook)
+                          :uri (u/uri "http://example.com/updated")
+                          :mtype "application/transit+json"
+                          :is-active true}
+                  out    (th/command! params)]
+              (t/is (nil? (:error out)))
+              (t/is (= 1 (:call-count @http-mock)))))
+
+          (th/reset-mock! http-mock)
+
+          (t/testing "remove editor from team"
+            (let [params {::th/type :delete-team-member
+                          ::rpc/profile-id (:id owner)
+                          :team-id (:id team)
+                          :member-id (:id editor)}
+                  out    (th/command! params)]
+              (t/is (nil? (:error out)))))
+
+          (th/reset-mock! http-mock)
+
+          (t/testing "removed editor cannot update webhook"
+            (let [params {::th/type :update-webhook
+                          ::rpc/profile-id (:id editor)
+                          :id (:id whook)
+                          :uri (u/uri "http://example.com/evil")
+                          :mtype "application/transit+json"
+                          :is-active true}
+                  out    (th/command! params)]
+              (t/is (= 0 (:call-count @http-mock)))
+              (let [error      (:error out)
+                    error-data (ex-data error)]
+                (t/is (th/ex-info? error))
+                (t/is (= (:type error-data) :not-found))
+                (t/is (= (:code error-data) :object-not-found)))))
+
+          (th/reset-mock! http-mock)
+
+          (t/testing "removed editor cannot delete webhook"
+            (let [params {::th/type :delete-webhook
+                          ::rpc/profile-id (:id editor)
+                          :id (:id whook)}
+                  out    (th/command! params)]
+              (t/is (= 0 (:call-count @http-mock)))
+              (let [error      (:error out)
+                    error-data (ex-data error)]
+                (t/is (th/ex-info? error))
+                (t/is (= (:type error-data) :not-found))
+                (t/is (= (:code error-data) :object-not-found)))))
+
+          (th/reset-mock! http-mock)
+
+          (t/testing "owner can still delete editor's webhook"
+            (let [params {::th/type :delete-webhook
+                          ::rpc/profile-id (:id owner)
+                          :id (:id whook)}
+                  out    (th/command! params)]
+              (t/is (nil? (:error out)))
+              (t/is (nil? (:result out)))
+              (let [rows (th/db-exec! ["select * from webhook"])]
+                (t/is (= 0 (count rows)))))))))))
