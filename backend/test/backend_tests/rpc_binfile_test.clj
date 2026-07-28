@@ -9,6 +9,7 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.binfile :as binfile]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -40,3 +41,10 @@
     ;; (Currently this will fail because file-id is still in schema)
     (t/is (false? (validator params-with-file-id))
           "params with file-id should be rejected")))
+
+(t/deftest import-binfile-has-concurrency-limit
+  ;; N1-10: import-binfile must have a concurrency limit to prevent
+  ;; connection pool exhaustion from concurrent imports
+  (let [mdata (meta #'binfile/sm$import-binfile)]
+    (t/is (some? (::climit/id mdata))
+          "import-binfile must have ::climit/id metadata")))
