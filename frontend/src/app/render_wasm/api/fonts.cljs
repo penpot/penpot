@@ -18,15 +18,22 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [lambdaisland.uri :as u]
-   [okulary.core :as l]
-   [potok.v2.core :as ptk]))
+   [okulary.core :as l]))
 
-(def ^:private fonts
+;; Custom fonts uploaded to the current team, keyed by id (`fonts` is taken by
+;; the `app.main.fonts` alias).
+(def ^:private custom-fonts
   (l/derived :fonts st/state))
+
+;; Emits the font-id of every font whose glyphs wasm can already shape and
+;; measure with. The browser-side loading of `app.main.fonts` is a separate
+;; signal: it only says the DOM can render the font.
+(defonce font-stored-stream (rx/subject))
 
 (def ^:private default-font-size 14)
 (def ^:private default-line-height 1.2)
@@ -103,7 +110,7 @@
                                      (= (str (:font-weight font)) (str font-weight))
                                      (= (:font-style font) font-style)
                                      font))
-                              (seq @fonts))]
+                              (seq @custom-fonts))]
       (when matching-font
         (:ttf-file-id matching-font)))
     :builtin
@@ -141,7 +148,6 @@
           mem  (js/Uint8Array. (.-buffer heap) ptr size)]
 
       (.set mem (js/Uint8Array. font-array-buffer))
-      (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
       (h/call wasm/internal-module "_store_font"
               (aget font-id-buffer 0)
               (aget font-id-buffer 1)
@@ -151,6 +157,8 @@
               (:style font-data)
               emoji?
               fallback?)
+      ;; Reported after the store call: subscribers react by measuring text.
+      (rx/push! font-stored-stream (:font-id font-data))
       true)))
 
 ;; Tracks fonts currently being fetched: {url -> fallback?}
@@ -224,7 +232,9 @@
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (font-stored? font-data emoji?)]
       (if font-stored?
-        (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
+        ;; Deferred so consumers, which subscribe after dispatching the sync
+        ;; that lands here, are listening when an already-stored font reports.
+        (tm/schedule #(rx/push! font-stored-stream (:font-id font-data)))
         (fetch-font font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style

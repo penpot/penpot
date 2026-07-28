@@ -27,6 +27,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
@@ -37,6 +38,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.api.fonts :as wasm.fonts]
    [app.render-wasm.text-editor :as wasm.text-editor]
    [app.util.text-editor :as ted]
    [app.util.text.content :as tc]
@@ -59,6 +61,87 @@
 (declare v2-update-text-shape-content)
 (declare v2-update-text-editor-styles)
 (declare v2-sync-wasm-text-layout)
+
+(defn- bridge-to-measurement
+  "Marks `ids` pending until the text pipeline marks its own work:
+  `:text-measure` in the DOM renderer, `:text-resize` in wasm. Emits nothing."
+  [ids]
+  (->> (rx/from ids)
+       ;; Each id owns its bridge. Starting work for one text must not release
+       ;; siblings that the renderer has not picked up yet.
+       (rx/mapcat
+        (fn [id]
+          (->> (wrf/pending-signal [id] #{:text-measure :text-resize})
+               (rx/ignore)
+               (wrf/with-pending :text-bridge [id]))))
+       (rx/ignore)))
+
+(defn initialize-text-reflow
+  "Tracks the texts the DOM pipeline still has to re-measure, so a reflow wait
+  covers the measurement that resizes them."
+  []
+  (ptk/reify ::initialize-text-reflow
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper (rx/filter (ptk/type? ::finalize-text-reflow) stream)]
+        (->> stream
+             (rx/filter (ptk/type? :text/reflow))
+             (rx/map deref)
+             (rx/mapcat (fn [{:keys [ids]}] (bridge-to-measurement ids)))
+             (rx/take-until stopper))))))
+
+(defn finalize-text-reflow
+  []
+  (ptk/data-event ::finalize-text-reflow))
+
+(defn- resolve-text-ids
+  "Returns the text shapes an attribute change on `id` applies to: `id` itself
+  when it is a text, its text descendants when it is a group. These are the
+  shapes that get re-measured, and so the ones the reflow waits track."
+  [objects id]
+  (let [shape (get objects id)]
+    (cond
+      (cfh/text-shape? shape)
+      [id]
+
+      (cfh/group-shape? shape)
+      (into [] (filter #(cfh/text-shape? (get objects %))) (cfh/get-children-ids objects id))
+
+      :else
+      [])))
+
+(defn- await-font-resize
+  "Marks `ids` as pending font work and dispatches their wasm resize once wasm
+  can measure with `font-id`, draining the marks afterwards. The fetch of that
+  font is started by the wasm shape sync of the content change these shapes
+  receive, so measuring before it lands would use the fallback font."
+  [stream font-id ids]
+  (if (empty? ids)
+    (rx/empty)
+    (let [stopper (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream)]
+      (->> wasm.fonts/font-stored-stream
+           (rx/filter #(= % font-id))
+           (rx/take 1)
+           (rx/take-until stopper)
+           (rx/observe-on :async)
+           (rx/mapcat (fn [_] (rx/from (mapv dwwt/resize-wasm-text ids))))
+           (wrf/with-pending :font ids)))))
+
+(defn- await-html-font
+  "Keeps legacy DOM text pending while its new font is loading. The DOM
+  measurement also awaits this promise, so the font task bridges the state
+  update to the renderer commit without relying on a fixed settle delay."
+  [font-id font-variant-id ids]
+  (if (or (nil? font-id) (empty? ids))
+    (rx/empty)
+    (->> (rx/of ::load-font)
+         ;; `ensure-loaded!` is intentionally invoked after `with-pending`
+         ;; subscribes, so even an immediately settled promise cannot create a
+         ;; gap before the task is visible to waiters.
+         (rx/mapcat (fn [_]
+                      (rx/from (fonts/ensure-loaded! font-id font-variant-id))))
+         (rx/ignore)
+         (wrf/with-pending :font ids))))
 
 ;; -- Content helpers
 
@@ -425,12 +508,20 @@
                 (update-text-range-attrs start end attrs)))
 
             shape-ids (cond (cfh/text-shape? shape)  [id]
-                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
+                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+            text-ids  (resolve-text-ids objects id)]
 
         (rx/concat
          (rx/of (dwsh/update-shapes shape-ids update-fn))
-         (if (features/active-feature? state "render-wasm/v1")
-           (rx/of (dwwt/resize-wasm-text-debounce id))
+         (cond
+           (features/active-feature? state "render-wasm/v1")
+           (->> (rx/from text-ids)
+                (rx/map dwwt/resize-wasm-text-debounce))
+
+           (contains? attrs :font-id)
+           (await-html-font (:font-id attrs) (:font-variant-id attrs) text-ids)
+
+           :else
            (rx/empty)))))))
 
 (defn update-root-attrs
@@ -664,17 +755,20 @@
 (defn resize-text
   [id new-width new-height]
 
-  (let [cur-event (js/Symbol)]
+  (let [cur-event   (js/Symbol)
+        reflow-task (wrf/task :text-resize [id])]
     (ptk/reify ::resize-text
       ptk/UpdateEvent
       (update [_ state]
         (-> state
             (update ::resize-text-debounce-props (fnil assoc {}) id [new-width new-height])
+            (update ::resize-text-reflow-tasks (fnil conj []) reflow-task)
             (cond-> (nil? (::resize-text-debounce-event state))
               (assoc ::resize-text-debounce-event cur-event))))
 
       ptk/WatchEvent
       (watch [_ state stream]
+        (wrf/start! reflow-task)
         (if (= (::resize-text-debounce-event state) cur-event)
           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
             (rx/concat
@@ -686,7 +780,12 @@
                    (rx/map #(commit-resize-text))
                    (rx/take-until stopper))
               (rx/of (resize-text id new-width new-height)))
-             (rx/of #(dissoc % ::resize-text-debounce-props ::resize-text-debounce-event))))
+             (rx/of (fn [state]
+                      (run! wrf/finish! (::resize-text-reflow-tasks state))
+                      (dissoc state
+                              ::resize-text-debounce-props
+                              ::resize-text-reflow-tasks
+                              ::resize-text-debounce-event)))))
           (rx/empty))))))
 
 (defn save-font
@@ -834,19 +933,14 @@
              (rx/of (update-position-data id position-data))))
           (rx/empty))))))
 
-(defn font-loaded-event?
-  [font-id]
-  (fn [event]
-    (and
-     (= :font-loaded (ptk/type event))
-     (= (:font-id (deref event)) font-id))))
-
 (defn update-attrs
   [id attrs]
   (ptk/reify ::update-attrs
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [text-editor-instance (:workspace-editor state)]
+      (let [text-editor-instance (:workspace-editor state)
+            objects              (dsh/lookup-page-objects state)
+            text-ids             (resolve-text-ids objects id)]
         (if (and (features/active-feature? state "text-editor/v2")
                  (some? text-editor-instance))
           (rx/empty)
@@ -870,7 +964,7 @@
                       (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
 
-           (when (features/active-feature? state "render-wasm/v1")
+           (if (features/active-feature? state "render-wasm/v1")
              (rx/concat
               ;; Apply style to selected spans and sync content
               (let [has-selection? (wasm.api/text-editor-has-selection?)]
@@ -882,14 +976,24 @@
                           (rx/of (v2-update-text-shape-content
                                   (:shape-id result) (:content result)
                                   :update-name? true))))))))
-              ;; Resize (with delay for font-id changes)
-              (if (contains? attrs :font-id)
-                (->> stream
-                     (rx/filter (font-loaded-event? (:font-id attrs)))
-                     (rx/take 1)
-                     (rx/observe-on :async)
-                     (rx/map #(dwwt/resize-wasm-text id)))
-                (rx/of (dwwt/resize-wasm-text id)))))))))
+              ;; Resize (with delay for font-id changes). Only auto-height and
+              ;; auto-width shapes have geometry to recompute.
+              (let [auto-ids (into [] (remove #(= :fixed (:grow-type (get objects %)))) text-ids)]
+                (if (contains? attrs :font-id)
+                  ;; The geometry depends on the font, so wait until wasm has it.
+                  (await-font-resize stream (:font-id attrs) auto-ids)
+                  ;; No font change: measurable right away.
+                  (->> (rx/from auto-ids)
+                       (rx/map dwwt/resize-wasm-text)))))
+
+             ;; The legacy renderer re-measures these in the DOM on its own,
+             ;; but font loading starts before that render commits.
+             (if (contains? attrs :font-id)
+               (await-html-font
+                (:font-id attrs)
+                (:font-variant-id attrs)
+                text-ids)
+               (rx/empty)))))))
 
     ptk/EffectEvent
     (effect [_ state _]

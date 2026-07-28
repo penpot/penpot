@@ -9,9 +9,14 @@
    [app.common.math :as m]
    [app.common.test-helpers.files :as cthf]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.shape :as shape]
    [app.util.object :as obj]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
@@ -404,3 +409,270 @@
           (let [shadows (.-shadows shape)]
             (t/is (array? shadows))
             (t/is (= 0 (.-length shadows)))))))))
+
+;; ---- waitForLayoutUpdate tests ------------------------------------------
+;;
+;; `waitForLayoutUpdate` resolves once the shapes with reflow work in flight
+;; have drained from the `app.main.data.workspace.reflow` pending task map.
+;; The tests drive that map directly with `start!` / `finish!` instead
+;; of replaying internal pipeline events. A minimal store is still installed so
+;; `create-context` / `shape-proxy` can resolve the global st/state.
+
+(def ^:private original-st-state st/state)
+(def ^:private original-st-stream st/stream)
+(def ^:private zero-id "00000000-0000-0000-0000-000000000000")
+
+(t/use-fixtures :each
+  {:before (fn []
+             ;; Keep the WASM mocks installed across the async test bodies:
+             ;; debounced text-resize timers leaked by earlier test namespaces
+             ;; can fire inside this namespace's async waits, and in Node they
+             ;; would otherwise reach the real (unavailable) WASM API.
+             (thw/setup-wasm-mocks!)
+             (wrf/reset-pending!))
+   :after (fn []
+            (thw/teardown-wasm-mocks!)
+            (wrf/reset-pending!)
+            (set! st/state original-st-state)
+            (set! st/stream original-st-stream))})
+
+(defn- make-test-store
+  "Creates a minimal potok store with an empty state map and installs it as the
+  global st/state and st/stream for the duration of the calling test."
+  []
+  (let [test-store (ptk/store {:state {} :on-error (fn [e] (js/console.error e))})]
+    (set! st/state test-store)
+    (set! st/stream (ptk/input-stream test-store))
+    test-store))
+
+(t/deftest test-wait-for-layout-update-no-pending
+  ;; When nothing is pending the promise resolves immediately via the fast path
+  ;; (the behavior-subject replays the empty map on subscribe).
+  (t/async done
+    (make-test-store)
+    (let [^js ctx (api/create-context zero-id)]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn []
+                   (t/is true "resolved with no pending work")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done)))))))
+
+(t/deftest test-wait-for-layout-update-pending
+  ;; While a shape is pending the context promise stays unresolved; it resolves
+  ;; once that shape is marked done.
+  (t/async done
+    (make-test-store)
+    (wrf/start! :layout [(uuid/next)])
+    (let [^js ctx (api/create-context zero-id)
+          resolved (atom false)]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must not resolve while a shape is pending")
+         ;; Draining everything resolves the context wait.
+         (wrf/reset-pending!)
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once nothing is pending")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-wait-for-layout-update-per-shape
+  ;; `shape.waitForLayoutUpdate()` only waits for that shape: draining another
+  ;; shape must not resolve it; draining its own id does.
+  (t/async done
+    (make-test-store)
+    (let [id-a (uuid/next)
+          id-b (uuid/next)
+          task-a (wrf/start! :layout [id-a])
+          task-b (wrf/start! :layout [id-b])
+          ^js shape-a (shape/shape-proxy zero-id uuid/zero uuid/zero id-a)
+          resolved (atom false)]
+      (-> (.waitForLayoutUpdate shape-a)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      ;; Draining the other shape leaves A pending.
+      (wrf/finish! task-b)
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "shape A wait must stay pending while A is pending")
+         (wrf/finish! task-a)
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once shape A drains")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-wait-for-layout-update-overlapping-tasks
+  ;; Two overlapping operations on the same shape: finishing one task must not
+  ;; resolve the wait while the second operation is still in flight.
+  (t/async done
+    (make-test-store)
+    (let [id (uuid/next)
+          task-a (wrf/start! :layout [id])
+          task-b (wrf/start! :layout [id])
+          ^js shape (shape/shape-proxy zero-id uuid/zero uuid/zero id)
+          resolved (atom false)]
+      (-> (.waitForLayoutUpdate shape)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      ;; First operation finishes; second is still pending.
+      (wrf/finish! task-a)
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must not resolve while a second op is in flight")
+         (wrf/finish! task-b)
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once both operations drain")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-wait-for-layout-update-timeout
+  ;; When the optional timeout fires before the shape drains the promise should
+  ;; reject with an Error whose message mentions "timeout".
+  (t/async done
+    (make-test-store)
+    (wrf/start! :layout [(uuid/next)])
+    (let [^js ctx (api/create-context zero-id)]
+      (-> (.waitForLayoutUpdate ctx 20)
+          (.then (fn []
+                   (t/is false "expected rejection but promise resolved")
+                   (done)))
+          (.catch (fn [^js err]
+                    (t/is (instance? js/Error err) "rejection value should be an Error")
+                    (t/is (some? (re-find #"timeout" (.-message err))) "error message should mention timeout")
+                    (done)))))))
+
+(t/deftest test-wait-for-layout-update-subtree
+  ;; A shape wait covers its whole subtree: reflow work is often marked on the
+  ;; children rather than on the shape the caller holds (a group is re-measured
+  ;; through its texts), so a pending child must block the parent.
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1))]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (let [^js ctx   (api/create-context zero-id)
+            ^js board (.createBoard ctx)
+            ^js rect  (.createRectangle ctx)]
+        (.appendChild board rect)
+        (let [child-id (obj/get rect "$id")
+              task (wrf/start! :layout [child-id])
+              resolved (atom false)]
+          (-> (.waitForLayoutUpdate board)
+              (.then (fn [] (reset! resolved true)))
+              (.catch (fn [err]
+                        (t/is false (str "unexpected rejection: " err)))))
+          (js/setTimeout
+           (fn []
+             (t/is (false? @resolved) "parent wait must block on a pending child")
+             (wrf/finish! task)
+             (js/setTimeout
+              (fn []
+                (t/is (true? @resolved) "resolves once the child drains")
+                (done))
+              20))
+           20))))))
+
+(t/deftest test-wait-for-layout-update-invalid-timeout
+  ;; A non-numeric or non-positive timeout is an invalid argument. The method
+  ;; always hands back a promise and rejects it, whatever the plugin's
+  ;; throwValidationErrors flag says.
+  (t/async done
+    (make-test-store)
+    (let [^js ctx   (api/create-context zero-id)
+          ^js shape (shape/shape-proxy zero-id uuid/zero uuid/zero (uuid/next))
+          rejected? (fn [^js promise]
+                      (t/is (instance? js/Promise promise) "must return a promise")
+                      (-> promise
+                          (.then (fn [] false))
+                          (.catch (fn [] true))))]
+      (-> (js/Promise.all
+           #js [(rejected? (.waitForLayoutUpdate ctx "soon"))
+                (rejected? (.waitForLayoutUpdate ctx 0))
+                (rejected? (.waitForLayoutUpdate ctx -5))
+                (rejected? (.waitForLayoutUpdate ctx js/NaN))
+                (rejected? (.waitForLayoutUpdate ctx js/Infinity))
+                (rejected? (.waitForLayoutUpdate shape "soon"))])
+          (.then (fn [results]
+                   (t/is (every? true? (array-seq results))
+                         "every invalid timeout must reject")
+                   (done)))))))
+
+(t/deftest test-with-pending-marks-on-subscribe
+  ;; `with-pending` marks on subscription, not while the observable is being
+  ;; built, so an observable that is never subscribed leaves nothing pending.
+  (t/async done
+    (make-test-store)
+    (let [id      (uuid/next)
+          ;; Built but never subscribed.
+          _       (wrf/with-pending :layout [id] (rx/of :ignored))
+          ^js ctx (api/create-context zero-id)]
+      (-> (.waitForLayoutUpdate ctx 50)
+          (.then (fn []
+                   (t/is true "an unsubscribed with-pending must not mark anything")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done)))))))
+
+(t/deftest test-with-pending-drains-on-terminate
+  ;; Once subscribed, the shape is pending for the lifetime of the wrapped
+  ;; observable and drains when it completes.
+  (t/async done
+    (make-test-store)
+    (let [id       (uuid/next)
+          subject  (rx/subject)
+          ^js shape (shape/shape-proxy zero-id uuid/zero uuid/zero id)
+          resolved (atom false)]
+      (rx/sub! (wrf/with-pending :layout [id] subject) (fn [_] nil))
+      (-> (.waitForLayoutUpdate shape)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must stay pending while the wrapped stream is alive")
+         (rx/end! subject)
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once the wrapped stream completes")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-resize-wasm-text-all-pending-across-buffer-commit
+  ;; While a shape-update buffer is open (token propagation) `resize-wasm-text-all`
+  ;; holds the resizes back until the commit lands, and the shapes stay pending
+  ;; for that whole wait.
+  (t/async done
+    (let [store    (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+          id       (uuid/next)
+          resolved (atom false)]
+      (ptk/emit! store (dwsh/update-shapes-buffer-start))
+      (ptk/emit! store (dwwt/resize-wasm-text-all [id]))
+      (-> (wrf/wait-for-layout-update [id] nil)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must stay pending while the buffer has not committed")
+         (ptk/emit! store (dwsh/update-shapes-buffer-commit))
+         ;; Covers the commit plus the per-shape debounce the resizes go through.
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once the commit releases the resizes")
+            (done))
+          300))
+       50))))
