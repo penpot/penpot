@@ -27,6 +27,34 @@
 
 (def debounce-resize-text-time 40)
 
+;; Attributes whose change invalidates the WASM-measured selrect of a text
+;; shape, i.e. its geometry must be re-derived from the WASM text layout.
+(def ^:private text-remeasure-attr? #{:content :grow-type})
+
+(defn commit-text-remeasure-ids
+  "Ids of shapes in a commit's `redo-changes` whose selrect went stale and must
+  be re-measured from the WASM text layout: a `:mod-obj` changed a
+  layout-relevant attribute (see `text-remeasure-attr?`) without also carrying
+  the resulting geometry.
+
+  The `:selrect` guard skips commits that already set the geometry themselves
+  (text-editor finalize, interactive resize, the re-measure commit itself), so
+  those neither trigger a redundant resize nor create a feedback loop.
+
+  Type filtering (text, non-`:fixed`) is left to `resize-wasm-text-all`."
+  [redo-changes]
+  (into #{}
+        (comp
+         (filter #(= :mod-obj (:type %)))
+         (keep (fn [{:keys [id operations]}]
+                 (let [attrs (into #{}
+                                   (comp (filter #(= :set (:type %))) (map :attr))
+                                   operations)]
+                   (when (and (some text-remeasure-attr? attrs)
+                              (not (contains? attrs :selrect)))
+                     id)))))
+        redo-changes))
+
 (defn get-wasm-text-new-size
   "Computes the new {width, height} for a text shape from WASM text layout.
   For :fixed grow-type, updates WASM content and returns current dimensions (no resize)."
@@ -95,8 +123,8 @@
 
 (defn resize-wasm-text-debounce-commit
   ([]
-   (resize-wasm-text-debounce-commit nil nil))
-  ([undo-group undo-id]
+   (resize-wasm-text-debounce-commit nil))
+  ([undo-id]
    (ptk/reify ::resize-wasm-text-debounce-commit
      ptk/WatchEvent
      (watch [_ state _]
@@ -115,12 +143,14 @@
               {}
               ids)
 
-             ;; When undo-id is present, extend the current undo transaction instead of
-             ;; creating a new one, and commit it after the resize (single undo action).
+             ;; The re-measure only syncs the shape's selrect with the WASM text
+             ;; layout; it is derived geometry, not a user action, so it must
+             ;; never land on the undo stack (an undo of it alone would
+             ;; re-expose the stale selrect). Undo/redo of the change that
+             ;; triggered it re-derives the geometry through the commit-level
+             ;; invalidation in `initialize-workspace`.
              extend-tx? (some? undo-id)
-             apply-opts (cond-> {}
-                          (some? undo-group) (assoc :undo-group undo-group)
-                          extend-tx? (assoc :undo-transation? false))]
+             apply-opts {:save-undo? false :undo-transation? false}]
          (cond
            (not (empty? modifiers))
            (if extend-tx?
@@ -130,7 +160,8 @@
              (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts)))
 
            extend-tx?
-           ;; No resize needed (e.g. :fixed grow-type) but we must commit the add
+           ;; No resize needed (e.g. :fixed grow-type) but we must still close
+           ;; the transaction opened by the caller (e.g. for the added shape).
            (rx/of (dwu/commit-undo-transaction undo-id))
 
            :else
@@ -143,7 +174,7 @@
 (defn resize-wasm-text-debounce-inner
   ([id]
    (resize-wasm-text-debounce-inner id nil))
-  ([id {:keys [undo-group undo-id]}]
+  ([id {:keys [undo-id]}]
    (let [cur-event   (js/Symbol)
          reflow-task (wrf/task :text-resize [id])]
      (ptk/reify ::resize-wasm-text-debounce-inner
@@ -168,12 +199,11 @@
                     (rx/take 1)
                     (rx/map (fn [evt]
                               (resize-wasm-text-debounce-commit
-                               (some-> evt meta :undo-group)
                                (some-> evt meta :undo-id))))
                     (rx/take-until stopper))
                (rx/of (with-meta
                         (resize-wasm-text-debounce-inner id)
-                        {:undo-group undo-group :undo-id undo-id})))
+                        {:undo-id undo-id})))
               ;; Cleanup, reached both after the commit and when the stopper
               ;; cancels the debounce, so the batch always drains and stays
               ;; pending until the resize is applied. All exact tasks in the
@@ -189,7 +219,7 @@
 (defn resize-wasm-text-debounce
   ([id]
    (resize-wasm-text-debounce id nil))
-  ([id {:keys [undo-group undo-id] :as opts}]
+  ([id {:keys [undo-id] :as opts}]
    (ptk/reify ::resize-wasm-text-debounce
      ptk/WatchEvent
      (watch [_ state _]
@@ -207,10 +237,8 @@
 
              resize-wasm-stream
              (if fonts-loaded?
-               (let [pass-opts (when (or (some? undo-group) (some? undo-id))
-                                 (cond-> {}
-                                   (some? undo-group) (assoc :undo-group undo-group)
-                                   (some? undo-id) (assoc :undo-id undo-id)))]
+               (let [pass-opts (when (some? undo-id)
+                                 {:undo-id undo-id})]
                  (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
 
                ;; Fonts not loaded; retry after 20 msecs
@@ -223,12 +251,19 @@
          (wrf/with-pending :text-resize [id] resize-wasm-stream))))))
 
 (defn resize-wasm-text-all
-  "Resize all text shapes (auto-width/auto-height) from a collection of ids."
+  "Resize all text shapes (auto-width/auto-height) from a collection of ids.
+
+  The shape currently being edited is skipped: the text editor already renders
+  and measures the growing text live and resizes it on finalize, so an
+  automatic per-keystroke resize here would be redundant and reintroduce typing
+  lag (see the guard in `app.main.data.workspace.texts`)."
   [ids]
   (ptk/reify ::resize-wasm-text-all
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [resize-stream
+      (let [editing (get-in state [:workspace-local :edition])
+            ids     (remove #(= % editing) ids)
+            resize-stream
             (->> (rx/from ids)
                  (rx/map resize-wasm-text-debounce))]
         (if (::dwsh/update-shapes-buffer state)

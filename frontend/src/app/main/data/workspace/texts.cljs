@@ -1369,7 +1369,7 @@
          (rx/of update-event)
          (if (features/active-feature? state "render-wasm/v1")
            (->> (rx/from ids)
-                (rx/map #(dwwt/resize-wasm-text-debounce % {:undo-group undo-group})))
+                (rx/map #(dwwt/resize-wasm-text-debounce %)))
            (rx/empty)))))))
 
 ;; -- Text Editor v3

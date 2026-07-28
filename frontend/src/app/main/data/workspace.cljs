@@ -452,6 +452,25 @@
                     (rx/map (fn [{:keys [ids]}]
                               (dwwt/resize-wasm-text-all ids))))
 
+               ;; Re-measure WASM text shapes whose layout-relevant attributes
+               ;; changed in a local commit. Centralizing this at the commit
+               ;; chokepoint keeps every mutation path (clipboard, libraries,
+               ;; plugins, undo/redo…) in sync without each call site having to
+               ;; remember to dispatch a resize. Undo/redo replay as commits too,
+               ;; so the geometry stays consistent through them (the re-measure
+               ;; itself is non-undoable, see `resize-wasm-text-debounce-commit`).
+               (->> stream
+                    (rx/filter dch/commit?)
+                    (rx/filter render-wasm-ready?)
+                    (rx/map deref)
+                    (rx/filter #(= :local (:source %)))
+                    (rx/mapcat
+                     (fn [{:keys [redo-changes]}]
+                       (let [ids (dwwt/commit-text-remeasure-ids redo-changes)]
+                         (if (seq ids)
+                           (rx/of (dwwt/resize-wasm-text-all ids))
+                           (rx/empty))))))
+
                (let [local-commits-s
                      (->> stream
                           (rx/filter dch/commit?)

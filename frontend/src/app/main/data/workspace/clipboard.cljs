@@ -1073,8 +1073,7 @@
                     (dwsh/create-and-add-shape :text x y shape
                                                (when skip-edition? {:skip-edition? true})))
              (if skip-edition?
-               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
-                                                          :undo-id undo-id}))
+               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-id undo-id}))
                (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn- paste-text
@@ -1105,8 +1104,7 @@
                 (dwsh/create-and-add-shape :text x y shape
                                            (when skip-edition? {:skip-edition? true})))
          (if skip-edition?
-           (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
-                                                      :undo-id undo-id}))
+           (rx/of (dwwt/resize-wasm-text-debounce id {:undo-id undo-id}))
            (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
