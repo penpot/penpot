@@ -35,6 +35,7 @@
            (dnt/go-to-buy-nitrate-license
             "monthly"
             dnt/go-to-ac-url
+            dnt/go-to-subscription-url
             "dashboard:plan-confirmation-modal"
             (if (:subscription profile) "paid" "trial")
             subscription-start-origin)))

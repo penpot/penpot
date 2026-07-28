@@ -165,8 +165,8 @@
 
 (t/deftest build-nitrate-callback-urls-preserves-hash-query
   (t/testing "appends subscription to an existing query inside the hash route"
-    (let [callbacks (dnt/build-nitrate-callback-urls
-                     "https://localhost:3449/#/dashboard/recent?team-id=e6666530-0216-81c8-8007-f17d6087b74f")]
+    (let [base-url  "https://localhost:3449/#/dashboard/recent?team-id=e6666530-0216-81c8-8007-f17d6087b74f"
+          callbacks (dnt/build-nitrate-callback-urls base-url base-url)]
       (t/is (= "https://localhost:3449/#/dashboard/recent?team-id=e6666530-0216-81c8-8007-f17d6087b74f&subscription=subscribed-to-penpot-nitrate"
                (:success-callback callbacks)))
       (t/is (= "https://localhost:3449/#/dashboard/recent?team-id=e6666530-0216-81c8-8007-f17d6087b74f&subscription=nitrate-checkout-error"
@@ -178,24 +178,38 @@
 
 (t/deftest build-nitrate-callback-urls-adds-hash-query-when-missing
   (t/testing "adds a hash query when the route has no query string yet"
-    (let [callbacks (dnt/build-nitrate-callback-urls
-                     "https://localhost:3449/#/settings/subscriptions")]
+    (let [base-url  "https://localhost:3449/#/settings/subscriptions"
+          callbacks (dnt/build-nitrate-callback-urls base-url base-url)]
       (t/is (= "https://localhost:3449/#/settings/subscriptions?subscription=subscribed-to-penpot-nitrate"
                (:success-callback callbacks))))))
 
 (t/deftest build-nitrate-callback-urls-adds-regular-query-without-hash
   (t/testing "falls back to the regular URL query when there is no hash route"
-    (let [callbacks (dnt/build-nitrate-callback-urls
-                     "https://localhost:3449/admin-console/licenses/billing?foo=bar")]
+    (let [base-url  "https://localhost:3449/admin-console/licenses/billing?foo=bar"
+          callbacks (dnt/build-nitrate-callback-urls base-url base-url)]
       (t/is (= "https://localhost:3449/admin-console/licenses/billing?foo=bar&subscription=subscribed-to-penpot-nitrate"
                (:success-callback callbacks))))))
 
 (t/deftest build-nitrate-callback-urls-accepts-uri-object
   (t/testing "accepts a URI object as base url (used by the nitrate-form modal)"
-    (let [callbacks (dnt/build-nitrate-callback-urls
-                     (u/uri "https://localhost:3449/#/settings/subscriptions"))]
+    (let [base-url  (u/uri "https://localhost:3449/#/settings/subscriptions")
+          callbacks (dnt/build-nitrate-callback-urls base-url base-url)]
       (t/is (= "https://localhost:3449/#/settings/subscriptions?subscription=nitrate-checkout-error"
                (:error-callback callbacks))))))
+
+(t/deftest build-nitrate-callback-urls-uses-separate-error-base
+  (t/testing "error callbacks use base-error-url while success/cancel use base-url"
+    (let [callbacks (dnt/build-nitrate-callback-urls
+                     "https://localhost:3449/#/dashboard/recent"
+                     "https://localhost:3449/#/settings/subscriptions")]
+      (t/is (= "https://localhost:3449/#/dashboard/recent?subscription=subscribed-to-penpot-nitrate"
+               (:success-callback callbacks)))
+      (t/is (= "https://localhost:3449/#/settings/subscriptions?subscription=nitrate-checkout-error"
+               (:error-callback callbacks)))
+      (t/is (= "https://localhost:3449/#/settings/subscriptions?subscription=nitrate-checkout-finish-error"
+               (:finish-error-callback callbacks)))
+      (t/is (= "https://localhost:3449/#/dashboard/recent?subscription=nitrate-checkout-cancelled"
+               (:cancel-callback callbacks))))))
 
 (t/deftest go-to-subscription-url-is-a-string
   (t/testing "must be a string so licenses/billing?callback=... survives query encoding"

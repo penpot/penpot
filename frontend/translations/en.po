@@ -6026,8 +6026,8 @@ msgstr "Payment was not completed. Try again whenever you're ready."
 #: src/app/main/ui/settings/subscription.cljs:427
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
-"We couldn't start the checkout. Please try again. If the problem persists, "
-"contact us: support@penpot.app."
+"The payment was not completed. Please try again. "
+"If the problem persists, contact us: support@penpot.app."
 
 #: src/app/main/ui/settings/subscription.cljs:407
 msgid "subscription.error.nitrate.checkout-finish-failed"

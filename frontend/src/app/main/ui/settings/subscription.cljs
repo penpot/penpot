@@ -807,6 +807,7 @@
            (dnt/go-to-buy-nitrate-license
             "monthly"
             (rt/get-current-href)
+            dnt/go-to-subscription-url
             event-origin
             (if nitrate-license "paid" "trial")
             subscription-start-origin)))]
