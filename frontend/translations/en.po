@@ -5711,6 +5711,10 @@ msgid "shortcuts.edit-modal.conflict"
 msgstr "Combination assigned to \"%s\". Saving will remove it there."
 
 #: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.reset-to-default"
+msgstr "Shortcut reset to default:"
+
+#: src/app/main/ui/shortcuts.cljs
 msgid "shortcuts.edit-modal.success"
 msgstr "This key combination is available and can be assigned without conflicts."
 

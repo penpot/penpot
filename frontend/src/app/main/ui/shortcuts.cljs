@@ -371,12 +371,15 @@
         conflict*              (mf/use-state nil)
         conflict               (deref conflict*)
 
+        reset-notification* (mf/use-state nil)
+
         clean-editing-state
         (fn []
           (reset! is-editing* false)
           (reset! display-parts* nil)
           (reset! recorded-command* nil)
-          (reset! conflict* nil))
+          (reset! conflict* nil)
+          (reset! reset-notification* nil))
 
         effective-section-key (if (= section-key :basics) :workspace section-key)
 
@@ -385,7 +388,9 @@
          (mf/deps effective-section-key command-info)
          (fn [shortcut-key]
            (st/emit! (customize/reset-custom-shortcut shortcut-key (:original-command command-info) effective-section-key))
-           (clean-editing-state)))
+           (reset! reset-notification* (:original-command command-info))
+           (reset! recorded-command* nil)
+           (reset! conflict* nil)))
 
         start-editing
         (mf/use-fn
@@ -436,6 +441,15 @@
     (mf/with-effect [is-editing]
       (when is-editing
         (some-> (mf/ref-val recording-ref) (dom/focus!))))
+
+    (mf/with-effect [display-parts]
+      (when (some? display-parts)
+        (reset! reset-notification* nil)))
+
+    (mf/with-effect [@reset-notification*]
+      (when-let [_ @reset-notification*]
+        (let [timer (js/setTimeout #(reset! reset-notification* nil) 7000)]
+          (fn [] (js/clearTimeout timer)))))
 
     (mf/with-effect [is-editing]
       (when is-editing
@@ -506,6 +520,14 @@
                                            :customized-key customized?)} (:final-key display-parts)])
             (when-not (:finalized? display-parts)
               [:span {:class (stl/css :recording-ellipsis)} "..."])])]
+        (when-let [default-cmd @reset-notification*]
+          [:> context-notification* {:level :info :class (stl/css :modal-reset-msg)}
+           (tr "shortcuts.edit-modal.reset-to-default")
+           [:> shortcuts-keys* {:content default-cmd
+                                :command (keyword "default")
+                                :is-customized false
+                                :has-conflict? false}]])
+
         (when recorded-command
           (if conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
