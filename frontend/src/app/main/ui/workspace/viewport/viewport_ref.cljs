@@ -7,62 +7,75 @@
 (ns app.main.ui.workspace.viewport.viewport-ref
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.mouse :as mse]
-   [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (defonce viewport-ref (atom nil))
-(defonce current-observer (atom nil))
 (defonce viewport-brect (atom nil))
 
-(defn init-observer
-  [node on-change-bounds]
+(defn- init-observer
+  [node]
+  (let [on-change-bounds
+        (fn [_]
+          (let [brect (dom/get-bounding-rect node)
+                brect (gpt/point (d/parse-integer (:left brect))
+                                 (d/parse-integer (:top brect)))]
+            (reset! viewport-brect brect)))
 
-  (let [observer (js/ResizeObserver. on-change-bounds)]
-    (when (some? @current-observer)
-      (.disconnect @current-observer))
+        observer
+        (js/ResizeObserver. on-change-bounds)]
 
-    (reset! current-observer observer)
-
-    (when (some? node)
-      (.observe observer node))))
-
-(defn on-change-bounds
-  [_]
-  (when @viewport-ref
-    (let [brect (dom/get-bounding-rect @viewport-ref)
-          brect (gpt/point (d/parse-integer (:left brect))
-                           (d/parse-integer (:top brect)))]
-      (reset! viewport-brect brect))))
+    (.observe observer node)
+    observer))
 
 (defn create-viewport-ref
   []
-  (let [ref (mf/use-ref nil)]
-    [ref
-     (mf/use-memo
-      #(fn [node]
-         (mf/set-ref-val! ref node)
-         (reset! viewport-ref node)
-         (when (some? node)
-           (events/listen node EventType.MOUSELEAVE (fn [] (st/emit! (mse/->BlurEvent)))))
-         (init-observer node on-change-bounds)))]))
+  (let [node-ref     (mf/use-ref nil)
+        handler-ref  (mf/use-ref nil)
+        observer-ref (mf/use-ref nil)
+        callback     (mf/use-fn
+                      (fn [node]
+                        ;; Dispose all previous resources
+                        (when-let [observer (mf/ref-val observer-ref)]
+                          (.disconnect ^js observer)
+                          (mf/set-ref-val! observer-ref nil))
+
+
+                        (when-let [handler (mf/ref-val handler-ref)]
+                          (when-let [node (mf/ref-val node-ref)]
+                            (.removeEventListener ^js node "mouseleave" handler)
+                            (mf/set-ref-val! handler-ref nil)))
+
+                        ;; Reset the ref values to the current node (can be nil)
+                        (mf/set-ref-val! node-ref node)
+                        (reset! viewport-ref node)
+
+                        (when (some? node)
+                          (let [handler  (fn [] (st/emit! (mse/->BlurEvent)))
+                                observer (init-observer node)]
+                            (.addEventListener ^js node "mouseleave" handler)
+
+                            (mf/set-ref-val! handler-ref handler)
+                            (mf/set-ref-val! observer-ref observer)))))]
+    [node-ref callback]))
 
 (defn point->viewport
   [pt]
-  (let [zoom (dm/get-in @st/state [:workspace-local :zoom] 1)]
-    (when (and (some? @viewport-ref)
-               (some? @viewport-brect))
-      (let [vbox     (.. ^js @viewport-ref -viewBox -baseVal)
-            brect    @viewport-brect
-            box      (gpt/point (.-x vbox) (.-y vbox))
-            zoom     (gpt/point zoom)]
+  (let [zoom          (d/nilv @refs/selected-zoom 1)
+        viewport-node  @viewport-ref
+        viewport-brect @viewport-brect]
 
-        (-> (gpt/subtract pt brect)
+    (when (and (some? viewport-brect)
+               (some? viewport-node))
+      (let [vbox (.. ^js viewport-node -viewBox -baseVal)
+            box  (gpt/point (.-x vbox) (.-y vbox))
+            zoom (gpt/point zoom)]
+
+        (-> (gpt/subtract pt viewport-brect)
             (gpt/divide zoom)
             (gpt/add box))))))
 
@@ -71,8 +84,8 @@
    Unlike point->viewport, this does NOT convert to canvas coordinates -
    it just subtracts the viewport's bounding rect offset."
   [pt]
-  (when (some? @viewport-brect)
-    (gpt/subtract pt @viewport-brect)))
+  (when-let [brect @viewport-brect]
+    (gpt/subtract pt brect)))
 
 (defn inside-viewport?
   [target]
