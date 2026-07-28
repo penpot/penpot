@@ -19,7 +19,7 @@
 
 (mf/defc themes-header*
   {::mf/private true}
-  []
+  [{:keys [tokens-source]}]
   (let [ordered-themes
         (mf/deref refs/workspace-token-themes-no-hidden)
 
@@ -44,7 +44,7 @@
            (tr "workspace.tokens.create-one")])]
        (if can-edit-tokens?
          [:div {:class (stl/css :theme-selector-wrapper)}
-          [:> theme-selector*]
+          [:> theme-selector* {:tokens-source tokens-source}]
           [:> button* {:variant "secondary"
                        :type "button"
                        :class (stl/css :edit-theme-button)
@@ -52,4 +52,4 @@
            (tr "labels.edit")]]
          [:div {:title (when-not can-edit-tokens?
                          (tr "workspace.tokens.no-permission-themes"))}
-          [:> theme-selector*]]))]))
+          [:> theme-selector* {:tokens-source tokens-source}]]))]))

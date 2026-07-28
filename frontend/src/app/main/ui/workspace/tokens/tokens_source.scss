@@ -1,0 +1,30 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as *;
+@use "ds/_sizes" as *;
+@use "ds/spacing.scss" as *;
+
+.tokens-source-wrapper {
+  display: flex;
+  padding: 0 0 0 var(--sp-m);
+}
+
+.tokens-source-header {
+  column-gap: var(--sp-s);
+  display: flex;
+  flex-grow: 1;
+  padding: var(--sp-s);
+}
+
+.tokens-source-title {
+  color: var(--title-foreground-color);
+  overflow-wrap: break-word;
+}
+
+.replace-this-by-a-badge-component {
+  font-size: $sz-12;
+}
