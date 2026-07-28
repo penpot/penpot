@@ -18,7 +18,6 @@
    [app.main.data.workspace.texts-v3 :as dwt-v3]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -180,11 +179,13 @@
                  (when (some? content)
                    (st/emit! (dwt/v2-update-text-shape-content (first ids) content :finalize? true)))))
 
+             ;; The :grow-type change is committed by `update-shapes`; the
+             ;; commit-level text re-measure in `initialize-workspace` picks it
+             ;; up and resizes, so no explicit WASM resize is dispatched here.
              (st/emit! (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
 
              (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwwt/resize-wasm-text-all ids)
-                         (ptk/data-event :layout/update {:ids ids})))
+               (st/emit! (ptk/data-event :layout/update {:ids ids})))
              ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]
