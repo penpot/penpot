@@ -8,13 +8,14 @@
   "Tracks the shape ids that have layout/reflow work in flight, broken down by
   the kind of work so we can tell which type of reflow is blocking each shape.
 
-  Pending work is stored as a nested refcount map `{shape-id -> {kind -> count}}`:
-  a shape is pending while it has at least one kind with a count greater than
-  zero. The count (instead of a plain set) is required because several reflow
-  operations of the same kind can target the same shape while an earlier one is
-  still in flight; each `mark-pending!` must be balanced by exactly one
-  `mark-done!` of the same kind and ids so an operation finishing doesn't resolve
-  waiters that are still blocked on another operation for the same shape.
+  Pending work is stored as `{shape-id -> {kind -> #{task-id}}}`. Every producer
+  opens an exact task with `start!` and closes that same task with `finish!`.
+  Tasks belong to a workspace generation, so a delayed completion from a
+  finalized workspace cannot drain work opened after the workspace reloads.
+
+  Observable producers should use `with-pending`; imperative renderer work
+  should use `run-pending!`. Direct task lifecycle calls are reserved for Potok
+  pipelines whose operation has to cross event or batching boundaries.
 
   Kinds correspond to the pipelines that schedule the work:
     :layout        flex/grid layout reflow      (shape-layout)
@@ -23,44 +24,47 @@
     :text-bridge   change awaiting its pipeline (texts)
     :font          font change measurement      (texts)"
   (:require
-   [beicon.v2.core :as rx]))
+   [beicon.v2.core :as rx]
+   [promesa.core :as p]))
 
-;; Feeder subject receiving `{:op .. :kind .. :ids ..}` messages from
-;; mark-pending! / mark-done! / reset-pending!; scanned into the
-;; `pending-shapes` refcount map.
+;; Feeder subject receiving task lifecycle messages, scanned into the
+;; `pending-shapes` map.
 (defonce ^:private reflow-input (rx/subject))
 
-;; Increments the `kind` refcount of each id (adding the shape/kind starting at 1).
-(defn- inc-ids
-  [acc kind ids]
-  (reduce (fn [m id] (update-in m [id kind] (fnil inc 0))) acc ids))
+(defonce ^:private workspace-generation (atom 0))
+(defonce ^:private next-task-id (atom 0))
 
-;; Decrements the `kind` refcount of each id, dropping the kind once it reaches
-;; zero and the shape once it has no pending kinds left (decrementing an absent
-;; id/kind is a no-op).
-(defn- dec-ids
-  [acc kind ids]
-  (reduce (fn [m id]
-            (let [n     (dec (get-in m [id kind] 0))
-                  kinds (if (pos? n)
-                          (assoc (get m id) kind n)
-                          (dissoc (get m id) kind))]
-              (if (seq kinds)
-                (assoc m id kinds)
-                (dissoc m id))))
-          acc ids))
+(defn- add-task
+  [acc {:keys [id kind ids]}]
+  (reduce (fn [m shape-id]
+            (update-in m [shape-id kind] (fnil conj #{}) id))
+          acc
+          ids))
 
-;; Applies one `{:op .. :kind .. :ids ..}` message to the pending map: :add
-;; increments, :remove decrements, :reset clears everything.
+(defn- remove-task
+  [acc {:keys [id kind ids]}]
+  (let [task-id id]
+    (reduce (fn [m shape-id]
+              (let [tasks (disj (get-in m [shape-id kind] #{}) task-id)
+                    kinds (if (seq tasks)
+                            (assoc (get m shape-id) kind tasks)
+                            (dissoc (get m shape-id) kind))]
+                (if (seq kinds)
+                  (assoc m shape-id kinds)
+                  (dissoc m shape-id))))
+            acc
+            ids)))
+
 (defn- reducer
-  [acc {:keys [op kind ids]}]
+  [acc {:keys [op task ids]}]
   (case op
-    :add    (inc-ids acc kind ids)
-    :remove (dec-ids acc kind ids)
+    :add    (add-task acc task)
+    :remove (remove-task acc task)
+    :cancel (apply dissoc acc ids)
     :reset  {}
     acc))
 
-;; Behaviour subject holding the current pending map `{shape-id -> {kind -> count}}`.
+;; Behaviour subject holding `{shape-id -> {kind -> #{task-id}}}`.
 ;; It replays its current value synchronously to new subscribers, which gives
 ;; `wait-for-layout-update` a free fast-path when there is nothing pending.
 (defonce ^:private pending-shapes
@@ -68,29 +72,69 @@
     (rx/sub! (->> reflow-input (rx/scan reducer {})) sub)
     sub))
 
-;; NOTE: do not dedupe `ids` — multiplicity must be preserved so each
-;; `mark-pending!` is balanced by exactly one `mark-done!` of the same kind and ids.
-(defn mark-pending!
+(defn task
+  "Creates an opaque task token without opening it."
   [kind ids]
-  (rx/push! reflow-input {:op :add :kind kind :ids ids}))
+  {:id (swap! next-task-id inc)
+   :generation @workspace-generation
+   :kind kind
+   :ids (into #{} ids)})
 
-(defn mark-done!
-  [kind ids]
-  (rx/push! reflow-input {:op :remove :kind kind :ids ids}))
+(defn start!
+  "Opens and returns a task. The one-argument form opens a token created with
+  `task`; the two-argument form creates and opens it in one step."
+  ([task]
+   (when (and (seq (:ids task))
+              (= (:generation task) @workspace-generation))
+     (rx/push! reflow-input {:op :add :task task}))
+   task)
+  ([kind ids]
+   (start! (task kind ids))))
+
+(defn finish!
+  "Closes `task` if it belongs to the active workspace generation. Repeated or
+  stale completion is a no-op."
+  [{:keys [generation ids] :as task}]
+  (when (and (seq ids)
+             (= generation @workspace-generation))
+    (rx/push! reflow-input {:op :remove :task task})))
 
 (defn reset-pending!
+  "Starts a new workspace generation and forgets every task from the old one."
   []
+  (swap! workspace-generation inc)
   (rx/push! reflow-input {:op :reset}))
 
+(defn cancel-shapes!
+  "Forgets pending work attached to shapes that no longer exist."
+  [ids]
+  (when (seq ids)
+    (rx/push! reflow-input {:op :cancel :ids ids})))
+
 (defn with-pending
-  "Wraps `ob` so `ids` are marked pending for `kind` on subscription and drained
-  when it terminates (complete, error or unsubscribe). An `ob` that is built but
-  never subscribed marks nothing."
+  "Runs observable `ob` as tracked layout work. Prefer this entry point for
+  observable producers: it owns task activation and finalization, including
+  errors and unsubscription. An `ob` that is built but never subscribed marks
+  nothing."
   [kind ids ob]
   (->> (rx/of ::subscribe)
        (rx/mapcat (fn [_]
-                    (mark-pending! kind ids)
-                    (rx/finalize #(mark-done! kind ids) ob)))))
+                    (let [task (start! kind ids)]
+                      (rx/finalize #(finish! task) ob))))))
+
+(defn run-pending!
+  "Runs zero-argument promise operation `f` as tracked layout work. The task is
+  opened before `f` runs and is finalized when its returned promise settles.
+  Synchronous failures also finalize the task before being rethrown.
+
+  Prefer this entry point for imperative or renderer-driven producers."
+  [kind ids f]
+  (let [task (start! kind ids)]
+    (try
+      (p/finally (f) #(finish! task))
+      (catch :default cause
+        (finish! task)
+        (throw cause)))))
 
 (defn pending-signal
   "Emits once any of `kinds` is pending for any of `ids`, then completes.
@@ -108,11 +152,6 @@
 ;; Ceiling for callers that pass no timeout, so a pipeline that never drains
 ;; its marks rejects the promise rather than leaving it unsettled.
 (def ^:private default-timeout 30000)
-
-;; How long a pipeline may hold a mark while waiting on an external signal
-;; (a font download, a buffered commit) before giving up and draining. Sized for
-;; the slowest of those, a font fetch.
-(def ^:const stuck-timeout 10000)
 
 (defn wait-for-layout-update
   "Returns a JS Promise that resolves when every id in `shape-ids` has drained

@@ -99,7 +99,7 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [page-id ids undo-group drain-ids]}]
+  [{:keys [page-id ids undo-group reflow-tasks]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state stream]
@@ -126,21 +126,19 @@
             ;; except while a shape-update buffer is open (token propagation),
             ;; where the commit lands on `update-shapes-buffer-commit`.
             drain-stream
-            (if (::dwsh/update-shapes-buffer state)
+            (if (and (::dwsh/update-shapes-buffer state)
+                     (d/not-empty? ids))
               (->> stream
                    (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
                    (rx/take 1)
-                   ;; Bounds the wait: a propagation can end without a commit
-                   ;; when `ids` filtered down to empty, buffering nothing.
-                   (rx/timeout wrf/stuck-timeout (rx/empty))
                    (rx/take-until (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream))
                    ;; No events are derived from this
                    (rx/ignore))
               (rx/empty))]
 
         (cond->> (rx/concat update-positions-stream drain-stream)
-          (d/not-empty? drain-ids)
-          (rx/finalize #(wrf/mark-done! :layout drain-ids)))))))
+          (d/not-empty? reflow-tasks)
+          (rx/finalize #(run! wrf/finish! reflow-tasks)))))))
 
 (defn- without-root-board
   [ids]
@@ -160,18 +158,17 @@
                        (-> (deref event)
                            (update :ids without-root-board))))
              (rx/filter #(d/not-empty? (:ids %)))
-             (rx/tap #(wrf/mark-pending! :layout (:ids %)))
+             (rx/map #(assoc % ::reflow-task (wrf/start! :layout (:ids %))))
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
              (rx/mapcat
               (fn [updates]
                 (->> (group-by :page-id updates)
                      (map (fn [[page-id updates]]
-                            ;; Repeats ids, one per mark, to balance them all.
-                            (let [drain-ids (into [] (mapcat :ids) updates)]
+                            (let [ids (into #{} (mapcat :ids) updates)]
                               (update-layout-positions {:page-id page-id
-                                                        :ids (set drain-ids)
-                                                        :drain-ids drain-ids})))))))
+                                                        :ids ids
+                                                        :reflow-tasks (mapv ::reflow-task updates)})))))))
              (rx/take-until stopper)
              ;; On workspace teardown clear everything still pending.
              (rx/finalize wrf/reset-pending!))))))

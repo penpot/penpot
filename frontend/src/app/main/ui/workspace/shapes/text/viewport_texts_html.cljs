@@ -28,38 +28,8 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
-   [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
-
-;; How long a finished measurement stays pending before its mark is released.
-;; Measuring schedules a resize that makes the pipeline measure again, so the
-;; mark has to outlive the gap between two passes of that chain.
-(def ^:private measure-settle-window 150)
-
-;; Scheduled mark releases, keyed by shape id. A new measurement cancels the
-;; release its predecessor scheduled, so a chain reads as one settle.
-(defonce ^:private settle-timers (atom {}))
-
-(defn- hold-measure-mark!
-  "Marks `id` pending, taking over any hold its predecessor still has."
-  [id]
-  ;; Marked before releasing the previous hold, so the refcount never reaches
-  ;; zero and no waiter settles inside the handover.
-  (wrf/mark-pending! :text-measure [id])
-  (when-let [timer (get @settle-timers id)]
-    (d/close! timer)
-    (swap! settle-timers dissoc id)
-    (wrf/mark-done! :text-measure [id])))
-
-(defn- release-measure-mark!
-  "Releases `id` once no further measurement has started for `measure-settle-window`."
-  [id]
-  (let [timer (ts/schedule measure-settle-window
-                           (fn []
-                             (swap! settle-timers dissoc id)
-                             (wrf/mark-done! :text-measure [id])))]
-    (swap! settle-timers assoc id timer)))
 
 (defn fix-position
   [shape]
@@ -220,14 +190,14 @@
            (let [uid (uuid/next)
                  id  (:id shape)]
              (swap! pending-update* assoc uid id)
-             ;; The measurement holds the pending mark for its own lifetime, so
-             ;; a reflow wait can never outlast the work it waits for.
-             (hold-measure-mark! id)
-             (p/then
-              (update-text-shape shape node)
-              (fn [_]
-                (swap! pending-update* dissoc uid)
-                (release-measure-mark! id))))))]
+             ;; Callback refs run at the DOM commit boundary. Track the exact
+             ;; measurement promise from that acknowledgement; any resize it
+             ;; schedules owns the following task in the chain.
+             (wrf/run-pending!
+              :text-measure
+              [id]
+              #(-> (update-text-shape shape node)
+                   (p/finally (fn [] (swap! pending-update* dissoc uid))))))))]
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]

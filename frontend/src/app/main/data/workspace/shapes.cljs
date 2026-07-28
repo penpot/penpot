@@ -23,8 +23,10 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -38,6 +40,17 @@
 (defn- reflow-attr?
   [attr]
   (or (update-layout-attr? attr) (text-reflow-attr? attr)))
+
+(defn- async-text-reflow?
+  "Whether `shape` enters an asynchronous text geometry pipeline. The HTML
+  renderer measures every changed text; WASM only resizes auto-sized texts.
+  A grow-type transition is included because `shape` is the value before the
+  update and may still be fixed."
+  [state shape changed]
+  (and (cfh/text-shape? shape)
+       (or (not (features/active-feature? state "render-wasm/v1"))
+           (not= :fixed (:grow-type shape))
+           (contains? changed :grow-type))))
 
 (defn- add-undo-group
   [changes state]
@@ -221,7 +234,7 @@
                  (let [edition (dm/get-in state [:workspace-local :edition])]
                    (->> reflow-changes
                         (into [] (comp (filter (fn [[shape changed]]
-                                                 (and (cfh/text-shape? shape)
+                                                 (and (async-text-reflow? state shape changed)
                                                       (some text-reflow-attr? changed))))
                                        (map (comp :id first))
                                        (remove #(= % edition))))
@@ -308,7 +321,7 @@
           (rx/of (dwu/start-undo-transaction undo-id)
                  ;; A new text has no geometry until the pipeline measures it,
                  ;; so it raises the same signal an edit does.
-                 (when (cfh/text-shape? shape)
+                 (when (async-text-reflow? state shape nil)
                    (ptk/data-event :text/reflow {:ids [(:id shape)] :page-id page-id}))
                  (dch/commit-changes changes)
                  (when-not no-update-layout?
@@ -368,6 +381,7 @@
              fdata         (dsh/lookup-file-data state file-id)
              page          (dsh/get-page fdata page-id)
              objects       (:objects page)
+             deleted-ids   (into #{} (mapcat #(cfh/get-children-ids-with-self objects %)) ids)
 
              undo-id (or (:undo-id options) (js/Symbol))
              [all-parents changes]
@@ -377,6 +391,7 @@
                                               :undo-group (:undo-group options)
                                               :undo-id undo-id}))]
 
+         (wrf/cancel-shapes! deleted-ids)
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)
                 (dch/commit-changes changes)

@@ -84,12 +84,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (dsh/lookup-page-objects state)
-            shape   (get objects id)]
-        (if (and (some? shape)
-                 (cfh/text-shape? shape)
-                 (not= :fixed (:grow-type shape)))
-          (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape)))
-          (rx/empty))))))
+            shape   (get objects id)
+            resize-stream
+            (if (and (some? shape)
+                     (cfh/text-shape? shape)
+                     (not= :fixed (:grow-type shape)))
+              (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape)))
+              (rx/empty))]
+        (wrf/with-pending :text-resize [id] resize-stream)))))
 
 (defn resize-wasm-text-debounce-commit
   ([]
@@ -142,20 +144,20 @@
   ([id]
    (resize-wasm-text-debounce-inner id nil))
   ([id {:keys [undo-group undo-id]}]
-   (let [cur-event (js/Symbol)]
+   (let [cur-event   (js/Symbol)
+         reflow-task (wrf/task :text-resize [id])]
      (ptk/reify ::resize-wasm-text-debounce-inner
        ptk/UpdateEvent
        (update [_ state]
          (-> state
              (update ::resize-wasm-text-debounce-ids (fnil conj []) id)
+             (update ::resize-wasm-text-reflow-tasks (fnil conj []) reflow-task)
              (cond-> (nil? (::resize-wasm-text-debounce-event state))
                (assoc ::resize-wasm-text-debounce-event cur-event))))
 
        ptk/WatchEvent
        (watch [_ state stream]
-         ;; One mark per invocation, 1:1 with the conj in UpdateEvent above;
-         ;; the cleanup step below drains the whole batch.
-         (wrf/mark-pending! :text-resize [id])
+         (wrf/start! reflow-task)
          (if (= (::resize-wasm-text-debounce-event state) cur-event)
            (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
              (rx/concat
@@ -174,13 +176,13 @@
                         {:undo-group undo-group :undo-id undo-id})))
               ;; Cleanup, reached both after the commit and when the stopper
               ;; cancels the debounce, so the batch always drains and stays
-              ;; pending until the resize is applied. The ids only live in the
-              ;; state, hence the side effect in the state function; potok
-              ;; applies it exactly once.
+              ;; pending until the resize is applied. All exact tasks in the
+              ;; batch are retained in state and finished by the cleanup.
               (rx/of (fn [state]
-                       (wrf/mark-done! :text-resize (::resize-wasm-text-debounce-ids state))
+                       (run! wrf/finish! (::resize-wasm-text-reflow-tasks state))
                        (dissoc state
                                ::resize-wasm-text-debounce-ids
+                               ::resize-wasm-text-reflow-tasks
                                ::resize-wasm-text-debounce-event)))))
            (rx/empty)))))))
 
@@ -216,8 +218,8 @@
                     (rx/delay 20)))]
 
          ;; Holds the shape pending across the font-retry loop: the retried
-         ;; event marks itself before this one drains, so the refcount never
-         ;; dips to zero in between.
+         ;; event opens its task before this one drains, so the task set never
+         ;; becomes empty in between.
          (wrf/with-pending :text-resize [id] resize-wasm-stream))))))
 
 (defn resize-wasm-text-all
@@ -238,7 +240,5 @@
             (->> stream
                  (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
                  (rx/take 1)
-                 ;; A commit that never lands still resizes.
-                 (rx/timeout wrf/stuck-timeout (rx/of :timeout))
                  (rx/mapcat (constantly resize-stream))))
           resize-stream)))))

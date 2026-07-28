@@ -413,8 +413,8 @@
 ;; ---- waitForLayoutUpdate tests ------------------------------------------
 ;;
 ;; `waitForLayoutUpdate` resolves once the shapes with reflow work in flight
-;; have drained from the `app.main.data.workspace.reflow` pending refcount map.
-;; The tests drive that map directly with `mark-pending!` / `mark-done!` instead
+;; have drained from the `app.main.data.workspace.reflow` pending task map.
+;; The tests drive that map directly with `start!` / `finish!` instead
 ;; of replaying internal pipeline events. A minimal store is still installed so
 ;; `create-context` / `shape-proxy` can resolve the global st/state.
 
@@ -464,7 +464,7 @@
   ;; once that shape is marked done.
   (t/async done
     (make-test-store)
-    (wrf/mark-pending! :layout [(uuid/next)])
+    (wrf/start! :layout [(uuid/next)])
     (let [^js ctx (api/create-context zero-id)
           resolved (atom false)]
       (-> (.waitForLayoutUpdate ctx)
@@ -490,19 +490,20 @@
     (make-test-store)
     (let [id-a (uuid/next)
           id-b (uuid/next)
+          task-a (wrf/start! :layout [id-a])
+          task-b (wrf/start! :layout [id-b])
           ^js shape-a (shape/shape-proxy zero-id uuid/zero uuid/zero id-a)
           resolved (atom false)]
-      (wrf/mark-pending! :layout [id-a id-b])
       (-> (.waitForLayoutUpdate shape-a)
           (.then (fn [] (reset! resolved true)))
           (.catch (fn [err]
                     (t/is false (str "unexpected rejection: " err)))))
       ;; Draining the other shape leaves A pending.
-      (wrf/mark-done! :layout [id-b])
+      (wrf/finish! task-b)
       (js/setTimeout
        (fn []
          (t/is (false? @resolved) "shape A wait must stay pending while A is pending")
-         (wrf/mark-done! :layout [id-a])
+         (wrf/finish! task-a)
          (js/setTimeout
           (fn []
             (t/is (true? @resolved) "resolves once shape A drains")
@@ -510,26 +511,26 @@
           20))
        20))))
 
-(t/deftest test-wait-for-layout-update-refcount
-  ;; Two overlapping operations on the same shape: a single mark-done! must not
+(t/deftest test-wait-for-layout-update-overlapping-tasks
+  ;; Two overlapping operations on the same shape: finishing one task must not
   ;; resolve the wait while the second operation is still in flight.
   (t/async done
     (make-test-store)
     (let [id (uuid/next)
+          task-a (wrf/start! :layout [id])
+          task-b (wrf/start! :layout [id])
           ^js shape (shape/shape-proxy zero-id uuid/zero uuid/zero id)
           resolved (atom false)]
-      (wrf/mark-pending! :layout [id])
-      (wrf/mark-pending! :layout [id])
       (-> (.waitForLayoutUpdate shape)
           (.then (fn [] (reset! resolved true)))
           (.catch (fn [err]
                     (t/is false (str "unexpected rejection: " err)))))
       ;; First operation finishes; second is still pending.
-      (wrf/mark-done! :layout [id])
+      (wrf/finish! task-a)
       (js/setTimeout
        (fn []
          (t/is (false? @resolved) "must not resolve while a second op is in flight")
-         (wrf/mark-done! :layout [id])
+         (wrf/finish! task-b)
          (js/setTimeout
           (fn []
             (t/is (true? @resolved) "resolves once both operations drain")
@@ -542,7 +543,7 @@
   ;; reject with an Error whose message mentions "timeout".
   (t/async done
     (make-test-store)
-    (wrf/mark-pending! :layout [(uuid/next)])
+    (wrf/start! :layout [(uuid/next)])
     (let [^js ctx (api/create-context zero-id)]
       (-> (.waitForLayoutUpdate ctx 20)
           (.then (fn []
@@ -566,8 +567,8 @@
             ^js rect  (.createRectangle ctx)]
         (.appendChild board rect)
         (let [child-id (obj/get rect "$id")
+              task (wrf/start! :layout [child-id])
               resolved (atom false)]
-          (wrf/mark-pending! :layout [child-id])
           (-> (.waitForLayoutUpdate board)
               (.then (fn [] (reset! resolved true)))
               (.catch (fn [err]
@@ -575,7 +576,7 @@
           (js/setTimeout
            (fn []
              (t/is (false? @resolved) "parent wait must block on a pending child")
-             (wrf/mark-done! :layout [child-id])
+             (wrf/finish! task)
              (js/setTimeout
               (fn []
                 (t/is (true? @resolved) "resolves once the child drains")

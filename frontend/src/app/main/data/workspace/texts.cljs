@@ -62,17 +62,19 @@
 (declare v2-update-text-editor-styles)
 (declare v2-sync-wasm-text-layout)
 
-;; Ceiling for a text no pipeline picks up, bounding what it costs later waits.
-(def ^:private reflow-bridge-timeout 2000)
-
 (defn- bridge-to-measurement
   "Marks `ids` pending until the text pipeline marks its own work:
   `:text-measure` in the DOM renderer, `:text-resize` in wasm. Emits nothing."
   [ids]
-  (->> (wrf/pending-signal ids #{:text-measure :text-resize})
-       (rx/timeout reflow-bridge-timeout (rx/empty))
-       (rx/ignore)
-       (wrf/with-pending :text-bridge ids)))
+  (->> (rx/from ids)
+       ;; Each id owns its bridge. Starting work for one text must not release
+       ;; siblings that the renderer has not picked up yet.
+       (rx/mapcat
+        (fn [id]
+          (->> (wrf/pending-signal [id] #{:text-measure :text-resize})
+               (rx/ignore)
+               (wrf/with-pending :text-bridge [id]))))
+       (rx/ignore)))
 
 (defn initialize-text-reflow
   "Tracks the texts the DOM pipeline still has to re-measure, so a reflow wait
@@ -120,12 +122,26 @@
       (->> wasm.fonts/font-stored-stream
            (rx/filter #(= % font-id))
            (rx/take 1)
-           ;; A font that never lands still resizes, against the fallback.
-           (rx/timeout wrf/stuck-timeout (rx/of :timeout))
            (rx/take-until stopper)
            (rx/observe-on :async)
            (rx/mapcat (fn [_] (rx/from (mapv dwwt/resize-wasm-text ids))))
            (wrf/with-pending :font ids)))))
+
+(defn- await-html-font
+  "Keeps legacy DOM text pending while its new font is loading. The DOM
+  measurement also awaits this promise, so the font task bridges the state
+  update to the renderer commit without relying on a fixed settle delay."
+  [font-id font-variant-id ids]
+  (if (or (nil? font-id) (empty? ids))
+    (rx/empty)
+    (->> (rx/of ::load-font)
+         ;; `ensure-loaded!` is intentionally invoked after `with-pending`
+         ;; subscribes, so even an immediately settled promise cannot create a
+         ;; gap before the task is visible to waiters.
+         (rx/mapcat (fn [_]
+                      (rx/from (fonts/ensure-loaded! font-id font-variant-id))))
+         (rx/ignore)
+         (wrf/with-pending :font ids))))
 
 ;; -- Content helpers
 
@@ -497,10 +513,15 @@
 
         (rx/concat
          (rx/of (dwsh/update-shapes shape-ids update-fn))
-         ;; The legacy renderer re-measures these in the DOM on its own.
-         (if (features/active-feature? state "render-wasm/v1")
+         (cond
+           (features/active-feature? state "render-wasm/v1")
            (->> (rx/from text-ids)
                 (rx/map dwwt/resize-wasm-text-debounce))
+
+           (contains? attrs :font-id)
+           (await-html-font (:font-id attrs) (:font-variant-id attrs) text-ids)
+
+           :else
            (rx/empty)))))))
 
 (defn update-root-attrs
@@ -734,21 +755,20 @@
 (defn resize-text
   [id new-width new-height]
 
-  (let [cur-event (js/Symbol)]
+  (let [cur-event   (js/Symbol)
+        reflow-task (wrf/task :text-resize [id])]
     (ptk/reify ::resize-text
       ptk/UpdateEvent
       (update [_ state]
         (-> state
             (update ::resize-text-debounce-props (fnil assoc {}) id [new-width new-height])
-            (update ::resize-text-pending-ids (fnil conj []) id)
+            (update ::resize-text-reflow-tasks (fnil conj []) reflow-task)
             (cond-> (nil? (::resize-text-debounce-event state))
               (assoc ::resize-text-debounce-event cur-event))))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        ;; Spans the debounce and commit that follow a measurement. One mark per
-        ;; invocation, 1:1 with the conj above; the cleanup drains the batch.
-        (wrf/mark-pending! :text-resize [id])
+        (wrf/start! reflow-task)
         (if (= (::resize-text-debounce-event state) cur-event)
           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
             (rx/concat
@@ -761,10 +781,10 @@
                    (rx/take-until stopper))
               (rx/of (resize-text id new-width new-height)))
              (rx/of (fn [state]
-                      (wrf/mark-done! :text-resize (::resize-text-pending-ids state))
+                      (run! wrf/finish! (::resize-text-reflow-tasks state))
                       (dissoc state
                               ::resize-text-debounce-props
-                              ::resize-text-pending-ids
+                              ::resize-text-reflow-tasks
                               ::resize-text-debounce-event)))))
           (rx/empty))))))
 
@@ -966,8 +986,14 @@
                   (->> (rx/from auto-ids)
                        (rx/map dwwt/resize-wasm-text)))))
 
-             ;; The legacy renderer re-measures these in the DOM on its own.
-             (rx/empty))))))
+             ;; The legacy renderer re-measures these in the DOM on its own,
+             ;; but font loading starts before that render commits.
+             (if (contains? attrs :font-id)
+               (await-html-font
+                (:font-id attrs)
+                (:font-variant-id attrs)
+                text-ids)
+               (rx/empty)))))))
 
     ptk/EffectEvent
     (effect [_ state _]
