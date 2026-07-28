@@ -45,8 +45,12 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def system-managed-props
+  "Props keys managed by the system (not user-writable via RPC)."
+  #{:subscription})
+
 (def schema:props
-  [:map {:title "ProfileProps"}
+  [:map {:title "ProfileProps" :closed true}
    [:plugins {:optional true} schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
@@ -454,7 +458,7 @@
                                  (assoc props k v))
                                props))
                            (:props profile)
-                           props)]
+                           (apply dissoc props system-managed-props))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
