@@ -22,20 +22,20 @@
   ;; The schema should not accept file-id as a valid parameter
   (let [schema @#'binfile/schema:import-binfile
         validator (sm/lazy-validator schema)
-        
+
         ;; Valid params without file-id
         valid-params {:name "test"
                       :project-id (uuid/random)
                       :version 3
                       :upload-id (uuid/random)}
-        
+
         ;; Params with file-id (should be rejected after fix)
         params-with-file-id (assoc valid-params :file-id (uuid/random))]
-    
+
     ;; Valid params without file-id should pass
     (t/is (true? (validator valid-params))
           "params without file-id should be valid")
-    
+
     ;; Params with file-id should fail validation after fix
     ;; (Currently this will fail because file-id is still in schema)
     (t/is (false? (validator params-with-file-id))
