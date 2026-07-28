@@ -36,7 +36,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc search-section*
-  [{:keys [filter-term on-search-term-change on-search-clear-click on-restore-all show-restore-all? has-custom-shortcuts]}]
+  [{:keys [filter-term on-search-term-change on-search-clear-click on-restore-all show-restore-all has-custom-shortcuts]}]
   [:div {:class (stl/css :shortcuts-search-section)}
    [:> search-bar* {:on-change on-search-term-change
                     :on-clear on-search-clear-click
@@ -44,7 +44,7 @@
                     :placeholder (tr "shortcuts.title")
                     :icon-id i/search
                     :auto-focus true}]
-   (when (and show-restore-all? has-custom-shortcuts)
+   (when (and show-restore-all has-custom-shortcuts)
      [:> button*
       {:variant "secondary"
        :on-click on-restore-all
@@ -172,10 +172,9 @@
                                    :conflicts conflicts}]))]))
 
 (mf/defc shortcuts-tab-section*
-  [{:keys [shortcut-filter show-restore-all? on-restore-all empty-str custom-shortcuts conflicts]}]
+  [{:keys [shortcut-filter show-restore-all on-restore-all empty-str custom-shortcuts conflicts expand-all-by-default
+           open-sections update-open-sections]}]
   (let [{:keys [all-shortcuts]} (mf/use-ctx ctx/shortcuts-ctx)
-        open-sections*   (mf/use-state [[:workspace]])
-        open-sections    (deref open-sections*)
 
         filter-term*     (mf/use-state "")
         filter-term      (deref filter-term*)
@@ -190,22 +189,34 @@
         all-shortcuts           (into {} (filter (fn [[_ v]] (section-has-content? v)) all-shortcuts))
         filtered-shortcuts      (filter-shortcuts-tree all-shortcuts shortcut-filter filter-term)
 
+        expanded?*       (mf/use-state false)
+        expanded?        (deref expanded?*)
+
+        expand-all-sections
+        (fn []
+          (let [all-ids (collect-open-section-ids filtered-shortcuts)]
+            (update-open-sections (if (seq all-ids) (vec all-ids) [[:workspace]]))))
+
         on-search-term-change
         (mf/use-fn
          (mf/deps all-shortcuts shortcut-filter)
          (fn [term]
            (reset! filter-term* term)
            (if (str/blank? term)
-             (reset! open-sections* [[:workspace]])
+             (if expand-all-by-default
+               (expand-all-sections)
+               (update-open-sections [[:workspace]]))
              (let [filtered-tree (filter-shortcuts-tree all-shortcuts shortcut-filter term)
                    open-ids (collect-open-section-ids filtered-tree)]
-               (reset! open-sections* open-ids)))))
+               (update-open-sections (vec open-ids))))))
 
         on-search-clear-click
         (mf/use-fn
          (fn [_]
-           (reset! open-sections* [[:workspace]])
-           (reset! filter-term* "")))
+           (reset! filter-term* "")
+           (if expand-all-by-default
+             (expand-all-sections)
+             (update-open-sections [[:workspace]]))))
 
         manage-sections
         (fn [item]
@@ -215,15 +226,29 @@
                   new-value (if is-present?
                               (filterv (fn [element] (not= element item)) open-sections)
                               (conj open-sections item))]
-              (reset! open-sections* new-value))))]
+              (update-open-sections new-value))))
+
+        has-custom-shortcuts (some #(seq (val %)) custom-shortcuts)
+
+        empty-str
+        (if (and has-custom-shortcuts (not (str/blank? filter-term)))
+          (tr "shortcuts.no-shortcuts")
+          empty-str)]
+
+    (mf/with-effect [filtered-shortcuts filter-term expand-all-by-default]
+      (when (and expand-all-by-default (str/blank? filter-term) (not expanded?))
+        (let [all-ids (collect-open-section-ids filtered-shortcuts)]
+          (when (seq all-ids)
+            (update-open-sections (vec all-ids))
+            (reset! expanded?* true)))))
 
     [:div {:class (stl/css :shortcuts-section)}
      [:> search-section* {:filter-term filter-term
                           :on-search-term-change on-search-term-change
                           :on-search-clear-click on-search-clear-click
                           :on-restore-all on-restore-all
-                          :show-restore-all? show-restore-all?
-                          :has-custom-shortcuts (some #(seq (val %)) custom-shortcuts)}]
+                          :show-restore-all show-restore-all
+                          :has-custom-shortcuts has-custom-shortcuts}]
      (if (seq filtered-shortcuts)
        [:> shortcuts-list* {:shortcuts filtered-shortcuts
                             :open-sections open-sections
@@ -273,6 +298,14 @@
         (mf/use-fn
          (fn [new-section]
            (reset! section* (keyword new-section))))
+
+        open-sections-by-tab* (mf/use-state {})
+        open-sections-by-tab  (deref open-sections-by-tab*)
+
+        make-update-open-sections
+        (fn [tab-key]
+          (fn [new-val]
+            (swap! open-sections-by-tab* assoc tab-key new-val)))
 
         custom-shortcuts                    (get-in profile [:props :custom-shortcuts])
         has-custom-shortcuts                (some #(seq (val %)) custom-shortcuts)
@@ -407,10 +440,12 @@
            [:> shortcuts-tab-section* {:shortcut-filter (fn [_ shortcut search-term]
                                                           (or (str/blank? search-term)
                                                               (matches-search (:translation shortcut) search-term)))
-                                       :show-restore-all? true
+                                       :show-restore-all true
                                        :empty-str (tr "shortcuts.no-shortcuts")
                                        :on-restore-all on-restore-all
-                                       :custom-shortcuts custom-shortcuts}]
+                                       :custom-shortcuts custom-shortcuts
+                                       :open-sections (get open-sections-by-tab :all [[:workspace]])
+                                       :update-open-sections (make-update-open-sections :all)}]
 
            :personalized
            [:> shortcuts-tab-section* {:shortcut-filter (fn [shortcut-key shortcut search-term]
@@ -422,10 +457,13 @@
                                                             (and customized?
                                                                  (or (str/blank? search-term)
                                                                      (matches-search (:translation shortcut) search-term)))))
-                                       :show-restore-all? true
+                                       :show-restore-all true
                                        :empty-str (tr "shortcuts.no-personalized")
                                        :on-restore-all on-restore-all
-                                       :custom-shortcuts custom-shortcuts}]
+                                       :expand-all-by-default true
+                                       :custom-shortcuts custom-shortcuts
+                                       :open-sections (get open-sections-by-tab :personalized [[:workspace]])
+                                       :update-open-sections (make-update-open-sections :personalized)}]
 
            :disabled
            [:> shortcuts-tab-section* {:shortcut-filter (fn [shortcut-key shortcut search-term]
@@ -437,10 +475,13 @@
                                                             (and in-group? blank?
                                                                  (or (str/blank? search-term)
                                                                      (matches-search (:translation shortcut) search-term)))))
-                                       :show-restore-all? true
+                                       :show-restore-all true
                                        :empty-str (tr "shortcuts.no-disabled")
                                        :on-restore-all on-restore-all
-                                       :custom-shortcuts custom-shortcuts}])]]
+                                       :expand-all-by-default true
+                                       :custom-shortcuts custom-shortcuts
+                                       :open-sections (get open-sections-by-tab :disabled [[:workspace]])
+                                       :update-open-sections (make-update-open-sections :disabled)}])]]
 
        [:div {:class (stl/css :shortcuts-page-footer)}
         [:div {:class (stl/css :shortcuts-info)}

@@ -21,6 +21,7 @@
   inline-size: 100%;
   z-index: var(--z-index-set);
   background-color: var(--overlay-color);
+  padding-inline-start: px2rem(300);
 }
 
 .modal-dialog {
