@@ -125,7 +125,7 @@
                  (dom/stop-propagation event)
 
                  ;; Mark as touched
-                 (swap! form assoc-in [:touched name] true)
+                 (swap! form assoc-in [:touched name] true))
 
                ;; Split pasted text by commas and/or whitespace, add each valid part
                (let [parts (->> (str/split paste-data #",|\s+")
