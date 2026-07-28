@@ -275,7 +275,11 @@
             ;; the event loop
             expand-s (->> (rx/of (dwc/expand-all-parents ids objects))
                           (rx/observe-on :async))
-            interrupt-s (rx/of :interrupt ::dwsp/interrupt)]
+            ;; :interrupt aborts drag-stopper; only emit it when clearing edition
+            ;; (unconditional emit broke marquee selection after #10798).
+            interrupt-s (if (some? (dm/get-in state [:workspace-local :edition]))
+                          (rx/of :interrupt ::dwsp/interrupt)
+                          (rx/of ::dwsp/interrupt))]
         (rx/merge expand-s interrupt-s)))))
 
 (defn select-all
