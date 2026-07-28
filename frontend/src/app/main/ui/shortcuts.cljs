@@ -305,7 +305,7 @@
             :key unique-key} char]))
 
 (mf/defc shortcuts-keys*
-  [{:keys [content command is-customized has-conflict?]}]
+  [{:keys [content command is-customized has-conflict? light-shortcut]}]
   (let [managed-list    (if (coll? content)
                           content
                           (conj () content))
@@ -324,7 +324,8 @@
                                 :command command
                                 :class (cond
                                          has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key))}])
+                                         is-customized (stl/css :customized-key)
+                                         light-shortcut (stl/css :light-key))}])
 
         (when (not= chars penultimate) [:span {:class (stl/css :space)} ","])])
      (when (not= last-element penultimate)
@@ -336,7 +337,8 @@
                                 :command command
                                 :class (cond
                                          has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key))}])])]))
+                                         is-customized (stl/css :customized-key)
+                                         light-shortcut (stl/css :light-key))}])])]))
 
 (mf/defc shortcut-row-editable*
   [{:keys [elements custom-shortcuts command-translate conflicts section-key]}]

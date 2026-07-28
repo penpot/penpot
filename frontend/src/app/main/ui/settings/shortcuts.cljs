@@ -24,6 +24,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.settings.import-shortcuts-diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal]
    [app.main.ui.shortcuts :as ss]
    [app.util.dom :as dom]
@@ -357,7 +358,7 @@
 
         on-file-selected
         (mf/use-fn
-         (mf/deps all-shortcuts-raw)
+         (mf/deps all-shortcuts-raw custom-shortcuts)
          (fn [event]
            (let [file (-> (dom/get-target event)
                           (dom/get-files)
@@ -370,7 +371,10 @@
                                                 :keywordize-keys true)
                              validation (validate-imported-shortcuts shortcuts)]
                          (if (:valid? validation)
-                           (st/emit! (ss/import-custom-shortcuts shortcuts all-shortcuts-raw))
+                           (st/emit! (modal/show {:type :import-shortcuts-diff-modal
+                                                  :imported-shortcuts shortcuts
+                                                  :custom-shortcuts custom-shortcuts
+                                                  :all-shortcuts-raw all-shortcuts-raw}))
                            (st/emit! (ntf/error (tr "errors.invalid-data")))))
                        (catch :default _
                          (st/emit! (ntf/error (tr "errors.invalid-data"))))))))

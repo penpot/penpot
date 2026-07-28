@@ -35,7 +35,7 @@
   min-inline-size: $sz-364;
   min-block-size: $sz-192;
   max-block-size: $sz-520;
-  inline-size: $sz-500;
+  inline-size: px2rem(584);
   max-inline-size: $sz-712;
 }
 
@@ -65,6 +65,7 @@
   flex-direction: column;
   gap: var(--sp-l);
   block-size: fit-content;
+  overflow-y: auto;
 }
 
 .modal-content-text {
@@ -98,7 +99,7 @@
 
   color: var(--color-foreground-secondary);
   display: grid;
-  grid-template-columns: 40% 30% 30%;
+  grid-template-columns: 35% 30% 35%;
 }
 
 .shortcuts-list-header {
@@ -127,6 +128,10 @@
   text-align: start;
 }
 
+.shortcut-name {
+  text-align: start;
+}
+
 .shortcut-command {
   display: flex;
   gap: var(--sp-s);
@@ -136,18 +141,26 @@
   flex-wrap: wrap;
 }
 
-.default-command {
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
-  border-radius: $br-6;
-}
-
-.customized-command {
-  background-color: var(--color-background-info);
-  color: var(--color-foreground-primary);
-  border-radius: $br-6;
-}
-
 .shortcut-empty {
   color: var(--color-foreground-secondary);
+}
+
+.context-separator {
+  border-block-end: none;
+}
+
+.context-label {
+  @include t.use-typography("title-small");
+
+  color: var(--color-foreground-secondary);
+  text-align: start;
+  padding-block: var(--sp-m) var(--sp-xxs);
+}
+
+.no-changes {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  text-align: center;
+  padding-block: var(--sp-xl);
 }

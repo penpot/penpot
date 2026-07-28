@@ -5850,6 +5850,22 @@ msgstr "Acction"
 msgid "restore-shortcuts.restore"
 msgstr "Restore"
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-title"
+msgstr "Import shortcuts"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-text"
+msgstr "The following shortcuts will be changed by the imported configuration."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.no-changes"
+msgstr "No differences found between the current and imported shortcuts."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.apply"
+msgstr "Apply"
+
 #: src/app/main/ui/dashboard/subscription.cljs:191
 msgid "subscription.banner.create-org-info"
 msgstr ""
