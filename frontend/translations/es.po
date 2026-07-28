@@ -9726,6 +9726,14 @@ msgstr "Usa una referencia"
 msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
 
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:24
+msgid "workspace.tokens.connected-library"
+msgstr "librería conectada"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:25
+msgid "workspace.tokens.open-connected-library"
+msgstr "Abrir librería conectada"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused
 msgid "workspace.tokens.warning-name-change"

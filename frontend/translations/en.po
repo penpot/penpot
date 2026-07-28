@@ -10073,6 +10073,14 @@ msgstr "Use a reference"
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:24
+msgid "workspace.tokens.connected-library"
+msgstr "connected library"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:25
+msgid "workspace.tokens.open-connected-library"
+msgstr "Open connected library"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused
 msgid "workspace.tokens.warning-name-change"

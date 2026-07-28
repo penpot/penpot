@@ -468,7 +468,7 @@
                         (tht/add-tokens-lib))
           file-data (cfo/set-tokens-source (:data file) (uuid/next))]
       (t/is (false? (cfo/tokens-provider? file-data))))))
- 
+
 (t/deftest test-editable-tokens?
   (t/testing "returns true when file-data has no tokens-source"
     (let [file      (thf/sample-file :file1)
