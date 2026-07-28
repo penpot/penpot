@@ -14,7 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
-   [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
@@ -50,15 +50,22 @@
                    :class (stl/css-case :check-icon true
                                         :check-icon-visible selected?)}]])]))
 
-(defn- open-tokens-theme-modal
-  []
-  (modal/show! :tokens/themes {}))
-
 (mf/defc theme-options*
-  [{:keys [tokens-lib tokens-status on-close]}]
+  [{:keys [tokens-lib tokens-status tokens-source can-edit-tokens team-id on-close]}]
   (let [themes
         (mf/with-memo [tokens-lib]
-          (ctob/get-theme-tree-no-hidden tokens-lib))]
+          (ctob/get-theme-tree-no-hidden tokens-lib))
+
+        edit-token-themes
+        (fn []
+          (if can-edit-tokens
+            (modal/show! :tokens/themes {})
+            (st/emit! (rt/nav :workspace
+                              {:team-id team-id
+                               :file-id tokens-source
+                               :layout :tokens}
+                              ::rt/new-window true))))]
+
     [:ul {:class (stl/css :theme-options :custom-select-dropdown)
           :role "listbox"}
      (for [[group themes] themes]
@@ -76,15 +83,21 @@
      [:li {:class (stl/css-case :checked-element true
                                 :checked-element-button true)
            :role "option"
-           :on-click open-tokens-theme-modal}
+           :on-click edit-token-themes}
       [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
-      [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]]))
+      [:> icon* {:icon-id (if can-edit-tokens
+                            i/arrow-right
+                            i/open-link)
+                 :aria-hidden true}]]]))
 
 (mf/defc theme-selector*
-  [{:keys []}]
+  [{:keys [tokens-source]}]
   (let [;; Store
-        tokens-lib          (mf/use-ctx ctx/tokens-lib)
-        tokens-status       (mf/use-ctx ctx/tokens-status)
+        tokens-lib      (mf/use-ctx ctx/tokens-lib)
+        tokens-status   (mf/use-ctx ctx/tokens-status)
+        can-edit-file?  (mf/use-ctx ctx/can-edit?)
+        can-edit-tokens (mf/use-ctx ctx/can-edit-tokens?)
+        team-id         (mf/use-ctx ctx/current-team-id)
 
         active-themes
         (mf/with-memo [tokens-lib tokens-status]
@@ -93,8 +106,6 @@
         active-themes-count
         (mf/with-memo [active-themes]
           (count active-themes))
-
-        can-edit?  (:can-edit (deref refs/permissions))
 
         ;; Data
         current-label (cond
@@ -117,9 +128,9 @@
 
         on-open-dropdown
         (mf/use-fn
-         (mf/deps can-edit?)
+         (mf/deps can-edit-file?)
          (fn [event]
-           (when can-edit?
+           (when can-edit-file?
              (when-let [node (dom/get-current-target event)]
                (let [rect (dom/get-bounding-rect node)]
                  (swap! state* assoc
@@ -129,14 +140,14 @@
         container (hooks/use-portal-container :popup)]
 
     [:div {:on-click on-open-dropdown
-           :disabled (not can-edit?)
+           :disabled (not can-edit-file?)
            :aria-expanded is-open?
            :aria-haspopup "listbox"
            :tab-index "0"
            :role "combobox"
            :data-testid "theme-select"
            :class (stl/css-case :custom-select true
-                                :disabled-select (not can-edit?))}
+                                :disabled-select (not can-edit-file?))}
      [:> text* {:as "span" :typography "body-small" :class (stl/css :current-label)}
       current-label]
      [:> icon* {:icon-id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
@@ -154,5 +165,8 @@
                         :on-close on-close-dropdown}
            [:> theme-options* {:tokens-lib tokens-lib
                                :tokens-status tokens-status
+                               :tokens-source tokens-source
+                               :can-edit-tokens can-edit-tokens
+                               :team-id team-id
                                :on-close on-close-dropdown}]]])
         container))]))

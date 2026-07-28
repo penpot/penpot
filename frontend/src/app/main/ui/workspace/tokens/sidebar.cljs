@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.modal :as modal]
@@ -25,18 +26,21 @@
    [app.main.ui.workspace.tokens.sets.context-menu :refer [token-set-context-menu*]]
    [app.main.ui.workspace.tokens.sets.lists :as tsetslist]
    [app.main.ui.workspace.tokens.themes :refer [themes-header*]]
+   [app.main.ui.workspace.tokens.tokens-source :refer [tokens-source-info*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]
-   [shadow.resource]
-   [app.common.files.tokens :as cfo]))
+   [shadow.resource]))
 
 ;; Components ------------------------------------------------------------------
 
 (mf/defc token-sets-list*
   {::mf/private true}
-  [{:keys [tokens-lib]}]
-  (let [token-sets
+  []
+  (let [tokens-lib
+        (mf/use-ctx ctx/tokens-lib)
+
+        token-sets
         (some-> tokens-lib (ctob/get-set-tree))
 
         selected-token-set-id
@@ -61,16 +65,22 @@
 
 (mf/defc token-management-section*
   {::mf/private true}
-  [{:keys [resize-height] :as props}]
+  [{:keys [resize-height current-file-data] :as props}]
 
   (let [can-edit-tokens?
-        (mf/use-ctx ctx/can-edit-tokens?)]
+        (mf/use-ctx ctx/can-edit-tokens?)
+
+        tokens-source
+        (mf/with-memo [current-file-data]
+          (cfo/get-tokens-source current-file-data))]
     [:*
      [:> token-set-context-menu*]
      [:section {:data-testid "token-management-sidebar"
                 :class (stl/css :token-management-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
-      [:> themes-header*]
+      (when (not= tokens-source (:id current-file-data))
+        [:> tokens-source-info* {:tokens-source tokens-source}])
+      [:> themes-header* {:tokens-source tokens-source}]
       [:div {:class (stl/css :sidebar-header)}
        [:> title-bar* {:title (tr "labels.sets")}
         (when can-edit-tokens?
@@ -140,7 +150,7 @@
                          :on-click open-settings-modal}])]))
 
 (mf/defc tokens-sidebar-tab*
-  [{:keys [tokens-lib] :as props}]
+  [{:keys [] :as props}]
   (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
@@ -162,7 +172,7 @@
      [:div {:class (stl/css :sidebar-wrapper)}
       [:> token-management-section*
        {:resize-height size-pages-opened
-        :tokens-lib tokens-lib}]
+        :current-file-data current-file-data}]
       [:article {:class (stl/css :tokens-section-wrapper)
                  :data-testid "tokens-sidebar"}
        [:div {:class (stl/css :resize-area-horiz)

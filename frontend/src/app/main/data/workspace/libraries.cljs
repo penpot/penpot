@@ -1660,8 +1660,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-data        (dm/get-in state [:files file-id :data])
-            libraries        (:shared-files state)
+      (let [libraries        (:shared-files state)
             library          (get libraries library-id)
             variants-count   (-> library :library-summary :variants count)
 
@@ -1679,10 +1678,10 @@
                                 (conj $ library-id)
                                 (map #(load-library-file file-id %) $))))
               (rx/catch (fn [cause]
-                           (let [error (ex-data cause)]
-                             (if (= (:code error) :circular-library-reference)
-                               (rx/of (ntf/error (tr "errors.circular-library-reference")))
-                               (rx/throw cause))))))
+                          (let [error (ex-data cause)]
+                            (if (= (:code error) :circular-library-reference)
+                              (rx/of (ntf/error (tr "errors.circular-library-reference")))
+                              (rx/throw cause))))))
          (rx/of (ptk/reify ::link-file-to-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})

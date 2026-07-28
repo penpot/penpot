@@ -1057,8 +1057,8 @@
          set-ids (ctos/get-active-set-ids tokens-status)
          library-data (::library-data (meta changes))
          prev-tokens-status (cfo/get-tokens-status library-data)
-         prev-theme-ids  (ctos/get-active-theme-ids prev-tokens-status)
-         prev-set-ids  (ctos/get-active-set-ids prev-tokens-status)]
+         prev-theme-ids (if prev-tokens-status (ctos/get-active-theme-ids prev-tokens-status) #{})
+         prev-set-ids (if prev-tokens-status (ctos/get-active-set-ids prev-tokens-status) #{})]
      (-> changes
          (update :redo-changes conj {:type :set-tokens-status :theme-ids theme-ids :set-ids set-ids})
          (update :undo-changes conj {:type :set-tokens-status :theme-ids prev-theme-ids :set-ids prev-set-ids})
