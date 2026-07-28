@@ -81,9 +81,15 @@ export PENPOT_INTERNAL_URI=http://localhost:3450
 # defaulting to ../frontend/resources/public/js (render-wasm.js/.wasm) — which
 # is where render-wasm/build leaves it in devenv. The docker image ships the
 # artifact inside the exporter bundle and points PENPOT_WASM_DIR at it.
-# export PENPOT_WASM_HEADLESS=true
+export PENPOT_WASM_HEADLESS=true
 # export PENPOT_WASM_DIR=../frontend/resources/public/js
+# Per worker, so the process can hold up to POOL_SIZE times this.
 # export PENPOT_WASM_IMAGE_CACHE_MB=256
+# Render worker threads. Each owns a wasm module, so this costs memory, not
+# just cpu. Renders are synchronous, so they run off the event loop.
+# export PENPOT_WASM_POOL_SIZE=2
+# Milliseconds without progress before a worker is treated as wedged.
+# export PENPOT_WASM_RENDER_TIMEOUT=120000
 
 export JAVA_OPTS="\
        -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \

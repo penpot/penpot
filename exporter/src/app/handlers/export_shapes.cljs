@@ -180,11 +180,17 @@
             {:id (:object-id entry)
              :filename (:filename entry)
              :name (:name entry)
-             :suffix (:suffix entry)})]
+             :suffix (:suffix entry)
+             :index (:index entry)})]
 
+    ;; `:index` is the object's position in the *requested* order. Renderers
+    ;; hand objects back as they finish, and partitions run concurrently, so
+    ;; completion order is not submission order — anything order-sensitive
+    ;; (`export-frames` joining a multi-page pdf) has to sort by this.
     (let [xform (comp
                  (map #(assoc % :token token))
-                 (assoc-file-name))]
+                 (assoc-file-name)
+                 (map-indexed (fn [index params] (assoc params :index index))))]
       (->> (sequence xform exports)
            (d/group-by (juxt :scale :type))
            (map second)

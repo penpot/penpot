@@ -85,12 +85,16 @@
                       :cause (ex-message cause)}]
             (redis/pub! topic data)))
 
+        ;; Keyed by `:index` (the frame's position in the request), NOT append
+        ;; order: partitions render concurrently, so objects arrive finished in
+        ;; whatever order they complete. Appending here would hand `pdfunite`
+        ;; its pages shuffled.
         result-cache
-        (atom [])
+        (atom {})
 
         on-object
-        (fn [{:keys [path] :as object}]
-          (let [res (swap! result-cache conj path)]
+        (fn [{:keys [path index]}]
+          (let [res (swap! result-cache assoc index path)]
             (on-progress (count res))))
 
         procs
@@ -98,7 +102,7 @@
              (map #(rd/render (assoc % :is-wasm is-wasm) on-object)))]
 
     (->> (p/all procs)
-         (p/fmap (fn [] @result-cache))
+         (p/fmap (fn [] (->> @result-cache (sort-by key) (mapv val))))
          (p/mcat (partial join-pdf file-id))
          (p/mcat (partial move-file resource))
          (p/fmap (constantly resource))

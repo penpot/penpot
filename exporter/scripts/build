@@ -40,4 +40,4 @@ EOF
 
 chmod +x target/setup;
 
-sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js;
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js ./target/worker/wasm-worker.js;

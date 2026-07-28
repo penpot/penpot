@@ -49,8 +49,18 @@
    [:wasm-headless {:optional true} :boolean]
    [:wasm-dir {:optional true} :string]
    ;; Byte budget (in MB) for the WASM image cache; least-recently-used
-   ;; images are evicted between requests once the store exceeds it.
-   [:wasm-image-cache-mb {:optional true} ::sm/int]])
+   ;; images are evicted between requests once the store exceeds it. Applies
+   ;; per worker, so the process can hold up to pool-size times this.
+   [:wasm-image-cache-mb {:optional true} ::sm/int]
+   ;; Number of render worker threads. Each owns a full wasm module, so this
+   ;; trades memory for concurrency.
+   [:wasm-pool-size {:optional true} ::sm/int]
+   ;; Milliseconds a worker may go without reporting progress before it is
+   ;; considered wedged, terminated and replaced.
+   [:wasm-render-timeout {:optional true} ::sm/int]
+   ;; Escape hatch for the compiled worker bundle path; normally derived from
+   ;; the running script.
+   [:wasm-worker-script {:optional true} :string]])
 
 (def ^:private decode-config
   (sm/decoder schema:config sm/string-transformer))

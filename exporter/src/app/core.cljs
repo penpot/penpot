@@ -13,6 +13,7 @@
    [app.http :as http]
    [app.redis :as redis]
    [app.wasm :as wasm]
+   [app.wasm.pool :as wasm.pool]
    [promesa.core :as p]))
 
 (enable-console-print!)
@@ -25,11 +26,10 @@
           :internal-uri (str (cf/get-internal-uri))
           :version (:full cf/version))
   (when (cf/get :wasm-headless)
-    (l/warn :msg "headless wasm export enabled (experimental)"
-            :hint (str "renders run in-process on a single shared wasm module "
-                       "and are serialized one at a time, so exports do not "
-                       "run concurrently; not recommended for busy instances")
+    (l/info :msg "headless wasm export enabled"
+            :hint "each worker holds its own wasm module and image cache"
             :wasm-dir (wasm/artifact-dir)
+            :workers (wasm.pool/pool-size)
             :image-cache-mb (wasm/image-cache-mb)))
   (p/do!
    (bwr/init)
@@ -48,6 +48,7 @@
    (bwr/stop)
    (redis/stop)
    (http/stop)
+   (wasm.pool/stop)
    (done)))
 
 (.on proc/default "uncaughtException"

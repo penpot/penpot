@@ -1,0 +1,447 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.wasm.render
+  "Headless render pipeline. Runs inside a `app.wasm.worker` thread, never on
+  the main thread: every step below is synchronous wasm work that would
+  otherwise block the node event loop for the whole export.
+
+  Backs `app.renderer.wasm` (the Playwright backends' drop-in alternative),
+  which dispatches here through `app.wasm.pool`. Pipeline per request:
+
+    init module (once) -> fetch shape bundle (backend RPC)
+      -> serialize scene
+      -> provision resources (team/google fonts + fallback fonts + images,
+         enumerated by the host-agnostic app.render-wasm.{resources,fallback-fonts})
+      -> relayout text (real font metrics) -> render each object -> tempfile
+
+  Handles png/jpeg/webp (Skia encodes all three natively) and pdf. `:svg` is
+  routed to the browser backend by `app.renderer` — it needs vector markup, not
+  a raster.
+
+  Each worker owns one wasm module (one design state, one global mem buffer)
+  and handles one request at a time, so nothing here needs to guard against
+  concurrent access."
+  (:require
+   ["node:fs" :as fs]
+   ["undici" :as http]
+   [app.common.data :as d]
+   ;; Required for side effects: these register the transit read handlers and
+   ;; deftype impls the `get-page` response is decoded into.
+   [app.common.geom.matrix]
+   [app.common.geom.point]
+   [app.common.geom.rect]
+   [app.common.logging :as l]
+   [app.common.transit :as t]
+   [app.common.types.fills.impl]
+   [app.common.types.objects-map]
+   [app.common.types.path.impl]
+   [app.common.types.shape]
+   [app.common.uri :as u]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.render-wasm.fallback-fonts :as fbf]
+   [app.render-wasm.resources :as resources]
+   [app.util.mime :as mime]
+   [app.util.shell :as sh]
+   [app.wasm :as wasm]
+   [app.wasm.gfonts :as gfonts]
+   [app.wasm.serialize :as serialize]
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
+
+;; --- module lifecycle (one lazily-initialized instance per worker thread)
+
+(defonce ^:private module* (atom nil))
+
+(defn- ensure-module!
+  []
+  (or @module*
+      (reset! module* (wasm/init!))))
+
+;; --- backend endpoints
+;;
+;; Every fetch below targets the *internal* endpoint (`internal-uri`, falling
+;; back to `public-uri`), same as the Playwright backends and
+;; `handlers.resources`: in a real deployment the exporter reaches the backend
+;; over the container network, not through the public ingress.
+
+(defn- internal-uri
+  "Absolute URI for `path` on the internal (backend) endpoint."
+  [path]
+  (-> (cf/get-internal-uri)
+      (u/ensure-path-slash)
+      (u/join path)
+      (str)))
+
+(defn- rpc-headers
+  "Auth headers for backend RPC calls (management key + bearer)."
+  [token]
+  #js {"Content-Type"  "application/transit+json"
+       "X-Shared-Key"  (str "exporter " cf/management-key)
+       "Authorization" (str "Bearer " token)})
+
+(defn- asset-headers
+  "Auth headers for `/assets/*` downloads. Cookie, not Bearer: those endpoints
+  redirect to a presigned S3/minio URL, and a Bearer Authorization header makes
+  S3 400 (\"multiple authentication types\")."
+  [token]
+  #js {"X-Shared-Key" (str "exporter " cf/management-key)
+       "Cookie"       (str "auth-token=" token)})
+
+;; --- shape bundle fetch (backend RPC)
+
+(defn- fetch-objects
+  "Fetches the page's `objects` map from the backend via the `get-page` RPC,
+  using the same auth the exporter uses elsewhere (management key + bearer)."
+  [{:keys [file-id page-id share-id token]}]
+  (let [headers (rpc-headers token)
+        ;; share-id is an OPTIONAL uuid on the backend; it must be omitted when
+        ;; absent, not sent as nil (nil fails the uuid schema).
+        body    (t/encode-str (cond-> {:file-id file-id
+                                       :page-id page-id}
+                                share-id (assoc :share-id share-id)))
+        uri     (internal-uri "api/rpc/command/get-page")]
+    (l/dbg :hint "wasm render: get-page"
+            :uri uri
+            :file-id (str file-id)
+            :page-id (str page-id))
+    (->> (http/fetch uri #js {:method "POST" :headers headers :body body})
+         (p/mcat (fn [^js resp]
+                   (if (= 200 (.-status resp))
+                     (.text resp)
+                     ;; Surface the backend's actual error body so we can tell
+                     ;; auth (401) from bad params (400/404).
+                     (->> (.text resp)
+                          (p/mcat (fn [resp-body]
+                                    (l/error :hint "wasm render: get-page failed"
+                                             :status (.-status resp)
+                                             :body resp-body)
+                                    (p/rejected (ex-info "get-page failed"
+                                                         {:status (.-status resp)
+                                                          :body resp-body}))))))))
+         (p/fmap t/decode-str)
+         (p/fmap :objects))))
+
+;; --- font resolution
+;;
+;; Custom (team) fonts: the exporter's text serializer keeps their real font
+;; uuid, so `wasm/fonts-for-shape` reports it. We fetch the file's team font
+;; variants once (get-font-variants RPC), map uuid+weight+style -> ttf asset id,
+;; and download the TTF from `assets/by-id/<id>`. Google/builtin fonts still fall
+;; back to the bundled default (they need the gfonts catalog — a later slice).
+
+(defn- fetch-font-variants
+  "Fetches the file's team (custom) font variants via the get-font-variants RPC.
+  Returns a promise of the variant vector (or nil on failure — fonts then just
+  fall back, they don't fail the export)."
+  [{:keys [file-id share-id token]}]
+  (let [headers (rpc-headers token)
+        body    (t/encode-str (cond-> {:file-id file-id}
+                                share-id (assoc :share-id share-id)))
+        uri     (internal-uri "api/rpc/command/get-font-variants")]
+    (->> (http/fetch uri #js {:method "POST" :headers headers :body body})
+         (p/mcat (fn [^js resp]
+                   (if (= 200 (.-status resp))
+                     (.text resp)
+                     (p/resolved nil))))
+         (p/fmap (fn [s] (when s (t/decode-str s))))
+         (p/merr (fn [cause]
+                   (l/warn :hint "wasm render: get-font-variants failed" :cause cause)
+                   (p/resolved nil))))))
+
+(defn- fetch-asset-bytes
+  "Downloads a stored asset (font TTF) by id, returning a promise of an
+  ArrayBuffer (or nil)."
+  [asset-id {:keys [token]}]
+  (let [headers (asset-headers token)
+        uri     (internal-uri (str "assets/by-id/" asset-id))]
+    (->> (http/fetch uri #js {:method "GET" :headers headers})
+         (p/mcat (fn [^js resp]
+                   (if (= 200 (.-status resp))
+                     (.arrayBuffer resp)
+                     (p/resolved nil))))
+         (p/merr (fn [cause]
+                   (l/warn :hint "wasm render: font asset fetch failed"
+                           :asset-id (str asset-id) :cause cause)
+                   (p/resolved nil))))))
+
+(defn- gfont-proxy-url
+  "Rewrites a gstatic ttf url to the local gfonts proxy (mirrors the browser's
+  `google-font-ttf-url`)."
+  [ttf-url]
+  (let [proxy (internal-uri "internal/gfonts/font/")]
+    (str/replace ttf-url "https://fonts.gstatic.com/s/" proxy)))
+
+(defn- fetch-gfont-bytes
+  "Downloads a google font TTF through the local gfonts proxy."
+  [ttf-url]
+  (let [uri (gfont-proxy-url ttf-url)]
+    (->> (http/fetch uri #js {:method "GET"})
+         (p/mcat (fn [^js resp]
+                   (if (= 200 (.-status resp))
+                     (.arrayBuffer resp)
+                     (p/resolved nil))))
+         (p/merr (fn [cause]
+                   (l/warn :hint "wasm render: gfont fetch failed" :url uri :cause cause)
+                   (p/resolved nil))))))
+
+(defn- make-resolve-font
+  "Builds a `resolve-font` fn (family map -> promise of TTF bytes). Tries the
+  file's custom (team) font variants first — matching uuid + weight + style,
+  degrading to uuid+weight then uuid — then the shared google catalog. Returns
+  nil for fonts not found (builtin falls back to the bundled default)."
+  [variants params]
+  (fn [{:keys [id weight style]}]
+    (let [font-uuid (uuid/from-unsigned-parts (aget id 0) (aget id 1) (aget id 2) (aget id 3))
+          style-str (if (zero? style) "normal" "italic")
+          variant   (or (d/seek (fn [v] (and (= (:font-id v) font-uuid)
+                                             (= (:font-weight v) weight)
+                                             (= (name (:font-style v)) style-str)))
+                                variants)
+                        (d/seek (fn [v] (and (= (:font-id v) font-uuid)
+                                             (= (:font-weight v) weight)))
+                                variants)
+                        (d/seek (fn [v] (= (:font-id v) font-uuid)) variants))]
+      (if-let [ttf-id (:ttf-file-id variant)]
+        (fetch-asset-bytes ttf-id params)
+        (if-let [gurl (gfonts/resolve-ttf-url font-uuid weight style)]
+          (fetch-gfont-bytes gurl)
+          (p/resolved nil))))))
+
+;; --- fallback fonts (emoji + per-script noto fonts)
+;;
+;; Emoji and non-latin scripts render through fallback families in the wasm
+;; font store, not through any span's font family — so `wasm/fonts-for-shape`
+;; never reports them and the per-object provisioning above never uploads
+;; them. The browser workspace uploads them as a side effect of serializing
+;; text (`add-emoji-font` / `add-noto-fonts`), which is why client-side single
+;; exports show emoji/CJK while headless exports dropped them. Which fonts a
+;; scene needs is computed by the host-agnostic
+;; `app.render-wasm.fallback-fonts` (same data the browser uses).
+;; `clear-fonts!` resets the store every request, so this must run per
+;; request; the TTF bytes are cached per font for the process lifetime.
+
+(defn- scene-fallback-fonts
+  "Fallback font descriptors needed by the scene's text content. Deduped:
+  several languages share a noto family (`gfont-noto-sans` covers cyrillic,
+  greek, devanagari, latin-ext and vietnamese), and the descriptors are
+  provisioned concurrently — without this they'd all miss the byte cache at
+  once and download the same TTF several times."
+  [scene]
+  (let [texts  (for [shape (vals scene)
+                     :when (= :text (:type shape))
+                     node  (or (some->> (:content shape) (tree-seq :children :children)) [])
+                     :let  [text (:text node)]
+                     :when (string? text)]
+                 text)
+        emoji? (boolean (some fbf/contains-emoji? texts))
+        langs  (reduce fbf/collect-used-languages #{} texts)]
+    (distinct
+     (cond-> (fbf/add-noto-fonts [] langs)
+       emoji? (fbf/add-emoji-font)))))
+
+(defonce ^:private fallback-font-bytes* (atom {}))
+
+(defn- fetch-fallback-font-bytes
+  "Downloads (and caches for the process lifetime) one fallback font's TTF."
+  [{:keys [font-id weight style]}]
+  (if-let [bytes (get @fallback-font-bytes* font-id)]
+    (p/resolved bytes)
+    (let [font-uuid (gfonts/gfont-id->uuid font-id)
+          ttf-url   (some-> font-uuid (gfonts/resolve-ttf-url weight style))]
+      (if ttf-url
+        (->> (fetch-gfont-bytes ttf-url)
+             (p/fmap (fn [buf]
+                       (when buf (swap! fallback-font-bytes* assoc font-id buf))
+                       buf)))
+        (p/resolved nil)))))
+
+(defn- provision-fallback-fonts!
+  [scene]
+  (->> (scene-fallback-fonts scene)
+       (map (fn [{:keys [font-id weight style is-emoji is-fallback] :as font}]
+              (if-let [font-uuid (gfonts/gfont-id->uuid font-id)]
+                (->> (fetch-fallback-font-bytes font)
+                     (p/fmap (fn [buf]
+                               (if buf
+                                 (wasm/store-font! {:id (uuid/get-u32 font-uuid)
+                                                    :weight weight
+                                                    :style style
+                                                    :emoji? (boolean is-emoji)
+                                                    :fallback? (boolean is-fallback)}
+                                                   buf)
+                                 (l/warn :hint "wasm render: fallback font unavailable"
+                                         :font-id font-id)))))
+                (p/resolved nil))))
+       (p/all)))
+
+;; --- image resolution
+;;
+;; Image fills reference file-media ids. We collect them from the scene, fetch
+;; the encoded bytes from `assets/by-file-media-id/<id>`, and hand them to
+;; `_store_image` (Skia decodes them; no WebGL). Keyed by media uuid, so this is
+;; done once per request rather than per rendered object.
+
+(defn- fetch-file-media-bytes
+  "Downloads an image fill's encoded bytes by file-media id."
+  [media-id {:keys [token]}]
+  (let [headers (asset-headers token)
+        uri     (internal-uri (str "assets/by-file-media-id/" media-id))]
+    (->> (http/fetch uri #js {:method "GET" :headers headers})
+         (p/mcat (fn [^js resp]
+                   (if (= 200 (.-status resp))
+                     (.arrayBuffer resp)
+                     (do
+                       (l/warn :hint "wasm render: image fetch non-200"
+                               :media-id (str media-id)
+                               :uri uri
+                               :status (.-status resp))
+                       (p/resolved nil)))))
+         (p/merr (fn [cause]
+                   (l/warn :hint "wasm render: image fetch failed"
+                           :media-id (str media-id) :uri uri :cause cause)
+                   (p/resolved nil))))))
+
+(defn- provision-images!
+  "Fetches and stores every image the scene references — shape fills, stroke
+  image fills, and text-span image fills (enumerated by the host-agnostic
+  `app.render-wasm.resources`, same source the workspace uses). Images the
+  module already holds are skipped: unlike fonts, the image store is not
+  reset per request, so repeated exports of the same file reuse them.
+  NOTE: that also means the store grows with every distinct image the
+  process ever exports; if exporter memory becomes a problem, add an
+  eviction policy on the Rust side rather than clearing per request."
+  [scene params]
+  (let [all-ids (resources/scene-image-ids scene)
+        new-ids (remove wasm/image-cached? all-ids)]
+    (l/dbg :hint "wasm render: provisioning images"
+            :total (count all-ids)
+            :cached (- (count all-ids) (count new-ids)))
+    (->> new-ids
+         (map (fn [image-id]
+                (->> (fetch-file-media-bytes image-id params)
+                     (p/fmap (fn [buf]
+                               (if buf
+                                 (do
+                                   (l/dbg :hint "wasm render: image stored"
+                                           :media-id (str image-id)
+                                           :bytes (.-byteLength ^js buf))
+                                   (wasm/store-image! image-id buf))
+                                 (l/warn :hint "wasm render: image unavailable"
+                                         :media-id (str image-id))))))))
+         (p/all))))
+
+(defn- relayout-text!
+  "Recomputes layout for every text shape in the scene. Called after fonts are
+  provisioned so metrics use the real fonts (serialize-time layout used the
+  fallback)."
+  [scene]
+  (doseq [shape (vals scene)
+          :when (= :text (:type shape))]
+    (wasm/update-text-layout! (:id shape))))
+
+;; --- render
+
+(defn- render-object-bytes
+  [type id scale]
+  (if (= :pdf type)
+    (let [bytes (wasm/render-shape-pdf id scale)]
+      (l/dbg :hint "PDF generated via Skia (render-wasm headless)"
+             :object-id (str id)
+             :backend "skia-wasm"
+             :bytes (.-length bytes))
+      bytes)
+    ;; The export type doubles as the encoder format: Skia encodes png/jpeg/webp
+    ;; natively, so — unlike the Playwright backend — webp needs no imagemagick
+    ;; conversion pass. `:svg` never reaches here; it needs vector markup, so
+    ;; `app.renderer` keeps it on the browser path.
+    (wasm/render-shape-raster id scale type)))
+
+;; NOTE: `handlers.export-shapes/prepare-exports` splits an export into
+;; partitions of 50 objects, and each partition arrives here as its own
+;; request. Since the unit of work is the partition, every one of them
+;; re-fetches and re-serializes the *whole* page scene, and re-provisions its
+;; fonts. Exporting 200 frames therefore pays that setup 4x — and with the pool
+;; dispatching partitions round-robin, those 4 setups now land on 4 different
+;; workers, so none of them share a warm image cache either. Worth revisiting
+;; if setup cost shows up in practice.
+
+(defn render
+  "Runs one export request to completion. `emit-object!` is called once per
+  rendered object with the object map plus a `:path` to its tempfile; it may
+  return a promise, which is awaited before the next object renders."
+  [{:keys [scale type objects] :as params} emit-object!]
+  (l/dbg :hint "wasm render: start"
+         :type type
+         :scale scale
+         :objects (count objects)
+         :file-id (str (:file-id params))
+         :page-id (str (:page-id params)))
+  (->> (ensure-module!)
+       (p/mcat (fn [_] (fetch-objects params)))
+       (p/mcat (fn [scene]
+                 (l/dbg :hint "wasm render: scene fetched" :shapes (count scene))
+                 (serialize/serialize-scene! scene)
+                 (l/dbg :hint "wasm render: scene serialized")
+                 ;; Reset the shared module's font store so fonts from a previous
+                 ;; request don't accumulate / leak into this one.
+                 (wasm/clear-fonts!)
+                 ;; Fetch the file's custom (team) font variants once, provision
+                 ;; every referenced image once, then resolve/provision the
+                 ;; deduped font set for all rendered objects.
+                 (->> (p/all [(fetch-font-variants params)
+                              (provision-images! scene params)
+                              (provision-fallback-fonts! scene)])
+                      (p/mcat
+                       (fn [[variants _]]
+                         (let [resolve-font (make-resolve-font (or variants []) params)]
+                           ;; Provision every object's fonts BEFORE rendering, so
+                           ;; the text relayout below sees real font metrics.
+                           ;; Deduped across objects: a 50-frame partition that
+                           ;; shares one family downloads its TTF once, not 50
+                           ;; times.
+                           (wasm/provision-fonts! (map :id objects) resolve-font))))
+                      (p/mcat
+                       (fn [_]
+                         ;; Serialize-time layout used the fallback font (fonts
+                         ;; weren't uploaded yet); recompute now that they are, or
+                         ;; text metrics/line breaks are wrong.
+                         (relayout-text! scene)
+                         (p/run
+                          (fn [{:keys [id] :as object}]
+                            (let [bytes (render-object-bytes type id scale)
+                                  path  (sh/tempfile :prefix "penpot.tmp.wasm."
+                                                     :suffix (mime/get-extension type))]
+                              (l/dbg :hint "wasm render: object rendered"
+                                      :object-id (str id) :bytes (.-length bytes))
+                              (fs/writeFileSync path bytes)
+                              ;; `emit-object!` may return a plain value or a
+                              ;; promise; `p/do` normalizes both to a thenable so
+                              ;; `p/mcat` doesn't throw "expected thenable".
+                              (p/do (emit-object! (assoc object :path path)))))
+                          objects))))))
+       (p/fmap (fn [result]
+                 ;; Trim the image store AFTER the request (never mid-render, so
+                 ;; an image can't disappear under a running export). Images the
+                 ;; next request needs again are simply re-provisioned.
+                 (let [evicted (wasm/evict-images! (wasm/image-cache-mb))]
+                   (when (pos? evicted)
+                     (l/info :hint "wasm render: evicted cached images" :count evicted)))
+                 result))
+       (p/merr (fn [cause]
+                 ;; undici hides the real network failure (ECONNREFUSED, a TLS
+                 ;; rejection, ...) in `.cause`, and without it every failure
+                 ;; reads as a bare "fetch failed".
+                 (l/error :hint "wasm render: failed"
+                          :reason (some-> (unchecked-get cause "cause")
+                                          (unchecked-get "code"))
+                          :cause cause)
+                 ;; A panic/abort can leave the module's buffer allocated or the
+                 ;; wasm instance aborted; drop it so the next request rebuilds a
+                 ;; fresh module instead of inheriting the bad state.
+                 (reset! module* nil)
+                 (p/rejected cause)))))

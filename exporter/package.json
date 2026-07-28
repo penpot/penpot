@@ -30,9 +30,9 @@
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
-    "watch:app": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch main",
+    "watch:app": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch main wasm-worker",
     "watch": "pnpm run watch:app",
-    "build:app": "clojure -M:dev:shadow-cljs release main",
+    "build:app": "clojure -M:dev:shadow-cljs release main wasm-worker",
     "build": "pnpm run clear:shadow-cache && pnpm run build:app",
     "fmt": "cljfmt fix --parallel=true src/",
     "check-fmt": "cljfmt check --parallel=true src/",
