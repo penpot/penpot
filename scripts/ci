@@ -55,7 +55,7 @@ declare -A FMT_CHECK_CMD=(
 )
 
 declare -A FMT_FIX_CMD=(
-  [frontend]="pnpm run fmt"
+  [frontend]="pnpm run fmt:clj && pnpm run fmt:js && pnpm run fmt:scss"
   [backend]="pnpm run fmt"
   [common]="pnpm run fmt:clj && pnpm run fmt:js"
   [render-wasm]="cargo fmt"
@@ -63,6 +63,17 @@ declare -A FMT_FIX_CMD=(
   [mcp]="pnpm run fmt"
   [plugins]="pnpm run format"
   [library]="pnpm run fmt"
+)
+
+declare -A PAREN_REPAIR_CMD=(
+  [frontend]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [backend]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [common]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [render-wasm]=""
+  [exporter]="find src -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [mcp]=""
+  [plugins]=""
+  [library]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
 )
 
 # Default options
@@ -180,6 +191,9 @@ run_module() {
           cmd="${FMT_CHECK_CMD[$module]:-}"
         fi
         ;;
+      paren-repair)
+        cmd="${PAREN_REPAIR_CMD[$module]:-}"
+        ;;
     esac
 
     if ! run_task "$module" "$task" "$cmd"; then
@@ -275,6 +289,7 @@ OPTIONS:
   --fmt             Run format check only
   --no-fmt          Skip format check
   --fix             Run format fix instead of check
+  --paren-repair    Fix delimiter errors in Clojure/CLJS files
   --fail-fast       Stop on first failure
   --verbose         Show command output on failure (default)
   --quiet           Suppress command output
@@ -287,6 +302,8 @@ EXAMPLES:
   $(basename "$0") --all --no-test           # Run lint and fmt on all modules
   $(basename "$0") --lint common             # Run only lint on common
   $(basename "$0") --fix frontend            # Fix formatting in frontend
+  $(basename "$0") --paren-repair frontend   # Fix delimiter errors in frontend
+  $(basename "$0") --paren-repair --all      # Fix delimiter errors in all Clojure modules
   $(basename "$0") --all --fail-fast --verbose
 EOF
   exit 0
@@ -328,6 +345,10 @@ main() {
         ;;
       --no-fmt)
         TASKS=("${TASKS[@]/fmt/}")
+        shift
+        ;;
+      --paren-repair)
+        TASKS=("paren-repair")
         shift
         ;;
       --fix)
