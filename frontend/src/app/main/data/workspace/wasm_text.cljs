@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
@@ -159,7 +160,7 @@
        (watch [_ state stream]
          (wrf/start! reflow-task)
          (if (= (::resize-wasm-text-debounce-event state) cur-event)
-           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+           (let [stopper (->> stream (rx/filter (ptk/type? ::dw/finalize-workspace)))]
              (rx/concat
               (rx/merge
                (->> stream
@@ -179,7 +180,7 @@
               ;; pending until the resize is applied. All exact tasks in the
               ;; batch are retained in state and finished by the cleanup.
               (rx/of (fn [state]
-                       (run! wrf/finish! (::resize-wasm-text-reflow-tasks state))
+                       (wrf/finish-tasks! (::resize-wasm-text-reflow-tasks state))
                        (dissoc state
                                ::resize-wasm-text-debounce-ids
                                ::resize-wasm-text-reflow-tasks
@@ -198,15 +199,15 @@
              content (dm/get-in objects [id :content])
              fonts   (wasm.fonts/get-content-fonts content)
 
-             fonts-loaded?
+             fonts-ready?
              (->> fonts
                   (every?
                    (fn [font]
                      (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))
+                       (wasm.fonts/font-ready? font-data)))))
 
              resize-wasm-stream
-             (if fonts-loaded?
+             (if fonts-ready?
                (let [pass-opts (when (or (some? undo-group) (some? undo-id))
                                  (cond-> {}
                                    (some? undo-group) (assoc :undo-group undo-group)
@@ -232,15 +233,32 @@
      (watch [_ state stream]
        (let [resize-stream
              (->> (rx/from ids)
-                  (rx/map #(resize-wasm-text-debounce % opts)))]
+                  (rx/map #(resize-wasm-text-debounce % opts)))
+
+             buffer-finished-stream
+             (->> (rx/merge
+                   (->> stream
+                        (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+                        (rx/map (constantly :commit)))
+                   ;; Let a buffered commit beat the stop signal.
+                   (->> stream
+                        (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-stop))
+                        (rx/observe-on :async)
+                        (rx/map (constantly :stop)))
+                   (->> stream
+                        (rx/filter (ptk/type? ::dw/finalize-workspace))
+                        (rx/map (constantly :finalize))))
+                  (rx/take 1))]
          (if (::dwsh/update-shapes-buffer state)
            ;; If we're in the middle of a token propagation we wait until is finished to
            ;; recalculate the text sizes. The shapes stay pending for that whole wait,
            ;; since the per-shape debounce only marks them once dispatched.
            (wrf/with-pending
              :text-resize ids
-             (->> stream
-                  (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
-                  (rx/take 1)
-                  (rx/mapcat (constantly resize-stream))))
+             (->> buffer-finished-stream
+                  (rx/mapcat
+                   (fn [reason]
+                     (if (= reason :finalize)
+                       (rx/empty)
+                       resize-stream)))))
            resize-stream))))))

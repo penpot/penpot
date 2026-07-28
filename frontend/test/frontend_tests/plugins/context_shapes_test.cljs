@@ -11,9 +11,11 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.reflow :as pwrf]
    [app.plugins.shape :as shape]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -445,6 +447,24 @@
     (set! st/stream (ptk/input-stream test-store))
     test-store))
 
+(t/deftest test-update-shapes-invokes-update-function-once
+  (let [store    (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                  {:renderer :svg})
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        ^js ctx  (api/create-context zero-id)
+        ^js rect (.createRectangle ctx)
+        id       (obj/get rect "$id")
+        calls    (atom 0)]
+    (ptk/emit! store
+               (dwsh/update-shapes
+                [id]
+                (fn [shape]
+                  (swap! calls inc)
+                  (assoc shape :opacity 0.5))))
+    (t/is (= 1 @calls) "the update function ran once for the committed shape")
+    (t/is (= 0.5 (.-opacity rect)) "the single computed result was committed")))
+
 (t/deftest test-wait-for-layout-update-no-pending
   ;; When nothing is pending the promise resolves immediately via the fast path
   ;; (the behavior-subject replays the empty map on subscribe).
@@ -458,6 +478,209 @@
           (.catch (fn [err]
                     (t/is false (str "unexpected rejection: " err))
                     (done)))))))
+
+(t/deftest test-create-text-bridges-dom-measurement
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                 {:renderer :svg})]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (ptk/emit! store (dwtxt/initialize-text-reflow))
+      (let [^js ctx  (api/create-context zero-id)
+            ^js text (.createText ctx "Measure me")
+            id       (obj/get text "$id")]
+        (-> (.waitForLayoutUpdate ctx 20)
+            (.then #(t/is false "createText resolved before DOM measurement started"))
+            (.catch #(t/is true "createText stayed bridged to DOM measurement"))
+            (.then (fn []
+                     (let [task (wrf/start! :text-measure [id])]
+                       (wrf/finish! task))
+                     (.waitForLayoutUpdate ctx 100)))
+            (.then #(t/is true "the bridge drained after measurement started"))
+            (.catch #(t/is false "the createText bridge did not drain"))
+            (.then (fn []
+                     (ptk/emit! store (dwtxt/finalize-text-reflow))
+                     (done))))))))
+
+(t/deftest test-dom-position-data-stays-pending-until-commit
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                 {:renderer :svg})]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (ptk/emit! store (dwtxt/initialize-text-reflow))
+      (let [^js ctx  (api/create-context zero-id)
+            ^js text (.createText ctx "Position me")
+            id       (obj/get text "$id")
+            task     (wrf/start! :text-measure [id])
+            position-data
+            [{:x 10 :y 20 :width 30 :height 12}]]
+        (wrf/finish! task)
+        (-> (.waitForLayoutUpdate text 100)
+            (.then
+             (fn []
+               (ptk/emit! store (dwtxt/update-position-data id position-data))
+               (-> (.waitForLayoutUpdate text 20)
+                   (.then (constantly false))
+                   (.catch (constantly true)))))
+            (.then
+             (fn [timed-out?]
+               (t/is timed-out?
+                     "position data stayed pending across its debounce")
+               (.waitForLayoutUpdate text 500)))
+            (.then
+             (fn []
+               (let [bounds (.-textBounds text)]
+                 (t/is (= 30 (obj/get bounds "width"))
+                       "the wait exposed the committed text bounds"))
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (done)))
+            (.catch
+             (fn [cause]
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (t/is false (str "position-data wait did not settle: " cause))
+               (done))))))))
+
+(t/deftest test-buffered-text-update-bridges-dom-measurement
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                 {:renderer :svg})]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (ptk/emit! store (dwtxt/initialize-text-reflow))
+      (let [^js ctx  (api/create-context zero-id)
+            ^js text (.createText ctx "Before")
+            id       (obj/get text "$id")
+            task     (wrf/start! :text-measure [id])]
+        (wrf/finish! task)
+        (-> (.waitForLayoutUpdate text 100)
+            (.then
+             (fn []
+               (ptk/emit! store (dwsh/update-shapes-buffer-start))
+               (set! (.-characters text) "After")
+               (ptk/emit! store (dwsh/update-shapes-buffer-stop))
+               (.waitForLayoutUpdate text 20)))
+            (.then #(t/is false "buffered update resolved before DOM measurement"))
+            (.catch #(t/is true "buffered update stayed bridged to DOM measurement"))
+            (.then
+             (fn []
+               (let [task (wrf/start! :text-measure [id])]
+                 (wrf/finish! task))
+               (.waitForLayoutUpdate text 100)))
+            (.then #(t/is true "the buffered update bridge drained"))
+            (.catch #(t/is false "the buffered update bridge did not drain"))
+            (.then
+             (fn []
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (done))))))))
+
+(t/deftest test-wasm-grow-type-wait-observes-its-resize
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1))]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (ptk/emit! store (dwtxt/initialize-text-reflow))
+      (let [^js ctx  (api/create-context zero-id)
+            ^js text (.createText ctx "Resize after grow type")]
+        (-> (.waitForLayoutUpdate text 500)
+            (.then
+             (fn []
+               (set! (.-growType text) "fixed")
+               (.waitForLayoutUpdate text 500)))
+            (.then
+             (fn []
+               (t/is (= "fixed" (.-growType text))
+                     "the grow-type bridge drained after its WASM resize")
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (done)))
+            (.catch
+             (fn [cause]
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (t/is false (str "grow-type wait did not settle: " cause))
+               (done))))))))
+
+(t/deftest test-cloned-text-bridges-dom-measurement
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                 {:renderer :svg})]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (ptk/emit! store (dwtxt/initialize-text-reflow))
+      (let [^js ctx  (api/create-context zero-id)
+            ^js text (.createText ctx "Clone me")
+            id       (obj/get text "$id")
+            task     (wrf/start! :text-measure [id])]
+        (wrf/finish! task)
+        (-> (.waitForLayoutUpdate text 100)
+            (.then
+             (fn []
+               (let [^js clone (.clone text)
+                     clone-id  (obj/get clone "$id")]
+                 (-> (.waitForLayoutUpdate clone 20)
+                     (.then #(t/is false "clone resolved before DOM measurement"))
+                     (.catch #(t/is true "clone stayed bridged to DOM measurement"))
+                     (.then
+                      (fn []
+                        (let [task (wrf/start! :text-measure [clone-id])]
+                          (wrf/finish! task))
+                        (.waitForLayoutUpdate clone 100)))))))
+            (.then #(t/is true "the cloned text bridge drained"))
+            (.catch #(t/is false "the cloned text bridge did not drain"))
+            (.then
+             (fn []
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (done))))))))
+
+(t/deftest test-fixed-text-resize-bridges-dom-measurement
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                 {:renderer :svg})]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (ptk/emit! store (dwtxt/initialize-text-reflow))
+      (let [^js ctx  (api/create-context zero-id)
+            ^js text (.createText ctx "Resize me")
+            id       (obj/get text "$id")
+            task     (wrf/start! :text-measure [id])]
+        (wrf/finish! task)
+        (-> (.waitForLayoutUpdate text 100)
+            (.then
+             (fn []
+               ;; Finish the grow-type update before resizing.
+               (set! (.-growType text) "fixed")
+               (let [task (wrf/start! :text-measure [id])]
+                 (wrf/finish! task))
+               (.waitForLayoutUpdate text 100)))
+            (.then
+             (fn []
+               (.resize text 240 80)
+               ;; Turn only this short wait into a boolean.
+               (-> (.waitForLayoutUpdate text 20)
+                   (.then (fn [] false))
+                   (.catch (fn [_] true)))))
+            (.then
+             (fn [timed-out?]
+               (t/is timed-out?
+                     "fixed text resize stayed bridged to DOM measurement")
+               (let [task (wrf/start! :text-measure [id])]
+                 (wrf/finish! task))
+               (.waitForLayoutUpdate text 100)))
+            (.then
+             (fn []
+               (t/is true "the resize bridge drained after measurement")
+               ;; Match the DOM renderer's 0.001 geometry tolerance.
+               (.resize text 240.0005 80)
+               (.waitForLayoutUpdate text 100)))
+            (.then
+             (fn []
+               (t/is true "a sub-tolerance resize opened no DOM bridge")
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (done)))
+            (.catch
+             (fn [cause]
+               (ptk/emit! store (dwtxt/finalize-text-reflow))
+               (t/is false (str "unexpected resize bridge rejection: " cause))
+               (done))))))))
 
 (t/deftest test-wait-for-layout-update-pending
   ;; While a shape is pending the context promise stays unresolved; it resolves
@@ -584,6 +807,54 @@
               20))
            20))))))
 
+(t/deftest test-wait-for-layout-update-ancestor
+  ;; A shape wait also covers layout on its parents.
+  (t/async done
+    (let [store (ths/setup-store (cthf/sample-file :file1 :page-label :page1))]
+      (set! st/state store)
+      (set! st/stream (ptk/input-stream store))
+      (let [^js ctx   (api/create-context zero-id)
+            ^js board (.createBoard ctx)
+            ^js rect  (.createRectangle ctx)]
+        (.appendChild board rect)
+        (let [board-id (obj/get board "$id")
+              task     (wrf/start! :layout [board-id])
+              resolved (atom false)]
+          (-> (.waitForLayoutUpdate rect)
+              (.then (fn [] (reset! resolved true)))
+              (.catch (fn [err]
+                        (t/is false (str "unexpected rejection: " err)))))
+          (js/setTimeout
+           (fn []
+             (t/is (false? @resolved) "child wait must block on a pending ancestor")
+             (wrf/finish! task)
+             (js/setTimeout
+              (fn []
+                (t/is (true? @resolved) "resolves once the ancestor drains")
+                (done))
+              20))
+           20))))))
+
+(t/deftest test-shape-wait-observes-file-sync
+  (t/async done
+    (let [file  (cthf/sample-file :file1 :page-label :page1)
+          store (ths/setup-store file)
+          _     (set! st/state store)
+          _     (set! st/stream (ptk/input-stream store))
+          ^js ctx   (api/create-context zero-id)
+          ^js shape (.createRectangle ctx)
+          task      (wrf/start! :sync-file [(:id file)])]
+      (-> (.waitForLayoutUpdate shape 20)
+          (.then #(t/is false "shape wait ignored its pending file sync"))
+          (.catch
+           (fn []
+             (t/is true "shape wait remained pending for its file sync")
+             (wrf/finish! task)
+             (.waitForLayoutUpdate shape 100)))
+          (.then #(t/is true "shape wait drained after the file sync"))
+          (.catch #(t/is false "shape wait did not drain its file sync"))
+          (.then (fn [] (done)))))))
+
 (t/deftest test-wait-for-layout-update-invalid-timeout
   ;; A non-numeric or non-positive timeout is an invalid argument. The method
   ;; always hands back a promise and rejects it, whatever the plugin's
@@ -603,6 +874,7 @@
                 (rejected? (.waitForLayoutUpdate ctx -5))
                 (rejected? (.waitForLayoutUpdate ctx js/NaN))
                 (rejected? (.waitForLayoutUpdate ctx js/Infinity))
+                (rejected? (.waitForLayoutUpdate ctx 2147483648))
                 (rejected? (.waitForLayoutUpdate shape "soon"))])
           (.then (fn [results]
                    (t/is (every? true? (array-seq results))
@@ -661,7 +933,7 @@
           resolved (atom false)]
       (ptk/emit! store (dwsh/update-shapes-buffer-start))
       (ptk/emit! store (dwwt/resize-wasm-text-all [id]))
-      (-> (wrf/wait-for-layout-update [id] nil)
+      (-> (pwrf/wait-for-layout-update [id] nil)
           (.then (fn [] (reset! resolved true)))
           (.catch (fn [err]
                     (t/is false (str "unexpected rejection: " err)))))

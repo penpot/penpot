@@ -40,6 +40,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.pages :as-alias dwpg]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.specialized-panel :as dwsp]
@@ -1129,6 +1130,16 @@
 (def valid-asset-types
   #{:colors :components :typographies})
 
+(defn- sync-file-pending-ids
+  [file-id changes]
+  ;; Track the file and every changed page object.
+  (into #{file-id}
+        (comp
+         (filter :page-id)
+         (keep :id)
+         (remove uuid/zero?))
+        (:redo-changes changes)))
+
 (defn set-updating-library
   [updating?]
   (ptk/reify ::set-updating-library
@@ -1137,6 +1148,32 @@
       (if updating?
         (assoc state :updating-library true)
         (dissoc state :updating-library)))))
+
+(defn- sync-file-frontend-events
+  [file-id changes updated-frames undo-group]
+  (rx/concat
+   (rx/of (set-updating-library false)
+          (ntf/hide {:tag :sync-dialog}))
+   (when (seq (:redo-changes changes))
+     (rx/of (dch/commit-changes changes)))
+   (when-not (empty? updated-frames)
+     (let [frames-by-page (group-by :page-id updated-frames)]
+       (rx/merge
+        ;; Emit one layout/update event for each page.
+        (->> frames-by-page
+             (map (fn [[page-id frames]]
+                    (ptk/data-event :layout/update
+                                    {:page-id page-id
+                                     :ids (map :id frames)
+                                     :undo-group undo-group})))
+             (rx/from))
+        (->> (rx/from updated-frames)
+             (rx/mapcat
+              (fn [shape]
+                (rx/of
+                 (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                 (when-not (= (:frame-id shape) uuid/zero)
+                   (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))))
 
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
@@ -1196,35 +1233,20 @@
                updated-frames  (->> changes
                                     :redo-changes
                                     (mapcat find-frames)
-                                    distinct)]
+                                    distinct)
+
+               pending-ids     (sync-file-pending-ids file-id changes)
+
+               frontend-sync
+               (sync-file-frontend-events
+                file-id changes updated-frames undo-group)]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                               (:redo-changes changes)
                                                               ldata))
            (rx/concat
-            (rx/of (set-updating-library false)
-                   (ntf/hide {:tag :sync-dialog}))
-            (when (seq (:redo-changes changes))
-              (rx/of (dch/commit-changes changes)))
-            (when-not (empty? updated-frames)
-              (let [frames-by-page (->> updated-frames
-                                        (group-by :page-id))]
-                (rx/merge
-                 ;; Emit one layout/update event for each page
-                 (rx/from
-                  (map (fn [[page-id frames]]
-                         (ptk/data-event :layout/update
-                                         {:page-id page-id
-                                          :ids (map :id frames)
-                                          :undo-group undo-group}))
-                       frames-by-page))
-                 (->> (rx/from updated-frames)
-                      (rx/mapcat
-                       (fn [shape]
-                         (rx/of
-                          (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                          (when-not (= (:frame-id shape) uuid/zero)
-                            (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))
+            ;; Keep the sync pending until its layout work starts.
+            (wrf/with-pending :sync-file pending-ids frontend-sync)
 
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the
@@ -1400,66 +1422,88 @@
                  (rx/buffer 2 1)
                  (rx/map first))
 
-            changes-s
+            ;; Barriers open before async inspection and close after detection.
+            pending-sync-barriers* (atom #{})
+
+            start-sync-barrier
+            (fn [{:keys [file-id save-undo?] :as event}]
+              (let [task (when (and save-undo? (uuid? file-id))
+                           (wrf/start! :sync-file [file-id]))]
+                (when task
+                  (swap! pending-sync-barriers* conj task))
+                [event task]))
+
+            finish-sync-barrier!
+            (fn [task]
+              (when task
+                (wrf/finish! task)
+                (swap! pending-sync-barriers* disj task)))
+
+            commits-s
             (->> stream
                  (rx/filter dch/commit?)
                  (rx/map deref)
                  (rx/filter #(= :local (:source %)))
+                 ;; Translation commits never propagate component changes.
+                 (rx/filter (complement :translation?))
+                 ;; Keep waits pending while component changes are checked.
+                 (rx/map start-sync-barrier)
                  (rx/observe-on :async))
 
-            check-changes
+            get-component-events
             (fn [[event old-data]]
-              (cond
-                (nil? old-data)
-                (rx/empty)
+              (let [{:keys [file-id changes save-undo? undo-group]} event
+                    changed-components
+                    (when (and old-data
+                               (or (nil? file-id) (= file-id (:id old-data))))
+                      (into #{}
+                            (mapcat (partial ch/components-changed old-data))
+                            changes))]
+                (cond
+                  (empty? changed-components)
+                  (rx/empty)
 
-                (:translation? event)
-                (rx/empty)
+                  save-undo?
+                  (do
+                    (log/info :hint "detected component changes"
+                              :ids (map str changed-components)
+                              :undo-group undo-group)
+                    (->> (rx/from changed-components)
+                         (rx/map #(component-changed
+                                   % (:id old-data) undo-group))))
 
-                :else
-                (let [{:keys [file-id changes save-undo? undo-group]} event
+                  :else
+                  ;; Undos only bump :modified-at.
+                  (->> (rx/from changed-components)
+                       (rx/map touch-component)))))
 
-                      changed-components
-                      (when (or (nil? file-id) (= file-id (:id old-data)))
-                        (->> changes
-                             (map (partial ch/components-changed old-data))
-                             (reduce into #{})))]
-
-                  (if (d/not-empty? changed-components)
-                    (if save-undo?
-                      (do (log/info :hint "detected component changes"
-                                    :ids (map str changed-components)
-                                    :undo-group undo-group)
-                          (->> (rx/from changed-components)
-                               (rx/map #(component-changed % (:id old-data) undo-group))))
-                      ;; save-undo? false (undos): just bump :modified-at
-                      (->> (rx/from changed-components)
-                           (rx/map touch-component)))
-
-                    (rx/empty)))))
-
-            changes-s
-            (->> changes-s
+            component-events-s
+            (->> commits-s
                  (rx/with-latest-from workspace-buffer-s)
-                 (rx/mapcat check-changes)
+                 (rx/mapcat
+                  (fn [[[event task] old-data]]
+                    (->> (get-component-events [event old-data])
+                         (rx/finalize #(finish-sync-barrier! task)))))
+                 ;; Close barriers left behind when the page shuts down.
+                 (rx/finalize #(wrf/finish-tasks! @pending-sync-barriers*))
                  (rx/share))
 
             notifier-s
-            (->> changes-s
+            (->> component-events-s
                  (rx/debounce 5000)
                  (rx/tap #(log/trc :hint "buffer initialized")))]
 
         (when (or (contains? cf/flags :component-thumbnails)
                   (features/active-feature? state "render-wasm/v1"))
           (->> (rx/merge
-                changes-s
+                component-events-s
 
                 ;; WASM only: render the thumbnail on every component
                 ;; change so single edits (fill, etc.) update instantly.
                 ;; Non-WASM persists on every render, so it stays on the
                 ;; debounced path below to avoid per-edit backend posts.
                 (if (features/active-feature? state "render-wasm/v1")
-                  (->> changes-s
+                  (->> component-events-s
                        (rx/filter (ptk/type? ::component-changed))
                        (rx/map deref)
                        (rx/map render-component-thumbnail-event))
@@ -1467,7 +1511,7 @@
 
                 ;; Persist to the server in batches, 5s after the user
                 ;; goes idle.
-                (->> changes-s
+                (->> component-events-s
                      (rx/filter (ptk/type? ::component-changed))
                      (rx/map deref)
                      (rx/buffer-until notifier-s)
@@ -1476,7 +1520,7 @@
                                (update-component-thumbnail component-id file-id))))
 
                 ;; Undo/redo emit touch-component instead.
-                (->> changes-s
+                (->> component-events-s
                      (rx/filter (ptk/type? ::touch-component))
                      (rx/map deref)
                      (rx/map render-component-thumbnail-event)))
@@ -1631,5 +1675,3 @@
            (rx/mapcat (fn [_]
                         (rp/cmd! :get-file-libraries {:file-id file-id})))
            (rx/map (partial cleanup-unlinked-libraries file-id))))))
-
-
