@@ -58,16 +58,27 @@
         typographies (count (:typographies data))
         components   (count (->> (ctkl/components-seq data)
                                  (remove #(cfv/is-secondary-variant? % data))))
+        tokens-lib   (cfo/get-tokens-lib data)
+        tokens       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
+        token-sets   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
+        token-themes (if (some? tokens-lib) (count (ctob/get-themes tokens-lib)) 0)
+
         empty?       (and (zero? components)
                           (zero? graphics)
                           (zero? colors)
-                          (zero? typographies))]
+                          (zero? typographies)
+                          (zero? tokens)
+                          (zero? token-sets)
+                          (zero? token-themes))]
 
     {:is-empty empty?
      :colors colors
      :graphics graphics
      :typographies typographies
-     :components components}))
+     :components components
+     :tokens tokens
+     :token-sets token-sets
+     :token-themes token-themes}))
 
 (defn- adapt-backend-summary
   [summary]
@@ -75,16 +86,25 @@
         graphics     (or (-> summary :media :count) 0)
         typographies (or (-> summary :typographies :count) 0)
         colors       (or (-> summary :colors :count) 0)
+        tokens       (or (-> summary :tokens-count) 0)
+        token-sets   (or (-> summary :token-sets-count) 0)
+        token-themes (or (-> summary :token-themes-count) 0)
 
         empty?       (and (zero? components)
                           (zero? graphics)
                           (zero? colors)
-                          (zero? typographies))]
-    {:is-empty     empty?
-     :components   components
-     :graphics     graphics
+                          (zero? typographies)
+                          (zero? tokens)
+                          (zero? token-sets)
+                          (zero? token-themes))]
+    {:is-empty empty?
+     :components components
+     :graphics graphics
      :typographies typographies
-     :colors       colors}))
+     :colors colors
+     :tokens tokens
+     :token-sets token-sets
+     :token-themes token-themes}))
 
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
@@ -111,10 +131,13 @@
 (mf/defc library-description*
   {::mf/private true}
   [{:keys [summary]}]
-  (let [components-count (get summary :components)
-        graphics-count   (get summary :graphics)
-        typography-count (get summary :typographies)
-        colors-count     (get summary :colors)]
+  (let [components-count   (get summary :components)
+        graphics-count     (get summary :graphics)
+        typography-count   (get summary :typographies)
+        colors-count       (get summary :colors)
+        tokens-count       (get summary :tokens)
+        token-sets-count   (get summary :token-sets)
+        token-themes-count (get summary :token-themes)]
 
     [:*
      (when (pos? components-count)
@@ -131,7 +154,19 @@
 
      (when (pos? typography-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.typography" (c typography-count))])]))
+        (tr "workspace.libraries.typography" (c typography-count))])
+
+     (when (pos? tokens-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.tokens" (c tokens-count))])
+
+     (when (pos? token-sets-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.token-sets" (c token-sets-count))])
+
+     (when (pos? token-themes-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.token-themes" (c token-themes-count))])]))
 
 (mf/defc sample-library-entry*
   {::mf/private true}
