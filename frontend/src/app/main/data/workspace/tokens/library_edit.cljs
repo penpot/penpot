@@ -523,7 +523,8 @@
                 (ctob/enable-set set-name))
 
             token-status
-            (ctos/make-tokens-status #{} #(ctob/get-id token-set))
+            (ctos/make-tokens-status :active-theme-ids #{}
+                                     :active-set-ids #{(ctob/get-id token-set)})
 
             changes
             (-> (pcb/empty-changes)
@@ -533,6 +534,7 @@
                 (pcb/set-token-theme (ctob/get-id hidden-theme)
                                      hidden-theme)
                 (pcb/set-tokens-status token-status))]
+
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 
