@@ -1663,8 +1663,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-data        (dm/get-in state [:files file-id :data])
-            libraries        (:shared-files state)
+      (let [libraries        (:shared-files state)
             library          (get libraries library-id)
             variants-count   (-> library :library-summary :variants count)
 
