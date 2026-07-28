@@ -228,14 +228,15 @@
                             (mth/precision 2))]
              (swap! preview-state assoc :offset offset))))
 
-        handle-preview-down
-        (mf/use-fn
-         (mf/deps on-add-stop-preview)
-         (fn [^js e]
-           (let [offset (-> (event->offset e)
-                            (mth/precision 2))]
-             (when on-add-stop-preview
-               (on-add-stop-preview offset)))))
+         handle-preview-down
+         (mf/use-fn
+          (mf/deps on-add-stop-preview)
+          (fn [^js e]
+            (let [offset (-> (event->offset e)
+                             (mth/clamp 0 1)
+                             (mth/precision 2))]
+              (when on-add-stop-preview
+                (on-add-stop-preview offset)))))
 
         handle-stop-marker-pointer-down
         (mf/use-fn
