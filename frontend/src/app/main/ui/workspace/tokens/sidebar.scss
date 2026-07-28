@@ -26,7 +26,7 @@
   overflow-y: auto;
   scrollbar-gutter: stable;
   position: relative;
-  padding-block-end: var(--sp-l);
+  padding-block: var(--sp-m) var(--sp-l);
 }
 
 .tokens-section-wrapper {
