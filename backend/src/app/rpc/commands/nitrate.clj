@@ -663,7 +663,7 @@
 (sv/defmethod ::check-nitrate-sso
   "Check if a user needs to login into the organization SSO.
   Accepts either team-id (to look up the org via the team) or organization-id directly.
-  Returns {:authorized true} when SSO is not active.
+  Returns {:authorized true} when SSO is not active or the user cannot access the team.
   Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
   re-authentication transparently if the user already has an active SSO session."
@@ -671,17 +671,22 @@
    ::doc/added "2.19"
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
-  [cfg {:keys [team-id organization-id url] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id organization-id url] :as params}]
   (if (contains? cf/flags :nitrate)
-    (let [request                  (rph/get-request params)
-          {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
-      (if authorized
-        {:authorized true}
-        (if (oidc/org-sso-discovery-uri sso)
-          {:authorized false
-           :redirect-uri (oidc/build-org-sso-auth-redirect-uri cfg sso
-                                                               :dest-url url
-                                                               :organization-id organization-id)}
-          {:authorized false
-           :redirect-uri nil})))
+    (if (and team-id
+             (not (teams/has-read-permissions? cfg profile-id team-id)))
+      ;; Let the destination RPC enforce its own permissions. Starting SSO before
+      ;; access is established sends unrelated users through the organization's IdP.
+      {:authorized true}
+      (let [request                  (rph/get-request params)
+            {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
+        (if authorized
+          {:authorized true}
+          (if (oidc/org-sso-discovery-uri sso)
+            {:authorized false
+             :redirect-uri (oidc/build-org-sso-auth-redirect-uri cfg sso
+                                                                 :dest-url url
+                                                                 :organization-id organization-id)}
+            {:authorized false
+             :redirect-uri nil}))))
     {:authorized true}))

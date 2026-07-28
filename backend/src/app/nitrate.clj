@@ -561,7 +561,7 @@
                   (call cfg :get-org-sso-by-team {:team-id team-id}))]
     (if-not (:active sso)
       {:authorized true :sso sso}
-      (if (or (:issuer sso) (:base-url sso))
+      (if-not (str/blank? (:issuer sso))
         (let [props           (:props session)
               sso-map         (get props :sso {})
               organization-id (:organization-id sso)

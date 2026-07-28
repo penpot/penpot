@@ -766,25 +766,22 @@
   (when-not (str/blank? value) value))
 
 (defn org-sso-discovery-uri
-  "Return the OIDC discovery URI from an org SSO config, preferring :issuer."
+  "Return the OIDC discovery URI from an org SSO config."
   [sso]
-  (or (non-blank-uri (:issuer sso))
-      (non-blank-uri (:base-url sso))))
+  (non-blank-uri (:issuer sso)))
 
 (defn prepare-org-sso-provider
   "Build an OIDC provider map dynamically from the Nitrate org SSO config.
-  Uses OIDC discovery via :base-url (or :issuer as fallback) when
-  token/auth/user URIs are absent."
-  [cfg {:keys [client-id client-secret base-url issuer scopes]}]
+  Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
+  [cfg {:keys [client-id client-secret issuer]}]
   (prepare-oidc-provider cfg
                          {:type             "oidc"
                           :client-id        client-id
                           :client-secret    client-secret
-                          :base-uri         (some-> (or (non-blank-uri base-url)
-                                                        (non-blank-uri issuer))
+                          :base-uri         (some-> (non-blank-uri issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           (into default-oidc-scopes (or scopes #{}))
+                          :scopes           default-oidc-scopes
                           :skip-ssrf-check? true}))
 
 (defn build-org-sso-auth-redirect-uri
@@ -797,7 +794,7 @@
     (when-not issuer
       (ex/raise :type :validation
                 :code :invalid-sso-config
-                :hint "missing issuer or base-url"))
+                :hint "missing issuer"))
     (let [oidc-provider (or provider (prepare-org-sso-provider cfg sso))
           state-token   (tokens/generate cfg {:iss             "oidc"
                                               :dest-url        dest-url

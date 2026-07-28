@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-nitrate-test
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.json :as json]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -59,9 +60,104 @@
       :get-org-summary org-summary
       nil)))
 
+(defn- active-sso-call-mock
+  [team-id organization-id organization-owner-id]
+  (fn [_cfg method params]
+    (case method
+      :get-team-org
+      (when (= team-id (:team-id params))
+        {:id team-id
+         :organization {:id organization-id
+                        :owner-id organization-owner-id}})
+
+      :get-org-sso-by-team
+      {:active true
+       :issuer "https://idp.example.com"
+       :organization-id organization-id}
+
+      nil)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest check-nitrate-sso-skips-gate-without-team-access
+  (let [team-owner       (th/create-profile* 1 {:is-active true})
+        external-profile (th/create-profile* 2 {:is-active true})
+        team             (th/create-team* 1 {:profile-id (:id team-owner)})
+        organization-id  (uuid/random)
+        params           (with-meta
+                           {::th/type :check-nitrate-sso
+                            ::rpc/profile-id (:id external-profile)
+                            :team-id (:id team)
+                            :url "https://penpot.example.com/#/workspace"}
+                           {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :nitrate)]
+      (with-redefs [nitrate/call
+                    (active-sso-call-mock
+                     (:id team)
+                     organization-id
+                     (:id team-owner))
+                    oidc/build-org-sso-auth-redirect-uri
+                    (constantly "https://idp.example.com/authorize")]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (t/is (= {:authorized true} (:result out))))))))
+
+(t/deftest check-nitrate-sso-keeps-gate-for-team-member
+  (let [team-owner      (th/create-profile* 1 {:is-active true})
+        team            (th/create-team* 1 {:profile-id (:id team-owner)})
+        organization-id (uuid/random)
+        redirect-uri    "https://idp.example.com/authorize"
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id team-owner)
+                           :team-id (:id team)
+                           :url "https://penpot.example.com/#/workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :nitrate)]
+      (with-redefs [nitrate/call
+                    (active-sso-call-mock
+                     (:id team)
+                     organization-id
+                     (:id team-owner))
+                    oidc/build-org-sso-auth-redirect-uri
+                    (constantly redirect-uri)]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (t/is (= {:authorized false
+                    :redirect-uri redirect-uri}
+                   (:result out))))))))
+
+(t/deftest check-nitrate-sso-keeps-gate-for-non-member-org-owner
+  (let [team-owner      (th/create-profile* 1 {:is-active true})
+        org-owner       (th/create-profile* 2 {:is-active true})
+        team            (th/create-team* 1 {:profile-id (:id team-owner)})
+        organization-id (uuid/random)
+        redirect-uri    "https://idp.example.com/authorize"
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id org-owner)
+                           :team-id (:id team)
+                           :url "https://penpot.example.com/#/workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :nitrate)]
+      (with-redefs [nitrate/organization-owner-of-team?
+                    (fn [_cfg profile-id team-id]
+                      (and (= (:id org-owner) profile-id)
+                           (= (:id team) team-id)))
+                    nitrate/call
+                    (active-sso-call-mock
+                     (:id team)
+                     organization-id
+                     (:id org-owner))
+                    oidc/build-org-sso-auth-redirect-uri
+                    (constantly redirect-uri)]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (t/is (= {:authorized false
+                    :redirect-uri redirect-uri}
+                   (:result out))))))))
 
 (t/deftest leave-org-happy-path-no-extra-teams
   (let [profile-owner  (th/create-profile* 1 {:is-active true})

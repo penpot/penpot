@@ -687,20 +687,35 @@
       (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
+(defn- check-team-sso
+  [team-id]
+  (let [url (rt/get-current-href)]
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+         (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
+                      (if authorized
+                        (rx/empty)
+                        (if redirect-uri
+                          (rx/of (rt/nav-raw :uri (str redirect-uri)))
+                          (rx/empty))))))))
+
 (defn handle-change-team-org
   [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-org
     ptk/WatchEvent
     (watch [_ state _]
       (let [current-team-id (:current-team-id state)
-            organization (:organization team)]
+            organization    (:organization team)
+            current-team?   (= (:id team) current-team-id)]
         (when (and (contains? cf/flags :nitrate)
-                   notification
-                   (= (:id team) current-team-id))
-          (rx/of (ntf/show {:content (tr notification (:name organization))
-                            :type :toast
-                            :level :info
-                            :timeout nil})))))
+                   current-team?)
+          (rx/concat
+           (when notification
+             (rx/of (ntf/show {:content (tr notification (:name organization))
+                               :type :toast
+                               :level :info
+                               :timeout nil})))
+           (when (:id organization)
+             (check-team-sso current-team-id))))))
     ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :nitrate)
@@ -767,14 +782,7 @@
               team    (dm/get-in state [:teams team-id])
               org-id  (dm/get-in team [:organization :id])]
           (when (= organization-id org-id)
-            (let [url (rt/get-current-href)]
-              (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
-                   (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
-                                (if authorized
-                                  (rx/empty)
-                                  (if redirect-uri
-                                    (rx/of (rt/nav-raw :uri (str redirect-uri)))
-                                    (rx/empty)))))))))))))
+            (check-team-sso team-id)))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
