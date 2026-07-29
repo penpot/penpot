@@ -1015,6 +1015,46 @@
           out  (th/command! data)]
       (t/is (th/success? out)))))
 
+(t/deftest create-team-invitations-email-cooldown
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile1 (th/create-profile* 1 {:is-active true})
+          team     (th/create-team* 1 {:profile-id (:id profile1)})
+
+          data     {::th/type :create-team-invitations
+                    ::rpc/profile-id (:id profile1)
+                    :team-id (:id team)
+                    :role :editor
+                    :emails ["cooldown-test@example.com"]}]
+
+      ;; First invitation sends email
+      (let [out (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock))))
+
+      ;; Resending immediately should NOT send email (cooldown active)
+      (th/reset-mock! mock)
+      (let [out (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 0 (:call-count @mock))))
+
+      ;; Resending to a different email should send email
+      (th/reset-mock! mock)
+      (let [data (assoc data :emails ["different@example.com"])
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock))))
+
+      ;; After cooldown expires, resending should send email
+      (th/reset-mock! mock)
+      (th/db-update! :team-invitation
+                     {:updated-at (ct/in-past "10m")}
+                     {:team-id (:id team)
+                      :email-to "cooldown-test@example.com"})
+      (let [data (assoc data :emails ["cooldown-test@example.com"])
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock)))))))
+
 (t/deftest update-team-with-invalid-name
   (let [profile (th/create-profile* 1 {:is-active true})
         team    (th/create-team* 1 {:profile-id (:id profile)})]
