@@ -69,7 +69,7 @@ PENPOT_PORT_BASE_STORYBOOK=${PENPOT_STORYBOOK_PORT:?missing in defaults.env}
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
-export IMAGEMAGICK_VERSION=7.1.2-24
+export IMAGEMAGICK_VERSION=7.1.2-27
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true
