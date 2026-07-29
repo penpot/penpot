@@ -374,6 +374,7 @@
         conflict               (deref conflict*)
 
         reset-notification* (mf/use-state nil)
+        reset-pending*      (mf/use-state false)
 
         clean-editing-state
         (fn []
@@ -381,7 +382,8 @@
           (reset! display-parts* nil)
           (reset! recorded-command* nil)
           (reset! conflict* nil)
-          (reset! reset-notification* nil))
+          (reset! reset-notification* nil)
+          (reset! reset-pending* false))
 
         effective-section-key (if (= section-key :basics) :workspace section-key)
 
@@ -389,10 +391,12 @@
         (mf/use-fn
          (mf/deps effective-section-key command-info)
          (fn [shortcut-key]
-           (st/emit! (customize/reset-custom-shortcut shortcut-key (:original-command command-info) effective-section-key))
-           (reset! reset-notification* (:original-command command-info))
-           (reset! recorded-command* nil)
-           (reset! conflict* nil)))
+           (let [original-cmd (:original-command command-info)]
+             (reset! reset-pending* true)
+             (reset! recorded-command* original-cmd)
+             (reset! reset-notification* original-cmd)
+             (reset! conflict* nil)
+             (reset! display-parts* nil))))
 
         start-editing
         (mf/use-fn
@@ -426,11 +430,13 @@
          (fn [event]
            (dom/prevent-default event)
            (when recorded-command
-             (st/emit! (customize/set-custom-shortcut
-                        command
-                        recorded-command
-                        (:key conflict)
-                        effective-section-key)))
+             (if (deref reset-pending*)
+               (st/emit! (customize/reset-custom-shortcut command recorded-command effective-section-key))
+               (st/emit! (customize/set-custom-shortcut
+                          command
+                          recorded-command
+                          (:key conflict)
+                          effective-section-key))))
            (clean-editing-state)))
 
         on-editable-container-blur
@@ -446,12 +452,8 @@
 
     (mf/with-effect [display-parts]
       (when (some? display-parts)
-        (reset! reset-notification* nil)))
-
-    (mf/with-effect [@reset-notification*]
-      (when-let [_ @reset-notification*]
-        (let [timer (js/setTimeout #(reset! reset-notification* nil) 7000)]
-          (fn [] (js/clearTimeout timer)))))
+        (reset! reset-notification* nil)
+        (reset! reset-pending* false)))
 
     (mf/with-effect [is-editing]
       (when is-editing
@@ -524,13 +526,13 @@
               [:span {:class (stl/css :recording-ellipsis)} "..."])])]
         (when-let [default-cmd @reset-notification*]
           [:> context-notification* {:level :info :class (stl/css :modal-reset-msg)}
-           (tr "shortcuts.edit-modal.reset-to-default")
+           (tr "shortcuts.edit-modal.reset-pending")
            [:> shortcuts-keys* {:content default-cmd
                                 :command (keyword "default")
                                 :is-customized false
                                 :has-conflict? false}]])
 
-        (when recorded-command
+        (when (and recorded-command (not (deref reset-pending*)))
           (if conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
              (tr "shortcuts.edit-modal.conflict" (:name conflict))]

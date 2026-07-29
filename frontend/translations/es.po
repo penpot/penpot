@@ -5562,8 +5562,8 @@ msgid "shortcuts.edit-modal.conflict"
 msgstr "Combinación usada en \"%s\". Guardar este atajo hará que se elimine allí."
 
 #: src/app/main/ui/shortcuts.cljs
-msgid "shortcuts.edit-modal.reset-to-default"
-msgstr "Atajo restablecido a su valor predeterminado:"
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "Si guardas, este atajo volvera a su valor original:"
 
 #: src/app/main/ui/shortcuts.cljs
 msgid "shortcuts.edit-modal.success"

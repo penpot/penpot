@@ -5707,8 +5707,8 @@ msgid "shortcuts.edit-modal.conflict"
 msgstr "Combination assigned to \"%s\". Saving will remove it there."
 
 #: src/app/main/ui/shortcuts.cljs
-msgid "shortcuts.edit-modal.reset-to-default"
-msgstr "Shortcut reset to default:"
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "If you save, this shortcut will return to the original value:"
 
 #: src/app/main/ui/shortcuts.cljs
 msgid "shortcuts.edit-modal.success"
