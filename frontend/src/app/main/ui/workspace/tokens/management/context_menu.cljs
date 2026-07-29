@@ -427,28 +427,28 @@
              (reset! parent-menu-dom-element-pos* (dm/str (.-offsetTop parent-menu-dom-element) "px")))))]
 
     [:li {:class (stl/css-case
-                  :context-menu-item true
-                  :context-menu-item-selected (and (not no-selectable) selected?)
-                  :context-menu-item-unselected (and (not no-selectable) (not selected?))
-                  :context-menu-item-hint-wrapper hint?)
+                  :menu-item true
+                  :menu-item-selected (and (not no-selectable) selected?)
+                  :menu-item-unselected (and (not no-selectable) (not selected?))
+                  :menu-item-hint-wrapper hint?)
           :ref get-parent-menu-entry-position
           :data-value value
           :on-click on-click
           :on-pointer-enter on-pointer-enter
           :on-pointer-leave on-pointer-leave}
      (when hint
-       [:span {:class (stl/css :context-menu-item-hint)} hint])
+       [:span {:class (stl/css :menu-item-hint)} hint])
      (when (not no-selectable)
-       [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon-wrapper)}])
-     [:span {:class (stl/css :item-text)}
+       [:> icon* {:icon-id i/tick :size "s" :class (stl/css :menu-item-icon)}])
+     [:span {:class (stl/css :menu-item-text)}
       title]
      (when children
        [:*
         [:> icon* {:icon-id i/arrow :size "s"}]
         [:ul {:ref submenu-ref
               :class (stl/css-case
-                      :token-context-submenu true
-                      :token-context-submenu-top is-submenu-outside?)
+                      :submenu true
+                      :submenu-top is-submenu-outside?)
               :style {:left (dm/str submenu-offset "px")
                       :top (if is-submenu-outside? "unset" parent-menu-dom-element-pos)}
               :on-context-menu prevent-default}
@@ -503,7 +503,7 @@
           (when (contains? #{:spacing :dimensions} token-type)
             (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes)))]
 
-    [:ul {:class (stl/css :context-list)}
+    [:ul {:class (stl/css :menu)}
      [:& menu-tree {:submenu-offset width
                     :token token
                     :errors errors
@@ -550,7 +550,7 @@
        (mf/html
         [:& dropdown {:show is-open?
                       :on-close #(st/emit! (dwtl/assign-token-context-menu nil))}
-         [:div {:class (stl/css :token-context-menu)
+         [:div {:class (stl/css :menu-wrapper)
                 :data-testid "tokens-context-menu-for-token"
                 :ref dropdown-ref
                 :data-direction dropdown-direction
