@@ -5,39 +5,21 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.wasm.text
-  "Browser-free text-content serialization for the headless exporter. The
-  binary layout is shared via `app.render-wasm.text-content`; only font-id
-  resolution is local, since the exporter has no fonts DB."
+  "Browser-free text-content serialization for the headless exporter. Only the
+  paragraph walk is local: the binary layout and the font-id -> uuid mapping
+  both come from `app.common.render-wasm.text-content`."
   (:require
-   [app.common.uuid :as uuid]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.text-content :as tc]
-   [app.render-wasm.wasm :as wasm]
-   [app.wasm.gfonts :as gfonts]
-   [cuerdas.core :as str]))
-
-(defn- normalize-font-id
-  "Maps a content font-id to its wasm uuid. The provisioning side keys on the
-  same uuid."
-  [font-id]
-  (try
-    (cond
-      (str/starts-with? font-id "gfont-")
-      (or (gfonts/gfont-id->uuid font-id) uuid/zero)
-
-      (str/includes? font-id "-")
-      (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
-        (if (str/blank? no-prefix) uuid/zero (uuid/parse no-prefix)))
-
-      :else uuid/zero)
-    (catch :default _ uuid/zero)))
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.serializers :as sr]
+   [app.common.render-wasm.text-content :as tc]
+   [app.common.render-wasm.wasm :as wasm]))
 
 (defn set-shape-text!
   "Serializes a text shape's content into the current WASM shape. Mirrors the
   editor's sequence: clear -> vertical-align -> append each paragraph -> layout.
-  Byte writing is the shared `text-content/write-shape-text!`; only font-id
-  resolution is injected."
+  Byte writing and font resolution are the shared
+  `text-content/write-shape-text!` defaults; the exporter has no fonts DB, so
+  it injects no variant normalization."
   [content]
   (when content
     (h/call wasm/internal-module "_clear_shape_text")
@@ -49,6 +31,5 @@
         (let [spans (get paragraph :children)]
           (when (seq spans)
             (let [text (apply str (map :text spans))]
-              (tc/write-shape-text! spans paragraph text
-                                    {:normalize-font-id normalize-font-id}))))))
+              (tc/write-shape-text! spans paragraph text {}))))))
     (h/call wasm/internal-module "_update_shape_text_layout")))

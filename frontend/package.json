@@ -19,7 +19,7 @@
     "build:storybook": "(cd packages/ui && pnpm run build) && pnpm run build:storybook:assets && pnpm run build:storybook:cljs && storybook build",
     "build:storybook:assets": "node ./scripts/build-storybook-assets.js",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
-    "build:wasm": "../render-wasm/build",
+    "build:wasm": "../render-wasm/build frontend",
     "build:app:libs": "node ./scripts/build-libs.js",
     "build:app:main": "clojure -M:dev:shadow-cljs release main worker",
     "build:app:worker": "clojure -M:dev:shadow-cljs release worker",

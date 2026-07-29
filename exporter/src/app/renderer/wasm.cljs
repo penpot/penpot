@@ -6,8 +6,7 @@
 
 (ns app.renderer.wasm
   "Headless renderer backend: renders exports with the render-wasm Skia
-  pipeline in this Node process, with no browser and no WebGL. Drop-in
-  alternative to the Playwright backends, selected from `app.renderer`.
+  pipeline in this Node process, with no browser and no WebGL.
 
   Per request: fetch scene (get-page RPC) -> serialize -> provision fonts and
   images -> relayout text with the real fonts -> render each object.
@@ -26,6 +25,9 @@
    [app.common.geom.point]
    [app.common.geom.rect]
    [app.common.logging :as l]
+   [app.common.render-wasm.fallback-fonts :as fbf]
+   [app.common.render-wasm.gfonts :as gf]
+   [app.common.render-wasm.resources :as resources]
    [app.common.transit :as t]
    [app.common.types.fills.impl]
    [app.common.types.objects-map]
@@ -34,12 +36,9 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.render-wasm.fallback-fonts :as fbf]
-   [app.render-wasm.resources :as resources]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [app.wasm :as wasm]
-   [app.wasm.gfonts :as gfonts]
    [app.wasm.serialize :as serialize]
    [cuerdas.core :as str]
    [promesa.core :as p]))
@@ -72,9 +71,8 @@
 
 ;; --- backend endpoints
 ;;
-;; Every fetch targets the internal endpoint (falling back to public-uri), same
-;; as the Playwright backends: in a deployment the exporter reaches the backend
-;; over the container network, not the public ingress.
+;; Every fetch targets the internal endpoint (falling back to public-uri),
+;; in a deployment the exporter reaches the backend over the container network
 
 (defn- internal-uri
   "Absolute URI for `path` on the internal (backend) endpoint."
@@ -146,9 +144,9 @@
                                 share-id (assoc :share-id share-id)))
         uri     (internal-uri "api/rpc/command/get-page")]
     (l/dbg :hint "wasm render: get-page"
-            :uri uri
-            :file-id (str file-id)
-            :page-id (str page-id))
+           :uri uri
+           :file-id (str file-id)
+           :page-id (str page-id))
     (->> (fetch! uri #js {:method "POST" :headers headers :body body})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
@@ -169,7 +167,7 @@
 ;;
 ;; The text serializer keeps each font's real uuid, so `wasm/fonts-for-shape`
 ;; reports it. Custom (team) fonts resolve through the file's font variants,
-;; google fonts through the `app.wasm.gfonts` catalog; builtin falls back to
+;; google fonts through the shared `app.common.render-wasm.gfonts` catalog; builtin falls back to
 ;; the bundled default.
 
 (defn- fetch-font-variants
@@ -209,11 +207,10 @@
                    (p/resolved nil))))))
 
 (defn- gfont-proxy-url
-  "Rewrites a gstatic ttf url to the local gfonts proxy (mirrors the browser's
-  `google-font-ttf-url`)."
+  "Rewrites a gstatic ttf url to the local gfonts proxy (same rewrite as the
+  browser's `google-font-ttf-url`)."
   [ttf-url]
-  (let [proxy (internal-uri "internal/gfonts/font/")]
-    (str/replace ttf-url "https://fonts.gstatic.com/s/" proxy)))
+  (gf/gstatic->proxy-url ttf-url (internal-uri "internal/gfonts/font")))
 
 (defn- fetch-gfont-bytes
   "Downloads a google font TTF through the local gfonts proxy."
@@ -247,7 +244,7 @@
                         (d/seek (fn [v] (= (:font-id v) font-uuid)) variants))]
       (if-let [ttf-id (:ttf-file-id variant)]
         (fetch-asset-bytes ttf-id params)
-        (if-let [gurl (gfonts/resolve-ttf-url font-uuid weight style)]
+        (if-let [gurl (gf/resolve-ttf-url font-uuid weight style)]
           (fetch-gfont-bytes gurl)
           (p/resolved nil))))))
 
@@ -286,8 +283,8 @@
   (let [cache-key [font-id weight style]]
     (if-let [bytes (get @fallback-font-bytes* cache-key)]
       (p/resolved bytes)
-      (let [font-uuid (gfonts/gfont-id->uuid font-id)
-            ttf-url   (some-> font-uuid (gfonts/resolve-ttf-url weight style))]
+      (let [font-uuid (gf/gfont-id->uuid font-id)
+            ttf-url   (some-> font-uuid (gf/resolve-ttf-url weight style))]
         (if ttf-url
           (->> (fetch-gfont-bytes ttf-url)
                (p/fmap (fn [buf]
@@ -299,7 +296,7 @@
   [scene]
   (->> (scene-fallback-fonts scene)
        (map (fn [{:keys [font-id weight style is-emoji is-fallback] :as font}]
-              (if-let [font-uuid (gfonts/gfont-id->uuid font-id)]
+              (if-let [font-uuid (gf/gfont-id->uuid font-id)]
                 (->> (fetch-fallback-font-bytes font)
                      (p/fmap (fn [buf]
                                (if buf
@@ -343,15 +340,15 @@
 
 (defn- provision-images!
   "Fetches and stores every image the scene references (shape, stroke and
-  text-span fills, enumerated by `app.render-wasm.resources`). Unlike fonts,
+  text-span fills, enumerated by `app.common.render-wasm.resources`). Unlike fonts,
   the image store is not reset per request, so already-held images are skipped
   and repeated exports of a file reuse them."
   [scene params]
   (let [all-ids (resources/scene-image-ids scene)
         new-ids (remove wasm/image-cached? all-ids)]
     (l/dbg :hint "wasm render: provisioning images"
-            :total (count all-ids)
-            :cached (- (count all-ids) (count new-ids)))
+           :total (count all-ids)
+           :cached (- (count all-ids) (count new-ids)))
     (->> new-ids
          (map (fn [image-id]
                 (->> (fetch-file-media-bytes image-id params)
@@ -359,8 +356,8 @@
                                (if buf
                                  (do
                                    (l/dbg :hint "wasm render: image stored"
-                                           :media-id (str image-id)
-                                           :bytes (.-byteLength ^js buf))
+                                          :media-id (str image-id)
+                                          :bytes (.-byteLength ^js buf))
                                    (wasm/store-image! image-id buf))
                                  (l/warn :hint "wasm render: image unavailable"
                                          :media-id (str image-id))))))))
@@ -385,14 +382,7 @@
              :backend "skia-wasm"
              :bytes (.-length bytes))
       bytes)
-    ;; The export type doubles as the encoder format: Skia encodes png/jpeg/webp
-    ;; natively, so webp needs no imagemagick pass like the Playwright backend.
     (wasm/render-shape-raster id scale type)))
-
-;; NOTE: `prepare-exports` splits an export into partitions of 50 objects, each
-;; arriving as its own request, so every partition re-fetches and re-serializes
-;; the whole page scene. Acceptable while the module is a single shared instance;
-;; revisit with module pooling.
 
 (defn- render*
   [{:keys [scale type objects] :as params} on-object]
@@ -429,7 +419,7 @@
                                   path  (sh/tempfile :prefix "penpot.tmp.wasm."
                                                      :suffix (mime/get-extension type))]
                               (l/dbg :hint "wasm render: object rendered"
-                                      :object-id (str id) :bytes (.-length bytes))
+                                     :object-id (str id) :bytes (.-length bytes))
                               (fs/writeFileSync path bytes)
                               ;; `on-object` returns a plain value (zip append) or
                               ;; a promise (single export's file move); `p/do`
@@ -439,7 +429,7 @@
        (p/fmap (fn [result]
                  ;; After the request, never mid-render, so an image can't
                  ;; disappear under a running export.
-                 (let [evicted (wasm/evict-images! (wasm/image-cache-mb))]
+                 (let [evicted (wasm/evict-images! wasm/image-cache-mb)]
                    (when (pos? evicted)
                      (l/info :hint "wasm render: evicted cached images" :count evicted)))
                  result))

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.serialize-shape
+(ns app.common.render-wasm.serialize-shape
   "Single source of truth for the host-independent part of serializing a whole
   shape into the WASM design state.
 
@@ -24,8 +24,8 @@
   The incremental workspace edit path (`set-wasm-attr!`) is unaffected; it keeps
   dispatching per changed key through the same underlying `props` setters."
   (:require
-   [app.render-wasm.api.props :as props]
-   [app.render-wasm.api.shapes :as shapes]))
+   [app.common.render-wasm.api.props :as props]
+   [app.common.render-wasm.api.shapes :as shapes]))
 
 (defn serialize-shape!
   "Applies every host-independent WASM property of `shape`. `set-shape-base-props`

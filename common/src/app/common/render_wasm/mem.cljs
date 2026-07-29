@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.mem
+(ns app.common.render-wasm.mem
   (:require
    [app.common.buffer :as buf]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.wasm :as wasm]))
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.wasm :as wasm]))
 
 (defn ->offset-32
   "Convert a 8-bit (1 byte) offset to a 32-bit (4 bytes) offset"

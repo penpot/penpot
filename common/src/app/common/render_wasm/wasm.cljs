@@ -4,8 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.wasm
-  (:require ["./api/shared.js" :as shared]))
+(ns app.common.render-wasm.wasm)
 
 (defonce internal-frame-id nil)
 (defonce internal-frame-type 0)
@@ -65,41 +64,19 @@
   (set! gl-context nil)
   (set! context-initialized? false))
 
-(defonce serializers
-  #js {:raster-format shared/RasterFormat
-       :blur-type shared/RawBlurType
-       :blend-mode shared/RawBlendMode
-       :bool-type shared/RawBoolType
-       :font-style shared/RawFontStyle
-       :flex-direction shared/RawFlexDirection
-       :grid-direction shared/RawGridDirection
-       :grow-type shared/RawGrowType
-       :align-items shared/RawAlignItems
-       :align-self shared/RawAlignSelf
-       :align-content shared/RawAlignContent
-       :justify-items shared/RawJustifyItems
-       :justify-content shared/RawJustifyContent
-       :justify-self shared/RawJustifySelf
-       :wrap-type shared/RawWrapType
-       :grid-track-type shared/RawGridTrackType
-       :shadow-style shared/RawShadowStyle
-       :guide-kind shared/RawGuideKind
-       :stroke-style shared/RawStrokeStyle
-       :stroke-cap shared/RawStrokeCap
-       :shape-type shared/RawShapeType
-       :constraint-h shared/RawConstraintH
-       :constraint-v shared/RawConstraintV
-       :sizing shared/RawSizing
-       :vertical-align shared/RawVerticalAlign
-       :fill-data shared/RawFillData
-       :text-align shared/RawTextAlign
-       :text-direction shared/RawTextDirection
-       :text-decoration shared/RawTextDecoration
-       :text-transform shared/RawTextTransform
-       :multiple-state shared/MultipleState
-       :transform-entry-kind shared/RawTransformEntryKind
-       :segment-data shared/RawSegmentData
-       :stroke-linecap shared/RawStrokeLineCap
-       :stroke-linejoin shared/RawStrokeLineJoin
-       :fill-rule shared/RawFillRule})
+(defonce serializers nil)
+
+(defn init-serializers!
+  "Binds the enum table produced by the `enums/serializers` macro."
+  [table]
+  (let [missing (array)]
+    (doseq [key (js/Object.keys table)]
+      (when (undefined? (unchecked-get table key))
+        (.push missing key)))
+
+    (when (pos? (alength missing))
+      (throw (ex-info "stale or incomplete render-wasm shared.js"
+                      {:missing (vec missing)})))
+
+    (set! serializers table)))
 

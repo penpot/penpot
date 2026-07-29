@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.mem.heap32
+(ns app.common.render-wasm.mem.heap32
   "A memory write helpers that uses 32 bits addressed offsets."
   (:require
    [app.common.data.macros :as dm]

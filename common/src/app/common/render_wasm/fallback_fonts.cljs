@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.fallback-fonts
+(ns app.common.render-wasm.fallback-fonts
   "Host-agnostic fallback-font knowledge: which scripts/emoji a text uses and
   which (google) fallback fonts cover them. Pure data + pure fns — no browser
   or Node dependencies — so the workspace (`api.texts`/`api.fonts`) and the

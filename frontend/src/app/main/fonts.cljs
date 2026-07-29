@@ -6,11 +6,11 @@
 
 (ns app.main.fonts
   "Fonts management and loading logic."
-  (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.render-wasm.gfonts :as gf]
    [app.common.types.text :as txt]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -25,8 +25,7 @@
 
 (log/set-level! :warn)
 
-(def google-fonts
-  (preload-gfonts "fonts/gfonts.2025.11.28.json"))
+(def google-fonts gf/catalog)
 
 (def local-fonts
   [{:id "sourcesanspro"
@@ -266,8 +265,7 @@
 
 (defn- process-gfont-css
   [css]
-  (let [base (u/join cf/public-uri "internal/gfonts/font")]
-    (str/replace css "https://fonts.gstatic.com/s" (dm/str base))))
+  (gf/gstatic->proxy-url css (u/join cf/public-uri "internal/gfonts/font")))
 
 (defn- fetch-gfont-css
   [url]
@@ -397,42 +395,12 @@
 
 (defn find-closest-variant
   "Find the closest font weight variant in `font` for `target-weight` with optional `target-style` match.
-  When exactly between two weights, choose the higher one."
+  When exactly between two weights, choose the higher one.
+
+  The algorithm lives in `app.common.render-wasm.gfonts` so the headless exporter resolves the
+  same variant for the same text."
   [font target-weight target-style]
-  (when-let [target-weight (d/parse-integer target-weight)]
-    (let [variants (:variants font [])
-          result
-          (reduce
-           (fn [closest-match variant]
-             (let [weight (d/parse-integer (:weight variant))
-                   distance (abs (- target-weight weight))
-                   matches-style? (= target-style (:style variant))
-                   current {:variant variant
-                            :weight weight
-                            :distance distance}]
-               (cond
-                 ;; Exact match found
-                 (and (zero? distance)
-                      (if target-style matches-style? true))
-                 (reduced current)
-
-                 (nil? closest-match) current
-
-                 ;; Update best match if this variant is closer or equal distance but higher weight
-                 (or (< distance (:distance closest-match))
-                     (and (= distance (:distance closest-match))
-                          (> weight (:weight closest-match))))
-                 current
-
-                 ;; Same weight as the `closest-match` but the style matches `target-style`
-                 (and (= weight (:weight closest-match)) matches-style?)
-                 current
-
-                 :else
-                 closest-match)))
-           nil
-           variants)]
-      (:variant result))))
+  (gf/closest-variant (:variants font []) target-weight target-style))
 
 ;; Font embedding functions
 (defn get-node-fonts

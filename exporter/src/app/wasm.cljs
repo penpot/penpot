@@ -18,12 +18,13 @@
    ["node:path" :as path]
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.mem :as mem]
+   [app.common.render-wasm.serializers :as sr]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]
+   ;; Required for side effects: binds the generated enums.
+   [app.wasm.enums]
    [promesa.core :as p]
    [shadow.esm :refer [dynamic-import]]))
 
@@ -37,17 +38,14 @@
 ;; get_fonts_for_shape entry: [uuid 16 bytes][weight u32][style u32].
 (def ^:private FONT-ENTRY-BYTES 24)
 
-(defn artifact-dir
-  "Directory holding the built render-wasm artifact. The docker image points
-  `PENPOT_WASM_DIR` at the copy inside the exporter bundle; the default is
-  where `render-wasm/build` leaves it in devenv."
-  []
-  (cf/get :wasm-dir "../frontend/resources/public/js"))
+(def artifact-dir
+  "Built render-wasm artifact, relative to the process working directory. Same
+  path in devenv and inside the bundle, so it is a constant."
+  "resources/wasm")
 
-(defn image-cache-mb
+(def image-cache-mb
   "Byte budget (MB) the image store is trimmed to between requests."
-  []
-  (cf/get :wasm-image-cache-mb 256))
+  256)
 
 (defn- read-result-bytes
   "Reads `len` bytes from the WASM heap starting at `offset`, copying them out
@@ -63,7 +61,7 @@
   Idempotent-ish: callers should hold the returned module."
   ([] (init! default-viewport-width default-viewport-height))
   ([width height]
-   (let [dir       (artifact-dir)
+   (let [dir       artifact-dir
          js-path   (path/resolve dir "render-wasm.js")
          wasm-path (path/resolve dir "render-wasm.wasm")
          wasm-bytes (fs/readFileSync wasm-path)]

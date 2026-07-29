@@ -178,6 +178,9 @@
     :stroke-path
     :stroke-per-side
 
+    ;; Exporter only: uses render-wasm for export instead of browser
+    ;; renderer.
+    :wasm-export
     :custom-shortcuts
     :remote-media-processing})
 

@@ -42,16 +42,12 @@
   [{:keys [type is-wasm] :as params} on-object]
   (us/verify ::render-params params)
   (us/verify fn? on-object)
-  ;; Opt-in: `:is-wasm` exports render in-process when `:wasm-headless` is on.
-  ;; Off by default, so existing behavior is unchanged. `:svg` stays on the
-  ;; browser path regardless — it needs vector markup, not a raster.
-  (let [headless? (and is-wasm
-                       (cf/get :wasm-headless)
-                       (not= :svg type))]
+  (let [wasm-export? (contains? cf/flags :wasm-export)
+        headless?    (and is-wasm wasm-export? (not= :svg type))]
     (when is-wasm
       (l/info :hint "render"
               :type type
-              :wasm-headless (boolean (cf/get :wasm-headless))
+              :wasm-export wasm-export?
               :backend (if headless? "wasm" "browser")))
     (if headless?
       (rw/render params on-object)

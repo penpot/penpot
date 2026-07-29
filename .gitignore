@@ -58,6 +58,8 @@ opencode.json
 /docker/images/bundle*
 /exporter/target
 /exporter/.shadow-cljs
+/exporter/resources/wasm/
+/exporter/src/app/wasm/shared.js
 /frontend/.storybook/preview-body.html
 /frontend/.storybook/preview-head.html
 /frontend/playwright-report/
