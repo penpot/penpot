@@ -31,6 +31,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -157,9 +158,7 @@
                (reset! open* true))
 
              (and open (kbd/esc? event))
-             (do
-               (dom/prevent-default event)
-               (reset! open* false)))))
+             (reset! open* false))))
 
         on-flyout-key-down
         (mf/use-fn
@@ -177,7 +176,6 @@
 
                    (kbd/esc? event)
                    (do
-                     (dom/prevent-default event)
                      (reset! open* false)
                      (when-let [li (mf/ref-val li-ref)]
                        (when-let [btn (.. li (querySelector "div[role=group] > button"))]
@@ -199,6 +197,12 @@
 
     (mf/with-effect [drawtool group]
       (reset! default-tool* (active-group-tool group drawtool)))
+
+    (mf/with-effect []
+      (let [subs (->> st/stream
+                      (rx/filter #(= % :interrupt))
+                      (rx/subs! #(reset! open* false)))]
+        #(rx/dispose! subs)))
 
     [:li {:ref li-ref
           :class (stl/css :toolbar-group)
