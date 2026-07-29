@@ -7,6 +7,7 @@
 (ns app.http.websocket
   "A penpot notification service for file cooperative edition."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
@@ -17,6 +18,8 @@
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
+   [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.util.websocket :as ws]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
@@ -131,8 +134,9 @@
       (mbus/pub! msgbus :topic topic :message msg))))
 
 (defmethod handle-message :subscribe-team
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [team-id] :as params}]
+  [{:keys [::mbus/msgbus ::db/pool]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [team-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
+  (teams/check-read-permissions! pool profile-id team-id)
   (let [prev-subs (get @state ::team-subscription)
         channel   (sp/chan :buf (sp/dropping-buffer 64)
                            :xf  (remove #(= (:session-id %) session-id)))]
@@ -150,8 +154,10 @@
 
 
 (defmethod handle-message :subscribe-file
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [{:keys [::mbus/msgbus ::db/pool]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
+  (bfc/check-file-exists pool file-id)
+  (files/check-read-permissions! pool profile-id file-id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
                       :xf  (remove #(= (:session-id %) session-id)))]
