@@ -6,16 +6,20 @@
 
 (ns backend-tests.rpc-nitrate-test
   (:require
+   [app.common.json :as json]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.email :as eml]
+   [app.http :as-alias http]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.nitrate]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.helpers :as rph]
    [backend-tests.helpers :as th]
+   [buddy.core.codecs :as bc]
    [clojure.test :as t]
    [cuerdas.core :as str]))
 
@@ -933,3 +937,44 @@
                               :organization-id org-id})]
         (t/is (th/success? out))
         (t/is (empty? @sent))))))
+
+(t/deftest get-nitrate-activation-code-request
+  (let [profile    (th/create-profile* 1 {:is-active true})
+        nitrate-id "nitrate-instance-1"
+        public-key "-----BEGIN PUBLIC KEY-----\nMIIB\n-----END PUBLIC KEY-----"
+        now        (ct/now)]
+    (with-redefs [cf/flags     (conj cf/flags :nitrate)
+                  ct/now       (constantly now)
+                  nitrate/call (fn [_cfg method _params]
+                                 (t/is (= :get-identity method))
+                                 {:nitrate-id nitrate-id
+                                  :public-key public-key})]
+      (let [out  (th/command! {::th/type :get-nitrate-activation-code-request
+                               ::rpc/profile-id (:id profile)})
+            body (-> (:result out)
+                     (bc/b64->str)
+                     (json/decode :key-fn json/read-kebab-key))]
+        (t/is (th/success? out))
+        (t/is (= {:nitrate-id nitrate-id
+                  :public-key public-key
+                  :email      (:email profile)
+                  :iat        (ct/seconds now)}
+                 body))
+
+        (let [[_ method-fn] (get-in th/*system* [:app.rpc/methods :get-nitrate-activation-code-request])
+              result        (method-fn {::rpc/profile-id (:id profile)
+                                        ::rpc/request-at now})
+              headers       (::http/headers (meta result))]
+          (t/is (rph/wrapped? result))
+          (t/is (= "text/plain" (get headers "content-type")))
+          (t/is (= "attachment; filename=\"penpot-activation-code-request.txt\""
+                   (get headers "content-disposition"))))))))
+
+(t/deftest get-nitrate-activation-code-request-identity-unavailable
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags     (conj cf/flags :nitrate)
+                  nitrate/call (fn [_cfg _method _params] nil)]
+      (let [out (th/command! {::th/type :get-nitrate-activation-code-request
+                              ::rpc/profile-id (:id profile)})]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-code? (:error out) :nitrate-identity-unavailable))))))
