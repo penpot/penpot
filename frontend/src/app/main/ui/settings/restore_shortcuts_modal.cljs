@@ -105,38 +105,38 @@
         [:tbody {:class (stl/css :shortcuts-list-body)}
          (for [context [:workspace :dashboard :viewer]
                shortcut-key (keys (get custom-shortcuts context {}))]
-            (let [[default-last-element
-                   default-short-char-list
-                   current-last-element
-                   current-command
-                   current-short-char-list
-                   customized?] (extract-shortcut-keys shortcut-key custom-shortcuts context)
-                  current-penultimate     (last current-short-char-list)
-                  default-penultimate     (last default-short-char-list)
-                  command-class           (if customized? (stl/css :customized-command) (stl/css :default-command))]
+           (let [[default-last-element
+                  default-short-char-list
+                  current-last-element
+                  current-command
+                  current-short-char-list
+                  customized?] (extract-shortcut-keys shortcut-key custom-shortcuts context)
+                 current-penultimate     (last current-short-char-list)
+                 default-penultimate     (last default-short-char-list)
+                 command-class           (if customized? (stl/css :customized-command) (stl/css :default-command))]
              [:tr {:key (dm/str (name context) "-" (name shortcut-key))
                    :class (stl/css :shortcuts-list-item)}
-               [:td {:class (stl/css :shortcut-name)}
-                (ss/translation-keyname :sc shortcut-key)]
-               [:td {:class (stl/css :shortcut-command)}
-                (if (str/blank? current-command)
-                  [:span {:class (stl/css :shortcut-empty)} "-"]
-                  (for [chars current-short-char-list]
-                    [:* {:key (str/join chars)}
-                     (for [char chars]
-                       [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
-                                                :char char
-                                                :class command-class
-                                                :command shortcut-key}])
-                     (when (not= chars current-penultimate) [:span {:class (stl/css :space)} ","])]))
-                (when (not= current-last-element current-penultimate)
-                  [:*
-                   [:span {:class (stl/css :space)} (tr "shortcuts.or")]
-                   (for [char current-last-element]
-                     [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
-                                              :char char
-                                              :class command-class
-                                              :command shortcut-key}])])]
+              [:td {:class (stl/css :shortcut-name)}
+               (ss/translation-keyname :sc shortcut-key)]
+              [:td {:class (stl/css :shortcut-command)}
+               (if (str/blank? current-command)
+                 [:span {:class (stl/css :shortcut-empty)} "-"]
+                 (for [chars current-short-char-list]
+                   [:* {:key (str/join chars)}
+                    (for [char chars]
+                      [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
+                                               :char char
+                                               :class command-class
+                                               :command shortcut-key}])
+                    (when (not= chars current-penultimate) [:span {:class (stl/css :space)} ","])]))
+               (when (not= current-last-element current-penultimate)
+                 [:*
+                  [:span {:class (stl/css :space)} (tr "shortcuts.or")]
+                  (for [char current-last-element]
+                    [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
+                                             :char char
+                                             :class command-class
+                                             :command shortcut-key}])])]
 
               [:td {:class (stl/css :shortcut-command)}
                (for [chars default-short-char-list]
