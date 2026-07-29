@@ -7,30 +7,22 @@
 (ns app.media.local
   "Local media processing via ImageMagick and FontForge shell commands."
   (:require
-   [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.media.svg :as svg]
    [app.media.validation :as validation]
    [app.storage.tmp :as tmp]
    [app.util.shell :as shell]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.string]
-   [clojure.xml :as xml]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io])
-  (:import
-   clojure.lang.XMLHandler
-   java.io.InputStream
-   javax.xml.parsers.SAXParserFactory
-   javax.xml.XMLConstants
-   org.apache.commons.io.IOUtils))
+   [datoteka.io :as io]))
 
 (defmulti process (fn [_system params] (:cmd params)))
 
@@ -39,30 +31,6 @@
   (ex/raise :type :internal
             :code :not-implemented
             :hint (str/fmt "No impl found for local process cmd: %s" cmd)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SVG PARSING
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- secure-parser-factory
-  [^InputStream input ^XMLHandler handler]
-  (.. (doto (SAXParserFactory/newInstance)
-        (.setFeature XMLConstants/FEATURE_SECURE_PROCESSING true)
-        (.setFeature "http://apache.org/xml/features/disallow-doctype-decl" true))
-      (newSAXParser)
-      (parse input handler)))
-
-(defn- strip-doctype
-  [data]
-  (cond-> data
-    (str/includes? data "<!DOCTYPE")
-    (str/replace #"<\!DOCTYPE[^>]*>" "")))
-
-(defn parse-svg
-  [text]
-  (let [text (strip-doctype text)]
-    (dm/with-open [istream (IOUtils/toInputStream ^String text "UTF-8")]
-      (xml/parse istream secure-parser-factory))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE THUMBNAILS
@@ -167,34 +135,6 @@
                                            "-extent" (str width "x" height)
                                            "-quality" (str quality)]))))
 
-(defn get-basic-info-from-svg
-  [{:keys [tag attrs] :as data}]
-  (when (not= tag :svg)
-    (ex/raise :type :validation
-              :code :unable-to-parse-svg
-              :hint "uploaded svg has invalid content"))
-  (reduce (fn [default f]
-            (if-let [res (f attrs)]
-              (reduced res)
-              default))
-          {:width 100 :height 100}
-          [(fn parse-width-and-height
-             [{:keys [width height]}]
-             (when (and (string? width)
-                        (string? height))
-               (let [width  (d/parse-double width)
-                     height (d/parse-double height)]
-                 (when (and width height)
-                   {:width (int width)
-                    :height (int height)}))))
-           (fn parse-viewbox
-             [{:keys [viewBox]}]
-             (let [[x y width height] (->> (str/split viewBox #"\s+" 4)
-                                           (map d/parse-double))]
-               (when (and x y width height)
-                 {:width (int width)
-                  :height (int height)})))]))
-
 (defn- get-dimensions-with-orientation [system ^String path]
   ;; Image magick doesn't give info about exif rotation so we use the identify command
   ;; If we are processing an animated gif we use the first frame with -scene 0
@@ -217,7 +157,7 @@
   [system {:keys [input] :as params}]
   (let [{:keys [path mtype] :as input} (validation/check-input input)]
     (if (= mtype "image/svg+xml")
-      (let [info (some-> path slurp parse-svg get-basic-info-from-svg)]
+      (let [info (some-> path slurp svg/parse-svg svg/get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
                     :code :invalid-svg-file
