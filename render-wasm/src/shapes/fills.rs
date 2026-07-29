@@ -42,6 +42,29 @@ impl Gradient {
         self.offsets.extend(offsets);
     }
 
+    pub fn start(&self) -> (f32, f32) {
+        self.start
+    }
+
+    pub fn end(&self) -> (f32, f32) {
+        self.end
+    }
+
+    pub fn opacity(&self) -> u8 {
+        self.opacity
+    }
+
+    pub fn width(&self) -> f32 {
+        self.width
+    }
+
+    pub fn stops(&self) -> impl Iterator<Item = (Color, f32)> + '_ {
+        self.colors
+            .iter()
+            .copied()
+            .zip(self.offsets.iter().copied())
+    }
+
     pub fn to_linear_shader(&self, rect: &Rect) -> Option<skia::Shader> {
         let start = (
             rect.left + self.start.0 * rect.width(),
@@ -125,6 +148,14 @@ impl ImageFill {
 
     pub fn keep_aspect_ratio(&self) -> bool {
         self.keep_aspect_ratio
+    }
+
+    pub fn width(&self) -> i32 {
+        self.width
+    }
+
+    pub fn height(&self) -> i32 {
+        self.height
     }
 }
 
