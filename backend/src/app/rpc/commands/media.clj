@@ -38,6 +38,12 @@
 
 (declare create-file-media-object)
 
+(def ^:private sql:get-team-id-for-file
+  "SELECT p.team_id
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.id = ?")
+
 (def ^:private schema:upload-file-media-object
   [:map {:title "upload-file-media-object"}
    [:id {:optional true} ::sm/uuid]
@@ -55,6 +61,12 @@
   (files/check-edition-permissions! pool profile-id file-id)
   (media/validate-media-type! content)
   (media/validate-media-size! content)
+
+  (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
+    (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
+                        ::quotes/profile-id profile-id
+                        ::quotes/team-id    team-id
+                        ::quotes/incr       (:size content)}))
 
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  ;; We get the minimal file for proper checking if

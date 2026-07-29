@@ -338,3 +338,96 @@
 
       (check-ok! 4)
       (check-ko! 5))))
+
+(t/deftest media-storage-bytes-per-team-quote
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-media-storage-bytes-per-team 1000})}]
+
+    (let [profile-1 (th/create-profile* 1)
+          profile-2 (th/create-profile* 2)
+          team-id   (:default-team-id profile-1)
+          data      {::quotes/id ::quotes/media-storage-bytes-per-team
+                     ::quotes/profile-id (:id profile-1)
+                     ::quotes/team-id team-id
+                     ::quotes/incr 500}
+
+          check-ok! (fn [msg]
+                      (quotes/check! th/*system* data)
+                      (t/is (true? true) msg))
+          check-ko! (fn [msg]
+                      (try
+                        (quotes/check! th/*system* data)
+                        (t/is false (str msg " — expected exception but none thrown"))
+                        (catch Exception e
+                          (let [ed (ex-data e)]
+                            (t/is (= :restriction (:type ed)))
+                            (t/is (= :max-quote-reached (:code ed)))
+                            (t/is (= "media-storage-bytes-per-team" (:target ed)))))))]
+
+      ;; Under default limit (1000) with incr=500 and no existing storage — ok
+      (check-ok! "first check under limit")
+
+      ;; Insert a quote row for another profile on the same team — does not help
+      (th/db-insert! :usage-quote
+                     {:profile-id (:id profile-2)
+                      :target "media-storage-bytes-per-team"
+                      :quote 100})
+
+      ;; Insert a team+profile quote that is still too low
+      (th/db-insert! :usage-quote
+                     {:team-id team-id
+                      :profile-id (:id profile-2)
+                      :target "media-storage-bytes-per-team"
+                      :quote 200})
+
+      ;; Insert a team-level quote (no profile) that is still too low
+      (th/db-insert! :usage-quote
+                     {:team-id team-id
+                      :target "media-storage-bytes-per-team"
+                      :quote 400})
+
+      ;; total=0, incr=500, best quote=400 → 0+500 > 400 → blocked
+      (check-ko! "blocked by team-level quote")
+
+      ;; Insert a team+profile quote that allows it
+      (th/db-insert! :usage-quote
+                     {:team-id team-id
+                      :profile-id (:id profile-1)
+                      :target "media-storage-bytes-per-team"
+                      :quote 1000})
+
+      ;; total=0, incr=500, best quote=1000 → 0+500 <= 1000 → ok
+      (check-ok! "allowed by team+profile quote"))))
+
+(t/deftest media-upload-enforces-storage-quote
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-media-storage-bytes-per-team 100})}]
+
+    (let [prof  (th/create-profile* 1)
+          proj  (th/create-project* 1 {:profile-id (:id prof)
+                                       :team-id (:default-team-id prof)})
+          file  (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:id proj)
+                                    :is-shared false})
+          mfile {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}
+
+          params {::th/type :upload-file-media-object
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :name "testfile"
+                  :content mfile}
+
+          out    (th/command! params)]
+
+      ;; 312043 bytes > 100 byte limit → should be rejected
+      (t/is (not (th/success? out)))
+      (let [error (:error out)]
+        (t/is (= :restriction (th/ex-type error)))
+        (t/is (= :max-quote-reached (th/ex-code error)))
+        (t/is (= "media-storage-bytes-per-team" (:target (ex-data error))))))))
