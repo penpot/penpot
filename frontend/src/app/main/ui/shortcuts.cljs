@@ -390,7 +390,7 @@
         on-reset-shortcut
         (mf/use-fn
          (mf/deps effective-section-key command-info)
-         (fn [shortcut-key]
+         (fn [_]
            (let [original-cmd (:original-command command-info)]
              (reset! reset-pending* true)
              (reset! recorded-command* original-cmd)

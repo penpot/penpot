@@ -1,6 +1,7 @@
 (ns frontend-tests.ui.settings-shortcuts-test
   (:require
    [app.main.data.profile :as du]
+   [app.main.ui.settings.import-shortcuts-diff-modal :as diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal :as restore-modal]
    [app.main.ui.settings.shortcuts :as sut]
    [app.main.ui.shortcuts :as ui-shortcuts]
@@ -149,6 +150,48 @@
               "First imported entry with duplicate command should be cleared")
         (t/is (= "ctrl+up" (get customs :move-to-top))
               "Last imported entry with duplicate command should survive")))))
+
+(t/deftest compute-diff-shows-new-shortcut-changes
+  (let [imported {:workspace {:add-comment "alt+c"}}
+        diff     (diff-modal/compute-diff imported {})]
+    (t/is (= 1 (count diff)))
+    (let [entry (first diff)]
+      (t/is (= :workspace (:context entry)))
+      (t/is (= :add-comment (:key entry)))
+      (t/is (= "alt+c" (:imported entry)))
+      (t/is (not= "alt+c" (:current entry))))))
+
+(t/deftest compute-diff-shows-conflict-as-disabled
+  (let [imported {:workspace {:select-all "ctrl+shift+a"}}
+        diff     (diff-modal/compute-diff imported {})]
+    (t/is (pos? (count diff)))
+    (let [select-all-entry (first (filter #(= :select-all (:key %)) diff))]
+      (t/is (= :workspace (:context select-all-entry)))
+      (t/is (= "ctrl+shift+a" (:imported select-all-entry))))))
+
+(t/deftest compute-diff-shows-empty-string-as-disabled-shortcut
+  (let [imported {:workspace {:escape ""}}
+        current  {}
+        diff     (diff-modal/compute-diff imported current)]
+    (t/is (pos? (count diff)))
+    (let [entry (first (filter #(= :escape (:key %)) diff))]
+      (t/is (= :workspace (:context entry)))
+      (t/is (= "" (:imported entry))))))
+
+(t/deftest compute-diff-excludes-unchanged-shortcuts
+  (let [imported {:workspace {:escape ""}}
+        current  {:workspace {:escape ""}}
+        diff     (diff-modal/compute-diff imported current)]
+    (t/is (empty? diff))))
+
+(t/deftest compute-diff-detects-multiple-contexts
+  (let [imported {:workspace {:add-comment "alt+c"}
+                  :viewer {:next-frame "right"}}
+        diff     (diff-modal/compute-diff imported {})]
+    (t/is (pos? (count diff)))
+    (let [contexts (set (map :context diff))]
+      (t/is (contains? contexts :workspace))
+      (t/is (contains? contexts :viewer)))))
 
 (t/deftest extract-shortcut-keys-uses-correct-context-override
   (let [customs {:workspace {:undo "shift+z"

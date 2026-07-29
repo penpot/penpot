@@ -12,7 +12,6 @@
    [app.common.i18n :refer [tr]]
    [app.main.data.dashboard.shortcuts :as dsc]
    [app.main.data.modal :as modal]
-   [app.main.data.shortcuts :as ds]
    [app.main.data.viewer.shortcuts :as vsc]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
@@ -30,7 +29,7 @@
    :dashboard dsc/shortcuts
    :viewer    vsc/shortcuts})
 
-(defn- compute-diff
+(defn compute-diff
   [imported-shortcuts custom-shortcuts]
   (let [contexts (filter #(contains? imported-shortcuts %) [:workspace :dashboard :viewer])]
     (mapcat
