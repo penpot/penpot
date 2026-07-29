@@ -8,6 +8,7 @@
   (:require
    [app.auth :as auth]
    [app.auth.oidc :as oidc]
+   [app.auth.passwords :as passwords]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -239,6 +240,9 @@
     (ex/raise :type :validation
               :code :email-as-password
               :hint "you can't use your email as password"))
+
+  ;; Validate password strength against common password dictionary
+  (passwords/validate-password (:password params))
 
   (when (eml/has-bounce-reports? cfg (:email params))
     (ex/raise :type :restriction
