@@ -264,12 +264,15 @@
           (swap! storage/session dissoc :template))))))
 
 (defn- use-nitrate-entry-popup
-  []
+  [onboarding-viewed?]
   (mf/with-effect []
     (when (dnt/nitrate-entry-popup-pending?)
       (dnt/consume-nitrate-entry-popup!)
-      (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
-                (dnt/show-nitrate-popup :nitrate-form)))))
+      (when (not onboarding-viewed?)
+        (st/emit! (dprof/update-profile-props {:onboarding-viewed true
+                                               :release-notes-viewed (:main cf/version)
+                                               :pending-nitrate-onboarding true})
+                  (dnt/show-nitrate-popup :nitrate-form))))))
 
 (defn- use-pending-action
   "Consumes a pending dashboard action from session storage and resumes it"
@@ -289,6 +292,7 @@
   [{:keys [profile project-id team-id search-term plugin-url template section pending-action-id]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
+        props           (get profile :props)
 
         project         (get projects project-id)
         projects        (mf/with-memo [projects team-id]
@@ -323,7 +327,7 @@
 
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
-    (use-nitrate-entry-popup)
+    (use-nitrate-entry-popup (:onboarding-viewed props))
     (use-pending-action pending-action-id)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
