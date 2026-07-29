@@ -9,7 +9,7 @@
 
 .token-context-menu {
   position: absolute;
-  z-index: deprecated.$z-index-4;
+  z-index: var(--z-index-dropdown);
 }
 
 .token-context-menu[data-direction="up"] {
