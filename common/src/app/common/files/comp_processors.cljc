@@ -63,10 +63,8 @@
       file-data)))
 
 (defn fix-missing-swap-slots
-  "Locate shapes that have been swapped (i.e. their shape-ref no longer points to a child of the
-   near main parent) but don't have a swap slot. In this case, add one pointing to the near match.
-   A ref shape that is still a child of the near main parent at another position is a reorder, not
-   a swap, and must NOT get a slot (a slot would freeze it out of normal synchronization)."
+  "Locate shapes that have been swapped (see `ctf/swapped-subhead?`) but don't have a swap slot.
+   In this case, add one pointing to the near match."
   [file-data libraries]
   (try
     (ctf/update-all-shapes
@@ -75,12 +73,9 @@
        (if (ctk/subcopy-head? shape)
          (let [container (:container (meta shape))
                file {:id (:id file-data) :data file-data}
-               parent (get (:objects container) (:parent-id shape))
-               parent-ref-shape (when parent
-                                  (ctf/find-ref-shape file container libraries parent :include-deleted? true))
-               swapped? (and (some? parent-ref-shape)
-                             (not-any? #(= % (:shape-ref shape))
-                                       (:shapes parent-ref-shape)))
+               swapped? (ctf/swapped-subhead?
+                         shape container
+                         #(ctf/find-ref-shape file container libraries % :include-deleted? true))
                near-match (when swapped?
                             (ctf/find-near-match file container libraries shape :include-deleted? true :with-context? false))]
            (if (and (some? near-match)

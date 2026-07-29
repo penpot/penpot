@@ -636,10 +636,7 @@
 (defn- process-children-reordering
   [objects {:keys [parent-id shapes allow-altering-copies] :as change}]
   (if-let [old-shapes (dm/get-in objects [parent-id :shapes])]
-    ;; The child structure of a component copy is owned by the component
-    ;; sync engine (same rule as `is-valid-move?` in :mov-objects): a local
-    ;; reorder of a copy's children would break the positional matching
-    ;; between the copy's children and the main's children.
+    ;; Component sync owns copy child ordering.
     (if (and (not allow-altering-copies)
              (ctk/in-component-copy? (get objects parent-id)))
       objects

@@ -439,26 +439,18 @@
 
 (defn- check-required-swap-slot
   "Validate that the shape has a swap slot if it's a subinstance head that has been
-   swapped: its ref shape is no longer a child of the near main parent. A ref shape
-   that is still a child at another position is a reorder, not a swap, and needs no
-   slot (the component sync realigns positions asynchronously)."
+   swapped (see `ctf/swapped-subhead?`)."
   [shape file page libraries]
   ;; Guard first: if the shape already has a swap slot the invariant is satisfied
   ;; and we can avoid the ref-shape lookups entirely.
-  (when (nil? (ctk/get-swap-slot shape))
-    (let [parent-shape     (ctst/get-shape page (:parent-id shape))
-          parent-ref-shape (when parent-shape
-                             (find-ref-shape* file page libraries parent-shape))
-          swapped?         (and (some? parent-ref-shape)
-                                (not-any? #(= % (:shape-ref shape))
-                                          (:shapes parent-ref-shape)))]
-      (when swapped?
-        (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
-          (when (some? near-match)
-            (report-error :missing-slot
-                          "Shape has been swapped, should have swap slot"
-                          shape file page
-                          :swap-slot (or (ctk/get-swap-slot near-match) (:id near-match)))))))))
+  (when (and (nil? (ctk/get-swap-slot shape))
+             (ctf/swapped-subhead? shape page #(find-ref-shape* file page libraries %)))
+    (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
+      (when (some? near-match)
+        (report-error :missing-slot
+                      "Shape has been swapped, should have swap slot"
+                      shape file page
+                      :swap-slot (or (ctk/get-swap-slot near-match) (:id near-match)))))))
 
 (defn- check-valid-touched
   "Validate that the text touched flags are coherent."

@@ -1525,37 +1525,37 @@
       (some? target-cell)
       (add-children-to-cell ids objects [(:row target-cell) (:column target-cell)]))))
 
+(defn- refill-slots
+  "Fill matching positions in `shapes` from `ordered`, preserving other indices.
+  `ordered` must contain exactly the ids accepted by `slot?`."
+  [shapes slot? ordered]
+  (loop [shapes  (seq shapes)
+         ordered (seq ordered)
+         result  (transient [])]
+    (if (nil? shapes)
+      (persistent! result)
+      (let [id (first shapes)]
+        (if (slot? id)
+          (recur (next shapes) (next ordered) (conj! result (first ordered)))
+          (recur (next shapes) ordered (conj! result id)))))))
+
 (defn reorder-grid-children
-  "Reorder the parent's :shapes to match the visual order of the grid cells.
-  Children that do not participate in any cell (hidden or absolute positioned)
-  keep their original index: moving them would gratuitously change their
-  z-order, and for component copies it would break the positional matching
-  between a copy's children and the main's children."
+  "Order cell children by grid position while preserving the indices of
+  hidden and absolute-positioned children."
   [parent]
-  (let [cells (get-cells parent {:sort? true})
+  (let [cells  (get-cells parent {:sort? true})
         child? (set (:shapes parent))
+
         in-cell-ids
         (into []
               (comp (keep (comp first :shapes))
                     (filter child?)
                     (distinct))
-              cells)
-        in-cell? (set in-cell-ids)
-        ;; target order for the in-cell children (:shapes is reversed
-        ;; relative to the visual cell order)
-        ordered (into [] (reverse in-cell-ids))]
-    (assoc parent :shapes
-           (loop [shapes  (seq (:shapes parent))
-                  ordered (seq ordered)
-                  result  (transient [])]
-             (if (nil? shapes)
-               (persistent! result)
-               (let [id (first shapes)]
-                 (if (in-cell? id)
-                   ;; slot of an in-cell child: take the next id in cell order
-                   (recur (next shapes) (next ordered) (conj! result (first ordered)))
-                   ;; cell-less child (hidden/absolute): keep it in place
-                   (recur (next shapes) ordered (conj! result id)))))))))
+              cells)]
+    ;; :shapes is ordered in reverse relative to the visual cell order
+    (assoc parent :shapes (refill-slots (:shapes parent)
+                                        (set in-cell-ids)
+                                        (reverse in-cell-ids)))))
 
 (defn cells-by-row
   ([parent index]

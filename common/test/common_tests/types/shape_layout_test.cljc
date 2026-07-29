@@ -1214,17 +1214,11 @@
         (t/is (= [shape-id-1 shape-id-2] (:shapes result)))))))
 
 (t/deftest reorder-grid-children-keeps-cell-less-children-in-place-test
-  ;; Children that participate in no cell (hidden or absolute positioned) must
-  ;; keep their original index: moving them would gratuitously change their
-  ;; z-order, and for component copies it would break the positional matching
-  ;; between the copy's children and the main's children. (A hidden copy
-  ;; sub-head used to be moved to the front of :shapes by a grid reflow,
-  ;; corrupting the file's referential integrity.)
+  ;; Cell-less children keep their index while cell children follow grid order.
   (let [shape-id-1 (uuid/next)
         shape-id-2 (uuid/next)
         hidden-id  (uuid/next)
-        ;; cell order: shape-id-2's cell first, so the in-cell target order
-        ;; (reversed) is [shape-id-1 shape-id-2] -> the pair swaps
+        ;; Grid storage reverses the visual cell order.
         cell-a (make-cell :row 1 :column 1 :shapes [shape-id-2])
         cell-b (make-cell :row 1 :column 2 :shapes [shape-id-1])
         parent {:layout-grid-dir :row
