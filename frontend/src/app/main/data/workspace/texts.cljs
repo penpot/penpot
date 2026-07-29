@@ -1311,7 +1311,14 @@
                                                     {:new-shape? new-shape?
                                                      :content-has-text? content-has-text?
                                                      :content content
-                                                     :original-content original-content
+                                                     ;; Undo baseline for the finalize commit: restore the
+                                                     ;; content as it was right before this commit. For existing
+                                                     ;; shapes that's `prev-content`; using the (unset, nil)
+                                                     ;; `original-content` here wiped `:content` to nil on undo,
+                                                     ;; which emptied the shape and crashed the WASM editor's
+                                                     ;; select-all on 0 paragraphs. New shapes keep the previous
+                                                     ;; behavior (their create is bundled in the undo group).
+                                                     :original-content (if new-shape? original-content prev-content)
                                                      :update-name? update-name?
                                                      :name name})))
                    (rx/empty))

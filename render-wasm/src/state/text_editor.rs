@@ -436,7 +436,7 @@ impl TextEditorState {
     pub fn select_all(&mut self, text_content: &TextContent) -> bool {
         self.is_pointer_selection_active = false;
         self.set_caret_from_position(&TextPositionWithAffinity::empty());
-        let num_paragraphs = text_content.paragraphs().len() - 1;
+        let num_paragraphs = text_content.paragraphs().len().saturating_sub(1);
         let Some(last_paragraph) = text_content.paragraphs().last() else {
             return false;
         };
