@@ -121,6 +121,25 @@
 
         show-multiple-placeholder? (or per-side-expanded? (not all-sides-equal?))
 
+        applied-token-width
+        (mf/with-memo [applied-tokens]
+          (let [top    (get applied-tokens :stroke-width-top)
+                right  (get applied-tokens :stroke-width-right)
+                bottom (get applied-tokens :stroke-width-bottom)
+                left   (get applied-tokens :stroke-width-left)
+
+                per-side            [top right bottom left]
+                per-side-has-token? (some some? per-side)]
+            (cond
+              (and (every? some? per-side) (apply = per-side))
+              (first per-side)
+
+              per-side-has-token?
+              :multiple
+
+              :else
+              nil)))
+
         per-side-toggle-label
         (if per-side-disabled
           (tr "workspace.options.stroke.per-side-disabled")
@@ -139,42 +158,62 @@
 
         on-width-top-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-side-change)
-         #(on-stroke-width-side-change index :stroke-width-top %))
+         (mf/deps index on-stroke-width-side-change ids)
+         #(soc/emit-value-or-token % (fn [v]
+                                       (on-stroke-width-side-change index :stroke-width-top v)) ids #{:stroke-width-top}))
 
         on-width-right-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-side-change)
-         #(on-stroke-width-side-change index :stroke-width-right %))
+         (mf/deps index on-stroke-width-side-change ids)
+         #(soc/emit-value-or-token % (fn [v]
+                                       (on-stroke-width-side-change index :stroke-width-right v)) ids #{:stroke-width-right}))
 
         on-width-bottom-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-side-change)
-         #(on-stroke-width-side-change index :stroke-width-bottom %))
+         (mf/deps index on-stroke-width-side-change ids)
+         #(soc/emit-value-or-token % (fn [v]
+                                       (on-stroke-width-side-change index :stroke-width-bottom v)) ids #{:stroke-width-bottom}))
 
         on-width-left-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-side-change)
-         #(on-stroke-width-side-change index :stroke-width-left %))
+         (mf/deps index on-stroke-width-side-change ids)
+         #(soc/emit-value-or-token % (fn [v]
+                                       (on-stroke-width-side-change index :stroke-width-left v)) ids #{:stroke-width-left}))
 
         on-width-change
         (mf/use-fn
          (mf/deps index on-stroke-width-change ids per-side?)
          (fn [value]
            (if per-side?
-             (st/emit! (dc/change-stroke-attrs
-                        ids
-                        {:stroke-width value
-                         :stroke-width-top value
-                         :stroke-width-right value
-                         :stroke-width-bottom value
-                         :stroke-width-left value}
-                        index))
+             (if (coll? value)
+               (soc/emit-value-or-token
+                value
+                (fn [v]
+                  (st/emit! (dc/change-stroke-attrs
+                             ids
+                             {:stroke-width v
+                              :stroke-width-top v
+                              :stroke-width-right v
+                              :stroke-width-bottom v
+                              :stroke-width-left v}
+                             index)))
+                ids
+                #{:stroke-width-top :stroke-width-right
+                  :stroke-width-bottom :stroke-width-left})
+               (st/emit! (dc/change-stroke-attrs
+                          ids
+                          {:stroke-width value
+                           :stroke-width-top value
+                           :stroke-width-right value
+                           :stroke-width-bottom value
+                           :stroke-width-left value}
+                          index)))
              (soc/emit-value-or-token
               value
               #(on-stroke-width-change index %)
-              ids
-              #{:stroke-width}))))
+               ids
+               #{:stroke-width-top :stroke-width-right
+                 :stroke-width-bottom :stroke-width-left}))))
 
         ;; The SVG renderer defaults dash and gap to `stroke-width + 10` when
         ;; unset. Showing that value as placeholder makes the override obvious.
@@ -264,7 +303,32 @@
         (mf/use-fn
          (mf/deps on-detach-token)
          (fn [token]
-           (on-detach-token token #{:stroke-width})))
+           (on-detach-token token #{:stroke-width-top :stroke-width-right
+                                    :stroke-width-bottom :stroke-width-left})))
+
+        on-detach-token-width-top
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (on-detach-token token #{:stroke-width-top})))
+
+        on-detach-token-width-right
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (on-detach-token token #{:stroke-width-right})))
+
+        on-detach-token-width-bottom
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (on-detach-token token #{:stroke-width-bottom})))
+
+        on-detach-token-width-left
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (on-detach-token token #{:stroke-width-left})))
 
         stroke-caps-options
         [{:id "none" :value "none" :label (tr "workspace.options.stroke-cap.none")}
@@ -343,7 +407,7 @@
                                     :attr :stroke-width
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width")
-                                    :applied-token (get applied-tokens :stroke-width)
+                                    :applied-token applied-token-width
                                     :placeholder (if show-multiple-placeholder?
                                                    (tr "settings.multiple")
                                                    "--")
@@ -420,46 +484,54 @@
      (when per-side-expanded?
        [:div {:class (stl/css :stroke-sides-options)
               :data-testid "stroke.per-side-options"}
-        [:div {:class (stl/css :stroke-side-input)
-               :title (tr "workspace.options.stroke-width-top")}
-         [:> icon* {:icon-id i/stroke-top
-                    :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-top stroke) stroke-width)
-                                              :min 0
-                                              :on-change on-width-top-change
-                                              :on-focus on-focus
-                                              :select-on-focus select-on-focus
-                                              :on-blur on-blur}]]
-        [:div {:class (stl/css :stroke-side-input)
-               :title (tr "workspace.options.stroke-width-right")}
-         [:> icon* {:icon-id i/stroke-right
-                    :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-right stroke) stroke-width)
-                                              :min 0
-                                              :on-change on-width-right-change
-                                              :on-focus on-focus
-                                              :select-on-focus select-on-focus
-                                              :on-blur on-blur}]]
-        [:div {:class (stl/css :stroke-side-input)
-               :title (tr "workspace.options.stroke-width-bottom")}
-         [:> icon* {:icon-id i/stroke-bottom
-                    :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-bottom stroke) stroke-width)
-                                              :min 0
-                                              :on-change on-width-bottom-change
-                                              :on-focus on-focus
-                                              :select-on-focus select-on-focus
-                                              :on-blur on-blur}]]
-        [:div {:class (stl/css :stroke-side-input)
-               :title (tr "workspace.options.stroke-width-left")}
-         [:> icon* {:icon-id i/stroke-left
-                    :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-left stroke) stroke-width)
-                                              :min 0
-                                              :on-change on-width-left-change
-                                              :on-focus on-focus
-                                              :select-on-focus select-on-focus
-                                              :on-blur on-blur}]]])
+        [:> numeric-input-wrapper* {:on-change on-width-top-change
+                                    :on-detach on-detach-token-width-top
+                                    :icon i/stroke-top
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-width-top
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-width-top")
+                                    :applied-token (get applied-tokens :stroke-width-top)
+                                    :nillable true
+                                    :value (d/nilv (:stroke-width-top stroke) stroke-width)}]
+        [:> numeric-input-wrapper* {:on-change on-width-right-change
+                                    :on-detach on-detach-token-width-right
+                                    :icon i/stroke-right
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-width-right
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-width-right")
+                                    :applied-token (get applied-tokens :stroke-width-right)
+                                    :nillable true
+                                    :value (d/nilv (:stroke-width-right stroke) stroke-width)}]
+        [:> numeric-input-wrapper* {:on-change on-width-bottom-change
+                                    :on-detach on-detach-token-width-bottom
+                                    :icon i/stroke-bottom
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-width-bottom
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-width-bottom")
+                                    :applied-token (get applied-tokens :stroke-width-bottom)
+                                    :nillable true
+                                    :value (d/nilv (:stroke-width-bottom stroke) stroke-width)}]
+        [:> numeric-input-wrapper* {:on-change on-width-left-change
+                                    :on-detach on-detach-token-width-left
+                                    :icon i/stroke-left
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-width-left
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-width-left")
+                                    :applied-token (get applied-tokens :stroke-width-left)
+                                    :nillable true
+                                    :value (d/nilv (:stroke-width-left stroke) stroke-width)}]])
 
      ;; Stroke Dash / Gap (only visible for dashed style)
      (when (= stroke-style :dashed)
