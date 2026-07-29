@@ -1,0 +1,11 @@
+Hi {{name|abbreviate:25}},
+
+Welcome to Penpot!
+
+Please verify your email to get started with your first design and collaboration.
+
+{{ public-uri }}/#/auth/verify-token?token={{token}}
+
+Enjoy!
+
+The Penpot team

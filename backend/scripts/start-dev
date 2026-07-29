@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $0);
+source $SCRIPT_DIR/_env;
+
+if [ -f $SCRIPT_DIR/_env.local ]; then
+    source $SCRIPT_DIR/_env.local;
+fi
+
+# Initialize MINIO config
+setup_minio;
+
+shift 1;
+set -ex
+exec clojure -A:jmx-remote -A:dev -M -m app.main "$@";

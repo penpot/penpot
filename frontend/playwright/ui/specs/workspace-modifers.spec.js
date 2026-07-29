@@ -1,0 +1,237 @@
+import { test, expect } from "@playwright/test";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
+
+test.beforeEach(async ({ page }) => {
+  await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-token-input"]);
+});
+
+test("BUG 13305 - Fix resize board to fit content", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13305.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-13305.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "9666e946-78e8-8111-8007-8fe5f0f454bf",
+    pageId: "9666e946-78e8-8111-8007-8fe5f0f49ac6",
+  });
+
+  await workspacePage.clickLeafLayer("Board");
+  await workspacePage.rightSidebar
+    .getByRole("button", { name: "Resize board to fit content" })
+    .click();
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  // Width
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("630");
+
+  // Height
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+  await expect(heightInput).toHaveValue("630");
+
+  // X Position (using "X axis" title)
+  const xPosInput = measuresSection.getByRole("textbox", {
+    name: "X axis",
+    exact: true,
+  });
+  await expect(xPosInput).toHaveValue("110");
+
+  // Y Position (using "Y axis" title)
+  const yPosInput = measuresSection.getByRole("textbox", {
+    name: "Y axis",
+    exact: true,
+  });
+  await expect(yPosInput).toHaveValue("110");
+});
+
+test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13382.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13382-fragment.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "52c4e771-3853-8190-8007-9506c70e8100",
+    pageId: "ecb0cfd0-0f0b-81f7-8007-950628f9665b",
+  });
+
+  await workspacePage.clickToggableLayer("A");
+  await workspacePage.clickToggableLayer("B");
+  await workspacePage.clickToggableLayer("C");
+  await workspacePage.clickLeafLayer("R2");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+  await heightInput.fill("200");
+  await heightInput.press("Enter");
+
+  await workspacePage.clickLeafLayer("B");
+
+  // Width
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("393");
+});
+
+test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13468.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13468-fragment.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "3a4d7ec7-c391-8146-8007-9a05c41da6b9",
+    pageId: "95b23c15-79f9-81ba-8007-99d81b5290dd",
+  });
+
+  await workspacePage.clickToggableLayer("Parent");
+  await workspacePage.clickToggableLayer("Container");
+
+  await workspacePage.sidebar.getByRole("button", { name: "Show" }).click();
+
+  await workspacePage.clickLeafLayer("Container");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+
+  await expect(heightInput).toHaveValue("76");
+});
+
+test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13272.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13272-fragment.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "3b9773cc-d4f1-81e1-8007-b3f8dcaba770",
+    pageId: "3b9773cc-d4f1-81e1-8007-b3f8dcaba771",
+  });
+
+  await workspacePage.clickToggableLayer("Group");
+  await workspacePage.clickLeafLayer("Group");
+
+  await workspacePage.page
+    .locator("g:nth-child(11) > .cursor-resize-nesw-0")
+    .hover();
+  await workspacePage.page.mouse.down();
+
+  await workspacePage.page.mouse.move(1200, 800);
+  await workspacePage.page.mouse.up();
+
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const heightInput = measuresSection.getByRole("textbox", {
+    name: "Height",
+    exact: true,
+  });
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("197.5");
+  await expect(heightInput).toHaveValue("128.28");
+});
+
+test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13755.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13755-fragment.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "7fd33337-c651-80ae-8007-c357213f876e",
+    pageId: "7fd33337-c651-80ae-8007-c357213f876f",
+  });
+
+  await workspacePage.clickToggableLayer("Board");
+  await workspacePage.clickLeafLayer("uno dos tres cuatro");
+
+  await workspacePage.page.keyboard.press("Enter");
+  await workspacePage.page.keyboard.type("test");
+
+  await workspacePage.clickToggableLayer("Board");
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("23");
+});

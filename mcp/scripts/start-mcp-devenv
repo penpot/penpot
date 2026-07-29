@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# This starts the MCP server in a configuration for Penpot development
+# (assuming devenv)
+
+PENPOT_MCP_SERVER_HOST=0.0.0.0 PENPOT_MCP_REMOTE_MODE=true PENPOT_MCP_DEVENV=true pnpm run bootstrap

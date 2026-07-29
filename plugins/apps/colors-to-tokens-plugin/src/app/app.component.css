@@ -1,0 +1,87 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-24);
+  padding-top: var(--spacing-36);
+}
+
+.title {
+  color: var(--foreground-primary);
+}
+
+.description {
+  padding-bottom: var(--spacing-4);
+
+  a {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+}
+
+.title,
+.description {
+  text-wrap: pretty;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-8);
+  justify-content: center;
+}
+
+.download-btn {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+
+  app-svg {
+    --svg-stroke-color: var(--background-primary);
+  }
+}
+
+.restart-btn {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+
+  app-svg {
+    --svg-stroke-color: var(--foreground-secondary);
+  }
+
+  &:hover {
+    app-svg {
+      --svg-stroke-color: var(--accent-primary);
+    }
+  }
+}
+
+/* Override default button appearance */
+.download-btn[data-appearance='primary']:is(button):disabled {
+  color: var(--background-secondary);
+  background-color: var(--accent-primary-muted);
+  border: 2px solid var(--accent-primary-muted);
+
+  app-svg {
+    --svg-stroke-color: var(--background-primary);
+  }
+}
+
+.success {
+  display: flex;
+  background-color: var(--success-950);
+  border-radius: var(--spacing-8);
+  border: 1px solid var(--success-500);
+  color: var(--app-white);
+  gap: var(--spacing-8);
+  padding: var(--spacing-8);
+
+  app-svg {
+    --svg-stroke-color: var(--success-500);
+  }
+}
+
+.download-note {
+  padding: 0 var(--spacing-8);
+  text-align: center;
+}

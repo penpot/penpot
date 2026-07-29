@@ -1,0 +1,31 @@
+{
+    "~:id": "~u015fda4f-caa6-8103-8004-862a9e4b4d4b",
+    "~:file-id": "~u015fda4f-caa6-8103-8004-862a00dd4f31",
+    "~:created-at": "~m1718718436639",
+    "~:data": {
+        "~ue117f7f6-433c-807e-8004-862a38e1823d": {
+            "~:id": "~ue117f7f6-433c-807e-8004-862a38e1823d",
+            "~:name": "Button",
+            "~:path": "",
+            "~:modified-at": "~m1718718335855",
+            "~:main-instance-id": "~ue117f7f6-433c-807e-8004-862a38e0099a",
+            "~:main-instance-page": "~u015fda4f-caa6-8103-8004-862a00ddbe94"
+        },
+        "~ue117f7f6-433c-807e-8004-862a51a90ef5": {
+            "~:id": "~ue117f7f6-433c-807e-8004-862a51a90ef5",
+            "~:name": "Badge",
+            "~:path": "",
+            "~:modified-at": "~m1718718361245",
+            "~:main-instance-id": "~ue117f7f6-433c-807e-8004-862a51a84a91",
+            "~:main-instance-page": "~u015fda4f-caa6-8103-8004-862a00ddbe94"
+        },
+        "~ue117f7f6-433c-807e-8004-862a9b541a46": {
+            "~:id": "~ue117f7f6-433c-807e-8004-862a9b541a46",
+            "~:name": "Avatar",
+            "~:path": "",
+            "~:modified-at": "~m1718718436652",
+            "~:main-instance-id": "~ue117f7f6-433c-807e-8004-862a9b5374b6",
+            "~:main-instance-page": "~u015fda4f-caa6-8103-8004-862a00ddbe94"
+        }
+    }
+}

@@ -1,0 +1,31 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+.button {
+  @include use-typography("body-small");
+
+  appearance: none;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  min-inline-size: px2rem(25);
+  padding-block: 0;
+  padding-inline: var(--sp-l);
+  transition: all 0.4s;
+  text-decoration: none !important;
+  block-size: $sz-40;
+
+  .logo {
+    block-size: px2rem(20);
+    inline-size: px2rem(20);
+  }
+}

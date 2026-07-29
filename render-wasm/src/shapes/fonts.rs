@@ -1,0 +1,56 @@
+use std::fmt;
+
+use crate::uuid::Uuid;
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+#[repr(u8)]
+pub enum FontStyle {
+    Normal = 0,
+    Italic = 1,
+}
+
+impl fmt::Display for FontStyle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let txt = match self {
+            Self::Normal => "normal",
+            Self::Italic => "italic",
+        };
+        write!(f, "{}", txt)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub struct FontFamily {
+    id: Uuid,
+    style: FontStyle,
+    weight: u32,
+}
+
+impl FontFamily {
+    pub fn new(id: Uuid, weight: u32, style: FontStyle) -> Self {
+        Self { id, style, weight }
+    }
+
+    pub fn alias(&self) -> String {
+        format!("{}", self)
+    }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn style(&self) -> FontStyle {
+        self.style
+    }
+
+    #[allow(dead_code)]
+    pub fn weight(&self) -> u32 {
+        self.weight
+    }
+}
+
+impl fmt::Display for FontFamily {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {} {}", self.id, self.weight, self.style)
+    }
+}

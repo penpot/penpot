@@ -1,0 +1,105 @@
+{
+    "~:features": {
+        "~#set": [
+            "layout/grid",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "New File 1",
+    "~:revn": 15,
+    "~:modified-at": "~m1738332498202",
+    "~:vern": 0,
+    "~:id": "~u525a5d8b-028e-80e7-8005-aa6cad42f27d",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u525a5d8b-028e-80e7-8005-aa6ca759253d",
+    "~:created-at": "~m1738331541791",
+    "~:data": {
+        "~:pages": [
+            "~u525a5d8b-028e-80e7-8005-aa6cad42f27e"
+        ],
+        "~:pages-index": {
+            "~u525a5d8b-028e-80e7-8005-aa6cad42f27e": {
+                "~#penpot/pointer": [
+                    "~u525a5d8b-028e-80e7-8005-aa705347b678",
+                    {
+                        "~:created-at": "~m1738332498207"
+                    }
+                ]
+            }
+        },
+        "~:id": "~u525a5d8b-028e-80e7-8005-aa6cad42f27d",
+        "~:options": {
+            "~:components-v2": true
+        }
+    }
+}

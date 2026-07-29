@@ -1,0 +1,58 @@
+name: "CI: Library"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'common/**'
+      - 'library/**'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'common/**'
+      - 'library/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-library:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Library Tests"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Lint
+        working-directory: ./library
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt
+          pnpm run lint
+
+      - name: Tests
+        working-directory: ./library
+        run: |
+          ./scripts/test

@@ -1,0 +1,277 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.element-list {
+  display: grid;
+  position: relative;
+}
+
+.tool-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-xs);
+  margin: var(--sp-m) var(--sp-m) 0 var(--sp-m);
+}
+
+.tool-window-bar-title {
+  margin-block-end: var(--sp-s);
+}
+
+.tool-window-content {
+  --calculated-height: calc(#{px2rem(136)} + var(--height, #{$sz-200}));
+
+  display: flex;
+  flex-direction: column;
+  block-size: calc(100vh - var(--calculated-height));
+  inline-size: calc(var(--left-sidebar-width) + var(--depth) * var(--layer-indentation-size));
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.filter-button {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.focus-title {
+  border: none;
+  background: none;
+  block-size: var(--sp-xxxl);
+  inline-size: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  margin-block-end: var(--sp-s);
+  padding: 0;
+}
+
+.focus-back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--sp-xxxl);
+  padding-inline-start: var(--sp-s);
+  color: var(--icon-foreground);
+}
+
+.focus-name {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  padding-inline-end: var(--sp-xs);
+  color: var(--title-foreground-color);
+}
+
+.focus-mode-tag-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 100%;
+  margin-inline-end: var(--sp-m);
+}
+
+.active-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  flex-wrap: wrap;
+  margin: 0 var(--sp-m);
+}
+
+.layer-filter {
+  @extend %button-tag;
+
+  gap: px2rem(6);
+  block-size: var(--sp-xxl);
+  margin: var(--sp-xxs) 0;
+  border-radius: $br-6;
+  background-color: var(--pill-background-color);
+}
+
+.layer-filter-icon,
+.layer-filter-close {
+  color: var(--pill-foreground-color);
+}
+
+.layer-filter-name {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pill-foreground-color);
+}
+
+.layers {
+  position: relative;
+}
+
+.replace-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-xs) var(--sp-m);
+  gap: var(--sp-xs);
+}
+
+.replace-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-xs);
+}
+
+.replace-scope-row {
+  display: flex;
+  gap: var(--sp-l);
+  align-items: center;
+  block-size: $sz-32;
+}
+
+.replace-actions-row {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.replace-actions-button {
+  justify-content: center;
+  flex: 1 1 0;
+}
+
+.replace-match-navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  flex-shrink: 0;
+}
+
+.replace-match-count {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-xs);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: px2rem(6);
+
+  &.selected {
+    .radio-text {
+      color: var(--color-foreground-primary);
+    }
+  }
+}
+
+.radio-icon {
+  block-size: var(--sp-m);
+  inline-size: var(--sp-m);
+  border: $b-1 solid var(--color-foreground-secondary);
+  border-radius: 50%;
+  background-color: transparent;
+  flex-shrink: 0;
+
+  &.checked {
+    border-color: var(--color-accent-primary);
+    background-color: var(--color-accent-primary);
+    box-shadow: inset 0 0 0 var(--sp-xxs) var(--color-background-primary);
+  }
+}
+
+.radio-input {
+  display: none;
+}
+
+.radio-text {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.filters-container {
+  @extend %menu-dropdown;
+
+  position: absolute;
+  inline-size: $sz-192;
+
+  .filter-menu-item {
+    @include t.use-typography("body-small");
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: 100%;
+    padding: px2rem(6);
+    border-radius: $br-8;
+
+    .filter-menu-item-name-wrapper {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-s);
+
+      .filter-menu-item-icon {
+        color: var(--menu-foreground-color);
+      }
+
+      .filter-menu-item-name {
+        padding-block-start: var(--sp-xxs);
+        color: var(--menu-foreground-color);
+      }
+    }
+
+    .filter-menu-item-tick {
+      color: var(--menu-foreground-color);
+    }
+
+    &.selected {
+      background-color: var(--menu-background-color-selected);
+
+      .filter-menu-item-name-wrapper {
+        .filter-menu-item-icon {
+          color: var(--menu-foreground-color);
+        }
+
+        .filter-menu-item-name {
+          color: var(--menu-foreground-color);
+        }
+      }
+
+      .filter-menu-item-tick {
+        color: var(--menu-foreground-color);
+      }
+    }
+
+    &:hover {
+      background-color: var(--menu-background-color-hover);
+
+      .filter-menu-item-name-wrapper {
+        .filter-menu-item-icon {
+          color: var(--menu-foreground-color-hover);
+        }
+
+        .filter-menu-item-name {
+          color: var(--menu-foreground-color-hover);
+        }
+      }
+
+      .filter-menu-item-tick {
+        color: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+}

@@ -1,0 +1,3583 @@
+{
+    "~:features": {
+      "~#set": [
+        "fdata/path-data",
+        "design-tokens/v1",
+        "variants/v1",
+        "layout/grid",
+        "fdata/pointer-map",
+        "fdata/objects-map",
+        "components/v2",
+        "fdata/shape-data-type"
+      ]
+    },
+    "~:team-id": "~ueba8fa2e-4140-8084-8005-448635d7a724",
+    "~:permissions": {
+      "~:type": "~:membership",
+      "~:is-owner": true,
+      "~:is-admin": true,
+      "~:can-edit": true,
+      "~:can-read": true,
+      "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "Bad blur bad blur",
+    "~:revn": 127,
+    "~:modified-at": "~m1772523623921",
+    "~:vern": 0,
+    "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc677169cd",
+    "~:is-shared": false,
+    "~:migrations": {
+      "~#ordered-set": [
+        "legacy-2",
+        "legacy-3",
+        "legacy-5",
+        "legacy-6",
+        "legacy-7",
+        "legacy-8",
+        "legacy-9",
+        "legacy-10",
+        "legacy-11",
+        "legacy-12",
+        "legacy-13",
+        "legacy-14",
+        "legacy-16",
+        "legacy-17",
+        "legacy-18",
+        "legacy-19",
+        "legacy-25",
+        "legacy-26",
+        "legacy-27",
+        "legacy-28",
+        "legacy-29",
+        "legacy-31",
+        "legacy-32",
+        "legacy-33",
+        "legacy-34",
+        "legacy-36",
+        "legacy-37",
+        "legacy-38",
+        "legacy-39",
+        "legacy-40",
+        "legacy-41",
+        "legacy-42",
+        "legacy-43",
+        "legacy-44",
+        "legacy-45",
+        "legacy-46",
+        "legacy-47",
+        "legacy-48",
+        "legacy-49",
+        "legacy-50",
+        "legacy-51",
+        "legacy-52",
+        "legacy-53",
+        "legacy-54",
+        "legacy-55",
+        "legacy-56",
+        "legacy-57",
+        "legacy-59",
+        "legacy-62",
+        "legacy-65",
+        "legacy-66",
+        "legacy-67",
+        "0001-remove-tokens-from-groups",
+        "0002-normalize-bool-content-v2",
+        "0002-clean-shape-interactions",
+        "0003-fix-root-shape",
+        "0003-convert-path-content-v2",
+        "0004-clean-shadow-color",
+        "0005-deprecate-image-type",
+        "0006-fix-old-texts-fills",
+        "0007-clear-invalid-strokes-and-fills-v2",
+        "0008-fix-library-colors-v4",
+        "0009-clean-library-colors",
+        "0009-add-partial-text-touched-flags",
+        "0010-fix-swap-slots-pointing-non-existent-shapes",
+        "0011-fix-invalid-text-touched-flags",
+        "0012-fix-position-data",
+        "0013-fix-component-path",
+        "0013-clear-invalid-strokes-and-fills",
+        "0014-fix-tokens-lib-duplicate-ids",
+        "0014-clear-components-nil-objects",
+        "0015-fix-text-attrs-blank-strings",
+        "0015-clean-shadow-color",
+        "0016-copy-fills-from-position-data-to-text-node"
+      ]
+    },
+    "~:version": 67,
+    "~:project-id": "~ueba8fa2e-4140-8084-8005-448635da32b4",
+    "~:created-at": "~m1772519242179",
+    "~:backend": "legacy-db",
+    "~:data": {
+      "~:pages": [
+        "~ua5508528-5928-8008-8007-a7de9feef61b"
+      ],
+      "~:pages-index": {
+        "~ua5508528-5928-8008-8007-a7de9feef61b": {
+          "~:objects": {
+            "~u00000000-0000-0000-0000-000000000000": {
+              "~#shape": {
+                "~:y": 0,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:name": "Root Frame",
+                "~:width": 0.01,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 0,
+                      "~:y": 0
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 0.01,
+                      "~:y": 0
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 0.01,
+                      "~:y": 0.01
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 0,
+                      "~:y": 0.01
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:r3": 0,
+                "~:r1": 0,
+                "~:id": "~u00000000-0000-0000-0000-000000000000",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [],
+                "~:x": 0,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 0,
+                    "~:y": 0,
+                    "~:width": 0.01,
+                    "~:height": 0.01,
+                    "~:x1": 0,
+                    "~:y1": 0,
+                    "~:x2": 0.01,
+                    "~:y2": 0.01
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#FFFFFF",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": 0.01,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~ua5508528-5928-8008-8007-a7e03d2ac912",
+                  "~ua5508528-5928-8008-8007-a7e0e62b1820"
+                ]
+              }
+            },
+            "~ua5508528-5928-8008-8007-a7e03d2ac912": {
+              "~#shape": {
+                "~:y": 470,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:hide-in-viewer": false,
+                "~:name": "Rectangle",
+                "~:width": 233,
+                "~:type": "~:rect",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 408,
+                      "~:y": 470
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 641,
+                      "~:y": 470
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 641,
+                      "~:y": 628
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 408,
+                      "~:y": 628
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:r3": 0,
+                "~:r1": 0,
+                "~:id": "~ua5508528-5928-8008-8007-a7e03d2ac912",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [],
+                "~:x": 408,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 408,
+                    "~:y": 470,
+                    "~:width": 233,
+                    "~:height": 158,
+                    "~:x1": 408,
+                    "~:y1": 470,
+                    "~:x2": 641,
+                    "~:y2": 628
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": 158,
+                "~:flip-y": null
+              }
+            },
+            "~ua5508528-5928-8008-8007-a7e0e62b1820": {
+              "~#shape": {
+                "~:y": 457,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:hide-in-viewer": false,
+                "~:name": "Board",
+                "~:width": 557,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 771,
+                      "~:y": 457
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1328,
+                      "~:y": 457
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1328,
+                      "~:y": 781
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 771,
+                      "~:y": 781
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:r3": 0,
+                "~:blur": {
+                  "~:id": "~ua5508528-5928-8008-8007-a7e0ef6b5783",
+                  "~:type": "~:layer-blur",
+                  "~:value": 4,
+                  "~:hidden": false
+                },
+                "~:r1": 0,
+                "~:id": "~ua5508528-5928-8008-8007-a7e0e62b1820",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [],
+                "~:x": 771,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 771,
+                    "~:y": 457,
+                    "~:width": 557,
+                    "~:height": 324,
+                    "~:x1": 771,
+                    "~:y1": 457,
+                    "~:x2": 1328,
+                    "~:y2": 781
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#FFFFFF",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": 324,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~ua5508528-5928-8008-8007-a7e0e89a5a24"
+                ]
+              }
+            },
+            "~ua5508528-5928-8008-8007-a7e0e89a5a24": {
+              "~#shape": {
+                "~:y": 496.000003814697,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:hide-in-viewer": true,
+                "~:name": "Board",
+                "~:width": 212.000012099743,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 838.000027060509,
+                      "~:y": 496.000003814697
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1050.00003916025,
+                      "~:y": 496.000003814697
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1050.00003916025,
+                      "~:y": 619.000005245209
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 838.000027060509,
+                      "~:y": 619.000005245209
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:r3": 0,
+                "~:r1": 0,
+                "~:id": "~ua5508528-5928-8008-8007-a7e0e89a5a24",
+                "~:parent-id": "~ua5508528-5928-8008-8007-a7e0e62b1820",
+                "~:frame-id": "~ua5508528-5928-8008-8007-a7e0e62b1820",
+                "~:strokes": [],
+                "~:x": 838.000027060509,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 838.000027060509,
+                    "~:y": 496.000003814697,
+                    "~:width": 212.000012099743,
+                    "~:height": 123.000001430511,
+                    "~:x1": 838.000027060509,
+                    "~:y1": 496.000003814697,
+                    "~:x2": 1050.00003916025,
+                    "~:y2": 619.000005245209
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 123.000001430511,
+                "~:flip-y": null,
+                "~:shapes": []
+              }
+            }
+          },
+          "~:id": "~ua5508528-5928-8008-8007-a7de9feef61b",
+          "~:name": "Page 1"
+        }
+      },
+      "~:tokens-lib": {
+        "~#penpot/tokens-lib": {
+          "~:sets": {
+            "~#ordered-map": [
+              [
+                "S-Global",
+                {
+                  "~#penpot/token-set": {
+                    "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781f1b3",
+                    "~:name": "Global",
+                    "~:description": "",
+                    "~:modified-at": "~m1772519242247",
+                    "~:tokens": {
+                      "~#ordered-map": [
+                        [
+                          "COLOR-2",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc67817448",
+                              "~:name": "COLOR-2",
+                              "~:type": "~:color",
+                              "~:value": "rgb(0, 239, 255)",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "SIZING-2",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc67817449",
+                              "~:name": "SIZING-2",
+                              "~:type": "~:sizing",
+                              "~:value": "2",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "DIMENSIONS-1",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781744a",
+                              "~:name": "DIMENSIONS-1",
+                              "~:type": "~:dimensions",
+                              "~:value": "10",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "SIZING-0.5",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781744f",
+                              "~:name": "SIZING-0.5",
+                              "~:type": "~:sizing",
+                              "~:value": "0.5",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "ROTATION-60",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781744b",
+                              "~:name": "ROTATION-60",
+                              "~:type": "~:rotation",
+                              "~:value": "60",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "LETTER-SPACING-10",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781744c",
+                              "~:name": "LETTER-SPACING-10",
+                              "~:type": "~:letter-spacing",
+                              "~:value": "10",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "OPACITY-40",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781744d",
+                              "~:name": "OPACITY-40",
+                              "~:type": "~:opacity",
+                              "~:value": "40%",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "OPACITY-20",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc6781744e",
+                              "~:name": "OPACITY-20",
+                              "~:type": "~:opacity",
+                              "~:value": "20%",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "SPACING-20",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc67817450",
+                              "~:name": "SPACING-20",
+                              "~:type": "~:spacing",
+                              "~:value": "20",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "BORDER-RADIUS-3",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc67817451",
+                              "~:name": "BORDER-RADIUS-3",
+                              "~:type": "~:border-radius",
+                              "~:value": "30",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "SPACING-10",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc67817452",
+                              "~:name": "SPACING-10",
+                              "~:type": "~:spacing",
+                              "~:value": "10",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242245"
+                            }
+                          }
+                        ],
+                        [
+                          "font-family-3",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186d5",
+                              "~:name": "font-family-3",
+                              "~:type": "~:font-family",
+                              "~:value": [
+                                "Alexandria"
+                              ],
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "FONT-SIZE-150",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186d6",
+                              "~:name": "FONT-SIZE-150",
+                              "~:type": "~:font-size",
+                              "~:value": "150",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "NUMBER-16",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186d7",
+                              "~:name": "NUMBER-16",
+                              "~:type": "~:number",
+                              "~:value": "16",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "OPACITY-60",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186d8",
+                              "~:name": "OPACITY-60",
+                              "~:type": "~:opacity",
+                              "~:value": "0.6",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "NUMBER-4",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186d9",
+                              "~:name": "NUMBER-4",
+                              "~:type": "~:number",
+                              "~:value": "4",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "font-family-2",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186da",
+                              "~:name": "font-family-2",
+                              "~:type": "~:font-family",
+                              "~:value": [
+                                "Abel"
+                              ],
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "SIZING-4",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186db",
+                              "~:name": "SIZING-4",
+                              "~:type": "~:sizing",
+                              "~:value": "4",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "COLOR-1",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186dc",
+                              "~:name": "COLOR-1",
+                              "~:type": "~:color",
+                              "~:value": "rgb(255, 0, 0)",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "BORDER-RADIUS-2",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186dd",
+                              "~:name": "BORDER-RADIUS-2",
+                              "~:type": "~:border-radius",
+                              "~:value": "20",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "BORDER-RADIUS-1",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186de",
+                              "~:name": "BORDER-RADIUS-1",
+                              "~:type": "~:border-radius",
+                              "~:value": "10",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "NUMBER-8",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186df",
+                              "~:name": "NUMBER-8",
+                              "~:type": "~:number",
+                              "~:value": "8",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "LETTER-SPACING-30",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e0",
+                              "~:name": "LETTER-SPACING-30",
+                              "~:type": "~:letter-spacing",
+                              "~:value": "30",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "SPACING-5",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e1",
+                              "~:name": "SPACING-5",
+                              "~:type": "~:spacing",
+                              "~:value": "5",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "font-family-1",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e2",
+                              "~:name": "font-family-1",
+                              "~:type": "~:font-family",
+                              "~:value": [
+                                "ABeeZee"
+                              ],
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "LETTER-SPACING-20",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e3",
+                              "~:name": "LETTER-SPACING-20",
+                              "~:type": "~:letter-spacing",
+                              "~:value": "20",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "FONT-SIZE-100",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e4",
+                              "~:name": "FONT-SIZE-100",
+                              "~:type": "~:font-size",
+                              "~:value": "100",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "FONT-SIZE-40",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e5",
+                              "~:name": "FONT-SIZE-40",
+                              "~:type": "~:font-size",
+                              "~:value": "40",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "ROTATION-30",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e6",
+                              "~:name": "ROTATION-30",
+                              "~:type": "~:rotation",
+                              "~:value": "30",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "ROTATION-15",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e7",
+                              "~:name": "ROTATION-15",
+                              "~:type": "~:rotation",
+                              "~:value": "15",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "COLOR-3",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e8",
+                              "~:name": "COLOR-3",
+                              "~:type": "~:color",
+                              "~:value": "rgb(0, 255, 4)",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "DIMENSIONS-3",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186e9",
+                              "~:name": "DIMENSIONS-3",
+                              "~:type": "~:dimensions",
+                              "~:value": "30",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ],
+                        [
+                          "DIMENSIONS-2",
+                          {
+                            "~#penpot/token": {
+                              "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc678186ea",
+                              "~:name": "DIMENSIONS-2",
+                              "~:type": "~:dimensions",
+                              "~:value": "20",
+                              "~:description": "",
+                              "~:modified-at": "~m1772519242246"
+                            }
+                          }
+                        ]
+                      ]
+                    }
+                  }
+                }
+              ]
+            ]
+          },
+          "~:themes": {
+            "~#ordered-map": [
+              [
+                "",
+                {
+                  "~#ordered-map": [
+                    [
+                      "__PENPOT__HIDDEN__TOKEN__THEME__",
+                      {
+                        "~#penpot/token-theme": {
+                          "~:id": "~u00000000-0000-0000-0000-000000000000",
+                          "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
+                          "~:group": "",
+                          "~:description": "",
+                          "~:is-source": false,
+                          "~:external-id": "",
+                          "~:modified-at": "~m1772519242248",
+                          "~:sets": {
+                            "~#set": [
+                              "Global"
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ]
+          },
+          "~:active-themes": {
+            "~#set": [
+              "/__PENPOT__HIDDEN__TOKEN__THEME__"
+            ]
+          }
+        }
+      },
+      "~:components": {
+        "~uade8229e-4891-80f7-8007-a6c641aa24c2": {
+          "~:path": "Modal / actions",
+          "~:deleted": true,
+          "~:main-instance-id": "~uade8229e-4891-80f7-8007-a6c641a6a32c",
+          "~:objects": {
+            "~uade8229e-4891-80f7-8007-a6c641a6a32f": {
+              "~#shape": {
+                "~:y": 1251.30205598607,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:layout-item-hsizing": "fill",
+                "~:layout-padding": {
+                  "~:p1": 5.6843418860808e-14,
+                  "~:p2": 0,
+                  "~:p3": 5.6843418860808e-14,
+                  "~:p4": 0
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "description",
+                "~:layout-align-items": "~:start",
+                "~:width": 465,
+                "~:layout-padding-type": "~:simple",
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1251.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1251.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1271.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1271.30205598607
+                    }
+                  }
+                ],
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:row-gap": 0,
+                  "~:column-gap": 0
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:layout-justify-content": "~:start",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a32f",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:layout-flex-dir": "~:column",
+                "~:layout-align-content": "~:stretch",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:strokes": [],
+                "~:x": 931.380862910156,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 931.380862910156,
+                    "~:y": 1251.30205598607,
+                    "~:width": 465,
+                    "~:height": 20.0000000000005,
+                    "~:x1": 931.380862910156,
+                    "~:y1": 1251.30205598607,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1271.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 20.0000000000005,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a339"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a32e": {
+              "~#shape": {
+                "~:y": 1287.30205598607,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:layout-item-hsizing": "auto",
+                "~:layout-padding": {
+                  "~:p1": 0,
+                  "~:p2": 0,
+                  "~:p3": 0,
+                  "~:p4": 0
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "Board",
+                "~:layout-align-items": "~:start",
+                "~:width": 196,
+                "~:layout-padding-type": "~:simple",
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1200.38086291016,
+                      "~:y": 1287.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1287.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1200.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:column-gap": 12,
+                  "~:row-gap": 12
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:r3": 0,
+                "~:layout-justify-content": "~:end",
+                "~:constraints-v": "~:top",
+                "~:constraints-h": "~:left",
+                "~:r1": 0,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a32e",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:layout-flex-dir": "~:row-reverse",
+                "~:applied-tokens": {
+                  "~:column-gap": "xx.alias.spacing.sm",
+                  "~:row-gap": "xx.alias.spacing.sm"
+                },
+                "~:layout-align-content": "~:stretch",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:strokes": [],
+                "~:x": 1200.38086291016,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:layout-item-align-self": "~:end",
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1200.38086291016,
+                    "~:y": 1287.30205598607,
+                    "~:width": 196,
+                    "~:height": 40,
+                    "~:x1": 1200.38086291016,
+                    "~:y1": 1287.30205598607,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1327.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 40,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a331",
+                  "~uade8229e-4891-80f7-8007-a6c641a6a332"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a32d": {
+              "~#shape": {
+                "~:y": 1207.18039402734,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:layout-item-hsizing": "fill",
+                "~:layout-padding": {
+                  "~:p1": 0,
+                  "~:p2": 0,
+                  "~:p3": 0,
+                  "~:p4": 0
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "content",
+                "~:layout-align-items": "~:start",
+                "~:width": 465,
+                "~:layout-padding-type": "~:simple",
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1207.18039402734
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1207.18039402734
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1327.30205598607
+                    }
+                  }
+                ],
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:column-gap": 16,
+                  "~:row-gap": 16
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:layout-justify-content": "~:start",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32c",
+                "~:layout-flex-dir": "~:column",
+                "~:applied-tokens": {
+                  "~:column-gap": "xx.alias.spacing.md",
+                  "~:row-gap": "xx.alias.spacing.md"
+                },
+                "~:layout-align-content": "~:stretch",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32c",
+                "~:strokes": [],
+                "~:x": 931.380862910156,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 931.380862910156,
+                    "~:y": 1207.18039402734,
+                    "~:width": 465,
+                    "~:height": 120.121661958726,
+                    "~:x1": 931.380862910156,
+                    "~:y1": 1207.18039402734,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1327.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 120.121661958726,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a32e",
+                  "~uade8229e-4891-80f7-8007-a6c641a6a32f",
+                  "~uade8229e-4891-80f7-8007-a6c641a6a330"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a32c": {
+              "~#shape": {
+                "~:y": 1183.18039402734,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:rx": 20,
+                "~:layout-item-hsizing": "fix",
+                "~:layout-padding": {
+                  "~:p2": 24,
+                  "~:p4": 24,
+                  "~:p3": 24,
+                  "~:p1": 24
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "Modal / actions / Destructive",
+                "~:layout-align-items": "~:center",
+                "~:width": 513,
+                "~:layout-padding-type": "~:multiple",
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 907.380862910156,
+                      "~:y": 1183.18039402734
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1420.38086291016,
+                      "~:y": 1183.18039402734
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1420.38086291016,
+                      "~:y": 1351.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 907.380862910156,
+                      "~:y": 1351.30205598607
+                    }
+                  }
+                ],
+                "~:r2": 8,
+                "~:component-root": true,
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:column-gap": 16,
+                  "~:row-gap": 16
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:r3": 8,
+                "~:layout-justify-content": "~:start",
+                "~:r1": 8,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a32c",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:layout-flex-dir": "~:row",
+                "~:applied-tokens": {
+                  "~:p2": "xx.alias.spacing.lg",
+                  "~:p4": "xx.alias.spacing.lg",
+                  "~:p3": "xx.alias.spacing.lg",
+                  "~:stroke-color": "xx.alias.color.background.lowEmphasis",
+                  "~:fill": "xx.alias.color.background.body",
+                  "~:r2": "xx.alias.border.radius.md",
+                  "~:p1": "xx.alias.spacing.lg",
+                  "~:column-gap": "xx.alias.spacing.md",
+                  "~:r3": "xx.alias.border.radius.md",
+                  "~:r1": "xx.alias.border.radius.md",
+                  "~:r4": "xx.alias.border.radius.md",
+                  "~:row-gap": "xx.alias.spacing.md"
+                },
+                "~:layout-align-content": "~:stretch",
+                "~:component-id": "~uade8229e-4891-80f7-8007-a6c641aa24c2",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 1,
+                    "~:stroke-color": "#dcdcdd",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": 907.380862910156,
+                "~:main-instance": true,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:color": {
+                      "~:opacity": 0.11,
+                      "~:color": "#18141f"
+                    },
+                    "~:spread": 0,
+                    "~:offset-y": 16,
+                    "~:style": "~:drop-shadow",
+                    "~:blur": 36,
+                    "~:hidden": false,
+                    "~:id": "~u3fc22407-7a7d-80f6-8005-a2e2d45449f1",
+                    "~:offset-x": 0
+                  },
+                  {
+                    "~:color": {
+                      "~:opacity": 0.06,
+                      "~:color": "#18141f"
+                    },
+                    "~:spread": 0,
+                    "~:offset-y": 0,
+                    "~:style": "~:drop-shadow",
+                    "~:blur": 2,
+                    "~:hidden": false,
+                    "~:id": "~u3fc22407-7a7d-80f6-8005-a2e2aecba2f2",
+                    "~:offset-x": 0
+                  }
+                ],
+                "~:r4": 8,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 907.380862910156,
+                    "~:y": 1183.18039402734,
+                    "~:width": 513,
+                    "~:height": 168.121661958726,
+                    "~:x1": 907.380862910156,
+                    "~:y1": 1183.18039402734,
+                    "~:x2": 1420.38086291016,
+                    "~:y2": 1351.30205598607
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#f3f3f4",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:ry": 20,
+                "~:height": 168.121661958726,
+                "~:component-file": "~ueffcbebc-b8c8-802f-8007-a7dc677169cd",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a32d"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a33c": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAABmU6xErMGXRAMAAADnRqxELbWXRKQyrEQttZdEJSasRKzBl0QDAAAApRmsRCzOl0SlGaxEb+KXRCUmrETu7pdEAgAAAAAAAAAAAAAAAAAAAAAAAADv3qxEuKeYRAIAAAAAAAAAAAAAAAAAAAAAAAAAJSasRIJgmUQDAAAAphmsRAFtmUSmGaxERYGZRCUmrETEjZlEAwAAAKQyrERDmplE50asREOamURmU6xExI2ZRAIAAAAAAAAAAAAAAAAAAAAAAAAAMAytRPnUmEQCAAAAAAAAAAAAAAAAAAAAAAAAAPvErUTEjZlEAwAAAHrRrURDmplEveWtREOamUQ88q1ExI2ZRAMAAAC7/q1ERYGZRLv+rUQBbZlEPPKtRIJgmUQCAAAAAAAAAAAAAAAAAAAAAAAAAHE5rUS4p5hEAgAAAAAAAAAAAAAAAAAAAAAAAAA98q1E7u6XRAMAAAC8/q1Eb+KXRLz+rUQszpdEPfKtRKzBl0QDAAAAvuWtRC21l0R60a1ELbWXRPvErUSswZdEAgAAAAAAAAAAAAAAAAAAAAAAAAAwDK1Ed3qYRAIAAAAAAAAAAAAAAAAAAAAAAAAAZlOsRKzBl0QEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                },
+                "~:name": "svg-path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:svg-attrs": {
+  
+                },
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group",
+                    "~:content-group",
+                    "~:fill-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1376.89905291016,
+                      "~:y": 1213.75941500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1391.86273791016,
+                      "~:y": 1213.75941500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1391.86273791016,
+                      "~:y": 1228.72300000671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1376.89905291016,
+                      "~:y": 1228.72300000671
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u5b5dd81f-49d7-8083-8005-9f14d5aadf2a",
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:constraints-v": "~:scale",
+                "~:svg-transform": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                },
+                "~:constraints-h": "~:scale",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a33c",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a33a",
+                "~:svg-viewbox": {
+                  "~:y": 4.51819,
+                  "~:y1": 4.51819,
+                  "~:width": 14.963685,
+                  "~:x": 4.51819,
+                  "~:x1": 4.51819,
+                  "~:y2": 19.481775,
+                  "~:x2": 19.481875,
+                  "~:height": 14.963585
+                },
+                "~:applied-tokens": {
+                  "~:fill": "xx.alias.color.border.heavy"
+                },
+                "~:svg-defs": {
+  
+                },
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a33a",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-color": "#8b898f",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1376.89905291016,
+                    "~:y": 1213.75941500671,
+                    "~:width": 14.9636849999988,
+                    "~:height": 14.9635850000004,
+                    "~:x1": 1376.89905291016,
+                    "~:y1": 1213.75941500671,
+                    "~:x2": 1391.86273791016,
+                    "~:y2": 1228.72300000671
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#49454e",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a33b": {
+              "~#shape": {
+                "~:y": 1208.24122500671,
+                "~:layout-item-hsizing": "fill",
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:auto-height",
+                "~:content": {
+                  "~:type": "root",
+                  "~:children": [
+                    {
+                      "~:type": "paragraph-set",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.3",
+                          "~:path": "font-screen-lg / headline",
+                          "~:font-style": "normal",
+                          "~:children": [
+                            {
+                              "~:line-height": "1.3",
+                              "~:path": "font-screen-lg / headline",
+                              "~:font-style": "normal",
+                              "~:text-transform": "none",
+                              "~:text-align": "left",
+                              "~:font-id": "gfont-dm-sans",
+                              "~:font-size": "20",
+                              "~:font-weight": "400",
+                              "~:modified-at": "2025-01-24T18:57:33.017Z",
+                              "~:font-variant-id": "regular",
+                              "~:text-decoration": "none",
+                              "~:letter-spacing": "-0.1599999964237213",
+                              "~:fills": [
+                                {
+                                  "~:fill-color": "#000000",
+                                  "~:fill-opacity": 1
+                                }
+                              ],
+                              "~:font-family": "DM Sans",
+                              "~:text": "Title"
+                            }
+                          ],
+                          "~:text-transform": "none",
+                          "~:text-align": "left",
+                          "~:font-id": "gfont-dm-sans",
+                          "~:key": "daugc",
+                          "~:font-size": "20",
+                          "~:font-weight": "400",
+                          "~:type": "paragraph",
+                          "~:modified-at": "2025-01-24T18:57:33.017Z",
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "-0.1599999964237213",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "DM Sans"
+                        }
+                      ]
+                    }
+                  ],
+                  "~:fills": []
+                },
+                "~:hide-in-viewer": false,
+                "~:name": "Title",
+                "~:width": 441,
+                "~:type": "~:text",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1208.24122500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1372.38086291016,
+                      "~:y": 1208.24122500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1372.38086291016,
+                      "~:y": 1234.24122500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1234.24122500671
+                    }
+                  }
+                ],
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a33b",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a330",
+                "~:applied-tokens": {
+                  "~:fill": "xx.alias.color.text.emphasis"
+                },
+                "~:position-data": [
+                  {
+                    "~:y": 1234.26123046875,
+                    "~:line-height": "1.2",
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:text-align": "left",
+                    "~:font-id": "sourcesanspro",
+                    "~:font-size": "20",
+                    "~:font-weight": "400",
+                    "~:text-direction": "ltr",
+                    "~:width": 38.8800048828125,
+                    "~:font-variant-id": "regular",
+                    "~:text-decoration": "none",
+                    "~:letter-spacing": "-0.1599999964237213",
+                    "~:x": 931.300842285156,
+                    "~:fills": [
+                      {
+                        "~:fill-color": "#000000",
+                        "~:fill-opacity": 1
+                      }
+                    ],
+                    "~:direction": "ltr",
+                    "~:font-family": "DM Sans",
+                    "~:height": 26.0400390625,
+                    "~:text": "Title"
+                  }
+                ],
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a330",
+                "~:strokes": [],
+                "~:x": 931.380862910156,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 931.380862910156,
+                    "~:y": 1208.24122500671,
+                    "~:width": 441,
+                    "~:height": 26,
+                    "~:x1": 931.380862910156,
+                    "~:y1": 1208.24122500671,
+                    "~:x2": 1372.38086291016,
+                    "~:y2": 1234.24122500671
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 26,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a33a": {
+              "~#shape": {
+                "~:y": 1209.24122500671,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:hide-in-viewer": true,
+                "~:name": "Icons / 24 / close",
+                "~:width": 24,
+                "~:type": "~:frame",
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1372.38086291016,
+                      "~:y": 1209.24122500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1209.24122500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1233.24122500671
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1372.38086291016,
+                      "~:y": 1233.24122500671
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u5b5dd81f-49d7-8083-8005-9f14d5aadf0e",
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a33a",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a330",
+                "~:applied-tokens": {
+  
+                },
+                "~:component-id": "~u5b5dd81f-49d7-8083-8005-9f14d5abeaac",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a330",
+                "~:strokes": [],
+                "~:x": 1372.38086291016,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1372.38086291016,
+                    "~:y": 1209.24122500671,
+                    "~:width": 24,
+                    "~:height": 24,
+                    "~:x1": 1372.38086291016,
+                    "~:y1": 1209.24122500671,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1233.24122500671
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 24,
+                "~:component-file": "~u29d026bf-3f3f-8055-8006-518212e12739",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a33c"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a339": {
+              "~#shape": {
+                "~:y": 1251.30205598607,
+                "~:layout-item-hsizing": "fill",
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:auto-height",
+                "~:content": {
+                  "~:type": "root",
+                  "~:children": [
+                    {
+                      "~:type": "paragraph-set",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.25",
+                          "~:path": "font-screen-lg / hyperlink",
+                          "~:font-style": "normal",
+                          "~:children": [
+                            {
+                              "~:line-height": "1.25",
+                              "~:path": "font-screen-lg / hyperlink",
+                              "~:font-style": "normal",
+                              "~:text-transform": "none",
+                              "~:text-align": "left",
+                              "~:font-id": "gfont-dm-sans",
+                              "~:font-size": "16",
+                              "~:font-weight": "400",
+                              "~:modified-at": "2025-01-24T18:57:33.140Z",
+                              "~:font-variant-id": "regular",
+                              "~:text-decoration": "none",
+                              "~:letter-spacing": "-0.1599999964237213",
+                              "~:fills": [
+                                {
+                                  "~:fill-color": "#747279",
+                                  "~:fill-opacity": 1
+                                }
+                              ],
+                              "~:font-family": "DM Sans",
+                              "~:text": "Notification description text"
+                            }
+                          ],
+                          "~:text-transform": "none",
+                          "~:text-align": "left",
+                          "~:font-id": "gfont-dm-sans",
+                          "~:key": "daugc",
+                          "~:font-size": "16",
+                          "~:font-weight": "400",
+                          "~:type": "paragraph",
+                          "~:modified-at": "2025-01-24T18:57:33.140Z",
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "-0.1599999964237213",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#747279",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "DM Sans"
+                        }
+                      ]
+                    }
+                  ],
+                  "~:vertical-align": "center",
+                  "~:fills": []
+                },
+                "~:hide-in-viewer": false,
+                "~:name": "Notification description text",
+                "~:width": 465,
+                "~:type": "~:text",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1251.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1251.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1271.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1271.30205598607
+                    }
+                  }
+                ],
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a339",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32f",
+                "~:applied-tokens": {
+                  "~:fill": "xx.alias.color.text.subtle"
+                },
+                "~:position-data": [
+                  {
+                    "~:y": 1271.72204589844,
+                    "~:line-height": "1.2",
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:text-align": "left",
+                    "~:font-id": "sourcesanspro",
+                    "~:font-size": "16",
+                    "~:font-weight": "400",
+                    "~:text-direction": "ltr",
+                    "~:width": 203.309997558594,
+                    "~:font-variant-id": "regular",
+                    "~:text-decoration": "none",
+                    "~:letter-spacing": "-0.1599999964237213",
+                    "~:x": 931.300842285156,
+                    "~:fills": [
+                      {
+                        "~:fill-color": "#747279",
+                        "~:fill-opacity": 1
+                      }
+                    ],
+                    "~:direction": "ltr",
+                    "~:font-family": "DM Sans",
+                    "~:height": 20.840087890625,
+                    "~:text": "Notification description text"
+                  }
+                ],
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32f",
+                "~:strokes": [],
+                "~:x": 931.380862910156,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 931.380862910156,
+                    "~:y": 1251.30205598607,
+                    "~:width": 465,
+                    "~:height": 20,
+                    "~:x1": 931.380862910156,
+                    "~:y1": 1251.30205598607,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1271.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 20,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a338": {
+              "~#shape": {
+                "~:y": null,
+                "~:stroke-cap-start": "round",
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAACGYaxEAP+iRAIAAAAAAAAAAAAAAAAAAAAAAAAA27atRAD/okQBAAAAAAAAAAAAAAAAAAAAAAAAAIbhrERVVKNEAgAAAAAAAAAAAAAAAAAAAAAAAACG4axEVdSjRAEAAAAAAAAAAAAAAAAAAAAAAAAA2zatRFVUo0QCAAAAAAAAAAAAAAAAAAAAAAAAANs2rURV1KNEAQAAAAAAAAAAAAAAAAAAAAAAAADbdqxEAP+iRAIAAAAAAAAAAAAAAAAAAAAAAAAAMIysRAD/o0QDAAAAMIysRJAWpERKn6xEqimkRNu2rESqKaREAgAAAAAAAAAAAAAAAAAAAAAAAACGYa1EqimkRAMAAAAWea1EqimkRDCMrUSQFqREMIytRAD/o0QCAAAAAAAAAAAAAAAAAAAAAAAAAIahrUQA/6JEAQAAAAAAAAAAAAAAAAAAAAAAAAAwzKxEAP+iRAIAAAAAAAAAAAAAAAAAAAAAAAAAMMysRAC/okQDAAAAMMysRDizokS91axEqqmiRIbhrESqqaJEAgAAAAAAAAAAAAAAAAAAAAAAAADbNq1EqqmiRAMAAACjQq1EqqmiRDBMrUQ4s6JEMEytRAC/okQCAAAAAAAAAAAAAAAAAAAAAAAAADBMrUQA/6JE"
+                },
+                "~:name": "svg-path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:svg-attrs": {
+                  "~:fill": "none",
+                  "~:stroke-linejoin": "round"
+                },
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group",
+                    "~:content-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1379.04752957682,
+                      "~:y": 1301.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1389.71419624349,
+                      "~:y": 1301.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1389.71419624349,
+                      "~:y": 1313.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1379.04752957682,
+                      "~:y": 1313.30205598607
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u829b5886-5b9d-80cc-8005-a18bbd9cffcc",
+                "~:proportion-lock": false,
+                "~:stroke-cap-end": "round",
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:constraints-v": "~:scale",
+                "~:svg-transform": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                },
+                "~:constraints-h": "~:scale",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a338",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a335",
+                "~:svg-viewbox": {
+                  "~:y": 3,
+                  "~:y1": 3,
+                  "~:width": 16,
+                  "~:x": 4,
+                  "~:x1": 4,
+                  "~:y2": 21,
+                  "~:x2": 20,
+                  "~:height": 18
+                },
+                "~:applied-tokens": {
+                  "~:stroke-color": "xx.alias.color.purpose.criticalLowEmphasis"
+                },
+                "~:svg-defs": {
+  
+                },
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a335",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 1.5,
+                    "~:stroke-cap-start": "~:round",
+                    "~:stroke-cap-end": "~:round",
+                    "~:stroke-color": "#ba5a56",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1379.04752957682,
+                    "~:y": 1301.30205598607,
+                    "~:width": 10.6666666666667,
+                    "~:height": 12,
+                    "~:x1": 1379.04752957682,
+                    "~:y1": 1301.30205598607,
+                    "~:x2": 1389.71419624349,
+                    "~:y2": 1313.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a337": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD/kK5ETdCiRAMAAACqiK5E+ceiRCh7rkT5x6JE03KuRE3QokQDAAAAfmquRKLYokR+aq5EJOaiRNNyrkR57qJEAgAAAAAAAAAAAAAAAAAAAAAAAAAF7q5EqmmjRAIAAAAAAAAAAAAAAAAAAAAAAAAA03KuRNzko0QDAAAAf2quRDHto0R/aq5Es/qjRNNyrkQHA6REAwAAACh7rkRcC6REqoiuRFwLpET/kK5EBwOkRAIAAAAAAAAAAAAAAAAAAAAAAAAAMAyvRNaHo0QCAAAAAAAAAAAAAAAAAAAAAAAAAGKHr0QHA6REAwAAALaPr0RcC6REOZ2vRFwLpESNpa9EBwOkRAMAAADira9Es/qjROKtr0Qx7aNEjaWvRNzko0QCAAAAAAAAAAAAAAAAAAAAAAAAAFwqr0SqaaNEAgAAAAAAAAAAAAAAAAAAAAAAAACOpa9Eee6iRAMAAADira9EJOaiROKtr0Si2KJEjqWvRE3QokQDAAAAOZ2vRPnHokS3j69E+ceiRGKHr0RN0KJEAgAAAAAAAAAAAAAAAAAAAAAAAAAwDK9Ef0ujRAIAAAAAAAAAAAAAAAAAAAAAAAAA/5CuRE3QokQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                },
+                "~:name": "svg-path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:svg-attrs": {
+  
+                },
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group",
+                    "~:content-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1395.39298957682,
+                      "~:y": 1302.31418265274
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1405.36877957682,
+                      "~:y": 1302.31418265274
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1405.36877957682,
+                      "~:y": 1312.28990598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1395.39298957682,
+                      "~:y": 1312.28990598607
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u829b5886-5b9d-80cc-8005-a18b7a1196dd",
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:constraints-v": "~:scale",
+                "~:svg-transform": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                },
+                "~:constraints-h": "~:scale",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a337",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a334",
+                "~:svg-viewbox": {
+                  "~:y": 4.51819,
+                  "~:y1": 4.51819,
+                  "~:width": 14.963685,
+                  "~:x": 4.51819,
+                  "~:x1": 4.51819,
+                  "~:y2": 19.481775,
+                  "~:x2": 19.481875,
+                  "~:height": 14.963585
+                },
+                "~:applied-tokens": {
+                  "~:stroke-color": "xx.alias.color.purpose.criticalLowEmphasis"
+                },
+                "~:svg-defs": {
+  
+                },
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a334",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 1,
+                    "~:stroke-color": "#ba5a56",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1395.39298957682,
+                    "~:y": 1302.31418265274,
+                    "~:width": 9.97578999999928,
+                    "~:height": 9.97572333333369,
+                    "~:x1": 1395.39298957682,
+                    "~:y1": 1302.31418265274,
+                    "~:x2": 1405.36877957682,
+                    "~:y2": 1312.28990598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a336": {
+              "~#shape": {
+                "~:y": 1295.30205598607,
+                "~:layout-item-hsizing": "fill",
+                "~:layout-padding": {
+                  "~:p3": 24,
+                  "~:p1": 24,
+                  "~:p2": 12
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:auto-width",
+                "~:content": {
+                  "~:type": "root",
+                  "~:children": [
+                    {
+                      "~:type": "paragraph-set",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.5",
+                          "~:path": "font-screen-lg / label",
+                          "~:font-style": "normal",
+                          "~:children": [
+                            {
+                              "~:line-height": "1.5",
+                              "~:path": "font-screen-lg / label",
+                              "~:font-style": "normal",
+                              "~:text-transform": "none",
+                              "~:text-align": "left",
+                              "~:font-id": "gfont-dm-sans",
+                              "~:font-size": "16",
+                              "~:font-weight": "500",
+                              "~:modified-at": "2025-01-24T19:39:31.048Z",
+                              "~:font-variant-id": "500",
+                              "~:text-decoration": "none",
+                              "~:letter-spacing": "0.07999999821186066",
+                              "~:fills": [
+                                {
+                                  "~:fill-color": "#ba5a56",
+                                  "~:fill-opacity": 1
+                                }
+                              ],
+                              "~:font-family": "DM Sans",
+                              "~:text": "Label"
+                            }
+                          ],
+                          "~:text-transform": "none",
+                          "~:text-align": "left",
+                          "~:font-id": "gfont-dm-sans",
+                          "~:key": "daugc",
+                          "~:font-size": "16",
+                          "~:font-weight": "500",
+                          "~:type": "paragraph",
+                          "~:modified-at": "2025-01-24T19:39:31.048Z",
+                          "~:font-variant-id": "500",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0.07999999821186066",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#ba5a56",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "DM Sans"
+                        }
+                      ]
+                    }
+                  ],
+                  "~:fills": []
+                },
+                "~:hide-in-viewer": false,
+                "~:name": "Label",
+                "~:width": 42,
+                "~:type": "~:text",
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1326.38086291016,
+                      "~:y": 1295.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1368.38086291016,
+                      "~:y": 1295.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1368.38086291016,
+                      "~:y": 1319.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1326.38086291016,
+                      "~:y": 1319.30205598607
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u829b5886-5b9d-80cc-8005-a18b7a11d7ad",
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a336",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:applied-tokens": {
+                  "~:fill": "xx.alias.color.purpose.criticalLowEmphasis"
+                },
+                "~:position-data": [
+                  {
+                    "~:y": 1317.72204589844,
+                    "~:line-height": "1.2",
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:text-align": "left",
+                    "~:font-id": "sourcesanspro",
+                    "~:font-size": "16",
+                    "~:font-weight": "500",
+                    "~:text-direction": "ltr",
+                    "~:width": 41.1199951171875,
+                    "~:font-variant-id": "regular",
+                    "~:text-decoration": "none",
+                    "~:letter-spacing": "0.07999999821186066",
+                    "~:x": 1326.4208984375,
+                    "~:fills": [
+                      {
+                        "~:fill-color": "#ba5a56",
+                        "~:fill-opacity": 1
+                      }
+                    ],
+                    "~:direction": "ltr",
+                    "~:font-family": "DM Sans",
+                    "~:height": 20.840087890625,
+                    "~:text": "Label"
+                  }
+                ],
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:strokes": [],
+                "~:x": 1326.38086291016,
+                "~:layout-item-margin": {
+                  "~:m2": 8,
+                  "~:m4": 8
+                },
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1326.38086291016,
+                    "~:y": 1295.30205598607,
+                    "~:width": 42,
+                    "~:height": 24,
+                    "~:x1": 1326.38086291016,
+                    "~:y1": 1295.30205598607,
+                    "~:x2": 1368.38086291016,
+                    "~:y2": 1319.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 24,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a335": {
+              "~#shape": {
+                "~:y": 1299.30205598607,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:hide-in-viewer": true,
+                "~:name": "Icons / 16 / Trash",
+                "~:width": 16,
+                "~:type": "~:frame",
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1376.38086291016,
+                      "~:y": 1299.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1392.38086291016,
+                      "~:y": 1299.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1392.38086291016,
+                      "~:y": 1315.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1376.38086291016,
+                      "~:y": 1315.30205598607
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:shape-ref": "~u829b5886-5b9d-80cc-8005-a18bbd9cffcb",
+                "~:show-content": true,
+                "~:proportion-lock": true,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:r3": 0,
+                "~:r1": 0,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a335",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:component-id": "~u829b5886-5b9d-80cc-8005-a17e67e9af2d",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:strokes": [],
+                "~:x": 1376.38086291016,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1376.38086291016,
+                    "~:y": 1299.30205598607,
+                    "~:width": 16,
+                    "~:height": 16,
+                    "~:x1": 1376.38086291016,
+                    "~:y1": 1299.30205598607,
+                    "~:x2": 1392.38086291016,
+                    "~:y2": 1315.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 16,
+                "~:component-file": "~u29d026bf-3f3f-8055-8006-518212e12739",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a338"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a334": {
+              "~#shape": {
+                "~:y": 1299.30205598607,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:hide-in-viewer": true,
+                "~:name": "Icons / 24 / close",
+                "~:width": 16,
+                "~:type": "~:frame",
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1392.38086291016,
+                      "~:y": 1299.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1408.38086291016,
+                      "~:y": 1299.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1408.38086291016,
+                      "~:y": 1315.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1392.38086291016,
+                      "~:y": 1315.30205598607
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u829b5886-5b9d-80cc-8005-a18b7a1196dc",
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:hidden": true,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a334",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:applied-tokens": {
+                  "~:width": "xx.alias.size.xxs",
+                  "~:height": "xx.alias.size.xxs"
+                },
+                "~:component-id": "~u5b5dd81f-49d7-8083-8005-9f14d5abeaac",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:strokes": [],
+                "~:x": 1392.38086291016,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1392.38086291016,
+                    "~:y": 1299.30205598607,
+                    "~:width": 16,
+                    "~:height": 16,
+                    "~:x1": 1392.38086291016,
+                    "~:y1": 1299.30205598607,
+                    "~:x2": 1408.38086291016,
+                    "~:y2": 1315.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 16,
+                "~:component-file": "~u29d026bf-3f3f-8055-8006-518212e12739",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a337"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a333": {
+              "~#shape": {
+                "~:y": 1295.30205598607,
+                "~:layout-item-hsizing": "fill",
+                "~:layout-padding": {
+                  "~:p3": 24,
+                  "~:p1": 24,
+                  "~:p2": 12
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:auto-width",
+                "~:content": {
+                  "~:type": "root",
+                  "~:children": [
+                    {
+                      "~:type": "paragraph-set",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.5",
+                          "~:path": "font-screen-lg / label",
+                          "~:font-style": "normal",
+                          "~:children": [
+                            {
+                              "~:line-height": "1.5",
+                              "~:path": "font-screen-lg / label",
+                              "~:font-style": "normal",
+                              "~:text-transform": "none",
+                              "~:text-align": "left",
+                              "~:font-id": "gfont-dm-sans",
+                              "~:font-size": "16",
+                              "~:font-weight": "500",
+                              "~:modified-at": "2025-01-24T19:39:31.048Z",
+                              "~:font-variant-id": "500",
+                              "~:text-decoration": "none",
+                              "~:letter-spacing": "0.07999999821186066",
+                              "~:fills": [
+                                {
+                                  "~:fill-color": "#686fc8",
+                                  "~:fill-opacity": 1
+                                }
+                              ],
+                              "~:font-family": "DM Sans",
+                              "~:text": "Label"
+                            }
+                          ],
+                          "~:text-transform": "none",
+                          "~:text-align": "left",
+                          "~:font-id": "gfont-dm-sans",
+                          "~:key": "daugc",
+                          "~:font-size": "16",
+                          "~:font-weight": "500",
+                          "~:type": "paragraph",
+                          "~:modified-at": "2025-01-24T19:39:31.048Z",
+                          "~:font-variant-id": "500",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0.07999999821186066",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#686fc8",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "DM Sans"
+                        }
+                      ]
+                    }
+                  ],
+                  "~:fills": []
+                },
+                "~:hide-in-viewer": false,
+                "~:name": "Label",
+                "~:width": 42,
+                "~:type": "~:text",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1224.38086291016,
+                      "~:y": 1295.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1266.38086291016,
+                      "~:y": 1295.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1266.38086291016,
+                      "~:y": 1319.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1224.38086291016,
+                      "~:y": 1319.30205598607
+                    }
+                  }
+                ],
+                "~:shape-ref": "~u453f99db-c307-8059-8005-af2b8edb901b",
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a333",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a331",
+                "~:applied-tokens": {
+                  "~:fill": "xx.alias.color.primary.brand"
+                },
+                "~:position-data": [
+                  {
+                    "~:y": 1317.72204589844,
+                    "~:line-height": "1.2",
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:text-align": "left",
+                    "~:font-id": "sourcesanspro",
+                    "~:font-size": "16",
+                    "~:font-weight": "500",
+                    "~:text-direction": "ltr",
+                    "~:width": 41.1199951171875,
+                    "~:font-variant-id": "regular",
+                    "~:text-decoration": "none",
+                    "~:letter-spacing": "0.07999999821186066",
+                    "~:x": 1224.4208984375,
+                    "~:fills": [
+                      {
+                        "~:fill-color": "#686fc8",
+                        "~:fill-opacity": 1
+                      }
+                    ],
+                    "~:direction": "ltr",
+                    "~:font-family": "DM Sans",
+                    "~:height": 20.840087890625,
+                    "~:text": "Label"
+                  }
+                ],
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a331",
+                "~:strokes": [],
+                "~:x": 1224.38086291016,
+                "~:layout-item-margin": {
+                  "~:m2": 8,
+                  "~:m4": 8
+                },
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1224.38086291016,
+                    "~:y": 1295.30205598607,
+                    "~:width": 42,
+                    "~:height": 24,
+                    "~:x1": 1224.38086291016,
+                    "~:y1": 1295.30205598607,
+                    "~:x2": 1266.38086291016,
+                    "~:y2": 1319.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 24,
+                "~:flip-y": null
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a332": {
+              "~#shape": {
+                "~:y": 1287.30205598607,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:rx": 20,
+                "~:layout-item-hsizing": "auto",
+                "~:layout-padding": {
+                  "~:p2": 16,
+                  "~:p4": 16,
+                  "~:p3": 8,
+                  "~:p1": 8
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "Button / Destructive / Label + Icon / Default",
+                "~:layout-align-items": "~:center",
+                "~:width": 94,
+                "~:layout-padding-type": "~:multiple",
+                "~:type": "~:frame",
+                "~:touched": {
+                  "~#set": [
+                    "~:geometry-group"
+                  ]
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1302.38086291016,
+                      "~:y": 1287.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1287.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1302.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  }
+                ],
+                "~:r2": 8,
+                "~:shape-ref": "~u829b5886-5b9d-80cc-8005-a18b7a1196db",
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:row-gap": 0,
+                  "~:column-gap": 0
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:r3": 8,
+                "~:layout-justify-content": "~:start",
+                "~:r1": 8,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a332",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32e",
+                "~:layout-flex-dir": "~:row",
+                "~:applied-tokens": {
+                  "~:p2": "xx.alias.spacing.md",
+                  "~:p4": "xx.alias.spacing.md",
+                  "~:p3": "xx.alias.spacing.xs",
+                  "~:fill": "xx.alias.color.purpose.onCritical",
+                  "~:r2": "xx.alias.border.radius.md",
+                  "~:p1": "xx.alias.spacing.xs",
+                  "~:r3": "xx.alias.border.radius.md",
+                  "~:r1": "xx.alias.border.radius.md",
+                  "~:r4": "xx.alias.border.radius.md"
+                },
+                "~:layout-align-content": "~:stretch",
+                "~:component-id": "~u829b5886-5b9d-80cc-8005-a18c797f2def",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32e",
+                "~:strokes": [],
+                "~:x": 1302.38086291016,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:color": {
+                      "~:opacity": 0.2,
+                      "~:color": "#000000"
+                    },
+                    "~:spread": 0,
+                    "~:offset-y": 1,
+                    "~:style": "~:drop-shadow",
+                    "~:blur": 7,
+                    "~:hidden": false,
+                    "~:id": "~uad03169f-c56c-8064-8004-8e08166c6d2a",
+                    "~:offset-x": 0
+                  }
+                ],
+                "~:r4": 8,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1302.38086291016,
+                    "~:y": 1287.30205598607,
+                    "~:width": 94,
+                    "~:height": 40,
+                    "~:x1": 1302.38086291016,
+                    "~:y1": 1287.30205598607,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1327.30205598607
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#ffc7bf",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:ry": 20,
+                "~:height": 40,
+                "~:component-file": "~u29d026bf-3f3f-8055-8006-518212e12739",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a334",
+                  "~uade8229e-4891-80f7-8007-a6c641a6a335",
+                  "~uade8229e-4891-80f7-8007-a6c641a6a336"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a331": {
+              "~#shape": {
+                "~:y": 1287.30205598607,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:rx": 20,
+                "~:layout-item-hsizing": "auto",
+                "~:layout-padding": {
+                  "~:p2": 16,
+                  "~:p4": 16,
+                  "~:p3": 8,
+                  "~:p1": 8
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "Button / Ghost / Label / Default",
+                "~:layout-align-items": "~:center",
+                "~:width": 90,
+                "~:layout-padding-type": "~:multiple",
+                "~:type": "~:frame",
+                "~:touched": {
+                  "~#set": []
+                },
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1200.38086291016,
+                      "~:y": 1287.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1290.38086291016,
+                      "~:y": 1287.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1290.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1200.38086291016,
+                      "~:y": 1327.30205598607
+                    }
+                  }
+                ],
+                "~:r2": 8,
+                "~:shape-ref": "~u453f99db-c307-8059-8005-af2b8edb9019",
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:row-gap": 0,
+                  "~:column-gap": 0
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:r3": 8,
+                "~:layout-justify-content": "~:start",
+                "~:r1": 8,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a331",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32e",
+                "~:layout-flex-dir": "~:row",
+                "~:applied-tokens": {
+                  "~:p2": "xx.alias.spacing.md",
+                  "~:p4": "xx.alias.spacing.md",
+                  "~:p3": "xx.alias.spacing.xs",
+                  "~:stroke-color": "xx.alias.color.primary.brand",
+                  "~:r2": "xx.alias.border.radius.md",
+                  "~:p1": "xx.alias.spacing.xs",
+                  "~:r3": "xx.alias.border.radius.md",
+                  "~:r1": "xx.alias.border.radius.md",
+                  "~:r4": "xx.alias.border.radius.md"
+                },
+                "~:layout-align-content": "~:stretch",
+                "~:component-id": "~u453f99db-c307-8059-8005-af2baa65f975",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32e",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 1,
+                    "~:stroke-color": "#686fc8",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": 1200.38086291016,
+                "~:proportion": 1,
+                "~:shadow": [],
+                "~:r4": 8,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1200.38086291016,
+                    "~:y": 1287.30205598607,
+                    "~:width": 90,
+                    "~:height": 40,
+                    "~:x1": 1200.38086291016,
+                    "~:y1": 1287.30205598607,
+                    "~:x2": 1290.38086291016,
+                    "~:y2": 1327.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:ry": 20,
+                "~:height": 40,
+                "~:component-file": "~u29d026bf-3f3f-8055-8006-518212e12739",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a333"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a330": {
+              "~#shape": {
+                "~:y": 1207.18039402734,
+                "~:hide-fill-on-export": false,
+                "~:layout-gap-type": "~:multiple",
+                "~:layout-item-hsizing": "fill",
+                "~:layout-padding": {
+                  "~:p1": 0,
+                  "~:p2": 0,
+                  "~:p3": 0,
+                  "~:p4": 0
+                },
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:layout-wrap-type": "~:nowrap",
+                "~:layout": "~:flex",
+                "~:hide-in-viewer": true,
+                "~:name": "header",
+                "~:layout-align-items": "~:center",
+                "~:width": 465,
+                "~:layout-padding-type": "~:simple",
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1207.18039402734
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1207.18039402734
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1396.38086291016,
+                      "~:y": 1235.30205598607
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 931.380862910156,
+                      "~:y": 1235.30205598607
+                    }
+                  }
+                ],
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:layout-gap": {
+                  "~:row-gap": 0,
+                  "~:column-gap": 0
+                },
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u829b5886-5b9d-80cc-8005-a18f9a6edd0f",
+                "~:layout-justify-content": "~:space-between",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a330",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:layout-flex-dir": "~:row",
+                "~:layout-align-content": "~:stretch",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a32d",
+                "~:strokes": [],
+                "~:x": 931.380862910156,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 931.380862910156,
+                    "~:y": 1207.18039402734,
+                    "~:width": 465,
+                    "~:height": 28.1216619587253,
+                    "~:x1": 931.380862910156,
+                    "~:y1": 1207.18039402734,
+                    "~:x2": 1396.38086291016,
+                    "~:y2": 1235.30205598607
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 28.1216619587253,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a33a",
+                  "~uade8229e-4891-80f7-8007-a6c641a6a33b"
+                ]
+              }
+            }
+          },
+          "~:name": "Destructive",
+          "~:modified-at": "~m1772446350100",
+          "~:main-instance-page": "~u73765590-e307-801e-8006-e4521313207b",
+          "~:id": "~uade8229e-4891-80f7-8007-a6c641aa24c2"
+        },
+        "~uade8229e-4891-80f7-8007-a6c641a9b090": {
+          "~:path": "Modal / actions",
+          "~:deleted": true,
+          "~:main-instance-id": "~uade8229e-4891-80f7-8007-a6c641a6a31b",
+          "~:objects": {
+            "~uade8229e-4891-80f7-8007-a6c641a6a31b": {
+              "~#shape": {
+                "~:y": 352.999955487879,
+                "~:hide-fill-on-export": false,
+                "~:rx": 20,
+                "~:layout-item-hsizing": "fix",
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:hide-in-viewer": true,
+                "~:name": "Modal / actions / Regular",
+                "~:width": 512.999938845635,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 981.00003269603,
+                      "~:y": 352.999955487879
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1493.99997154166,
+                      "~:y": 352.999955487879
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1493.99997154166,
+                      "~:y": 520.999969122142
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 981.00003269603,
+                      "~:y": 520.999969122142
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:component-root": true,
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u73765590-e307-801e-8006-e4521313207b",
+                "~:r3": 0,
+                "~:blur": {
+                  "~:id": "~ua5508528-5928-8008-8007-a7de3e463903",
+                  "~:type": "~:layer-blur",
+                  "~:value": 4,
+                  "~:hidden": true
+                },
+                "~:r1": 0,
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a31b",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:applied-tokens": {
+                  "~:row-gap": "xx.alias.spacing.md"
+                },
+                "~:component-id": "~uade8229e-4891-80f7-8007-a6c641a9b090",
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [],
+                "~:x": 981.00003269603,
+                "~:main-instance": true,
+                "~:proportion": 1,
+                "~:shadow": [],
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 981.00003269603,
+                    "~:y": 352.999955487879,
+                    "~:width": 512.999938845635,
+                    "~:height": 168.000013634263,
+                    "~:x1": 981.00003269603,
+                    "~:y1": 352.999955487879,
+                    "~:x2": 1493.99997154166,
+                    "~:y2": 520.999969122142
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#f3f3f4",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:ry": 20,
+                "~:height": 168.000013634263,
+                "~:component-file": "~ueffcbebc-b8c8-802f-8007-a7dc677169cd",
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a31c"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a31c": {
+              "~#shape": {
+                "~:y": 376.999984733,
+                "~:hide-fill-on-export": false,
+                "~:layout-item-hsizing": "fill",
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:hide-in-viewer": true,
+                "~:name": "content",
+                "~:width": 464.99994456768,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1005.00002988041,
+                      "~:y": 376.999984733
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1469.99997444809,
+                      "~:y": 376.999984733
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1469.99997444809,
+                      "~:y": 496.999989763423
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1005.00002988041,
+                      "~:y": 496.999989763423
+                    }
+                  }
+                ],
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u73765590-e307-801e-8006-e4521313207b",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a31c",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a31b",
+                "~:applied-tokens": {
+                  "~:column-gap": "xx.alias.spacing.md",
+                  "~:row-gap": "xx.alias.spacing.md"
+                },
+                "~:layout-item-vsizing": "auto",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a31b",
+                "~:strokes": [],
+                "~:x": 1005.00002988041,
+                "~:proportion": 1,
+                "~:grids": [],
+                "~:shadow": [],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1005.00002988041,
+                    "~:y": 376.999984733,
+                    "~:width": 464.99994456768,
+                    "~:height": 120.000005030423,
+                    "~:x1": 1005.00002988041,
+                    "~:y1": 376.999984733,
+                    "~:x2": 1469.99997444809,
+                    "~:y2": 496.999989763423
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 120.000005030423,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~uade8229e-4891-80f7-8007-a6c641a6a31f"
+                ]
+              }
+            },
+            "~uade8229e-4891-80f7-8007-a6c641a6a31f": {
+              "~#shape": {
+                "~:y": 376.999995172412,
+                "~:hide-fill-on-export": false,
+                "~:layout-item-hsizing": "fill",
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:hide-in-viewer": true,
+                "~:name": "header",
+                "~:width": 464.99994456768,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1005.00002988041,
+                      "~:y": 376.999995172412
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1469.99997444809,
+                      "~:y": 376.999995172412
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1469.99997444809,
+                      "~:y": 405.000011605939
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1005.00002988041,
+                      "~:y": 405.000011605939
+                    }
+                  }
+                ],
+                "~:show-content": true,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:page-id": "~u73765590-e307-801e-8006-e4521313207b",
+                "~:id": "~uade8229e-4891-80f7-8007-a6c641a6a31f",
+                "~:parent-id": "~uade8229e-4891-80f7-8007-a6c641a6a31c",
+                "~:frame-id": "~uade8229e-4891-80f7-8007-a6c641a6a31c",
+                "~:strokes": [],
+                "~:x": 1005.00002988041,
+                "~:proportion": 1,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1005.00002988041,
+                    "~:y": 376.999995172412,
+                    "~:width": 464.99994456768,
+                    "~:height": 28.000016433527,
+                    "~:x1": 1005.00002988041,
+                    "~:y1": 376.999995172412,
+                    "~:x2": 1469.99997444809,
+                    "~:y2": 405.000011605939
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": 28.000016433527,
+                "~:flip-y": null,
+                "~:shapes": []
+              }
+            }
+          },
+          "~:name": "Regular",
+          "~:modified-at": "~m1772519947685",
+          "~:main-instance-page": "~u73765590-e307-801e-8006-e4521313207b",
+          "~:id": "~uade8229e-4891-80f7-8007-a6c641a9b090"
+        }
+      },
+      "~:id": "~ueffcbebc-b8c8-802f-8007-a7dc677169cd",
+      "~:options": {
+        "~:components-v2": true,
+        "~:base-font-size": "16px"
+      }
+    }
+  }

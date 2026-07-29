@@ -1,0 +1,35 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.button {
+  --pin-button-icon-color: var(--button-icon-foreground-color);
+  --pin-button-bg-color: none;
+  --pin-button-border-color: none;
+
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
+  background: var(--pin-button-bg-color);
+  border: deprecated.$s-2 solid var(--pin-button-border-color);
+  border-radius: deprecated.$br-8;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.button-active {
+  --pin-button-icon-color: var(--button-icon-foreground-color-selected);
+  --pin-button-bg-color: var(--button-icon-background-color-selected);
+  --pin-button-border-color: var(--button-icon-border-color-selected);
+}
+
+.icon {
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  fill: none;
+  stroke: var(--pin-button-icon-color);
+}

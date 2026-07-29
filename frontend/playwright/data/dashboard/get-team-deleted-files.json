@@ -1,0 +1,47 @@
+[
+  {
+    "~:id": "~uc7ce0794-0992-8105-8004-38e630f41234",
+    "~:revn": 1,
+    "~:vern": 1,
+    "~:project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+    "~:created-at": "~m1705307400000",
+    "~:modified-at": "~m1732111500000",
+    "~:deleted-at": "~m1732111500000",
+    "~:name": "Deleted Design File 1",
+    "~:is-shared": false,
+    "~:will-be-deleted-at": "~m1732716300000",
+    "~:thumbnail-id": null,
+    "~:row-num": 1,
+    "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d"
+  },
+  {
+    "~:id": "~uc7ce0794-0992-8105-8004-38e630f41235",
+    "~:revn": 2,
+    "~:vern": 2,
+    "~:project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+    "~:created-at": "~m1704875700000",
+    "~:modified-at": "~m1732025400000",
+    "~:deleted-at": "~m1732025400000",
+    "~:name": "Deleted Design File 2",
+    "~:is-shared": true,
+    "~:will-be-deleted-at": "~m1732630200000",
+    "~:thumbnail-id": null,
+    "~:row-num": 2,
+    "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d"
+  },
+  {
+    "~:id": "~uc7ce0794-0992-8105-8004-38e630f41236",
+    "~:revn": 3,
+    "~:vern": 3,
+    "~:project-id": "~uc7ce0794-0992-8105-8004-38e630f7920c",
+    "~:created-at": "~m1706792400000",
+    "~:modified-at": "~m1731939600000",
+    "~:deleted-at": "~m1731939600000",
+    "~:name": "Old Project Design",
+    "~:is-shared": false,
+    "~:will-be-deleted-at": "~m1732544400000",
+    "~:thumbnail-id": null,
+    "~:row-num": 3,
+    "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d"
+  }
+]

@@ -1,0 +1,45 @@
+---
+layout: layouts/base.njk
+templateClass: tmpl-mcp
+---
+
+{%- macro show_children(item) -%}
+  {%- for child in item | children | sorted('data.order') %}
+    {%- if loop.first -%}<ul>{%- endif -%}
+    <li>
+      <a href="{{ child.url }}">{{ child.data.title }}</a>
+      {%- if page.url.includes(child.url) -%}
+        {{ show_children(child) }}
+      {%- endif -%}
+      {%- if child.url == page.url -%}
+        {{ content | toc(tags=['h2', 'h3']) | stripHash | safe }}
+      {%- endif -%}
+    </li>
+    {%- if loop.last -%}</ul>{%- endif -%}
+  {%- endfor %}
+{%- endmacro -%}
+
+<div class="main-container with-sidebar">
+  <aside id="stickySidebar" class="sidebar">
+    {%- set root = '/mcp/index' | find -%}
+    <div id="toc">
+      <div class="header mobile" id="toc-title">{{ root.data.title }}</div>
+      <a class="header" href="{{ root.url }}">{{ root.data.title }}</a>
+      {%- if page.url == root.url -%}
+        {{ content
+          | toc(tags=['h2', 'h3'])
+          | replace('<ol', '<ul')
+          | replace('</ol>', '</ul>')
+          | stripHash
+          | safe }}
+      {%- else -%}
+        {{ show_children(root) }}
+      {%- endif -%}
+    </div>
+  </aside>
+
+  <content class="main-content">
+    {{ content | safe }}
+  </content>
+
+</div>

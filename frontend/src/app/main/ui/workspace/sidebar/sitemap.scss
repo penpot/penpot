@@ -1,0 +1,158 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/mixins.scss" as *;
+
+.sitemap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  inline-size: 100%;
+  block-size: var(--height, $sz-200);
+}
+
+.sitemap-title {
+  padding-inline-start: var(--sp-s);
+  margin-block: var(--sp-s) var(--sp-xs);
+}
+
+.sitemap-content {
+  display: flex;
+  flex-direction: column;
+  inline-size: var(--left-sidebar-width);
+  overflow: hidden auto;
+  scrollbar-gutter: stable;
+}
+
+.page-item {
+  @include t.use-typography("body-small");
+
+  min-block-size: $sz-32;
+  inline-size: 100%;
+
+  &.dnd-over-top {
+    border-block-start: $b-1 solid var(--layer-row-foreground-color-drag);
+  }
+
+  &.dnd-over-bot {
+    border-block-end: $b-1 solid var(--layer-row-foreground-color-drag);
+  }
+
+  .page-item-body {
+    display: flex;
+    align-items: center;
+    block-size: $sz-32;
+    inline-size: 100%;
+    padding: 0 var(--sp-m) 0 0;
+    transition: none;
+    color: var(--layer-row-foreground-color);
+    user-select: none;
+
+    &.separator {
+      block-size: auto;
+      min-block-size: var(--sp-xxxl);
+      padding: 0;
+    }
+  }
+
+  .page-item-label {
+    @include text-ellipsis;
+
+    flex-grow: 1;
+    padding-inline-start: var(--sp-xxs);
+  }
+
+  .page-item-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 var(--sp-xs) 0 var(--sp-s);
+  }
+
+  .page-item-actions {
+    block-size: $sz-32;
+    display: flex;
+    align-items: center;
+  }
+
+  .page-item-input {
+    @include text-ellipsis;
+    @include t.use-typography("body-small");
+
+    background: none;
+    outline: none;
+    flex-grow: 1;
+    block-size: $sz-28;
+    max-inline-size: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+    padding-inline-start: $sz-6;
+    margin: 0;
+    border-radius: $br-8;
+    border: $b-1 solid var(--input-border-color-focus);
+    color: var(--layer-row-foreground-color);
+  }
+
+  &:active .page-item-body {
+    color: var(--layer-row-foreground-color-drag);
+    background-color: var(--layer-row-background-color-drag);
+  }
+
+  &.selected .page-item-body,
+  &.selected:hover .page-item-body {
+    color: var(--layer-row-foreground-color-selected);
+    background-color: var(--layer-row-background-color-selected);
+    box-shadow: $sz-16 0 0 0 var(--layer-row-background-color-selected);
+  }
+
+  &:hover .page-item-body,
+  &.hover .page-item-body {
+    color: var(--layer-row-foreground-color-hover);
+    background-color: var(--layer-row-background-color-hover);
+    box-shadow: $sz-16 0 0 0 var(--layer-row-background-color-hover);
+  }
+
+  &:hover .page-delete-btn,
+  &.hover .page-delete-btn {
+    --delete-button-display: initial;
+  }
+
+  &:focus .page-item-body {
+    color: var(--layer-row-foreground-color-focus);
+    border: $b-1 solid var(--layer-row-border-color-focus);
+    outline: none;
+  }
+
+  &:focus-within .page-item-body {
+    outline: none;
+  }
+
+  &.separator:hover .page-item-body,
+  &.separator.hover .page-item-body {
+    color: var(--layer-row-foreground-color);
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.page-divider {
+  inline-size: 100%;
+  block-size: $b-1;
+  margin: var(--sp-s);
+  background-color: var(--color-background-quaternary);
+}
+
+.page-delete-btn {
+  --delete-button-display: none;
+}
+
+.page-delete-icon {
+  display: var(--delete-button-display);
+}

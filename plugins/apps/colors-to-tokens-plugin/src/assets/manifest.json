@@ -1,0 +1,7 @@
+{
+  "name": "Colors to Tokens",
+  "description": "Generate a design tokens file from a list of colors",
+  "code": "/assets/plugin.js",
+  "icon": "/assets/icon.png",
+  "permissions": ["content:read", "library:read", "allow:downloads"]
+}

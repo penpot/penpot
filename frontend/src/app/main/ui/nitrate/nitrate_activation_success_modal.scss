@@ -1,0 +1,79 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+
+  z-index: var(--z-index-notifications);
+}
+
+.modal-dialog {
+  @extend %modal-container-base;
+
+  max-block-size: initial;
+  min-inline-size: px2rem(608);
+  max-inline-size: px2rem(608);
+  padding: var(--sp-xxxl);
+}
+
+.close-btn {
+  @extend %modal-close-btn-base;
+}
+
+.modal-content {
+  display: flex;
+  gap: $sz-40;
+}
+
+.modal-start {
+  display: flex;
+  justify-content: center;
+  min-inline-size: $sz-224;
+
+  @media (width <= 640px) {
+    display: none;
+  }
+}
+
+.modal-start svg {
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.modal-end {
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.modal-title {
+  @include t.use-typography("title-large");
+
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-text-primary {
+  @include t.use-typography("body-large");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-text {
+  @include t.use-typography("body-large");
+}
+
+.modal-button {
+  margin-block-start: var(--sp-s);
+  align-self: flex-start;
+}

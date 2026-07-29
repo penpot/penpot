@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -ex
+
+corepack enable;
+corepack install;
+
+rm -rf ./_dist
+pnpm install
+pnpm run build

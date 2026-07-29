@@ -1,0 +1,439 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/mixins.scss" as *;
+
+// INPUT
+.input-wrapper {
+  --input-icon-padding: var(--sp-l);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+
+  &.valid {
+    input {
+      @extend %disabled-input;
+
+      border: $b-1 solid var(--input-border-color-success);
+
+      &:hover,
+      &:focus {
+        border: $b-1 solid var(--input-border-color-success);
+      }
+    }
+  }
+
+  &.invalid {
+    input {
+      @extend %disabled-input;
+
+      border: $b-1 solid var(--input-border-color-error);
+
+      &:hover,
+      &:focus {
+        border: $b-1 solid var(--input-border-color-error);
+      }
+    }
+  }
+
+  &.valid .help-icon,
+  &.invalid .help-icon {
+    inset-inline-end: $sz-40;
+  }
+}
+
+.input-with-label-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  justify-content: flex-start;
+  align-items: flex-start;
+  block-size: 100%;
+  inline-size: 100%;
+  padding: 0;
+  cursor: pointer;
+  color: var(--modal-title-foreground-color);
+  text-transform: uppercase;
+
+  input {
+    @extend %input-element;
+
+    color: var(--input-foreground-color-active);
+    margin-block-start: 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    block-size: 100%;
+    padding: 0 var(--sp-s);
+
+    &:focus {
+      outline: none;
+      border: $b-1 solid var(--input-border-color-focus);
+      border-radius: var(--sp-s);
+    }
+  }
+
+  // Input autofill
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--input-foreground-color-active);
+    box-shadow: inset 0 0 20px 20px var(--input-background-color);
+    border: $b-1 solid var(--input-border-color);
+    background-clip: text;
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: var(--input-foreground-color-active);
+  }
+}
+
+.input-and-icon {
+  position: relative;
+  inline-size: var(--input-width, calc(100% - deprecated.$s-1));
+  min-inline-size: var(--input-min-width);
+  block-size: var(--input-height, $sz-32);
+}
+
+.help-icon {
+  cursor: pointer;
+  position: absolute;
+  inset-inline-end: var(--sp-l);
+  inset-block-start: calc(50% - var(--sp-s));
+
+  svg {
+    @extend %button-icon-small;
+
+    stroke: var(--color-foreground-secondary);
+    inline-size: $sz-16;
+    block-size: $sz-16;
+  }
+}
+
+.invalid-icon {
+  inline-size: $sz-16;
+  block-size: $sz-16;
+  padding: 0;
+  border: none;
+  background: var(--input-border-color-error);
+  border-radius: $br-circle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset-inline-end: var(--input-icon-padding);
+  inset-block-start: calc(50% - var(--sp-s));
+  cursor: pointer;
+
+  svg {
+    inline-size: $sz-12;
+    block-size: $sz-12;
+    stroke: var(--input-background-color);
+  }
+}
+
+.valid-icon {
+  inline-size: $sz-16;
+  block-size: $sz-16;
+  background: var(--input-border-color-success);
+  border-radius: $br-circle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset-inline-end: var(--sp-l);
+  inset-block-start: calc(50% - var(--sp-s));
+
+  svg {
+    inline-size: $sz-12;
+    block-size: $sz-12;
+    fill: var(--input-border-color-success);
+    stroke: var(--input-background-color);
+  }
+}
+
+.error {
+  color: var(--input-border-color-error);
+  inline-size: 100%;
+  font-size: deprecated.$fs-14;
+}
+
+.hint {
+  @include t.use-typography("body-small");
+
+  inline-size: 99%;
+  margin-block-start: var(--sp-s);
+  color: var(--modal-text-foreground-color);
+}
+
+.checkbox {
+  @extend %input-checkbox;
+
+  .checkbox-label {
+    @include t.use-typography("body-small");
+
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    gap: px2rem(6);
+    min-block-size: var(--sp-xxxl);
+    cursor: pointer;
+
+    span {
+      @extend %checkbox-icon;
+    }
+
+    input {
+      display: none !important;
+    }
+
+    &:hover {
+      span {
+        border-color: var(--input-checkbox-border-color-hover);
+      }
+    }
+
+    a {
+      // Need for terms and conditions links on register checkbox
+      color: var(--link-foreground-color);
+    }
+  }
+}
+
+// SELECT
+.custom-select {
+  @extend %select-wrapper;
+
+  block-size: $sz-32;
+
+  .input-container {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xs);
+    block-size: $sz-32;
+    inline-size: 100%;
+    border-radius: var(--sp-s);
+    border: $b-1 solid var(--input-border-color);
+
+    @extend %select-wrapper;
+
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color);
+
+    .main-content {
+      @include t.use-typography("body-small");
+
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-xs);
+      position: relative;
+      justify-content: center;
+      flex-grow: 1;
+      block-size: 100%;
+      padding: var(--sp-s);
+
+      .label {
+        color: var(--input-foreground-color);
+      }
+
+      .value {
+        inline-size: 100%;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        color: var(--input-foreground-color-active);
+      }
+    }
+
+    .icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      block-size: $sz-32;
+      inline-size: $sz-24;
+      pointer-events: none;
+
+      svg {
+        @extend %button-icon-small;
+
+        stroke: var(--icon-foreground);
+        transform: rotate(90deg);
+      }
+    }
+
+    &.disabled {
+      background-color: var(--input-background-color-disabled);
+      border: $b-1 solid var(--input-border-color-disabled);
+      color: var(--input-foreground-color-disabled);
+    }
+
+    &.focus {
+      outline: none;
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-active);
+      border: $b-1 solid var(--input-border-color-active);
+    }
+  }
+
+  select {
+    @extend %menu-dropdown;
+    @include t.use-typography("body-small");
+
+    box-sizing: border-box;
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    min-block-size: $sz-32;
+    block-size: auto;
+    inline-size: calc(100% - 1px);
+    padding: 0 var(--sp-m);
+    margin: 0;
+    border: none;
+    opacity: 0;
+    z-index: var(--z-index-dropdown);
+    background-color: transparent;
+    cursor: pointer;
+
+    option {
+      @include t.use-typography("body-small");
+
+      color: var(--title-foreground-color-hover);
+      background-color: var(--menu-background-color);
+      appearance: none;
+      block-size: $sz-32;
+    }
+  }
+}
+
+// SUBMIT-BUTTON
+.button-submit {
+  @extend %button-primary;
+
+  &:disabled {
+    @extend %button-disabled;
+
+    min-block-size: $sz-32;
+  }
+}
+
+// RADIO BUTTONS
+.custom-radio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-l);
+}
+
+.radio-label {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  align-items: flex-start;
+  gap: var(--sp-s);
+  min-block-size: $sz-32;
+  block-size: fit-content;
+  border-radius: var(--sp-s);
+  padding: var(--sp-s);
+  color: var(--input-foreground-color-rest);
+  border: $b-1 solid transparent;
+
+  &:has(:focus-visible) {
+    outline: none;
+    border: $b-1 solid var(--input-border-color-active);
+  }
+}
+
+.radio-dot {
+  block-size: var(--sp-s);
+  inline-size: var(--sp-s);
+  border-radius: $br-circle;
+  background-color: var(--color-background-tertiary);
+}
+
+.radio-input {
+  inline-size: 0;
+  margin: 0;
+}
+
+.radio-icon {
+  @extend %checkbox-icon;
+
+  border-radius: $br-circle;
+}
+
+.radio-label-image {
+  @include t.use-typography("body-medium");
+
+  display: grid;
+  grid-template-rows: auto auto 0;
+  justify-items: center;
+  gap: 0;
+  border-radius: var(--sp-s);
+  margin: 0;
+  border: $b-1 solid var(--color-background-tertiary);
+  cursor: pointer;
+
+  &:global(.checked) {
+    border: $b-1 solid var(--color-accent-primary);
+  }
+
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: $b-1 solid var(--input-border-color-active);
+  }
+
+  .image-text {
+    color: var(--input-foreground-color-rest);
+    display: grid;
+    align-self: center;
+    margin-block-end: var(--sp-l);
+    padding-inline: var(--sp-s);
+    text-align: center;
+  }
+}
+
+.image-inside {
+  margin: var(--sp-l);
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-inside {
+  margin: var(--sp-l);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  svg {
+    inline-size: 40px;
+    block-size: 60px;
+    stroke: var(--icon-foreground);
+    fill: none;
+  }
+}
+
+// TEXTAREA
+
+.textarea-label {
+  @include t.use-typography("headline-small");
+
+  color: var(--modal-title-foreground-color);
+  margin-block-end: var(--sp-s);
+}
+
+.textarea-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}

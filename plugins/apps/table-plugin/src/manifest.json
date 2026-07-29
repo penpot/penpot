@@ -1,0 +1,8 @@
+{
+  "name": "Table plugin",
+  "description": "Table plugin to import or create tables",
+  "version": 2,
+  "code": "assets/plugin.js",
+  "icon": "assets/icon.png",
+  "permissions": ["content:read", "content:write"]
+}

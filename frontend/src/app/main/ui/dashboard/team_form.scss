@@ -1,0 +1,75 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+}
+
+.modal-container {
+  @extend %modal-container-base;
+}
+
+.modal-header {
+  margin-block-end: var(--sp-xxl);
+}
+
+.modal-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend %modal-close-btn-base;
+}
+
+.modal-content {
+  margin-block-end: var(--sp-xxl);
+  color: var(--color-foreground-secondary);
+
+  @include t.use-typography("body-large");
+}
+
+.team-form {
+  min-inline-size: px2rem(400);
+}
+
+.group-name-input {
+  @extend %input-element-label;
+
+  margin-block-end: var(--sp-s);
+}
+
+.group-name-input label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  align-items: flex-start;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  height: 100%;
+}
+
+.action-buttons {
+  @extend %modal-action-btns;
+}
+
+.cancel-button {
+  @extend %modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend %modal-accept-btn;
+
+  &.danger {
+    @extend %modal-danger-btn;
+  }
+}

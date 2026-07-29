@@ -1,0 +1,1210 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u04868522-3ebf-81e8-8006-306b0c9b5f59",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "Strokes",
+    "~:revn": 31,
+    "~:modified-at": "~m1749473897268",
+    "~:vern": 0,
+    "~:id": "~u202c1104-9385-81d3-8006-507413ff2c99",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content",
+            "0004-clean-shadow-and-colors",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-opacity"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u53a7ff09-2228-81d3-8006-4b5ea964593b",
+    "~:created-at": "~m1749473553426",
+    "~:data": {
+        "~:pages": [
+            "~u202c1104-9385-81d3-8006-507413ff2c9a"
+        ],
+        "~:pages-index": {
+            "~u202c1104-9385-81d3-8006-507413ff2c9a": {
+                "~:objects": {
+                    "~u00000000-0000-0000-0000-000000000000": {
+                        "~#shape": {
+                            "~:y": 0,
+                            "~:hide-fill-on-export": false,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "Root Frame",
+                            "~:width": 0.01,
+                            "~:type": "~:frame",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 0.0,
+                                        "~:y": 0.0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.01
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.0,
+                                        "~:y": 0.01
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 0,
+                            "~:proportion": 1.0,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 0.01,
+                                    "~:height": 0.01,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 0.01,
+                                    "~:y2": 0.01
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#FFFFFF",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 0.01,
+                            "~:flip-y": null,
+                            "~:shapes": [
+                                "~u408f5e19-4051-8035-8006-50741a000bce",
+                                "~u408f5e19-4051-8035-8006-507430023c4f",
+                                "~u408f5e19-4051-8035-8006-507427e67662",
+                                "~u76faa7f5-8253-80e7-8006-50746e7a587d",
+                                "~u76faa7f5-8253-80e7-8006-50747874d301",
+                                "~u76faa7f5-8253-80e7-8006-50747bfa2951",
+                                "~u9202dd03-bb97-8037-8006-50751cf6b858",
+                                "~u9202dd03-bb97-8037-8006-50752c8c937c",
+                                "~udeb18501-60d5-8066-8006-50753a954c6e",
+                                "~udeb18501-60d5-8066-8006-50754213576e"
+                            ]
+                        }
+                    },
+                    "~u76faa7f5-8253-80e7-8006-50747874d301": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAABD1LZDAADwQQMAAAD/XZND3+6xQuDId0Nr7btCLF2WQ4zj/0IDAAAA6NWwQ9bsIUO8xetD3uVRQylJ30Mx8QNDAwAAAJbM0kMQ8ldCQ9S2QwAA8EFD1LZDAADwQQ=="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 278.0000278540057,
+                                        "~:y": 29.999999284744263
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 450.0000220072752,
+                                        "~:y": 29.999999284744263
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 450.0000220072752,
+                                        "~:y": 174.0000046654724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 278.0000278540057,
+                                        "~:y": 174.0000046654724
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u76faa7f5-8253-80e7-8006-50747874d301",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:center",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color-gradient": {
+                                        "~:start-x": 0.5,
+                                        "~:start-y": 0,
+                                        "~:end-x": 0.5,
+                                        "~:end-y": 1,
+                                        "~:width": 1,
+                                        "~:type": "~:linear",
+                                        "~:stops": [
+                                            {
+                                                "~:color": "#ff0000",
+                                                "~:offset": 0,
+                                                "~:opacity": 1
+                                            },
+                                            {
+                                                "~:color": "#000000",
+                                                "~:offset": 1,
+                                                "~:opacity": 0
+                                            }
+                                        ]
+                                    }
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 278.0000278540057,
+                                    "~:y": 29.999999284744263,
+                                    "~:width": 171.99999415326954,
+                                    "~:height": 144.00000538072814,
+                                    "~:x1": 278.0000278540057,
+                                    "~:y1": 29.999999284744263,
+                                    "~:x2": 450.0000220072752,
+                                    "~:y2": 174.0000046654724
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u408f5e19-4051-8035-8006-50741a000bce": {
+                        "~#shape": {
+                            "~:y": 233,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:hide-in-viewer": false,
+                            "~:name": "Rectangle",
+                            "~:width": 155,
+                            "~:type": "~:rect",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 86,
+                                        "~:y": 233
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 241,
+                                        "~:y": 233
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 241,
+                                        "~:y": 371
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 86,
+                                        "~:y": 371
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u408f5e19-4051-8035-8006-50741a000bce",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-color": "#000000",
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-width": 10
+                                }
+                            ],
+                            "~:x": 86,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 86,
+                                    "~:y": 233,
+                                    "~:width": 155,
+                                    "~:height": 138,
+                                    "~:x1": 86,
+                                    "~:y1": 233,
+                                    "~:x2": 241,
+                                    "~:y2": 371
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": 138,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u408f5e19-4051-8035-8006-507430023c4f": {
+                        "~#shape": {
+                            "~:y": 233,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:hide-in-viewer": false,
+                            "~:name": "Rectangle",
+                            "~:width": 155,
+                            "~:type": "~:rect",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 504,
+                                        "~:y": 233
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 659,
+                                        "~:y": 233
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 659,
+                                        "~:y": 371
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 504,
+                                        "~:y": 371
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u408f5e19-4051-8035-8006-507430023c4f",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-image": {
+                                        "~:id": "~u202c1104-9385-81d3-8006-5074e4682cac",
+                                        "~:width": 872,
+                                        "~:height": 1400,
+                                        "~:mtype": "image/jpeg",
+                                        "~:name": "Aptenodytes_forsteri_-Snow_Hill_Island,_Antarctica_-adults_and_juvenile-8.jpg",
+                                        "~:keep-aspect-ratio": true
+                                    }
+                                }
+                            ],
+                            "~:x": 504,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 504,
+                                    "~:y": 233,
+                                    "~:width": 155,
+                                    "~:height": 138,
+                                    "~:x1": 504,
+                                    "~:y1": 233,
+                                    "~:x2": 659,
+                                    "~:y2": 371
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": 138,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u76faa7f5-8253-80e7-8006-50747bfa2951": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAABHWhJEAADwQQMAAAAlnwBE3+6xQrvE6UNr7btCux4CRIzj/0IDAAAAGVsPRNbsIUMD0yxE3uVRQ7qUJkQx8QNDAwAAAHBWIEQQ8ldCR1oSRAAA8EFHWhJEAADwQQ=="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 497.75230432816625,
+                                        "~:y": 29.999998569488525
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 669.7522984814358,
+                                        "~:y": 29.999998569488525
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 669.7522984814358,
+                                        "~:y": 174.00000395021667
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 497.75230432816625,
+                                        "~:y": 174.00000395021667
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u76faa7f5-8253-80e7-8006-50747bfa2951",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-image": {
+                                        "~:id": "~u202c1104-9385-81d3-8006-5074c50339b6",
+                                        "~:width": 872,
+                                        "~:height": 1400,
+                                        "~:mtype": "image/jpeg",
+                                        "~:name": "Aptenodytes_forsteri_-Snow_Hill_Island,_Antarctica_-adults_and_juvenile-8.jpg",
+                                        "~:keep-aspect-ratio": true
+                                    }
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 497.75230432816625,
+                                    "~:y": 29.999998569488525,
+                                    "~:width": 171.99999415326954,
+                                    "~:height": 144.00000538072814,
+                                    "~:x1": 497.75230432816625,
+                                    "~:y1": 29.999998569488525,
+                                    "~:x2": 669.7522984814358,
+                                    "~:y2": 174.00000395021667
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u9202dd03-bb97-8037-8006-50751cf6b858": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAAJ5CAEAIRAIAAAAAAAAAAAAAAAAAAAAAAAAAAAApQwAA4kM="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 79,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 169,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 169,
+                                        "~:y": 545
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 79,
+                                        "~:y": 545
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u9202dd03-bb97-8037-8006-50751cf6b858",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#000000",
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-cap-start": "~:line-arrow",
+                                    "~:stroke-cap-end": "~:line-arrow"
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 79,
+                                    "~:y": 452,
+                                    "~:width": 90,
+                                    "~:height": 93,
+                                    "~:x1": 79,
+                                    "~:y1": 452,
+                                    "~:x2": 169,
+                                    "~:y2": 545
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u408f5e19-4051-8035-8006-507427e67662": {
+                        "~#shape": {
+                            "~:y": 233,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:hide-in-viewer": false,
+                            "~:name": "Rectangle",
+                            "~:width": 155,
+                            "~:type": "~:rect",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 295,
+                                        "~:y": 233
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 450,
+                                        "~:y": 233
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 450,
+                                        "~:y": 371
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 295,
+                                        "~:y": 371
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u408f5e19-4051-8035-8006-507427e67662",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:center",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color-gradient": {
+                                        "~:start-x": 0.5,
+                                        "~:start-y": 0,
+                                        "~:end-x": 0.5,
+                                        "~:end-y": 1,
+                                        "~:width": 1,
+                                        "~:type": "~:linear",
+                                        "~:stops": [
+                                            {
+                                                "~:color": "#ff0000",
+                                                "~:offset": 0,
+                                                "~:opacity": 1
+                                            },
+                                            {
+                                                "~:color": "#000000",
+                                                "~:offset": 1,
+                                                "~:opacity": 0
+                                            }
+                                        ]
+                                    }
+                                }
+                            ],
+                            "~:x": 295,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 295,
+                                    "~:y": 233,
+                                    "~:width": 155,
+                                    "~:height": 138,
+                                    "~:x1": 295,
+                                    "~:y1": 233,
+                                    "~:x2": 450,
+                                    "~:y2": 371
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": 138,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u76faa7f5-8253-80e7-8006-50746e7a587d": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAABJDAADwQQMAAAAAAJZCAACyQgAA4EEAALxCAACiQgAAAEMDAAAAAAAGQwAAIkMAAHxDAABSQwAAY0MAAARDAwAAAAAASkMAAFhCAAASQwAA8EEAABJDAADwQQ=="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 58.247751379845134,
+                                        "~:y": 30
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 230.43213038893805,
+                                        "~:y": 30
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 230.43213038893805,
+                                        "~:y": 174.0817110343229
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 58.247751379845134,
+                                        "~:y": 174.0817110343229
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u76faa7f5-8253-80e7-8006-50746e7a587d",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#000000",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 58.247751379845134,
+                                    "~:y": 30,
+                                    "~:width": 172.1843790090929,
+                                    "~:height": 144.0817110343229,
+                                    "~:x1": 58.247751379845134,
+                                    "~:y1": 30,
+                                    "~:x2": 230.43213038893805,
+                                    "~:y2": 174.0817110343229
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~udeb18501-60d5-8066-8006-50753a954c6e": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAgJ9DAEAIRAIAAAAAAAAAAAAAAAAAAAAAAAAAAIDMQwAA4kM="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 318.9999945163727,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 408.9999945163727,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 408.9999945163727,
+                                        "~:y": 545
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 318.9999945163727,
+                                        "~:y": 545
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~udeb18501-60d5-8066-8006-50753a954c6e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-cap-start": "~:line-arrow",
+                                    "~:stroke-cap-end": "~:line-arrow",
+                                    "~:stroke-color-gradient": {
+                                        "~:start-x": 0.5,
+                                        "~:start-y": 0,
+                                        "~:end-x": 0.5,
+                                        "~:end-y": 1,
+                                        "~:width": 1,
+                                        "~:type": "~:linear",
+                                        "~:stops": [
+                                            {
+                                                "~:color": "#ff0000",
+                                                "~:offset": 0,
+                                                "~:opacity": 1
+                                            },
+                                            {
+                                                "~:color": "#000000",
+                                                "~:offset": 1,
+                                                "~:opacity": 0
+                                            }
+                                        ]
+                                    }
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 318.9999945163727,
+                                    "~:y": 452,
+                                    "~:width": 90,
+                                    "~:height": 93,
+                                    "~:x1": 318.9999945163727,
+                                    "~:y1": 452,
+                                    "~:x2": 408.9999945163727,
+                                    "~:y2": 545
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~udeb18501-60d5-8066-8006-50754213576e": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAwAZEAEAIRAIAAAAAAAAAAAAAAAAAAAAAAAAAAEAdRAAA4kM="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 538.999981880188,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 628.999981880188,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 628.999981880188,
+                                        "~:y": 545
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 538.999981880188,
+                                        "~:y": 545
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~udeb18501-60d5-8066-8006-50754213576e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-cap-start": "~:line-arrow",
+                                    "~:stroke-cap-end": "~:line-arrow",
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-image": {
+                                        "~:id": "~u202c1104-9385-81d3-8006-507560ce29e3",
+                                        "~:width": 872,
+                                        "~:height": 1400,
+                                        "~:mtype": "image/jpeg",
+                                        "~:name": "Aptenodytes_forsteri_-Snow_Hill_Island,_Antarctica_-adults_and_juvenile-8.jpg",
+                                        "~:keep-aspect-ratio": true
+                                    }
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 538.999981880188,
+                                    "~:y": 452,
+                                    "~:width": 90,
+                                    "~:height": 93,
+                                    "~:x1": 538.999981880188,
+                                    "~:y1": 452,
+                                    "~:x2": 628.999981880188,
+                                    "~:y2": 545
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u9202dd03-bb97-8037-8006-50752c8c937c": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAAJ5CAEAIRAIAAAAAAAAAAAAAAAAAAAAAAAAAAAApQwAA4kM="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 79,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 169,
+                                        "~:y": 452
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 169,
+                                        "~:y": 545
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 79,
+                                        "~:y": 545
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u9202dd03-bb97-8037-8006-50752c8c937c",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#000000",
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-cap-start": "~:line-arrow",
+                                    "~:stroke-cap-end": "~:line-arrow"
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 79,
+                                    "~:y": 452,
+                                    "~:width": 90,
+                                    "~:height": 93,
+                                    "~:x1": 79,
+                                    "~:y1": 452,
+                                    "~:x2": 169,
+                                    "~:y2": 545
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                "~:id": "~u202c1104-9385-81d3-8006-507413ff2c9a",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u202c1104-9385-81d3-8006-507413ff2c99",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}

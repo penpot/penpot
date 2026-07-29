@@ -1,0 +1,646 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.main.data.workspace.shapes
+  (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.shapes-helpers :as cfsh]
+   [app.common.logic.shapes :as cls]
+   [app.common.schema :as sm]
+   [app.common.types.component :as ctc]
+   [app.common.types.container :as ctn]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
+   [app.main.data.changes :as dch]
+   [app.main.data.comments :as dc]
+   [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.collapse :as dwco]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
+
+;; If anything a translation can mutate is added here, drop the
+;; `(when-not translation? …)` guard in `update-shapes` below.
+(def ^:private update-layout-attr? #{:hidden})
+
+;; Text attrs whose change makes the DOM text pipeline re-measure the shape.
+(def ^:private text-reflow-attr? #{:content :grow-type})
+
+(defn- reflow-attr?
+  [attr]
+  (or (update-layout-attr? attr) (text-reflow-attr? attr)))
+
+(defn- async-text-reflow?
+  "Whether `shape` enters an asynchronous text geometry pipeline. The HTML
+  renderer measures every changed text; WASM only resizes auto-sized texts.
+  A grow-type transition is included because `shape` is the value before the
+  update and may still be fixed."
+  [state shape changed]
+  (and (cfh/text-shape? shape)
+       (or (not (features/active-feature? state "render-wasm/v1"))
+           (not= :fixed (:grow-type shape))
+           (contains? changed :grow-type))))
+
+(defn- add-undo-group
+  [changes state]
+  (let [undo            (:workspace-undo state)
+        items           (:items undo)
+        index           (or (:index undo) (dec (count items)))
+        prev-item       (when-not (or (empty? items) (= index -1))
+                          (get items index))
+        undo-group      (:undo-group prev-item)
+        add-undo-group? (and
+                         (not (nil? undo-group))
+                         (= (get-in changes [:redo-changes 0 :type]) :mod-obj)
+                         (= (get-in prev-item [:redo-changes 0 :type]) :add-obj)
+                         (contains? (:tags prev-item) :alt-duplication))] ;; This is a copy-and-move with mouse+alt
+
+    (cond-> changes add-undo-group? (assoc :undo-group undo-group))))
+
+(defn update-shapes-buffer-start
+  []
+  (ptk/reify ::update-shapes-buffer-start
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state ::update-shapes-buffer true))))
+
+(defn update-shapes-buffer-stop
+  []
+  (ptk/reify ::update-shapes-buffer-stop
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state ::update-shapes-buffer false))))
+
+(defn update-shapes-buffer-commit
+  []
+  (ptk/reify ::update-shapes-buffer-commit
+    ptk/WatchEvent
+    (watch [_ state _]
+      (->> (get state ::update-shapes-buffer-changes)
+           (vals)
+           (map dch/commit-changes)
+           (rx/from)))))
+
+;; Looks for the objects data in the state, if there is an "in progress"
+;; update-shapes-buffer will return the objeccts inside the current changes
+;; to be applied.
+(defn lookup-changed-objects
+  [state page-id]
+  (let [changes-objects
+        (-> (get-in state [::update-shapes-buffer-changes page-id])
+            (pcb/lookup-objects))]
+    (or changes-objects (dsh/lookup-page-objects state page-id))))
+
+;; Accumulates the update shapes changes into a single commit-changes
+;; The accumulation is marked between the events `start` and `stop` in between
+;; those events all the `update-shapes` will be agregated together with this event.
+;; After a `stop` arrives the `commit` will send the changes at the same time.
+(defn update-shapes-buffer
+  ([ids update-fn]
+   (update-shapes-buffer ids update-fn nil))
+  ([ids update-fn
+    {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
+            ignore-touched undo-group with-objects? changed-sub-attr translation?]
+     :or {reg-objects? false
+          save-undo? true
+          stack-undo? false
+          ignore-touched false
+          with-objects? false}
+     :as props}]
+   (let [cur-event (js/Symbol)]
+     (ptk/reify ::update-shapes-buffer
+       ptk/UpdateEvent
+       (update [it state]
+         (if (nil? (::update-shapes-buffer-event state))
+           (assoc state ::update-shapes-buffer-event cur-event)
+
+           (let [page-id (or page-id (get state :current-page-id))
+                 objects   (dsh/lookup-page-objects state page-id)]
+             (-> state
+                 (update-in
+                  [::update-shapes-buffer-changes page-id]
+                  (fn [changes]
+                    (-> (or changes
+                            (-> (pcb/empty-changes it page-id)
+                                (pcb/with-objects objects)
+                                (pcb/set-save-undo? save-undo?)
+                                (pcb/set-stack-undo? stack-undo?)
+                                (cond-> undo-group
+                                  (pcb/set-undo-group undo-group))))
+                        (cls/generate-update-shapes
+                         ids
+                         update-fn
+                         nil
+                         {:attrs attrs
+                          :changed-sub-attr changed-sub-attr
+                          :ignore-tree ignore-tree
+                          :ignore-touched ignore-touched
+                          :with-objects? with-objects?})
+                        (cond-> reg-objects? (pcb/resize-parents ids))
+                        (pcb/set-translation? translation?))))))))
+
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (if (= (::update-shapes-buffer-event state) cur-event)
+           (let [stopper (->> stream (rx/filter (ptk/type? ::update-shapes-buffer-stop)))]
+             (rx/concat
+              (rx/merge
+               (->> stream
+                    (rx/filter (ptk/type? ::update-shapes-buffer))
+                    (rx/take-until stopper)
+                    (rx/last)
+                    (rx/map update-shapes-buffer-commit))
+               (rx/of (update-shapes-buffer ids update-fn props)))
+
+              (rx/of #(dissoc %
+                              ::update-shapes-buffer-changes
+                              ::update-shapes-buffer-event))))
+           (rx/empty)))))))
+
+(defn update-shapes
+  ([ids update-fn]
+   (update-shapes ids update-fn nil))
+  ([ids update-fn
+    {:as props
+     :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
+            ignore-touched undo-group with-objects? changed-sub-attr translation?
+            update-layout?]
+     :or {reg-objects? false
+          save-undo? true
+          stack-undo? false
+          ignore-touched false
+          with-objects? false
+          update-layout? true}}]
+
+   (assert (every? uuid? ids) "expect a coll of uuid for `ids`")
+   (assert (fn? update-fn) "the `update-fn` should be a valid function")
+
+   (ptk/reify ::update-shapes
+     ptk/WatchEvent
+     (watch [it state _]
+
+       (if (::update-shapes-buffer state)
+         (rx/of (update-shapes-buffer ids update-fn props))
+
+         (let [page-id   (or page-id (get state :current-page-id))
+               objects   (dsh/lookup-page-objects state page-id)
+               ids       (into [] (filter some?) ids)
+
+               ;; Pairs of [shape changed-attrs] for the shapes whose change
+               ;; matters to a reflow, feeding both id sets below.
+               xf-reflow
+               (comp
+                (map (d/getf objects))
+                (keep (fn [shape]
+                        (let [changed (pcb/changed-attrs shape objects update-fn
+                                                         {:attrs attrs :with-objects? with-objects?})]
+                          (when (some reflow-attr? changed)
+                            [shape changed])))))
+
+               ;; `changed-attrs` runs `update-fn` in full for every shape, which
+               ;; can be expensive (e.g. `update-bool-shape` recalculates the whole
+               ;; boolean path in WASM). Skip the pass entirely when we can prove it
+               ;; cannot match: when the caller declares `attrs`, `changed-attrs`
+               ;; filters its result to that set, so if no reflow attr is present
+               ;; the check is always empty.
+               reflow-changes
+               (when-not (or translation?
+                             (not update-layout?)
+                             (and (some? attrs)
+                                  (not (some reflow-attr? attrs))))
+                 (into [] xf-reflow ids))
+
+               update-layout-ids
+               (->> reflow-changes
+                    (into [] (comp (filter (fn [[_ changed]] (some update-layout-attr? changed)))
+                                   (map (comp :id first))))
+                    (not-empty))
+
+               ;; Text shapes the DOM pipeline has to re-measure, narrowed to what
+               ;; it actually measures: the active page, never the edited shape.
+               text-reflow-ids
+               (when (= page-id (get state :current-page-id))
+                 (let [edition (dm/get-in state [:workspace-local :edition])]
+                   (->> reflow-changes
+                        (into [] (comp (filter (fn [[shape changed]]
+                                                 (and (async-text-reflow? state shape changed)
+                                                      (some text-reflow-attr? changed))))
+                                       (map (comp :id first))
+                                       (remove #(= % edition))))
+                        (not-empty))))
+
+               changes
+               (-> (pcb/empty-changes it page-id)
+                   (pcb/set-save-undo? save-undo?)
+                   (pcb/set-stack-undo? stack-undo?)
+                   (cls/generate-update-shapes ids
+                                               update-fn
+                                               objects
+                                               {:attrs attrs
+                                                :changed-sub-attr changed-sub-attr
+                                                :ignore-tree ignore-tree
+                                                :ignore-touched ignore-touched
+                                                :with-objects? with-objects?
+                                                :translation? translation?})
+                   (cond-> undo-group
+                     (pcb/set-undo-group undo-group))
+                   (pcb/set-translation? translation?))
+
+               changes
+               (add-undo-group changes state)]
+
+           (rx/concat
+            ;; Announces the texts still to be re-measured, so a reflow wait
+            ;; covers the render that measures them. Goes before the commit,
+            ;; which is what triggers that render.
+            (if text-reflow-ids
+              (rx/of (ptk/data-event :text/reflow {:ids text-reflow-ids :page-id page-id}))
+              (rx/empty))
+
+            (if (seq (:redo-changes changes))
+              (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
+                (rx/of (dch/commit-changes changes)))
+              (rx/empty))
+
+            ;; Update layouts for properties marked
+            (if update-layout-ids
+              (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
+              (rx/empty)))))))))
+
+(defn add-shape
+  ([shape]
+   (add-shape shape {}))
+  ([shape {:keys [no-select? no-update-layout? skip-edition?]}]
+
+   (cts/check-shape shape)
+
+   (ptk/reify ::add-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       (cond-> state
+         (and (cfh/text-shape? shape) (nil? (:content shape)))
+         (update :workspace-new-text-shapes (fnil conj #{}) (:id shape))))
+
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id  (:current-page-id state)
+             objects  (dsh/lookup-page-objects state page-id)
+
+             [shape changes]
+             (-> (pcb/empty-changes it page-id)
+                 (pcb/with-objects objects)
+                 (cfsh/prepare-add-shape shape objects))
+
+             changes
+             (cond-> changes
+               (cfh/text-shape? shape)
+               (pcb/set-undo-group (:id shape)))
+
+             undo-id
+             (js/Symbol)
+
+             parent-type
+             (cfh/get-shape-type objects (:parent-id shape))
+
+             ;; Skip edition when using embedded editor (v3) and shape already has content (e.g. paste)
+             start-edition? (and (cfh/text-shape? shape)
+                                 (not (and skip-edition? (some? (:content shape)))))]
+
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 ;; A new text has no geometry until the pipeline measures it,
+                 ;; so it raises the same signal an edit does.
+                 (when (async-text-reflow? state shape nil)
+                   (ptk/data-event :text/reflow {:ids [(:id shape)] :page-id page-id}))
+                 (dch/commit-changes changes)
+                 (when-not no-update-layout?
+                   (ptk/data-event :layout/update {:ids [(:parent-id shape)]}))
+                 (when-not no-select?
+                   (dws/select-shapes (d/ordered-set (:id shape))))
+                 (dwu/commit-undo-transaction undo-id))
+          (when start-edition?
+            (->> (rx/of (dwe/start-edition-mode (:id shape)))
+                 (rx/observe-on :async)))
+
+          (rx/of (ev/event {::ev/name "create-shape"
+                            ::ev/origin "workspace:add-shape"
+                            :type (get shape :type)
+                            :parent-type parent-type}))
+
+          (when (cfh/has-layout? objects (:parent-id shape))
+            (rx/of (ev/event {::ev/name "layout-add-element"
+                              ::ev/origin "workspace:add-shape"
+                              :type (get shape :type)
+                              :parent-type parent-type})))))))))
+
+(defn move-shapes-into-frame
+  [frame-id shapes]
+  (ptk/reify ::move-shapes-into-frame
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            objects (dsh/lookup-page-objects state page-id)
+            shapes  (->> shapes
+                         (remove #(dm/get-in objects [% :blocked]))
+                         (cfh/order-by-indexed-shapes objects))
+
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects))
+
+            changes (cfsh/prepare-move-shapes-into-frame changes frame-id shapes objects true)]
+
+        (if (some? changes)
+          (rx/of (dch/commit-changes changes))
+          (rx/empty))))))
+
+(declare update-shape-flags)
+
+(defn delete-shapes
+  ([ids] (delete-shapes nil ids {}))
+  ([page-id ids] (delete-shapes page-id ids {}))
+  ([page-id ids options]
+   (assert (sm/check-set-of-uuid ids))
+
+   (ptk/reify ::delete-shapes
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [file-id       (:current-file-id state)
+             page-id       (or page-id (:current-page-id state))
+
+             fdata         (dsh/lookup-file-data state file-id)
+             page          (dsh/get-page fdata page-id)
+             objects       (:objects page)
+             deleted-ids   (into #{} (mapcat #(cfh/get-children-ids-with-self objects %)) ids)
+
+             undo-id (or (:undo-id options) (js/Symbol))
+             [all-parents changes]
+             (-> (pcb/empty-changes it (:id page))
+                 (cls/generate-delete-shapes fdata page objects ids
+                                             {:ignore-touched (:allow-altering-copies options)
+                                              :undo-group (:undo-group options)
+                                              :undo-id undo-id}))]
+
+         (wrf/cancel-shapes! deleted-ids)
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dc/detach-comment-thread ids)
+                (dch/commit-changes changes)
+                (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
+                (dwu/commit-undo-transaction undo-id)))))))
+
+(defn create-and-add-shape
+  ([type frame-x frame-y attrs]
+   (create-and-add-shape type frame-x frame-y attrs nil))
+  ([type frame-x frame-y {:keys [width height] :as attrs} {:keys [skip-edition?]}]
+   (ptk/reify ::create-and-add-shape
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [vbc       (dsh/get-viewport-center state)
+             x         (:x attrs (- (:x vbc) (/ width 2)))
+             y         (:y attrs (- (:y vbc) (/ height 2)))
+             page-id   (:current-page-id state)
+             objects   (dsh/lookup-page-objects state page-id)
+             frame-id  (-> (dsh/lookup-page-objects state page-id)
+                           (ctst/top-nested-frame {:x frame-x :y frame-y}))
+
+             selected  (dsh/lookup-selected state)
+             base      (cfh/get-base-shape objects selected)
+
+             parent-id (if (or (and (= 1 (count selected))
+                                    (cfh/frame-shape? (get objects (first selected))))
+                               (empty? selected))
+                         frame-id
+                         (:parent-id base))
+
+             ;; If the parent-id or the frame-id are component-copies, we need to get the first not copy parent
+             parent-id (:id (ctn/get-first-valid-parent objects parent-id))   ;; We don't want to change the structure of component copies
+             frame-id  (:id (ctn/get-first-valid-parent objects frame-id))
+
+             shape     (cts/setup-shape
+                        (-> attrs
+                            (assoc :type type)
+                            (assoc :x x)
+                            (assoc :y y)
+                            (assoc :frame-id frame-id)
+                            (assoc :parent-id parent-id)))]
+
+         (rx/of (add-shape shape {:skip-edition? skip-edition?})))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Artboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-artboard-from-shapes
+  ([shapes id parent-id index name delta]
+   (create-artboard-from-shapes shapes id parent-id index name delta true))
+  ([shapes id parent-id index name delta layout-update?]
+   (ptk/reify ::create-artboard-from-shapes
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id      (:current-page-id state)
+             objects      (dsh/lookup-page-objects state page-id)
+
+             changes      (-> (pcb/empty-changes it page-id)
+                              (pcb/with-objects objects))
+
+             [frame-shape changes]
+             (cfsh/prepare-create-artboard-from-selection changes
+                                                          id
+                                                          parent-id
+                                                          objects
+                                                          shapes
+                                                          index
+                                                          name
+                                                          false
+                                                          nil
+                                                          delta)
+
+             undo-id  (js/Symbol)]
+
+         (when changes
+           (rx/of
+            (dwu/start-undo-transaction undo-id)
+            (dch/commit-changes changes)
+            (dws/select-shapes (d/ordered-set (:id frame-shape)))
+            (when layout-update? (ptk/data-event :layout/update {:ids [(:id frame-shape)]}))
+            (ev/event {::ev/name "create-board"
+                       :converted-from (cfh/get-selected-type objects shapes)
+                       :parent-type (cfh/get-shape-type objects (:parent-id frame-shape))})
+            (dwu/commit-undo-transaction undo-id))))))))
+
+(defn create-artboard-from-selection
+  ([]
+   (create-artboard-from-selection nil))
+  ([id]
+   (create-artboard-from-selection id nil))
+  ([id parent-id]
+   (create-artboard-from-selection id parent-id nil))
+  ([id parent-id index]
+   (create-artboard-from-selection id parent-id index nil))
+  ([id parent-id index name]
+   (create-artboard-from-selection id parent-id index name nil))
+  ([id parent-id index name delta]
+   (ptk/reify ::create-artboard-from-selection
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id      (:current-page-id state)
+             objects      (dsh/lookup-page-objects state page-id)
+             selected     (->> (dsh/lookup-selected state)
+                               (cfh/clean-loops objects)
+                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))
+                               (remove #(->> %
+                                             (get objects)
+                                             (ctc/is-variant?))))]
+
+         (rx/of (create-artboard-from-shapes selected id parent-id index name delta)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shape Flags
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn update-shape-flags
+  [ids flags]
+  (assert (every? uuid? ids)
+          "expected valid coll of uuids")
+
+  (let [{:keys [blocked hidden undo-group]}
+        (cts/check-shape-generic-attrs flags)]
+
+    (ptk/reify ::update-shape-flags
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [update-fn
+              (fn [obj]
+                (cond-> obj
+                  (boolean? blocked) (assoc :blocked blocked)
+                  (boolean? hidden) (assoc :hidden hidden)))
+              objects (dsh/lookup-page-objects state)
+              ;; We have change only the hidden behaviour, to hide only the
+              ;; selected shape, block behaviour remains the same.
+              ids     (if (boolean? blocked)
+                        (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
+                        ids)]
+          (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group})))))))
+
+(defn toggle-visibility-selected
+  []
+  (ptk/reify ::toggle-visibility-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (dsh/lookup-selected state)]
+        (rx/of (update-shapes selected #(update % :hidden not)))))))
+
+(defn toggle-lock-selected
+  []
+  (ptk/reify ::toggle-lock-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (dsh/lookup-selected state)]
+        (rx/of (update-shapes selected #(update % :blocked not)))))))
+
+
+;; FIXME: this need to be refactored
+
+
+(defn toggle-file-thumbnail-selected
+  []
+  (ptk/reify ::toggle-file-thumbnail-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected   (dsh/lookup-selected state)
+            fdata      (dsh/lookup-file-data state)
+            pages      (-> fdata :pages-index vals)
+            undo-id  (js/Symbol)]
+
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         ;; First: clear the `:use-for-thumbnail` flag from all not
+         ;; selected frames.
+         (rx/from
+          (->> pages
+               (mapcat
+                (fn [{:keys [objects id] :as page}]
+                  (->> (ctst/get-frames objects)
+                       (sequence
+                        (comp (filter :use-for-thumbnail)
+                              (map :id)
+                              (remove selected)
+                              (map (partial vector id)))))))
+               (d/group-by first second)
+               (map (fn [[page-id frame-ids]]
+                      (update-shapes frame-ids #(dissoc % :use-for-thumbnail) {:page-id page-id})))))
+
+         ;; And finally: toggle the flag value on all the selected shapes
+         (rx/of (update-shapes selected #(update % :use-for-thumbnail not))
+                (dwu/commit-undo-transaction undo-id)))))))
+
+
+;; --- Change Shape Order (D&D Ordering)
+
+
+(defn relocate-shapes
+  [ids parent-id to-index & [ignore-parents?]]
+  (dm/assert! (every? uuid? ids))
+  (dm/assert! (set? ids))
+  (dm/assert! (uuid? parent-id))
+  (dm/assert! (number? to-index))
+
+  (ptk/reify ::relocate-shapes
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id  (:current-page-id state)
+            objects  (dsh/lookup-page-objects state page-id)
+            data     (dsh/lookup-file-data state)
+
+            ;; Ignore any shape whose parent is also intended to be moved
+            ids      (cfh/clean-loops objects ids)
+
+            ;; If we try to move a parent into a child we remove it
+            ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
+
+            all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
+
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-page-id page-id)
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data)
+                        (cls/generate-relocate
+                         parent-id
+                         to-index
+                         ids
+                         :ignore-parents? ignore-parents?))
+
+            add-component-to-variant? (and
+                                       ;; Any of the shapes is a head
+                                       (some (comp ctc/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects parent-id)
+                                            (some ctc/is-variant?)))
+
+            add-new-variant? (and
+                              ;; The parent is a variant container
+                              (-> parent-id objects ctc/is-variant-container?)
+                              ;; Any of the shapes is a main instance
+                              (some (comp ctc/main-instance? objects) ids))
+
+            undo-id (js/Symbol)]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (dwco/expand-collapse parent-id)
+               (ptk/data-event :layout/update {:ids (concat all-parents ids)})
+               (dwu/commit-undo-transaction undo-id)
+               (when add-component-to-variant?
+                 (ev/event {::ev/name "add-component-to-variant"}))
+               (when add-new-variant?
+                 (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-in-layers-tab"})))))))

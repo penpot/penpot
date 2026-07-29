@@ -1,0 +1,98 @@
+{% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+penpot - error report {{id}}
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div>[<a href="/dbg/error">⮜</a>]</div>
+  <div>[<a href="#context">context</a>]</div>
+  <div>[<a href="#params">request params</a>]</div>
+  {% if data %}
+  <div>[<a href="#edata">error data</a>]</div>
+  {% endif %}
+  {% if spec-explain %}
+  <div>[<a href="#spec-explain">spec explain</a>]</div>
+  {% endif %}
+  {% if spec-problems %}
+  <div>[<a href="#spec-problems">spec problems</a>]</div>
+  {% endif %}
+  {% if spec-value %}
+  <div>[<a href="#spec-value">spec value</a>]</div>
+  {% endif %}
+
+  {% if trace %}
+  <div>[<a href="#trace">error trace</a>]</div>
+  {% endif %}
+</nav>
+<main>
+  <div class="table">
+    <div class="table-row multiline">
+      <div id="context" class="table-key">CONTEXT: </div>
+
+      <div class="table-val">
+        <h1>{{hint}}</h1>
+      </div>
+
+      <div class="table-val">
+        <pre>{{context}}</pre>
+      </div>
+    </div>
+
+    {% if params %}
+    <div class="table-row multiline">
+      <div id="params" class="table-key">REQUEST PARAMS: </div>
+      <div class="table-val">
+        <pre>{{params}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if data %}
+    <div class="table-row multiline">
+      <div id="edata" class="table-key">ERROR DATA: </div>
+      <div class="table-val">
+        <pre>{{data}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if spec-explain %}
+    <div class="table-row multiline">
+      <div id="spec-explain" class="table-key">SPEC EXPLAIN: </div>
+      <div class="table-val">
+        <pre>{{spec-explain}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if spec-problems %}
+    <div class="table-row multiline">
+      <div id="spec-problems" class="table-key">SPEC PROBLEMS: </div>
+      <div class="table-val">
+        <pre>{{spec-problems}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if spec-value %}
+    <div class="table-row multiline">
+      <div id="spec-value" class="table-key">SPEC VALUE: </div>
+      <div class="table-val">
+        <pre>{{spec-value}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if trace %}
+    <div class="table-row multiline">
+      <div id="trace" class="table-key">TRACE:</div>
+      <div class="table-val">
+        <pre>{{trace}}</pre>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

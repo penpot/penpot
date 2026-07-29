@@ -1,0 +1,395 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "./ds/typography.scss" as t;
+
+.exception-layout {
+  inline-size: 100%;
+  block-size: 100%;
+  background-color: var(--color-background-secondary);
+}
+
+.nitrate-unavailable-layout {
+  inline-size: 100%;
+  block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-background-primary);
+  padding: var(--sp-xxxl);
+}
+
+.nitrate-unavailable-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxxl);
+}
+
+.nitrate-unavailable-logo {
+  inline-size: 146px;
+  block-size: 64px;
+  color: var(--color-foreground-primary);
+}
+
+.nitrate-unavailable-message {
+  @include t.use-typography("title-large");
+
+  margin: 0;
+  max-inline-size: 32rem;
+  text-align: center;
+  color: var(--color-foreground-primary);
+  font-weight: 500;
+}
+
+.nitrate-unavailable-footer {
+  @include t.use-typography("title-medium");
+
+  margin: 0;
+  text-align: center;
+  color: var(--color-foreground-secondary);
+}
+
+.deco-before {
+  position: absolute;
+  inset-inline-start: calc(50% - $sz-40);
+  block-size: 34vh;
+  inset-block-start: 0;
+}
+
+// SVG inside deco-before — no class available on the raw element
+.deco-before svg {
+  position: absolute;
+  block-size: 1537px;
+  inline-size: px2rem(80);
+  inset-block-end: 0;
+}
+
+// SVG inside deco-after2 — no class available on the raw element
+.deco-after2 svg {
+  block-size: 1537px;
+  inline-size: px2rem(80);
+}
+
+.deco-after2 {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  block-size: 34vh;
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  color: var(--color-foreground-primary);
+
+  span {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    block-size: 100%;
+    inline-size: 25%;
+    padding-block-end: px2rem(28);
+
+    &:first-child {
+      text-align: right;
+    }
+  }
+}
+
+.exception-header {
+  color: var(--color-foreground-secondary);
+  padding: var(--sp-xxl) var(--sp-xxxl);
+  position: fixed;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.penpot-logo {
+  fill: var(--color-foreground-primary);
+  inline-size: $sz-48;
+  block-size: $sz-48;
+}
+
+.back-arrow {
+  transform: rotate(180deg);
+}
+
+.go-back-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-s);
+  margin-inline-start: var(--sp-m);
+  font-size: 0.875rem;
+}
+
+.login-header {
+  @include t.use-typography("headline-small");
+
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-accent-primary);
+  border: $b-1 solid var(--color-accent-primary);
+  color: var(--color-background-secondary);
+  border-radius: $br-8;
+  min-block-size: $sz-32;
+  padding: var(--sp-s) var(--sp-l);
+  position: fixed;
+  inset-inline-end: 0;
+  margin: $sz-40 $sz-32;
+  text-transform: uppercase;
+}
+
+.exception-content {
+  display: flex;
+  block-size: 100%;
+  justify-content: center;
+  inline-size: 100%;
+}
+
+.exception-content .container {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  block-size: 34vh;
+  justify-content: center;
+  margin-block-start: 33vh;
+  text-align: center;
+  inline-size: px2rem(640);
+}
+
+.main-message {
+  @include t.use-typography("title-large");
+
+  color: var(--color-foreground-primary);
+}
+
+.desc-message {
+  @include t.use-typography("title-large");
+
+  color: var(--color-foreground-secondary);
+}
+
+.desc-text {
+  @include t.use-typography("title-large");
+
+  color: var(--color-foreground-secondary);
+  margin-block-end: 0;
+}
+
+.download-link {
+  @include t.use-typography("code-font");
+
+  color: var(--color-foreground-primary);
+  text-transform: lowercase;
+}
+
+.sign-info {
+  text-align: center;
+}
+
+.workspace {
+  inline-size: 100%;
+  block-size: 100%;
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--color-canvas);
+  position: relative;
+}
+
+.workspace .workspace-left,
+.workspace .workspace-right {
+  padding: var(--sp-m);
+  inline-size: px2rem(276);
+  block-size: 100%;
+  background-color: var(--color-background-primary);
+  display: flex;
+  gap: var(--sp-xs);
+
+  svg {
+    inline-size: 2rem;
+    block-size: 2rem;
+    fill: var(--color-foreground-primary);
+  }
+}
+
+.workspace .workspace-left .project-name,
+.workspace .workspace-right .project-name {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.workspace .workspace-left .file-name,
+.workspace .workspace-right .file-name {
+  @include t.use-typography("title-small");
+
+  color: var(--color-foreground-primary);
+  text-transform: none;
+}
+
+.dashboard {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.dashboard .dashboard-sidebar {
+  inline-size: px2rem(300);
+  block-size: 100%;
+}
+
+.viewer {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+// TODO: `.login-container` appears unused in CLJS — verify before removal
+// .login-container {
+//   inline-size: 100%;
+//   background-color: var(--color-background-error);
+// }
+
+.overlay {
+  inline-size: 100%;
+  block-size: 100%;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 100;
+  background-color: rgb(0 0 0 / 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay .dialog,
+.overlay .dialog-login {
+  inline-size: 556px;
+  background-color: var(--color-background-primary);
+  border-radius: $br-8;
+  display: flex;
+  flex-direction: column;
+  align-content: stretch;
+  padding: $sz-36;
+  color: var(--color-foreground-secondary);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  inset-block-start: $sz-16;
+  inset-inline-end: $sz-16;
+}
+
+.overlay .dialog .dialog-title,
+.overlay .dialog-login .dialog-title {
+  font-size: 1.25rem;
+}
+
+.overlay .dialog .sign-info,
+.overlay .dialog-login .sign-info {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--sp-xxxl);
+}
+
+.overlay .dialog .sign-info,
+.overlay .dialog-login .sign-info {
+  .cancel-button {
+    background: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: $br-8;
+    background-color: var(--color-background-tertiary);
+    border: $b-1 solid var(--color-background-tertiary);
+    color: var(--color-foreground-secondary);
+    padding: var(--sp-s) var(--sp-l);
+    font-size: 0.688rem;
+    text-transform: uppercase;
+    margin-inline-end: var(--sp-l);
+  }
+}
+
+.overlay .dialog {
+  gap: var(--sp-m);
+}
+
+.overlay .login {
+  gap: 0;
+  padding: 0 var(--sp-l) px2rem(72) var(--sp-l);
+}
+
+.overlay .login .logo {
+  margin-block-end: $sz-40;
+}
+
+.logo-icon {
+  fill: var(--color-foreground-primary);
+  inline-size: $sz-120;
+  block-size: $sz-40;
+}
+
+.overlay .login .logo-title {
+  font-size: 1.25rem;
+  color: var(--color-foreground-primary);
+  margin-block-end: var(--sp-xs);
+}
+
+.overlay .login .logo-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-foreground-primary);
+  margin-block-end: var(--sp-xxl);
+}
+
+.overlay .login .change-section {
+  inline-size: 100%;
+  text-align: center;
+
+  // Native <a> inside change-section — no class available
+  a {
+    color: var(--color-accent-primary);
+  }
+}
+
+// Native <hr> inside login — no class available
+.overlay .login hr {
+  margin: var(--sp-xl) 0;
+  border-block-start: solid $b-1 solid var(--color-background-quaternary);
+}
+
+.overlay .login .separator {
+  margin: var(--sp-xl) 0;
+}
+
+// Native <form> and <div> inside login — no class available
+.overlay .login form {
+  div {
+    margin-block-end: var(--sp-s);
+  }
+}
+
+.buttons-container {
+  display: flex;
+}
+
+.buttons-container .retry-btn {
+  margin-inline-start: var(--sp-xxl);
+}

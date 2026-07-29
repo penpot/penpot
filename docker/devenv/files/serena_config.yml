@@ -1,0 +1,153 @@
+language_backend: LSP
+
+# line ending convention to use when writing source files.
+# Possible values: "lf" (Unix), "crlf" (Windows), "native" (platform default).
+# Note that Serena's own files (e.g. memories and configuration files) always use native line endings.
+# This setting can be overridden on a per-project basis in project.yml files.
+line_ending: native
+
+# whether to open a graphical window with Serena's logs.
+# This is mainly supported on Windows and (partly) on Linux; not available on macOS.
+# If you prefer a browser-based tool, use the `web_dashboard` option instead.
+# Further information: https://oraios.github.io/serena/02-usage/060_dashboard.html
+#
+# Being able to inspect logs is useful both for troubleshooting and for monitoring the tool calls,
+# especially when using the agno playground, since the tool calls are not always shown,
+# and the input params are never shown in the agno UI.
+# When used as MCP server for Claude Desktop, the logs are primarily for troubleshooting.
+# Note: unfortunately, the various entities starting the Serena server or agent do so in
+# mysterious ways, often starting multiple instances of the process without shutting down
+# previous instances. This can lead to multiple log windows being opened, and only the last
+# window being updated. Since we can't control how agno or Claude Desktop start Serena,
+# we have to live with this limitation for now.
+gui_log_window: false
+
+# whether to start the Serena Dashboard, which provides detailed information on your Serena session,
+# the current configuration and furthermore allows some settings to be conveniently modified on the fly.
+# We strongly recommend to always enable this option!
+# If you want to prevent the Dashboard window from being opened on launch,
+# set `web_dashboard_open_on_launch` to false (see below).
+# Further information: https://oraios.github.io/serena/02-usage/060_dashboard.html
+web_dashboard: true
+
+# whether to open the Dashboard window/browser tab when Serena starts (provided that web_dashboard is enabled).
+# If set to false, you can still open the dashboard manually by clicking on the Serena icon in your system
+# tray on Windows and macOS. On Linux, there is no system tray support, so you can only open the dashboard by
+# a) telling the LLM to "open the dashboard" (provided that the open_dashboard tool is enabled) or by
+# b) manually navigating to http://localhost:24282/dashboard/ in your web browser (actual port
+#    may be higher if you have multiple instances running; try ports 24283, 24284, etc.)
+# See also: https://oraios.github.io/serena/02-usage/060_dashboard.html
+web_dashboard_open_on_launch: false
+
+# defines the interface (application mode) used for the web dashboard (if enabled).
+# If empty/null, use platform-dependent default. Otherwise, possible values:
+#  * browser: the dashboard is opened in the default browser (if `web_dashboard_open_on_launch` is true)
+#      This is supported on all platforms.
+#  * app: the dashboard is opened in a separate native-like app window with accompanying tray icon, whose
+#      lifecycle is tied to the Serena process.
+#      If `web_dashboard_open_on_launch` is false, the dashboard can be conveniently accessed via the tray icon.
+#      This is supported on Windows and macOS, but note that on macOS, where tray icons are very visible,
+#      this may result in too many icons being displayed when using multi-agent setups.
+#  * tray_manager: use a global tray icon to provide access to the dashboards of all running Serena instances,
+#      opening the dashboard in browser tabs when selected from the tray menu.
+#      This is EXPERIMENTAL. It is tested on Windows only. We will establish macOS support, but it is yet untested.
+#      On Linux, this cannot be universally supported, but it may work in some desktop environments.
+web_dashboard_interface:
+
+# the address the web dashboard will listen on (bind address).
+web_dashboard_listen_address: 0.0.0.0
+
+# address where JetBrains plugin servers are running (only relevant when using the JetBrains language backend)
+jetbrains_plugin_server_address: 127.0.0.1
+
+# the minimum log level for the GUI log window and the dashboard (10 = debug, 20 = info, 30 = warning, 40 = error)
+log_level: 20
+
+# whether to trace the communication between Serena and the language servers.
+# This is useful for debugging language server issues.
+trace_lsp_communication: false
+
+# advanced configuration option allowing to configure language server-specific options.
+# Maps the language key to the options.
+# Have a look at the docstring of the constructors of the LS implementations within solidlsp (e.g., for C# or PHP) to see which options are available.
+# No documentation on options means no options are available.
+ls_specific_settings: {}
+
+# list of paths to ignore across all projects.
+# Same syntax as gitignore, so you can use * and **.
+# These patterns are merged additively with each project's own ignored_paths.
+ignored_paths: []
+
+# list of regex patterns which, when matched, mark a memory entry as read‑only.
+# For example, "global/.*" will mark all global memories as read-only.
+# You can extend the list on a per-project basis in the project.yml configuration file.
+read_only_memory_patterns: []
+
+# list of regex patterns for memories to completely ignore.
+# Matching memories will not appear in list_memories or activate_project output
+# and cannot be accessed via read_memory or write_memory.
+# To access ignored memory files, use the read_file tool on the raw file path.
+# This is useful for projects with large numbers of archived memory files.
+# You can extend the list on a per-project basis in the project.yml configuration file.
+# Example: ["_archive/.*", "_episodes/.*"]
+ignored_memory_patterns: []
+
+# timeout, in seconds, after which tool executions are terminated
+tool_timeout: 240
+
+# list of tools to be globally excluded
+excluded_tools: []
+
+# list of optional tools (which are disabled by default) to be included
+included_optional_tools: []
+
+# fixed set of tools to use as the base tool set (if non-empty), replacing Serena's default set of tools.
+# This cannot be combined with non-empty excluded_tools or included_optional_tools.
+fixed_tools: []
+
+# list of mode names to that are always to be included in the set of active modes
+# The full set of modes to be activated is base_modes + default_modes.
+# If this is undefined, no base modes are included.
+# The project configuration (project.yml) may override this setting.
+base_modes: [no-onboarding]
+
+# list of mode names that are to be activated by default.
+# The full set of modes to be activated is base_modes + default_modes.
+# These modes can be overridden by the project configuration (project.yml) or through the CLI (--mode).
+default_modes:
+- interactive
+- editing
+default_max_tool_answer_chars: 150000
+
+# the name of the token count estimator to use for tool usage statistics.
+# See the `RegisteredTokenCountEstimator` enum for available options.
+#
+# By default, a very naive character count estimator is used, which simply counts the number of characters.
+# You can configure this to TIKTOKEN_GPT4 to use a local tiktoken-based estimator for GPT-4 (will download tiktoken
+# data files on first run), or ANTHROPIC_CLAUDE_SONNET_4 which will use the (free of cost) Anthropic API to
+# estimate the token count using the Claude Sonnet 4 tokenizer.
+token_count_estimator: CHAR_COUNT
+
+# time budget (seconds) per tool call for the retrieval of additional symbol information
+# such as docstrings or parameter information.
+# (currently only used by LSP-based tools).
+# If the budget is exceeded, Serena stops issuing further retrieval requests
+# and returns partial info results.
+# 0 disables the budget (no early stopping). Negative values are invalid.
+# This is an advanced setting that can help alleviate problems with LSP servers
+# that have a slow implementation of request_hover (clangd is one of those)
+# or with tool calls that find very many symbols.
+# Can be overridden in project.yml.
+symbol_info_budget: 10
+
+# template for the location of the per-project .serena data folder (memories, caches, etc.).
+# Supports the following placeholders:
+#   $projectDir         - the absolute path to the project root directory
+#   $projectFolderName  - the name of the project directory
+# Default: "$projectDir/.serena" (data stored inside the project directory)
+# Example for a central location: "/projects-metadata/$projectFolderName/.serena"
+project_serena_folder_location: "$projectDir/.serena"
+
+# the list of registered project paths (updated automatically).
+projects:
+- /home/penpot/penpot

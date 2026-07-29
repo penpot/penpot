@@ -1,0 +1,146 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.main.ui.workspace.sidebar.layer-name
+  (:require-macros [app.main.style :as stl])
+  (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.types.variant :as ctv]
+   [app.main.data.workspace :as dw]
+   [app.main.store :as st]
+   [app.util.debug :as dbg]
+   [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
+
+(def ^:private ^:const space-for-icons 110)
+
+(mf/defc layer-name*
+  [{:keys [shape-id rename-id shape-name is-shape-touched disabled-double-click
+           on-start-edit on-stop-edit depth parent-size is-selected
+           type-comp type-frame component-id is-hidden is-blocked
+           variant-id variant-name variant-properties variant-error
+           on-tab-press ref]}]
+  (let [;; Subscribe to dbg/state so the component re-renders when
+        ;; debug options are toggled without a page reload.
+        _dbg             (mf/deref dbg/state)
+
+        edition*         (mf/use-state false)
+        edition?         (deref edition*)
+
+        local-ref        (mf/use-ref)
+        ref              (d/nilv ref local-ref)
+
+        shape-name
+        (if variant-id
+          (d/nilv variant-error variant-name)
+          shape-name)
+
+        default-value
+        (mf/with-memo [variant-id variant-error variant-properties shape-name]
+          (if variant-id
+            (or variant-error (ctv/properties-map->formula variant-properties))
+            shape-name))
+
+        has-path?
+        (str/includes? shape-name "/")
+
+        start-edit
+        (mf/use-fn
+         (mf/deps disabled-double-click on-start-edit shape-id is-blocked)
+         (fn []
+           (when (and (not is-blocked)
+                      (not disabled-double-click))
+             (on-start-edit)
+             (reset! edition* true)
+             (st/emit! (dw/start-rename-shape shape-id)))))
+
+        accept-edit
+        (mf/use-fn
+         (mf/deps edition? shape-id on-stop-edit component-id variant-id variant-name variant-properties)
+         (fn []
+           (when edition?
+             (let [name-input (mf/ref-val ref)
+                   name       (str/trim (dom/get-value name-input))]
+               (on-stop-edit)
+               (reset! edition* false)
+               (st/emit! (dw/rename-shape-or-variant shape-id name))))))
+
+        cancel-edit
+        (mf/use-fn
+         (mf/deps shape-id on-stop-edit)
+         (fn []
+           (on-stop-edit)
+           (reset! edition* false)
+           (st/emit! (dw/end-rename-shape shape-id nil))))
+
+        on-key-down
+        (mf/use-fn
+         (mf/deps edition? accept-edit cancel-edit on-tab-press shape-id on-stop-edit)
+         (fn [event]
+           (when (kbd/enter? event) (accept-edit))
+           (when (kbd/esc? event) (cancel-edit))
+           (when (kbd/tab? event)
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (when edition?
+               (let [name-input (mf/ref-val ref)
+                     name       (str/trim (dom/get-value name-input))]
+                 (on-stop-edit)
+                 (reset! edition* false)
+                 (st/emit! (dw/end-rename-shape shape-id name))
+                 (when (fn? on-tab-press)
+                   (on-tab-press event)))))))
+
+        parent-size
+        (dm/str (- parent-size space-for-icons) "px")]
+
+    (mf/with-effect [rename-id edition? start-edit shape-id]
+      (when (and (= rename-id shape-id)
+                 (not ^boolean edition?))
+        (start-edit)))
+
+    (mf/with-effect [edition?]
+      (when edition?
+        (some-> (mf/ref-val ref) dom/select-text!)
+        nil))
+
+    (if ^boolean edition?
+      [:input
+       {:class (stl/css :element-name
+                        :element-name-input
+                        :selected is-selected)
+        :style {"--depth" depth "--parent-size" parent-size}
+        :type "text"
+        :ref ref
+        :on-blur accept-edit
+        :on-key-down on-key-down
+        :auto-focus true
+        :id (dm/str "layer-name-" shape-id)
+        :default-value (d/nilv default-value "")}]
+
+      [:*
+       [:span {:class (stl/css-case
+                       :element-name true
+                       :left-ellipsis has-path?
+                       :selected is-selected
+                       :hidden is-hidden
+                       :type-comp type-comp
+                       :type-frame type-frame)
+               :id (dm/str "layer-name-" shape-id)
+               :style {"--depth" depth "--parent-size" parent-size}
+               :ref ref
+               :on-double-click start-edit}
+
+        (if ^boolean (dbg/enabled? :show-ids)
+          (dm/str (d/nilv shape-name "") " | " (str/slice (str shape-id) 24))
+          (d/nilv shape-name ""))]
+
+       (when (and ^boolean (dbg/enabled? :show-touched)
+                  ^boolean is-shape-touched)
+         [:span {:class (stl/css :element-name-touched)} "*"])])))

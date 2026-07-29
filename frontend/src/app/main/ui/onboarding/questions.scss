@@ -1,0 +1,112 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+}
+
+.action-buttons {
+  @extend %modal-action-btns;
+}
+
+.next-button {
+  @extend %modal-accept-btn;
+}
+
+.prev-button {
+  @extend %modal-cancel-btn;
+}
+
+.modal-container {
+  max-width: $sz-964;
+  max-height: fit-content;
+  inline-size: fit-content;
+  padding-inline: $sz-96;
+  padding-block: $sz-40 $sz-64;
+  border-radius: $br-8;
+  border: $b-2 solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
+}
+
+.form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-xxl);
+}
+
+.paginator {
+  @include t.use-typography("title-small");
+
+  text-align: right;
+  color: var(--modal-text-foreground-color);
+}
+
+.radio label,
+.select span {
+  @include t.use-typography("body-medium");
+}
+
+.header-image {
+  block-size: $sz-120;
+  inline-size: auto;
+  margin-inline-start: auto;
+}
+
+.modal-title {
+  @include t.use-typography("title-large");
+
+  color: var(--modal-title-foreground-color);
+  min-block-size: $sz-32;
+  margin-block: auto;
+}
+
+.modal-subtitle {
+  @include t.use-typography("body-large");
+
+  color: var(--modal-title-foreground-color);
+  margin: 0;
+  padding: 0;
+}
+
+.modal-text {
+  @include t.use-typography("body-large");
+
+  color: var(--modal-text-foreground-color);
+  margin: 0;
+}
+
+.step {
+  max-inline-size: $sz-520;
+  inline-size: $sz-520;
+}
+
+.modal-question {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $sz-16 $sz-32;
+  gap: var(--sp-l);
+  block-size: fit-content;
+}
+
+.radio-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-l);
+}
+
+.radio-image {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: $sz-96 $sz-96 $sz-96;
+  gap: var(--sp-l) var(--sp-xxl);
+  justify-content: center;
+}

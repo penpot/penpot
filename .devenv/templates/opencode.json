@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "penpot": {
+      "type": "remote",
+      "url": "http://localhost:${PENPOT_MCP_PORT}/mcp",
+      "enabled": true
+    },
+    "serena-devenv": {
+      "type": "remote",
+      "url": "http://localhost:${SERENA_MCP_PORT}/mcp",
+      "enabled": true
+    }
+  }
+}

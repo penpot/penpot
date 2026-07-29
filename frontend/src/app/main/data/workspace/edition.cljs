@@ -1,0 +1,73 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.main.data.workspace.edition
+  (:require
+   [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.path.common :as dwpc]
+   [app.main.features :as features]
+   [app.render-wasm.api :as wasm.api]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
+
+(defn interrupt?
+  [e]
+  (= e :interrupt))
+
+(declare clear-edition-mode)
+
+(defn start-edition-mode
+  "Mark a shape in edition mode"
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+
+  (ptk/reify ::start-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (dsh/lookup-page-objects state)]
+        ;; Can only edit objects that exist
+        (if (contains? objects id)
+          (-> state
+              (update :workspace-local assoc :edition id)
+              (dissoc :workspace-grid-edition))
+          state)))
+
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter interrupt?)
+           (rx/take 1)
+           (rx/map clear-edition-mode)))))
+
+;; IMPORTANT: If this event is moved from this namespace to other,
+;; update namespace reference in the
+;; app/main/data/workspace/path/undo.cljs file.
+
+(defn clear-edition-mode
+  []
+  (ptk/reify ::clear-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :edition :edit-path)
+          (update :workspace-drawing dissoc :object :lock)
+          (dissoc :workspace-grid-edition)
+          (dissoc :workspace-wasm-editor-styles)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [id (get-in state [:workspace-local :edition])]
+        (rx/concat
+         (when (some? id)
+           (dwpc/finish-path)))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (features/active-feature? state "text-editor-wasm/v1")
+        ;; NOTE: the WASM text editor is disposed by the v3 editor component on
+        ;; unmount, *after* it finalizes its content.
+        (wasm.api/request-render "clear-edition-mode")))))
+

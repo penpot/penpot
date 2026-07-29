@@ -1,0 +1,133 @@
+name: "CI: Plugin API Test Suite"
+
+# Runs the Plugin API Test Suite (it exercises the real Penpot Plugin API, so it
+# needs a running frontend + the plugin runtime). Two jobs:
+#
+# - api-test-suite-mocked (pull_request / push): the per-PR gate. Serves the
+#   prebuilt frontend bundle and intercepts every backend RPC with Playwright
+#   (MOCK_BACKEND=1). No backend / no login. Validates the frontend Plugin API
+#   binding + in-memory store; backend-result-dependent tests are skipped via the
+#   `skipIfMocked` tag. See plugins/apps/plugin-api-test-suite/README.md.
+#
+# - api-test-suite-live (workflow_dispatch): true end-to-end against a LIVE
+#   instance. Point PENPOT_BASE_URL at a reachable instance and provide login
+#   credentials via repo secrets. Manual because the CI runner has no Docker to
+#   stand up a full stack.
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Penpot base URL (e.g. https://localhost:3449)"
+        required: false
+        default: "https://localhost:3449"
+
+  pull_request:
+    paths:
+      - 'plugins/**'
+      - 'frontend/**'
+      - 'common/**'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+    paths:
+      - 'plugins/**'
+      - 'frontend/src/app/plugins/**'
+      - 'common/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-test-suite-mocked:
+    if: ${{ github.event_name != 'workflow_dispatch' && !github.event.pull_request.draft }}
+    name: "Run Plugin API Test Suite (mocked)"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Mocked mode serves the prebuilt bundle from frontend/resources/public.
+      - name: Build frontend bundle
+        working-directory: ./frontend
+        run: ./scripts/build
+
+      - name: Install deps
+        working-directory: ./plugins
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+
+      - name: Install Playwright Chromium
+        working-directory: ./plugins
+        run: pnpm --filter plugin-api-test-suite exec playwright install --with-deps chromium
+
+      - name: Generate API surface
+        working-directory: ./plugins
+        run: pnpm --filter plugin-api-test-suite run gen:api
+
+      - name: Run API test suite (mocked)
+        working-directory: ./plugins
+        env:
+          MOCK_BACKEND: "1"
+        run: pnpm --filter plugin-api-test-suite run test:ci
+
+  ## The following job will launch the whole suite of tests but we need
+  ## to have a full environment in the CI for this to work.
+
+  # api-test-suite-live:
+  #   if: ${{ github.event_name == 'workflow_dispatch' }}
+  #   name: Run Plugin API Test Suite (live)
+  #   runs-on: penpot-runner-02
+  #   container:
+  #     image: penpotapp/devenv:latest
+  # 
+  #   env:
+  #     PENPOT_BASE_URL: ${{ github.event.inputs.base_url }}
+  #     E2E_LOGIN_EMAIL: ${{ secrets.E2E_LOGIN_EMAIL }}
+  #     E2E_LOGIN_PASSWORD: ${{ secrets.E2E_LOGIN_PASSWORD }}
+  # 
+  #   steps:
+  #     - uses: actions/checkout@v6
+  # 
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         node-version-file: .nvmrc
+  # 
+  #     - name: Install deps
+  #       working-directory: ./plugins
+  #       run: |
+  #         corepack enable;
+  #         corepack install;
+  #         pnpm install;
+  # 
+  #     - name: Install Playwright Chromium
+  #       working-directory: ./plugins
+  #       run: pnpm --filter plugin-api-test-suite exec playwright install --with-deps chromium
+  # 
+  #     - name: Generate API surface
+  #       working-directory: ./plugins
+  #       run: pnpm --filter plugin-api-test-suite run gen:api
+  # 
+  #     # Note: requires a running Penpot instance reachable at PENPOT_BASE_URL.
+  #     - name: Run API test suite
+  #       working-directory: ./plugins
+  #       run: pnpm --filter plugin-api-test-suite run test:ci

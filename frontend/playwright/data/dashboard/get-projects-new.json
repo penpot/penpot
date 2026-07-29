@@ -1,0 +1,18 @@
+[{
+  "~:id": "~ue5a24d1b-ef1e-812f-8004-52bab84be6f7",
+  "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+  "~:created-at": "~m1715266551088",
+  "~:modified-at": "~m1715266551088",
+  "~:is-default": false,
+  "~:name": "New Project 1",
+  "~:is-pinned": false,
+  "~:count": 0
+},
+{
+  "~:id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+  "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+  "~:created-at": "~m1713533116382",
+  "~:modified-at": "~m1713873823633",
+  "~:is-default": true,
+  "~:name": "Drafts"
+}]

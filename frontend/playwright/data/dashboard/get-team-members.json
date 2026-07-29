@@ -1,0 +1,16 @@
+[
+  {
+      "~:is-admin": true,
+      "~:email": "foo@example.com",
+      "~:team-id": "~udd33ff88-f4e5-8033-8003-8096cc07bdf3",
+      "~:name": "Princesa Leia",
+      "~:fullname": "Princesa Leia",
+      "~:is-owner": false,
+      "~:modified-at": "~m1713533116365",
+      "~:can-edit": true,
+      "~:is-active": true,
+      "~:id": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+      "~:profile-id": "~uf56647eb-19a7-8115-8003-b6bc939ecd1b",
+      "~:created-at": "~m1713533116365"
+  }
+]

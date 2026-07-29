@@ -1,0 +1,13 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} has created a comment in a thread you've been mentioned at "{{ comment-reference }}".
+
+--
+
+{{ comment-content }}
+
+--
+
+{{ comment-url }}
+
+The Penpot team.

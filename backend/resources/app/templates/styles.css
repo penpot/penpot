@@ -1,0 +1,240 @@
+* {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
+}
+
+pre {
+  margin: 0px;
+  line-height: 16px;
+}
+
+desc {
+  margin-bottom: 10px;
+  font-size: 10px;
+  color: #666;
+}
+
+input[type=text], input[type=submit] {
+  padding: 3px;
+}
+
+pre {
+  white-space: pre-wrap;
+}
+
+main {
+  margin: 20px;
+}
+
+small {
+  font-size: 9px;
+  color: #888;
+}
+
+.strong {
+  font-weight: 900;
+}
+
+.not-important {
+  color: #888;
+  font-weight: 200;
+}
+
+small > strong {
+  font-size: 9px;
+}
+
+nav {
+  position: fixed;
+  width: 100vw;
+  top: 0;
+  left: 0;
+  padding: 5px 20px;
+  display: flex;
+  background: #e3e3e3;
+}
+
+nav > .title {
+  display: flex;
+  width: 100%;
+}
+
+nav > .title > a {
+  color: black;
+  text-decoration: none;
+}
+
+nav > .title > a.strong {
+  text-decoration: underline;
+}
+
+nav > .title > h1 {
+  margin: 0px;
+  font-size: 11px;
+  display: block;
+}
+
+nav > .title > * {
+  padding: 0px 6px;
+}
+
+nav > div {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+nav > div:not(:last-child) {
+  margin-right: 10px;
+}
+
+.table {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-row {
+  display: flex;
+  padding-bottom: 15px;
+  /* width: 100%; */
+  /* border: 1px solid red; */
+}
+
+.table-key {
+  font-weight: 600;
+  width: 60px;
+  padding: 4px;
+
+  padding-top: 40px;
+  margin-top: -40px;
+}
+
+.table-val {
+  font-weight: 200;
+  color: #333;
+  padding: 4px;
+}
+
+.multiline {
+  margin-top: 15px;
+  flex-direction: column;
+}
+
+.multiline .table-key {
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #dddddd;
+  /* padding: 4px; */
+  width: unset;
+}
+
+.dashboard {
+  margin-top: 40px;
+  display: flex;
+}
+
+.widget {
+  max-width: 400px;
+  margin: 5px;
+  height: fit-content;
+}
+
+.widget input[type=submit] {
+  outline: none;
+  border: 1px solid gray;
+  border-radius: 2px;
+  padding: 3px 5px;
+}
+
+.widget input[type=submit].danger {
+  outline: none;
+  border: 1px solid red;
+  border-radius: 2px;
+  padding: 3px 5px;
+}
+
+
+
+.widget > fieldset {
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.widget > fieldset:not(:last-child) {
+  margin-bottom: 10px;
+}
+
+
+
+.dashboard fieldset:not(:first-child) {
+  margin-top: 15px;
+}
+
+
+.widget > h2 {
+  margin-top: 0px;
+}
+
+.horizontal-list {
+  margin: 20px;
+  margin-top: 40px;
+}
+
+.horizontal-list ul {
+  display: flex;
+  margin: 0px;
+  padding: 0px;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.horizontal-list li {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+  line-height: 18px;
+  min-width: 210px;
+  margin: 0px 20px;
+  display: flex;
+  border-radius: 3px;
+}
+
+
+
+.horizontal-list li:hover {
+  background-color: #e9e9e9;
+}
+
+.horizontal-list li > *:not(:last-child) {
+  margin-right: 10px;
+}
+
+.horizontal-list li > a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.horizontal-list li > .date {
+  font-weight: 200;
+  color: #686868;
+  min-width: 210px;
+}
+
+
+form .row {
+  padding: 5px 0;
+}
+
+.set-of-inputs {
+  flex-direction: column;
+  display: flex;
+}
+
+.set-of-inputs input:not(:last-child) {
+  margin-bottom: 3px;
+}
+

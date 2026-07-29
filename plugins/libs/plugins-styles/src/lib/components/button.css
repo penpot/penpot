@@ -1,0 +1,185 @@
+:where([data-appearance]:is(button), [role='tab']:is(button)) {
+  border: 2px solid transparent;
+  font-weight: 500;
+  font-size: 12px;
+  border-radius: 8px;
+  line-height: 1.2;
+  padding: 8px 24px 8px 24px;
+  text-transform: uppercase;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    cursor: pointer;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+[data-theme='dark'] {
+  [data-appearance='primary']:is(button) {
+    background-color: var(--da-primary);
+    border: 2px solid transparent;
+    color: var(--db-secondary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--da-tertiary);
+      border: 2px solid var(--da-tertiary);
+    }
+
+    &:focus:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      border: 2px solid var(--da-primary);
+      background-color: var(--db-tertiary);
+      color: var(--df-secondary);
+    }
+
+    &:active:not(:disabled) {
+      border: 2px solid var(--da-tertiary);
+    }
+
+    &:disabled {
+      background-color: transparent;
+      border: 2px solid var(--db-quaternary);
+      color: var(--df-secondary);
+    }
+
+    &[data-variant='destructive'] {
+      background-color: var(--error-500);
+      border: 2px solid transparent;
+
+      &:hover:not(:disabled) {
+        background-color: var(--error-700);
+        border: 2px solid var(--error-700);
+      }
+
+      &:focus:not(:disabled),
+      &:focus-visible:not(:disabled) {
+        border: 2px solid var(--error-500);
+      }
+
+      &:active:not(:disabled) {
+        background-color: var(--app-red);
+        border: 2px solid var(--error-700);
+      }
+
+      &:disabled {
+        background-color: transparent;
+        border: var(--df-secondary);
+      }
+    }
+  }
+
+  [data-appearance='secondary']:is(button) {
+    background-color: var(--db-tertiary);
+    color: var(--df-secondary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--db-quaternary);
+      color: var(--da-primary);
+    }
+
+    &:focus:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      border: 2px solid var(--da-primary);
+    }
+
+    &:active:not(:disabled) {
+      color: var(--da-primary);
+      border: 2px solid var(--db-quaternary);
+    }
+
+    &:disabled {
+      background-color: transparent;
+      border: 2px solid var(--db-quaternary);
+    }
+  }
+}
+
+[data-theme='light'] {
+  [data-appearance='primary']:is(button) {
+    background-color: var(--la-primary);
+    color: var(--lb-primary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--la-tertiary);
+    }
+
+    &:focus:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      color: var(--lf-secondary);
+      background-color: var(--lb-tertiary);
+      border: 2px solid var(--la-primary);
+    }
+
+    &:active:not(:disabled) {
+      border: 2px solid var(--la-tertiary);
+    }
+
+    &:disabled {
+      background-color: transparent;
+      border: 2px solid var(--lb-quaternary);
+      color: var(--lf-secondary);
+    }
+
+    &[data-variant='destructive'] {
+      background-color: transparent;
+      border: 2px solid var(--error-200);
+      color: var(--lf-secondary);
+
+      &:hover:not(:disabled) {
+        background-color: var(--error-500);
+        color: var(--lb-secondary);
+        border: 2px solid var(--error-500);
+      }
+
+      &:focus:not(:disabled),
+      &:focus-visible:not(:disabled) {
+        background-color: var(--error-700);
+        border: 2px solid var(--error-700);
+        color: var(--lb-secondary);
+        border: 2px solid var(--error-700);
+      }
+
+      &:active:not(:disabled) {
+        background-color: var(--app-red);
+        color: var(--lb-primary);
+        border: 2px solid var(--error-700);
+      }
+
+      &:disabled {
+        background-color: var(--error-500);
+        color: var(--lb-secondary);
+      }
+    }
+  }
+
+  [data-appearance='secondary']:is(button) {
+    background-color: var(--lb-tertiary);
+    color: var(--lf-secondary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--lb-quaternary);
+      color: var(--la-primary);
+    }
+
+    &:focus:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      background-color: var(--lb-tertiary);
+      border: 2px solid var(--la-primary);
+      color: var(--lf-secondary);
+    }
+
+    &:active:not(:disabled) {
+      background-color: var(--lb-tertiary);
+      color: var(--la-primary);
+      outline: 2px solid var(--lb-quaternary);
+    }
+
+    &:disabled {
+      background-color: transparent;
+      border: 2px solid var(--lb-quaternary);
+    }
+  }
+}

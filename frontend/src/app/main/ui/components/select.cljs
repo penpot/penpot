@@ -1,0 +1,282 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.main.ui.components.select
+  (:require-macros [app.main.style :as stl])
+  (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
+   [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.icons :as deprecated-icon]
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
+
+(defn- as-key-value
+  [item]
+  (if (map? item)
+    [(:value item) (:label item) (:icon item)]
+    [item item item]))
+
+(defn- rotate-index-forward
+  [index length]
+  (let [last-index (dec length)
+        index (if (< index 0) 0 index)
+        index (inc index)
+        index (if (> index last-index) 0 index)]
+    index))
+
+(defn- rotate-index-backward
+  [index length]
+  (let [last-index (dec length)
+        index (if (< index 0) 0 index)
+        index (dec index)
+        index (if (< index 0) last-index index)]
+    index))
+
+(defn- rotate-option-forward
+  [options index]
+  (:value (nth options (rotate-index-forward index (count options)))))
+
+(defn- rotate-option-backward
+  [options index length]
+  (:value (nth options (rotate-index-backward index length))))
+
+(mf/defc select
+  [{:keys [default-value options class dropdown-class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled data-direction searchable? search-placeholder]}]
+  (let [label-index   (mf/with-memo [options]
+                        (into {} (map as-key-value) options))
+
+        state*        (mf/use-state
+                       #(-> {:id (uuid/next)
+                             :is-open? (or is-open? false)
+                             :current-value default-value}))
+
+        state         (deref state*)
+        current-id    (get state :id)
+        current-value (get state :current-value)
+        current-label (get label-index current-value)
+
+        is-open?      (get state :is-open?)
+
+        ;; nil = the user is not actively searching (input shows the current
+        ;; selection's label); a string = the user has typed (input shows that
+        ;; string and options are filtered).
+        search*       (mf/use-state nil)
+        search        (deref search*)
+        searching?    (and searchable? (some? search))
+        search-input-ref (mf/use-ref nil)
+
+        visible-options
+        (mf/with-memo [options search searchable?]
+          (if (and searchable? (some? search) (not (str/blank? search)))
+            (let [needle (str/lower search)]
+              (into [] (filter (fn [item]
+                                 (and (map? item)
+                                      (when-let [label (:label item)]
+                                        (str/includes? (str/lower (dm/str label)) needle)))))
+                    options))
+            options))
+
+        node-ref      (mf/use-ref nil)
+
+        dropdown-direction*
+        (mf/use-state "down")
+
+        dropdown-direction
+        (deref dropdown-direction*)
+
+        dropdown-direction-change*
+        (mf/use-ref 0)
+
+        handle-key-up
+        (mf/use-fn
+         (mf/deps disabled visible-options current-value searchable?)
+         (fn [e]
+           (when-not disabled
+             (let [options (into [] (remove :disabled) visible-options)
+                   length  (count options)
+                   index   (d/index-of-pred options #(= (:value %) current-value))
+                   index   (d/nilv index 0)]
+
+               (cond
+                 (or (kbd/left-arrow? e)
+                     (kbd/up-arrow? e))
+                 (when (pos? length)
+                   (let [value (rotate-option-backward options index length)]
+                     (swap! state* assoc :current-value value)
+                     (when (fn? on-change)
+                       (on-change value))))
+
+                 (or (kbd/right-arrow? e)
+                     (kbd/down-arrow? e))
+                 (when (pos? length)
+                   (let [value (rotate-option-forward options index)]
+                     (swap! state* assoc :current-value value)
+                     (when (fn? on-change)
+                       (on-change value))))
+
+                 (kbd/enter? e)
+                 (swap! state* assoc :is-open? false)
+
+                 ;; In searchable mode the input owns Space — let the user
+                 ;; type spaces in the filter without closing the dropdown.
+                 (and (not searchable?) (kbd/space? e))
+                 (swap! state* assoc :is-open? false)
+
+                 (kbd/tab? e)
+                 (swap! state* assoc
+                        :is-open? true
+                        :current-value (-> options first :value)))))))
+
+        handle-search-change
+        (mf/use-fn
+         (fn [e]
+           (let [v (dom/get-target-val e)]
+             (reset! search* v)
+             (swap! state* assoc :is-open? true))))
+
+        handle-search-focus
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn [_]
+           (when-not disabled
+             (swap! state* assoc :is-open? true))))
+
+        open-dropdown
+        (mf/use-fn
+         (mf/deps disabled searchable?)
+         (fn []
+           (when-not disabled
+             (swap! state* assoc :is-open? true)
+             ;; In searchable mode the input is the focus target — pull focus
+             ;; in case the click landed on the wrapper or the dropdown arrow.
+             (when searchable?
+               (when-let [el (mf/ref-val search-input-ref)]
+                 (dom/focus! el))))))
+
+        close-dropdown
+        (mf/use-fn #(swap! state* assoc :is-open? false))
+
+        select-item
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [event]
+           (let [value (-> (dom/get-current-target event)
+                           (dom/get-data "value")
+                           (d/read-string))]
+
+             (swap! state* assoc :current-value value)
+             (when (fn? on-change)
+               (on-change value)))))
+
+        highlight-item
+        (mf/use-fn
+         (mf/deps on-pointer-enter-option)
+         (fn [event]
+           (when (fn? on-pointer-enter-option)
+             (let [value (-> (dom/get-current-target event)
+                             (dom/get-data "value")
+                             (d/read-string))]
+               (on-pointer-enter-option value)))))
+
+        unhighlight-item
+        (mf/use-fn
+         (mf/deps on-pointer-leave-option)
+         (fn [event]
+           (when (fn? on-pointer-leave-option)
+             (let [value (-> (dom/get-current-target event)
+                             (dom/get-data "value")
+                             (d/read-string))]
+               (on-pointer-leave-option value)))))]
+
+    (mf/with-effect [default-value]
+      (swap! state* assoc :current-value default-value))
+
+    (mf/with-effect [is-open?]
+      (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
+        (reset! dropdown-direction* "down")
+        (mf/set-ref-val! dropdown-direction-change* 0)))
+
+    (mf/with-effect [is-open?]
+      (when (and searchable? (not is-open?))
+        (reset! search* nil)))
+
+    (mf/with-effect [is-open?]
+      (let [dropdown-element (mf/ref-val node-ref)]
+        (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
+          (let [is-outside? (dom/is-element-outside? dropdown-element)]
+            (reset! dropdown-direction* (if is-outside? "up" "down"))
+            (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
+
+    (let [selected-option (first (filter #(= (:value %) default-value) options))
+          current-icon (:icon selected-option)
+          current-icon-ref (deprecated-icon/key->icon current-icon)
+          input-value (if searching? search (or current-label ""))]
+      [:div {:id (dm/str current-id)
+             :on-click open-dropdown
+             :on-key-up handle-key-up
+             :tab-index (if searchable? "-1" "0")
+             :role "combobox"
+             :class (dm/str (stl/css-case :custom-select true
+                                          :searchable-select searchable?
+                                          :disabled disabled
+                                          :icon (some? current-icon-ref))
+                            " " class)}
+       (when (and current-icon current-icon-ref)
+         [:span {:class (stl/css :current-icon)} current-icon-ref])
+       (if searchable?
+         [:input {:ref search-input-ref
+                  :type "text"
+                  :class (stl/css :current-label-input)
+                  :value input-value
+                  :placeholder (or search-placeholder current-label)
+                  :disabled disabled
+                  :role "searchbox"
+                  :aria-autocomplete "list"
+                  :aria-label (or search-placeholder current-label)
+                  :on-focus handle-search-focus
+                  :on-click handle-search-focus
+                  :on-change handle-search-change}]
+         [:span {:class (stl/css :current-label)} current-label])
+       [:span {:class (stl/css :dropdown-button)} deprecated-icon/arrow]
+       [:& dropdown {:show is-open? :on-close close-dropdown}
+        [:ul {:ref node-ref
+              :data-direction (d/nilv data-direction dropdown-direction)
+              :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
+         (when (and searchable? searching? (not (str/blank? search)) (empty? visible-options))
+           [:li {:class (stl/css :custom-select-no-matches)
+                 :role "presentation"}
+            (tr "labels.no-matches")])
+         (for [[index item] (d/enumerate visible-options)]
+           (if (= :separator item)
+             [:li {:id (dm/str current-id "-" index)
+                   :key (dm/str current-id "-" index)
+                   :class (stl/css :separator)
+                   :tab-index "-1"
+                   :role "option"}]
+             (let [[value label icon] (as-key-value item)
+                   icon-ref (deprecated-icon/key->icon icon)]
+               [:li
+                {:id (dm/str current-id "-" index)
+                 :key (dm/str current-id "-" index)
+                 :tab-index "-1"
+                 :role "option"
+                 :class (stl/css-case
+                         :checked-element true
+                         :disabled (:disabled item)
+                         :is-selected (= value current-value))
+                 :data-value (pr-str value)
+                 :on-key-up select-item
+                 :on-pointer-enter highlight-item
+                 :on-pointer-leave unhighlight-item
+                 :on-click select-item}
+                (when (and icon icon-ref) [:span {:class (stl/css :icon)} icon-ref])
+                [:span {:class (stl/css :label)} label]
+                [:span {:class (stl/css :check-icon)} deprecated-icon/tick]])))]]])))

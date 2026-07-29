@@ -1,0 +1,49 @@
+:root {
+  width: 100dvw;
+  height: 100dvh;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* overflow: hidden; */
+  width: 100dvw;
+  height: 100dvh;
+}
+
+#playground {
+  color: #c0c0c2;
+  background-color: #18181a;
+  display: grid;
+  max-height: 100cqh;
+}
+
+#info {
+  /* background-color: #f00; */
+}
+
+form {
+  display: flex;
+}
+
+#app {
+  /* background-color: #0f0; */
+}
+
+canvas {
+  width: 100%;
+  height: max-content;
+}
+
+.text-editor-container {
+  position: fixed;
+  min-width: 1rem;
+  min-height: 1rem;
+  transform-origin: top left;
+  color: transparent;
+}
+
+.text-editor-content {
+  outline: 1px solid red !important;
+}

@@ -1,0 +1,2826 @@
+{
+    "~:features": {
+      "~#set": [
+        "fdata/path-data",
+        "plugins/runtime",
+        "design-tokens/v1",
+        "variants/v1",
+        "layout/grid",
+        "styles/v2",
+        "fdata/pointer-map",
+        "fdata/objects-map",
+        "render-wasm/v1",
+        "components/v2",
+        "fdata/shape-data-type"
+      ]
+    },
+    "~:team-id": "~ueba8fa2e-4140-8084-8005-448635d7a724",
+    "~:permissions": {
+      "~:type": "~:membership",
+      "~:is-owner": true,
+      "~:is-admin": true,
+      "~:can-edit": true,
+      "~:can-read": true,
+      "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "New File 21",
+    "~:revn": 1,
+    "~:modified-at": "~m1771576427744",
+    "~:vern": 0,
+    "~:id": "~u93113137-fe66-80fb-8007-99cfd5cbf361",
+    "~:is-shared": false,
+    "~:migrations": {
+      "~#ordered-set": [
+        "legacy-2",
+        "legacy-3",
+        "legacy-5",
+        "legacy-6",
+        "legacy-7",
+        "legacy-8",
+        "legacy-9",
+        "legacy-10",
+        "legacy-11",
+        "legacy-12",
+        "legacy-13",
+        "legacy-14",
+        "legacy-16",
+        "legacy-17",
+        "legacy-18",
+        "legacy-19",
+        "legacy-25",
+        "legacy-26",
+        "legacy-27",
+        "legacy-28",
+        "legacy-29",
+        "legacy-31",
+        "legacy-32",
+        "legacy-33",
+        "legacy-34",
+        "legacy-36",
+        "legacy-37",
+        "legacy-38",
+        "legacy-39",
+        "legacy-40",
+        "legacy-41",
+        "legacy-42",
+        "legacy-43",
+        "legacy-44",
+        "legacy-45",
+        "legacy-46",
+        "legacy-47",
+        "legacy-48",
+        "legacy-49",
+        "legacy-50",
+        "legacy-51",
+        "legacy-52",
+        "legacy-53",
+        "legacy-54",
+        "legacy-55",
+        "legacy-56",
+        "legacy-57",
+        "legacy-59",
+        "legacy-62",
+        "legacy-65",
+        "legacy-66",
+        "legacy-67",
+        "0001-remove-tokens-from-groups",
+        "0002-normalize-bool-content-v2",
+        "0002-clean-shape-interactions",
+        "0003-fix-root-shape",
+        "0003-convert-path-content-v2",
+        "0005-deprecate-image-type",
+        "0006-fix-old-texts-fills",
+        "0008-fix-library-colors-v4",
+        "0009-clean-library-colors",
+        "0009-add-partial-text-touched-flags",
+        "0010-fix-swap-slots-pointing-non-existent-shapes",
+        "0011-fix-invalid-text-touched-flags",
+        "0012-fix-position-data",
+        "0013-fix-component-path",
+        "0013-clear-invalid-strokes-and-fills",
+        "0014-fix-tokens-lib-duplicate-ids",
+        "0014-clear-components-nil-objects",
+        "0015-fix-text-attrs-blank-strings",
+        "0015-clean-shadow-color",
+        "0016-copy-fills-from-position-data-to-text-node"
+      ]
+    },
+    "~:version": 67,
+    "~:project-id": "~ueba8fa2e-4140-8084-8005-448635da32b4",
+    "~:created-at": "~m1771576423215",
+    "~:backend": "legacy-db",
+    "~:data": {
+      "~:pages": [
+        "~u93113137-fe66-80fb-8007-99cfd5cbf362"
+      ],
+      "~:pages-index": {
+        "~u93113137-fe66-80fb-8007-99cfd5cbf362": {
+          "~:objects": {
+            "~u00000000-0000-0000-0000-000000000000": {
+              "~#shape": {
+                "~:y": 0,
+                "~:hide-fill-on-export": false,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:name": "Root Frame",
+                "~:width": 0.01,
+                "~:type": "~:frame",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 0,
+                      "~:y": 0
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 0.01,
+                      "~:y": 0
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 0.01,
+                      "~:y": 0.01
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 0,
+                      "~:y": 0.01
+                    }
+                  }
+                ],
+                "~:r2": 0,
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:r3": 0,
+                "~:r1": 0,
+                "~:id": "~u00000000-0000-0000-0000-000000000000",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [],
+                "~:x": 0,
+                "~:proportion": 1,
+                "~:r4": 0,
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 0,
+                    "~:y": 0,
+                    "~:width": 0.01,
+                    "~:height": 0.01,
+                    "~:x1": 0,
+                    "~:y1": 0,
+                    "~:x2": 0.01,
+                    "~:y2": 0.01
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#FFFFFF",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": 0.01,
+                "~:flip-y": null,
+                "~:shapes": [
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02c8",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02c9",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02ca",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02cb",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02cc",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02cd",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02ce",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02cf",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d0",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d1",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d2",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d3",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d4",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d5",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d6",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d7",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d8",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02d9",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02da",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02db",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02dc",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02dd",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02de",
+                  "~ue52394cc-813d-80b9-8007-99cfd71e02df"
+                ]
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02da": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAABcMBFAABQRAIAAAAAAAAAAAAAAAAAAAAAAAAAAPjTRQCAukMCAAAAAAAAAAAAAAAAAAAAAAAAAADQ1EX//4tE"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 6158.00012798179,
+                      "~:y": 373
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6810.00012798179,
+                      "~:y": 373
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6810.00012798179,
+                      "~:y": 1120
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6158.00012798179,
+                      "~:y": 1120
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02da",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 6158.00012798179,
+                    "~:y": 373,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 6158.00012798179,
+                    "~:y1": 373,
+                    "~:x2": 6810.00012798179,
+                    "~:y2": 1120
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02db": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 0.998897352755765,
+                    "~:b": -0.0469476161005346,
+                    "~:c": 0.0469476161005349,
+                    "~:d": 0.998897352755766,
+                    "~:e": 4.54747350886464e-13,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 357.309110550245,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAACmVsBF1TfxRAMAAABYJsJFLZ/rRIC/3UUBgLFEgL/dRQGAsUQCAAAAAAAAAAAAAAAAAAAAAAAAADj63kVZtRtFAgAAAAAAAAAAAAAAAAAAAAAAAACmVsBF1TfxRA=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 6133.00018961173,
+                      "~:y": 1465.25750392213
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7095.93725783569,
+                      "~:y": 1420.00000105336
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7146.26510334951,
+                      "~:y": 2490.81798563435
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6183.32803512555,
+                      "~:y": 2536.07548850312
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 0.998897352755766,
+                    "~:b": 0.0469476161005346,
+                    "~:c": -0.0469476161005349,
+                    "~:d": 0.998897352755766,
+                    "~:e": -4.54245924973187e-13,
+                    "~:f": -2.13493040521528e-14
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02db",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 6157.63263638579,
+                    "~:y": 1442.03773355246,
+                    "~:width": 964.000020189657,
+                    "~:height": 1072.00002245157,
+                    "~:x1": 6157.63263638579,
+                    "~:y1": 1442.03773355246,
+                    "~:x2": 7121.63265657545,
+                    "~:y2": 2514.03775600403
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d8": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD/B+1FAQBcRAIAAAAAAAAAAAAAAAAAAAAAAAAA/0cARgCA0kMCAAAAAAAAAAAAAAAAAAAAAAAAAP+zAEb//5FE"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974837637,
+                      "~:y": 421.000030517579
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8236.99974837637,
+                      "~:y": 421.000030517579
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8236.99974837637,
+                      "~:y": 1168.00003051758
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974837637,
+                      "~:y": 1168.00003051758
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d8",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 7584.99974837637,
+                    "~:y": 421.000030517579,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 7584.99974837637,
+                    "~:y1": 421.000030517579,
+                    "~:x2": 8236.99974837637,
+                    "~:y2": 1168.00003051758
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d9": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD/B+1F/x/nRAMAAAD/5+5F/9/hRP+TBUb//6xE/5MFRv//rEQCAAAAAAAAAAAAAAAAAAAAAAAAAP9nBUb/fxlFAgAAAAAAAAAAAAAAAAAAAAAAAAD/B+1F/x/nRA=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974837637,
+                      "~:y": 1384
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8548.99974837637,
+                      "~:y": 1384
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8548.99974837637,
+                      "~:y": 2456
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974837637,
+                      "~:y": 2456
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d9",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 7584.99974837637,
+                    "~:y": 1384,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 7584.99974837637,
+                    "~:y1": 1384,
+                    "~:x2": 8548.99974837637,
+                    "~:y2": 2456
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02de": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAABcMBFALBMRQIAAAAAAAAAAAAAAAAAAAAAAAAAAPjTRf//L0UCAAAAAAAAAAAAAAAAAAAAAAAAAADQ1EUAsF5F"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 6158.00012557245,
+                      "~:y": 2815.99998762242
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6810.00012557245,
+                      "~:y": 2815.99998762242
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6810.00012557245,
+                      "~:y": 3562.99998762242
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6158.00012557245,
+                      "~:y": 3562.99998762242
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02de",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 6158.00012557245,
+                    "~:y": 2815.99998762242,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 6158.00012557245,
+                    "~:y1": 2815.99998762242,
+                    "~:x2": 6810.00012557245,
+                    "~:y2": 3562.99998762242
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02df": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAABcMBFAPCHRQMAAAABUMJFAKCGRQCQ3kUA0HJFAJDeRQDQckUCAAAAAAAAAAAAAAAAAAAAAAAAAAA43kUA6JpFAgAAAAAAAAAAAAAAAAAAAAAAAAABcMBFAPCHRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 6158.00012557245,
+                      "~:y": 3884.99995710485
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7122.00012557245,
+                      "~:y": 3884.99995710485
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7122.00012557245,
+                      "~:y": 4956.99995710485
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 6158.00012557245,
+                      "~:y": 4956.99995710485
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02df",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 6158.00012557245,
+                    "~:y": 3884.99995710485,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 6158.00012557245,
+                    "~:y1": 3884.99995710485,
+                    "~:x2": 7122.00012557245,
+                    "~:y2": 4956.99995710485
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02dc": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD/B+1FALBPRQIAAAAAAAAAAAAAAAAAAAAAAAAA/0cARv//MkUCAAAAAAAAAAAAAAAAAAAAAAAAAP+zAEYAsGFF"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974596703,
+                      "~:y": 2864.00001814
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8236.99974596703,
+                      "~:y": 2864.00001814
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8236.99974596703,
+                      "~:y": 3611.00001814
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974596703,
+                      "~:y": 3611.00001814
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02dc",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 7584.99974596703,
+                    "~:y": 2864.00001814,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 7584.99974596703,
+                    "~:y1": 2864.00001814,
+                    "~:x2": 8236.99974596703,
+                    "~:y2": 3611.00001814
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02dd": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD/B+1FACCGRQMAAAD/5+5FANCERf+TBUYAMG9F/5MFRgAwb0UCAAAAAAAAAAAAAAAAAAAAAAAAAP9nBUYAGJlFAgAAAAAAAAAAAAAAAAAAAAAAAAD/B+1FACCGRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974596703,
+                      "~:y": 3826.99989606969
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8548.99974596703,
+                      "~:y": 3826.99989606969
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 8548.99974596703,
+                      "~:y": 4898.99989606969
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 7584.99974596703,
+                      "~:y": 4898.99989606969
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02dd",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:outer",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 7584.99974596703,
+                    "~:y": 3826.99989606969,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 7584.99974596703,
+                    "~:y1": 3826.99989606969,
+                    "~:x2": 8548.99974596703,
+                    "~:y2": 4898.99989606969
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d2": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMExF/79hRAIAAAAAAAAAAAAAAAAAAAAAAAAAAEBzRf//3UMCAAAAAAAAAAAAAAAAAAAAAAAAAADwdEX/35RE"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 3266.99998057661,
+                      "~:y": 443.999986701422
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3918.99998057661,
+                      "~:y": 443.999986701422
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3918.99998057661,
+                      "~:y": 1190.99998670142
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3266.99998057661,
+                      "~:y": 1190.99998670142
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d2",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 3266.99998057661,
+                    "~:y": 443.999986701422,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 3266.99998057661,
+                    "~:y1": 443.999986701422,
+                    "~:x2": 3918.99998057661,
+                    "~:y2": 1190.99998670142
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d3": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 0.998897352755765,
+                    "~:b": -0.0469476161005346,
+                    "~:c": 0.0469476161005349,
+                    "~:d": 0.998897352755766,
+                    "~:e": 4.54747350886464e-13,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 357.309110550245,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAABL/UtF1hf6RAMAAACvnE9FLn/0RH9ng0UBYLpEf2eDRQFgukQCAAAAAAAAAAAAAAAAAAAAAAAAADeihEVaJSBFAgAAAAAAAAAAAAAAAAAAAAAAAABL/UtF1hf6RA=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 3241.9999811714,
+                      "~:y": 1536.25758217629
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4204.93704939535,
+                      "~:y": 1491.00007930752
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4255.26489490917,
+                      "~:y": 2561.81806388851
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3292.32782668522,
+                      "~:y": 2607.07556675728
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 0.998897352755766,
+                    "~:b": 0.0469476161005346,
+                    "~:c": -0.0469476161005349,
+                    "~:d": 0.998897352755766,
+                    "~:e": -4.54245924973187e-13,
+                    "~:f": -2.13493040521528e-14
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d3",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 3266.63242794546,
+                    "~:y": 1513.03781180661,
+                    "~:width": 964.000020189657,
+                    "~:height": 1072.00002245157,
+                    "~:x1": 3266.63242794546,
+                    "~:y1": 1513.03781180661,
+                    "~:x2": 4230.63244813512,
+                    "~:y2": 2585.03783425818
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d0": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMIxFAMBhRAIAAAAAAAAAAAAAAAAAAAAAAAAAALifRf//3UMCAAAAAAAAAAAAAAAAAAAAAAAAAACQoEUA4JRE"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005873486,
+                      "~:y": 443.999986701423
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5138.00005873486,
+                      "~:y": 443.999986701423
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5138.00005873486,
+                      "~:y": 1190.99998670142
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005873486,
+                      "~:y": 1190.99998670142
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d0",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 4486.00005873486,
+                    "~:y": 443.999986701423,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 4486.00005873486,
+                    "~:y1": 443.999986701423,
+                    "~:x2": 5138.00005873486,
+                    "~:y2": 1190.99998670142
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d1": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMIxFAADqRAMAAAAAEI5FAMDkRABQqkUA4K9EAFCqRQDgr0QCAAAAAAAAAAAAAAAAAAAAAAAAAAD4qUUA8BpFAgAAAAAAAAAAAAAAAAAAAAAAAAAAMIxFAADqRA=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005873486,
+                      "~:y": 1407.00004773658
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5450.00005873486,
+                      "~:y": 1407.00004773658
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5450.00005873486,
+                      "~:y": 2479.00004773658
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005873486,
+                      "~:y": 2479.00004773658
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d1",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 4486.00005873486,
+                    "~:y": 1407.00004773658,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 4486.00005873486,
+                    "~:y1": 1407.00004773658,
+                    "~:x2": 5450.00005873486,
+                    "~:y2": 2479.00004773658
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d6": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMExFACBRRQIAAAAAAAAAAAAAAAAAAAAAAAAAAEBzRQBwNEUCAAAAAAAAAAAAAAAAAAAAAAAAAADwdEUAIGNF"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 3266.99997816727,
+                      "~:y": 2887.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3918.99997816727,
+                      "~:y": 2887.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3918.99997816727,
+                      "~:y": 3634.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3266.99997816727,
+                      "~:y": 3634.00009639416
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d6",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 3266.99997816727,
+                    "~:y": 2887.00009639416,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 3266.99997816727,
+                    "~:y1": 2887.00009639416,
+                    "~:x2": 3918.99997816727,
+                    "~:y2": 3634.00009639416
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d7": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMExFACiKRQMAAAAA8E9FANiIRQA4hEUAQHdFADiERQBAd0UCAAAAAAAAAAAAAAAAAAAAAAAAAADgg0UAIJ1FAgAAAAAAAAAAAAAAAAAAAAAAAAAAMExFACiKRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 3266.99997816727,
+                      "~:y": 3956.00006587658
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4230.99997816727,
+                      "~:y": 3956.00006587658
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4230.99997816727,
+                      "~:y": 5028.00006587658
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 3266.99997816727,
+                      "~:y": 5028.00006587658
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d7",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 3266.99997816727,
+                    "~:y": 3956.00006587658,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 3266.99997816727,
+                    "~:y1": 3956.00006587658,
+                    "~:x2": 4230.99997816727,
+                    "~:y2": 5028.00006587658
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d4": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMIxFACBRRQIAAAAAAAAAAAAAAAAAAAAAAAAAALifRQBwNEUCAAAAAAAAAAAAAAAAAAAAAAAAAACQoEUAIGNF"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005632553,
+                      "~:y": 2887.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5138.00005632553,
+                      "~:y": 2887.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5138.00005632553,
+                      "~:y": 3634.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005632553,
+                      "~:y": 3634.00009639416
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d4",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 4486.00005632553,
+                    "~:y": 2887.00009639416,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 4486.00005632553,
+                    "~:y1": 2887.00009639416,
+                    "~:x2": 5138.00005632553,
+                    "~:y2": 3634.00009639416
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02d5": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAMIxFANiGRQMAAAAAEI5FAIiFRQBQqkUAoHBFAFCqRQCgcEUCAAAAAAAAAAAAAAAAAAAAAAAAAAD4qUUA0JlFAgAAAAAAAAAAAAAAAAAAAAAAAAAAMIxFANiGRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005632553,
+                      "~:y": 3850.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5450.00005632553,
+                      "~:y": 3850.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 5450.00005632553,
+                      "~:y": 4922.00009639416
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 4486.00005632553,
+                      "~:y": 4922.00009639416
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02d5",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:center",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 4486.00005632553,
+                    "~:y": 3850.00009639416,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 4486.00005632553,
+                    "~:y1": 3850.00009639416,
+                    "~:x2": 5450.00005632553,
+                    "~:y2": 4922.00009639416
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02ca": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD//wpEAAB2RAIAAAAAAAAAAAAAAAAAAAAAAAAAAKCTRP8/A0QCAAAAAAAAAAAAAAAAAAAAAAAAAAAAl0QAAJ9E"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 555.999938370053,
+                      "~:y": 524.999995655115
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1207.99993837005,
+                      "~:y": 524.999995655115
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1207.99993837005,
+                      "~:y": 1271.99999565511
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 555.999938370053,
+                      "~:y": 1271.99999565511
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02ca",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 555.999938370053,
+                    "~:y": 524.999995655115,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 555.999938370053,
+                    "~:y1": 524.999995655115,
+                    "~:x2": 1207.99993837005,
+                    "~:y2": 1271.99999565511
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02cb": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 0.998897352755765,
+                    "~:b": -0.0469476161005346,
+                    "~:c": 0.0469476161005349,
+                    "~:d": 0.998897352755766,
+                    "~:e": 4.54747350886464e-13,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 357.309110550245,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAArNQpE6xsCRQMAAAC7shhELp/+RP29ukQAgMRE/b26RACAxEQCAAAAAAAAAAAAAAAAAAAAAAAAAN6ov0RZNSVFAgAAAAAAAAAAAAAAAAAAAAAAAAArNQpE6xsCRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 531,
+                      "~:y": 1617.25753009482
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1493.93706822395,
+                      "~:y": 1572.00002722605
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1544.26491373777,
+                      "~:y": 2642.81801180705
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 581.327845513821,
+                      "~:y": 2688.07551467582
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 0.998897352755766,
+                    "~:b": 0.0469476161005346,
+                    "~:c": -0.0469476161005349,
+                    "~:d": 0.998897352755766,
+                    "~:e": -4.54245924973187e-13,
+                    "~:f": -2.13493040521528e-14
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02cb",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 555.632446774058,
+                    "~:y": 1594.03775972515,
+                    "~:width": 964.000020189657,
+                    "~:height": 1072.00002245157,
+                    "~:x1": 555.632446774058,
+                    "~:y1": 1594.03775972515,
+                    "~:x2": 1519.63246696372,
+                    "~:y2": 2666.03778217672
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02c8": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAA4N1EAAB2RAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAWRf8/A0QCAAAAAAAAAAAAAAAAAAAAAAAAAACwF0UAAJ9E"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989445799,
+                      "~:y": 524.999995655115
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2426.99989445799,
+                      "~:y": 524.999995655115
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2426.99989445799,
+                      "~:y": 1271.99999565512
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989445799,
+                      "~:y": 1271.99999565512
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02c8",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1774.99989445799,
+                    "~:y": 524.999995655115,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 1774.99989445799,
+                    "~:y1": 524.999995655115,
+                    "~:x2": 2426.99989445799,
+                    "~:y2": 1271.99999565512
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02c9": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAA4N1EACD0RAMAAAAAYOVEAODuRAAwK0UAALpEADArRQAAukQCAAAAAAAAAAAAAAAAAAAAAAAAAACAKkUAACBFAgAAAAAAAAAAAAAAAAAAAAAAAAAA4N1EACD0RA=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989445799,
+                      "~:y": 1487.99999565512
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2738.99989445799,
+                      "~:y": 1487.99999565512
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2738.99989445799,
+                      "~:y": 2559.99999565512
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989445799,
+                      "~:y": 2559.99999565512
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02c9",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 0,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1774.99989445799,
+                    "~:y": 1487.99999565512,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 1774.99989445799,
+                    "~:y1": 1487.99999565512,
+                    "~:x2": 2738.99989445799,
+                    "~:y2": 2559.99999565512
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02ce": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD//wpEADBWRQIAAAAAAAAAAAAAAAAAAAAAAAAAAKCTRACAOUUCAAAAAAAAAAAAAAAAAAAAAAAAAAAAl0QAMGhF"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 555.999935960719,
+                      "~:y": 2967.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1207.99993596072,
+                      "~:y": 2967.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1207.99993596072,
+                      "~:y": 3714.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 555.999935960719,
+                      "~:y": 3714.99998327754
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02ce",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 555.999935960719,
+                    "~:y": 2967.99998327754,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 555.999935960719,
+                    "~:y1": 2967.99998327754,
+                    "~:x2": 1207.99993596072,
+                    "~:y2": 3714.99998327754
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02cf": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD//wpEALCMRQMAAAD//xlEAGCLRQAAvkQAUHxFAAC+RABQfEUCAAAAAAAAAAAAAAAAAAAAAAAAAACgvEQAqJ9FAgAAAAAAAAAAAAAAAAAAAAAAAAD//wpEALCMRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 555.999935960719,
+                      "~:y": 4036.99995275996
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1519.99993596072,
+                      "~:y": 4036.99995275996
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1519.99993596072,
+                      "~:y": 5108.99995275996
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 555.999935960719,
+                      "~:y": 5108.99995275996
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02cf",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 555.999935960719,
+                    "~:y": 4036.99995275996,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 555.999935960719,
+                    "~:y1": 4036.99995275996,
+                    "~:x2": 1519.99993596072,
+                    "~:y2": 5108.99995275996
+                  }
+                },
+                "~:fills": [],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02cc": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAA4N1EADBWRQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAWRQCAOUUCAAAAAAAAAAAAAAAAAAAAAAAAAACwF0UAMGhF"
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989204866,
+                      "~:y": 2967.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2426.99989204866,
+                      "~:y": 2967.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2426.99989204866,
+                      "~:y": 3714.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989204866,
+                      "~:y": 3714.99998327754
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02cc",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1774.99989204866,
+                    "~:y": 2967.99998327754,
+                    "~:width": 652,
+                    "~:height": 747,
+                    "~:x1": 1774.99989204866,
+                    "~:y1": 2967.99998327754,
+                    "~:x2": 2426.99989204866,
+                    "~:y2": 3714.99998327754
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            },
+            "~ue52394cc-813d-80b9-8007-99cfd71e02cd": {
+              "~#shape": {
+                "~:y": null,
+                "~:transform": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:rotation": 0,
+                "~:grow-type": "~:fixed",
+                "~:content": {
+                  "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAA4N1EAGCJRQMAAAAAYOVEABCIRQAwK0UAsHVFADArRQCwdUUCAAAAAAAAAAAAAAAAAAAAAAAAAACAKkUAWJxFAgAAAAAAAAAAAAAAAAAAAAAAAAAA4N1EAGCJRQ=="
+                },
+                "~:name": "Path",
+                "~:width": null,
+                "~:type": "~:path",
+                "~:points": [
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989204866,
+                      "~:y": 3930.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2738.99989204866,
+                      "~:y": 3930.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 2738.99989204866,
+                      "~:y": 5002.99998327754
+                    }
+                  },
+                  {
+                    "~#point": {
+                      "~:x": 1774.99989204866,
+                      "~:y": 5002.99998327754
+                    }
+                  }
+                ],
+                "~:proportion-lock": false,
+                "~:transform-inverse": {
+                  "~#matrix": {
+                    "~:a": 1,
+                    "~:b": 0,
+                    "~:c": 0,
+                    "~:d": 1,
+                    "~:e": 0,
+                    "~:f": 0
+                  }
+                },
+                "~:id": "~ue52394cc-813d-80b9-8007-99cfd71e02cd",
+                "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                "~:strokes": [
+                  {
+                    "~:stroke-style": "~:solid",
+                    "~:stroke-alignment": "~:inner",
+                    "~:stroke-width": 50,
+                    "~:stroke-color": "#000000",
+                    "~:stroke-opacity": 1
+                  }
+                ],
+                "~:x": null,
+                "~:proportion": 1,
+                "~:shadow": [
+                  {
+                    "~:id": "~u660e606c-c745-80a4-8007-988b6dd9ceb1",
+                    "~:style": "~:drop-shadow",
+                    "~:color": {
+                      "~:color": "#ff0000",
+                      "~:opacity": 1
+                    },
+                    "~:offset-x": 100,
+                    "~:offset-y": 100,
+                    "~:blur": 40,
+                    "~:spread": 40,
+                    "~:hidden": false
+                  }
+                ],
+                "~:selrect": {
+                  "~#rect": {
+                    "~:x": 1774.99989204866,
+                    "~:y": 3930.99998327754,
+                    "~:width": 964,
+                    "~:height": 1072,
+                    "~:x1": 1774.99989204866,
+                    "~:y1": 3930.99998327754,
+                    "~:x2": 2738.99989204866,
+                    "~:y2": 5002.99998327754
+                  }
+                },
+                "~:fills": [
+                  {
+                    "~:fill-color": "#B1B2B5",
+                    "~:fill-opacity": 1
+                  }
+                ],
+                "~:flip-x": null,
+                "~:height": null,
+                "~:flip-y": null
+              }
+            }
+          },
+          "~:id": "~u93113137-fe66-80fb-8007-99cfd5cbf362",
+          "~:name": "Page 1"
+        }
+      },
+      "~:id": "~u93113137-fe66-80fb-8007-99cfd5cbf361",
+      "~:options": {
+        "~:components-v2": true,
+        "~:base-font-size": "16px"
+      }
+    }
+  }

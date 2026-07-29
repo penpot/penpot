@@ -1,0 +1,140 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.color-light {
+  color: var(--color-foreground-primary);
+}
+
+.color-dimmed {
+  color: var(--color-foreground-secondary);
+}
+
+.text-align-right {
+  text-align: right;
+}
+
+.align-center {
+  justify-content: center;
+}
+
+.link-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.link {
+  @include t.use-typography("body-small");
+
+  cursor: pointer;
+  text-decoration: underline;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--color-foreground-secondary);
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+}
+
+.modal-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+  position: relative;
+  inline-size: px2rem(908);
+  padding: px2rem(72) px2rem(100);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+}
+
+.modal-sections {
+  display: grid;
+  grid-template-columns: px2rem(336) $sz-12 1fr;
+  gap: var(--sp-xxl);
+  block-size: 100%;
+}
+
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+  padding: var(--sp-m);
+}
+
+.modal-info-desc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.modal-info-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.modal-info-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
+}
+
+.modal-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  border-radius: $br-circle;
+  border: $b-1 solid var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.modal-separator {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-separator-line {
+  inline-size: $sz-1;
+  block-size: 100%;
+  background-color: var(--color-background-quaternary);
+}
+
+.modal-team {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xl);
+}
+
+.modal-team-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-xxl);
+}
+
+.modal-team-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.modal-team-sub-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}

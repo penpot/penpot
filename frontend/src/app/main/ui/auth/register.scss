@@ -1,0 +1,77 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+@use "./common";
+
+.checkbox-terms-and-privacy,
+.checkbox-newsletter-updates {
+  align-items: flex-start;
+}
+
+.register-form {
+  gap: var(--sp-xxl);
+}
+
+.register-success {
+  gap: var(--sp-xxl);
+}
+
+.register-success .auth-title {
+  @include use-typography("title-medium");
+
+  line-height: 1.2;
+}
+
+.notification-text {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+}
+
+.notification-text-email {
+  @include use-typography("title-medium");
+
+  line-height: 1.2;
+  color: var(--color-background-success);
+  margin-inline: $sz-36;
+}
+
+.logo-btn {
+  block-size: $sz-40;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: flex-start;
+  inline-size: $sz-120;
+  margin-block-end: var(--sp-xxl);
+}
+
+.terms-register {
+  @include use-typography("body-small");
+
+  display: flex;
+  gap: var(--sp-xs);
+  justify-content: center;
+  inline-size: 100%;
+}
+
+.and-text {
+  border-block-end: $b-1 solid transparent;
+  color: var(--color-foreground-secondary);
+}
+
+.auth-link {
+  color: var(--color-accent-primary);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -1,0 +1,34 @@
+{:deps {:aliases [:dev]}
+ :source-paths ["src" "vendor" "../common"]
+
+ :builds
+ {:main
+  {:target :esm
+   :runtime :node
+   :output-dir "target/"
+   :devtools {:before-load-async app.core/stop
+              :after-load app.core/start}
+
+   :modules
+   {:app
+    {:entries []
+     :init-fn app.core/main}}
+
+   :js-options
+   {:entry-keys ["module" "browser" "main"]
+    :export-conditions ["module" "import", "browser" "require" "default"]
+    :js-provider :import}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :source-map true
+     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :simple]
+     :pseudo-names true
+     :pretty-print true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}}}

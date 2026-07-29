@@ -1,0 +1,10 @@
+# Workspace-specific MCP servers for the OpenAI Codex CLI. The PENPOT_MCP_PORT
+# and SERENA_MCP_PORT placeholders below are filled in per workspace by
+# manage.sh's write-instance-mcp-configs, then the result is concatenated
+# with shared/codex.toml to produce .codex/config.toml.
+
+[mcp_servers.penpot]
+url = "http://localhost:${PENPOT_MCP_PORT}/mcp"
+
+[mcp_servers.serena-devenv]
+url = "http://localhost:${SERENA_MCP_PORT}/mcp"

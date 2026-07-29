@@ -1,0 +1,43 @@
+import 'ses';
+import './lib/modal/plugin-modal';
+
+import {
+  ɵloadPlugin,
+  setContextBuilder,
+  ɵloadPluginByUrl,
+  ɵunloadPlugin,
+} from './lib/load-plugin.js';
+
+// Export the plugin error checker so the frontend can identify plugin errors
+export { isPluginError } from './lib/create-sandbox.js';
+
+import type { Context } from '@penpot/plugin-types';
+
+console.log('%c[PLUGINS] Loading plugin system', 'color: #008d7c');
+
+repairIntrinsics({
+  evalTaming: 'unsafeEval',
+  stackFiltering: 'verbose',
+  errorTaming: 'unsafe',
+  consoleTaming: 'unsafe',
+  errorTrapping: 'none',
+  unhandledRejectionTrapping: 'none',
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const globalThisAny$ = globalThis as any;
+
+export const initPluginsRuntime = (contextBuilder: (id: string) => Context) => {
+  try {
+    console.log('%c[PLUGINS] Initialize runtime', 'color: #008d7c');
+    setContextBuilder(contextBuilder);
+    globalThisAny$.ɵcontext = contextBuilder(
+      '00000000-0000-0000-0000-000000000000',
+    );
+    globalThis.ɵloadPlugin = ɵloadPlugin;
+    globalThis.ɵloadPluginByUrl = ɵloadPluginByUrl;
+    globalThis.ɵunloadPlugin = ɵunloadPlugin;
+  } catch (err) {
+    console.error(err);
+  }
+};

@@ -1,0 +1,125 @@
+.input-label-hidden {
+  block-size: 1px;
+  border: 0;
+  clip: rect(1px 1px 1px 1px);
+  clip: rect(1px, 1px, 1px, 1px);
+  clip-path: inset(50%);
+  inline-size: 1px;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] {
+  & .input {
+    background-color: var(--db-tertiary);
+    border-color: var(--db-tertiary);
+    color: var(--df-primary);
+
+    &:focus {
+      border-color: var(--da-primary);
+    }
+
+    &:hover {
+      background-color: var(--db-quaternary);
+      border-color: var(--db-quaternary);
+    }
+
+    &:focus {
+      background-color: var(--db-primary);
+      border-color: var(--da-primary);
+    }
+
+    &:disabled {
+      background-color: var(--db-primary);
+      border-color: var(--db-quaternary);
+      cursor: not-allowed;
+    }
+
+    &::placeholder {
+      color: var(--df-secondary);
+    }
+
+    &:invalid {
+      background-color: var(--db-primary);
+    }
+
+    &.success {
+      background-color: var(--db-primary);
+      border-color: var(--da-tertiary);
+    }
+
+    &.error {
+      background-color: var(--db-primary);
+    }
+  }
+}
+
+[data-theme='light'] {
+  & .input {
+    background-color: var(--lb-tertiary);
+    border-color: var(--lb-tertiary);
+    color: var(--lf-primary);
+
+    &:focus {
+      background-color: var(--lb-secondary);
+      border-color: var(--la-primary);
+    }
+
+    &:hover {
+      background-color: var(--lb-quaternary);
+      border-color: var(--lb-quaternary);
+    }
+
+    &:focus {
+      background-color: var(--lb-primary);
+      border-color: var(--la-primary);
+    }
+
+    &:disabled {
+      background-color: var(--lb-primary);
+      border-color: var(--lb-quaternary);
+      cursor: not-allowed;
+    }
+
+    &::placeholder {
+      color: var(--lf-secondary);
+    }
+
+    &:invalid {
+      background-color: var(--lb-primary);
+    }
+
+    &.success {
+      background-color: var(--lb-primary);
+      border-color: var(--la-tertiary);
+    }
+
+    &.error {
+      background-color: var(--lb-primary);
+    }
+  }
+}
+
+.input {
+  display: flex;
+  border: 1px solid;
+  border-radius: var(--spacing-8);
+  font-family: inherit;
+  font-size: var(--font-size-s);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--font-line-height-m);
+  outline: none;
+  padding-block: var(--spacing-8);
+  padding-inline: var(--spacing-8);
+
+  &:invalid {
+    border-color: var(--error-500);
+  }
+
+  &.error {
+    border-color: var(--error-500);
+  }
+}

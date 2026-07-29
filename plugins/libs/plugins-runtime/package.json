@@ -1,0 +1,19 @@
+{
+  "name": "@penpot/plugins-runtime",
+  "version": "1.5.0",
+  "dependencies": {
+    "@penpot/plugin-types": "workspace:^",
+    "ses": "^2.1.0",
+    "zod": "^3.25.76"
+  },
+  "module": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:watch": "vite build --watch --mode development",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
+}

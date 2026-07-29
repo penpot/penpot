@@ -1,0 +1,440 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/z-index.scss" as *;
+
+// ─── VARIABLES ─────────────────────────────────
+
+$bp-max-1366: "(max-width: 1366px)";
+$thumbnail-default-width: $sz-252;
+$thumbnail-default-height: px2rem(168);
+
+// ─── DASHBOARD GRID ────────────────────────────
+
+.dashboard-grid {
+  @include t.use-typography("body-medium");
+
+  block-size: 100%;
+  overflow: hidden auto;
+  padding: 0 var(--sp-l) var(--sp-l);
+}
+
+// ─── GRID ROW ──────────────────────────────────
+
+.grid-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(var(--sp-m) + var(--thumbnail-width, #{$thumbnail-default-width}));
+  inline-size: 100%;
+  gap: var(--sp-xxl);
+
+  &.list-view {
+    display: flex;
+    flex-direction: column;
+    grid-auto-flow: initial;
+    grid-auto-columns: initial;
+    gap: var(--sp-s);
+    padding: var(--sp-s) 0;
+    inline-size: 100%;
+  }
+}
+
+// ─── CARD VIEW: GRID ITEM ─────────────────────
+
+.grid-item {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin: var(--sp-m) 0;
+  position: relative;
+  text-align: center;
+
+  &.is-dragged {
+    border-radius: $br-4;
+    outline: $br-4 solid var(--color-accent-primary);
+    text-align: initial;
+    inline-size: calc(var(--thumbnail-width) + var(--sp-m));
+    block-size: var(--thumbnail-height, #{$thumbnail-default-height});
+  }
+}
+
+.grid-item-info {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  max-inline-size: var(--thumbnail-width, #{$thumbnail-default-width});
+}
+
+.grid-item-meta {
+  @include t.use-typography("body-small");
+
+  display: grid;
+  padding: var(--sp-s);
+  text-align: left;
+  inline-size: 100%;
+}
+
+.grid-item-title {
+  @include t.use-typography("body-large");
+
+  border: $b-1 solid transparent;
+  color: var(--color-foreground-primary);
+  line-height: 1.92;
+  block-size: $sz-28;
+  max-inline-size: px2rem(260);
+  overflow: hidden;
+  padding: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  inline-size: 100%;
+
+  @media #{$bp-max-1366} {
+    max-inline-size: px2rem(232);
+  }
+}
+
+.grid-item-date {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  inline-size: 100%;
+  white-space: nowrap;
+  max-inline-size: px2rem(260);
+
+  &::first-letter {
+    text-transform: capitalize;
+  }
+
+  @media #{$bp-max-1366} {
+    max-inline-size: px2rem(232);
+  }
+}
+
+.grid-item-badge {
+  color: var(--color-background-secondary);
+  background-color: var(--color-accent-primary);
+  border: none;
+  border-radius: $br-6;
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-item-thumbnail {
+  border-radius: $br-8;
+  block-size: var(--thumbnail-height, #{$thumbnail-default-height});
+  inline-size: var(--thumbnail-width, #{$thumbnail-default-width});
+  overflow: hidden;
+  position: relative;
+  text-align: initial;
+  background-size: cover;
+
+  &.is-deleted {
+    opacity: 0.5;
+  }
+}
+
+.grid-item-thumbnail-image {
+  object-fit: contain;
+  block-size: auto;
+  inline-size: 100%;
+}
+
+// ─── CARD VIEW: PROJECT THUMBNAIL ──────────────
+
+.project-thumbnail {
+  background-color: transparent;
+  border-radius: $br-8;
+  padding-block-start: $sz-6;
+
+  &.library-item {
+    block-size: px2rem(612);
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: var(--color-background-tertiary);
+
+    .project-thumbnail-actions {
+      opacity: 1;
+    }
+  }
+
+  .is-selected .grid-item-thumbnail {
+    outline: px2rem(4) solid var(--color-accent-tertiary);
+  }
+}
+
+.project-thumbnail-actions {
+  align-items: center;
+  display: flex;
+  block-size: 100%;
+  justify-content: center;
+  opacity: 0;
+  inset-inline-end: $sz-6;
+  inline-size: $sz-32;
+
+  &.is-force-display {
+    opacity: 1;
+  }
+}
+
+.project-thumbnail-icon {
+  align-items: center;
+  display: flex;
+  margin-inline-end: var(--sp-s);
+  margin-block-start: 0;
+}
+
+// ─── CARD VIEW: MENU ───────────────────────────
+
+.menu {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  block-size: $sz-32;
+  justify-content: center;
+  margin-inline-end: 0;
+  margin-block-start: var(--sp-xl);
+  inline-size: 100%;
+
+  --menu-icon-color: var(--button-tertiary-foreground-color-rest);
+
+  &:hover,
+  &:focus {
+    --menu-icon-color: var(--button-tertiary-foreground-color-hover);
+  }
+}
+
+.menu-icon {
+  color: var(--menu-icon-color);
+  margin-inline-end: 0;
+  block-size: $sz-16;
+  inline-size: $sz-16;
+}
+
+// ─── LIST VIEW ─────────────────────────────────
+
+.list-item {
+  align-items: stretch;
+  flex-direction: row;
+  margin: 0;
+  text-align: initial;
+  inline-size: 100%;
+
+  // Reuse the grid options menu, but neutralize the card-oriented offsets so
+  // it sits inline at the end of the row.
+  .project-thumbnail-actions {
+    flex: 0 0 auto;
+    block-size: auto;
+    opacity: 1;
+    inline-size: auto;
+  }
+
+  .project-thumbnail-icon {
+    margin: 0;
+  }
+
+  .menu {
+    align-items: center;
+    flex-direction: row;
+    block-size: $sz-32;
+    margin: 0;
+    inline-size: auto;
+  }
+}
+
+.list-item-dragged {
+  border-radius: $br-8;
+  block-size: $sz-48;
+  outline: $br-4 solid var(--color-accent-primary);
+  outline-offset: -$br-4;
+  inline-size: 100%;
+}
+
+.list-item-row {
+  align-items: center;
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
+  display: flex;
+  gap: var(--sp-m);
+  padding: var(--sp-s) var(--sp-m);
+  inline-size: 100%;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: var(--color-background-tertiary);
+  }
+
+  &.is-selected {
+    background-color: var(--color-background-tertiary);
+    outline: $b-2 solid var(--color-accent-tertiary);
+  }
+}
+
+.list-item-name {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+  flex: 0 1 auto;
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-item-badge {
+  align-items: center;
+  color: var(--color-background-secondary);
+  background-color: var(--color-accent-primary);
+  border-radius: $br-6;
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  block-size: $sz-24;
+  inline-size: $sz-24;
+}
+
+.list-item-date {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  white-space: nowrap;
+
+  &::first-letter {
+    text-transform: capitalize;
+  }
+}
+
+// ─── LIBRARY ───────────────────────────────────
+
+.library-thumbnail {
+  border-radius: $br-4;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-background-tertiary);
+  display: flex;
+  flex-direction: column;
+  block-size: 90%;
+  justify-content: flex-start;
+  max-block-size: px2rem(580);
+  padding: var(--sp-xxxl);
+}
+
+.library-num-assets {
+  color: var(--color-foreground-secondary);
+}
+
+.library-name-block {
+  color: var(--color-foreground-secondary);
+  inline-size: calc(100% - var(--sp-xxl) - var(--sp-s));
+}
+
+.library-item-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-asset-section {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+
+  &:not(:first-child) {
+    margin-block-start: var(--sp-l);
+  }
+}
+
+.library-asset-item {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  border-radius: $br-4;
+  border: $b-1 solid transparent;
+  color: var(--color-foreground-primary);
+  margin-block-start: var(--sp-xs);
+  padding: var(--sp-xxs);
+  position: relative;
+}
+
+.library-asset-title {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  text-transform: uppercase;
+}
+
+.library-asset-icon {
+  background-color: var(--color-canvas);
+  border-radius: $br-4;
+  border: $b-2 solid transparent;
+  margin-inline-end: var(--sp-s);
+  block-size: $sz-24;
+  inline-size: $sz-24;
+}
+
+.library-color-name {
+  color: var(--color-foreground-primary);
+}
+
+.library-color-value {
+  color: var(--color-foreground-secondary);
+  margin-inline-start: var(--sp-xs);
+  text-transform: uppercase;
+}
+
+.library-color-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-s);
+}
+
+.library-typography-sample {
+  block-size: px2rem(20);
+  margin-inline-end: var(--sp-xs);
+  inline-size: px2rem(20);
+}
+
+// ─── MISC ──────────────────────────────────────
+
+.drag-counter {
+  @include t.use-typography("body-large");
+
+  position: absolute;
+  inset-block-start: var(--sp-xs);
+  inset-inline-start: var(--sp-xs);
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  background-color: var(--color-accent-tertiary);
+  border-radius: $br-circle;
+  color: var(--color-background-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid-loader {
+  --icon-width: calc(var(--thumbnail-width, #{$thumbnail-default-width}) * 0.25);
+}

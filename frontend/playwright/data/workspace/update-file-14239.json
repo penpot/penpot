@@ -1,0 +1,133 @@
+{
+    "~:revn": 2,
+    "~:lagged": [
+        {
+            "~:id": "~u7f0e4986-db88-8130-8008-1573f690be15",
+            "~:revn": 2,
+            "~:file-id": "~u7f0e4986-db88-8130-8008-1573e577911a",
+            "~:session-id": "~u71a5dd44-23e8-8036-8008-1573e19c6190",
+            "~:changes": [
+                {
+                    "~:type": "~:mod-page",
+                    "~:id": "~u7f0e4986-db88-8130-8008-1573e577911b",
+                    "~:background": "#e8e9ea"
+                }
+            ]
+        },
+        {
+            "~:id": "~u7f0e4986-db88-8130-8008-1573ff5a4706",
+            "~:revn": 3,
+            "~:file-id": "~u7f0e4986-db88-8130-8008-1573e577911a",
+            "~:session-id": "~u71a5dd44-23e8-8036-8008-1573e19c6190",
+            "~:changes": [
+                {
+                    "~:ignore-touched": false,
+                    "~:index": null,
+                    "~:type": "~:add-obj",
+                    "~:page-id": "~u7f0e4986-db88-8130-8008-1573e577911b",
+                    "~:id": "~u71a5dd44-23e8-8036-8008-1573f8419e2f",
+                    "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:obj": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAwEJEAAAjQwIAAAAAAAAAAAAAAAAAAAAAAAAAAMBtRAAAgUM="
+                            },
+                            "~:name": "Path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 779,
+                                        "~:y": 163
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 951,
+                                        "~:y": 163
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 951,
+                                        "~:y": 258
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 779,
+                                        "~:y": 258
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:id": "~u71a5dd44-23e8-8036-8008-1573f8419e2f",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#000000",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 779,
+                                    "~:y": 163,
+                                    "~:width": 172,
+                                    "~:height": 95,
+                                    "~:x1": 779,
+                                    "~:y1": 163,
+                                    "~:x2": 951,
+                                    "~:y2": 258
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                {
+                    "~:type": "~:mov-objects",
+                    "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:page-id": "~u7f0e4986-db88-8130-8008-1573e577911b",
+                    "~:shapes": [
+                        "~u71a5dd44-23e8-8036-8008-1573f8419e2f"
+                    ]
+                }
+            ]
+        }
+    ]
+}

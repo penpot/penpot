@@ -1,0 +1,59 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as SwatchStories from "./swatch.stories";
+
+<Meta title="Foundations/Utilities/Swatch/Docs" />
+
+# Swatch
+
+Swatches are elements that display a color, gradient or image. They can sometimes trigger an action.
+
+## Background Property
+
+A swatch component can receive several props. The `background` prop is the most important and must be an object. Depending on the value of the background property we will get different variants of the component.
+
+## Variants
+
+If the background prop has a property `value` with an hex color value it will display a full swatch with a solid color
+
+<Canvas of={SwatchStories.Default} />
+
+If the background prop has a property `value` with an hex color value and a a property `opacity` it will display a full swatch with a solid color on one side and the same color with the opacity applied on the other side. (default opacity: 1)
+
+<Canvas of={SwatchStories.WithOpacity} />
+
+If the background prop has a gradient property it will display a full swatch with the gradient (linear or radial)
+
+<Canvas of={SwatchStories.LinearGradient} />
+<Canvas of={SwatchStories.RadialGradient} />
+
+The element can also be interactive, and execute an external function. Typically, it launches the color picker. To make it an interactive button, it accepts an onClick function.
+
+<Canvas of={SwatchStories.Clickable} />
+
+> Due to technical issues regarding how we display internal images in Penpot we cannot preview:
+
+    - Swatches with images
+
+## Technical Notes
+
+### onClick
+
+> Note: If the swatch is interactive, an `aria-label` is required. See the `Accessibility` section for more information.
+
+The swatch button accepts an onClick prop that expects a function on the parent context.
+It should be useful for launching other tools as a color picker.
+It is executed when the user clicks on the swatch, or presses Enter or Spacebar while focused.
+
+### Accessibility
+
+If the swatch is interactive, an `aria-label` is required.
+
+```clj
+[:> swatch* {:on-click launch-colorpicker :aria-label "Lorem ipsum"}]
+```

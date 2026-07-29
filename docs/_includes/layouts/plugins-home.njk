@@ -1,0 +1,27 @@
+---
+layout: layouts/base.njk
+templateClass: tmpl-plugins-guide
+---
+
+{%- macro show_children(item) -%}
+  {%- for child in item | children | sorted('data.title') %}
+    {%- if loop.first -%}<ul>{%- endif -%}
+    <li>
+      <a href="{{ child.url }}">{{ child.data.title }}</a>
+      {%- if page.url.includes(child.url) -%}
+        {{ show_children(child) }}
+      {%- endif -%}
+      {%- if child.url == page.url -%}
+        {{ content | toc(tags=['h2', 'h3']) | stripHash | safe }}
+      {%- endif -%}
+    </li>
+    {%- if loop.last -%}</ul>{%- endif -%}
+  {%- endfor %}
+{%- endmacro -%}
+
+<div class="main-container">
+  <content class="main-content plugins">
+    {{ content | safe }}
+  </content>
+
+</div>

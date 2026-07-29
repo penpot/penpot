@@ -1,0 +1,1952 @@
+{
+  "~:features": {
+    "~#set": [
+      "design-tokens/v1",
+      "layout/grid",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "New File 32",
+  "~:revn": 36,
+  "~:modified-at": "~m1737542758402",
+  "~:vern": 0,
+  "~:id": "~uc7ce0794-0992-8105-8004-38f280443849",
+  "~:is-shared": false,
+  "~:version": 60,
+  "~:project-id": "~u0df61468-6cbf-8067-8005-6b453ce996d0",
+  "~:created-at": "~m1737536563847",
+  "~:data": {
+    "~:pages": [
+      "~u66697432-c33d-8055-8006-2c62cc084cad"
+    ],
+    "~:pages-index": {
+      "~u66697432-c33d-8055-8006-2c62cc084cad": {
+        "~#penpot/pointer": [
+          "~u51e13852-1a8e-8037-8005-9eabb500f7c7",
+          {
+            "~:created-at": "~m1737542758403"
+          }
+        ]
+      }
+    },
+    "~:id": "~u51e13852-1a8e-8037-8005-9e9413a1f1f6",
+    "~:options": {
+      "~:components-v2": true
+    },
+    "~:tokens-lib": {
+      "~#penpot/tokens-lib": {
+        "~:sets": {
+          "~#ordered-map": [
+            [
+              "S-core",
+              {
+                "~#penpot/token-set": {
+                  "~:name": "core",
+                  "~:id": "~u51e13852-1a8e-8037-8005-9e9413a1f1f6",
+                  "~:description": "",
+                  "~:modified-at": "~m1737542498283",
+                  "~:tokens": {
+                    "~#ordered-map": [
+                      [
+                        "colors.red.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d600",
+                            "~:name": "colors.red.600",
+                            "~:type": "~:color",
+                            "~:value": "#e53e3e",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.white",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d601",
+                            "~:name": "colors.white",
+                            "~:type": "~:color",
+                            "~:value": "#ffffff",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d602",
+                            "~:name": "colors.pink.400",
+                            "~:type": "~:color",
+                            "~:value": "#f687b3",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d603",
+                            "~:name": "colors.blue.300",
+                            "~:type": "~:color",
+                            "~:value": "#90cdf4",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d604",
+                            "~:name": "colors.red.700",
+                            "~:type": "~:color",
+                            "~:value": "#c53030",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d605",
+                            "~:name": "colors.pink.800",
+                            "~:type": "~:color",
+                            "~:value": "#97266d",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d606",
+                            "~:name": "colors.green.100",
+                            "~:type": "~:color",
+                            "~:value": "#f0fff4",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d607",
+                            "~:name": "colors.blue.100",
+                            "~:type": "~:color",
+                            "~:value": "#ebf8ff",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d608",
+                            "~:name": "colors.green.800",
+                            "~:type": "~:color",
+                            "~:value": "#276749",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498280"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d609",
+                            "~:name": "colors.indigo.500",
+                            "~:type": "~:color",
+                            "~:value": "#667eea",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "dimension.sm",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d610",
+                            "~:name": "dimension.sm",
+                            "~:type": "~:dimensions",
+                            "~:value": "{dimension.xs} * {dimension.scale}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d611",
+                            "~:name": "colors.purple.900",
+                            "~:type": "~:color",
+                            "~:value": "#44337a",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d612",
+                            "~:name": "colors.orange.200",
+                            "~:type": "~:color",
+                            "~:value": "#feebc8",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d613",
+                            "~:name": "colors.teal.700",
+                            "~:type": "~:color",
+                            "~:value": "#2c7a7b",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d614",
+                            "~:name": "colors.green.300",
+                            "~:type": "~:color",
+                            "~:value": "#9ae6b4",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d615",
+                            "~:name": "colors.pink.600",
+                            "~:type": "~:color",
+                            "~:value": "#d53f8c",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d616",
+                            "~:name": "colors.yellow.200",
+                            "~:type": "~:color",
+                            "~:value": "#fefcbf",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d617",
+                            "~:name": "colors.yellow.800",
+                            "~:type": "~:color",
+                            "~:value": "#975a16",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d618",
+                            "~:name": "colors.teal.200",
+                            "~:type": "~:color",
+                            "~:value": "#b2f5ea",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d619",
+                            "~:name": "colors.teal.500",
+                            "~:type": "~:color",
+                            "~:value": "#38b2ac",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d620",
+                            "~:name": "colors.blue.200",
+                            "~:type": "~:color",
+                            "~:value": "#bee3f8",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d621",
+                            "~:name": "colors.green.600",
+                            "~:type": "~:color",
+                            "~:value": "#38a169",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d622",
+                            "~:name": "colors.indigo.400",
+                            "~:type": "~:color",
+                            "~:value": "#7f9cf5",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d623",
+                            "~:name": "colors.purple.600",
+                            "~:type": "~:color",
+                            "~:value": "#805ad5",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d624",
+                            "~:name": "colors.purple.400",
+                            "~:type": "~:color",
+                            "~:value": "#b794f4",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d625",
+                            "~:name": "colors.indigo.900",
+                            "~:type": "~:color",
+                            "~:value": "#3c366b",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "spacing.lg",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d626",
+                            "~:name": "spacing.lg",
+                            "~:type": "~:spacing",
+                            "~:value": "{dimension.lg}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d627",
+                            "~:name": "colors.purple.300",
+                            "~:type": "~:color",
+                            "~:value": "#d6bcfa",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d628",
+                            "~:name": "colors.yellow.500",
+                            "~:type": "~:color",
+                            "~:value": "#ecc94b",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "opacity.md",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d629",
+                            "~:name": "opacity.md",
+                            "~:type": "~:opacity",
+                            "~:value": "50%",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498283"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d630",
+                            "~:name": "colors.purple.800",
+                            "~:type": "~:color",
+                            "~:value": "#553c9a",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d631",
+                            "~:name": "colors.yellow.900",
+                            "~:type": "~:color",
+                            "~:value": "#744210",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "dimension.xl",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d632",
+                            "~:name": "dimension.xl",
+                            "~:type": "~:dimensions",
+                            "~:value": "{dimension.lg} * {dimension.scale}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d633",
+                            "~:name": "colors.yellow.700",
+                            "~:type": "~:color",
+                            "~:value": "#b7791f",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d634",
+                            "~:name": "colors.green.900",
+                            "~:type": "~:color",
+                            "~:value": "#22543d",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498280"
+                          }
+                        }
+                      ],
+                      [
+                        "spacing.md",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d635",
+                            "~:name": "spacing.md",
+                            "~:type": "~:spacing",
+                            "~:value": "{dimension.md}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d636",
+                            "~:name": "colors.red.200",
+                            "~:type": "~:color",
+                            "~:value": "#fed7d7",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d637",
+                            "~:name": "colors.orange.600",
+                            "~:type": "~:color",
+                            "~:value": "#dd6b20",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "dimension.scale",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d638",
+                            "~:name": "dimension.scale",
+                            "~:type": "~:dimensions",
+                            "~:value": "2",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d639",
+                            "~:name": "colors.red.800",
+                            "~:type": "~:color",
+                            "~:value": "#9b2c2c",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d640",
+                            "~:name": "colors.red.300",
+                            "~:type": "~:color",
+                            "~:value": "#feb2b2",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "dimension.md",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d641",
+                            "~:name": "dimension.md",
+                            "~:type": "~:dimensions",
+                            "~:value": "{dimension.sm} * {dimension.scale}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d642",
+                            "~:name": "colors.gray.600",
+                            "~:type": "~:color",
+                            "~:value": "#718096",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d643",
+                            "~:name": "colors.pink.100",
+                            "~:type": "~:color",
+                            "~:value": "#fff5f7",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d644",
+                            "~:name": "colors.yellow.300",
+                            "~:type": "~:color",
+                            "~:value": "#faf089",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d645",
+                            "~:name": "colors.orange.800",
+                            "~:type": "~:color",
+                            "~:value": "#9c4221",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d646",
+                            "~:name": "colors.indigo.700",
+                            "~:type": "~:color",
+                            "~:value": "#4c51bf",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d647",
+                            "~:name": "colors.yellow.400",
+                            "~:type": "~:color",
+                            "~:value": "#f6e05e",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "opacity.low",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d648",
+                            "~:name": "opacity.low",
+                            "~:type": "~:opacity",
+                            "~:value": "10%",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498283"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d649",
+                            "~:name": "colors.indigo.200",
+                            "~:type": "~:color",
+                            "~:value": "#c3dafe",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d650",
+                            "~:name": "colors.blue.900",
+                            "~:type": "~:color",
+                            "~:value": "#2a4365",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d651",
+                            "~:name": "colors.gray.500",
+                            "~:type": "~:color",
+                            "~:value": "#a0aec0",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d652",
+                            "~:name": "colors.red.400",
+                            "~:type": "~:color",
+                            "~:value": "#fc8181",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d653",
+                            "~:name": "colors.teal.800",
+                            "~:type": "~:color",
+                            "~:value": "#285e61",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d654",
+                            "~:name": "colors.gray.300",
+                            "~:type": "~:color",
+                            "~:value": "#e2e8f0",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d655",
+                            "~:name": "colors.teal.600",
+                            "~:type": "~:color",
+                            "~:value": "#319795",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d656",
+                            "~:name": "colors.red.500",
+                            "~:type": "~:color",
+                            "~:value": "#f56565",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d657",
+                            "~:name": "colors.teal.400",
+                            "~:type": "~:color",
+                            "~:value": "#4fd1c5",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "borderRadius.lg",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d658",
+                            "~:name": "borderRadius.lg",
+                            "~:type": "~:border-radius",
+                            "~:value": "8",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d659",
+                            "~:name": "colors.gray.200",
+                            "~:type": "~:color",
+                            "~:value": "#edf2f7",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d660",
+                            "~:name": "colors.red.900",
+                            "~:type": "~:color",
+                            "~:value": "#742a2a",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d661",
+                            "~:name": "colors.gray.900",
+                            "~:type": "~:color",
+                            "~:value": "#1a202c",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d662",
+                            "~:name": "colors.pink.700",
+                            "~:type": "~:color",
+                            "~:value": "#b83280",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d663",
+                            "~:name": "colors.green.200",
+                            "~:type": "~:color",
+                            "~:value": "#c6f6d5",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d664",
+                            "~:name": "colors.pink.500",
+                            "~:type": "~:color",
+                            "~:value": "#ed64a6",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d665",
+                            "~:name": "colors.yellow.600",
+                            "~:type": "~:color",
+                            "~:value": "#d69e2e",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d666",
+                            "~:name": "colors.orange.700",
+                            "~:type": "~:color",
+                            "~:value": "#c05621",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d667",
+                            "~:name": "colors.teal.100",
+                            "~:type": "~:color",
+                            "~:value": "#e6fffa",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498280"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d668",
+                            "~:name": "colors.gray.800",
+                            "~:type": "~:color",
+                            "~:value": "#2d3748",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d669",
+                            "~:name": "colors.orange.300",
+                            "~:type": "~:color",
+                            "~:value": "#fbd38d",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d670",
+                            "~:name": "colors.orange.100",
+                            "~:type": "~:color",
+                            "~:value": "#fffaf0",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d671",
+                            "~:name": "colors.purple.700",
+                            "~:type": "~:color",
+                            "~:value": "#6b46c1",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "dimension.lg",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d672",
+                            "~:name": "dimension.lg",
+                            "~:type": "~:dimensions",
+                            "~:value": "{dimension.md} * {dimension.scale}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d673",
+                            "~:name": "colors.gray.400",
+                            "~:type": "~:color",
+                            "~:value": "#cbd5e0",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d674",
+                            "~:name": "colors.indigo.100",
+                            "~:type": "~:color",
+                            "~:value": "#ebf4ff",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d675",
+                            "~:name": "colors.green.500",
+                            "~:type": "~:color",
+                            "~:value": "#48bb78",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d676",
+                            "~:name": "colors.pink.300",
+                            "~:type": "~:color",
+                            "~:value": "#fbb6ce",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d677",
+                            "~:name": "colors.pink.900",
+                            "~:type": "~:color",
+                            "~:value": "#702459",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d678",
+                            "~:name": "colors.purple.200",
+                            "~:type": "~:color",
+                            "~:value": "#e9d8fd",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d679",
+                            "~:name": "colors.purple.500",
+                            "~:type": "~:color",
+                            "~:value": "#9f7aea",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d680",
+                            "~:name": "colors.green.700",
+                            "~:type": "~:color",
+                            "~:value": "#2f855a",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d681",
+                            "~:name": "colors.indigo.800",
+                            "~:type": "~:color",
+                            "~:value": "#434190",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d682",
+                            "~:name": "colors.blue.700",
+                            "~:type": "~:color",
+                            "~:value": "#2b6cb0",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "borderRadius.sm",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d683",
+                            "~:name": "borderRadius.sm",
+                            "~:type": "~:border-radius",
+                            "~:value": "4",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.black",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d684",
+                            "~:name": "colors.black",
+                            "~:type": "~:color",
+                            "~:value": "#000000",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "opacity.high",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d685",
+                            "~:name": "opacity.high",
+                            "~:type": "~:opacity",
+                            "~:value": "90%",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498283"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.800",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d686",
+                            "~:name": "colors.blue.800",
+                            "~:type": "~:color",
+                            "~:value": "#2c5282",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d687",
+                            "~:name": "colors.orange.400",
+                            "~:type": "~:color",
+                            "~:value": "#f6ad55",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.pink.200",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d688",
+                            "~:name": "colors.pink.200",
+                            "~:type": "~:color",
+                            "~:value": "#fed7e2",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d689",
+                            "~:name": "colors.gray.100",
+                            "~:type": "~:color",
+                            "~:value": "#f7fafc",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "spacing.xl",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d690",
+                            "~:name": "spacing.xl",
+                            "~:type": "~:spacing",
+                            "~:value": "{dimension.xl}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "dimension.xs",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d691",
+                            "~:name": "dimension.xs",
+                            "~:type": "~:dimensions",
+                            "~:value": "4",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d692",
+                            "~:name": "colors.teal.900",
+                            "~:type": "~:color",
+                            "~:value": "#234e52",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.teal.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d693",
+                            "~:name": "colors.teal.300",
+                            "~:type": "~:color",
+                            "~:value": "#81e6d9",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d694",
+                            "~:name": "colors.blue.500",
+                            "~:type": "~:color",
+                            "~:value": "#4299e1",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "borderRadius.xl",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d695",
+                            "~:name": "borderRadius.xl",
+                            "~:type": "~:border-radius",
+                            "~:value": "16",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.green.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d696",
+                            "~:name": "colors.green.400",
+                            "~:type": "~:color",
+                            "~:value": "#68d391",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.300",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d697",
+                            "~:name": "colors.indigo.300",
+                            "~:type": "~:color",
+                            "~:value": "#a3bffa",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.red.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d698",
+                            "~:name": "colors.red.100",
+                            "~:type": "~:color",
+                            "~:value": "#fff5f5",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.900",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d699",
+                            "~:name": "colors.orange.900",
+                            "~:type": "~:color",
+                            "~:value": "#7b341e",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.purple.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d700",
+                            "~:name": "colors.purple.100",
+                            "~:type": "~:color",
+                            "~:value": "#faf5ff",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "spacing.xs",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d701",
+                            "~:name": "spacing.xs",
+                            "~:type": "~:spacing",
+                            "~:value": "{dimension.xs}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498276"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.indigo.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d702",
+                            "~:name": "colors.indigo.600",
+                            "~:type": "~:color",
+                            "~:value": "#5a67d8",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498282"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.gray.700",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d703",
+                            "~:name": "colors.gray.700",
+                            "~:type": "~:color",
+                            "~:value": "#4a5568",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.400",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d704",
+                            "~:name": "colors.blue.400",
+                            "~:type": "~:color",
+                            "~:value": "#63b3ed",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ],
+                      [
+                        "spacing.sm",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d705",
+                            "~:name": "spacing.sm",
+                            "~:type": "~:spacing",
+                            "~:value": "{dimension.sm}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498277"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.orange.500",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d706",
+                            "~:name": "colors.orange.500",
+                            "~:type": "~:color",
+                            "~:value": "#ed8936",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498278"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.yellow.100",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d707",
+                            "~:name": "colors.yellow.100",
+                            "~:type": "~:color",
+                            "~:value": "#fffff0",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498279"
+                          }
+                        }
+                      ],
+                      [
+                        "colors.blue.600",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d708",
+                            "~:name": "colors.blue.600",
+                            "~:type": "~:color",
+                            "~:value": "#3182ce",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498281"
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            ],
+            [
+              "G-LightDark",
+              {
+                "~#ordered-map": [
+                  [
+                    "S-light",
+                    {
+                      "~#penpot/token-set": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d709",
+                        "~:name": "LightDark/light",
+                        "~:description": "",
+                        "~:modified-at": "~m1737542498290",
+                        "~:tokens": {
+                          "~#ordered-map": [
+                            [
+                              "accent.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d710",
+                                  "~:name": "accent.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.400}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d711",
+                                  "~:name": "bg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.100}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d712",
+                                  "~:name": "bg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.200}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.bg",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d713",
+                                  "~:name": "accent.bg",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.200}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.onAccent",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d714",
+                                  "~:name": "accent.onAccent",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "shadows.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d715",
+                                  "~:name": "shadows.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.900}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d716",
+                                  "~:name": "fg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.700}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498289"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d717",
+                                  "~:name": "fg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.black}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498289"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d718",
+                                  "~:name": "fg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.500}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d719",
+                                  "~:name": "bg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ]
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  [
+                    "S-dark",
+                    {
+                      "~#penpot/token-set": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d720",
+                        "~:name": "LightDark/dark",
+                        "~:description": "",
+                        "~:modified-at": "~m1737542498291",
+                        "~:tokens": {
+                          "~#ordered-map": [
+                            [
+                              "accent.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d721",
+                                  "~:name": "accent.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.600}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d722",
+                                  "~:name": "bg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.700}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d723",
+                                  "~:name": "bg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.600}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.bg",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d724",
+                                  "~:name": "accent.bg",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.800}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.onAccent",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d725",
+                                  "~:name": "accent.onAccent",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "shadows.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d726",
+                                  "~:name": "shadows.default",
+                                  "~:type": "~:color",
+                                  "~:value": "rgba({colors.black}, 0.3)",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d727",
+                                  "~:name": "fg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.300}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d728",
+                                  "~:name": "fg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d729",
+                                  "~:name": "fg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.500}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d730",
+                                  "~:name": "bg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.900}",
+                                  "~:description": "",
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ]
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            ],
+            [
+              "S-theme",
+              {
+                "~#penpot/token-set": {
+                  "~:id": "~u66697432-c33d-8055-8006-2c62de27d731",
+                  "~:name": "theme",
+                  "~:description": "",
+                  "~:modified-at": "~m1737542498292",
+                  "~:tokens": {
+                    "~#ordered-map": [
+                      [
+                        "button.primary.background",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d732",
+                            "~:name": "button.primary.background",
+                            "~:type": "~:color",
+                            "~:value": "{accent.default}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498292"
+                          }
+                        }
+                      ],
+                      [
+                        "button.primary.text",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d733",
+                            "~:name": "button.primary.text",
+                            "~:type": "~:color",
+                            "~:value": "{accent.onAccent}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498292"
+                          }
+                        }
+                      ],
+                      [
+                        "button.borderRadius",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d734",
+                            "~:name": "button.borderRadius",
+                            "~:type": "~:border-radius",
+                            "~:value": "{borderRadius.lg}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498292"
+                          }
+                        }
+                      ],
+                      [
+                        "card.borderRadius",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d735",
+                            "~:name": "card.borderRadius",
+                            "~:type": "~:border-radius",
+                            "~:value": "{borderRadius.lg}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498292"
+                          }
+                        }
+                      ],
+                      [
+                        "card.background",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d736",
+                            "~:name": "card.background",
+                            "~:type": "~:color",
+                            "~:value": "{bg.default}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498292"
+                          }
+                        }
+                      ],
+                      [
+                        "card.padding",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u66697432-c33d-8055-8006-2c62de27d737",
+                            "~:name": "card.padding",
+                            "~:type": "~:dimensions",
+                            "~:value": "{dimension.md}",
+                            "~:description": "",
+                            "~:modified-at": "~m1737542498292"
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "~:themes": {
+          "~#ordered-map": [
+            [
+              "Core",
+              {
+                "~#ordered-map": [
+                  [
+                    "Light",
+                    {
+                      "~#penpot/token-theme": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d738",
+                        "~:name": "Light",
+                        "~:group": "Core",
+                        "~:description": "",
+                        "~:is-source": false,
+                        "~:external-id": "core-light",
+                        "~:modified-at": "~m1737542746842",
+                        "~:sets": {
+                          "~#set": ["LightDark/light", "theme", "core"]
+                        }
+                      }
+                    }
+                  ],
+                  [
+                    "Dark",
+                    {
+                      "~#penpot/token-theme": {
+                        "~:id": "~u66697432-c33d-8055-8006-2c62de27d739",
+                        "~:name": "Dark",
+                        "~:group": "Core",
+                        "~:description": "",
+                        "~:is-source": false,
+                        "~:external-id": "core-dark",
+                        "~:modified-at": "~m1737542746842",
+                        "~:sets": {
+                          "~#set": ["LightDark/dark", "theme", "core"]
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            ],
+            [
+              "",
+              {
+                "~#ordered-map": [
+                  [
+                    "__PENPOT__HIDDEN__TOKEN__THEME__",
+                    {
+                      "~#penpot/token-theme": {
+                        "~:id": "~u00000000-0000-0000-0000-000000000000",
+                        "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
+                        "~:group": "",
+                        "~:description": "",
+                        "~:is-source": false,
+                        "~:external-id": "",
+                        "~:modified-at": "~m1737542683555",
+                        "~:sets": {
+                          "~#set": ["LightDark/light", "theme", "core"]
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            ]
+          ]
+        },
+        "~:active-themes": {
+          "~#set": ["Core/Light"]
+        }
+      }
+    }
+  }
+}

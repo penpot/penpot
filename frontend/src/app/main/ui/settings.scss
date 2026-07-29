@@ -1,0 +1,37 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "common/refactor/common-dashboard";
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.dashboard {
+  background-color: var(--color-background-primary);
+  display: grid;
+  grid-template-rows: $sz-48 1fr;
+  grid-template-columns: $sz-40 px2rem(256) 1fr;
+  block-size: 100vh;
+}
+
+.dashboard-content {
+  @include custom-scrollbar;
+
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  grid-row: 1 / span 2;
+  padding: var(--sp-l) var(--sp-l) 0 0;
+}
+
+.dashboard-container {
+  flex: 1 0 0;
+  margin-inline-end: var(--sp-l);
+  overflow-y: auto;
+  inline-size: 100%;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}

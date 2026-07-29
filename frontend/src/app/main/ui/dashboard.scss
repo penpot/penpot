@@ -1,0 +1,29 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.dashboard {
+  @include custom-scrollbar($include-selection: false, $include-placeholder: false);
+
+  background-color: var(--color-background-primary);
+  display: grid;
+  grid-template-columns: $sz-40 px2rem(256) 1fr;
+  grid-template-rows: px2rem(52) 1fr;
+  block-size: 100vh;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-rows: $sz-64 1fr;
+  position: relative;
+  grid-row: 1 / span 2;
+  padding: var(--sp-l) var(--sp-l) 0 0;
+  overflow: hidden;
+  inline-size: 100%;
+}

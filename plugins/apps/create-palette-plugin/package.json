@@ -1,0 +1,15 @@
+{
+  "name": "create-palette-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --emptyOutDir",
+    "watch": "vite build --watch --mode development",
+    "serve": "vite preview",
+    "init": "concurrently --kill-others --names build,serve \"pnpm run watch\" \"pnpm run serve\"",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
+}

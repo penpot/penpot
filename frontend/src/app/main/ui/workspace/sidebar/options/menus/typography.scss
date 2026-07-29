@@ -1,0 +1,463 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// Must match BOX_HEIGHT in scripts/build-fonts-preview.js (the sprite bakes each
+// font name into that box at 1 unit == 1px).
+$font-preview-box-height: 28px;
+
+.typography-entry {
+  --actions-visibility: hidden;
+  --typography-entry-background-color: var(--color-background-tertiary);
+  --typography-entry-foreground-color: var(--color-foreground-primary);
+  --typography-entry-border-color: transparent;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--typography-entry-background-color);
+  color: var(--typography-entry-foreground-color);
+  border: $b-1 solid var(--typography-entry-border-color);
+
+  &:hover,
+  &:focus-within {
+    --typography-entry-background-color: var(--color-background-quaternary);
+    --typography-entry-foreground-color: var(--color-foreground-primary);
+  }
+
+  &.selected {
+    --typography-entry-border-color: var(--color-accent-primary);
+  }
+
+  &:hover {
+    --typography-entry-background-color: var(--color-background-quaternary);
+
+    .element-set-actions {
+      --actions-visibility: visible;
+    }
+  }
+}
+
+.element-set-actions {
+  display: flex;
+  visibility: var(--actions-visibility);
+}
+
+.font-family-mixed {
+  color: var(--color-foreground-secondary);
+}
+
+.typography-selection-wrapper {
+  display: grid;
+  grid-template-columns: $sz-24 auto 1fr;
+  flex: 1;
+  block-size: 100%;
+  inline-size: 100%;
+  padding-inline-start: var(--sp-m);
+
+  &.is-selectable {
+    cursor: pointer;
+  }
+}
+
+.typography-sample {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-inline-size: $sz-24;
+  block-size: $sz-32;
+  color: var(--color-foreground-secondary);
+}
+
+.typography-name {
+  color: var(--color-foreground-primary);
+}
+
+.font-name-wrapper {
+  --font-name-wrapper-foreground-color: var(--color-foreground-primary);
+  --font-name-wrapper-background-color: var(--color-background-tertiary);
+  --font-name-wrapper-border-color: transparent;
+
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: 100%;
+  border-radius: $br-8;
+  border: $b-1 solid var(--font-name-wrapper-border-color);
+  box-sizing: border-box;
+  background-color: var(--font-name-wrapper-background-color);
+  margin-block-end: var(--sp-s);
+  padding: var(--sp-s) 0 var(--sp-s) var(--sp-m);
+
+  &:focus-within {
+    --font-name-wrapper-border-color: var(--color-accent-primary);
+  }
+
+  &:hover {
+    --font-name-wrapper-background-color: var(--color-background-quaternary);
+  }
+}
+
+.typography-sample-input {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-24;
+  block-size: 100%;
+  font-size: px2rem(16);
+  color: var(--color-foreground-primary);
+}
+
+.adv-typography-name {
+  font-size: px2rem(12);
+  color: var(--font-name-wrapper-foreground-color);
+  flex-grow: 1;
+  padding-inline-start: px2rem(6);
+  margin: 0;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.advanced-options-wrapper {
+  block-size: 100%;
+  inline-size: 100%;
+  background-color: var(--color-background-primary);
+}
+
+.typography-info-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin-block-end: var(--sp-m);
+}
+
+.typography-name-wrapper {
+  @extend %asset-element;
+
+  display: grid;
+  grid-template-columns: $sz-24 auto 1fr $sz-28;
+  flex: 1;
+  block-size: $sz-32;
+  inline-size: 100%;
+  padding: 0 0 0 var(--sp-m);
+  background-color: var(--color-background-quaternary);
+  margin-block-end: var(--sp-xs);
+}
+
+.typography-sample {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-inline-size: $sz-24;
+  font-size: px2rem(16);
+  block-size: $sz-32;
+  padding: 0;
+  color: var(--color-foreground-primary);
+}
+
+.name-block {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  margin: 0;
+  min-inline-size: px2rem(6);
+  padding: 8px 0 8px 6px;
+  max-width: 100%;
+  color: var(--color-foreground-primary);
+}
+
+.typography-name,
+.typography-font {
+  @include t.use-typography("body-small");
+
+  min-inline-size: 0;
+  color: var(--color-foreground-primary);
+}
+
+.typography-font {
+  margin-inline-start: px2rem(6);
+  color: var(--color-foreground-secondary);
+}
+
+.info-row {
+  --calculated-width: calc(var(--right-sidebar-width) - $sz-48);
+
+  display: grid;
+  grid-template-columns: 50% 50%;
+  block-size: $sz-32;
+  padding-left: var(--sp-xs);
+}
+
+.info-label,
+.info-content {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  inline-size: calc(var(--calculated-width) / 2);
+  padding-block-start: var(--sp-s);
+  color: var(--color-foreground-primary);
+}
+
+.text-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  max-inline-size: var(--options-width);
+
+  &:not(.text-options-full-size) {
+    position: relative;
+  }
+}
+
+.font-option {
+  @include t.use-typography("body-small");
+  @extend %asset-element;
+
+  padding: var(--sp-s);
+  cursor: pointer;
+}
+
+.font-option-name {
+  @include text-ellipsis;
+
+  flex-grow: 1;
+  inline-size: 100%;
+}
+
+.font-modifiers {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.font-size-options {
+  @extend %asset-element;
+  @include t.use-typography("body-small");
+
+  flex-grow: 1;
+  inline-size: px2rem(60);
+  margin: 0;
+  padding: 0;
+  border: $b-1 solid var(--color-background-tertiary);
+  position: relative;
+}
+
+.font-variant-options {
+  padding: 0;
+  flex-grow: 2;
+}
+
+.typography-variations {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.spacing-options {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.line-height,
+.letter-spacing {
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  .icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    inline-size: $sz-28;
+
+    svg {
+      @extend %button-icon-small;
+    }
+  }
+}
+
+.text-transform {
+  @extend %asset-element;
+
+  inline-size: fit-content;
+  padding: 0;
+  background-color: var(--color-background-tertiary);
+}
+
+.font-size-select {
+  @include t.use-typography("body-small");
+
+  block-size: 100%;
+  inline-size: 100%;
+  margin: 0;
+  padding: var(--sp-s);
+  border: none;
+  background: none;
+  outline: none;
+
+  .numeric-input {
+    @extend %input-base;
+    @include t.use-typography("body-small");
+
+    padding: 0;
+  }
+}
+
+.font-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: calc(-1 * #{px2rem(18)});
+  left: 0;
+  right: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  z-index: var(--z-index-dropdown);
+}
+
+.fonts-on-modal {
+  top: 0;
+}
+
+.show-recent {
+  border-radius: $br-8 $br-8 0 0;
+  background: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-block-end: none;
+}
+
+.font-selector-dropdown {
+  inline-size: 100%;
+
+  &:not(.font-selector-dropdown-full-size) {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    block-size: 100%;
+  }
+}
+
+.header {
+  display: grid;
+  row-gap: var(--sp-xxs);
+}
+
+.header-title {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+  margin: 0;
+  padding: var(--sp-m);
+}
+
+.font-wrapper {
+  padding-bottom: var(--sp-xs);
+  cursor: pointer;
+}
+
+.font-item {
+  @extend %asset-element;
+
+  margin-bottom: var(--sp-xs);
+  border-radius: $br-8;
+  display: flex;
+
+  &.selected {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.font-item-label {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  flex-grow: 1;
+  min-inline-size: 0;
+}
+
+// --- FLAG :font-preview row styling. Only applied when font-item* adds the
+// .font-item-preview-on modifier; remove this whole block with the flag so rows
+// render exactly as before.
+.font-item-preview-on {
+  // Center & clip so a previewed font's own metrics never grow/overflow the row.
+  align-items: center;
+  overflow: hidden;
+
+  // Match the label size to the vector previews.
+  .font-item-label {
+    @include t.use-typography("body-medium");
+
+    line-height: 1.2;
+  }
+}
+
+// `currentColor` makes the glyph fill follow the row text color (theme + selected).
+.font-item-preview {
+  flex-grow: 1;
+  min-inline-size: 0;
+  inline-size: 100%;
+  block-size: $font-preview-box-height;
+  fill: currentcolor;
+}
+
+.font-selector-dropdown-full-size {
+  block-size: var(--sidebar-element-options-height);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: var(--sp-xxs) var(--sp-m) var(--sp-m) var(--sp-m);
+}
+
+.fonts-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-block-size: 100%;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--sp-xxs);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  overflow: hidden;
+
+  &:not(.fonts-list-full-size) {
+    margin-block-start: var(--sp-xxs);
+  }
+}
+
+.fonts-list-full-size {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border: $b-1 solid var(--color-background-quaternary);
+
+  // TODO: this should belong to typography-entry , but atm we don't have a clear
+  // way of accessing whether we are in fullsize mode or not
+  .selected {
+    padding-inline-end: 0;
+  }
+}
+
+.dropdown-icon {
+  color: var(--color-foreground-secondary);
+}

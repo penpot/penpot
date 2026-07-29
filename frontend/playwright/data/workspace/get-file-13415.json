@@ -1,0 +1,135 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u99e49e93-362f-80ef-8007-3450ea52c9a4",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "BUG 13415",
+    "~:revn": 14,
+    "~:modified-at": "~m1771334256704",
+    "~:vern": 0,
+    "~:id": "~u0472abff-2573-8186-8007-961793e53f45",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content-v2",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content-v2",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0008-fix-library-colors-v4",
+            "0009-clean-library-colors",
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes",
+            "0011-fix-invalid-text-touched-flags",
+            "0012-fix-position-data",
+            "0013-fix-component-path",
+            "0013-clear-invalid-strokes-and-fills",
+            "0014-fix-tokens-lib-duplicate-ids",
+            "0014-clear-components-nil-objects",
+            "0015-fix-text-attrs-blank-strings",
+            "0015-clean-shadow-color",
+            "0016-copy-fills-from-position-data-to-text-node"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~ucd8f7672-e5d1-810f-8007-87e124eda82a",
+    "~:created-at": "~m1771326794644",
+    "~:backend": "legacy-db",
+    "~:data": {
+        "~:pages": [
+            "~u0472abff-2573-8186-8007-961793e53f46"
+        ],
+        "~:pages-index": {
+            "~u0472abff-2573-8186-8007-961793e53f46": {
+                "~:objects": {
+                    "~#penpot/objects-map/v2": {
+                        "~u00000000-0000-0000-0000-000000000000": "[\"~#shape\",[\"^ \",\"~:y\",0,\"~:hide-fill-on-export\",false,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"Root Frame\",\"~:width\",0.01,\"~:type\",\"~:frame\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",0.0,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.01]],[\"^:\",[\"^ \",\"~:x\",0.0,\"~:y\",0.01]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^3\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",0,\"~:proportion\",1.0,\"~:r4\",0,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^6\",0.01,\"~:height\",0.01,\"~:x1\",0,\"~:y1\",0,\"~:x2\",0.01,\"~:y2\",0.01]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#FFFFFF\",\"~:fill-opacity\",1]],\"~:flip-x\",null,\"^H\",0.01,\"~:flip-y\",null,\"~:shapes\",[\"~uaef184da-e9c1-80f8-8007-961cf253d534\"]]]",
+                        "~uaef184da-e9c1-80f8-8007-961cf253d534": "[\"~#shape\",[\"^ \",\"~:y\",286,\"~:layout-grid-columns\",[[\"^ \",\"~:type\",\"~:flex\",\"~:value\",1],[\"^ \",\"^2\",\"^3\",\"^4\",1]],\"~:hide-fill-on-export\",false,\"~:layout-gap-type\",\"~:multiple\",\"~:layout-padding\",[\"^ \",\"~:p1\",0,\"~:p2\",0,\"~:p3\",0,\"~:p4\",0],\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:grow-type\",\"~:fixed\",\"~:layout\",\"~:grid\",\"~:hide-in-viewer\",false,\"~:name\",\"Board\",\"~:layout-align-items\",\"~:start\",\"~:width\",298,\"~:layout-grid-cells\",[\"^ \",\"~uaef184da-e9c1-80f8-8007-961cf50d67b4\",[\"^ \",\"~:justify-self\",\"~:auto\",\"~:column\",1,\"~:id\",\"~uaef184da-e9c1-80f8-8007-961cf50d67b4\",\"~:position\",\"^L\",\"~:column-span\",1,\"~:align-self\",\"^L\",\"~:row\",1,\"~:row-span\",1,\"~:shapes\",[]],\"~uaef184da-e9c1-80f8-8007-961cf50d67b5\",[\"^ \",\"^K\",\"^L\",\"^M\",2,\"^N\",\"~uaef184da-e9c1-80f8-8007-961cf50d67b5\",\"^O\",\"^L\",\"^P\",1,\"^Q\",\"^L\",\"^R\",1,\"^S\",1,\"^T\",[]],\"~uaef184da-e9c1-80f8-8007-961cf50d67b6\",[\"^ \",\"^K\",\"^L\",\"^M\",1,\"^N\",\"~uaef184da-e9c1-80f8-8007-961cf50d67b6\",\"^O\",\"^L\",\"^P\",1,\"^Q\",\"^L\",\"^R\",2,\"^S\",1,\"^T\",[]],\"~uaef184da-e9c1-80f8-8007-961cf50d67b7\",[\"^ \",\"^K\",\"^L\",\"^M\",2,\"^N\",\"~uaef184da-e9c1-80f8-8007-961cf50d67b7\",\"^O\",\"^L\",\"^P\",1,\"^Q\",\"^L\",\"^R\",2,\"^S\",1,\"^T\",[]]],\"~:layout-padding-type\",\"~:simple\",\"^2\",\"~:frame\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",322,\"~:y\",286]],[\"^10\",[\"^ \",\"~:x\",620,\"~:y\",286]],[\"^10\",[\"^ \",\"~:x\",620,\"~:y\",552]],[\"^10\",[\"^ \",\"~:x\",322,\"~:y\",552]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:layout-gap\",[\"^ \",\"~:row-gap\",0,\"~:column-gap\",0],\"~:transform-inverse\",[\"^>\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:layout-justify-content\",\"~:stretch\",\"~:r1\",0,\"^N\",\"~uaef184da-e9c1-80f8-8007-961cf253d534\",\"~:layout-justify-items\",\"^G\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:layout-align-content\",\"^19\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",322,\"~:proportion\",1,\"~:r4\",0,\"~:layout-grid-rows\",[[\"^ \",\"^2\",\"^3\",\"^4\",1],[\"^ \",\"^2\",\"^3\",\"^4\",1]],\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",322,\"~:y\",286,\"^H\",298,\"~:height\",266,\"~:x1\",322,\"~:y1\",286,\"~:x2\",620,\"~:y2\",552]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#FFFFFF\",\"~:fill-opacity\",1]],\"~:layout-grid-dir\",\"^R\",\"~:flip-x\",null,\"^1E\",266,\"~:flip-y\",null,\"^T\",[]]]"
+                    }
+                },
+                "~:id": "~u0472abff-2573-8186-8007-961793e53f46",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u0472abff-2573-8186-8007-961793e53f45",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}

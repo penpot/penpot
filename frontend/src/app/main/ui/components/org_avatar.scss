@@ -1,0 +1,66 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as t;
+@use "ds/colors.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.org-avatar {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.org-avatar-custom {
+  object-fit: cover;
+}
+
+.org-avatar-xxxl {
+  width: px2rem(30);
+  height: px2rem(30);
+  border-radius: px2rem(6);
+}
+
+.org-avatar-xxl {
+  width: var(--sp-xxl);
+  height: var(--sp-xxl);
+  border-radius: px2rem(5);
+}
+
+.org-avatar-xl {
+  width: px2rem(22);
+  height: px2rem(22);
+  border-radius: var(--sp-xs);
+}
+
+.org-avatar-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.org-avatar-initials {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  inset: 0;
+  color: #{$gray-950};
+}
+
+.size-initials-xxl {
+  @include t.use-typography("headline-small");
+
+  font-weight: 600;
+}
+
+.size-initials-xxxl {
+  @include t.use-typography("headline-medium");
+
+  font-weight: 600;
+}

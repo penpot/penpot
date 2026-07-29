@@ -1,0 +1,195 @@
+{
+    "~:id": "~uaa5cc0bb-91ff-81b9-8004-77dfae2d9e7c",
+    "~:file-id": "~uaa5cc0bb-91ff-81b9-8004-77df9cd3edb1",
+    "~:created-at": "~m1717759268004",
+    "~:data": {
+        "~:options": {},
+        "~:objects": {
+            "~u00000000-0000-0000-0000-000000000000": {
+                "~#shape": {
+                    "~:y": 0,
+                    "~:hide-fill-on-export": false,
+                    "~:transform": {
+                        "~#matrix": {
+                            "~:a": 1.0,
+                            "~:b": 0.0,
+                            "~:c": 0.0,
+                            "~:d": 1.0,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:rotation": 0,
+                    "~:name": "Root Frame",
+                    "~:width": 0.01,
+                    "~:type": "~:frame",
+                    "~:points": [
+                        {
+                            "~#point": {
+                                "~:x": 0,
+                                "~:y": 0
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 0.01,
+                                "~:y": 0
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 0.01,
+                                "~:y": 0.01
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 0,
+                                "~:y": 0.01
+                            }
+                        }
+                    ],
+                    "~:proportion-lock": false,
+                    "~:transform-inverse": {
+                        "~#matrix": {
+                            "~:a": 1.0,
+                            "~:b": 0.0,
+                            "~:c": 0.0,
+                            "~:d": 1.0,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:strokes": [],
+                    "~:x": 0,
+                    "~:proportion": 1.0,
+                    "~:selrect": {
+                        "~#rect": {
+                            "~:x": 0,
+                            "~:y": 0,
+                            "~:width": 0.01,
+                            "~:height": 0.01,
+                            "~:x1": 0,
+                            "~:y1": 0,
+                            "~:x2": 0.01,
+                            "~:y2": 0.01
+                        }
+                    },
+                    "~:fills": [
+                        {
+                            "~:fill-color": "#FFFFFF",
+                            "~:fill-opacity": 1
+                        }
+                    ],
+                    "~:flip-x": null,
+                    "~:height": 0.01,
+                    "~:flip-y": null,
+                    "~:shapes": [
+                        "~ubc508673-9e3b-80bf-8004-77dfa30a2b13"
+                    ]
+                }
+            },
+            "~ubc508673-9e3b-80bf-8004-77dfa30a2b13": {
+                "~#shape": {
+                    "~:y": 100,
+                    "~:hide-fill-on-export": false,
+                    "~:transform": {
+                        "~#matrix": {
+                            "~:a": 0.5735764363510460,
+                            "~:b": 0.8191520442889918,
+                            "~:c": -0.8191520442889918,
+                            "~:d": 0.5735764363510460,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:rotation": 55,
+                    "~:grow-type": "~:fixed",
+                    "~:hide-in-viewer": false,
+                    "~:name": "Board",
+                    "~:width": 80,
+                    "~:type": "~:frame",
+                    "~:points": [
+                        {
+                            "~#point": {
+                                "~:x": 166.208,
+                                "~:y": 92.816
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 212.096,
+                                "~:y": 158.352
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 113.792,
+                                "~:y": 227.184
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 67.904,
+                                "~:y": 161.648
+                            }
+                        }
+                    ],
+                    "~:proportion-lock": false,
+                    "~:transform-inverse": {
+                        "~#matrix": {
+                            "~:a": 0.5735764363510460,
+                            "~:b": -0.8191520442889918,
+                            "~:c": 0.8191520442889918,
+                            "~:d": 0.5735764363510460,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:id": "~ubc508673-9e3b-80bf-8004-77dfa30a2b13",
+                    "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:strokes": [
+                        {
+                            "~:stroke-color": "#FF0000",
+                            "~:stroke-opacity": 1,
+                            "~:stroke-style": "~:solid",
+                            "~:stroke-alignment": "~:outer",
+                            "~:stroke-width": 20
+                        }
+                    ],
+                    "~:x": 100,
+                    "~:proportion": 1,
+                    "~:selrect": {
+                        "~#rect": {
+                            "~:x": 100,
+                            "~:y": 100,
+                            "~:width": 80,
+                            "~:height": 120,
+                            "~:x1": 100,
+                            "~:y1": 100,
+                            "~:x2": 180,
+                            "~:y2": 220
+                        }
+                    },
+                    "~:fills": [
+                        {
+                            "~:fill-color": "#FFFFFF",
+                            "~:fill-opacity": 1
+                        }
+                    ],
+                    "~:flip-x": null,
+                    "~:height": 120,
+                    "~:flip-y": null,
+                    "~:shapes": [],
+                    "~:show-content": true
+                }
+            }
+        },
+        "~:id": "~uaa5cc0bb-91ff-81b9-8004-77df9cd3edb2",
+        "~:name": "Page 1"
+    }
+}

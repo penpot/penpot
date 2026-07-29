@@ -1,0 +1,21 @@
+{
+  "Global": {
+    "font-1": {
+      "$value": [
+        "Abel"
+      ],
+      "$type": "fontFamilies",
+      "$description": ""
+    }
+  },
+  "$themes": [],
+  "$metadata": {
+    "tokenSetOrder": [
+      "Global"
+    ],
+    "activeThemes": [],
+    "activeSets": [
+      "Global"
+    ]
+  }
+}

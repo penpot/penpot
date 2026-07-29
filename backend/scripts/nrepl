@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+clojure -J-Xms50m -J-Xmx256m -J-XX:+UseSerialGC -Sdeps '{:deps {reply/reply {:mvn/version "0.5.0"}}}' -M -m reply.main --attach localhost:6064 -e "(in-ns 'app.main)"

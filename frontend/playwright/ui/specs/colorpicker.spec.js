@@ -1,0 +1,364 @@
+import { test, expect } from "@playwright/test";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
+
+test.beforeEach(async ({ page }) => {
+  await WasmWorkspacePage.init(page);
+});
+
+// Fix for https://tree.taiga.io/project/penpot/issue/7549
+test("Bug 7549 - User clicks on color swatch to display the color picker next to it", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.moveButton.click();
+  const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
+  const swatchBox = await swatch.boundingBox();
+  await swatch.click();
+
+  await expect(workspacePage.colorpicker).toBeVisible();
+  const pickerBox = await workspacePage.colorpicker.boundingBox();
+  const distance = swatchBox.x - (pickerBox.x + pickerBox.width);
+  expect(distance).toBeLessThan(60);
+});
+
+test("Bug 10756 - Image fill picker accepts SVG files", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+  await workspacePage.page
+    .getByRole("button", { name: "#B1B2B5" })
+    .click();
+  await workspacePage.page.getByText("Solid").click();
+  await workspacePage.page.getByText("Image").click();
+
+  await expect(workspacePage.page.locator("#fill-image-upload")).toHaveAttribute(
+    "accept",
+    /(?:^|,)image\/svg\+xml(?:,|$)/,
+  );
+});
+
+test("Create a LINEAR gradient", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  await swatch.click();
+
+  const select = workspacePage.page.getByText("Solid");
+  await select.click();
+
+  const gradOption = workspacePage.page.getByText("Gradient");
+  await gradOption.click();
+
+  const addStopBtn = workspacePage.page.getByRole("button", {
+    name: "Add stop",
+  });
+  await addStopBtn.click();
+  await addStopBtn.click();
+  await addStopBtn.click();
+
+  const removeBtn = workspacePage.colorpicker
+    .getByRole("button", { name: "Remove color" })
+    .last();
+  await removeBtn.click();
+  await removeBtn.click();
+
+  const inputColor1 = workspacePage.colorpicker
+    .getByRole("textbox", { name: "Color" })
+    .first();
+  await inputColor1.fill("#fabada");
+
+  const inputOpacity1 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .first();
+  await inputOpacity1.fill("100");
+
+  const inputColor2 = workspacePage.colorpicker
+    .getByRole("textbox", { name: "Color" })
+    .last();
+  await inputColor2.fill("#ff0000");
+
+  const inputOpacity2 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .last();
+  await inputOpacity2.fill("40");
+
+  await expect(workspacePage.page.getByText("Linear gradient")).toBeVisible();
+});
+
+test("Create a RADIAL gradient", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  await swatch.click();
+
+  const select = workspacePage.page.getByText("Solid");
+  await select.click();
+
+  const gradOption = workspacePage.page.getByText("Gradient");
+  await gradOption.click();
+
+  const gradTypeOptions = workspacePage.colorpicker
+    .locator("div")
+    .filter({ hasText: "Linear" })
+    .nth(3);
+  await gradTypeOptions.click();
+
+  const gradRadialOption = workspacePage.page
+    .locator("li")
+    .filter({ hasText: "Radial" });
+  await gradRadialOption.click();
+
+  const addStopBtn = workspacePage.page.getByRole("button", {
+    name: "Add stop",
+  });
+  await addStopBtn.click();
+  await addStopBtn.click();
+  await addStopBtn.click();
+
+  const removeBtn = workspacePage.colorpicker
+    .getByRole("button", { name: "Remove color" })
+    .last();
+  await removeBtn.click();
+  await removeBtn.click();
+
+  const inputColor1 = workspacePage.page
+    .getByRole("textbox", { name: "Color" })
+    .first();
+  await inputColor1.fill("#fabada");
+
+  const inputOpacity1 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .first();
+  await inputOpacity1.fill("100");
+
+  const inputColor2 = workspacePage.page
+    .getByRole("textbox", { name: "Color" })
+    .last();
+  await inputColor2.fill("#ff0000");
+
+  const inputOpacity2 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .last();
+  await inputOpacity2.fill("100");
+
+  await expect(workspacePage.page.getByText("Radial gradient")).toBeVisible();
+});
+
+test("Gradient stops limit", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.mockConfigFlags(["enable-feature-render-wasm"]);
+  await workspacePage.setupEmptyFile(page);
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-fragment-gradient-limits.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
+  });
+
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", {
+    name: "Linear gradient",
+  });
+  await swatch.click();
+
+  await expect(workspacePage.colorpicker).toBeVisible();
+
+  await expect(
+    workspacePage.colorpicker.getByRole("button", { name: "Add stop" }),
+  ).toBeDisabled();
+});
+
+// Fix for https://tree.taiga.io/project/penpot/issue/9900
+test("Bug 9900 - Color picker has no inputs for HSB values", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.moveButton.click();
+  const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
+  await swatch.click();
+
+  const HSBA = await workspacePage.page.getByLabel("HSBA");
+  await HSBA.click();
+
+  await workspacePage.page.getByLabel("H", { exact: true }).isVisible();
+  await workspacePage.page.getByLabel("S", { exact: true }).isVisible();
+  await workspacePage.page.getByLabel("B(V)", { exact: true }).isVisible();
+});
+
+test("Bug 10089 - Cannot change alpha", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  await swatch.click();
+
+  const alpha = workspacePage.page.getByRole("spinbutton", { name: "Alpha" });
+  await expect(alpha).toHaveValue("100");
+
+  const alphaSlider = workspacePage.page.getByTestId("slider-opacity");
+  await alphaSlider.click();
+
+  await expect(alpha).toHaveValue("50");
+});
+
+test("Color picker color list", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  await page.getByRole("tab", { name: "Assets" }).click();
+  await page.getByRole("button", { name: "Add color" }).click();
+
+  const rampSelector = page.getByTestId("value-saturation-selector");
+  await expect(rampSelector).toBeVisible();
+  await rampSelector.click({ position: { x: 50, y: 50 } });
+  await page.getByRole("button", { name: "Save color style" }).click();
+  await page
+    .getByTestId("left-sidebar")
+    .locator('input[type="text"]')
+    .fill("first color");
+  await workspacePage.page.keyboard.press("Enter");
+
+  await page.getByRole("button", { name: "Add color" }).click();
+  await rampSelector.click({ position: { x: 40, y: 40 } });
+  await page.getByRole("button", { name: "Save color style" }).click();
+  await page
+    .getByTestId("left-sidebar")
+    .locator('input[type="text"]')
+    .fill("second color");
+  await workspacePage.page.keyboard.press("Enter");
+
+  await page.getByRole("button", { name: "Add color" }).click();
+  await rampSelector.click({ position: { x: 60, y: 60 } });
+  await page.getByRole("button", { name: "Save color style" }).click();
+  await page
+    .getByTestId("left-sidebar")
+    .locator('input[type="text"]')
+    .fill("third  color");
+  await workspacePage.page.keyboard.press("Enter");
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  await swatch.click();
+
+  const colorpicker = workspacePage.page.getByTestId("colorpicker");
+  await expect(colorpicker).toBeVisible();
+
+  const colorItems = colorpicker.getByRole("listitem");
+
+  const colorButtons = colorItems.getByRole("button");
+  await expect(colorButtons).toHaveCount(3);
+
+  const toggleButton = colorpicker.getByRole("button", { name: "List view" });
+  await toggleButton.click();
+
+  await expect(
+    colorpicker.getByRole("listitem", { name: "#708191" }),
+  ).toBeVisible();
+  await colorpicker
+    .getByRole("combobox")
+    .filter({ hasText: "Recent colors" })
+    .click();
+  await colorpicker.getByRole("option", { name: "File library" }).click();
+
+  await expect(
+    colorpicker.getByRole("listitem", { name: "First color" }),
+  ).toBeVisible();
+
+  //test show and hide color palette
+  const paletteToggle = workspacePage.page.getByRole('button', { name: 'Toggle color palette' });
+  await paletteToggle.click();
+  const paletteBar = workspacePage.page.getByRole('region', { name: 'Palette bar' });
+  await expect(paletteBar).toBeVisible();
+
+  // Check that color palette is open by checking the presence of a color swatch in the palette
+  const paletteSwatch = paletteBar.getByRole('button', { name: 'first color' });
+  await expect(paletteSwatch).toBeVisible();
+
+  // Close the color palette
+  await paletteToggle.click();
+  await expect(paletteSwatch).not.toBeVisible();
+});

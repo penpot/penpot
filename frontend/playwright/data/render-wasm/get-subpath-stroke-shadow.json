@@ -1,0 +1,567 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u6bd7c17d-4f59-815e-8006-5c1f6882469a",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "small_closed_path",
+    "~:revn": 25,
+    "~:modified-at": "~m1758717395171",
+    "~:vern": 0,
+    "~:id": "~u3f7c3cc4-556d-80fa-8006-da2505231c2b",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content-v2",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content-v2",
+            "0004-clean-shadow-color",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-v4",
+            "0009-clean-library-colors",
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes",
+            "0011-fix-invalid-text-touched-flags"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~uf084c276-e46f-8168-8006-ce89321fde44",
+    "~:created-at": "~m1758713852044",
+    "~:data": {
+        "~:pages": [
+            "~u3f7c3cc4-556d-80fa-8006-da2505231c2c"
+        ],
+        "~:pages-index": {
+            "~u3f7c3cc4-556d-80fa-8006-da2505231c2c": {
+                "~:objects": {
+                    "~u00000000-0000-0000-0000-000000000000": {
+                        "~#shape": {
+                            "~:y": 0,
+                            "~:hide-fill-on-export": false,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "Root Frame",
+                            "~:width": 0.01,
+                            "~:type": "~:frame",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 0,
+                                        "~:y": 0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.01
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0,
+                                        "~:y": 0.01
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 0,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 0.01,
+                                    "~:height": 0.01,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 0.01,
+                                    "~:y2": 0.01
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#FFFFFF",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 0.01,
+                            "~:flip-y": null,
+                            "~:shapes": [
+                                "~ue758a369-49fb-801a-8006-da250da25b70"
+                            ]
+                        }
+                    },
+                    "~ue758a369-49fb-801a-8006-da250da25b70": {
+                        "~#shape": {
+                            "~:y": 289.0000254924257,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "test",
+                            "~:width": 1269.396990548183,
+                            "~:type": "~:group",
+                            "~:svg-attrs": {
+                                "~:width": "36.938",
+                                "~:height": "39.605"
+                            },
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 15.99999664735742,
+                                        "~:y": 289.0000254924257
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1285.3969871955405,
+                                        "~:y": 289.0000254924257
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1285.3969871955405,
+                                        "~:y": 1473.2282874172934
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 15.99999664735742,
+                                        "~:y": 1473.2282874172934
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~ue758a369-49fb-801a-8006-da250da25b70",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 15.99999664735742,
+                            "~:proportion": 1,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 15.99999664735742,
+                                    "~:y": 289.0000254924257,
+                                    "~:width": 1269.396990548183,
+                                    "~:height": 1184.2282619248676,
+                                    "~:x1": 15.99999664735742,
+                                    "~:y1": 289.0000254924257,
+                                    "~:x2": 1285.3969871955405,
+                                    "~:y2": 1473.2282874172934
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": false,
+                            "~:height": 1184.2282619248676,
+                            "~:flip-y": false,
+                            "~:shapes": [
+                                "~ue758a369-49fb-801a-8006-da250da460cc",
+                                "~ue758a369-49fb-801a-8006-da250da8073d"
+                            ]
+                        }
+                    },
+                    "~ue758a369-49fb-801a-8006-da250da460cc": {
+                        "~#shape": {
+                            "~:y": 289.00001521099387,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "base-background",
+                            "~:width": 1269.3871566880562,
+                            "~:type": "~:rect",
+                            "~:svg-attrs": {
+                                "~:fill": "none",
+                                "~:id": "base-background"
+                            },
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 15.99999664735742,
+                                        "~:y": 289.000015210994
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1285.3871533354136,
+                                        "~:y": 289.000015210994
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1285.3871533354136,
+                                        "~:y": 1473.2279626015984
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 15.99999664735742,
+                                        "~:y": 1473.2279626015984
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:hidden": true,
+                            "~:id": "~ue758a369-49fb-801a-8006-da250da460cc",
+                            "~:parent-id": "~ue758a369-49fb-801a-8006-da250da25b70",
+                            "~:svg-viewbox": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 9.773,
+                                    "~:height": 10.479,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 9.773,
+                                    "~:y2": 10.479
+                                }
+                            },
+                            "~:svg-defs": {},
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#cd0e8f",
+                                    "~:stroke-opacity": 1
+                                },
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#0c31e0",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 15.99999664735742,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 15.99999664735742,
+                                    "~:y": 289.00001521099387,
+                                    "~:width": 1269.3871566880562,
+                                    "~:height": 1184.2279473906046,
+                                    "~:x1": 15.99999664735742,
+                                    "~:y1": 289.00001521099387,
+                                    "~:x2": 1285.3871533354136,
+                                    "~:y2": 1473.2279626015984
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#5dde7f",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 1184.2279473906046,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~ue758a369-49fb-801a-8006-da250da8073d": {
+                        "~#shape": {
+                            "~:y": null,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:content": {
+                                "~#penpot/path-data": "~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"
+                            },
+                            "~:name": "svg-path",
+                            "~:width": null,
+                            "~:type": "~:path",
+                            "~:svg-attrs": {
+                                "~:style": {
+                                    "~:strokeWidth": "0.296442"
+                                }
+                            },
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 16.000007651096666,
+                                        "~:y": 289.0000106633722
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1285.3965909402777,
+                                        "~:y": 289.0000106633722
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1285.3965909402777,
+                                        "~:y": 1473.196270402294
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 16.000007651096666,
+                                        "~:y": 1473.196270402294
+                                    }
+                                }
+                            ],
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:svg-transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": -83.989157,
+                                    "~:f": -73.223098
+                                }
+                            },
+                            "~:id": "~ue758a369-49fb-801a-8006-da250da8073d",
+                            "~:parent-id": "~ue758a369-49fb-801a-8006-da250da25b70",
+                            "~:svg-viewbox": {
+                                "~#rect": {
+                                    "~:x": 0.000003135483506132297,
+                                    "~:y": -0.0000027832518292754405,
+                                    "~:width": 9.773072575314877,
+                                    "~:height": 10.478719602207821,
+                                    "~:x1": 0.000003135483506132297,
+                                    "~:y1": -0.0000027832518292754405,
+                                    "~:x2": 9.773075710798384,
+                                    "~:y2": 10.478716818955991
+                                }
+                            },
+                            "~:svg-defs": {},
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#cd0e8f",
+                                    "~:stroke-opacity": 1
+                                },
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:inner",
+                                    "~:stroke-width": 10,
+                                    "~:stroke-color": "#0c31e0",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": null,
+                            "~:proportion": 1,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 20,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 4,
+                                    "~:hidden": false,
+                                    "~:id": "~u055fbfc6-9f69-80cb-8006-da327c4b1584",
+                                    "~:offset-x": 20
+                                }
+                            ],
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 16.00000765109678,
+                                    "~:y": 289.0000106633721,
+                                    "~:width": 1269.3965832891809,
+                                    "~:height": 1184.196259738922,
+                                    "~:x1": 16.00000765109678,
+                                    "~:y1": 289.0000106633721,
+                                    "~:x2": 1285.3965909402777,
+                                    "~:y2": 1473.196270402294
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#5dde7f",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": null,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                "~:id": "~u3f7c3cc4-556d-80fa-8006-da2505231c2c",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u3f7c3cc4-556d-80fa-8006-da2505231c2b",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}

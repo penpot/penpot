@@ -1,0 +1,17 @@
+diff --git a/lib/zip-core-base.js b/lib/zip-core-base.js
+index 142155c8c3ab1a6caa7c370e8a2931a954556ca9..61b0fe6efb91312f437750e0002218f218afad8b 100644
+--- a/lib/zip-core-base.js
++++ b/lib/zip-core-base.js
+@@ -28,12 +28,6 @@
+ 
+ import { configure } from "./core/configuration.js";
+ 
+-try {
+-	configure({ baseURI: import.meta.url });
+-} catch {
+-	// ignored
+-}
+-
+ export * from "./zip-core-reader.js";
+ export * from "./zip-core-writer.js";
+ export {

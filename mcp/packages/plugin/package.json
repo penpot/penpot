@@ -1,0 +1,24 @@
+{
+  "name": "mcp-plugin",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "vite build --watch --config vite.config.ts",
+    "start:multi-user": "pnpm run start",
+    "build": "tsc && vite build --config vite.release.config.ts",
+    "test": "node --experimental-strip-types --test src/*.test.ts",
+    "types:check": "tsc --noEmit",
+    "clean": "rm -rf dist/"
+  },
+  "dependencies": {
+    "@penpot/plugin-styles": "1.5.0",
+    "@penpot/plugin-types": "1.5.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.1",
+    "vite-live-preview": "^0.4.0"
+  }
+}

@@ -1,0 +1,67 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.shortcuts {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+
+  // TODO: Fix this once we start implementing the DS.
+  //       We should not be doing these hardcoded calc's.
+  block-size: calc(100vh - #{px2rem(60)});
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  margin: var(--sp-l) var(--sp-m) var(--sp-xs) var(--sp-m);
+
+  // The search bar should fill available space; the reset-all button sits at the end
+  & > :first-child {
+    flex: 1;
+    min-inline-size: 0;
+  }
+}
+
+.shortcuts-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
+}
+
+.shortcuts-list {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  padding: var(--sp-m);
+  overflow-y: auto;
+  color: var(--color-foreground-secondary);
+  min-block-size: px2rem(250);
+}
+
+.not-found {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  margin: var(--sp-m);
+}
+
+.edit-shortcuts-button {
+  @include t.use-typography("headline-small");
+
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  justify-content: center;
+}

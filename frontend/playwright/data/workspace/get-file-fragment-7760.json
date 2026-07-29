@@ -1,0 +1,386 @@
+{
+  "~:id": "~ucd90e028-326a-80b4-8004-7cdeefa23ece",
+  "~:file-id": "~ucd90e028-326a-80b4-8004-7cdec16ffad5",
+  "~:created-at": "~m1718094617214",
+  "~:data": {
+    "~:options": {},
+    "~:objects": {
+      "~u00000000-0000-0000-0000-000000000000": {
+        "~#shape": {
+          "~:y": 0,
+          "~:hide-fill-on-export": false,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:name": "Root Frame",
+          "~:width": 0.01,
+          "~:type": "~:frame",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 0,
+                "~:y": 0
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.01,
+                "~:y": 0
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.01,
+                "~:y": 0.01
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0,
+                "~:y": 0.01
+              }
+            }
+          ],
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:id": "~u00000000-0000-0000-0000-000000000000",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 0,
+          "~:proportion": 1.0,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 0,
+              "~:y": 0,
+              "~:width": 0.01,
+              "~:height": 0.01,
+              "~:x1": 0,
+              "~:y1": 0,
+              "~:x2": 0.01,
+              "~:y2": 0.01
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#FFFFFF",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 0.01,
+          "~:flip-y": null,
+          "~:shapes": [
+            "~u86087f92-9a17-8067-8004-7cdec45bee43",
+            "~u86087f92-9a17-8067-8004-7cded1cbe70e"
+          ]
+        }
+      },
+      "~u86087f92-9a17-8067-8004-7cdec45bee43": {
+        "~#shape": {
+          "~:y": 341,
+          "~:hide-fill-on-export": false,
+          "~:layout-gap-type": "~:multiple",
+          "~:layout-padding": {
+            "~:p1": 34,
+            "~:p2": 36,
+            "~:p3": 34,
+            "~:p4": 36
+          },
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:layout-wrap-type": "~:nowrap",
+          "~:grow-type": "~:fixed",
+          "~:layout": "~:flex",
+          "~:hide-in-viewer": false,
+          "~:name": "Flex Board",
+          "~:layout-align-items": "~:start",
+          "~:width": 176,
+          "~:layout-padding-type": "~:simple",
+          "~:type": "~:frame",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 217,
+                "~:y": 341
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 393,
+                "~:y": 341
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 393,
+                "~:y": 511
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 217,
+                "~:y": 511
+              }
+            }
+          ],
+          "~:layout-item-h-sizing": "~:auto",
+          "~:proportion-lock": false,
+          "~:layout-gap": {
+            "~:row-gap": 0,
+            "~:column-gap": 0
+          },
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:layout-item-v-sizing": "~:auto",
+          "~:layout-justify-content": "~:start",
+          "~:id": "~u86087f92-9a17-8067-8004-7cdec45bee43",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:layout-flex-dir": "~:row",
+          "~:layout-align-content": "~:stretch",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 217,
+          "~:proportion": 1,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 217,
+              "~:y": 341,
+              "~:width": 176,
+              "~:height": 170,
+              "~:x1": 217,
+              "~:y1": 341,
+              "~:x2": 393,
+              "~:y2": 511
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#FFFFFF",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 170,
+          "~:flip-y": null,
+          "~:shapes": [
+            "~u86087f92-9a17-8067-8004-7cdec98dfa7f"
+          ]
+        }
+      },
+      "~u86087f92-9a17-8067-8004-7cdec98dfa7f": {
+        "~#shape": {
+          "~:y": 375,
+          "~:r1": 0,
+          "~:r2": 0,
+          "~:r3": 0,
+          "~:r4": 0,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:grow-type": "~:fixed",
+          "~:hide-in-viewer": false,
+          "~:name": "Rectangle",
+          "~:width": 104,
+          "~:type": "~:rect",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 253,
+                "~:y": 375
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 357,
+                "~:y": 375
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 357,
+                "~:y": 477
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 253,
+                "~:y": 477
+              }
+            }
+          ],
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:id": "~u86087f92-9a17-8067-8004-7cdec98dfa7f",
+          "~:parent-id": "~u86087f92-9a17-8067-8004-7cdec45bee43",
+          "~:frame-id": "~u86087f92-9a17-8067-8004-7cdec45bee43",
+          "~:strokes": [],
+          "~:x": 253,
+          "~:proportion": 1,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 253,
+              "~:y": 375,
+              "~:width": 104,
+              "~:height": 102,
+              "~:x1": 253,
+              "~:y1": 375,
+              "~:x2": 357,
+              "~:y2": 477
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#B1B2B5",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:ry": 0,
+          "~:height": 102,
+          "~:flip-y": null
+        }
+      },
+      "~u86087f92-9a17-8067-8004-7cded1cbe70e": {
+        "~#shape": {
+          "~:y": 300,
+          "~:hide-fill-on-export": false,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:grow-type": "~:fixed",
+          "~:hide-in-viewer": false,
+          "~:name": "Container Board",
+          "~:width": 434,
+          "~:type": "~:frame",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 689,
+                "~:y": 300
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 1123,
+                "~:y": 300
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 1123,
+                "~:y": 741
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 689,
+                "~:y": 741
+              }
+            }
+          ],
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:id": "~u86087f92-9a17-8067-8004-7cded1cbe70e",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 689,
+          "~:proportion": 1,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 689,
+              "~:y": 300,
+              "~:width": 434,
+              "~:height": 441,
+              "~:x1": 689,
+              "~:y1": 300,
+              "~:x2": 1123,
+              "~:y2": 741
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#FFFFFF",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 441,
+          "~:flip-y": null,
+          "~:shapes": []
+        }
+      }
+    },
+    "~:id": "~ucd90e028-326a-80b4-8004-7cdec16ffad6",
+    "~:name": "Page 1"
+  }
+}
