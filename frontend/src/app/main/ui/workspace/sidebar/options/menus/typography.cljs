@@ -332,12 +332,19 @@
          (fn [new-font-id]
            (let [{:keys [family] :as font} (get fonts new-font-id)
                  {:keys [id name weight style]} (fonts/get-default-variant font)]
-             (on-change {:font-id new-font-id
-                         :font-family family
-                         :font-variant-id (or id name)
-                         :font-weight weight
-                         :font-style style})
-             (mf/set-ref-val! last-font font))))
+             ;; Guard against a font that is not present in fontsdb (unloaded
+             ;; custom font, deleted font, shared library not yet resolved).
+             ;; Without it `family`/`weight`/`style` come back nil and get written
+             ;; onto the text spans, producing content that fails the backend
+             ;; `validate-shape` schema (`:font-family`/`:font-weight`/`:font-style`
+             ;; must be non-blank strings when present).
+             (when (and (some? font) (some? family))
+               (on-change {:font-id new-font-id
+                           :font-family family
+                           :font-variant-id (or id name)
+                           :font-weight weight
+                           :font-style style})
+               (mf/set-ref-val! last-font font)))))
 
         on-font-size-change
         (mf/use-fn

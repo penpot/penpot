@@ -708,7 +708,13 @@
 (defn apply-styles-to-selection
   [attrs use-shape-fn set-shape-text-content-fn]
   (when (wasm/ready?)
-    (let [shape-id  (text-editor-get-active-shape-id)
+    (let [;; Drop nil-valued attrs so they are never merged onto text spans.
+          ;; The DOM editor path strips these in `attrs->styles`; the WASM merge
+          ;; here (`apply-attrs-to-paragraph`) does not, so an unresolved attr
+          ;; (e.g. nil :font-family/:font-weight/:font-style from an unloaded
+          ;; font) would corrupt the span and fail the backend schema.
+          attrs     (into {} (remove (comp nil? val)) attrs)
+          shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
 
       (when (and shape-id selection)
