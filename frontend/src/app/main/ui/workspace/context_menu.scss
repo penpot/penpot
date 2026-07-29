@@ -5,12 +5,13 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/z-index.scss" as *;
 
 .workspace-context-menu {
   position: absolute;
   top: deprecated.$s-40;
   left: deprecated.$s-736;
-  z-index: deprecated.$z-index-4;
+  z-index: var(--z-index-dropdown);
 }
 
 .context-list,
