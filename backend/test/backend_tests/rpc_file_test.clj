@@ -141,6 +141,31 @@
         (let [result (:result out)]
           (t/is (= 0 (count result))))))))
 
+(t/deftest create-file-with-duplicate-id
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)]
+
+    (t/testing "create file with specific id"
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "first-file"}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "create file with duplicate id returns normalized error"
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "duplicate-file"}
+            out  (th/command! data)
+            err  (:error out)]
+        (t/is (th/ex-info? err))
+        (t/is (th/ex-of-type? err :not-found))))))
+
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
