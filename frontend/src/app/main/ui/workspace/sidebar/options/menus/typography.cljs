@@ -178,15 +178,24 @@
         flist        (mf/use-ref)
         input        (mf/use-ref)
 
-        fonts        (mf/deref fonts/fonts)
-        fonts        (mf/with-memo [state fonts]
-                       (filter-fonts state fonts))
+        all-fonts    (mf/deref fonts/fonts)
+        fonts        (mf/with-memo [state all-fonts]
+                       (filter-fonts state all-fonts))
+
+        ;; Ids currently installed in fontsdb. Recent fonts that are no longer
+        ;; available (deleted, or belonging to another team) must be hidden:
+        ;; selecting one applies a missing/nil font-family and corrupts the
+        ;; text content (fails the backend `validate-shape` schema).
+        installed-ids (mf/with-memo [all-fonts]
+                        (into #{} (map :id) all-fonts))
 
         sprite-status (:status (mf/deref fonts/preview-sprite))
 
         recent-fonts (mf/deref refs/recent-fonts)
-        recent-fonts (mf/with-memo [state recent-fonts]
-                       (filter-fonts state recent-fonts))
+        recent-fonts (mf/with-memo [state recent-fonts installed-ids]
+                       (->> recent-fonts
+                            (filter #(contains? installed-ids (:id %)))
+                            (filter-fonts state)))
 
 
         full-size?   (boolean (and full-size show-recent))

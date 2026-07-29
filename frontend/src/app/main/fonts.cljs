@@ -73,6 +73,25 @@
 (defn get-font-data [id]
   (get @fontsdb id))
 
+(defn installed?
+  "True when a font with `font-id` is currently registered in `fontsdb`."
+  [font-id]
+  (contains? @fontsdb font-id))
+
+(defn valid-default-font
+  "Return the remembered default-font attrs only when its font is still
+  installed in `fontsdb`; otherwise nil, so callers fall back to the built-in
+  default text attrs (Source Sans Pro).
+
+  A new text shape inherits the last-used font (`[:workspace-global
+  :default-font]`). If that font is gone (deleted, unavailable in the current
+  team, or never resolved), its attrs carry a missing/nil font-family, which
+  produces content that fails the backend `validate-shape` schema."
+  [default-font]
+  (when (and (some? default-font)
+             (installed? (:font-id default-font)))
+    default-font))
+
 (defn find-font-data [data]
   (d/seek
    (fn [font]

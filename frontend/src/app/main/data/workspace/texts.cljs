@@ -321,7 +321,8 @@
     (update [_ state]
       (let [text-state   (some->> content ted/import-content)
             attrs        (merge (txt/get-default-text-attrs)
-                                (get-in state [:workspace-global :default-font]))
+                                (fonts/valid-default-font
+                                 (get-in state [:workspace-global :default-font])))
             editor       (cond-> (ted/create-editor-state text-state decorator)
                            (and (nil? content) (some? attrs))
                            (ted/update-editor-current-block-data attrs))]
@@ -1149,7 +1150,8 @@
       ;; Avoid swapping the global store when the computed styles are unchanged,
       ;; otherwise we can end up in store->rerender->selectionchange loops.
       (let [merged-styles (merge (txt/get-default-text-attrs)
-                                 (get-in state [:workspace-global :default-font])
+                                 (fonts/valid-default-font
+                                  (get-in state [:workspace-global :default-font]))
                                  new-styles)
             prev (get-in state [:workspace-v2-editor-state id])]
         (if (= merged-styles prev)
