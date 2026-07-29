@@ -158,6 +158,7 @@
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
@@ -184,6 +185,7 @@
    :ungroup              {:tooltip (ds/shift "G")
                           :command "shift+g"
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/ungroup-selected))}
 
    :mask                 {:tooltip (ds/meta "M")
@@ -356,11 +358,13 @@
    :draw-line            {:tooltip "L"
                           :command "l"
                           :subsections [:tools]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :line))}
 
    :draw-arrow           {:tooltip (ds/shift "L")
                           :command "shift+l"
                           :subsections [:tools]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :arrow))}
 
    :draw-curve           {:tooltip (ds/shift "C")
