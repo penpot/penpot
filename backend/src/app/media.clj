@@ -124,6 +124,47 @@
     (dm/with-open [istream (IOUtils/toInputStream ^String text "UTF-8")]
       (xml/parse istream secure-parser-factory))))
 
+(defn- sanitize-svg-element
+  "Recursively sanitize an SVG element by removing dangerous tags and attributes."
+  [{:keys [tag attrs content] :as element}]
+  (when (and (map? element) tag)
+    (let [dangerous-tags #{:script :foreignObject}
+          dangerous-attrs-pattern #"(?i)^(on\w+|xmlns:.*)$"
+          javascript-href-pattern #"(?i)^javascript:"]
+      (when-not (contains? dangerous-tags tag)
+        (let [clean-attrs (->> attrs
+                               (remove (fn [[k v]]
+                                         (or (re-matches dangerous-attrs-pattern (name k))
+                                             (and (#{:href :xlink:href} k)
+                                                  (string? v)
+                                                  (re-find javascript-href-pattern v)))))
+                               (into {}))
+              clean-content (when content
+                              (->> content
+                                   (filter #(or (string? %) (map? %)))
+                                   (map (fn [child]
+                                          (if (map? child)
+                                            (sanitize-svg-element child)
+                                            child)))
+                                   (filter some?)
+                                   vec))]
+          (cond-> {:tag tag :attrs clean-attrs}
+            (seq clean-content) (assoc :content clean-content)))))))
+
+(defn sanitize-svg
+  "Sanitize SVG content by removing dangerous elements and attributes.
+   Removes <script> tags, <foreignObject> elements, event handlers (on*),
+   and javascript: URLs from href attributes."
+  [svg-text]
+  (try
+    (let [parsed (parse-svg svg-text)
+          sanitized (sanitize-svg-element parsed)]
+      (if sanitized
+        (with-out-str (xml/emit sanitized))
+        svg-text))
+    (catch Exception _
+      svg-text)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE THUMBNAILS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

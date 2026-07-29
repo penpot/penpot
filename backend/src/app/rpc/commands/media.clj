@@ -24,6 +24,7 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
+   [datoteka.fs :as fs]
    [datoteka.io :as io])
   (:import
    java.io.OutputStream))
@@ -125,13 +126,22 @@
 
 (defn- process-main-image
   [info]
-  (let [hash (sto/calculate-hash (:path info))
-        data (-> (sto/content (:path info))
+  (let [path (:path info)
+        mtype (:mtype info)
+        path (if (= mtype "image/svg+xml")
+               (let [content (slurp path)
+                     sanitized (media/sanitize-svg content)
+                     temp-path (fs/create-tempfile :prefix "penpot-svg-" :suffix ".svg")]
+                 (spit (str temp-path) sanitized)
+                 temp-path)
+               path)
+        hash (sto/calculate-hash path)
+        data (-> (sto/content path)
                  (sto/wrap-with-hash hash))]
     {::sto/content data
      ::sto/deduplicate? true
      ::sto/touched-at (:ts info)
-     :content-type (:mtype info)
+     :content-type mtype
      :bucket "file-media-object"}))
 
 (defn- process-thumb-image
