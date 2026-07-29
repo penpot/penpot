@@ -1347,10 +1347,15 @@
     (or (:panning local) (:zooming local))))
 
 (defn finalize-view-interaction!
-  "Ends the view interaction and triggers a full-quality render."
+  "Ends an in-progress pan/zoom view interaction and triggers a full-quality
+   render. No-ops when no view interaction is active.
+
+   `finish-panning` runs on every pointerup, so without this guard we would
+   call `internal-render` (and WASM `reset_canvas`) on plain clicks."
   []
-  (view-interaction-end!)
-  (internal-render 0 0))
+  (when @view-interaction-active?
+    (view-interaction-end!)
+    (internal-render 0 0)))
 
 (def render-finish
   (letfn [(do-render []
