@@ -189,9 +189,6 @@
         all-shortcuts           (into {} (filter (fn [[_ v]] (section-has-content? v)) all-shortcuts))
         filtered-shortcuts      (filter-shortcuts-tree all-shortcuts shortcut-filter filter-term)
 
-        expanded?*       (mf/use-state false)
-        expanded?        (deref expanded?*)
-
         expand-all-sections
         (fn []
           (let [all-ids (collect-open-section-ids filtered-shortcuts)]
@@ -236,11 +233,10 @@
           empty-str)]
 
     (mf/with-effect [filtered-shortcuts filter-term expand-all-by-default]
-      (when (and expand-all-by-default (str/blank? filter-term) (not expanded?))
+      (when (and expand-all-by-default (str/blank? filter-term))
         (let [all-ids (collect-open-section-ids filtered-shortcuts)]
           (when (seq all-ids)
-            (update-open-sections (vec all-ids))
-            (reset! expanded?* true)))))
+            (update-open-sections (vec all-ids))))))
 
     [:div {:class (stl/css :shortcuts-section)}
      [:> search-section* {:filter-term filter-term
