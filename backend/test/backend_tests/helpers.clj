@@ -189,7 +189,7 @@
    (let [params (merge {:id (mk-uuid "profile" i)
                         :fullname (str "Profile " i)
                         :email (str "profile" i ".test@nodomain.com")
-                        :password "123123"
+                        :password "Test123!"
                         :is-demo false}
                        params)]
      (db/run! system
