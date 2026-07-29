@@ -9686,6 +9686,10 @@ msgstr "Paddings"
 msgid "workspace.tokens.radius"
 msgstr "Radius"
 
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:287
+msgid "workspace.tokens.stroke-width"
+msgstr "Stroke Width"
+
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
 msgstr "Reference in {%s} is not valid or is not in any active set."

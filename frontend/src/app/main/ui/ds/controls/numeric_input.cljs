@@ -145,7 +145,7 @@
    [:step {:optional true} [:maybe [:or :int :float]]]
    [:is-selected-on-focus {:optional true} :boolean]
    [:nillable {:optional true} :boolean]
-   [:applied-token {:optional true} [:maybe [:or :string [:= :multiple]]]]
+   [:applied-token-name {:optional true} [:maybe [:or :string [:= :multiple]]]]
    [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]
    [:on-change-start {:optional true} fn?]

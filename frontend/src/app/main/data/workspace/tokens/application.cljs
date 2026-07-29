@@ -102,19 +102,56 @@
                                   :no-wasm? true})))))))
 
 (defn update-stroke-width
-  ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids attributes]
+   (update-stroke-width value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
    (when (number? value)
      (dwsh/update-shapes shape-ids
                          (fn [shape]
                            (if (seq (:strokes shape))
-                             (assoc-in shape [:strokes 0 :stroke-width] value)
-                             (let [stroke (assoc cts/default-stroke :stroke-width value)]
+                             (let [stroke (get-in shape [:strokes 0])]
+                               (assoc-in shape [:strokes 0]
+                                        (merge stroke
+                                               {:stroke-width value
+                                                :stroke-width-top value
+                                                :stroke-width-right value
+                                                :stroke-width-bottom value
+                                                :stroke-width-left value})))
+                             (let [stroke (assoc cts/default-stroke
+                                                 :stroke-width value
+                                                 :stroke-width-top value
+                                                 :stroke-width-right value
+                                                 :stroke-width-bottom value
+                                                 :stroke-width-left value)]
                                (assoc shape :strokes [stroke]))))
                          {:reg-objects? true
                           :ignore-touched true
                           :page-id page-id
                           :attrs [:strokes]}))))
+
+(defn update-stroke-width-side
+  ([value shape-ids attributes]
+   (update-stroke-width-side value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (when (number? value)
+     (let [attrs (into {} (map (fn [attr] [attr value]) attributes))]
+       (dwsh/update-shapes shape-ids
+                           (fn [shape]
+                             (if (seq (:strokes shape))
+                               (let [attrs (if (contains? attributes :stroke-width-top)
+                                             (assoc attrs :stroke-width value)
+                                             attrs)]
+                                 (update-in shape [:strokes 0] merge attrs))
+                               (let [default-attrs (reduce
+                                                    (fn [acc attr]
+                                                      (assoc acc attr value))
+                                                    {:stroke-width value}
+                                                    (disj attributes :stroke-width))]
+                                 (assoc shape :strokes [(merge cts/default-stroke default-attrs)]))))
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs [:strokes]})))))
 
 (defn update-color [f value shape-ids page-id]
   (when-let [tc (tinycolor/valid-color value)]
@@ -539,10 +576,10 @@
               (set (filter attributes #{:r1 :r2 :r3 :r4}))
               page-id)))
 
-    (some attributes #{:stroke-width})
-    (conj #(update-stroke-width
+    (some attributes ctt/stroke-width-keys)
+    (conj #(update-stroke-width-side
             value shape-ids
-            #{:stroke-width}
+            (set/intersection attributes ctt/stroke-width-keys)
             page-id))
 
     (some attributes #{:max-width :max-height :layout-item-max-h :layout-item-max-w :layout-item-min-h :layout-item-min-w})
@@ -615,9 +652,9 @@
   "Maps each attribute-set to the update function that applies it to a shape.
   Used both here (to resolve the correct update fn when explicit attrs are
   passed to toggle-token) and in propagation.cljs (re-exported from there)."
-  {ctt/border-radius-keys  update-shape-radius-for-corners
-   ctt/color-keys          update-fill-stroke
-   ctt/stroke-width-keys   update-stroke-width
+   {ctt/border-radius-keys  update-shape-radius-for-corners
+    ctt/color-keys          update-fill-stroke
+    ctt/stroke-width-keys   update-stroke-width-side
    ctt/sizing-keys         apply-dimensions-token
    ctt/opacity-keys        update-opacity
    ctt/rotation-keys       update-rotation
@@ -1006,6 +1043,7 @@
    {:title "Stroke Width"
     :attributes ctt/stroke-width-keys
     :on-update-shape update-stroke-width
+    :on-update-shape-side update-stroke-width-side
     :modal {:key :tokens/stroke-width
             :fields [{:label "Stroke Width"
                       :key :stroke-width}]}}

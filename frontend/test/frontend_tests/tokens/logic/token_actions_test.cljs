@@ -508,9 +508,9 @@
             rect-with-stroke (cths/get-shape file :rect-1)
             rect-without-stroke (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
-                                       :attributes #{:stroke-width}
-                                       :token (toht/get-token file "stroke-width.sm")
-                                       :on-update-shape dwta/update-stroke-width})]]
+                                        :attributes #{:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left}
+                                        :token (toht/get-token file "stroke-width.sm")
+                                        :on-update-shape dwta/update-stroke-width-side})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -518,12 +518,18 @@
                  token-target' (toht/get-token file' "stroke-width.sm")
                  rect-with-stroke' (cths/get-shape file' :rect-1)
                  rect-without-stroke' (cths/get-shape file' :rect-2)]
-             (t/testing "token got applied to rect with stroke and shape stroke got updated"
-               (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (:name token-target')))
-               (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
-             (t/testing "token got applied to rect without stroke and shape stroke got updated"
-               (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
-               (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
+              (t/testing "token got applied to rect with stroke and shape stroke got updated"
+                (t/is (= (:stroke-width-top (:applied-tokens rect-with-stroke')) (:name token-target')))
+                (t/is (= (:stroke-width-right (:applied-tokens rect-with-stroke')) (:name token-target')))
+                (t/is (= (:stroke-width-bottom (:applied-tokens rect-with-stroke')) (:name token-target')))
+                (t/is (= (:stroke-width-left (:applied-tokens rect-with-stroke')) (:name token-target')))
+                (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
+              (t/testing "token got applied to rect without stroke and shape stroke got updated"
+                (t/is (= (:stroke-width-top (:applied-tokens rect-without-stroke')) (:name token-target')))
+                (t/is (= (:stroke-width-right (:applied-tokens rect-without-stroke')) (:name token-target')))
+                (t/is (= (:stroke-width-bottom (:applied-tokens rect-without-stroke')) (:name token-target')))
+                (t/is (= (:stroke-width-left (:applied-tokens rect-without-stroke')) (:name token-target')))
+                (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
 
 (t/deftest test-apply-shadow
   (t/testing "applies shadow token and updates the shapes with shadow"
