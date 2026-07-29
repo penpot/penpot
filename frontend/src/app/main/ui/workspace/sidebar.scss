@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_sizes.scss" as *;
+@use "ds/z-index.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .left-settings-bar {
@@ -18,7 +19,7 @@
   background-color: var(--panel-background-color);
   height: 100vh;
   max-height: 100vh;
-  z-index: deprecated.$z-index-1;
+  z-index: var(--z-index-panels);
 
   .resize-area {
     grid-area: resize;
@@ -60,7 +61,7 @@
   height: 100vh;
   width: var(--right-sidebar-width);
   background-color: var(--panel-background-color);
-  z-index: deprecated.$z-index-1;
+  z-index: var(--z-index-panels);
 
   &.not-expand {
     max-width: var(--right-sidebar-width);
