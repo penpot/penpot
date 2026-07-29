@@ -690,7 +690,7 @@
   (ptk/reify ::handle-user-organization-change
     ptk/WatchEvent
     (watch [_ state _]
-      (when (and notification (contains? cf/flags :nitrate))
+      (when (and notification (contains? cf/flags :admin-console))
         (let [team-id (:current-team-id state)
               team    (dm/get-in state [:teams team-id])]
           (rx/of (ntf/show {:content (tr notification organization-name)
@@ -708,7 +708,7 @@
   (ptk/reify ::handle-organization-deleted
     ptk/WatchEvent
     (watch [_ state _]
-      (when (contains? cf/flags :nitrate)
+      (when (contains? cf/flags :admin-console)
         (let [team-id        (:current-team-id state)
               current-team   (dm/get-in state [:teams team-id])
               current-organization-id (dm/get-in current-team [:organization :id])

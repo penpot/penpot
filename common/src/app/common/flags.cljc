@@ -164,13 +164,13 @@
     ;; redis for caching data
     :redis-cache
 
-    ;; Activates the nitrate module
-    :nitrate
+    ;; Activates the admin-console module
+    :admin-console
 
-    ;; disabled by default. When enabled, allows the nitrate
+    ;; disabled by default. When enabled, allows the admin-console
     ;; `bulk-create-profiles` method to create batches of already
     ;; active profiles. Only intended for test environments.
-    :nitrate-bulk-create-profiles
+    :admin-console-bulk-create-profiles
 
     :mcp
     :background-blur

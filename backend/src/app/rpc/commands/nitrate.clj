@@ -423,7 +423,7 @@
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
   ;; Check moveTeams permission on the source organization
-  (when (contains? cf/flags :nitrate)
+  (when (contains? cf/flags :admin-console)
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
                                            {:organization-id organization-id})]
       (if (nil? organization-perms)
@@ -493,7 +493,7 @@
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
 
-  (when (contains? cf/flags :nitrate)
+  (when (contains? cf/flags :admin-console)
     (let [organization-member-ids-before (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
           team-with-organization         (nitrate/call cfg :get-team-organization {:team-id team-id})
           source-organization-id         (get-in team-with-organization [:organization :id])
@@ -574,7 +574,7 @@
    ::sm/result [:map-of :string :boolean]
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id organization-id emails]}]
-  (or (when (contains? cf/flags :nitrate)
+  (or (when (contains? cf/flags :admin-console)
         (assert-membership cfg profile-id organization-id)
         (let [emails-array   (db/create-array conn "text" emails)
               profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
@@ -598,7 +598,7 @@
    ::sm/params schema:all-organization-members-in-team-params
    ::sm/result ::sm/boolean}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (let [perms (teams/get-permissions cfg profile-id team-id)]
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
@@ -622,7 +622,7 @@
    ::sm/params schema:all-team-members-in-organizations-params
    ::sm/result [:map-of ::sm/uuid ::sm/boolean]}
   [cfg {:keys [::rpc/profile-id team-id organization-ids]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (let [perms (teams/get-permissions cfg profile-id team-id)]
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
@@ -659,7 +659,7 @@
    ::sm/result schema:check-team-external-invitations-result
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (let [perms (teams/get-permissions cfg profile-id team-id)]
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
@@ -692,7 +692,7 @@
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id team-id organization-id url] :as params}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (if (and team-id
              (not (teams/has-read-permissions? cfg profile-id team-id)))
       ;; Let the destination RPC enforce its own permissions. Starting SSO before

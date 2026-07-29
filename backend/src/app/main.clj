@@ -469,7 +469,7 @@
    ::setup/shared-keys
    {::setup/props (ig/ref ::setup/props)
     :nexus        (cf/get :nexus-shared-key)
-    :nitrate      (cf/get :nitrate-shared-key)
+    :admin-console (cf/get :admin-console-shared-key)
     :exporter     (cf/get :exporter-shared-key)}
 
    ::setup/clock

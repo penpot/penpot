@@ -418,7 +418,7 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (if (contains? cf/flags :nitrate)
+           (if (contains? cf/flags :admin-console)
              (st/emit! (dtm/check-and-create-team (:id team)))
              (st/emit! (modal/show :team-form {})))))
 
@@ -434,15 +434,15 @@
      [:> dropdown-menu-item* {:on-click    on-team-click
                               :data-value  default-team-id
                               :class       (stl/css-case :team-dropdown-item true
-                                                         :team-dropdown-item-no-logo (contains? cf/flags :nitrate))}
-      (when-not (contains? cf/flags :nitrate)
+                                                         :team-dropdown-item-no-logo (contains? cf/flags :admin-console))}
+      (when-not (contains? cf/flags :admin-console)
         [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
 
-      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :nitrate) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
+      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :admin-console) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
       (when (= default-team-id (:id team))
         tick-icon)]
 
-     (when (and (contains? cf/flags :nitrate)
+     (when (and (contains? cf/flags :admin-console)
                 (seq (remove :is-default (vals teams))))
        [:*
         [:hr {:role "separator" :class (stl/css :team-separator)}]
@@ -890,7 +890,7 @@
 
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
-  (let [nitrate?     (contains? cf/flags :nitrate)
+  (let [nitrate?     (contains? cf/flags :admin-console)
         organization          (:organization team)
         organization-id (when nitrate? (:id organization))
         teams (cond->> (mf/deref refs/teams)
@@ -1039,7 +1039,7 @@
         overflow*   (mf/use-state false)
         overflow?   (deref overflow*)
 
-        nitrate?    (contains? cf/flags :nitrate)
+        nitrate?    (contains? cf/flags :admin-console)
 
         focus-timer-ref  (use-focus-timer-ref)
 
@@ -1401,7 +1401,7 @@
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     (mf/with-effect [teams]
-      (when (and (contains? cf/flags :nitrate)
+      (when (and (contains? cf/flags :admin-console)
                  (empty? teams))
         (st/emit! (dtm/fetch-teams))))
 
@@ -1410,7 +1410,7 @@
         (reset! sub-menu* nil)))
 
     [:*
-     (if (contains? cf/flags :nitrate)
+     (if (contains? cf/flags :admin-console)
        [:*
         [:> nitrate-sidebar* {:profile profile :teams teams}]
         [:> nitrate-current-plan* {:profile profile}]]

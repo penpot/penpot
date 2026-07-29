@@ -91,7 +91,7 @@
           (t/is (not (contains? result :password))))))
 
     (t/testing "update profile"
-      (with-redefs [app.config/flags #{:nitrate}]
+      (with-redefs [app.config/flags #{:admin-console}]
         (with-redefs [nitrate/add-nitrate-licence-to-profile
                       (fn [_ profile]
                         (assoc profile :subscription {:plan :pro}))]

@@ -1504,7 +1504,7 @@
 
 (mf/defc team-settings-page*
   [{:keys [team]}]
-  (let [nitrate?    (contains? cfg/flags :nitrate)
+  (let [nitrate?    (contains? cfg/flags :admin-console)
         finput      (mf/use-ref)
 
         members     (get team :members)

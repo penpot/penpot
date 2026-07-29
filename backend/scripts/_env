@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export PENPOT_NITRATE_SHARED_KEY=super-secret-nitrate-api-key
+export PENPOT_ADMIN_CONSOLE_SHARED_KEY=super-secret-nitrate-api-key
 export PENPOT_EXPORTER_SHARED_KEY=super-secret-exporter-api-key
 export PENPOT_NEXUS_SHARED_KEY=super-secret-nexus-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
@@ -71,7 +71,7 @@ export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
 
 export PENPOT_USER_FEEDBACK_DESTINATION="support@example.com"
 
-export PENPOT_NITRATE_BACKEND_URI=http://localhost:3000/admin-console
+export PENPOT_ADMIN_CONSOLE_URI=http://localhost:3000/admin-console
 
 export JAVA_OPTS="\
        -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \

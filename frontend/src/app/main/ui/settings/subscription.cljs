@@ -457,7 +457,7 @@
         (-> profile :props :subscription)
 
         subscription-type
-        (if (and (contains? cf/flags :nitrate) nitrate?) (:type nitrate-license) (get-subscription-type subscription))
+        (if (and (contains? cf/flags :admin-console) nitrate?) (:type nitrate-license) (get-subscription-type subscription))
 
         subscription-name
         (cond
@@ -724,7 +724,7 @@
                                       (tr "subscription.settings.professional.teams-editors-benefit")
                                       (tr "subscription.settings.professional.selfhost.community-support"))]
                          :cta-text (tr "subscription.settings.subscribe")
-                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?)
+                         :cta-link (if (and (contains? cf/flags :admin-console) nitrate?)
                                      #(open-contact-sales-modal subscription-type "Professional"
                                                                 (and (:licenses connectivity) (not (:manual nitrate-license))))
                                      go-to-payments)
@@ -742,14 +742,14 @@
                                     (tr "subscription.settings.unlimited.autosave-benefit"),
                                     (tr "subscription.settings.unlimited.bill")]
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
-                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
+                         :cta-link (if (and (contains? cf/flags :admin-console) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")
                          :current-plan false}])
 
-       (when (and (not= subscription-type "enterprise") cf/saas? (not (contains? cf/flags :nitrate)))
+       (when (and (not= subscription-type "enterprise") cf/saas? (not (contains? cf/flags :admin-console)))
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
@@ -765,7 +765,7 @@
                          :show-button-cta (= subscription-type "professional")
                          :current-plan false}])
 
-       (when (and (contains? cf/flags :nitrate) (not nitrate?))
+       (when (and (contains? cf/flags :admin-console) (not nitrate?))
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :price-value "$25"
                          :price-period (tr "subscription.settings.organization-member-month")

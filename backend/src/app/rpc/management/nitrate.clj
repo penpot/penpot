@@ -1005,7 +1005,7 @@ RETURNING id, deleted_at;")
    ::rpc/auth false}
   [cfg {:keys [password emails]}]
 
-  (when-not (contains? cf/flags :nitrate-bulk-create-profiles)
+  (when-not (contains? cf/flags :admin-console-bulk-create-profiles)
     (ex/raise :type :restriction
               :code :nitrate-bulk-create-profiles-not-allowed
               :hint "Bulk profile creation is disabled by config."))

@@ -115,7 +115,7 @@
                     (assoc keys id key)))))
             {}
             [:exporter
-             :nitrate
+             :admin-console
              :nexus])))
 
 (sm/register! ::props [:map-of :keyword ::sm/any])

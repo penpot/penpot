@@ -85,7 +85,7 @@
 (defn can-send-invitations?
   [{:keys [organization profile-id team-permissions]}]
   (nitrate-perms/can-send-invitations?
-   {:nitrate-enabled? (contains? cf/flags :nitrate)
+   {:nitrate-enabled? (contains? cf/flags :admin-console)
     :organization organization
     :profile-id profile-id
     :team-permissions team-permissions}))
@@ -149,7 +149,7 @@
 
 (defn is-valid-license?
   [profile]
-  (and (contains? cf/flags :nitrate)
+  (and (contains? cf/flags :admin-console)
        ;; Possible values: "active" "canceled" "incomplete" "incomplete_expired" "past_due" "paused" "trialing" "unpaid"
        (contains? #{"active" "past_due" "trialing"}
                   (dm/get-in profile [:subscription :status]))))
