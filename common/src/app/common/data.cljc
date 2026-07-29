@@ -1183,6 +1183,15 @@
         str/trim)
     ""))
 
+(defn escape-markdown
+  "Escapes Markdown special characters by prefixing them with backslash.
+  Intended for user-controlled values embedded in Markdown messages
+  (e.g. Mattermost notifications)."
+  [s]
+  (if s
+    (str/replace (str s) #"([*_~`\[\]()>#+=\-|{}.!@\\])" "\\\\$1")
+    ""))
+
 (defn get-initials
   "Returns up to two uppercase initials extracted from a string.
   Non-letter prefixes in each token are ignored."

@@ -36,6 +36,25 @@
   (t/is (= "" (d/get-initials nil)))
   (t/is (= "" (d/get-initials "!!! ???"))))
 
+(t/deftest escape-markdown-test
+  (t/is (= "hello" (d/escape-markdown "hello")))
+  (t/is (= "" (d/escape-markdown nil)))
+  (t/is (= "" (d/escape-markdown "")))
+  (t/is (= "\\*bold\\*" (d/escape-markdown "*bold*")))
+  (t/is (= "\\_italic\\_" (d/escape-markdown "_italic_")))
+  (t/is (= "\\~strikethrough\\~" (d/escape-markdown "~strikethrough~")))
+  (t/is (= "\\`code\\`" (d/escape-markdown "`code`")))
+  (t/is (= "\\[link\\]\\(http://evil\\.com\\)" (d/escape-markdown "[link](http://evil.com)")))
+  (t/is (= "\\> quote" (d/escape-markdown "> quote")))
+  (t/is (= "\\# heading" (d/escape-markdown "# heading")))
+  (t/is (= "\\@channel" (d/escape-markdown "@channel")))
+  (t/is (= "\\!bang" (d/escape-markdown "!bang")))
+  (t/is (= "normal\\-text" (d/escape-markdown "normal-text")))
+  (t/is (= "a\\+b\\=c" (d/escape-markdown "a+b=c")))
+  (t/is (= "pipe\\|separated" (d/escape-markdown "pipe|separated")))
+  (t/is (= "curly\\{\\}braces" (d/escape-markdown "curly{}braces")))
+  (t/is (= "backslash\\\\slash" (d/escape-markdown "backslash\\slash"))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ordered Data Structures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
