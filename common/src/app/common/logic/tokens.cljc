@@ -6,6 +6,7 @@
 
 (ns app.common.logic.tokens
   (:require
+   [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]))
@@ -83,6 +84,22 @@
                       :before-group? (:group? before))
         prev-before (assoc :prev-before-path (:path prev-before)
                            :prev-before-group? (:group? prev-before))))))
+
+(declare generate-sync-tokens-status-with-lib)
+
+(defn generate-update-token-theme
+  "Create changes for updating a token theme and regenerating the activation status
+   of the sets inside it."
+  [changes token-theme]
+  (let [changes' (pcb/set-token-theme changes (ctob/get-id token-theme) token-theme)
+        data (pcb/get-library-data changes')
+        tokens-status (cfo/get-tokens-status data)
+        tokens-lib' (-> data
+                        (ch/process-changes (:redo-changes changes'))
+                        (cfo/get-tokens-lib))]
+    (generate-sync-tokens-status-with-lib changes'
+                                          tokens-status
+                                          tokens-lib')))
 
 (defn generate-move-token-set
   "Create changes for dropping a token set or token set.
