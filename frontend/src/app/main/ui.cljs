@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.team :as dtm]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
@@ -156,20 +157,24 @@
         props   (get profile :props)
         section (get data :name)
         team    (mf/deref refs/team)
+        nitrate-entry-active? (dnt/nitrate-entry-popup-pending?)
 
         show-question-modal?
         (and (contains? cf/flags :onboarding)
+             (not nitrate-entry-active?)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-questions)))
 
         show-team-modal?
         (and (contains? cf/flags :onboarding)
+             (not nitrate-entry-active?)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-team-id))
              (:is-default team))
 
         show-release-modal?
         (and (contains? cf/flags :onboarding)
+             (not nitrate-entry-active?)
              (not (contains? cf/flags :hide-release-modal))
              (:onboarding-viewed props)
              (not= (:release-notes-viewed props) (:main cf/version))

@@ -264,14 +264,19 @@
           (swap! storage/session dissoc :template))))))
 
 (defn- use-nitrate-entry-popup
-  [onboarding-viewed?]
-  (mf/with-effect []
-    (when (dnt/nitrate-entry-popup-pending?)
-      (dnt/consume-nitrate-entry-popup!)
-      (when (not onboarding-viewed?)
-        (st/emit! (dprof/update-profile-props {:onboarding-viewed true
-                                               :release-notes-viewed (:main cf/version)
-                                               :pending-nitrate-onboarding true})
+  [onboarding-viewed? nitrate-onboarding-viewed?]
+  (let [nitrate-popup-pending? (dnt/nitrate-entry-popup-pending?)]
+    (mf/with-effect [nitrate-popup-pending? onboarding-viewed? nitrate-onboarding-viewed?]
+      (when nitrate-popup-pending?
+        (dnt/consume-nitrate-entry-popup!)
+        (st/emit! (dprof/update-profile-props
+                   (cond-> {}
+                     (not (or nitrate-onboarding-viewed? onboarding-viewed?))
+                     (assoc :nitrate-onboarding-viewed false)
+
+                     (not onboarding-viewed?)
+                     (assoc :onboarding-viewed true
+                            :release-notes-viewed (:main cf/version))))
                   (dnt/show-nitrate-popup :nitrate-form))))))
 
 (defn- use-pending-action
@@ -327,7 +332,7 @@
 
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
-    (use-nitrate-entry-popup (:onboarding-viewed props))
+    (use-nitrate-entry-popup (:onboarding-viewed props) (:nitrate-onboarding-viewed props))
     (use-pending-action pending-action-id)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
