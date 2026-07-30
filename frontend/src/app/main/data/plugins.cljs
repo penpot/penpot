@@ -115,7 +115,7 @@
   [{:keys [url] :as manifest} user-can-edit?]
   (if url
     ;; If the saved manifest has a URL we fetch the manifest to check
-    ;; for updates
+    ;; for updates and validate integrity
     (->> (fetch-manifest url)
          (rx/subs!
           (fn [new-manifest]
@@ -127,6 +127,8 @@
               (cond
                 (and is-edition-plugin? (not user-can-edit?))
                 (st/emit! (ntf/warn (tr "workspace.plugins.error.need-editor")))
+
+                ;; Permissions changed - show permissions dialog
                 (not= (:permissions new-manifest) (:permissions manifest))
                 (modal/show!
                  :plugin-permissions-update
@@ -136,15 +138,25 @@
                      (preg/install-plugin! new-manifest)
                      (load-plugin! new-manifest))})
 
+                ;; Manifest changed (code, name, etc.) - require re-confirmation
+                ;; This prevents execution of tampered/injected plugins
                 (not= new-manifest manifest)
-                (do (preg/install-plugin! new-manifest)
-                    (load-plugin! manifest))
+                (modal/show!
+                 :plugin-permissions-update
+                 {:plugin new-manifest
+                  :on-accept
+                  #(do
+                     (preg/install-plugin! new-manifest)
+                     (load-plugin! new-manifest))})
+
+                ;; Manifests match exactly - safe to load
                 :else
                 (load-plugin! manifest))))
-          (fn []
-            ;; Error fetching the manifest we'll load the plugin with the
-            ;; old manifest
-            (load-plugin! manifest))))
+          (fn [_err]
+            ;; Error fetching the manifest - can't verify integrity
+            ;; Show error instead of loading potentially tampered code
+            (st/emit! (ntf/warn (tr "workspace.plugins.error.unreachable"))))))
+    ;; Bundled plugins (no URL) - trusted, load directly
     (load-plugin! manifest)))
 
 (defn close-plugin!
