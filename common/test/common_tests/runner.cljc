@@ -59,6 +59,7 @@
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.token-test]
    [common-tests.logic.variants-switch-test]
+   [common-tests.math-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
    [common-tests.record-test]
@@ -133,6 +134,7 @@
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.token-test
    'common-tests.logic.variants-switch-test
+   'common-tests.math-test
    'common-tests.media-test
    'common-tests.path-names-test
    'common-tests.record-test
