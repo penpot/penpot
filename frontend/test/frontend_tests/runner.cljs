@@ -7,6 +7,7 @@
    [frontend-tests.basic-shapes-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.store-test]
@@ -88,6 +89,7 @@
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
    'frontend-tests.data.store-test
+   'frontend-tests.data.exports-assets-test
    'frontend-tests.errors-test
    'frontend-tests.main-errors-test
    'frontend-tests.data.uploads-test
