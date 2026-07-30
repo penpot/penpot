@@ -467,34 +467,34 @@
                            :on-change handle-change-tab
                            :class (stl/css :shortcuts-switcher)}
          (case section
-            :all
-            [:> shortcuts-tab-section* {:shortcut-filter filter-all
-                                        :show-restore-all true
-                                        :empty-str (tr "shortcuts.no-shortcuts")
-                                        :on-restore-all on-restore-all
-                                        :custom-shortcuts custom-shortcuts
-                                        :open-sections (get open-sections-by-tab :all [[:workspace]])
-                                        :update-open-sections (make-update-open-sections :all)}]
+           :all
+           [:> shortcuts-tab-section* {:shortcut-filter filter-all
+                                       :show-restore-all true
+                                       :empty-str (tr "shortcuts.no-shortcuts")
+                                       :on-restore-all on-restore-all
+                                       :custom-shortcuts custom-shortcuts
+                                       :open-sections (get open-sections-by-tab :all [[:workspace]])
+                                       :update-open-sections (make-update-open-sections :all)}]
 
-            :personalized
-            [:> shortcuts-tab-section* {:shortcut-filter filter-personalized
-                                        :show-restore-all true
-                                        :empty-str (tr "shortcuts.no-personalized")
-                                        :on-restore-all on-restore-all
-                                        :expand-all-by-default true
-                                        :custom-shortcuts custom-shortcuts
-                                        :open-sections (get open-sections-by-tab :personalized [[:workspace]])
-                                        :update-open-sections (make-update-open-sections :personalized)}]
+           :personalized
+           [:> shortcuts-tab-section* {:shortcut-filter filter-personalized
+                                       :show-restore-all true
+                                       :empty-str (tr "shortcuts.no-personalized")
+                                       :on-restore-all on-restore-all
+                                       :expand-all-by-default true
+                                       :custom-shortcuts custom-shortcuts
+                                       :open-sections (get open-sections-by-tab :personalized [[:workspace]])
+                                       :update-open-sections (make-update-open-sections :personalized)}]
 
-            :disabled
-            [:> shortcuts-tab-section* {:shortcut-filter filter-disabled
-                                        :show-restore-all true
-                                        :empty-str (tr "shortcuts.no-disabled")
-                                        :on-restore-all on-restore-all
-                                        :expand-all-by-default true
-                                        :custom-shortcuts custom-shortcuts
-                                        :open-sections (get open-sections-by-tab :disabled [[:workspace]])
-                                        :update-open-sections (make-update-open-sections :disabled)}])]]
+           :disabled
+           [:> shortcuts-tab-section* {:shortcut-filter filter-disabled
+                                       :show-restore-all true
+                                       :empty-str (tr "shortcuts.no-disabled")
+                                       :on-restore-all on-restore-all
+                                       :expand-all-by-default true
+                                       :custom-shortcuts custom-shortcuts
+                                       :open-sections (get open-sections-by-tab :disabled [[:workspace]])
+                                       :update-open-sections (make-update-open-sections :disabled)}])]]
 
        [:div {:class (stl/css :shortcuts-page-footer)}
         [:div {:class (stl/css :shortcuts-info)}

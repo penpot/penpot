@@ -150,10 +150,12 @@
 
    :show-measure        {:tooltip (ds/alt "")
                          :command ["alt" "."]
-                         :type "keydown"
+                         :type ["keydown" "keyup"]
                          :subsections [:tools]
                          :section [:workspace]
-                         :fn #(emit-when-no-readonly (dw/toggle-distances-display true))}
+                         :fn #(emit-when-no-readonly
+                               (let [type (.-type %)]
+                                 (dw/toggle-distances-display (if (= type "keydown") true false))))}
 
    :escape               {:tooltip (ds/esc)
                           :command "escape"
