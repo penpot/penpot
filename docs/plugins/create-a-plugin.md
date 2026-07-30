@@ -116,6 +116,10 @@ Your plugin can capture incoming messages from Penpot using the <code class="lan
 
 ```js
 window.addEventListener("message", (event) => {
+  // Validate the origin to ensure messages come from a trusted source
+  if (event.origin !== window.location.origin) {
+    return;
+  }
   // Handle the incoming message
   console.log(event.data);
 });
@@ -129,11 +133,11 @@ This setup allows for two-way communication between Penpot and your plugin. Penp
 
 ```js
 // Sending a message back to Penpot from your plugin
-parent.postMessage(responseMessage, targetOrigin);
+parent.postMessage(responseMessage, window.location.origin);
 ```
 
 -<code class="language-js">responseMessage</code> is the data you want to send back to Penpot.
--<code class="language-js">targetOrigin</code> should be the origin of the Penpot application to ensure messages are only sent to the intended recipient. You can use<code class="language-js">'*'</code> to allow all.
+-<code class="language-js">window.location.origin</code> should be used as the target origin to ensure messages are only sent to the intended recipient. Never use<code class="language-js">'*'</code> in production, as it allows any origin to receive the message.
 
 ### Summary
 

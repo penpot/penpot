@@ -39,5 +39,8 @@ export async function createPlugin(
     plugin,
     manifest,
     compartment: sandbox,
+    get iframeWindow() {
+      return plugin.iframeWindow;
+    },
   };
 }
