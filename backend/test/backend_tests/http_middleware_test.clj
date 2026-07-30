@@ -113,6 +113,21 @@
       (t/is (= #{} (:app.http.access-token/perms response)))
       (t/is (= (:id profile) (:app.http.access-token/profile-id response))))))
 
+(t/deftest access-token-authz-sets-token-id-and-type
+  (let [profile (th/create-profile* 1)
+        token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
+                            (:id profile) "test" nil "mcp")
+        handler (#'app.http.access-token/wrap-authz identity th/*system*)
+        request {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}}
+        response (handler request)]
+    ;; Must set ::actoken/id from claims :tid
+    (t/is (= (:id token) (:app.http.access-token/id response)))
+    ;; Must set ::actoken/type from database
+    (t/is (= "mcp" (:app.http.access-token/type response)))
+    ;; Existing assertions still pass
+    (t/is (= #{} (:app.http.access-token/perms response)))
+    (t/is (= (:id profile) (:app.http.access-token/profile-id response)))))
+
 (defrecord MethodAwareDummyRequest [req-method headers]
   yreq/IRequest
   (method [_] req-method)

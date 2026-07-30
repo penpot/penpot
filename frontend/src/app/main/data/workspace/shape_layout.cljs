@@ -26,6 +26,7 @@
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
@@ -98,26 +99,50 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [page-id ids undo-group]}]
+  [{:keys [page-id ids undo-group reflow-tasks]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ state stream]
       (let [page-id (or page-id (:current-page-id state))
             objects (dsh/lookup-page-objects state page-id)
-            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))]
-        (if (d/not-empty? ids)
-          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (if (features/active-feature? state "render-wasm/v1")
-              (rx/of (dwm/apply-wasm-modifiers modif-tree
+            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+
+            update-positions-stream
+            (if (d/not-empty? ids)
+              (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+                (if (features/active-feature? state "render-wasm/v1")
+                  (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                                   :stack-undo? true
+                                                   :undo-group undo-group
+                                                   :ignore-touched true))
+                  (rx/of (dwm/apply-modifiers {:page-id page-id
+                                               :modifiers modif-tree
                                                :stack-undo? true
-                                               :undo-group undo-group
-                                               :ignore-touched true))
-              (rx/of (dwm/apply-modifiers {:page-id page-id
-                                           :modifiers modif-tree
-                                           :stack-undo? true
-                                           :ignore-touched true
-                                           :undo-group undo-group}))))
-          (rx/empty))))))
+                                               :ignore-touched true
+                                               :undo-group undo-group}))))
+              (rx/empty))
+
+            ;; The apply events above are dispatched and applied synchronously,
+            ;; except while a shape-update buffer is open (token propagation),
+            ;; where the commit lands on `update-shapes-buffer-commit`.
+            drain-stream
+            (if (and (::dwsh/update-shapes-buffer state)
+                     (d/not-empty? ids))
+              (->> stream
+                   (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+                   (rx/take 1)
+                   (rx/take-until (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream))
+                   ;; No events are derived from this
+                   (rx/ignore))
+              (rx/empty))]
+
+        (cond->> (rx/concat update-positions-stream drain-stream)
+          (d/not-empty? reflow-tasks)
+          (rx/finalize #(run! wrf/finish! reflow-tasks)))))))
+
+(defn- without-root-board
+  [ids]
+  (into [] (remove uuid/zero?) ids))
 
 (defn initialize-shape-layout
   []
@@ -126,21 +151,27 @@
     (watch [_ _ stream]
       (let [stopper (rx/filter (ptk/type? ::finalize-shape-layout) stream)]
         (->> stream
-             ;; FIXME: we don't need use types for simple signaling,
-             ;; we can just use a keyword for it
              (rx/filter (ptk/type? :layout/update))
-             (rx/map deref)
-             ;; We buffer the updates to the layout so if there are many changes at the same time
-             ;; they are process together. It will get a better performance.
+             ;; Keeps each update's page and the shapes that can be laid out;
+             ;; the root lays out nothing, so an update with only it is dropped.
+             (rx/map (fn [event]
+                       (-> (deref event)
+                           (update :ids without-root-board))))
+             (rx/filter #(d/not-empty? (:ids %)))
+             (rx/map #(assoc % ::reflow-task (wrf/start! :layout (:ids %))))
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
              (rx/mapcat
-              (fn [data]
-                (->> (group-by :page-id data)
-                     (map (fn [[page-id items]]
-                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
-                              (update-layout-positions {:page-id page-id :ids ids})))))))
-             (rx/take-until stopper))))))
+              (fn [updates]
+                (->> (group-by :page-id updates)
+                     (map (fn [[page-id updates]]
+                            (let [ids (into #{} (mapcat :ids) updates)]
+                              (update-layout-positions {:page-id page-id
+                                                        :ids ids
+                                                        :reflow-tasks (mapv ::reflow-task updates)})))))))
+             (rx/take-until stopper)
+             ;; On workspace teardown clear everything still pending.
+             (rx/finalize wrf/reset-pending!))))))
 
 (defn finalize-shape-layout
   []

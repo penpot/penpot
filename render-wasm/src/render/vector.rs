@@ -10,6 +10,7 @@ use crate::uuid::Uuid;
 use super::shape_renderer::ShapeRenderer;
 use super::text;
 use super::RenderResources;
+use super::RenderState;
 use super::{get_dest_rect, get_source_rect};
 
 // ---------------------------------------------------------------------------
@@ -438,9 +439,10 @@ fn render_tree_inner(
     }
 
     // Background blur samples already-drawn content behind the shape, so it must
-    // run before the shape (and its subtree) paints. Text/SVGRaw are excluded,
-    // matching the GPU path.
-    if !matches!(element.shape_type, Type::Text(_) | Type::SVGRaw(_)) {
+    // run before the shape (and its subtree) paints. SVGRaw is excluded,
+    // matching the GPU path; text keeps only the glyph-alpha coverage (see the
+    // text branches below), also matching the GPU path.
+    if !matches!(element.shape_type, Type::SVGRaw(_)) {
         if let Some(blur) = element.visible_background_blur() {
             if blur.value > 0.0 {
                 if opts.embed_bg_blur {
@@ -479,8 +481,9 @@ fn render_tree_inner(
 
 /// Background blur on a canvas that supports Skia backdrop filters (raster).
 /// Blurs the current device contents within the shape silhouette and stamps the
-/// result back with `Src`. `sigma_radius` is the blur radius already multiplied
-/// by the export scale.
+/// result back with `Src` — or, for text, keeps it only under the glyph/stroke
+/// alpha via a `DstIn` mask (mirrors the GPU path). `sigma_radius` is the blur
+/// radius already multiplied by the export scale.
 fn render_background_blur_backdrop(canvas: &Canvas, shape: &Shape, sigma_radius: f32) {
     let sigma = radius_to_sigma(sigma_radius);
     let Some(blur_filter) =
@@ -492,7 +495,59 @@ fn render_background_blur_backdrop(canvas: &Canvas, shape: &Shape, sigma_radius:
     let matrix = shape.centered_transform();
     canvas.save();
     canvas.concat(&matrix);
-    clip_to_shape(canvas, shape, true);
+
+    if matches!(shape.shape_type, Type::Text(_)) {
+        // Text has no closed geometry to clip with: blur the backdrop inside
+        // the shape rect (outset by the max outward stroke reach so the mask's
+        // stroke coverage isn't cut off), then keep the blurred result only
+        // where the opaque glyph/stroke mask is, via DstIn.
+        let mut clip_rect = shape.selrect;
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+        if stroke_outset > 0.0 {
+            clip_rect.outset((stroke_outset, stroke_outset));
+        }
+        canvas.clip_rect(clip_rect, skia::ClipOp::Intersect, true);
+
+        // Blur in device space (sigma already includes the export scale); the
+        // clip survives reset_matrix. Remember the full transform to restore it
+        // for painting the mask.
+        let local_to_device = canvas.local_to_device();
+        canvas.reset_matrix();
+
+        // SrcOver composite (NOT Src): Src would clear the backdrop outside
+        // the glyphs within the clip rect; SrcOver + DstIn mask leaves the
+        // unmasked backdrop untouched.
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .backdrop(&blur_filter)
+            .backdrop_tile_mode(skia::TileMode::Clamp);
+        canvas.save_layer(&layer_rec);
+
+        canvas.set_matrix(&local_to_device);
+
+        // Keep the blurred backdrop only where the glyphs/strokes are.
+        let mut mask_paint = Paint::default();
+        mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+        let mask_layer_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+        canvas.save_layer(&mask_layer_rec);
+
+        text::paint_text_mask(canvas, shape);
+
+        canvas.restore(); // mask layer
+        canvas.restore(); // blur layer
+        canvas.restore(); // clip + transform
+        return;
+    }
+
+    // When strokes extend beyond the fill geometry (center/outer), expand the
+    // clip with the stroke coverage so the backdrop is also blurred under the
+    // stroke (mirrors the GPU path).
+    let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+    if stroke_outset > 0.0 {
+        let clip_path = RenderState::background_blur_clip_path(shape, stroke_outset);
+        canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
+    } else {
+        clip_to_shape(canvas, shape, true);
+    }
     // Apply the blur in device space (sigma already includes the export scale);
     // the clip, set with the full transform, survives reset_matrix.
     canvas.reset_matrix();
@@ -554,6 +609,7 @@ fn render_background_blur_image(
     // Bake the blur into a raster bitmap. The PDF backend ignores image filters
     // at draw time (same limitation as backdrop filters), so we must blur on a
     // raster surface — where filters work — and embed the pre-blurred result.
+    let is_text = matches!(shape.shape_type, Type::Text(_));
     let sigma = radius_to_sigma(shape.visible_background_blur().map_or(0.0, |b| b.value) * scale);
     let blurred = {
         let Some(mut blur_surface) = skia::surfaces::raster_n32_premul((width, height)) else {
@@ -568,13 +624,50 @@ fn render_background_blur_image(
             paint.set_image_filter(filter);
         }
         bc.draw_image(&image, (0.0, 0.0), Some(&paint));
+
+        if is_text {
+            // Text has no closed geometry to clip with on the PDF canvas, and
+            // the PDF backend can't express DstIn either — so bake the
+            // glyph/stroke alpha mask into the raster bitmap here (where blend
+            // modes work) and embed the already-masked result.
+            let mut mask_paint = Paint::default();
+            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+            bc.save_layer(&skia::canvas::SaveLayerRec::default().paint(&mask_paint));
+            // Same page-space transform used to render the backdrop above.
+            bc.scale((scale, scale));
+            bc.translate((-bounds.left(), -bounds.top()));
+            bc.concat(&shape.centered_transform());
+            text::paint_text_mask(bc, shape);
+            bc.restore();
+        }
+
         blur_surface.image_snapshot()
     };
 
     let matrix = shape.centered_transform();
     canvas.save();
     canvas.concat(&matrix);
-    clip_to_shape(canvas, shape, true);
+    if is_text {
+        // Mask is already baked into the bitmap; the clip only bounds it to
+        // the shape rect (outset by the max outward stroke reach so stroke
+        // coverage isn't cut off).
+        let mut clip_rect = shape.selrect;
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+        if stroke_outset > 0.0 {
+            clip_rect.outset((stroke_outset, stroke_outset));
+        }
+        canvas.clip_rect(clip_rect, skia::ClipOp::Intersect, true);
+    } else {
+        // Expand the clip with the stroke coverage when strokes reach beyond
+        // the fill geometry (mirrors the GPU path).
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+        if stroke_outset > 0.0 {
+            let clip_path = RenderState::background_blur_clip_path(shape, stroke_outset);
+            canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
+        } else {
+            clip_to_shape(canvas, shape, true);
+        }
+    }
     // Draw the pre-blurred full-page bitmap in device space (1 image px per
     // device unit) so it aligns with the page regardless of the shape transform.
     canvas.reset_matrix();

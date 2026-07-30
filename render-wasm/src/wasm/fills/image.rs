@@ -48,6 +48,29 @@ pub struct RawImageFillData {
     height: i32,
 }
 
+impl From<&ImageFill> for RawImageFillData {
+    fn from(image_fill: &ImageFill) -> Self {
+        let id = image_fill.id();
+        let (a, b, c, d) = crate::utils::uuid_to_u32_quartet(&id);
+        let flags = if image_fill.keep_aspect_ratio() {
+            FLAG_KEEP_ASPECT_RATIO
+        } else {
+            0
+        };
+
+        Self {
+            a,
+            b,
+            c,
+            d,
+            opacity: image_fill.opacity(),
+            flags,
+            width: image_fill.width(),
+            height: image_fill.height(),
+        }
+    }
+}
+
 impl From<RawImageFillData> for ImageFill {
     fn from(value: RawImageFillData) -> Self {
         let id = uuid_from_u32_quartet(value.a, value.b, value.c, value.d);

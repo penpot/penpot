@@ -48,15 +48,15 @@ impl TryFrom<&shapes::Fill> for RawFillData {
                         | (color.b() as u32),
                 }))
             }
-            shapes::Fill::LinearGradient(_) => {
-                Err("LinearGradient serialization is not implemented".to_string())
-            }
-            shapes::Fill::RadialGradient(_) => {
-                Err("RadialGradient serialization is not implemented".to_string())
-            }
-            shapes::Fill::Image(_) => {
-                Err("Image fill serialization is not implemented".to_string())
-            }
+            shapes::Fill::LinearGradient(linear_gradient) => Ok(RawFillData::Linear(
+                gradient::RawGradientData::from(linear_gradient),
+            )),
+            shapes::Fill::RadialGradient(radial_gradient) => Ok(RawFillData::Radial(
+                gradient::RawGradientData::from(radial_gradient),
+            )),
+            shapes::Fill::Image(image_fill) => Ok(RawFillData::Image(
+                image::RawImageFillData::from(image_fill),
+            )),
         }
     }
 }
@@ -154,5 +154,37 @@ mod tests {
             raw_fill.unwrap(),
             RawFillData::Solid(solid::RawSolidData { color: 0xfffabada })
         );
+    }
+
+    #[test]
+    fn test_gradient_fill_round_trip() {
+        let gradient = shapes::Gradient::new(
+            (0.0, 0.5),
+            (1.0, 0.5),
+            0x80,
+            0.25,
+            &[
+                (shapes::Color::from(0xfffabada), 0.0),
+                (shapes::Color::from(0xff00ff00), 1.0),
+            ],
+        );
+
+        let fill = shapes::Fill::LinearGradient(gradient.clone());
+        let raw_fill = RawFillData::try_from(&fill).expect("gradient must be serializable");
+        let bytes = <[u8; RAW_FILL_DATA_SIZE]>::from(raw_fill);
+
+        assert_eq!(bytes[0], 0x01);
+        assert_eq!(shapes::Fill::from(RawFillData::from(bytes)), fill);
+    }
+
+    #[test]
+    fn test_image_fill_round_trip() {
+        let image_fill = shapes::ImageFill::new(crate::uuid::Uuid::nil(), 0x80, 300, 200, true);
+        let fill = shapes::Fill::Image(image_fill);
+        let raw_fill = RawFillData::try_from(&fill).expect("image fill must be serializable");
+        let bytes = <[u8; RAW_FILL_DATA_SIZE]>::from(raw_fill);
+
+        assert_eq!(bytes[0], 0x03);
+        assert_eq!(shapes::Fill::from(RawFillData::from(bytes)), fill);
     }
 }

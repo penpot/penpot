@@ -138,6 +138,16 @@
         default (unchecked-get values "layer-blur")]
     (d/nilv (unchecked-get values (d/name blur-type)) default)))
 
+(defn translate-raster-format
+  "Export image format keyword (:png/:jpeg/:webp) -> `RasterFormat` code.
+  Unlike the other translators this one has NO default: falling back to png
+  would emit png bytes under a jpeg/webp mtype, which is exactly what the
+  explicit format threading exists to prevent."
+  [format]
+  (let [values (unchecked-get wasm/serializers "raster-format")]
+    (or (unchecked-get values (d/name format))
+        (throw (ex-info "unsupported raster format" {:format format})))))
+
 (defn translate-layout-flex-dir
   [flex-dir]
   (let [values (unchecked-get wasm/serializers "flex-direction")]

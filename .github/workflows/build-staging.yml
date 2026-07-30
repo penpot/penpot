@@ -20,3 +20,9 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "staging"
+
+  build-admin-console-docker:
+    uses: ./.github/workflows/build-docker-admin-console.yml
+    secrets: inherit
+    with:
+      gh_ref: "staging"

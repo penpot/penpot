@@ -18,6 +18,7 @@
    [common-tests.data-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
+   [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.validate-test]
@@ -46,6 +47,7 @@
    [common-tests.logic.chained-propagation-test]
    [common-tests.logic.comp-creation-test]
    [common-tests.logic.comp-detach-with-nested-test]
+   [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
    [common-tests.logic.comp-remove-swap-slots-test]
    [common-tests.logic.comp-reset-test]
    [common-tests.logic.comp-sync-test]
@@ -58,6 +60,7 @@
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.token-test]
    [common-tests.logic.variants-switch-test]
+   [common-tests.math-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
    [common-tests.record-test]
@@ -92,6 +95,7 @@
    'common-tests.data-test
    'common-tests.files-changes-test
    'common-tests.files-builder-test
+   'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-test
    'common-tests.files.validate-test
    'common-tests.geom-align-test
@@ -119,6 +123,7 @@
    'common-tests.logic.chained-propagation-test
    'common-tests.logic.comp-creation-test
    'common-tests.logic.comp-detach-with-nested-test
+   'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-remove-swap-slots-test
    'common-tests.logic.comp-reset-test
    'common-tests.logic.comp-sync-test
@@ -131,6 +136,7 @@
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.token-test
    'common-tests.logic.variants-switch-test
+   'common-tests.math-test
    'common-tests.media-test
    'common-tests.path-names-test
    'common-tests.record-test

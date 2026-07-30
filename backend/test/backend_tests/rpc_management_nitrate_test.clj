@@ -1588,7 +1588,7 @@
             params      {::th/type :notify-organization-sso-change
                          :organization-id org-id
                          :updated-props false
-                         :became-active true}]
+                         :announce-activation true}]
 
         ;; --- Setup: insert invitations ---
         ;; Member also has a pending invitation: should still receive only one email.
@@ -1645,7 +1645,7 @@
         params {::th/type :notify-organization-sso-change
                 :organization-id (uuid/random)
                 :updated-props false
-                :became-active false}]
+                :announce-activation false}]
     (with-redefs [eml/send! (fn [params] (swap! sent conj params))]
       (th/management-command! params))
     (t/is (empty? @sent))))
@@ -1658,7 +1658,7 @@
                    :organization-id org-id
                    :client-id "test-client"
                    :client-secret "test-secret"
-                   :base-url "https://idp.example.com"}))]
+                   :issuer "https://idp.example.com"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
 
@@ -1671,7 +1671,7 @@
     (t/is (th/success? out))
     (t/is (false? (-> out :result :valid)))))
 
-(t/deftest check-organization-sso-uses-issuer-when-base-url-is-blank
+(t/deftest check-organization-sso-passes-issuer-to-validation
   (let [org-id (uuid/random)
         out    (with-redefs [oidc/is-organization-sso-config-valid?
                              (fn [_cfg sso]
@@ -1682,7 +1682,6 @@
                    :organization-id org-id
                    :client-id "test-client"
                    :client-secret "test-secret"
-                   :base-url ""
                    :issuer "https://idp.example.com/"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))

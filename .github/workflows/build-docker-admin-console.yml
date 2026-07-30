@@ -1,0 +1,91 @@
+name: Admin Console Docker Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref to build in penpot-nitrate'
+        type: string
+        required: true
+        default: 'develop'
+      dispatch_ref:
+        description: 'Branch of penpot-nitrate from which the workflow definition is read'
+        type: string
+        required: false
+        default: 'develop'
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref to build in penpot-nitrate'
+        type: string
+        required: true
+      dispatch_ref:
+        description: 'Branch of penpot-nitrate from which the workflow definition is read'
+        type: string
+        required: false
+        default: 'develop'
+    secrets:
+      ORG_WORKFLOW_TOKEN:
+        description: 'Token with Actions write access on penpot-nitrate'
+        required: true
+
+jobs:
+  build-nitrate-docker:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
+      REPO: penpot/penpot-nitrate
+      WORKFLOW: build-docker-admin-console.yml
+      GH_REF: ${{ inputs.gh_ref }}
+      DISPATCH_REF: ${{ inputs.dispatch_ref }}
+    steps:
+      - name: Trigger nitrate docker build
+        id: dispatch
+        run: |
+          DISTINCT_ID="${{ github.run_id }}-${{ github.run_attempt }}"
+          CALLER_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$DISPATCH_REF" \
+            -f gh_ref="$GH_REF" \
+            -f caller_run_id="$DISTINCT_ID" \
+            -f caller_run_url="$CALLER_URL"
+
+          # Locate the dispatched run using the correlation id embedded in its run-name
+          RUN_ID=""
+          for i in $(seq 1 24); do
+            sleep 5
+            RUN_ID=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" \
+              --limit 10 --json databaseId,displayTitle \
+              --jq ".[] | select(.displayTitle | contains(\"$DISTINCT_ID\")) | .databaseId" \
+              | head -n1)
+            [ -n "$RUN_ID" ] && break
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::Could not locate the dispatched run in $REPO"
+            exit 1
+          fi
+
+          RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "run_url=$RUN_URL" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Nitrate docker build::$RUN_URL"
+
+      - name: Wait for nitrate docker build
+        run: |
+          gh run watch "${{ steps.dispatch.outputs.run_id }}" \
+            --repo "$REPO" \
+            --interval 30 \
+            --exit-status
+
+      - name: Report result
+        if: always() && steps.dispatch.outputs.run_id != ''
+        run: |
+          CONCLUSION=$(gh run view "${{ steps.dispatch.outputs.run_id }}" \
+            --repo "$REPO" --json conclusion --jq '.conclusion')
+          {
+            echo "### 🐳 Nitrate docker build"
+            echo ""
+            echo "- Result: \`${CONCLUSION:-in_progress}\`"
+            echo "- Run: ${{ steps.dispatch.outputs.run_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

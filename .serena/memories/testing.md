@@ -137,17 +137,32 @@ E2E tests should not be added unless explicitly requested.
 
 ## Execution discipline
 
-When running CLJS/JS tests (frontend, common):
+**CRITICAL: Test output handling rules**
 
+When running ANY test command (CLJS/JS or JVM):
+
+1. **NEVER pipe test output directly to `| head`, `| tail`, `| grep`, or similar filters** — this can hide failures and cause you to miss critical errors.
+2. **ALWAYS pipe to a file first, then read the file:**
+   ```bash
+   # CORRECT:
+   pnpm run test 2>&1 > /tmp/test-output.txt
+   grep -A 5 "failures" /tmp/test-output.txt
+   
+   # WRONG:
+   pnpm run test 2>&1 | tail -20
+   pnpm run test 2>&1 | grep "failures"
+   ```
+3. **Use `--focus` to narrow test scope** instead of filtering output.
+4. **Read the full output file** to understand test results completely.
+
+When running CLJS/JS tests (frontend, common):
 - **Always use `pnpm run test:quiet`** — it silently builds the test bundle then runs the test runner, giving you clean test output.
-- **Never pipe test output through `tail`, `head`, or similar filters** — doing so can silently hide test failures. Use `--focus` to narrow scope instead.
-- **If you need to filter output, tee to a temp file first:** `pnpm run test:quiet 2>&1 | tee /tmp/penpot-test-output.txt`. The full output is preserved on disk so you can `grep`/`tail`/`head` the file without re-running.
 - Use `pnpm run test` when you want to see build output alongside test results (always builds, then runs).
 - After `build:test` has been run once, you can invoke the runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 
 When running JVM tests (backend, common):
 - Use `clojure -M:dev:test` directly (no pnpm wrapper).
-- The same no-piping rule applies: use `--focus` to narrow scope.
+- Same file-piping rule applies.
 
 ## Verification Checklist
 

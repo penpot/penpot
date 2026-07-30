@@ -44,6 +44,41 @@ impl RawStopData {
     }
 }
 
+impl From<&Gradient> for RawGradientData {
+    fn from(gradient: &Gradient) -> Self {
+        let mut stops = [RawStopData {
+            color: 0,
+            offset: 0.0,
+        }; MAX_GRADIENT_STOPS];
+
+        let mut stop_count: u8 = 0;
+        for (index, (color, offset)) in gradient.stops().take(MAX_GRADIENT_STOPS).enumerate() {
+            stops[index] = RawStopData {
+                color: ((color.a() as u32) << 24)
+                    | ((color.r() as u32) << 16)
+                    | ((color.g() as u32) << 8)
+                    | (color.b() as u32),
+                offset,
+            };
+            stop_count += 1;
+        }
+
+        let (start_x, start_y) = gradient.start();
+        let (end_x, end_y) = gradient.end();
+
+        RawGradientData {
+            start_x,
+            start_y,
+            end_x,
+            end_y,
+            opacity: gradient.opacity(),
+            width: gradient.width(),
+            stop_count,
+            stops,
+        }
+    }
+}
+
 impl From<RawGradientData> for Gradient {
     fn from(raw_gradient: RawGradientData) -> Self {
         let stops = raw_gradient

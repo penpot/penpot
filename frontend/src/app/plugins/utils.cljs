@@ -291,6 +291,14 @@
     (throw-not-valid code value)
     (display-not-valid code value)))
 
+(defn valid-timeout?
+  "A plugin timeout argument: omitted, or a finite positive number of msecs."
+  [value]
+  (or (nil? value)
+      (and (number? value)
+           (pos? value)
+           (js/Number.isFinite value))))
+
 (defn reject-not-valid
   [reject code value]
   (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)]

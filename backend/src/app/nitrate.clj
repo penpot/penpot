@@ -413,6 +413,17 @@
                       (generate-nitrate-uri "api/connectivity")
                       schema:connectivity params))
 
+(def ^:private schema:identity
+  [:map
+   [:nitrate-id ::sm/text]
+   [:public-key ::sm/text]])
+
+(defn- get-identity-api
+  [cfg params]
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri "api/identity")
+                      schema:identity params))
+
 (def ^:private schema:redeem-result
   [:map
    [:cancel-at [:maybe schema:timestamp]]])
@@ -491,6 +502,7 @@
      :get-subscription             (partial get-subscription-api cfg)
      :get-subscription-warning     (partial get-subscription-warning-api cfg)
      :connectivity                 (partial get-connectivity-api cfg)
+     :get-identity                 (partial get-identity-api cfg)
      :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -549,7 +561,7 @@
                   (call cfg :get-org-sso-by-team {:team-id team-id}))]
     (if-not (:active sso)
       {:authorized true :sso sso}
-      (if (or (:issuer sso) (:base-url sso))
+      (if-not (str/blank? (:issuer sso))
         (let [props           (:props session)
               sso-map         (get props :sso {})
               organization-id (:organization-id sso)

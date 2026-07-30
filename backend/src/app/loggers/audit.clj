@@ -337,7 +337,9 @@
   (let [resultm      (meta result)
         request      (-> params meta ::http/request)
         profile-id   (or (::profile-id resultm)
-                         (:profile-id result)
+                         (some-> (:profile-id result)
+                                 (cond-> (string? (:profile-id result))
+                                   uuid/parse*))
                          (::rpc/profile-id params)
                          uuid/zero)
 
