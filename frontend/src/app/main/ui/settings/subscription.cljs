@@ -187,21 +187,31 @@
                                   (rt/encode-url))
                    href       (dm/str "payments/subscriptions/create?type=unlimited&show="
                                       add-payment-details? "&quantity="
-                                      min-members "&returnUrl=" return-url)]
+                                      min-members "&returnUrl=" return-url)
+                   event-name (if subscribe-to-trial
+                                "create-trial-subscription"
+                                "create-subscription")
+                   subscription-mode (if subscribe-to-trial "trial" "paid")]
                (reset! form nil)
-               (st/emit! (ev/event {::ev/name "create-trial-subscription"
+               (st/emit! (ev/event {::ev/name event-name
                                     :type "unlimited"
-                                    :quantity min-members})
+                                    :quantity min-members
+                                    :subscription-mode subscription-mode})
                          (rt/nav-raw :href href))))))
 
         subscribe-to-enterprise
         (mf/use-fn
          (fn []
-           (st/emit! (ev/event {::ev/name "create-trial-subscription"
-                                :type "enterprise"}))
-           (let [return-url (-> (rt/get-current-href) (rt/encode-url))
+           (let [event-name (if subscribe-to-trial
+                              "create-trial-subscription"
+                              "create-subscription")
+                 subscription-mode (if subscribe-to-trial "trial" "paid")
+                 return-url (-> (rt/get-current-href) (rt/encode-url))
                  href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
-             (st/emit! (rt/nav-raw :href href)))))
+             (st/emit! (ev/event {::ev/name event-name
+                                  :type "enterprise"
+                                  :subscription-mode subscription-mode})
+                       (rt/nav-raw :href href)))))
 
         handle-accept-dialog
         (mf/use-fn
