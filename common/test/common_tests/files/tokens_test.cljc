@@ -1184,7 +1184,7 @@
       (t/is (= #{theme-1-id} (ctos/get-active-theme-ids tokens-status')))
       (t/is (ctos/theme-active? tokens-status' theme-1-id))))
 
-  (t/testing "removes set ids that no longer exist in the lib"
+  (t/testing "removes set ids that no longer exist in the lib (active themes)"
     (let [theme-1-id (thi/new-id! :theme-1)
           set-a-id   (thi/new-id! :set-a)
           tokens-lib (-> (ctob/make-tokens-lib)
@@ -1197,6 +1197,36 @@
                                                   :active-set-ids #{set-a-id (thi/new-id! :removed-set)})
           tokens-status' (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)]
       (t/is (= #{set-a-id} (ctos/get-active-set-ids tokens-status')))))
+
+  (t/testing "removes set ids that no longer exist in the lib (no active themes)"
+    (let [theme-1-id (thi/new-id! :theme-1)
+          set-a-id   (thi/new-id! :set-a)
+          tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set (ctob/make-token-set :id set-a-id :name "set-a"))
+                         (ctob/add-theme (ctob/make-token-theme :id theme-1-id
+                                                                :name "theme-1"
+                                                                :group ""
+                                                                :sets #{"set-a"})))
+          tokens-status  (ctos/make-tokens-status :active-theme-ids #{}
+                                                  :active-set-ids #{set-a-id (thi/new-id! :removed-set)})
+          tokens-status' (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)]
+      (t/is (= #{set-a-id} (ctos/get-active-set-ids tokens-status')))))
+
+  (t/testing "updates active sets when theme changes"
+    (let [theme-1-id (thi/new-id! :theme-1)
+          set-a-id   (thi/new-id! :set-a)
+          set-b-id   (thi/new-id! :set-b)
+          tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set (ctob/make-token-set :id set-a-id :name "set-a"))
+                         (ctob/add-set (ctob/make-token-set :id set-b-id :name "set-b"))
+                         (ctob/add-theme (ctob/make-token-theme :id theme-1-id
+                                                                :name "theme-1"
+                                                                :group ""
+                                                                :sets #{"set-b"})))
+          tokens-status  (ctos/make-tokens-status :active-theme-ids #{theme-1-id}
+                                                  :active-set-ids #{set-a-id (thi/new-id! :removed-set)})
+          tokens-status' (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)]
+      (t/is (= #{set-b-id} (ctos/get-active-set-ids tokens-status')))))
 
   (t/testing "returns same status object when everything is valid"
     (let [theme-1-id (thi/new-id! :theme-1)
