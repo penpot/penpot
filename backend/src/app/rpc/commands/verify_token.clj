@@ -237,7 +237,7 @@
                   "direct-organization-invitation"
                   "team-invitation"))
 
-              organization-client-event-origin
+              organization-event-origin
               (when organization-id-on-add
                 (if organization-id
                   "organization-invitation-acceptance"
@@ -293,23 +293,28 @@
                  cfg
                  (-> (audit/event-from-rpc-params params)
                      (assoc :name "accept-organization-invitation")
-                     (update :context assoc
-                             :client-event-origin
-                             organization-client-event-origin)
                      (assoc :props
                             (-> props
-                                (assoc :organization-id organization-id-on-add
-                                       :organization-member-add-source organization-add-source
-                                       :belongs-to-team-on-add (boolean team-id)
-                                       :organization-member-count-before
-                                       organization-member-count-before)
+                                (assoc :organization-id organization-id-on-add)
                                 (audit/clean-props))))))
 
               (cond-> (assoc claims :state :created)
                 ;; when the invitation is to an org, instead of a team, add the
                 ;; accepted-team-id as :org-team-id
                 (:organization-id claims)
-                (assoc :org-team-id accepted-team-id))))))
+                (assoc :org-team-id accepted-team-id)
+
+                organization-id-on-add
+                (assoc :organization-invitation-audit
+                       {:origin organization-event-origin
+                        :props
+                        (-> props
+                            (assoc :organization-id organization-id-on-add
+                                   :organization-member-add-source organization-add-source
+                                   :belongs-to-team-on-add (boolean team-id)
+                                   :organization-member-count-before
+                                   organization-member-count-before)
+                            (audit/clean-props))}))))))
 
       (do
         ;; If the user is not logged-in and the invitation has been canceled

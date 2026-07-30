@@ -282,7 +282,8 @@
         (case (:type action)
           :add-team-to-organization
           (st/emit! (dnt/add-team-to-organization {:team-id         (:team-id action)
-                                                   :organization-id (:organization-id action)}))
+                                                   :organization-id (:organization-id action)
+                                                   :skip-audit?     true}))
           nil)))))
 
 (mf/defc dashboard*

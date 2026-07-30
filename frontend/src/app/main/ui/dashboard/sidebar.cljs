@@ -662,7 +662,9 @@
         leave-fn
         (mf/use-fn
          (mf/deps on-error organization default-team-id not-owned-teams owned-teams)
-         (fn [{:keys [teams-to-transfer]}]
+         (fn [{:keys [teams-to-transfer
+                      member-added-at
+                      organization-member-count-before]}]
            (let [teams-to-leave (cond->> not-owned-teams
                                   :always
                                   (map #(select-keys % [:id]))
@@ -678,6 +680,9 @@
                                        :default-team-id default-team-id
                                        :teams-to-delete teams-to-delete
                                        :teams-to-leave teams-to-leave
+                                       :member-added-at member-added-at
+                                       :organization-member-count-before
+                                       organization-member-count-before
                                        :on-error on-error})))))
 
         on-leave-clicked

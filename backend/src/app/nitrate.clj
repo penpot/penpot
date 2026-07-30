@@ -173,13 +173,6 @@
       [:id ::sm/uuid]
       [:is-your-penpot :boolean]]]]])
 
-(def ^:private schema:profile-org
-  [:map
-   [:is-member :boolean]
-   [:organization-id {:optional true} [:maybe ::sm/uuid]]
-   [:default-team-id {:optional true} [:maybe ::sm/uuid]]])
-
-
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
 (def ^:private schema:timestamp
   (sm/type-schema
@@ -195,6 +188,13 @@
      :encode/string inst-ms
      :decode/json ct/inst
      :encode/json inst-ms}}))
+
+(def ^:private schema:profile-org
+  [:map
+   [:is-member :boolean]
+   [:organization-id {:optional true} [:maybe ::sm/uuid]]
+   [:default-team-id {:optional true} [:maybe ::sm/uuid]]
+   [:created-at {:optional true} [:maybe schema:timestamp]]])
 
 (def ^:private schema:subscription
   [:map {:title "Subscription"}
@@ -333,14 +333,9 @@
                       nil params))
 
 (defn- set-team-org-api
-  [cfg {:keys [organization-id team-id is-default client-event-origin add-method team-created-at] :as params}]
-  (let [request-params (cond-> {:team-id team-id
-                                :is-your-penpot (true? is-default)}
-                         (some? client-event-origin)
-                         (assoc :client-event-origin client-event-origin
-                                :add-method add-method
-                                :team-created-at team-created-at))
-        params (assoc params :request-params request-params)
+  [cfg {:keys [organization-id team-id is-default] :as params}]
+  (let [params (assoc params :request-params {:team-id team-id
+                                              :is-your-penpot (true? is-default)})
         team (request-to-nitrate cfg :post
                                  (generate-nitrate-uri
                                   "api/organizations/"
@@ -366,14 +361,12 @@
                         schema:profile-org params)))
 
 (defn- remove-profile-from-org-api
-  [cfg {:keys [profile-id organization-id user-who-delete-member deleted-by-role client-event-origin] :as params}]
+  [cfg {:keys [profile-id organization-id user-who-delete-member deleted-by-role] :as params}]
   (let [request-params (cond-> {:user-id profile-id}
                          (some? user-who-delete-member)
                          (assoc :user-who-delete-member user-who-delete-member)
                          (some? deleted-by-role)
-                         (assoc :deleted-by-role deleted-by-role)
-                         (some? client-event-origin)
-                         (assoc :client-event-origin client-event-origin))
+                         (assoc :deleted-by-role deleted-by-role))
         params (assoc params :request-params request-params)]
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
@@ -621,14 +614,10 @@
   Requires organization-id and is-default in params.
   Throws an exception if the request fails."
   [cfg team params]
-  (let [params (cond-> (assoc (or params {})
-                              :team-id (:id team)
-                              :organization-id (:organization-id params)
-                              :is-default (:is-default params))
-                 (false? (:is-default params))
-                 (assoc :client-event-origin "dashboard:create-team-in-organization"
-                        :add-method "create-team-in-organization"
-                        :team-created-at (:created-at team)))
+  (let [params (assoc (or params {})
+                      :team-id (:id team)
+                      :organization-id (:organization-id params)
+                      :is-default (:is-default params))
         result (call cfg :set-team-org params)]
     (when (nil? result)
       (ex/raise :type :internal

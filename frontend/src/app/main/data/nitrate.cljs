@@ -1,8 +1,6 @@
 (ns app.main.data.nitrate
   (:require
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
-   [app.common.time :as ct]
    [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
@@ -10,6 +8,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate-audit :as nitrate-audit]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dt]
    [app.main.repo :as rp]
@@ -24,15 +23,9 @@
 
 (def ^:private nitrate-entry-active-key ::nitrate-entry-active)
 (def ^:private nitrate-entry-pending-popup-key ::nitrate-entry-pending-popup)
-(def ^:private milliseconds-per-day (* 24 60 60 1000))
-
 (defn account-age-days
   [profile]
-  (when (ct/inst? (:created-at profile))
-    (-> (ct/diff-ms (:created-at profile) (ct/now))
-        (/ milliseconds-per-day)
-        (mth/floor)
-        (mth/max 0))))
+  (nitrate-audit/age-days (:created-at profile)))
 
 (defn activate-nitrate-entry-popup!
   []
@@ -169,27 +162,50 @@
                   (dm/get-in profile [:subscription :status]))))
 
 (defn leave-org
-  [{:keys [id name default-team-id teams-to-delete teams-to-leave on-error] :as params}]
+  [{:keys [id
+           name
+           default-team-id
+           teams-to-delete
+           teams-to-leave
+           member-added-at
+           organization-member-count-before
+           on-error]}]
 
   (ptk/reify ::leave-org
     ptk/WatchEvent
     (watch [_ state _]
-      (let [profile-team-id (dm/get-in state [:profile :default-team-id])]
-        (->> (rp/cmd! ::leave-org {:id id
-                                   :name name
-                                   :default-team-id default-team-id
-                                   :teams-to-delete teams-to-delete
-                                   :teams-to-leave teams-to-leave})
-             (rx/mapcat
-              (fn [_]
-                (rx/of
-                 (dt/fetch-teams)
-                 (dcm/go-to-dashboard-recent :team-id profile-team-id)
-                 (modal/hide)
-                 (ntf/show {:content (tr "dasboard.leave-org.toast" name)
-                            :type :toast
-                            :level :success}))))
-             (rx/catch on-error))))))
+      (let [profile-id         (dm/get-in state [:profile :id])
+            profile-team-id    (dm/get-in state [:profile :default-team-id])
+            subscription-status
+            (if (= "trialing" (dm/get-in state [:profile :subscription :status]))
+              "trial"
+              "active")
+            audit-event
+            (nitrate-audit/delete-organization-member-event
+             {:organization-id id
+              :user-id profile-id
+              :user-who-delete-member profile-id
+              :deleted-by-role "organization-member"
+              :member-added-at member-added-at
+              :organization-member-count-before organization-member-count-before
+              :subscription-status subscription-status})]
+        (rx/concat
+         (rx/of audit-event)
+         (->> (rp/cmd! ::leave-org {:id id
+                                    :name name
+                                    :default-team-id default-team-id
+                                    :teams-to-delete teams-to-delete
+                                    :teams-to-leave teams-to-leave})
+              (rx/mapcat
+               (fn [_]
+                 (rx/of
+                  (dt/fetch-teams)
+                  (dcm/go-to-dashboard-recent :team-id profile-team-id)
+                  (modal/hide)
+                  (ntf/show {:content (tr "dasboard.leave-org.toast" name)
+                             :type :toast
+                             :level :success}))))
+              (rx/catch on-error)))))))
 
 (defn show-leave-org-modal
   [{:keys [organization profile default-team-id leave-fn teams-to-transfer on-error]}]
@@ -203,7 +219,14 @@
               (let [num-teams-to-delete (:teams-to-delete summary)
                     num-teams-to-transfer (:teams-to-transfer summary)
                     num-teams-to-exit (:teams-to-exit summary)
-                    num-teams-to-detach (:teams-to-detach summary)]
+                    num-teams-to-detach (:teams-to-detach summary)
+                    leave-fn
+                    (fn [params]
+                      (leave-fn
+                       (assoc params
+                              :member-added-at (:member-added-at summary)
+                              :organization-member-count-before
+                              (:organization-member-count-before summary))))]
                 (cond
                   (pos? num-teams-to-transfer)
                   (rx/of
@@ -290,26 +313,50 @@
   organization requires a fresh Nitrate SSO session. When SSO is required,
   stores the pending action and redirects to the provider so the dashboard
   can resume the operation after the callback."
-  [{:keys [team-id organization-id]}]
+  [{:keys [team-id organization-id skip-audit?]}]
   (ptk/reify ::add-team-to-organization
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [pending-id   (str (uuid/next))
+    (watch [_ state _]
+      (let [team         (dm/get-in state [:teams team-id])
+            organization-team-count-before
+            (nitrate-audit/organization-team-count
+             (vals (:teams state))
+             organization-id)
+            team-previous-organization-status
+            (if (or (:organization-id team)
+                    (get-in team [:organization :id]))
+              "other-organization"
+              "no-organization")
+            subscription-status
+            (or (dm/get-in state [:profile :subscription :status])
+                "active")
+            audit-event
+            (nitrate-audit/add-team-to-organization-event
+             {:team team
+              :organization-id organization-id
+              :organization-team-count-before organization-team-count-before
+              :team-previous-organization-status team-previous-organization-status
+              :add-method "move-existing-team-to-organization"
+              :subscription-status subscription-status})
+            pending-id   (str (uuid/next))
             callback-url (dom/append-query-param (rt/get-current-href)
                                                  :pending-action-id pending-id)]
-        (->> (rp/cmd! :check-nitrate-sso {:organization-id organization-id :url callback-url})
-             (rx/mapcat
-              (fn [{:keys [authorized redirect-uri]}]
-                (if authorized
-                  (->> (rp/cmd! ::add-team-to-organization {:team-id team-id :organization-id organization-id})
-                       (rx/map (fn [_] (modal/hide))))
-                  (if redirect-uri
-                    (do
-                      (ss/save-pending-action! pending-id {:type            :add-team-to-organization
-                                                           :team-id         team-id
-                                                           :organization-id organization-id})
-                      (rx/of (rt/nav-raw :uri (str redirect-uri))))
-                    (rx/empty))))))))))
+        (rx/concat
+         (when-not skip-audit?
+           (rx/of audit-event))
+         (->> (rp/cmd! :check-nitrate-sso {:organization-id organization-id :url callback-url})
+              (rx/mapcat
+               (fn [{:keys [authorized redirect-uri]}]
+                 (if authorized
+                   (->> (rp/cmd! ::add-team-to-organization {:team-id team-id :organization-id organization-id})
+                        (rx/map (fn [_] (modal/hide))))
+                   (if redirect-uri
+                     (do
+                       (ss/save-pending-action! pending-id {:type            :add-team-to-organization
+                                                            :team-id         team-id
+                                                            :organization-id organization-id})
+                       (rx/of (rt/nav-raw :uri (str redirect-uri))))
+                     (rx/empty)))))))))))
 
 
 (defn- fetch-orgs-allowed

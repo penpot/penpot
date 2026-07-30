@@ -8,7 +8,11 @@
   (:require
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.main.data.event :as ev]
    [app.main.data.nitrate :as dnt]
+   [app.main.data.nitrate-audit :as nitrate-audit]
+   [app.main.store :as st]
+   [app.main.ui.auth.verify-token :as verify-token]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest account-age-days-test
@@ -26,6 +30,117 @@
     (t/testing "returns nil when the creation date is not an instant"
       (t/is (nil? (dnt/account-age-days {})))
       (t/is (nil? (dnt/account-age-days {:created-at "invalid"}))))))
+
+(t/deftest add-team-to-organization-audit-event-test
+  (with-redefs [ct/now (constantly (ct/inst "2026-07-27T12:00:00Z"))]
+    (t/testing "reports creating the first team in an organization"
+      (let [event @(nitrate-audit/add-team-to-organization-event
+                    {:organization-id "organization-1"
+                     :organization-team-count-before 0
+                     :team-previous-organization-status "no-organization"
+                     :add-method "create-team-in-organization"
+                     :subscription-status "trialing"})]
+        (t/is (= "add-team-to-organization" (::ev/name event)))
+        (t/is (= "dashboard:create-team-in-organization" (::ev/origin event)))
+        (t/is (= {:is-your-penpot false
+                  :add-method "create-team-in-organization"
+                  :organization-id "organization-1"
+                  :organization-team-count-before 0
+                  :team-previous-organization-status "no-organization"
+                  :is-first-team-in-organization true
+                  :subscription-status "trialing"}
+                 (dissoc event ::ev/name ::ev/origin)))))
+
+    (t/testing "reports moving an older team from another organization"
+      (let [event @(nitrate-audit/add-team-to-organization-event
+                    {:team {:id "team-2"
+                            :created-at (ct/inst "2026-07-17T12:00:00Z")}
+                     :organization-id "organization-2"
+                     :organization-team-count-before 3
+                     :team-previous-organization-status "other-organization"
+                     :add-method "move-existing-team-to-organization"
+                     :subscription-status "active"})]
+        (t/is (= "dashboard:move-team-to-organization" (::ev/origin event)))
+        (t/is (= 10 (:team-age-days event)))
+        (t/is (false? (:is-first-team-in-organization event)))))))
+
+(t/deftest organization-team-count-test
+  (let [organization-id "organization-1"
+        teams [{:id "default"
+                :is-default true
+                :organization-id organization-id}
+               {:id "team-1"
+                :is-default false
+                :organization-id organization-id}
+               {:id "team-2"
+                :is-default false
+                :organization {:id organization-id}}
+               {:id "other-team"
+                :is-default false
+                :organization-id "organization-2"}]]
+    (t/is (= 2
+             (nitrate-audit/organization-team-count
+              teams
+              organization-id)))))
+
+(t/deftest delete-organization-member-audit-event-test
+  (with-redefs [ct/now (constantly (ct/inst "2026-07-27T12:00:00Z"))]
+    (let [event @(nitrate-audit/delete-organization-member-event
+                  {:organization-id "organization-1"
+                   :user-id "profile-1"
+                   :user-who-delete-member "profile-1"
+                   :deleted-by-role "organization-member"
+                   :member-added-at (ct/inst "2026-07-17T12:00:00Z")
+                   :organization-member-count-before 4
+                   :subscription-status "trial"})]
+      (t/is (= "delete-organization-member" (::ev/name event)))
+      (t/is (nil? (::ev/origin event)))
+      (t/is (= {:organization-id "organization-1"
+                :user-id "profile-1"
+                :user-who-delete-member "profile-1"
+                :deleted-by-role "organization-member"
+                :days-since-member-added 10
+                :organization-member-count-before 4
+                :subscription-status "trial"}
+               (dissoc event ::ev/name))))
+
+    (t/testing "keeps a null age when the membership date is unavailable"
+      (let [event @(nitrate-audit/delete-organization-member-event
+                    {:organization-id "organization-1"
+                     :user-id "profile-1"
+                     :user-who-delete-member "profile-1"
+                     :deleted-by-role "organization-member"
+                     :organization-member-count-before 4
+                     :subscription-status "active"})]
+        (t/is (contains? event :days-since-member-added))
+        (t/is (nil? (:days-since-member-added event)))))))
+
+(t/deftest accept-organization-invitation-audit-event-test
+  (let [emitted (atom [])
+        props   {:team-id "team-1"
+                 :organization-id "organization-1"
+                 :role :editor
+                 :invitation-id "invitation-1"
+                 :organization-member-add-source "team-invitation"
+                 :belongs-to-team-on-add true
+                 :organization-member-count-before 4}]
+    (with-redefs [st/emit! (fn
+                             ([event]
+                              (swap! emitted conj event))
+                             ([event & events]
+                              (swap! emitted into (cons event events))))]
+      (verify-token/handle-token
+       {:iss :team-invitation
+        :state :created
+        :team-id "team-1"
+        :organization-invitation-audit
+        {:origin "team-invitation-acceptance"
+         :props props}}))
+
+    (let [event @(first @emitted)]
+      (t/is (= "accept-organization-invitation" (::ev/name event)))
+      (t/is (= "team-invitation-acceptance" (::ev/origin event)))
+      (t/is (= props (dissoc event ::ev/name ::ev/origin))))))
 
 (t/deftest build-admin-console-url-preserves-public-uri-subpath
   (t/testing "builds admin console routes below the configured Penpot subpath"

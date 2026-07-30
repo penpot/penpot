@@ -471,7 +471,8 @@
             (->> (:call-args-list @audit-mock)
                  (map second)
                  (filter #(= "accept-organization-invitation" (:name %)))
-                 first))]
+                 first))
+          frontend-event     (atom nil)]
 
       (db/insert! (:app.db/pool th/*system*)
                   :team-invitation
@@ -491,18 +492,27 @@
                         nil))
                     teams/initialize-user-in-nitrate-org
                     (fn [& _] default-team-id)]
-        (t/is (th/success? (verify! direct-token))))
+        (let [out (verify! direct-token)]
+          (t/is (th/success? out))
+          (reset! frontend-event
+                  (get-in out [:result :organization-invitation-audit]))))
 
       (let [event (organization-event)]
-        (t/is (= "organization-invitation-acceptance"
-                 (get-in event [:context :client-event-origin])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
-        (t/is (= "direct-organization-invitation"
-                 (get-in event [:props :organization-member-add-source])))
-        (t/is (false? (get-in event [:props :belongs-to-team-on-add])))
-        (t/is (= 3 (get-in event [:props :organization-member-count-before])))
+        (t/is (not (contains? (:props event) :organization-member-add-source)))
+        (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
+        (t/is (not (contains? (:props event) :organization-member-count-before)))
         (t/is (= :editor (get-in event [:props :role])))
         (t/is (uuid? (get-in event [:props :invitation-id])))
+        (t/is (= "organization-invitation-acceptance"
+                 (:origin @frontend-event)))
+        (t/is (= organization-id
+                 (get-in @frontend-event [:props :organization-id])))
+        (t/is (= "direct-organization-invitation"
+                 (get-in @frontend-event [:props :organization-member-add-source])))
+        (t/is (false? (get-in @frontend-event [:props :belongs-to-team-on-add])))
+        (t/is (= 3
+                 (get-in @frontend-event [:props :organization-member-count-before])))
         (t/is (not-any? #(contains? #{"accept-team-invitation"
                                       "accept-team-invitation-from"}
                                     (:name (second %)))
@@ -527,20 +537,30 @@
                                                (repeatedly 4 uuid/random))
                         nil))
                     teams/add-profile-to-team! (fn [& _] nil)]
-        (t/is (th/success? (verify! team-token))))
+        (let [out (verify! team-token)]
+          (t/is (th/success? out))
+          (reset! frontend-event
+                  (get-in out [:result :organization-invitation-audit]))))
 
       (let [events (mapv second (:call-args-list @audit-mock))
             event  (organization-event)]
         (t/is (some #(= "accept-team-invitation" (:name %)) events))
         (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
-        (t/is (= "team-invitation-acceptance"
-                 (get-in event [:context :client-event-origin])))
         (t/is (= (:id team) (get-in event [:props :team-id])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
+        (t/is (not (contains? (:props event) :organization-member-add-source)))
+        (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
+        (t/is (not (contains? (:props event) :organization-member-count-before)))
+        (t/is (= "team-invitation-acceptance"
+                 (:origin @frontend-event)))
+        (t/is (= (:id team) (get-in @frontend-event [:props :team-id])))
+        (t/is (= organization-id
+                 (get-in @frontend-event [:props :organization-id])))
         (t/is (= "team-invitation"
-                 (get-in event [:props :organization-member-add-source])))
-        (t/is (true? (get-in event [:props :belongs-to-team-on-add])))
-        (t/is (= 5 (get-in event [:props :organization-member-count-before]))))
+                 (get-in @frontend-event [:props :organization-member-add-source])))
+        (t/is (true? (get-in @frontend-event [:props :belongs-to-team-on-add])))
+        (t/is (= 5
+                 (get-in @frontend-event [:props :organization-member-count-before]))))
 
       (th/reset-mock! audit-mock)
       (db/insert! (:app.db/pool th/*system*)
@@ -559,11 +579,15 @@
                         :get-org-members (throw (ex-info "unexpected member count" {}))
                         nil))
                     teams/add-profile-to-team! (fn [& _] nil)]
-        (t/is (th/success? (verify! team-token))))
+        (let [out (verify! team-token)]
+          (t/is (th/success? out))
+          (reset! frontend-event
+                  (get-in out [:result :organization-invitation-audit]))))
 
       (let [events (mapv second (:call-args-list @audit-mock))]
         (t/is (some #(= "accept-team-invitation" (:name %)) events))
-        (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))))))
+        (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))
+        (t/is (nil? @frontend-event))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]

@@ -57,6 +57,11 @@
   (fn [_cfg method _params]
     (case method
       :get-org-summary org-summary
+      :get-org-membership {:is-member true
+                           :organization-id (:id org-summary)
+                           :created-at (ct/inst "2026-07-17T12:00:00Z")}
+      :get-org-members [(:owner-id org-summary)
+                        (uuid/random)]
       nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -108,9 +113,7 @@
         (t/is (= (:id profile-user)
                  (:user-who-delete-member @remove-profile-params)))
         (t/is (= "organization-member"
-                 (:deleted-by-role @remove-profile-params)))
-        (t/is (= "dashboard"
-                 (:client-event-origin @remove-profile-params)))))))
+                 (:deleted-by-role @remove-profile-params)))))))
 
 (t/deftest leave-org-deletes-org-default-team-when-empty
   (let [profile-owner   (th/create-profile* 1 {:is-active true})
@@ -325,7 +328,9 @@
         (t/is (= {:teams-to-delete 0
                   :teams-to-transfer 0
                   :teams-to-exit 0
-                  :teams-to-detach 0}
+                  :teams-to-detach 0
+                  :member-added-at (ct/inst "2026-07-17T12:00:00Z")
+                  :organization-member-count-before 2}
                  (:result out)))))))
 
 (t/deftest get-leave-org-summary-counts-default-team-as-keep-when-has-files
@@ -357,7 +362,9 @@
         (t/is (= {:teams-to-delete 1
                   :teams-to-transfer 0
                   :teams-to-exit 0
-                  :teams-to-detach 1}
+                  :teams-to-detach 1
+                  :member-added-at (ct/inst "2026-07-17T12:00:00Z")
+                  :organization-member-count-before 2}
                  (:result out)))))))
 
 (t/deftest leave-org-error-org-owner-cannot-leave
@@ -900,12 +907,10 @@
                               :organization-id org-id})]
         (t/is (th/success? out))))
 
-    (t/is (= "dashboard:move-team-to-organization"
-             (:client-event-origin @set-team-params)))
-    (t/is (= "move-existing-team-to-organization"
-             (:add-method @set-team-params)))
-    (t/is (= (:created-at team)
-             (:team-created-at @set-team-params)))
+    (t/is (= {:team-id (:id team)
+              :organization-id org-id
+              :is-default false}
+             @set-team-params))
 
     (let [emails (->> @sent (map :to) set)]
       (t/is (= 2 (count @sent)))
@@ -914,7 +919,7 @@
         (t/is (= org-name (:organization-name email-params)))
         (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
 
-(t/deftest create-team-in-organization-passes-audit-context-to-nitrate
+(t/deftest create-team-in-organization-passes-association-to-nitrate
   (let [organization-id (uuid/random)
         team            {:id (uuid/random)
                          :created-at (ct/now)}
@@ -929,12 +934,10 @@
        {:organization-id organization-id
         :is-default false}))
 
-    (t/is (= "dashboard:create-team-in-organization"
-             (:client-event-origin @params*)))
-    (t/is (= "create-team-in-organization"
-             (:add-method @params*)))
-    (t/is (= (:created-at team)
-             (:team-created-at @params*)))))
+    (t/is (= {:team-id (:id team)
+              :organization-id organization-id
+              :is-default false}
+             @params*))))
 
 (t/deftest add-team-to-organization-skips-sso-emails-when-sso-inactive
   (let [owner      (th/create-profile* 303 {:is-active true :email "owner303@example.com"})
