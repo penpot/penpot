@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -57,7 +58,7 @@
 
 (def schema:props
   [:map {:title "ProfileProps" :closed true}
-   [:plugins {:optional true} schema:plugin-registry]
+   [:plugins {:optional true} ctp/schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
