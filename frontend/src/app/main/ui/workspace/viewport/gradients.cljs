@@ -189,6 +189,7 @@
                    lv (-> (gpt/to-vec from-p to-p) (gpt/unit))
                    nv (gpt/normal-left lv)
                    offset (-> (gsp/project-t position [from-p to-p] nv)
+                              (mth/clamp 0 1)
                               (mth/precision 2))
                    new-stop (cc/interpolate-gradient stops offset)
                    stops (conj stops new-stop)
