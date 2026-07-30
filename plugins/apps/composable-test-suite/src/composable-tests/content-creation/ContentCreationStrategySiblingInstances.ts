@@ -1,4 +1,4 @@
-import { Board } from "@penpot/plugin-types";
+import { Board, Shape } from "@penpot/plugin-types";
 import { Situation } from "../core/Situation";
 import { Color } from "../model/Color";
 import { ContentCreationStrategy } from "./ContentCreationStrategy";
@@ -23,6 +23,8 @@ export type SiblingLayout = "none" | "flex" | "grid";
  * is offered to keep the sweep space available, not because it is known to break.
  */
 export class ContentCreationStrategySiblingInstances extends ContentCreationStrategy {
+    static readonly SIBLING_NAME = "Icon";
+
     /**
      * @param count - how many sibling instances of the inner component to append
      * @param baselineColor - the inner rectangle's fill colour
@@ -39,7 +41,7 @@ export class ContentCreationStrategySiblingInstances extends ContentCreationStra
     createContent(_situation: Situation, board: Board): void {
         // inner component: a small board with a single rectangle
         const innerBoard = penpot.createBoard();
-        innerBoard.name = "Icon";
+        innerBoard.name = ContentCreationStrategySiblingInstances.SIBLING_NAME;
         innerBoard.resize(24, 24);
         const rect = penpot.createRectangle();
         rect.name = "rect";
@@ -63,5 +65,17 @@ export class ContentCreationStrategySiblingInstances extends ContentCreationStra
                 board.appendChild(innerComponent.instance());
             }
         }
+    }
+
+    /** Returns the sibling instance at `index` inside a component instance. */
+    getSibling(instance: Board, index: number): Shape {
+        const siblings = (instance.children ?? []).filter(
+            (shape) => shape.name === ContentCreationStrategySiblingInstances.SIBLING_NAME
+        );
+        const sibling = siblings[index];
+        if (sibling === undefined) {
+            throw new Error(`No sibling instance at index ${index} inside "${instance.name}"`);
+        }
+        return sibling;
     }
 }

@@ -113,6 +113,116 @@
     (-> changes
         (pcb/update-shapes ids update-fn {:attrs #{:blocked :hidden}}))))
 
+;; Deleting shapes inside a surviving component main transitively removes their
+;; copies across all pages. Whole-main and component-swap deletions are excluded.
+
+(defn- mutilates-main?
+  "Whether deleting `id` takes a shape out of a component main that survives.
+  `deleted-ids` are all the ids the deletion removes from the page."
+  [objects deleted-ids id]
+  (->> (cfh/get-parent-ids objects id)
+       (some (fn [parent-id]
+               (let [parent (get objects parent-id)]
+                 (and (:main-instance parent)
+                      (not (contains? deleted-ids parent-id))))))))
+
+(defn- build-shape-ref-index
+  "Index every referencing shape by shape-ref and page."
+  [pages-index page-objects]
+  (reduce (fn [index page-id]
+            (reduce (fn [index shape]
+                      (if-let [shape-ref (:shape-ref shape)]
+                        (update index shape-ref (fnil conj []) [page-id (:id shape)])
+                        index))
+                    index
+                    (vals (page-objects page-id))))
+          {}
+          (keys pages-index)))
+
+(defn- collect-copy-deletions
+  "Collect dangling copy roots and their subtree ids by page.
+  `scheduled` prevents duplicate deletions during transitive traversal."
+  [ref-index descendants-of dangling scheduled]
+  (loop [dangling  dangling
+         scheduled scheduled
+         result    {}]
+    (if (empty? dangling)
+      result
+      (let [hits
+            (into #{}
+                  (comp (mapcat ref-index)
+                        (remove (fn [[_ id]] (contains? scheduled id))))
+                  dangling)
+
+            ;; Ancestor subtrees already contain nested hits.
+            nested
+            (into #{}
+                  (mapcat (fn [[page-id id]] (descendants-of page-id id)))
+                  hits)
+
+            subtrees
+            (into []
+                  (comp (remove (fn [[_ id]] (contains? nested id)))
+                        (map (fn [[page-id id]]
+                               [page-id id (-> (descendants-of page-id id)
+                                               (set)
+                                               (conj id))])))
+                  hits)
+
+            deleted
+            (into #{} (mapcat #(nth % 2)) subtrees)]
+        (recur deleted
+               (into scheduled deleted)
+               (reduce (fn [result [page-id root-id ids]]
+                         (-> result
+                             (update-in [page-id :roots]
+                                        (fnil conj (d/ordered-set))
+                                        root-id)
+                             (update-in [page-id :ids] (fnil into #{}) ids)))
+                       result
+                       subtrees))))))
+
+(defn- propagated-copy-deletions
+  "Collect propagated copy deletions unless component sync owns the operation."
+  [objects pages-index page-objects deleted-ids allow-altering-copies]
+  (if (or allow-altering-copies (nil? pages-index))
+    {}
+    (let [dangling (into #{}
+                         (filter #(mutilates-main? objects deleted-ids %))
+                         deleted-ids)]
+      (if (empty? dangling)
+        {}
+        (collect-copy-deletions (build-shape-ref-index pages-index page-objects)
+                                ;; Cache subtrees shared by multiple references.
+                                (memoize (fn [page-id id]
+                                           (cfh/get-children-ids (page-objects page-id) id)))
+                                dangling
+                                deleted-ids)))))
+
+(declare generate-delete-shapes)
+
+(defn- generate-copy-deletions
+  "Delete propagated copy roots through each page's normal deletion workflow."
+  [changes data page pages-index copy-deletions]
+  (reduce-kv (fn [changes pid {:keys [roots]}]
+               (let [options     {:ignore-touched true
+                                  :allow-altering-copies true}
+                     target-page (if (= pid (:id page))
+                                   page
+                                   (get pages-index pid))]
+                 (if (= pid (:id page))
+                   (second (generate-delete-shapes changes roots options))
+                   (let [[_ target-changes]
+                         (generate-delete-shapes (pcb/empty-changes nil pid)
+                                                 data
+                                                 target-page
+                                                 (:objects target-page)
+                                                 roots
+                                                 options)]
+                     (pcb/concat-changes-without-local changes target-changes)))))
+             changes
+             copy-deletions))
+
 (defn generate-delete-shapes
   ([changes file page objects ids options]
    (generate-delete-shapes (-> changes
@@ -185,17 +295,19 @@
                    ids-to-delete)
            [])
 
-         interacting-shapes
-         (filter (fn [shape]
-                   ;; If any of the deleted shapes is the destination of
-                   ;; some interaction, this must be deleted, too.
-                   (let [interactions (:interactions shape)]
-                     (some #(and (ctsi/has-destination %)
-                                 (contains? ids-to-delete (:destination %)))
-                           interactions)))
-                 (vals objects))
-
          id-to-delete? (set ids-to-delete)
+
+         interacting-shapes
+         (into []
+               (filter (fn [shape]
+                         ;; If any of the deleted shapes is the destination of
+                         ;; some interaction, this must be deleted, too.
+                         (let [interactions (:interactions shape)]
+                           (some #(and (ctsi/has-destination %)
+                                       (id-to-delete? (:destination %)))
+                                 interactions))))
+               (vals objects))
+
          changes
          (->> (:flows page)
               (reduce
@@ -261,19 +373,43 @@
                  []
                  (into ids-to-delete descendants-to-delete))
 
+         ;; Empty main parents also leave their copies dangling.
+         all-deleted-ids
+         (-> (set ids-to-delete)
+             (into descendants-to-delete)
+             (into empty-parents))
 
-         ids-set (set ids-to-delete)
+         pages-index
+         (when data
+           (or (:pages-index data)
+               (dm/get-in data [:data :pages-index])))
+
+         page-objects
+         (fn [id]
+           (if (= id (:id page))
+             objects
+             (dm/get-in pages-index [id :objects])))
+
+         copy-deletions
+         (propagated-copy-deletions objects pages-index page-objects
+                                    all-deleted-ids allow-altering-copies)
+
+         ;; Propagated copy deletions supersede hiding the same shapes.
+         ids-to-hide
+         (if-let [deleted (seq (get-in copy-deletions [(:id page) :ids]))]
+           (into [] (remove (set deleted)) ids-to-hide)
+           ids-to-hide)
 
          guides-to-delete
          (->> (:guides page)
               (vals)
-              (filter #(contains? ids-set (:frame-id %)))
+              (filter #(id-to-delete? (:frame-id %)))
               (map :id))
 
          changes (reduce (fn [changes guide-id]
                            (-> changes
                                (pcb/with-page page)
-                               (pcb/set-flow guide-id nil)))
+                               (pcb/set-guide guide-id nil)))
                          changes
                          guides-to-delete)
 
@@ -289,6 +425,7 @@
                      (pcb/remove-objects descendants-to-delete {:ignore-touched true})
                      (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
+                     (generate-copy-deletions data page pages-index copy-deletions)
                      (pcb/resize-parents all-parents)
                      (pcb/update-shapes groups-to-unmask
                                         (fn [shape]
@@ -299,7 +436,7 @@
                                                          (fn [interactions]
                                                            (into []
                                                                  (remove #(and (ctsi/has-destination %)
-                                                                               (contains? ids-to-delete (:destination %))))
+                                                                               (id-to-delete? (:destination %))))
                                                                  interactions))))))]
      [all-parents changes])))
 
