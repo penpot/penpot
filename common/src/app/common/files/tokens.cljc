@@ -694,7 +694,8 @@
 
 (defn sync-tokens-status-with-lib
   "Synchronizes tokens status with the current tokens lib:
-   - Delete any theme or set that no longer exists in the lib."
+   - Delete any theme or set that no longer exists in the lib.
+   - Recalculate the list of active sets from the new themes."
   [tokens-status tokens-lib]
   (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
   (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
@@ -703,9 +704,11 @@
                                (filter #(some? (ctob/get-theme tokens-lib %)))
                                active-theme-ids)
         active-set-ids   (ctos/get-active-set-ids tokens-status)
-        valid-set-ids    (into #{}
-                               (filter #(some? (ctob/get-set tokens-lib %)))
-                               active-set-ids)]
+        valid-set-ids    (if (empty? valid-theme-ids)
+                           (into #{}
+                                 (filter #(some? (ctob/get-set tokens-lib %)))
+                                 active-set-ids)
+                           (calculate-active-sets valid-theme-ids tokens-lib))]
 
     (if (or (not= active-theme-ids valid-theme-ids)
             (not= active-set-ids valid-set-ids))

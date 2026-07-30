@@ -308,15 +308,16 @@
   (let [file-id (cthi/new-id! :file)
         set-id  (cthi/new-id! :set)
         dup-id  (cthi/new-id! :dup)
-        proxy   (ptok/token-set-proxy "plugin-id" file-id set-id)]
-    (with-redefs [r/check-permission (constantly true)
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
                   dwtl/duplicate-token-set
                   (mock/stub (fn [id {:keys [id-ref]}]
                                (t/is (= set-id id))
                                (reset! id-ref dup-id)
                                :duplicate-token-set))
                   st/emit! mock/noop]
-      (let [dup (.duplicate proxy)]
+      (let [proxy (ptok/token-set-proxy "plugin-id" file-id set-id)
+            dup   (.duplicate proxy)]
         (t/is (ptok/token-set-proxy? dup))
         (t/is (= (str dup-id) (.-id dup)))))))
 
@@ -324,10 +325,9 @@
   (let [file-id  (cthi/new-id! :file)
         theme-id (cthi/new-id! :theme)
         set-id   (cthi/new-id! :set)
-        set      (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
-        theme    (ptok/token-theme-proxy "plugin-id" file-id theme-id)
         captured (atom [])]
-    (with-redefs [r/check-permission (constantly true)
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
                   u/locate-token-theme
                   (fn [_file _theme]
                     (ctob/make-token-theme :id theme-id
@@ -338,18 +338,21 @@
                     (swap! captured conj {:id id :theme theme})
                     :update-token-theme)
                   st/emit! mock/noop]
-      (.addSet theme set)
-      (.removeSet theme set)
-      (t/is (= [theme-id theme-id] (mapv :id @captured)))
-      (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
-      (t/is (not (contains? (-> @captured second :theme :sets) "Primitives"))))))
+      (let [set   (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
+            theme (ptok/token-theme-proxy "plugin-id" file-id theme-id)]
+        (.addSet theme set)
+        (.removeSet theme set)
+        (t/is (= [theme-id theme-id] (mapv :id @captured)))
+        (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
+        (t/is (not (contains? (-> @captured second :theme :sets) "Primitives")))))))
 
 (t/deftest font-family-token-value-accepts-a-string
   (let [file-id  (cthi/new-id! :file)
         set-id   (cthi/new-id! :set)
         token-id (cthi/new-id! :token)
         captured (atom nil)]
-    (with-redefs [r/check-permission (constantly true)
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
                   u/locate-token (constantly {:id token-id
                                               :name "font.primary"
                                               :type :font-family
@@ -423,13 +426,14 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [r/check-permission (constantly true)
+    (with-redefs [r/check-permission   (constantly true)
+                  u/locate-tokens-lib  (constantly nil)
                   u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
                   u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
                   u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
         (.addSet theme-proxy (str set-id))
         (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
@@ -444,13 +448,14 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [r/check-permission (constantly true)
+    (with-redefs [r/check-permission   (constantly true)
+                  u/locate-tokens-lib  (constantly nil)
                   u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
                   u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
                   u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
             set-proxy   (ptok/token-set-proxy plugin-id file-id set-id "Core")]
         (.addSet theme-proxy set-proxy)
@@ -463,20 +468,23 @@
         theme-id  (uuid/next)
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
-        errors    (atom [])]
-    (with-redefs [u/locate-token-set         (constantly nil)
-                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
-                  u/throw-validation-errors? (constantly true)
-                  dwtl/update-token-theme    (fn [id theme] {:id id :theme theme})
-                  st/emit!                   (fn ([event] (swap! emitted conj event) nil)
-                                               ([event & _] (swap! emitted conj event) nil))]
+        invalid   (atom [])]
+    (with-redefs [u/locate-tokens-lib     (constantly nil)
+                  u/locate-token-set      (constantly nil)
+                  u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
+                  u/handle-error          (fn [plugin-id]
+                                            (fn [cause]
+                                              (u/not-valid plugin-id :error (str cause))))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
-        ;; Non-id, non-proxy arguments are rejected by the schema coercer.
-        (try (.addSet theme-proxy 42) (catch :default e (swap! errors conj e)))
-        (try (.removeSet theme-proxy nil) (catch :default e (swap! errors conj e)))
+        (try (.addSet theme-proxy 42) (catch :default e (swap! invalid conj e)))
+        (try (.removeSet theme-proxy nil) (catch :default e (swap! invalid conj e)))
         (t/is (empty? @emitted))
-        (t/is (= 2 (count @errors)))
-        (t/is (every? #(instance? js/Error %) @errors))))))
+        (t/is (= 2 (count @invalid)))
+        (t/is (every? #(instance? js/Error %) @invalid))))))
 
 ;; ═══════════════════════════════════════════════════════════════
 ;; Permission check tests (T9-F-01)
