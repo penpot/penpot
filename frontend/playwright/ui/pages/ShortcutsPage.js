@@ -305,6 +305,13 @@ export class ShortcutsPage extends BaseWebSocketPage {
     });
   }
 
+  async confirmImportApply() {
+    const applyButton = this.page.getByRole("button", {
+      name: /apply/i,
+    });
+    await applyButton.click();
+  }
+
   async getExportedJson() {
     const [download] = await Promise.all([
       this.page.waitForEvent("download"),

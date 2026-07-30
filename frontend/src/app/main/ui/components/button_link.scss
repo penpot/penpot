@@ -23,9 +23,9 @@
   transition: all 0.4s;
   text-decoration: none !important;
   block-size: $sz-40;
+}
 
-  .logo {
-    block-size: px2rem(20);
-    inline-size: px2rem(20);
-  }
+.logo {
+  block-size: px2rem(20);
+  inline-size: px2rem(20);
 }

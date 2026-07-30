@@ -5486,12 +5486,8 @@ msgid "shortcuts.start-editing"
 msgstr "Comenzar edición"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Comenzar medida"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Terminar medida"
+msgid "shortcuts.show-measure"
+msgstr "Mostrar medidas"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
@@ -5564,6 +5560,10 @@ msgstr "Pulsa la combinación de teclas deseada"
 #: src/app/main/ui/shortcuts.cljs
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Combinación usada en \"%s\". Guardar este atajo hará que se elimine allí."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "Si guardas, este atajo volvera a su valor original:"
 
 #: src/app/main/ui/shortcuts.cljs
 msgid "shortcuts.edit-modal.success"
@@ -5700,6 +5700,22 @@ msgstr "Acción"
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs
 msgid "restore-shortcuts.restore"
 msgstr "Restaurar"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-title"
+msgstr "Importar atajos"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-text"
+msgstr "Los siguientes atajos se modificarán con la configuración importada."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.no-changes"
+msgstr "No se encontraron diferencias entre los atajos actuales y los importados."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.apply"
+msgstr "Aplicar"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
 msgid "subscription.banner.create-org-info"

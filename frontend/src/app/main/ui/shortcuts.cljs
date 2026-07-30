@@ -305,7 +305,7 @@
             :key unique-key} char]))
 
 (mf/defc shortcuts-keys*
-  [{:keys [content command is-customized has-conflict?]}]
+  [{:keys [content command is-customized has-conflict? light-shortcut]}]
   (let [managed-list    (if (coll? content)
                           content
                           (conj () content))
@@ -324,7 +324,8 @@
                                 :command command
                                 :class (cond
                                          has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key))}])
+                                         is-customized (stl/css :customized-key)
+                                         light-shortcut (stl/css :light-key))}])
 
         (when (not= chars penultimate) [:span {:class (stl/css :space)} ","])])
      (when (not= last-element penultimate)
@@ -336,7 +337,8 @@
                                 :command command
                                 :class (cond
                                          has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key))}])])]))
+                                         is-customized (stl/css :customized-key)
+                                         light-shortcut (stl/css :light-key))}])])]))
 
 (mf/defc shortcut-row-editable*
   [{:keys [elements custom-shortcuts command-translate conflicts section-key]}]
@@ -371,21 +373,30 @@
         conflict*              (mf/use-state nil)
         conflict               (deref conflict*)
 
+        reset-notification* (mf/use-state nil)
+        reset-pending*      (mf/use-state false)
+
         clean-editing-state
         (fn []
           (reset! is-editing* false)
           (reset! display-parts* nil)
           (reset! recorded-command* nil)
-          (reset! conflict* nil))
+          (reset! conflict* nil)
+          (reset! reset-notification* nil)
+          (reset! reset-pending* false))
 
         effective-section-key (if (= section-key :basics) :workspace section-key)
 
         on-reset-shortcut
         (mf/use-fn
          (mf/deps effective-section-key command-info)
-         (fn [shortcut-key]
-           (st/emit! (customize/reset-custom-shortcut shortcut-key (:original-command command-info) effective-section-key))
-           (clean-editing-state)))
+         (fn [_]
+           (let [original-cmd (:original-command command-info)]
+             (reset! reset-pending* true)
+             (reset! recorded-command* original-cmd)
+             (reset! reset-notification* original-cmd)
+             (reset! conflict* nil)
+             (reset! display-parts* nil))))
 
         start-editing
         (mf/use-fn
@@ -419,11 +430,13 @@
          (fn [event]
            (dom/prevent-default event)
            (when recorded-command
-             (st/emit! (customize/set-custom-shortcut
-                        command
-                        recorded-command
-                        (:key conflict)
-                        effective-section-key)))
+             (if (deref reset-pending*)
+               (st/emit! (customize/reset-custom-shortcut command recorded-command effective-section-key))
+               (st/emit! (customize/set-custom-shortcut
+                          command
+                          recorded-command
+                          (:key conflict)
+                          effective-section-key))))
            (clean-editing-state)))
 
         on-editable-container-blur
@@ -436,6 +449,11 @@
     (mf/with-effect [is-editing]
       (when is-editing
         (some-> (mf/ref-val recording-ref) (dom/focus!))))
+
+    (mf/with-effect [display-parts]
+      (when (some? display-parts)
+        (reset! reset-notification* nil)
+        (reset! reset-pending* false)))
 
     (mf/with-effect [is-editing]
       (when is-editing
@@ -506,7 +524,15 @@
                                            :customized-key customized?)} (:final-key display-parts)])
             (when-not (:finalized? display-parts)
               [:span {:class (stl/css :recording-ellipsis)} "..."])])]
-        (when recorded-command
+        (when-let [default-cmd @reset-notification*]
+          [:> context-notification* {:level :info :class (stl/css :modal-reset-msg)}
+           (tr "shortcuts.edit-modal.reset-pending")
+           [:> shortcuts-keys* {:content default-cmd
+                                :command (keyword "default")
+                                :is-customized false
+                                :has-conflict? false}]])
+
+        (when (and recorded-command (not (deref reset-pending*)))
           (if conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
              (tr "shortcuts.edit-modal.conflict" (:name conflict))]
