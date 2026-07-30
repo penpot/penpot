@@ -18,6 +18,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.media :as di]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate-audit :as nitrate-audit]
    [app.main.data.profile :as dp]
    [app.main.features :as features]
    [app.main.repo :as rp]
@@ -438,17 +439,36 @@
   (dm/assert! (string? name))
   (ptk/reify ::create-team
     ptk/WatchEvent
-    (watch [it _ _]
+    (watch [it state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
             features features/global-enabled-features
+            organization-team-count-before
+            (when organization-id
+              (nitrate-audit/organization-team-count
+               (vals (:teams state))
+               organization-id))
+            subscription-status
+            (or (dm/get-in state [:profile :subscription :status])
+                "active")
+            audit-event
+            (when organization-id
+              (nitrate-audit/add-team-to-organization-event
+               {:organization-id organization-id
+                :organization-team-count-before organization-team-count-before
+                :team-previous-organization-status "no-organization"
+                :add-method "create-team-in-organization"
+                :subscription-status subscription-status}))
             params   (cond-> {:name name :features features}
                        organization-id (assoc :organization-id organization-id))]
-        (->> (rp/cmd! :create-team (with-meta params (meta it)))
-             (rx/tap on-success)
-             (rx/map team-created)
-             (rx/catch on-error))))))
+        (rx/concat
+         (when audit-event
+           (rx/of audit-event))
+         (->> (rp/cmd! :create-team (with-meta params (meta it)))
+              (rx/tap on-success)
+              (rx/map team-created)
+              (rx/catch on-error)))))))
 
 ;; --- EVENT: create-team-with-invitations
 

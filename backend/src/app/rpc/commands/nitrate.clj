@@ -223,7 +223,9 @@
    [:teams-to-delete ::sm/int]
    [:teams-to-transfer ::sm/int]
    [:teams-to-exit ::sm/int]
-   [:teams-to-detach ::sm/int]])
+   [:teams-to-detach ::sm/int]
+   [:member-added-at [:maybe ct/schema:inst]]
+   [:organization-member-count-before ::sm/int]])
 
 (def ^:private schema:get-leave-org-summary
   [:map
@@ -322,7 +324,8 @@
 
 (defn leave-org
   [{:keys [::db/conn] :as cfg}
-   {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?]}]
+   {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?
+           user-who-delete-member deleted-by-role]}]
   (let [org-prefix (str "[" (d/sanitize-string name) "] ")
         {:keys [deletable-team-ids
                 keep-default-team?
@@ -357,7 +360,11 @@
                                                :organization-id id}))
 
     ;; Api call to nitrate
-    (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :organization-id id})
+    (nitrate/call cfg :remove-profile-from-org
+                  {:profile-id profile-id
+                   :organization-id id
+                   :user-who-delete-member user-who-delete-member
+                   :deleted-by-role deleted-by-role})
 
     nil))
 
@@ -368,7 +375,10 @@
    ::sm/params schema:leave-org
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (leave-org cfg (assoc params :profile-id profile-id)))
+  (leave-org cfg (assoc params
+                        :profile-id profile-id
+                        :user-who-delete-member profile-id
+                        :deleted-by-role "organization-member")))
 
 
 (sv/defmethod ::get-leave-org-summary
@@ -382,12 +392,20 @@
                 valid-teams-to-transfer
                 valid-teams-to-exit
                 valid-default-team]} (get-valid-teams cfg id profile-id default-team-id)
+        membership              (nitrate/call cfg :get-org-membership
+                                              {:profile-id profile-id
+                                               :organization-id id})
+        organization-members    (nitrate/call cfg :get-org-members
+                                              {:organization-id id})
         teams-to-transfer-count (count valid-teams-to-transfer)
         teams-to-exit-count     (count valid-teams-to-exit)]
     (when-not valid-default-team
       (ex/raise :type :validation
                 :code :not-valid-teams))
-    (get-leave-org-summary cfg default-team-id valid-teams-to-delete-ids teams-to-transfer-count teams-to-exit-count)))
+    (assoc
+     (get-leave-org-summary cfg default-team-id valid-teams-to-delete-ids teams-to-transfer-count teams-to-exit-count)
+     :member-added-at (:created-at membership)
+     :organization-member-count-before (count organization-members))))
 
 
 (def ^:private schema:remove-team-from-org
@@ -525,7 +543,9 @@
           (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
       ;; Api call to nitrate
-      (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
+      (let [team (nitrate/call cfg :set-team-org {:team-id team-id
+                                                  :organization-id organization-id
+                                                  :is-default false})]
         ;; Notify connected users
         (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
 

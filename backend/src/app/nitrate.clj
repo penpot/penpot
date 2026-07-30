@@ -173,13 +173,6 @@
       [:id ::sm/uuid]
       [:is-your-penpot :boolean]]]]])
 
-(def ^:private schema:profile-org
-  [:map
-   [:is-member :boolean]
-   [:organization-id {:optional true} [:maybe ::sm/uuid]]
-   [:default-team-id {:optional true} [:maybe ::sm/uuid]]])
-
-
 ;; TODO Unify with schemas on backend/src/app/http/management.clj
 (def ^:private schema:timestamp
   (sm/type-schema
@@ -195,6 +188,13 @@
      :encode/string inst-ms
      :decode/json ct/inst
      :encode/json inst-ms}}))
+
+(def ^:private schema:profile-org
+  [:map
+   [:is-member :boolean]
+   [:organization-id {:optional true} [:maybe ::sm/uuid]]
+   [:default-team-id {:optional true} [:maybe ::sm/uuid]]
+   [:created-at {:optional true} [:maybe schema:timestamp]]])
 
 (def ^:private schema:subscription
   [:map {:title "Subscription"}
@@ -361,8 +361,13 @@
                         schema:profile-org params)))
 
 (defn- remove-profile-from-org-api
-  [cfg {:keys [profile-id organization-id] :as params}]
-  (let [params (assoc params :request-params {:user-id profile-id})]
+  [cfg {:keys [profile-id organization-id user-who-delete-member deleted-by-role] :as params}]
+  (let [request-params (cond-> {:user-id profile-id}
+                         (some? user-who-delete-member)
+                         (assoc :user-who-delete-member user-who-delete-member)
+                         (some? deleted-by-role)
+                         (assoc :deleted-by-role deleted-by-role))
+        params (assoc params :request-params request-params)]
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"

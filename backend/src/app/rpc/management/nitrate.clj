@@ -17,6 +17,7 @@
    [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar schema:nitrate-sso]]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
@@ -619,8 +620,12 @@ RETURNING id, deleted_at;")
                 [:default-team-id ::sm/uuid]]
    ::db/transaction true
    ::nitrate/sso false}
-  [cfg {:keys [profile-id organization-id organization-name default-team-id] :as params}]
-  (let [{:keys [valid-teams-to-delete-ids
+  [cfg {actor-profile-id ::rpc/profile-id
+        :keys [profile-id organization-id organization-name default-team-id]
+        :as params}]
+  (let [actor-profile-id (when-not (= actor-profile-id uuid/zero)
+                           actor-profile-id)
+        {:keys [valid-teams-to-delete-ids
                 valid-teams-to-transfer
                 valid-teams-to-exit]} (cnit/get-valid-teams cfg organization-id profile-id default-team-id)
         add-reassign-to (partial add-reassign-to cfg profile-id)
@@ -633,7 +638,10 @@ RETURNING id, deleted_at;")
                                :name organization-name
                                :teams-to-delete valid-teams-to-delete-ids
                                :teams-to-leave valid-teams-to-leave
-                               :skip-validation true))
+                               :skip-validation true
+                               :user-who-delete-member actor-profile-id
+                               :deleted-by-role (when actor-profile-id
+                                                  "organization-owner")))
     (notifications/notify-user-org-change cfg profile-id organization-id organization-name "dashboard.user-no-longer-belong-org")
     nil))
 
@@ -809,7 +817,7 @@ RETURNING id, deleted_at;")
         ip-addr  (::rpc/ip-addr params)]
 
     (run! (fn [{:keys [type name profile-id props context] :as event}]
-            (let [context (-> (merge context context')
+            (let [context (-> (merge context (d/without-nils context'))
                               (d/without-nils))]
               (audit/submit cfg {:type (d/nilv type "action")
                                  :name name

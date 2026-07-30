@@ -127,7 +127,8 @@
                   :hint "The invited email is not a member of the organization")))))
 
 (defn- create-invitation
-  [{:keys [::db/conn] :as cfg} {:keys [team organization profile role email org-member-ids] :as params}]
+  [{:keys [::db/conn] :as cfg}
+   {:keys [team organization profile role email org-member-ids organization-member-ids] :as params}]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
@@ -203,6 +204,7 @@
                                                (name role) expire]))
               updated?   (not= id (:id invitation))
               profile-id (:id profile)
+              team-organization-id (get-in team [:organization :id])
               tprops     {:profile-id profile-id
                           :invitation-id (:id invitation)
                           :valid-until expire
@@ -212,18 +214,37 @@
                           :member-email (:email-to invitation)
                           :member-id (:id member)
                           :role role}
+              audit-props
+              (cond-> {:invitation-id (:id invitation)
+                       :valid-until expire
+                       :team-id (:id team)
+                       :organization-id (:id organization)
+                       :organization-name (:name organization)
+                       :member-email (:email-to invitation)
+                       :member-id (:id member)
+                       :role role}
+                organization
+                (assoc :user-who-send-invitation (str profile-id))
+
+                (not organization)
+                (assoc :team-belongs-to-organization (boolean team-organization-id)
+                       :adds-invitee-to-organization (boolean team-organization-id)
+                       :invitee-already-organization-member
+                       (boolean
+                        (and team-organization-id
+                             member
+                             (contains? organization-member-ids (:id member))))))
               itoken     (create-invitation-token cfg tprops)
               ptoken     (create-profile-identity-token cfg profile-id)]
 
           (when (contains? cf/flags :log-invitation-tokens)
             (l/info :hint "invitation token" :token itoken))
 
-          (let [props  (-> (dissoc tprops :profile-id)
-                           (audit/clean-props))
+          (let [props  (audit/clean-props audit-props)
                 evname (cond
-                         (and updated? organization) "update-org-invitation"
+                         (and updated? organization) "update-organization-invitation"
                          updated? "update-team-invitation"
-                         organization "create-org-invitation"
+                         organization "create-organization-invitation"
                          :else "create-team-invitation")
                 event (-> (audit/event-from-rpc-params params)
                           (assoc :name evname)
@@ -331,9 +352,14 @@
         org              (:organization team)
         org-id           (:id org)
         restricted?      (and org-id (not (nitrate-perms/allowed? :add-anybody-to-team {:org-perms org})))
-        org-member-ids   (when restricted?
-                           (into #{} (nitrate/call cfg :get-org-members {:organization-id org-id})))
-        params           (assoc params :team team :org-member-ids org-member-ids)
+        organization-member-ids
+        (when org-id
+          (into #{} (nitrate/call cfg :get-org-members {:organization-id org-id})))
+        org-member-ids   (when restricted? organization-member-ids)
+        params           (assoc params
+                                :team team
+                                :org-member-ids org-member-ids
+                                :organization-member-ids organization-member-ids)
 
         ;; Normalize input to a consistent format: [{:email :role}]
         invitation-data  (cond

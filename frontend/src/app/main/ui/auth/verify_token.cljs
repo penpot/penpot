@@ -9,6 +9,7 @@
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.repo :as rp]
@@ -44,6 +45,13 @@
 
 (defmethod handle-token :team-invitation
   [{:keys [state team-id org-team-id organization-name invitation-token] :as tdata}]
+  (when-let [{:keys [origin props]} (:organization-invitation-audit tdata)]
+    (st/emit!
+     (ev/event
+      (assoc props
+             ::ev/name "accept-organization-invitation"
+             ::ev/origin origin))))
+
   (case state
     :created
     (if org-team-id

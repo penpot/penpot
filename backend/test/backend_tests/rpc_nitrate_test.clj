@@ -45,19 +45,28 @@
   "Creates a mock for nitrate/call that returns the given org-summary for
   :get-org-summary, a valid membership for :get-org-membership, and nil for
   any other method."
-  [org-summary]
-  (fn [_cfg method _params]
-    (case method
-      :get-org-summary org-summary
-      :get-org-membership {:is-member true
-                           :organization-id (:id org-summary)}
-      nil)))
+  ([org-summary]
+   (nitrate-call-mock org-summary nil))
+  ([org-summary remove-profile-params]
+   (fn [_cfg method params]
+     (case method
+       :get-org-summary org-summary
+       :get-org-membership {:is-member true
+                            :organization-id (:id org-summary)}
+       :remove-profile-from-org (when remove-profile-params
+                                  (reset! remove-profile-params params))
+       nil))))
 
 (defn- nitrate-org-summary-only-mock
   [org-summary]
   (fn [_cfg method _params]
     (case method
       :get-org-summary org-summary
+      :get-org-membership {:is-member true
+                           :organization-id (:id org-summary)
+                           :created-at (ct/inst "2026-07-17T12:00:00Z")}
+      :get-org-members [(:owner-id org-summary)
+                        (uuid/random)]
       nil)))
 
 (defn- active-sso-call-mock
@@ -173,14 +182,15 @@
         ;; The user's personal penpot team in the org context
         your-penpot-id (:id org-default-team)
 
-        org-summary    (make-org-summary
-                        :organization-id            organization-id
-                        :organization-name          "Test Org"
-                        :owner-id          (:id profile-owner)
-                        :your-penpot-teams [your-penpot-id]
-                        :org-teams         [])]
+        org-summary          (make-org-summary
+                              :organization-id   organization-id
+                              :organization-name "Test Org"
+                              :owner-id          (:id profile-owner)
+                              :your-penpot-teams [your-penpot-id]
+                              :org-teams         [])
+        remove-profile-params (atom nil)]
 
-    (with-redefs [nitrate/call (nitrate-call-mock org-summary)]
+    (with-redefs [nitrate/call (nitrate-call-mock org-summary remove-profile-params)]
       (let [data {::th/type        :leave-org
                   ::rpc/profile-id (:id profile-user)
                   :id          organization-id
@@ -198,7 +208,12 @@
         ;; unset as a default team.
         (let [team (th/db-get :team {:id your-penpot-id})]
           (t/is (str/starts-with? (:name team) "[Test Org] "))
-          (t/is (false? (:is-default team))))))))
+          (t/is (false? (:is-default team))))
+
+        (t/is (= (:id profile-user)
+                 (:user-who-delete-member @remove-profile-params)))
+        (t/is (= "organization-member"
+                 (:deleted-by-role @remove-profile-params)))))))
 
 (t/deftest leave-org-deletes-org-default-team-when-empty
   (let [profile-owner   (th/create-profile* 1 {:is-active true})
@@ -413,7 +428,9 @@
         (t/is (= {:teams-to-delete 0
                   :teams-to-transfer 0
                   :teams-to-exit 0
-                  :teams-to-detach 0}
+                  :teams-to-detach 0
+                  :member-added-at (ct/inst "2026-07-17T12:00:00Z")
+                  :organization-member-count-before 2}
                  (:result out)))))))
 
 (t/deftest get-leave-org-summary-counts-default-team-as-keep-when-has-files
@@ -445,7 +462,9 @@
         (t/is (= {:teams-to-delete 1
                   :teams-to-transfer 0
                   :teams-to-exit 0
-                  :teams-to-detach 1}
+                  :teams-to-detach 1
+                  :member-added-at (ct/inst "2026-07-17T12:00:00Z")
+                  :organization-member-count-before 2}
                  (:result out)))))))
 
 (t/deftest leave-org-error-org-owner-cannot-leave
@@ -920,7 +939,7 @@
         (t/is (= :not-valid-teams (th/ex-code (:error out))))))))
 
 (defn- add-team-to-org-nitrate-mock
-  [{:keys [org-id org-summary org-perms owner-id team-id sso-active?]}]
+  [{:keys [org-id org-summary org-perms owner-id team-id sso-active? set-team-params]}]
   (fn [_cfg method params]
     (case method
       :get-org-membership (if (= (:profile-id params) owner-id)
@@ -929,7 +948,10 @@
       :get-org-members [owner-id]
       :get-team-org {:organization nil}
       :get-org-permissions org-perms
-      :set-team-org {:id team-id}
+      :set-team-org (do
+                      (when set-team-params
+                        (reset! set-team-params params))
+                      {:id team-id})
       :get-org-sso {:active sso-active?}
       :get-org-summary (assoc org-summary :teams [{:id team-id}])
       :add-profile-to-org {:is-member true}
@@ -956,7 +978,8 @@
                     :permissions {:create-teams "any"
                                   :move-teams "always"
                                   :new-team-members "members"}}
-        sent       (atom [])]
+        sent       (atom [])
+        set-team-params (atom nil)]
 
     (th/db-insert! :team-invitation
                    {:id (uuid/random)
@@ -974,7 +997,8 @@
                                  :org-perms org-perms
                                  :owner-id (:id owner)
                                  :team-id (:id team)
-                                 :sso-active? true})
+                                 :sso-active? true
+                                 :set-team-params set-team-params})
                   teams/initialize-user-in-nitrate-org (fn [& _] nil)
                   eml/send! (fn [params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
@@ -983,12 +1007,37 @@
                               :organization-id org-id})]
         (t/is (th/success? out))))
 
+    (t/is (= {:team-id (:id team)
+              :organization-id org-id
+              :is-default false}
+             @set-team-params))
+
     (let [emails (->> @sent (map :to) set)]
       (t/is (= 2 (count @sent)))
       (t/is (= #{"member302@example.com" "external301@example.com"} emails))
       (doseq [email-params @sent]
         (t/is (= org-name (:organization-name email-params)))
         (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+
+(t/deftest create-team-in-organization-passes-association-to-nitrate
+  (let [organization-id (uuid/random)
+        team            {:id (uuid/random)
+                         :created-at (ct/now)}
+        params*         (atom nil)]
+    (with-redefs [nitrate/call (fn [_cfg method params]
+                                 (when (= method :set-team-org)
+                                   (reset! params* params))
+                                 {:id (:id team)})]
+      (nitrate/set-team-organization
+       {}
+       team
+       {:organization-id organization-id
+        :is-default false}))
+
+    (t/is (= {:team-id (:id team)
+              :organization-id organization-id
+              :is-default false}
+             @params*))))
 
 (t/deftest add-team-to-organization-skips-sso-emails-when-sso-inactive
   (let [owner      (th/create-profile* 303 {:is-active true :email "owner303@example.com"})

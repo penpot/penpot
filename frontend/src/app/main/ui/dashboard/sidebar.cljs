@@ -304,7 +304,15 @@
 (mf/defc organizations-selector-dropdown*
   {::mf/private true}
   [{:keys [organization organizations profile] :rest props}]
-  (let [on-org-click
+  (let [teams (mf/deref refs/teams)
+
+        subscription-type (get-subscription-type (-> profile :props :subscription))
+
+        team-count (count teams)
+
+        account-age-days (dnt/account-age-days profile)
+
+        on-org-click
         (mf/use-fn
          (fn [event]
            (let [team-id (-> (dom/get-current-target event)
@@ -314,18 +322,27 @@
 
         on-create-org-click
         (mf/use-fn
-         (mf/deps profile)
+         (mf/deps account-age-days profile subscription-type team-count)
          (fn []
-           (cond
-             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
-
-             (dnt/is-valid-license? profile)
+           (if (and (not= subscription-type "unlimited")
+                    (dnt/is-valid-license? profile))
              (dnt/go-to-nitrate-ac-create-organization
               "dashboard:organization-switcher")
-
-             :else
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+             (st/emit!
+              (ev/event
+               (cond-> {::ev/name "open-subscription-modal"
+                        ::ev/origin "dashboard:organization-switcher"
+                        :product "nitrate:enterprise"
+                        :source "frontend"
+                        :has-teams (pos? team-count)
+                        :team-count team-count}
+                 (some? account-age-days)
+                 (assoc :account-age-days account-age-days)))
+              (dnt/show-nitrate-popup
+               :nitrate-form
+               (cond-> {:subscription-start-origin "dashboard:organization-switcher"}
+                 (= subscription-type "unlimited")
+                 (assoc :show-contact-sales-option true)))))))
 
         on-go-to-cc-click
         (mf/use-fn
@@ -648,7 +665,9 @@
         leave-fn
         (mf/use-fn
          (mf/deps on-error organization default-team-id not-owned-teams owned-teams)
-         (fn [{:keys [teams-to-transfer]}]
+         (fn [{:keys [teams-to-transfer
+                      member-added-at
+                      organization-member-count-before]}]
            (let [teams-to-leave (cond->> not-owned-teams
                                   :always
                                   (map #(select-keys % [:id]))
@@ -664,6 +683,9 @@
                                        :default-team-id default-team-id
                                        :teams-to-delete teams-to-delete
                                        :teams-to-leave teams-to-leave
+                                       :member-added-at member-added-at
+                                       :organization-member-count-before
+                                       organization-member-count-before
                                        :on-error on-error})))))
 
         on-leave-clicked
@@ -694,6 +716,12 @@
 (mf/defc sidebar-org-switch*
   [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
+
+        subscription-type (get-subscription-type (-> profile :props :subscription))
+
+        team-count (count teams)
+
+        account-age-days (dnt/account-age-days profile)
 
         current-org (dtm/team->organization team)
 
@@ -772,18 +800,27 @@
 
         on-create-org-click
         (mf/use-fn
-         (mf/deps profile)
+         (mf/deps account-age-days profile subscription-type team-count)
          (fn []
-           (cond
-             (= (get-subscription-type (-> profile :props :subscription)) "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
-
-             (dnt/is-valid-license? profile)
+           (if (and (not= subscription-type "unlimited")
+                    (dnt/is-valid-license? profile))
              (dnt/go-to-nitrate-ac-create-organization
               "dashboard:organization-switcher")
-
-             :else
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
+             (st/emit!
+              (ev/event
+               (cond-> {::ev/name "open-subscription-modal"
+                        ::ev/origin "dashboard:create-organization-button"
+                        :product "nitrate:enterprise"
+                        :source "frontend"
+                        :has-teams (pos? team-count)
+                        :team-count team-count}
+                 (some? account-age-days)
+                 (assoc :account-age-days account-age-days)))
+              (dnt/show-nitrate-popup
+               :nitrate-form
+               (cond-> {:subscription-start-origin "dashboard:create-organization-button"}
+                 (= subscription-type "unlimited")
+                 (assoc :show-contact-sales-option true)))))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
        [:div {:class (stl/css :org-switch-content)}

@@ -49,6 +49,47 @@
     (t/is (= :authentication (th/ex-type (:error out))))
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
+(t/deftest create-and-update-organization-invitations-audit-props
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               audit-mock {:target 'app.loggers.audit/submit :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (binding [cf/flags (conj cf/flags :email-verification)]
+      (let [owner        (th/create-profile* 101 {:is-active true})
+            invitee      (th/create-profile* 102 {:is-active true})
+            organization {:id (uuid/random)
+                          :name "Acme"
+                          :initials "AC"
+                          :logo nil
+                          :avatar-bg-url nil}
+            params       {::th/type :invite-to-organization
+                          ::rpc/profile-id (:id owner)
+                          :email (:email invitee)
+                          :organization organization}
+            create-out   (th/management-command! params)
+            update-out   (th/management-command! params)
+            external-out (th/management-command! (assoc params :email "external@example.com"))
+            events       (mapv second (:call-args-list @audit-mock))
+            create-event (first (filter #(= "create-organization-invitation" (:name %)) events))
+            update-event (first (filter #(= "update-organization-invitation" (:name %)) events))
+            external-event
+            (first (filter #(= "external@example.com" (get-in % [:props :member-email])) events))]
+        (t/is (th/success? create-out))
+        (t/is (th/success? update-out))
+        (t/is (th/success? external-out))
+
+        (doseq [event [create-event update-event]]
+          (t/is (not (contains? (:props event) :event-origin)))
+          (t/is (= (str (:id owner))
+                   (get-in event [:props :user-who-send-invitation])))
+          (t/is (= (:id organization)
+                   (get-in event [:props :organization-id])))
+          (t/is (= (:email invitee)
+                   (get-in event [:props :member-email])))
+          (t/is (= (:id invitee)
+                   (get-in event [:props :member-id]))))
+
+        (t/is (not (contains? (:props external-event) :member-id)))))))
+
 (t/deftest get-penpot-version
   (let [out     (th/management-command! {::th/type :get-penpot-version})
         version (-> out :result :version)]
@@ -1034,25 +1075,29 @@
               (mapv (fn [id] {:id id :is-your-penpot false}) org-teams))})
 
 (defn- nitrate-call-mock
-  [org-summary]
-  (fn [_cfg method _params]
-    (case method
-      :get-org-summary org-summary
-      :get-org-membership {:organization-id (:id org-summary)
-                           :is-member true}
-      :remove-profile-from-org nil
-      nil)))
+  ([org-summary]
+   (nitrate-call-mock org-summary nil))
+  ([org-summary remove-profile-params]
+   (fn [_cfg method params]
+     (case method
+       :get-org-summary org-summary
+       :get-org-membership {:organization-id (:id org-summary)
+                            :is-member true}
+       :remove-profile-from-org (when remove-profile-params
+                                  (reset! remove-profile-params params))
+       nil))))
 
 (t/deftest remove-from-organization-happy-path-no-extra-teams
   ;; User is only in its default team (which has files); it should be
   ;; kept, renamed and unset as default.  A notification must be sent.
   ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  (let [org-summary-ref      (atom nil)
+        remove-profile-params (atom nil)]
     (with-mocks
       [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}
+                               (apply (nitrate-call-mock @org-summary-ref remove-profile-params) args))}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -1089,6 +1134,10 @@
         ;; --- Verify: RPC returns success with no result payload ---
         (t/is (th/success? out))
         (t/is (nil? (:result out)))
+        (t/is (= (:id org-owner)
+                 (:user-who-delete-member @remove-profile-params)))
+        (t/is (= "organization-owner"
+                 (:deleted-by-role @remove-profile-params)))
 
         ;; --- Verify: default team preserved, renamed and unset as default ---
         (let [team (th/db-get :team {:id (:id org-team)})]
@@ -1107,12 +1156,13 @@
 (t/deftest remove-from-organization-deletes-empty-default-team
   ;; When the default team has no files it should be soft-deleted.
   ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  (let [org-summary-ref       (atom nil)
+        remove-profile-params (atom nil)]
     (with-mocks
       [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}
+                               (apply (nitrate-call-mock @org-summary-ref remove-profile-params) args))}
        ;; --- Message bus mock: swallow notifications ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -1133,7 +1183,7 @@
             ;; --- Exercise: remove the user from the org ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    uuid/zero
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
@@ -1141,6 +1191,8 @@
 
         ;; --- Verify: RPC returns success ---
         (t/is (th/success? out))
+        (t/is (nil? (:user-who-delete-member @remove-profile-params)))
+        (t/is (nil? (:deleted-by-role @remove-profile-params)))
         ;; --- Verify: empty default team is soft-deleted ---
         (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
           (t/is (some? (:deleted-at team))))))))

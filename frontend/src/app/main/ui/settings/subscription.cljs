@@ -193,21 +193,31 @@
                                   (rt/encode-url))
                    href       (dm/str "payments/subscriptions/create?type=unlimited&show="
                                       add-payment-details? "&quantity="
-                                      min-members "&returnUrl=" return-url)]
+                                      min-members "&returnUrl=" return-url)
+                   event-name (if subscribe-to-trial
+                                "create-trial-subscription"
+                                "create-subscription")
+                   subscription-mode (if subscribe-to-trial "trial" "paid")]
                (reset! form nil)
-               (st/emit! (ev/event {::ev/name "create-trial-subscription"
+               (st/emit! (ev/event {::ev/name event-name
                                     :type "unlimited"
-                                    :quantity min-members})
+                                    :quantity min-members
+                                    :subscription-mode subscription-mode})
                          (rt/nav-raw :href href))))))
 
         subscribe-to-enterprise
         (mf/use-fn
          (fn []
-           (st/emit! (ev/event {::ev/name "create-trial-subscription"
-                                :type "enterprise"}))
-           (let [return-url (-> (rt/get-current-href) (rt/encode-url))
+           (let [event-name (if subscribe-to-trial
+                              "create-trial-subscription"
+                              "create-subscription")
+                 subscription-mode (if subscribe-to-trial "trial" "paid")
+                 return-url (-> (rt/get-current-href) (rt/encode-url))
                  href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
-             (st/emit! (rt/nav-raw :href href)))))
+             (st/emit! (ev/event {::ev/name event-name
+                                  :type "enterprise"
+                                  :subscription-mode subscription-mode})
+                       (rt/nav-raw :href href)))))
 
         handle-accept-dialog
         (mf/use-fn
@@ -224,7 +234,10 @@
         handle-close-dialog
         (mf/use-fn
          (fn []
-           (st/emit! (ev/event {::ev/name "close-subscription-modal"}))
+           (when (= subscription-type "unlimited")
+             (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                  ::ev/origin "subscriptions:unlimited"
+                                  :product "unlimited"})))
            (modal/hide!)))
 
         on-submit
@@ -482,6 +495,14 @@
                  href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
              (st/emit! (rt/nav-raw :href href)))))
 
+        go-to-nitrate-payments
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "settings"
+                                :section "nitrate:enterprise"}))
+           (dnt/go-to-nitrate-billing)))
+
         open-subscription-modal
         (mf/use-fn
          (mf/deps subscription-editors nitrate-license)
@@ -492,7 +513,8 @@
              (st/emit! (dnt/show-nitrate-popup
                         :nitrate-dialog
                         {:nitrate-license nitrate-license
-                         :event-origin "settings:plan-confirmation-modal"}))
+                         :event-origin "settings:plan-confirmation-modal"
+                         :subscription-start-origin "settings"}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
@@ -602,7 +624,7 @@
                                      (tr "subscription.settings.manage-your-subscription")
                                      (tr "nitrate.subscription.settings.manual-cancel"))
                          :cta-link (if (and (:licenses connectivity) (not (:manual nitrate-license)))
-                                     dnt/go-to-nitrate-billing
+                                     go-to-nitrate-payments
                                      open-cancel-contact-sales-modal)
                          :code-action (when (:manual nitrate-license) :renovate)
                          :current-plan true}]
@@ -768,12 +790,15 @@
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
    ::mf/register-as :nitrate-dialog}
-  [{:keys [nitrate-license show-contact-sales-option event-origin] :as connectivity}]
+  [{:keys [nitrate-license show-contact-sales-option event-origin subscription-start-origin] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
         handle-close-dialog
         (mf/use-fn
          (fn []
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                ::ev/origin "nitrate:plan-confirmation-modal"
+                                :product "nitrate:enterprise"}))
            (modal/hide!)))
 
         on-subscribe-click
@@ -783,7 +808,8 @@
             "monthly"
             (rt/get-current-href)
             event-origin
-            (if nitrate-license "paid" "trial"))))]
+            (if nitrate-license "paid" "trial")
+            subscription-start-origin)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
