@@ -224,21 +224,23 @@
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
-  [ids]
-  (ptk/reify ::resize-wasm-text-all
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [resize-stream
-            (->> (rx/from ids)
-                 (rx/map resize-wasm-text-debounce))]
-        (if (::dwsh/update-shapes-buffer state)
-          ;; If we're in the middle of a token propagation we wait until is finished to
-          ;; recalculate the text sizes. The shapes stay pending for that whole wait,
-          ;; since the per-shape debounce only marks them once dispatched.
-          (wrf/with-pending
-            :text-resize ids
-            (->> stream
-                 (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
-                 (rx/take 1)
-                 (rx/mapcat (constantly resize-stream))))
-          resize-stream)))))
+  ([ids]
+   (resize-wasm-text-all ids nil))
+  ([ids opts]
+   (ptk/reify ::resize-wasm-text-all
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [resize-stream
+             (->> (rx/from ids)
+                  (rx/map #(resize-wasm-text-debounce % opts)))]
+         (if (::dwsh/update-shapes-buffer state)
+           ;; If we're in the middle of a token propagation we wait until is finished to
+           ;; recalculate the text sizes. The shapes stay pending for that whole wait,
+           ;; since the per-shape debounce only marks them once dispatched.
+           (wrf/with-pending
+             :text-resize ids
+             (->> stream
+                  (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+                  (rx/take 1)
+                  (rx/mapcat (constantly resize-stream))))
+           resize-stream))))))
