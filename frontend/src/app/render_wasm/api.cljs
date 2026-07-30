@@ -1387,9 +1387,13 @@
     (render-text-editor-overlay-if-active!)))
 
 (defn finalize-view-interaction!
-  "Ends the view interaction and triggers a full-quality render."
+  "Ends an in-progress pan/zoom view interaction and triggers a full-quality
+   render. No-ops when no view interaction is active.
+
+   `finish-panning` runs on every pointerup, so without this guard we would
+   call `internal-render` (and WASM `reset_canvas`) on plain clicks."
   []
-  (when (initialized?)
+  (when (and @view-interaction-active? (initialized?))
     (view-interaction-end!)
     ;; Preserve the last presented frame while the new one renders. A plain render
     ;; goes through WASM `reset_canvas`, which clears to the background and
