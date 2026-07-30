@@ -133,9 +133,10 @@ export class PluginBridge {
     /**
      * Removes a client connection and releases all resources associated with it.
      *
-     * Clears the per-connection keep-alive interval and removes the connection
-     * from both the socket-keyed and token-keyed indexes. Safe to call with a
-     * socket that is not (or no longer) registered.
+     * Clears the per-connection keep-alive interval and removes the connection from the
+     * socket-keyed index. The token-keyed index entry (and, in multi-instance mode, the
+     * token's Redis task subscription) is removed only if it is owned by the given
+     * connection. Safe to call with a socket that is not (or no longer) registered.
      *
      * @param ws - The WebSocket whose connection state should be removed
      */
@@ -147,12 +148,18 @@ export class PluginBridge {
         clearInterval(connection.pingInterval);
         this.connectedClients.delete(ws);
         if (connection.userToken) {
-            this.clientsByToken.delete(connection.userToken);
+            // Perform the token-keyed cleanup only if this connection owns the token registration.
+            // A connection rejected as a duplicate carries the same token but must not remove token associations.
+            if (this.clientsByToken.get(connection.userToken) !== connection) {
+                this.logger.debug("Removed connection does not own its token registration; skipping token cleanup");
+            } else {
+                this.clientsByToken.delete(connection.userToken);
 
-            if (this.redisBridge) {
-                this.redisBridge
-                    .unsubscribeFromTasks(connection.userToken)
-                    .catch((error) => this.logger.error(error, "Failed to unsubscribe from Redis task channel"));
+                if (this.redisBridge) {
+                    this.redisBridge
+                        .unsubscribeFromTasks(connection.userToken)
+                        .catch((error) => this.logger.error(error, "Failed to unsubscribe from Redis task channel"));
+                }
             }
         }
     }
