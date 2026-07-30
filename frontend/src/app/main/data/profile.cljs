@@ -371,20 +371,6 @@
                        (js/console.error "delete-photo failed" cause)
                        (rx/of (refresh-profile))))))))
 
-(defn fetch-file-comments-users
-  [{:keys [team-id]}]
-  (assert (uuid? team-id) "expected a valid uuid for `team-id`")
-  (letfn [(fetched [users state]
-            (->> users
-                 (d/index-by :id)
-                 (assoc state :file-comments-users)))]
-    (ptk/reify ::fetch-file-comments-users
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-profiles-for-file-comments {:team-id team-id :share-id share-id})
-               (rx/map #(partial fetched %))))))))
-
 ;; --- EVENT: request-account-deletion
 
 (def profile-deleted-event?

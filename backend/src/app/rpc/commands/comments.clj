@@ -371,44 +371,51 @@
 
 ;; --- COMMAND: Get file comments users
 
-;; All the profiles that had comment the file, plus the current
-;; profile.
+;; All the profiles that had comment any of the given files, plus the
+;; current profile. The :file-id param is a set (max 100) of file ids
+;; so the same method serves both single-file and dashboard batch
+;; callers.
 
 (def ^:private sql:file-comment-users
   "WITH available_profiles AS (
-     SELECT DISTINCT owner_id AS id
-       FROM comment
-      WHERE thread_id IN (SELECT id FROM comment_thread WHERE file_id=?)
-  )
-  SELECT p.id,
-         p.email,
-         p.fullname AS name,
-         p.fullname AS fullname,
-         p.photo_id,
-         p.is_active
-    FROM profile AS p
-   WHERE p.id IN (SELECT id FROM available_profiles) OR p.id=?")
+     SELECT DISTINCT c.owner_id AS id
+       FROM comment AS c
+      INNER JOIN comment_thread AS ct ON (ct.id = c.thread_id)
+      WHERE ct.file_id = ANY(?::uuid[])
+   )
+   SELECT p.id,
+          p.email,
+          p.fullname AS name,
+          p.fullname AS fullname,
+          p.photo_id,
+          p.is_active
+     FROM profile AS p
+    WHERE p.id IN (SELECT id FROM available_profiles) OR p.id=?")
 
-(defn get-file-comments-users
-  [conn file-id profile-id]
-  (db/exec! conn [sql:file-comment-users file-id profile-id]))
+(defn- get-file-comments-users
+  [conn file-ids profile-id]
+  (let [file-ids (db/create-array conn "uuid" file-ids)]
+    (db/exec! conn [sql:file-comment-users file-ids profile-id])))
 
 (def ^:private
   schema:get-profiles-for-file-comments
   [:map {:title "get-profiles-for-file-comments"}
-   [:file-id ::sm/uuid]
+   [:file-id [::sm/set {:max 100} ::sm/uuid]]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
 (sv/defmethod ::get-profiles-for-file-comments
   "Retrieves a list of profiles with limited set of properties of all
-  participants on comment threads of the file."
+  participants on comment threads of the given file(s)."
   {::doc/added "1.15"
-   ::doc/changes ["1.15" "Imported from queries and renamed."]
+   ::doc/changes ["1.15.0" "Imported from queries and renamed."
+                  "2.17.1" "Schema widened: :file-id now accepts a set (max 100) of file ids."]
    ::sm/params schema:get-profiles-for-file-comments}
   [cfg {:keys [::rpc/profile-id file-id share-id]}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (files/check-comment-permissions! conn profile-id file-id share-id)
-                 (get-file-comments-users conn file-id profile-id))))
+  (db/run! cfg
+           (fn [{:keys [::db/conn] :as cfg}]
+             (doseq [fid file-id]
+               (files/check-comment-permissions! cfg profile-id fid share-id))
+             (get-file-comments-users conn file-id profile-id))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS

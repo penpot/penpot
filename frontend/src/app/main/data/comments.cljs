@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.shape-tree :as ctst]
@@ -21,6 +22,12 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(def ^:private max-batch-file-ids
+  "Maximum number of file-ids sent per batch request. Must match
+  the `:max 100` constraint on the backend schema
+  `get-profiles-for-file-comments`."
+  100)
 
 (def ^:private schema:comment-thread
   [:map {:title "CommentThread"}
@@ -454,13 +461,24 @@
         (->> (rp/cmd! :get-unread-comment-threads {:team-id team-id})
              (rx/merge-map
               (fn [comments]
-                (rx/concat
-                 (rx/of (partial fetched-comments comments))
+                (let [ids (vec (into #{} (map :file-id) comments))
+                      n   (count ids)
+                      ids (if (> n max-batch-file-ids)
+                            (do
+                              (log/warn :msg "unread-threads: capping file-ids at max"
+                                        :max max-batch-file-ids
+                                        :count n
+                                        :team-id team-id)
+                              (subvec ids 0 max-batch-file-ids))
+                            ids)]
+                  (rx/concat
+                   (rx/of (partial fetched-comments comments))
 
-                 (->> (rx/from (into #{} (map :file-id) comments))
-                      (rx/merge-map #(rp/cmd! :get-profiles-for-file-comments {:file-id %}))
-                      (rx/reduce #(merge %1 (d/index-by :id %2)) {})
-                      (rx/map #(partial fetched-users %))))))
+                   (if (seq ids)
+                     (->> (rp/cmd! :get-profiles-for-file-comments {:file-id ids})
+                          (rx/map #(d/index-by :id %))
+                          (rx/map #(partial fetched-users %)))
+                     (rx/of (partial fetched-users {})))))))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
 (defn mark-all-threads-as-read
@@ -682,7 +700,7 @@
       (let [file-id (:current-file-id state)
             share-id (or (-> state :viewer-local :share-id)
                          (:current-share-id state))]
-        (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id})
+        (->> (rp/cmd! :get-profiles-for-file-comments {:file-id #{file-id} :share-id share-id})
              (rx/map (fn [profiles]
                        #(update % :profiles merge (d/index-by :id profiles)))))))))
 
