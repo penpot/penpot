@@ -10,7 +10,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.logic.tokens :as clt]
+   [app.common.logic.tokens :as clo]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.shape :as cts]
@@ -252,7 +252,7 @@
                             :timeout 9000}))
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token-theme (ctob/get-id token-theme) token-theme))]
+                            (clo/generate-update-token-theme token-theme))]
             (rx/of (dch/commit-changes changes))))))))
 
 (defn set-token-theme-active
@@ -267,7 +267,7 @@
             tokens-lib    (dsh/lookup-tokens-lib state)
             changes       (-> (pcb/empty-changes)
                               (pcb/with-library-data data)
-                              (clt/generate-set-theme-status tokens-status tokens-lib id active?))]
+                              (clo/generate-set-theme-status tokens-status tokens-lib id active?))]
 
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
@@ -283,7 +283,7 @@
             tokens-lib    (dsh/lookup-tokens-lib state)
             changes       (-> (pcb/empty-changes it)
                               (pcb/with-library-data data)
-                              (clt/generate-toggle-theme tokens-status tokens-lib id))]
+                              (clo/generate-toggle-theme tokens-status tokens-lib id))]
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -370,7 +370,7 @@
             tokens-status (dsh/lookup-tokens-status state)
             changes       (-> (pcb/empty-changes)
                               (pcb/with-library-data data)
-                              (clt/generate-set-enabled-token-set tokens-status tokens-lib id enabled?))]
+                              (clo/generate-set-enabled-token-set tokens-status tokens-lib id enabled?))]
 
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
@@ -386,7 +386,7 @@
             tokens-status (dsh/lookup-tokens-status state)
             changes       (-> (pcb/empty-changes)
                               (pcb/with-library-data data)
-                              (clt/generate-toggle-token-set tokens-status tokens-lib id))]
+                              (clo/generate-toggle-token-set tokens-status tokens-lib id))]
 
         (rx/of
          (dch/commit-changes changes)
@@ -402,7 +402,7 @@
             tokens-status (dsh/lookup-tokens-status state)
             changes       (-> (pcb/empty-changes)
                               (pcb/with-library-data data)
-                              (clt/generate-toggle-token-set-group tokens-status tokens-lib group-path))]
+                              (clo/generate-toggle-token-set-group tokens-status tokens-lib group-path))]
 
         (rx/of
          (dch/commit-changes changes)
@@ -451,7 +451,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (clt/generate-delete-token-set-group (dsh/lookup-tokens-lib state) path))]
+                        (clo/generate-delete-token-set-group (dsh/lookup-tokens-lib state) path))]
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
@@ -479,7 +479,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (try
-        (when-let [changes (clt/generate-move-token-set-group (pcb/empty-changes it) (dsh/lookup-tokens-lib state) drop-opts)]
+        (when-let [changes (clo/generate-move-token-set-group (pcb/empty-changes it) (dsh/lookup-tokens-lib state) drop-opts)]
           (rx/of
            (dch/commit-changes changes)
            (dwtp/propagate-workspace-tokens)))
@@ -497,7 +497,7 @@
       (try
         (let [tokens-lib (dsh/lookup-tokens-lib state)
               changes    (-> (pcb/empty-changes it)
-                             (clt/generate-move-token-set tokens-lib params))]
+                             (clo/generate-move-token-set tokens-lib params))]
           (rx/of (dch/commit-changes changes)
                  (dwtp/propagate-workspace-tokens)))
         (catch :default cause
