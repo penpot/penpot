@@ -459,9 +459,10 @@
     (let [{:keys [status body]} (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
       (if (= status 200)
         (let [data (json/decode body)
-              data {:token/access (get data :access_token)
-                    :token/id     (get data :id_token)
-                    :token/type   (get data :token_type)}]
+              data {:token/access     (get data :access_token)
+                    :token/id         (get data :id_token)
+                    :token/type       (get data :token_type)
+                    :token/expires-in (get data :expires_in)}]
           (l/trc :hint "access token fetched"
                  :token-id (:token/id data)
                  :token-type (:token/type data)
@@ -619,6 +620,9 @@
       (some? (:external-session-id state))
       (assoc :external-session-id (:external-session-id state))
 
+      (some? (:token/expires-in tdata))
+      (assoc :sso-token-exp (ct/in-future {:seconds (:token/expires-in tdata)}))
+
       ;; If state token comes with props, merge them. The state token
       ;; props can contain pm_ and utm_ prefixed query params.
       (map? (:props state))
@@ -766,25 +770,22 @@
   (when-not (str/blank? value) value))
 
 (defn org-sso-discovery-uri
-  "Return the OIDC discovery URI from an org SSO config, preferring :issuer."
+  "Return the OIDC discovery URI from an org SSO config."
   [sso]
-  (or (non-blank-uri (:issuer sso))
-      (non-blank-uri (:base-url sso))))
+  (non-blank-uri (:issuer sso)))
 
 (defn prepare-org-sso-provider
   "Build an OIDC provider map dynamically from the Nitrate org SSO config.
-  Uses OIDC discovery via :base-url (or :issuer as fallback) when
-  token/auth/user URIs are absent."
-  [cfg {:keys [client-id client-secret base-url issuer scopes]}]
+  Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
+  [cfg {:keys [client-id client-secret issuer]}]
   (prepare-oidc-provider cfg
                          {:type             "oidc"
                           :client-id        client-id
                           :client-secret    client-secret
-                          :base-uri         (some-> (or (non-blank-uri base-url)
-                                                        (non-blank-uri issuer))
+                          :base-uri         (some-> (non-blank-uri issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           (into default-oidc-scopes (or scopes #{}))
+                          :scopes           default-oidc-scopes
                           :skip-ssrf-check? true}))
 
 (defn build-org-sso-auth-redirect-uri
@@ -797,7 +798,7 @@
     (when-not issuer
       (ex/raise :type :validation
                 :code :invalid-sso-config
-                :hint "missing issuer or base-url"))
+                :hint "missing issuer"))
     (let [oidc-provider (or provider (prepare-org-sso-provider cfg sso))
           state-token   (tokens/generate cfg {:iss             "oidc"
                                               :dest-url        dest-url
@@ -902,10 +903,9 @@
           (let [organization-id (:organization-id state)
                 sso             (nitrate/call cfg :get-org-sso {:organization-id organization-id})
                 provider        (prepare-org-sso-provider cfg sso)
-                ;; verify token or throw error
-                _info           (get-info cfg provider state code)
+                info            (get-info cfg provider state code)
                 session         (session/get-session request)
-                exp             (ct/in-future {:hours 48})]
+                exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]
             (when (and session organization-id)
               (let [props (-> (or (:props session) {})
                               (update :sso assoc organization-id exp))]

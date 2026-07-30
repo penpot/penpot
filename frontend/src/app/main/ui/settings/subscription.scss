@@ -150,9 +150,10 @@
 }
 
 .benefits-list {
-  list-style-position: inside;
+  list-style-position: outside;
   list-style-type: disc;
   margin-block: 0;
+  margin-inline: var(--sp-l);
 }
 
 .benefits-title,

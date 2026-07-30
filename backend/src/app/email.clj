@@ -455,7 +455,6 @@
 
 (def ^:private schema:organization-setup-sso
   [:map
-   [:user-name {:optional true} [:maybe ::sm/text]]
    [:organization-name ::sm/text]])
 
 (def organization-setup-sso

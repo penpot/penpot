@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.texts-v3
   (:require
    [app.common.types.text :as txt]
+   [app.main.fonts :as fonts]
    [potok.v2.core :as ptk]))
 
 (defn v3-update-text-editor-styles
@@ -15,6 +16,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [merged-styles (merge (txt/get-default-text-attrs)
-                                 (get-in state [:workspace-global :default-font])
+                                 (fonts/valid-default-font
+                                  (get-in state [:workspace-global :default-font]))
                                  new-styles)]
         (update-in state [:workspace-wasm-editor-styles id] (fnil merge {}) merged-styles)))))

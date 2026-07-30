@@ -42,6 +42,7 @@
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -1052,6 +1053,18 @@
 
                :else
                (st/emit! (dwsh/delete-shapes #{id}))))
+
+           :waitForLayoutUpdate
+           (fn [timeout]
+             ;; Always a promise, so a bad argument travels as a rejection.
+             (if (u/valid-timeout? timeout)
+               ;; Resolves once the reflow work of this shape's subtree has
+               ;; settled: it can be marked on the shape or on its descendants.
+               (let [objects (u/locate-objects file-id page-id)]
+                 (wrf/wait-for-layout-update (cfh/get-children-ids-with-self objects id) timeout))
+               (js/Promise.
+                (fn [_ reject]
+                  (u/reject-not-valid reject :waitForLayoutUpdate timeout)))))
 
            ;; Plugin data
            :getPluginData

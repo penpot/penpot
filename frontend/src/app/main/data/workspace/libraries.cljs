@@ -1573,7 +1573,12 @@
                                (as-> libraries-to-load $
                                  (remove loaded-libraries $)
                                  (conj $ library-id)
-                                 (map #(load-library-file file-id %) $))))))
+                                 (map #(load-library-file file-id %) $))))
+               (rx/catch (fn [cause]
+                           (let [error (ex-data cause)]
+                             (if (= (:code error) :circular-library-reference)
+                               (rx/of (ntf/error (tr "errors.circular-library-reference")))
+                               (rx/throw cause)))))))
          (rx/of (ptk/reify ::attach-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})

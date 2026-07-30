@@ -10,7 +10,7 @@ const copyCssPlugin = () => ({
   closeBundle: () => {
     try {
       copyFileSync(
-        'dist/index.css',
+        'dist/ui.css',
         '../../resources/public/css/ui.css',
       );
     } catch (e) {
@@ -21,6 +21,15 @@ const copyCssPlugin = () => ({
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
+  css: {
+    preprocessorOptions: {
+      scss: {
+        loadPaths: [
+          path.resolve(import.meta.dirname, '../../src/app/main/ui'),
+        ],
+      },
+    },
+  },
   plugins: [
     react({
       babel: {
@@ -42,9 +51,11 @@ export default defineConfig(() => ({
       transformMixedEsModules: true,
     },
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        modal: 'src/modal.ts',
+      },
       name: 'ui',
-      fileName: 'index',
       formats: ['es' as const],
     },
     rollupOptions: {

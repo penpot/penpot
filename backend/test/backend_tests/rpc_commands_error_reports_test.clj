@@ -8,11 +8,15 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
+   [app.util.services :as sv]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [yetti.request]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -249,3 +253,36 @@
     (t/is (not (th/success? out)))
     (t/is (= :not-found (th/ex-type (:error out))))
     (t/is (= :report-not-found (th/ex-code (:error out))))))
+
+;; --- Audit event tests
+
+(t/deftest get-error-report-audit-event-has-uuid-profile-id
+  ;; When get-error-report returns a report with string profile-id in content,
+  ;; the audit event must have a proper UUID profile-id (not a string).
+  ;; This tests the prepare-rpc-event function directly since the test RPC
+  ;; flow doesn't include the audit middleware wrapper.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        id       (uuid/next)
+        orig-pid "33601240-a00b-11ea-ba1b-c554cc60e361"
+        ;; Simulate the result from get-error-report with string profile-id
+        result   {:id id
+                  :source "logging"
+                  :hint "test error"
+                  :profile-id orig-pid}
+        mdata    {::sv/name "get-error-report"}
+        params   {::rpc/profile-id (:id profile)
+                  ::rpc/request-id (uuid/next)
+                  ::rpc/request-at (ct/now)}
+        mock-req (reify yetti.request/IRequest
+                   (get-header [_ _] nil)
+                   (remote-addr [_] "127.0.0.1"))
+        params   (with-meta params {:app.http/request mock-req})
+        event    (audit/prepare-rpc-event th/*system* mdata params result)]
+    ;; profile-id must be a UUID, not a string
+    (t/is (uuid? (:profile-id event)))
+    (t/is (= #uuid "33601240-a00b-11ea-ba1b-c554cc60e361" (:profile-id event)))))
+
+;; Note: The integration of access token middleware with audit context is tested
+;; via unit tests in rpc_audit_test.clj and http_middleware_test.clj.
+;; The middleware sets ::id and ::type on the request, and prepare-context-from-request
+;; reads these values to populate :access-token-id and :access-token-type in the context.

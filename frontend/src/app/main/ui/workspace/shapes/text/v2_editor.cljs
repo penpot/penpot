@@ -86,9 +86,11 @@
         canvas-node
         (mf/ref-val canvas-ref)
 
-        ;; Gets the default font from the workspace refs.
+        ;; Gets the default font from the workspace refs. Ignore it when the
+        ;; remembered font is no longer installed, falling back to the built-in
+        ;; default so a new text shape never inherits a missing font.
         default-font
-        (deref refs/default-font)
+        (fonts/valid-default-font (deref refs/default-font))
 
         style-defaults
         (styles/get-style-defaults

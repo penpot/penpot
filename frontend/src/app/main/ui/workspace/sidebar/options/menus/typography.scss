@@ -345,6 +345,7 @@ $font-preview-box-height: 28px;
   background: var(--color-background-tertiary);
   border: $b-1 solid var(--color-background-quaternary);
   border-block-end: none;
+  padding: var(--sp-xxs);
 }
 
 .font-selector-dropdown {
@@ -379,6 +380,7 @@ $font-preview-box-height: 28px;
 .font-item {
   @extend %asset-element;
 
+  width: px2rem(280);
   margin-bottom: var(--sp-xs);
   border-radius: $br-8;
   display: flex;
@@ -450,12 +452,6 @@ $font-preview-box-height: 28px;
   border-start-start-radius: 0;
   border-start-end-radius: 0;
   border: $b-1 solid var(--color-background-quaternary);
-
-  // TODO: this should belong to typography-entry , but atm we don't have a clear
-  // way of accessing whether we are in fullsize mode or not
-  .selected {
-    padding-inline-end: 0;
-  }
 }
 
 .dropdown-icon {

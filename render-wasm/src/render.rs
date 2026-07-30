@@ -2429,6 +2429,7 @@ impl RenderState {
         tree: ShapesPoolRef,
         scale: f32,
         timestamp: i32,
+        format: raster::RasterFormat,
     ) -> Result<(Vec<u8>, i32, i32)> {
         let target_surface = SurfaceId::Export;
 
@@ -2459,7 +2460,7 @@ impl RenderState {
 
         self.surfaces
             .canvas(target_surface)
-            .clear(skia::Color::TRANSPARENT);
+            .clear(format.clear_color());
 
         if tree.len() != 0 {
             let Some(shape) = tree.get(id) else {
@@ -2475,6 +2476,14 @@ impl RenderState {
             self.render_area = extrect;
             self.render_area_with_margins = extrect;
             self.surfaces.update_render_context(extrect, scale);
+
+            // `resize_export_surface` swaps in a brand-new (zeroed, i.e.
+            // transparent) surface whenever the dimensions change, discarding
+            // the clear above — so an opaque backdrop has to be laid down again
+            // here, after the resize.
+            if let Some(background) = format.opaque_background() {
+                self.surfaces.canvas(target_surface).clear(background);
+            }
 
             self.pending_nodes.push(NodeRenderState {
                 id: *id,
@@ -2496,10 +2505,10 @@ impl RenderState {
         let data = image
             .encode(
                 Some(&mut get_gpu_state().context),
-                skia::EncodedImageFormat::PNG,
-                100,
+                format.encoded(),
+                format.quality(),
             )
-            .expect("PNG encode failed");
+            .unwrap_or_else(|| panic!("{format:?} encode failed"));
         let skia::ISize { width, height } = image.dimensions();
 
         // Restore the workspace render state.

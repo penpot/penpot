@@ -244,6 +244,7 @@
      [:page-id {:optional true} ::sm/uuid]
      [:component-id {:optional true} ::sm/uuid]
      [:ignore-touched {:optional true} :boolean]
+     [:allow-altering-copies {:optional true} :boolean]
      [:parent-id ::sm/uuid]
      [:shapes ::sm/any]]]
 
@@ -633,22 +634,26 @@
     (d/update-in-when data [:components component-id :objects] process-operations change)))
 
 (defn- process-children-reordering
-  [objects {:keys [parent-id shapes] :as change}]
+  [objects {:keys [parent-id shapes allow-altering-copies] :as change}]
   (if-let [old-shapes (dm/get-in objects [parent-id :shapes])]
-    (let [id->idx
-          (update-vals
-           (->> (d/enumerate shapes)
-                (group-by second))
-           (comp first first))
+    ;; Component sync owns copy child ordering.
+    (if (and (not allow-altering-copies)
+             (ctk/in-component-copy? (get objects parent-id)))
+      objects
+      (let [id->idx
+            (update-vals
+             (->> (d/enumerate shapes)
+                  (group-by second))
+             (comp first first))
 
-          new-shapes
-          (vec (sort-by #(d/nilv (id->idx %) -1) < old-shapes))]
+            new-shapes
+            (vec (sort-by #(d/nilv (id->idx %) -1) < old-shapes))]
 
-      (if (not= old-shapes new-shapes)
-        (do
-          (some-> *touched-changes* (vswap! conj change))
-          (update objects parent-id assoc :shapes new-shapes))
-        objects))
+        (if (not= old-shapes new-shapes)
+          (do
+            (some-> *touched-changes* (vswap! conj change))
+            (update objects parent-id assoc :shapes new-shapes))
+          objects)))
 
     objects))
 

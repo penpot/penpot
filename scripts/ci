@@ -1,0 +1,499 @@
+#!/usr/bin/env bash
+# scripts/ci - CI orchestration script for Penpot monorepo
+
+set -euo pipefail
+
+# Constants
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+LOG_DIR="$PROJECT_ROOT/.ci-logs"
+
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+# Available modules
+ALL_MODULES=("frontend" "backend" "common" "render-wasm" "exporter" "mcp" "plugins" "library")
+
+# Module commands
+declare -A LINT_CMD=(
+  [frontend]="pnpm run lint:clj && pnpm run lint:js && pnpm run lint:scss"
+  [backend]="pnpm run lint"
+  [common]="pnpm run lint:clj"
+  [render-wasm]="./lint"
+  [exporter]="pnpm run lint"
+  [mcp]=""
+  [plugins]="pnpm run lint"
+  [library]="pnpm run lint"
+)
+
+declare -A TEST_CMD=(
+  [frontend]="pnpm run test:quiet"
+  [backend]="clojure -M:dev:test"
+  [common]="clojure -M:dev:test && pnpm run test:quiet"
+  [render-wasm]="./test"
+  [exporter]=""
+  [mcp]="pnpm run test"
+  [plugins]="pnpm run test"
+  [library]="pnpm run test"
+)
+
+declare -A FMT_CHECK_CMD=(
+  [frontend]="pnpm run check-fmt:clj && pnpm run check-fmt:js && pnpm run check-fmt:scss"
+  [backend]="pnpm run check-fmt"
+  [common]="pnpm run check-fmt:clj && pnpm run check-fmt:js"
+  [render-wasm]="cargo fmt --check"
+  [exporter]="pnpm run check-fmt"
+  [mcp]="pnpm run fmt:check"
+  [plugins]="pnpm run format:check"
+  [library]="pnpm run check-fmt"
+)
+
+declare -A FMT_FIX_CMD=(
+  [frontend]="pnpm run fmt:clj && pnpm run fmt:js && pnpm run fmt:scss"
+  [backend]="pnpm run fmt"
+  [common]="pnpm run fmt:clj && pnpm run fmt:js"
+  [render-wasm]="cargo fmt"
+  [exporter]="pnpm run fmt"
+  [mcp]="pnpm run fmt"
+  [plugins]="pnpm run format"
+  [library]="pnpm run fmt"
+)
+
+declare -A PAREN_REPAIR_CMD=(
+  [frontend]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [backend]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [common]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [render-wasm]=""
+  [exporter]="find src -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [mcp]=""
+  [plugins]=""
+  [library]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+)
+
+# Default options
+MODULES=()
+TASKS=("lint" "test" "fmt")
+FIX_MODE=false
+FAIL_FAST=false
+VERBOSE=true
+DRY_RUN=false
+
+# Results tracking
+declare -A RESULTS=()
+declare -a FAILED_LOGS=()
+
+timestamp() {
+  date "+%H:%M:%S"
+}
+
+log_info() {
+  echo -e "${BLUE}[$(timestamp)]${NC} $1"
+}
+
+log_success() {
+  echo -e "${GREEN}[$(timestamp)] ✓${NC} $1"
+}
+
+log_error() {
+  echo -e "${RED}[$(timestamp)] ✗${NC} $1"
+}
+
+log_warning() {
+  echo -e "${YELLOW}[$(timestamp)] ⚠${NC} $1"
+}
+
+log_header() {
+  local module=$1
+  local current=$2
+  local total=$3
+  echo ""
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${CYAN} ${BOLD}[$current/$total] $module${NC}"
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+run_task() {
+  local module=$1
+  local task=$2
+  local cmd=$3
+  local logfile="$LOG_DIR/${module}-${task}.log"
+
+  if [[ -z "$cmd" ]]; then
+    log_warning "$task: not defined for $module, skipping"
+    RESULTS["$module:$task"]="SKIPPED"
+    return 0
+  fi
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "$task: would run '$cmd' in $module/"
+    RESULTS["$module:$task"]="DRY-RUN"
+    return 0
+  fi
+
+  log_info "Running ${BOLD}$task${NC} for $module..."
+
+  mkdir -p "$LOG_DIR"
+  local start_time
+  start_time=$(date +%s)
+
+  if [[ "$VERBOSE" == "true" ]]; then
+    echo -e "${BLUE}  cmd: $cmd${NC}"
+  fi
+
+  local exit_code=0
+  (cd "$PROJECT_ROOT/$module" && eval "$cmd") > "$logfile" 2>&1 || exit_code=$?
+
+  local end_time
+  end_time=$(date +%s)
+  local duration=$((end_time - start_time))
+
+  if [[ $exit_code -eq 0 ]]; then
+    log_success "$task passed for $module ${BLUE}(${duration}s)${NC}"
+    RESULTS["$module:$task"]="PASSED"
+    return 0
+  else
+    log_error "$task failed for $module ${BLUE}(${duration}s)${NC}"
+    echo -e "  ${RED}log: $logfile${NC}"
+    RESULTS["$module:$task"]="FAILED"
+    FAILED_LOGS+=("$logfile")
+    if [[ "$VERBOSE" == "true" ]]; then
+      echo -e "${YELLOW}  --- last 30 lines ---${NC}"
+      tail -n 30 "$logfile" | sed 's/^/  /'
+      echo -e "${YELLOW}  ---------------------${NC}"
+    fi
+    return 1
+  fi
+}
+
+run_module() {
+  local module=$1
+  local failed=false
+
+  for task in "${TASKS[@]}"; do
+    local cmd=""
+    case $task in
+      lint)
+        cmd="${LINT_CMD[$module]:-}"
+        ;;
+      test)
+        cmd="${TEST_CMD[$module]:-}"
+        ;;
+      fmt)
+        if [[ "$FIX_MODE" == "true" ]]; then
+          cmd="${FMT_FIX_CMD[$module]:-}"
+        else
+          cmd="${FMT_CHECK_CMD[$module]:-}"
+        fi
+        ;;
+      paren-repair)
+        cmd="${PAREN_REPAIR_CMD[$module]:-}"
+        ;;
+    esac
+
+    if ! run_task "$module" "$task" "$cmd"; then
+      failed=true
+      if [[ "$FAIL_FAST" == "true" ]]; then
+        return 1
+      fi
+    fi
+  done
+
+  if [[ "$failed" == "true" ]]; then
+    return 1
+  fi
+  return 0
+}
+
+print_summary() {
+  echo ""
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${CYAN} ${BOLD}SUMMARY${NC}"
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+  local total=0
+  local passed=0
+  local failed=0
+  local skipped=0
+
+  for module in "${MODULES[@]}"; do
+    for task in "${TASKS[@]}"; do
+      local result="${RESULTS[$module:$task]:-N/A}"
+      total=$((total + 1))
+      case $result in
+        PASSED)
+          passed=$((passed + 1))
+          echo -e "  ${GREEN}✓${NC} $module:$task"
+          ;;
+        FAILED)
+          failed=$((failed + 1))
+          echo -e "  ${RED}✗${NC} $module:$task"
+          ;;
+        SKIPPED)
+          skipped=$((skipped + 1))
+          echo -e "  ${YELLOW}○${NC} $module:$task"
+          ;;
+        DRY-RUN)
+          echo -e "  ${BLUE}~${NC} $module:$task"
+          ;;
+      esac
+    done
+  done
+
+  echo ""
+  echo -e "  ${BOLD}Total:${NC} $total  ${GREEN}Passed:${NC} $passed  ${RED}Failed:${NC} $failed  ${YELLOW}Skipped:${NC} $skipped"
+
+  if [[ $failed -gt 0 ]]; then
+    echo ""
+    echo -e "  ${RED}${BOLD}Failed logs:${NC}"
+    for logfile in "${FAILED_LOGS[@]}"; do
+      echo -e "    ${RED}•${NC} $logfile"
+    done
+    return 1
+  fi
+  return 0
+}
+
+validate_module() {
+  local mod=$1
+  for valid in "${ALL_MODULES[@]}"; do
+    if [[ "$valid" == "$mod" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [OPTIONS] [MODULES...]
+
+CI orchestration script for Penpot monorepo.
+
+MODULES:
+  frontend, backend, common, render-wasm, exporter, mcp, plugins, library
+  Use --all to run all modules.
+
+OPTIONS:
+  --all             Run all modules
+  --exclude MOD     Exclude a module (can be repeated)
+  --lint            Run lint only
+  --no-lint         Skip lint
+  --test            Run tests only
+  --no-test         Skip tests
+  --fmt             Run format check only
+  --no-fmt          Skip format check
+  --fix             Run format fix instead of check
+  --paren-repair    Fix delimiter errors in Clojure/CLJS files
+  --fail-fast       Stop on first failure
+  --verbose         Show command output on failure (default)
+  --quiet           Suppress command output
+  --dry-run         Show what would run without executing
+  --clean           Remove .ci-logs directory
+  --help            Show this help message
+
+EXAMPLES:
+  $(basename "$0") frontend backend          # Run lint, test, fmt on frontend and backend
+  $(basename "$0") --all --no-test           # Run lint and fmt on all modules
+  $(basename "$0") --lint common             # Run only lint on common
+  $(basename "$0") --fix frontend            # Fix formatting in frontend
+  $(basename "$0") --paren-repair frontend   # Fix delimiter errors in frontend
+  $(basename "$0") --paren-repair --all      # Fix delimiter errors in all Clojure modules
+  $(basename "$0") --all --fail-fast --verbose
+EOF
+  exit 0
+}
+
+main() {
+  local exclude_modules=()
+  local run_all=false
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --all)
+        run_all=true
+        shift
+        ;;
+      --exclude)
+        exclude_modules+=("$2")
+        shift 2
+        ;;
+      --lint)
+        TASKS=("lint")
+        shift
+        ;;
+      --no-lint)
+        TASKS=("${TASKS[@]/lint/}")
+        shift
+        ;;
+      --test)
+        TASKS=("test")
+        shift
+        ;;
+      --no-test)
+        TASKS=("${TASKS[@]/test/}")
+        shift
+        ;;
+      --fmt)
+        TASKS=("fmt")
+        shift
+        ;;
+      --no-fmt)
+        TASKS=("${TASKS[@]/fmt/}")
+        shift
+        ;;
+      --paren-repair)
+        TASKS=("paren-repair")
+        shift
+        ;;
+      --fix)
+        FIX_MODE=true
+        shift
+        ;;
+      --fail-fast)
+        FAIL_FAST=true
+        shift
+        ;;
+      --verbose)
+        VERBOSE=true
+        shift
+        ;;
+      --quiet)
+        VERBOSE=false
+        shift
+        ;;
+      --dry-run)
+        DRY_RUN=true
+        shift
+        ;;
+      --clean)
+        if [[ -d "$LOG_DIR" ]]; then
+          rm -rf "$LOG_DIR"
+          echo "Cleaned $LOG_DIR"
+        else
+          echo "No logs to clean"
+        fi
+        exit 0
+        ;;
+      --help | -h)
+        usage
+        ;;
+      -*)
+        echo -e "${RED}Error: Unknown option $1${NC}" >&2
+        echo "Run '$(basename "$0") --help' for usage." >&2
+        exit 1
+        ;;
+      *)
+        if validate_module "$1"; then
+          MODULES+=("$1")
+        else
+          echo -e "${RED}Error: Unknown module '$1'${NC}" >&2
+          echo "Valid modules: ${ALL_MODULES[*]}" >&2
+          exit 1
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  # Clean empty entries from TASKS after removal
+  TASKS=("${TASKS[@]// /}")
+  TASKS=("${TASKS[@]/#/}")
+  local clean_tasks=()
+  for t in "${TASKS[@]}"; do
+    if [[ -n "$t" ]]; then
+      clean_tasks+=("$t")
+    fi
+  done
+  TASKS=("${clean_tasks[@]}")
+
+  # Set modules
+  if [[ "$run_all" == "true" ]]; then
+    MODULES=("${ALL_MODULES[@]}")
+  fi
+
+  # Apply exclusions
+  if [[ ${#exclude_modules[@]} -gt 0 ]]; then
+    local filtered=()
+    for mod in "${MODULES[@]}"; do
+      local excluded=false
+      for ex in "${exclude_modules[@]}"; do
+        if [[ "$mod" == "$ex" ]]; then
+          excluded=true
+          break
+        fi
+      done
+      if [[ "$excluded" == "false" ]]; then
+        filtered+=("$mod")
+      fi
+    done
+    MODULES=("${filtered[@]}")
+  fi
+
+  # Validate
+  if [[ ${#MODULES[@]} -eq 0 ]]; then
+    echo -e "${RED}Error: No modules specified.${NC}" >&2
+    echo "Use --all or specify modules: ${ALL_MODULES[*]}" >&2
+    exit 1
+  fi
+
+  if [[ ${#TASKS[@]} -eq 0 ]]; then
+    echo -e "${RED}Error: No tasks selected.${NC}" >&2
+    exit 1
+  fi
+
+  # Print configuration
+  echo ""
+  echo -e "${CYAN}${BOLD}Penpot CI Orchestrator${NC}"
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "  ${BOLD}Modules:${NC}  ${MODULES[*]}"
+  echo -e "  ${BOLD}Tasks:${NC}    ${TASKS[*]}"
+  echo -e "  ${BOLD}Fix mode:${NC} $FIX_MODE"
+  echo -e "  ${BOLD}Fail-fast:${NC} $FAIL_FAST"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo -e "  ${BOLD}Mode:${NC}     ${YELLOW}DRY RUN${NC}"
+  fi
+  echo ""
+
+  # Run
+  local total_modules=${#MODULES[@]}
+  local current=0
+  local modules_failed=0
+  local start_time
+  start_time=$(date +%s)
+
+  for module in "${MODULES[@]}"; do
+    current=$((current + 1))
+    log_header "$module" "$current" "$total_modules"
+
+    if ! run_module "$module"; then
+      modules_failed=$((modules_failed + 1))
+      if [[ "$FAIL_FAST" == "true" ]]; then
+        log_error "Fail-fast: stopping due to failure in $module"
+        break
+      fi
+    fi
+  done
+
+  local end_time
+  end_time=$(date +%s)
+  local total_duration=$((end_time - start_time))
+
+  print_summary || true
+
+  echo ""
+  echo -e "  ${BOLD}Duration:${NC} ${total_duration}s"
+  echo ""
+
+  if [[ $modules_failed -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+}
+
+main "$@"

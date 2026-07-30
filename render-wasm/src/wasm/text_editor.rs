@@ -33,12 +33,17 @@ pub enum CursorDirection {
 // STATE MANAGEMENT
 // ============================================================================
 
+/// Apply the editor theme. When `invert` is true the caret is painted with a
+/// Difference blend mode (pass white as `cursor_color` to always show the
+/// inverted color of the background); otherwise it is painted with the given
+/// solid `cursor_color`.
 #[no_mangle]
-pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u32) {
+pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u32, invert: bool) {
     // NOTE: In the future could be interesting to fill al this data from
     // a structure pointer.
     get_text_editor_state().theme.selection_color = Color::new(selection_color);
     get_text_editor_state().theme.cursor_color = Color::new(cursor_color);
+    get_text_editor_state().theme.cursor_invert = invert;
 }
 
 #[no_mangle]

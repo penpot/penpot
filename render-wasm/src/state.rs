@@ -10,6 +10,7 @@ pub use ui::RulerState;
 pub use ui::UIState;
 
 use crate::error::{Error, Result};
+use crate::render::raster::RasterFormat;
 use crate::render::FrameType;
 use crate::shapes::{grid_layout::grid_cell_data, FontFamily, Shape};
 use crate::uuid::Uuid;
@@ -95,18 +96,24 @@ impl State {
         id: &Uuid,
         scale: f32,
         timestamp: i32,
+        format: RasterFormat,
     ) -> Result<(Vec<u8>, i32, i32)> {
-        get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp)
+        get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp, format)
     }
 
     pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
         crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes, scale)
     }
 
-    /// GPU-free counterpart of [`State::render_shape_pixels`]: PNG on a CPU
-    /// raster surface, no GPU/WebGL.
-    pub fn render_shape_raster(&mut self, id: &Uuid, scale: f32) -> Result<(Vec<u8>, i32, i32)> {
-        crate::render::raster::render_to_raster(get_resources(), id, &self.shapes, scale)
+    /// GPU-free counterpart of [`State::render_shape_pixels`]: encodes to
+    /// `format` on a CPU raster surface, no GPU/WebGL.
+    pub fn render_shape_raster(
+        &mut self,
+        id: &Uuid,
+        scale: f32,
+        format: RasterFormat,
+    ) -> Result<(Vec<u8>, i32, i32)> {
+        crate::render::raster::render_to_raster(get_resources(), id, &self.shapes, scale, format)
     }
 
     /// Distinct font families used by the (visible) subtree rooted at `id`, in

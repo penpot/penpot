@@ -13,7 +13,10 @@
 
 (defn export-image-uri
   [{:keys [type scale object-id]}]
-  (let [bytes (wasm.api/render-shape-pixels object-id scale)
+  ;; The export type doubles as the encoder format, so the bytes always match
+  ;; the mtype we wrap them in. `:svg` never reaches here — it needs vector
+  ;; markup and `exports.assets/wasm-export-types` keeps it off this path.
+  (let [bytes (wasm.api/render-shape-pixels object-id scale type)
         mtype (format->mtype type)
         blob (wapi/create-blob bytes mtype)]
     (wapi/create-uri blob)))

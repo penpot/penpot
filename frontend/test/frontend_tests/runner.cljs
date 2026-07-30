@@ -8,8 +8,10 @@
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.dashboard-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
+   [frontend-tests.data.store-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
@@ -17,6 +19,7 @@
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
+   [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
@@ -47,7 +50,9 @@
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
+   [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.svg-fills-test]
+   [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -69,7 +74,10 @@
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
+   [frontend-tests.util-text-editor-test]
    [frontend-tests.util-webapi-test]
+   [frontend-tests.util-zip-test]
+   [frontend-tests.util.dom.dnd-test]
    [frontend-tests.worker-snap-test]
    [goog.object :as gobj]))
 
@@ -89,8 +97,10 @@
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
+
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
@@ -98,6 +108,7 @@
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
+   'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
@@ -128,6 +139,7 @@
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.import-export-test
@@ -144,13 +156,17 @@
    'frontend-tests.ui.gradient-handlers-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
+   'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
+   'frontend-tests.util-text-editor-test
    'frontend-tests.util-webapi-test
+   'frontend-tests.util.dom.dnd-test
+   'frontend-tests.util-zip-test
    'frontend-tests.worker-snap-test])
 
 (assert (every? find-ns-obj test-namespaces)

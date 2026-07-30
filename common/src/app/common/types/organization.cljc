@@ -70,7 +70,5 @@
    [:active {:optional true} [:maybe :boolean]]
    [:provider {:optional true} [:maybe :string]]
    [:client-id {:optional true} [:maybe :string]]
-   [:base-url {:optional true} [:maybe :string]]
    [:client-secret {:optional true} [:maybe :string]]
-   [:issuer {:optional true} [:maybe :string]]
-   [:scopes {:optional true} [:maybe [::sm/set ::sm/text]]]])
+   [:issuer {:optional true} [:maybe :string]]])
