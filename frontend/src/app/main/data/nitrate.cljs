@@ -112,20 +112,20 @@
 (def nitrate-checkout-cancelled-token "nitrate-checkout-cancelled")
 
 (defn build-nitrate-callback-urls
-  "Build the success/error/cancel callback URLs from a base URL by appending
-  a `subscription` query param identifying the outcome."
-  [base-url]
-  (let [build (fn [token]
-                (dom/append-query-param base-url :subscription token))]
-    {:success-callback      (build "subscribed-to-penpot-nitrate")
-     :error-callback        (build nitrate-checkout-error-token)
-     :finish-error-callback (build nitrate-checkout-finish-error-token)
-     :cancel-callback       (build nitrate-checkout-cancelled-token)}))
+  "Build checkout callback URLs from base URLs by appending a `subscription`
+  query param identifying the outcome."
+  [base-url base-error-url]
+  (let [build (fn [url token]
+                (dom/append-query-param url :subscription token))]
+    {:success-callback      (build base-url "subscribed-to-penpot-nitrate")
+     :error-callback        (build base-error-url nitrate-checkout-error-token)
+     :finish-error-callback (build base-error-url nitrate-checkout-finish-error-token)
+     :cancel-callback       (build base-url nitrate-checkout-cancelled-token)}))
 
 (defn go-to-buy-nitrate-license
-  [subscription base-url event-origin subscription-mode subscription-start-origin]
+  [subscription base-url base-error-url event-origin subscription-mode subscription-start-origin]
   (let [{:keys [success-callback error-callback finish-error-callback cancel-callback]}
-        (build-nitrate-callback-urls base-url)
+        (build-nitrate-callback-urls base-url base-error-url)
         params {:subscription subscription
                 :callback success-callback
                 :error_callback error-callback
