@@ -7,6 +7,10 @@
     ".": {
       "import": "./dist/index.js"
     },
+    "./modal": {
+      "import": "./dist/modal.js",
+      "types": "./dist/modal.d.ts"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {

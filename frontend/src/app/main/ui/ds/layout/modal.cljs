@@ -8,7 +8,7 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
-   ["@penpot/ui" :as ui]
+   ["@penpot/ui/modal" :as modal]
    [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.typography :as t]
@@ -88,7 +88,7 @@
 
 (mf/defc modal-close-button*
   []
-  (let [close (ui/useModalClose)]
+  (let [close (modal/useModalClose)]
     (when close
       [:div {:class (stl/css :modal-close)}
        [:> icon-button* {:icon "close"
@@ -111,7 +111,7 @@
                           :trigger trigger
                           :is-dismissable is-dismissable
                           :size size})]
-    [:> ui/Modal props
+    [:> modal/Modal props
      (when-not hide-close
        [:> modal-close-button*])
      (if show-body

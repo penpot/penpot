@@ -1,8 +1,4 @@
 import { defineConfig } from 'vite';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type { import('@storybook/react-vite').StorybookConfig } */
 const config = {
@@ -27,13 +23,6 @@ const config = {
   async viteFinal(config) {
     return defineConfig({
       ...config,
-      resolve: {
-        ...config.resolve,
-        alias: {
-          ...config.resolve?.alias,
-          '@penpot/ui': path.resolve(__dirname, '../packages/ui/dist/index.js'),
-        },
-      },
       plugins: [
         ...(config.plugins ?? []),
         {
