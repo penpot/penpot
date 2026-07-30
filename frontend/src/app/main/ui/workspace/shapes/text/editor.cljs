@@ -221,7 +221,12 @@
                   state                (-> (ted/insert-text state text style)
                                            (handle-change))]
               (st/emit! (dwt/update-editor-state shape state))))
-          "handled")]
+          "handled")
+
+        handle-drop
+        (fn [_ _ drag-type]
+          (when (= drag-type "internal")
+            "handled"))]
 
     (mf/use-layout-effect on-mount)
 
@@ -246,6 +251,7 @@
        :handle-return handle-return
        :strip-pasted-styles true
        :handle-pasted-text handle-pasted-text
+       :handle-drop handle-drop
        :custom-style-fn (partial styles-fn shape)
        :block-renderer-fn #(render-block % shape)
        :ref on-editor
