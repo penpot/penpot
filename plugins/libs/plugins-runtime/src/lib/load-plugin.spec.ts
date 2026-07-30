@@ -120,13 +120,78 @@ describe('plugin-loader', () => {
   });
 
   it('should handle messages sent to plugins', async () => {
+    const mockIframeWindow = { nodeType: 1 } as unknown as Window;
+    const mockPluginWithIframe = {
+      plugin: {
+        close: mockClose,
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: mockIframeWindow,
+    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginWithIframe);
+
     await loadPlugin(manifest);
 
-    window.dispatchEvent(new MessageEvent('message', { data: 'test-message' }));
+    const event = new MessageEvent('message', {
+      data: 'test-message',
+      origin: window.location.origin,
+    });
+    Object.defineProperty(event, 'source', { value: mockIframeWindow });
+    window.dispatchEvent(event);
 
-    expect(mockPluginApi.plugin.sendMessage).toHaveBeenCalledWith(
+    expect(mockPluginWithIframe.plugin.sendMessage).toHaveBeenCalledWith(
       'test-message',
     );
+  });
+
+  it('should reject messages from unrecognized origins', async () => {
+    await loadPlugin(manifest);
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: 'malicious-message',
+        origin: 'https://evil.com',
+      }),
+    );
+
+    expect(mockPluginApi.plugin.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('should only route messages to the sender plugin', async () => {
+    const mockIframeWindow1 = { nodeType: 1 } as unknown as Window;
+    const mockIframeWindow2 = { nodeType: 2 } as unknown as Window;
+
+    const mockPluginApi1 = {
+      plugin: {
+        close: vi.fn(),
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: mockIframeWindow1,
+    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+
+    const mockPluginApi2 = {
+      plugin: {
+        close: vi.fn(),
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: mockIframeWindow2,
+    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi1);
+    await loadPlugin(manifest);
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi2);
+    await loadPlugin(manifest);
+
+    const event = new MessageEvent('message', {
+      data: 'test',
+      origin: window.location.origin,
+    });
+    Object.defineProperty(event, 'source', { value: mockIframeWindow2 });
+    window.dispatchEvent(event);
+
+    expect(mockPluginApi2.plugin.sendMessage).toHaveBeenCalledWith('test');
   });
 
   it('should load plugin using ɵloadPlugin', async () => {
