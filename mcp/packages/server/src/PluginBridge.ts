@@ -20,6 +20,8 @@ interface ClientConnection {
  * over these connections.
  */
 export class PluginBridge {
+    public static readonly MULTIUSER_CONNECTION_ERROR_MESSAGE = `No Penpot instance connected for user token. Please ensure that Penpot is connected and that the MCP client connection is using the correct token.`;
+
     private readonly logger = createLogger("PluginBridge");
     private readonly wsServer: WebSocketServer;
     private readonly connectedClients: Map<WebSocket, ClientConnection> = new Map();
@@ -190,6 +192,35 @@ export class PluginBridge {
     }
 
     /**
+     * Rejects a still-pending task with the given error, releasing its correlation state.
+     *
+     * Clears the task's timeout (if armed) and removes the task from the pending-task
+     * index before rejecting its promise. Safe to call for a task that has already been
+     * settled (e.g. by a response or a timeout), in which case nothing happens.
+     *
+     * @param taskId - The ID of the task to reject
+     * @param error - The error with which to reject the task
+     * @returns Whether the task was still pending and has been rejected
+     */
+    private rejectPendingTask(taskId: string, error: Error): boolean {
+        const pendingTask = this.pendingTasks.get(taskId);
+        if (!pendingTask) {
+            return false;
+        }
+
+        const timeoutHandle = this.taskTimeouts.get(taskId);
+        if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+            this.taskTimeouts.delete(taskId);
+        }
+        this.pendingTasks.delete(taskId);
+
+        pendingTask.rejectWithError(error);
+        this.logger.info(`Task ${taskId} rejected: ${error.message}`);
+        return true;
+    }
+
+    /**
      * Determines the client connection to use for executing a task.
      *
      * In single-user mode, returns the single connected client.
@@ -207,9 +238,7 @@ export class PluginBridge {
 
             const connection = this.clientsByToken.get(sessionContext.userToken);
             if (!connection) {
-                throw new Error(
-                    `No plugin instance connected for user token. Please ensure the plugin is running and connected with the correct token.`
-                );
+                throw new Error(PluginBridge.MULTIUSER_CONNECTION_ERROR_MESSAGE);
             }
 
             return connection;
@@ -257,6 +286,10 @@ export class PluginBridge {
      * `resolveWithResult`/`rejectWithError` methods. The same correlation and timeout
      * handling therefore applies regardless of the transport.
      *
+     * When routing via Redis, the task is rejected immediately (rather than timing out)
+     * if the published request reached no instance, i.e. if no instance holds a plugin
+     * connection for the session's user token, or if publishing fails outright.
+     *
      * @param task - The task to dispatch
      * @param useRedis - Whether to route the request via Redis (multi-instance) rather
      *   than directly over the local WebSocket connection
@@ -279,9 +312,17 @@ export class PluginBridge {
 
             // register the task for result correlation, then publish the request via Redis
             this.pendingTasks.set(task.id, task);
-            void redisBridge.sendTaskRequest(userToken, task.toRequest(), (response) =>
-                this.handlePluginTaskResponse(response)
-            );
+            void redisBridge
+                .sendTaskRequest(userToken, task.toRequest(), (response) => this.handlePluginTaskResponse(response))
+                .then((receiverCount) => {
+                    // fail fast when no instance received the request (no connection with matching user token in any instance)
+                    if (receiverCount === 0) {
+                        this.rejectPendingTask(task.id, new Error(PluginBridge.MULTIUSER_CONNECTION_ERROR_MESSAGE));
+                    }
+                })
+                .catch((error) => {
+                    this.rejectPendingTask(task.id, error instanceof Error ? error : new Error(String(error)));
+                });
 
             // on timeout, release the response-channel subscription, since no response
             // will arrive to trigger its self-unsubscribe.
@@ -300,14 +341,13 @@ export class PluginBridge {
 
         // Set up a timeout to reject the task if no response is received
         const timeoutHandle = setTimeout(() => {
-            const pendingTask = this.pendingTasks.get(task.id);
-            if (pendingTask) {
-                this.pendingTasks.delete(task.id);
-                this.taskTimeouts.delete(task.id);
-                onTimeout?.();
-                pendingTask.rejectWithError(
+            if (
+                this.rejectPendingTask(
+                    task.id,
                     new Error(`Task ${task.id} timed out after ${this.taskTimeoutSecs} seconds`)
-                );
+                )
+            ) {
+                onTimeout?.();
             }
         }, this.taskTimeoutSecs * 1000);
 
