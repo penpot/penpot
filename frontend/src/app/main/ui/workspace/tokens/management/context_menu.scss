@@ -52,59 +52,49 @@
 }
 
 .menu-item {
-  --context-menu-item-bg-color: none;
-  --context-menu-item-fg-color: var(--color-foreground-primary);
-  --context-menu-item-border-color: none;
+  --menu-item-bg-color: none;
+  --menu-item-fg-color: var(--color-foreground-primary);
+  --menu-item-border-color: none;
+  --menu-item-icon-color: none;
 
   @include use-typography("body-small");
 
+  cursor: default;
   display: flex;
   align-items: center;
   block-size: $sz-32;
   inline-size: 100%;
   padding: var(--sp-s);
   border-radius: $br-8;
-  color: var(--context-menu-item-fg-color);
-  background-color: var(--context-menu-item-bg-color);
-  border: $b-1 solid var(--context-menu-item-border-color);
+  color: var(--menu-item-fg-color);
+  background-color: var(--menu-item-bg-color);
+  border: $b-1 solid var(--menu-item-border-color);
 
   &:hover {
-    --context-menu-item-bg-color: var(--color-background-quaternary);
+    --menu-item-bg-color: var(--color-background-quaternary);
   }
 
   &:focus {
-    --context-menu-item-bg-color: var(--color-background-tertiary);
-    --context-menu-item-border-color: var(--color-background-tertiary);
+    --menu-item-bg-color: var(--color-background-tertiary);
+    --menu-item-border-color: var(--color-background-tertiary);
   }
 
-  &[aria-selected="true"] {
-    --context-menu-item-bg-color: var(--color-background-quaternary);
-  }
-}
-
-.menu-item-hint-wrapper {
-  position: relative;
-}
-
-.menu-item-selected {
-  .menu-item-icon {
-    color: var(--color-accent-primary);
-  }
-}
-
-.menu-item-unselected {
-  color: var(--color-foreground-secondary);
-
-  .menu-item-icon {
-    color: var(--color-background-quaternary);
+  &.selected {
+    --menu-item-icon-color: var(--color-accent-primary);
   }
 
-  &:hover {
-    color: var(--color-foreground-primary);
+  &.unselected {
+    --menu-item-fg-color: var(--color-foreground-secondary);
+    --menu-item-icon-color: var(--color-background-quaternary);
 
-    .menu-item-icon {
-      color: var(--color-foreground-secondary);
+    &:hover {
+      --menu-item-fg-color: var(--color-foreground-primary);
+      --menu-item-icon-color: var(--color-foreground-secondary);
     }
+  }
+
+  &.hint {
+    position: relative;
   }
 }
 
@@ -123,5 +113,6 @@
 }
 
 .menu-item-icon {
+  color: var(--menu-item-icon-color);
   margin-inline-end: var(--sp-xs);
 }

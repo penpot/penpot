@@ -36,11 +36,10 @@
 }
 
 .menu-item {
-  --context-menu-item-bg-color: var(--color-background-tertiary);
-  --context-menu-item-title-color: var(--color-foreground-primary);
-  --context-menu-item-shortcut-color: var(--color-foreground-secondary);
-  --context-menu-item-shortcut-bg-color: var(--color-background-primary);
-  --context-menu-item-shortcut-border-color: transparent;
+  --menu-item-bg-color: var(--color-background-tertiary);
+  --menu-item-title-color: var(--color-foreground-primary);
+  --menu-item-shortcut-color: var(--color-foreground-secondary);
+  --menu-item-shortcut-border-color: transparent;
 
   display: flex;
   align-items: center;
@@ -49,18 +48,18 @@
   inline-size: 100%;
   padding: px2rem(6);
   border-radius: $br-8;
-  background-color: var(--context-menu-item-bg-color);
-  border: $b-1 solid var(--context-menu-item-shortcut-border-color);
+  background-color: var(--menu-item-bg-color);
+  border: $b-1 solid var(--menu-item-shortcut-border-color);
 
   &:hover {
-    --context-menu-item-title-color: var(--color-foreground-primary);
-    --context-menu-item-bg-color: var(--color-background-quaternary);
-    --context-menu-item-shortcut-color: var(--color-foreground-primary);
+    --menu-item-title-color: var(--color-foreground-primary);
+    --menu-item-bg-color: var(--color-background-quaternary);
+    --menu-item-shortcut-color: var(--color-foreground-primary);
   }
 
   &:focus {
-    --context-menu-item-bg-color: var(--color-background-tertiary);
-    --context-menu-item-shortcut-border-color: var(--color-accent-primary);
+    --menu-item-bg-color: var(--color-background-tertiary);
+    --menu-item-shortcut-border-color: var(--color-accent-primary);
   }
 }
 
@@ -94,7 +93,7 @@
 .menu-item-title {
   @include use-typography("body-small");
 
-  color: var(--context-menu-item-title-color);
+  color: var(--menu-item-title-color);
 }
 
 .shortcut {
@@ -102,7 +101,7 @@
   justify-content: center;
   align-items: center;
   gap: var(--sp-xxs);
-  color: var(--context-menu-item-shortcut-color);
+  color: var(--menu-item-shortcut-color);
 }
 
 .shortcut-key {
@@ -114,7 +113,7 @@
   block-size: px2rem(20);
   padding: var(--sp-xxs) px2rem(6);
   border-radius: $br-6;
-  background-color: var(--context-menu-item-shortcut-bg-color);
+  background-color: var(--color-background-primary);
 
   &.customized-key {
     background-color: var(--color-background-info);

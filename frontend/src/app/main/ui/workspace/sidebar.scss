@@ -9,20 +9,6 @@
 @use "ds/_utils.scss" as *;
 @use "ds/z-index.scss" as *;
 
-// Shared (used across multiple components)
-
-.resize-area {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: unset;
-
-  // TODO: No DS z-index equivalent exists for value 4.
-  z-index: 4;
-  inline-size: var(--sp-s);
-  cursor: ew-resize;
-  block-size: 100%;
-}
-
 // Component: collapse-button*
 
 .collapse-button {
@@ -96,7 +82,7 @@
   overflow-x: hidden;
 }
 
-.resize-area-horiz {
+.layers-tab-resize-area {
   background-color: var(--color-background-primary);
   position: absolute;
   inset-inline-start: 0;
@@ -106,7 +92,7 @@
   cursor: ns-resize;
 }
 
-.resize-handle-horiz {
+.layers-tab-resize-handle {
   border-block-end: $b-2 solid var(--color-background-quaternary);
   cursor: ns-resize;
 }
@@ -120,15 +106,11 @@
   grid-area: left-sidebar;
   min-inline-size: var(--left-sidebar-width);
   max-inline-size: var(--left-sidebar-width-max);
-  inline-size: var(--right-sidebar-width);
+  inline-size: var(--left-sidebar-width);
   background-color: var(--color-background-primary);
   block-size: 100vh;
   max-block-size: 100vh;
   z-index: var(--z-index-panels);
-
-  .resize-area {
-    grid-area: resize;
-  }
 }
 
 .left-sidebar-header {
@@ -143,6 +125,16 @@
 .left-sidebar-tabs {
   --tabs-nav-padding-inline-start: var(--sp-m);
   --tabs-nav-padding-inline-end: var(--sp-m);
+}
+
+.left-sidebar-resize-area {
+  grid-area: resize;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: unset;
+  inline-size: var(--sp-s);
+  block-size: 100%;
+  cursor: ew-resize;
 }
 
 // Component: right-sidebar*

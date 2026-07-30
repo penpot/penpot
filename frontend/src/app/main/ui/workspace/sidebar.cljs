@@ -106,12 +106,12 @@
                    :on-toggle-collapsed on-toggle-sitemap-collapsed}]
 
      (when-not ^boolean sitemap-collapsed?
-       [:div {:class (stl/css :resize-area-horiz)
+       [:div {:class (stl/css :layers-tab-resize-area)
               :on-pointer-down on-pointer-down
               :on-lost-pointer-capture on-lost-pointer-capture
               :on-pointer-move on-pointer-move}
 
-        [:div {:class (stl/css :resize-handle-horiz)}]])
+        [:div {:class (stl/css :layers-tab-resize-handle)}]])
 
      [:> layers-toolbox* {:size-parent width}]]))
 
@@ -192,7 +192,7 @@
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture
              :on-pointer-move on-pointer-move
-             :class (stl/css :resize-area)}]
+             :class (stl/css :left-sidebar-resize-area)}]
 
       (cond
         (true? shortcuts?)
