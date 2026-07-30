@@ -178,15 +178,24 @@
         flist        (mf/use-ref)
         input        (mf/use-ref)
 
-        fonts        (mf/deref fonts/fonts)
-        fonts        (mf/with-memo [state fonts]
-                       (filter-fonts state fonts))
+        all-fonts    (mf/deref fonts/fonts)
+        fonts        (mf/with-memo [state all-fonts]
+                       (filter-fonts state all-fonts))
+
+        ;; Ids currently installed in fontsdb. Recent fonts that are no longer
+        ;; available (deleted, or belonging to another team) must be hidden:
+        ;; selecting one applies a missing/nil font-family and corrupts the
+        ;; text content (fails the backend `validate-shape` schema).
+        installed-ids (mf/with-memo [all-fonts]
+                        (into #{} (map :id) all-fonts))
 
         sprite-status (:status (mf/deref fonts/preview-sprite))
 
         recent-fonts (mf/deref refs/recent-fonts)
-        recent-fonts (mf/with-memo [state recent-fonts]
-                       (filter-fonts state recent-fonts))
+        recent-fonts (mf/with-memo [state recent-fonts installed-ids]
+                       (->> recent-fonts
+                            (filter #(contains? installed-ids (:id %)))
+                            (filter-fonts state)))
 
 
         full-size?   (boolean (and full-size show-recent))
@@ -332,12 +341,19 @@
          (fn [new-font-id]
            (let [{:keys [family] :as font} (get fonts new-font-id)
                  {:keys [id name weight style]} (fonts/get-default-variant font)]
-             (on-change {:font-id new-font-id
-                         :font-family family
-                         :font-variant-id (or id name)
-                         :font-weight weight
-                         :font-style style})
-             (mf/set-ref-val! last-font font))))
+             ;; Guard against a font that is not present in fontsdb (unloaded
+             ;; custom font, deleted font, shared library not yet resolved).
+             ;; Without it `family`/`weight`/`style` come back nil and get written
+             ;; onto the text spans, producing content that fails the backend
+             ;; `validate-shape` schema (`:font-family`/`:font-weight`/`:font-style`
+             ;; must be non-blank strings when present).
+             (when (and (some? font) (some? family))
+               (on-change {:font-id new-font-id
+                           :font-family family
+                           :font-variant-id (or id name)
+                           :font-weight weight
+                           :font-style style})
+               (mf/set-ref-val! last-font font)))))
 
         on-font-size-change
         (mf/use-fn

@@ -145,6 +145,29 @@
 
 ;; -- Content helpers
 
+;; Style attrs typed as `::sm/text` in the content schema (see
+;; app.common.types.shape.text/schema:content): when the key is present its
+;; value must be a non-blank string, so an explicit nil fails backend
+;; `validate-shape`. `:key` is likewise a plain `:string`.
+(def ^:private non-nilable-style-attrs
+  #{:font-family :font-size :font-style :font-weight
+    :direction :text-direction :text-decoration :text-transform :key})
+
+(defn- remove-nil-style-attrs
+  "Strip nil-valued non-nilable style attrs from every node in a content tree.
+  Repairs content already corrupted with e.g. nil :font-family/:font-weight/
+  :font-style (from an unloaded font) so it can pass the backend schema again."
+  [content]
+  (txt/transform-nodes
+   (fn [node]
+     (reduce (fn [node k]
+               (if (and (contains? node k) (nil? (get node k)))
+                 (dissoc node k)
+                 node))
+             node
+             non-nilable-style-attrs))
+   content))
+
 (defn ensure-valid-text-content
   "Repair structurally incomplete text :content to a canonical
   root -> paragraph-set -> paragraph -> span tree. Returns the
@@ -153,7 +176,11 @@
   A `nil` content, a root with no :children, or a root with an empty
   :children vector all fail the backend `validate-shape` schema
   (children must contain at least one paragraph-set). This helper
-  is the defensive normalizer used by content-commit paths."
+  is the defensive normalizer used by content-commit paths.
+
+  It also scrubs nil-valued non-nilable style attrs (e.g. nil
+  :font-family/:font-weight/:font-style left over from an unloaded font),
+  so already-corrupted content self-heals on the next commit."
   [content]
   (if (and (map? content)
            (= "root" (:type content))
@@ -161,7 +188,7 @@
                (empty? (:children content))))
     (let [base (tc/v2-default-text-content)]
       (d/txt-merge base (select-keys content txt/root-attrs)))
-    content))
+    (remove-nil-style-attrs content)))
 
 (defn- v2-content-has-text?
   [content]
@@ -294,7 +321,8 @@
     (update [_ state]
       (let [text-state   (some->> content ted/import-content)
             attrs        (merge (txt/get-default-text-attrs)
-                                (get-in state [:workspace-global :default-font]))
+                                (fonts/valid-default-font
+                                 (get-in state [:workspace-global :default-font])))
             editor       (cond-> (ted/create-editor-state text-state decorator)
                            (and (nil? content) (some? attrs))
                            (ted/update-editor-current-block-data attrs))]
@@ -1122,7 +1150,8 @@
       ;; Avoid swapping the global store when the computed styles are unchanged,
       ;; otherwise we can end up in store->rerender->selectionchange loops.
       (let [merged-styles (merge (txt/get-default-text-attrs)
-                                 (get-in state [:workspace-global :default-font])
+                                 (fonts/valid-default-font
+                                  (get-in state [:workspace-global :default-font]))
                                  new-styles)
             prev (get-in state [:workspace-v2-editor-state id])]
         (if (= merged-styles prev)
