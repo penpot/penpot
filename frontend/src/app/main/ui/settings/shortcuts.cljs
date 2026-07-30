@@ -186,8 +186,10 @@
               (seq (:children (:none children)))
               (seq children))))
 
-        all-shortcuts           (into {} (filter (fn [[_ v]] (section-has-content? v)) all-shortcuts))
-        filtered-shortcuts      (filter-shortcuts-tree all-shortcuts shortcut-filter filter-term)
+        all-shortcuts           (mf/with-memo [all-shortcuts]
+                                  (into {} (filter (fn [[_ v]] (section-has-content? v)) all-shortcuts)))
+        filtered-shortcuts      (mf/with-memo [all-shortcuts shortcut-filter filter-term]
+                                  (filter-shortcuts-tree all-shortcuts shortcut-filter filter-term))
 
         expand-all-sections
         (fn []
@@ -232,11 +234,11 @@
           (tr "shortcuts.no-shortcuts")
           empty-str)]
 
-    (mf/with-effect [filtered-shortcuts filter-term expand-all-by-default]
+    (mf/with-effect [filtered-shortcuts filter-term expand-all-by-default open-sections]
       (when (and expand-all-by-default (str/blank? filter-term))
-        (let [all-ids (collect-open-section-ids filtered-shortcuts)]
-          (when (seq all-ids)
-            (update-open-sections (vec all-ids))))))
+        (let [all-ids (vec (collect-open-section-ids filtered-shortcuts))]
+          (when (and (seq all-ids) (not= all-ids open-sections))
+            (update-open-sections all-ids)))))
 
     [:div {:class (stl/css :shortcuts-section)}
      [:> search-section* {:filter-term filter-term
@@ -352,11 +354,12 @@
          :viewer-orig vsc/shortcuts)
 
         shortcuts-ctx-value
-        {:workspace-sc-trans (d/deep-merge workspace-shortcuts-with-translation path-shortcuts-with-translation)
-         :dashboard-sc-trans dashboard-shortcuts-with-translation
-         :viewer-sc-trans viewer-shortcuts-with-translation
-         :all-shortcuts all-shortcuts
-         :all-sc-raw all-shortcuts-raw}
+        (mf/with-memo [custom-shortcuts]
+          {:workspace-sc-trans (d/deep-merge workspace-shortcuts-with-translation path-shortcuts-with-translation)
+           :dashboard-sc-trans dashboard-shortcuts-with-translation
+           :viewer-sc-trans viewer-shortcuts-with-translation
+           :all-shortcuts all-shortcuts
+           :all-sc-raw all-shortcuts-raw})
 
         on-restore-all
         (mf/use-fn
@@ -365,6 +368,38 @@
            (dom/stop-propagation event)
            (st/emit! (modal/show {:type :restore-all-modal
                                   :custom-shortcuts custom-shortcuts}))))
+
+        filter-all
+        (mf/with-memo []
+          (fn [_ shortcut search-term]
+            (or (str/blank? search-term)
+                (matches-search (:translation shortcut) search-term))))
+
+        filter-personalized
+        (mf/use-fn
+         (mf/deps custom-shortcuts)
+         (fn [shortcut-key shortcut search-term]
+           (let [shortcut-group (first (:section shortcut))
+                 group-map (get custom-shortcuts shortcut-group)
+                 group-map (if (map? group-map) group-map {})
+                 customized? (and (contains? group-map shortcut-key)
+                                  (not (str/blank? (get group-map shortcut-key))))]
+             (and customized?
+                  (or (str/blank? search-term)
+                      (matches-search (:translation shortcut) search-term))))))
+
+        filter-disabled
+        (mf/use-fn
+         (mf/deps custom-shortcuts)
+         (fn [shortcut-key shortcut search-term]
+           (let [shortcut-group (first (:section shortcut))
+                 group-map (get custom-shortcuts shortcut-group)
+                 group-map (if (map? group-map) group-map {})
+                 in-group? (contains? group-map shortcut-key)
+                 blank? (str/blank? (get group-map shortcut-key))]
+             (and in-group? blank?
+                  (or (str/blank? search-term)
+                      (matches-search (:translation shortcut) search-term))))))
 
         on-import-file
         (mf/use-fn
@@ -432,52 +467,34 @@
                            :on-change handle-change-tab
                            :class (stl/css :shortcuts-switcher)}
          (case section
-           :all
-           [:> shortcuts-tab-section* {:shortcut-filter (fn [_ shortcut search-term]
-                                                          (or (str/blank? search-term)
-                                                              (matches-search (:translation shortcut) search-term)))
-                                       :show-restore-all true
-                                       :empty-str (tr "shortcuts.no-shortcuts")
-                                       :on-restore-all on-restore-all
-                                       :custom-shortcuts custom-shortcuts
-                                       :open-sections (get open-sections-by-tab :all [[:workspace]])
-                                       :update-open-sections (make-update-open-sections :all)}]
+            :all
+            [:> shortcuts-tab-section* {:shortcut-filter filter-all
+                                        :show-restore-all true
+                                        :empty-str (tr "shortcuts.no-shortcuts")
+                                        :on-restore-all on-restore-all
+                                        :custom-shortcuts custom-shortcuts
+                                        :open-sections (get open-sections-by-tab :all [[:workspace]])
+                                        :update-open-sections (make-update-open-sections :all)}]
 
-           :personalized
-           [:> shortcuts-tab-section* {:shortcut-filter (fn [shortcut-key shortcut search-term]
-                                                          (let [shortcut-group (first (:section shortcut))
-                                                                group-map (get custom-shortcuts shortcut-group)
-                                                                group-map (if (map? group-map) group-map {})
-                                                                customized? (and (contains? group-map shortcut-key)
-                                                                                 (not (str/blank? (get group-map shortcut-key))))]
-                                                            (and customized?
-                                                                 (or (str/blank? search-term)
-                                                                     (matches-search (:translation shortcut) search-term)))))
-                                       :show-restore-all true
-                                       :empty-str (tr "shortcuts.no-personalized")
-                                       :on-restore-all on-restore-all
-                                       :expand-all-by-default true
-                                       :custom-shortcuts custom-shortcuts
-                                       :open-sections (get open-sections-by-tab :personalized [[:workspace]])
-                                       :update-open-sections (make-update-open-sections :personalized)}]
+            :personalized
+            [:> shortcuts-tab-section* {:shortcut-filter filter-personalized
+                                        :show-restore-all true
+                                        :empty-str (tr "shortcuts.no-personalized")
+                                        :on-restore-all on-restore-all
+                                        :expand-all-by-default true
+                                        :custom-shortcuts custom-shortcuts
+                                        :open-sections (get open-sections-by-tab :personalized [[:workspace]])
+                                        :update-open-sections (make-update-open-sections :personalized)}]
 
-           :disabled
-           [:> shortcuts-tab-section* {:shortcut-filter (fn [shortcut-key shortcut search-term]
-                                                          (let [shortcut-group (first (:section shortcut))
-                                                                group-map (get custom-shortcuts shortcut-group)
-                                                                group-map (if (map? group-map) group-map {})
-                                                                in-group? (contains? group-map shortcut-key)
-                                                                blank? (str/blank? (get group-map shortcut-key))]
-                                                            (and in-group? blank?
-                                                                 (or (str/blank? search-term)
-                                                                     (matches-search (:translation shortcut) search-term)))))
-                                       :show-restore-all true
-                                       :empty-str (tr "shortcuts.no-disabled")
-                                       :on-restore-all on-restore-all
-                                       :expand-all-by-default true
-                                       :custom-shortcuts custom-shortcuts
-                                       :open-sections (get open-sections-by-tab :disabled [[:workspace]])
-                                       :update-open-sections (make-update-open-sections :disabled)}])]]
+            :disabled
+            [:> shortcuts-tab-section* {:shortcut-filter filter-disabled
+                                        :show-restore-all true
+                                        :empty-str (tr "shortcuts.no-disabled")
+                                        :on-restore-all on-restore-all
+                                        :expand-all-by-default true
+                                        :custom-shortcuts custom-shortcuts
+                                        :open-sections (get open-sections-by-tab :disabled [[:workspace]])
+                                        :update-open-sections (make-update-open-sections :disabled)}])]]
 
        [:div {:class (stl/css :shortcuts-page-footer)}
         [:div {:class (stl/css :shortcuts-info)}
