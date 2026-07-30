@@ -24,6 +24,7 @@ export class PluginBridge {
 
     private readonly logger = createLogger("PluginBridge");
     private readonly wsServer: WebSocketServer;
+
     private readonly connectedClients: Map<WebSocket, ClientConnection> = new Map();
     private readonly clientsByToken: Map<string, ClientConnection> = new Map();
     private readonly pendingTasks: Map<string, AbstractPluginTask<any, any>> = new Map();
@@ -39,12 +40,13 @@ export class PluginBridge {
      *   holding the relevant plugin's WebSocket connection (which may be this same
      *   instance) via Redis, rather than dispatched directly over a local socket.
      * @param taskTimeoutSecs - Timeout, in seconds, for plugin task execution
+     *   (defaults to {@link DEFAULT_TASK_TIMEOUT_SECS})
      */
     constructor(
         public readonly mcpServer: PenpotMcpServer,
         private port: number,
-        private readonly redisBridge?: RedisBridge,
-        private taskTimeoutSecs: number = 30
+        private readonly taskTimeoutSecs: number,
+        private readonly redisBridge?: RedisBridge
     ) {
         this.wsServer = new WebSocketServer({ port: port });
         this.setupWebSocketHandlers();
