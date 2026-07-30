@@ -385,11 +385,15 @@ impl TextEditorState {
     }
 
     pub fn focus(&mut self, shape_id: Uuid) {
+        let same_shape = self.active_shape_id == Some(shape_id);
+
         self.has_focus = true;
         self.active_shape_id = Some(shape_id);
         self.cursor_visible = true;
         self.last_blink_time_ms = 0.0;
-        self.selection.reset();
+        if !same_shape {
+            self.selection.reset();
+        }
         self.is_pointer_selection_active = false;
         self.is_overtype_mode = false;
         self.pending_events.clear();

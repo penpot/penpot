@@ -12,7 +12,9 @@ pub fn render_overlay(
     editor_state: &TextEditorState,
     shape: &Shape,
 ) {
-    if !editor_state.has_focus {
+    let has_selection = editor_state.selection.is_selection();
+
+    if !editor_state.has_focus && !has_selection {
         return;
     }
 
@@ -25,12 +27,12 @@ pub fn render_overlay(
     canvas.scale((zoom, zoom));
     canvas.translate((-viewbox.area.left, -viewbox.area.top));
 
-    if editor_state.selection.is_selection() {
+    if has_selection {
         // With an active selection there is no blinking caret (the caret is one
         // end of the selection); drawing it would make it toggle on top of the
         // highlight while the selection is held.
         render_selection(canvas, editor_state, text_content, shape);
-    } else if editor_state.cursor_visible {
+    } else if editor_state.has_focus && editor_state.cursor_visible {
         render_cursor(canvas, zoom, options.dpr, editor_state, text_content, shape);
     }
 
