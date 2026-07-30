@@ -12,7 +12,6 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.plugins :refer [schema:plugin-registry]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -54,7 +53,7 @@
 
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
-  #{:subscription})
+  #{:subscription :plugins})
 
 (def schema:props
   [:map {:title "ProfileProps" :closed true}

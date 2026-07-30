@@ -400,6 +400,7 @@
           'app.rpc.commands.management
           'app.rpc.commands.media
           'app.rpc.commands.nitrate
+          'app.rpc.commands.plugins
           'app.rpc.commands.profile
           'app.rpc.commands.projects
           'app.rpc.commands.search
