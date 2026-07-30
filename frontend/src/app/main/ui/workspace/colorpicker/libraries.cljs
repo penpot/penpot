@@ -108,7 +108,8 @@
              gradient-text]])
 
          image
-         [:span (tr "media.image")]
+         [:span {:class (stl/css :color-row-colorpicker-label)}
+          (:name image)]
 
          color
          (if name
@@ -124,7 +125,8 @@
                opacity-text])])
 
          :else
-         [:span (tr "labels.other")])]]]))
+         [:span {:class (stl/css :color-row-colorpicker-label)}
+          (tr "labels.other")])]]]))
 
 ;; ---------------------------------------------------------------------------
 ;; Grouped color list
