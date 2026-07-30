@@ -103,6 +103,7 @@ export class PenpotMcpServer {
     public readonly port: number;
     public readonly webSocketPort: number;
     public readonly replPort: number;
+    public readonly penpotApiUrl: string;
     private sessionTimeoutInterval: ReturnType<typeof setInterval> | undefined;
 
     /**
@@ -126,6 +127,7 @@ export class PenpotMcpServer {
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
+        this.penpotApiUrl = process.env.PENPOT_API_URL ?? "http://localhost:6060";
         this.tenant = process.env.PENPOT_TENANT ?? "default";
 
         this.configLoader = new ConfigurationLoader(process.cwd());

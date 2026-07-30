@@ -8,11 +8,14 @@ import type { PenpotMcpServer } from "./PenpotMcpServer";
 import type { RedisBridge } from "./RedisBridge";
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds
+const TOKEN_REVALIDATION_INTERVAL = 300000; // 5 minutes
+const TOKEN_VALIDATION_TIMEOUT = 5000; // 5 seconds
 
 interface ClientConnection {
     socket: WebSocket;
     userToken: string | null;
     pingInterval: NodeJS.Timeout;
+    revalidationInterval?: NodeJS.Timeout;
 }
 
 /**
@@ -49,13 +52,46 @@ export class PluginBridge {
     }
 
     /**
+     * Validates a user token against the Penpot backend.
+     *
+     * Makes an HTTP request to the backend's get-profile endpoint to verify
+     * that the token is valid, not expired, and not revoked.
+     *
+     * @param userToken - The token to validate
+     * @returns Promise resolving to true if valid, false otherwise
+     */
+    private async validateUserToken(userToken: string): Promise<boolean> {
+        const apiUrl = this.mcpServer.penpotApiUrl;
+        const url = `${apiUrl}/api/rpc/command/get-profile`;
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), TOKEN_VALIDATION_TIMEOUT);
+
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    Authorization: `Token ${userToken}`,
+                },
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+            return response.ok;
+        } catch (error) {
+            this.logger.error(error, "Token validation failed");
+            return false;
+        }
+    }
+
+    /**
      * Sets up WebSocket connection handlers for plugin communication.
      *
      * Manages client connections and provides bidirectional communication
      * channel between the MCP mcpServer and Penpot plugin instances.
      */
     private setupWebSocketHandlers(): void {
-        this.wsServer.on("connection", (ws: WebSocket, request: http.IncomingMessage) => {
+        this.wsServer.on("connection", async (ws: WebSocket, request: http.IncomingMessage) => {
             // extract userToken from query parameters
             const url = new URL(request.url!, `ws://${request.headers.host}`);
             const userToken = url.searchParams.get("userToken");
@@ -65,6 +101,17 @@ export class PluginBridge {
                 this.logger.warn("Connection attempt without userToken in multi-user mode - rejecting");
                 ws.close(1008, "Missing userToken parameter");
                 return;
+            }
+
+            // validate token against backend in multi-user mode
+            if (this.mcpServer.isMultiUserMode() && userToken) {
+                const isValid = await this.validateUserToken(userToken);
+                if (!isValid) {
+                    this.logger.warn("Connection attempt with invalid or revoked token - rejecting");
+                    ws.close(1008, "Invalid or revoked token");
+                    return;
+                }
+                this.logger.info("Token validated successfully");
             }
 
             if (userToken) {
@@ -80,6 +127,20 @@ export class PluginBridge {
 
             // register the client connection with both indexes
             const connection: ClientConnection = { socket: ws, userToken, pingInterval };
+
+            // start periodic token revalidation in multi-user mode
+            if (this.mcpServer.isMultiUserMode() && userToken) {
+                const revalidationInterval = setInterval(async () => {
+                    const isValid = await this.validateUserToken(userToken);
+                    if (!isValid) {
+                        this.logger.warn("Token revalidation failed - closing connection");
+                        this.removeConnection(ws);
+                        ws.close(1008, "Token revoked");
+                    }
+                }, TOKEN_REVALIDATION_INTERVAL);
+                connection.revalidationInterval = revalidationInterval;
+            }
+
             this.connectedClients.set(ws, connection);
             if (userToken) {
                 // ensure only one connection per userToken
@@ -143,6 +204,9 @@ export class PluginBridge {
             return;
         }
         clearInterval(connection.pingInterval);
+        if (connection.revalidationInterval) {
+            clearInterval(connection.revalidationInterval);
+        }
         this.connectedClients.delete(ws);
         if (connection.userToken) {
             this.clientsByToken.delete(connection.userToken);
