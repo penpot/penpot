@@ -459,9 +459,10 @@
     (let [{:keys [status body]} (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
       (if (= status 200)
         (let [data (json/decode body)
-              data {:token/access (get data :access_token)
-                    :token/id     (get data :id_token)
-                    :token/type   (get data :token_type)}]
+              data {:token/access     (get data :access_token)
+                    :token/id         (get data :id_token)
+                    :token/type       (get data :token_type)
+                    :token/expires-in (get data :expires_in)}]
           (l/trc :hint "access token fetched"
                  :token-id (:token/id data)
                  :token-type (:token/type data)
@@ -618,6 +619,9 @@
 
       (some? (:external-session-id state))
       (assoc :external-session-id (:external-session-id state))
+
+      (some? (:token/expires-in tdata))
+      (assoc :sso-token-exp (ct/in-future {:seconds (:token/expires-in tdata)}))
 
       ;; If state token comes with props, merge them. The state token
       ;; props can contain pm_ and utm_ prefixed query params.
@@ -899,10 +903,9 @@
           (let [organization-id (:organization-id state)
                 sso             (nitrate/call cfg :get-org-sso {:organization-id organization-id})
                 provider        (prepare-org-sso-provider cfg sso)
-                ;; verify token or throw error
-                _info           (get-info cfg provider state code)
+                info            (get-info cfg provider state code)
                 session         (session/get-session request)
-                exp             (ct/in-future {:hours 48})]
+                exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]
             (when (and session organization-id)
               (let [props (-> (or (:props session) {})
                               (update :sso assoc organization-id exp))]
