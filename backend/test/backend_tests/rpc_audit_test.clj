@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
+   [app.util.services :as sv]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [yetti.request]))
@@ -498,3 +499,47 @@
       (t/is (some? (:tracked-at row)))
       (t/is (= {} (:props row)))
       (t/is (= {} (:context row))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PREPARE-RPC-EVENT PROFILE-ID CONVERSION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest prepare-rpc-event-converts-string-profile-id-to-uuid
+  ;; When result contains a string :profile-id (e.g. from error reports),
+  ;; prepare-rpc-event must convert it to a UUID for audit schema compliance.
+  (let [prof       (th/create-profile* 1 {:is-active true})
+        string-pid "33601240-a00b-11ea-ba1b-c554cc60e361"
+        expected   #uuid "33601240-a00b-11ea-ba1b-c554cc60e361"
+        mdata      {::sv/name "test-cmd"}
+        params     {::rpc/profile-id (:id prof)
+                    ::rpc/request-id (uuid/next)
+                    ::rpc/request-at (ct/now)}
+        mock-req   (reify
+                     yetti.request/IRequest
+                     (get-header [_ _] nil)
+                     (remote-addr [_] "127.0.0.1"))
+        params     (with-meta params {:app.http/request mock-req})
+        result     {:profile-id string-pid :some-data "value"}
+        event      (audit/prepare-rpc-event th/*system* mdata params result)]
+    ;; profile-id must be a UUID, not a string
+    (t/is (uuid? (:profile-id event)))
+    (t/is (= expected (:profile-id event)))))
+
+(t/deftest prepare-rpc-event-handles-invalid-string-profile-id
+  ;; When result contains an invalid string :profile-id, it should fall back
+  ;; to the RPC params profile-id (which is always a valid UUID).
+  (let [prof   (th/create-profile* 1 {:is-active true})
+        mdata  {::sv/name "test-cmd"}
+        params {::rpc/profile-id (:id prof)
+                ::rpc/request-id (uuid/next)
+                ::rpc/request-at (ct/now)}
+        mock-req (reify
+                   yetti.request/IRequest
+                   (get-header [_ _] nil)
+                   (remote-addr [_] "127.0.0.1"))
+        params (with-meta params {:app.http/request mock-req})
+        result {:profile-id "not-a-valid-uuid"}
+        event  (audit/prepare-rpc-event th/*system* mdata params result)]
+    ;; profile-id must fall back to the RPC params profile-id
+    (t/is (uuid? (:profile-id event)))
+    (t/is (= (:id prof) (:profile-id event)))))
