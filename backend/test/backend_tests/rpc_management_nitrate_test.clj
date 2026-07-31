@@ -142,7 +142,7 @@
     (t/is (= 1 (count @calls)))
     (t/is (= uuid/zero (-> @calls first :topic)))
     (let [msg (-> @calls first :message)]
-      (t/is (= :team-org-change (:type msg)))
+      (t/is (= :team-organization-change (:type msg)))
       (t/is (= nil (:notification msg)))
       (t/is (= team-id (-> msg :team :id)))
       (t/is (= false (-> msg :team :is-your-penpot)))
@@ -152,11 +152,11 @@
       (t/is (= (:owner-id organization) (-> msg :team :organization :owner-id)))
       (t/is (= (:avatar-bg-url organization) (str (-> msg :team :organization :avatar-bg-url)))))))
 
-(t/deftest notify-user-added-to-organization-creates-default-org-team
+(t/deftest notify-user-added-to-organization-creates-default-organization-team
   (with-mocks [nitrate-mock {:target 'app.nitrate/call
                              :return (fn [_ m _]
                                        (case m
-                                         :set-team-org {:success true}
+                                         :set-team-organization {:success true}
                                          nil))}]
     (let [profile      (th/create-profile* 1 {:is-active true})
           before-teams (->> (th/db-query :team-profile-rel {:profile-id (:id profile)
@@ -224,18 +224,18 @@
                (->> out :result :teams (map :id) set))))))
 
 (t/deftest get-teams-detail-last-activity-reflects-file-modifications
-  (let [org-summary-ref (atom nil)]
+  (let [organization-summary-ref (atom nil)]
     (with-mocks [nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (case method
-                                           :get-org-summary @org-summary-ref
+                                           :get-organization-summary @organization-summary-ref
                                            nil))}]
       (let [profile                  (th/create-profile* 1 {:is-active true})
             team                     (th/create-team* 1 {:profile-id (:id profile)})
             organization-id          (uuid/random)
-            org-summary              {:id organization-id
-                                      :teams [{:id (:id team)}]}
-            _                        (reset! org-summary-ref org-summary)
+            organization-summary              {:id organization-id
+                                               :teams [{:id (:id team)}]}
+            _                        (reset! organization-summary-ref organization-summary)
             params                   {::th/type :get-teams-detail
                                       ::rpc/profile-id (:id profile)
                                       :organization-id organization-id}
@@ -280,16 +280,16 @@
         (t/is (= (:modified-at file-after-update) (:last-activity-at updated-team)))
         (t/is (not= (:last-activity-at with-file) (:last-activity-at updated-team)))))))
 
-(t/deftest notify-organization-deletion-prefixes-teams-and-publishes-org-deleted-event
-  ;; --- Deferred org-summary: nil during setup, filled before RPC ---
-  (let [org-summary-ref (atom nil)]
+(t/deftest notify-organization-deletion-prefixes-teams-and-publishes-organization-deleted-event
+  ;; --- Deferred organization-summary: nil during setup, filled before RPC ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
       [;; --- Nitrate mock: return nil during profile/team creation,
-       ;; then serve the computed org-summary once available ---
+       ;; then serve the computed organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method params]
-                               (if @org-summary-ref
-                                 @org-summary-ref
+                               (if @organization-summary-ref
+                                 @organization-summary-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submission ---
        wrk-mock    {:target 'app.worker/submit! :return nil}
@@ -312,14 +312,14 @@
             organization-name "Acme / Design"
             expected-start    (str "[" (d/sanitize-string organization-name) "] ")
             ;; --- Org-summary that nitrate would return ---
-            org-summary       {:id organization-id
-                               :name organization-name
-                               :teams [{:id (:id team-with-files)
-                                        :is-your-penpot true}
-                                       {:id (:id empty-team)
-                                        :is-your-penpot true}]}
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                 (reset! org-summary-ref org-summary)
+            organization-summary       {:id organization-id
+                                        :name organization-name
+                                        :teams [{:id (:id team-with-files)
+                                                 :is-your-penpot true}
+                                                {:id (:id empty-team)
+                                                 :is-your-penpot true}]}
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                 (reset! organization-summary-ref organization-summary)
 
             ;; --- Exercise: notify Penpot that an organization is deleted ---
             out               (th/management-command! {::th/type :notify-organization-deletion
@@ -330,9 +330,9 @@
             updated-with-files (th/db-get :team {:id (:id team-with-files)} {::db/remove-deleted false})
             updated-empty      (th/db-get :team {:id (:id empty-team)} {::db/remove-deleted false})]
 
-        ;; --- Verify: nitrate was queried for the org summary ---
+        ;; --- Verify: nitrate was queried for the organization summary ---
         (let [[_ method params] (:call-args @nitrate-mock)]
-          (t/is (= :get-org-summary method))
+          (t/is (= :get-organization-summary method))
           (t/is (= {:organization-id organization-id} params)))
 
         ;; --- Verify: RPC returns success with no result payload ---
@@ -361,132 +361,132 @@
           (t/is (= #{(:id empty-team)}
                    (set (:deleted-teams (:message msg))))))))))
 
-(t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-org-events
-  ;; --- Deferred owned-orgs: nil during setup, filled before RPC ---
-  (let [owned-orgs-ref (atom nil)]
+(t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-organization-events
+  ;; --- Deferred owned-organizations: nil during setup, filled before RPC ---
+  (let [owned-organizations-ref (atom nil)]
     (with-mocks
       [;; --- Nitrate mock: return nil during profile/team creation,
-       ;; then serve the computed owned-orgs once available ---
+       ;; then serve the computed owned-organizations once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (case method
-                                 :get-owned-orgs @owned-orgs-ref
+                                 :get-owned-organizations @owned-organizations-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submissions ---
        wrk-mock    {:target 'app.worker/submit! :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create a profile with teams across two orgs ---
+      ;; --- Setup: create a profile with teams across two organizations ---
       (let [profile            (th/create-profile* 1 {:is-active true})
             ;; --- Org-1: team with files: kept and renamed ---
-            org-1-team-files   (th/db-get :team {:id (:default-team-id profile)})
-            org-1-proj         (th/create-project* 1 {:profile-id (:id profile)
-                                                      :team-id (:id org-1-team-files)})
+            organization-1-team-files   (th/db-get :team {:id (:default-team-id profile)})
+            organization-1-proj         (th/create-project* 1 {:profile-id (:id profile)
+                                                               :team-id (:id organization-1-team-files)})
             _                  (th/create-file* 1 {:profile-id (:id profile)
-                                                   :project-id (:id org-1-proj)})
+                                                   :project-id (:id organization-1-proj)})
             ;; --- Org-1: empty team: soft-deleted ---
-            org-1-team-empty   (th/create-team* 1 {:profile-id (:id profile)})
+            organization-1-team-empty   (th/create-team* 1 {:profile-id (:id profile)})
 
             ;; --- Org-2: team with files: kept and renamed ---
-            org-2-team-files   (th/create-team* 2 {:profile-id (:id profile)})
-            org-2-proj         (th/create-project* 2 {:profile-id (:id profile)
-                                                      :team-id (:id org-2-team-files)})
+            organization-2-team-files   (th/create-team* 2 {:profile-id (:id profile)})
+            organization-2-proj         (th/create-project* 2 {:profile-id (:id profile)
+                                                               :team-id (:id organization-2-team-files)})
             _                  (th/create-file* 2 {:profile-id (:id profile)
-                                                   :project-id (:id org-2-proj)})
+                                                   :project-id (:id organization-2-proj)})
             ;; --- Org-2: empty team: soft-deleted ---
-            org-2-team-empty   (th/create-team* 3 {:profile-id (:id profile)})
+            organization-2-team-empty   (th/create-team* 3 {:profile-id (:id profile)})
 
             ;; --- Data needed by the RPC call ---
-            org-1-id           (uuid/random)
-            org-2-id           (uuid/random)
-            org-1-name         "Org One / Design"
-            org-2-name         "Org Two"
-            org-1-prefix       (str "[" (d/sanitize-string org-1-name) "] ")
-            org-2-prefix       (str "[" (d/sanitize-string org-2-name) "] ")
-            ;; --- Owned-orgs that nitrate would return ---
-            owned-orgs         [{:id org-1-id
-                                 :name org-1-name
-                                 :teams [{:id (:id org-1-team-files)
-                                          :is-your-penpot true}
-                                         {:id (:id org-1-team-empty)
-                                          :is-your-penpot true}]}
-                                {:id org-2-id
-                                 :name org-2-name
-                                 :teams [{:id (:id org-2-team-files)
-                                          :is-your-penpot true}
-                                         {:id (:id org-2-team-empty)
-                                          :is-your-penpot true}]}]
-            ;; --- Publish owned-orgs so the mock can serve it ---
-            _                  (reset! owned-orgs-ref owned-orgs)
+            organization-1-id           (uuid/random)
+            organization-2-id           (uuid/random)
+            organization-1-name         "Org One / Design"
+            organization-2-name         "Org Two"
+            organization-1-prefix       (str "[" (d/sanitize-string organization-1-name) "] ")
+            organization-2-prefix       (str "[" (d/sanitize-string organization-2-name) "] ")
+            ;; --- Owned-organizations that nitrate would return ---
+            owned-organizations         [{:id organization-1-id
+                                          :name organization-1-name
+                                          :teams [{:id (:id organization-1-team-files)
+                                                   :is-your-penpot true}
+                                                  {:id (:id organization-1-team-empty)
+                                                   :is-your-penpot true}]}
+                                         {:id organization-2-id
+                                          :name organization-2-name
+                                          :teams [{:id (:id organization-2-team-files)
+                                                   :is-your-penpot true}
+                                                  {:id (:id organization-2-team-empty)
+                                                   :is-your-penpot true}]}]
+            ;; --- Publish owned-organizations so the mock can serve it ---
+            _                  (reset! owned-organizations-ref owned-organizations)
 
-            ;; --- Exercise: notify Penpot that the user's orgs are deleted ---
+            ;; --- Exercise: notify Penpot that the user's organizations are deleted ---
             out                (th/management-command! {::th/type :notify-user-organizations-deletion
                                                         ::rpc/profile-id (:id profile)
                                                         :profile-id (:id profile)})
 
             ;; --- Fetch teams post-deletion to verify mutations ---
-            org-1-updated-files (th/db-get :team {:id (:id org-1-team-files)} {::db/remove-deleted false})
-            org-1-updated-empty (th/db-get :team {:id (:id org-1-team-empty)} {::db/remove-deleted false})
-            org-2-updated-files (th/db-get :team {:id (:id org-2-team-files)} {::db/remove-deleted false})
-            org-2-updated-empty (th/db-get :team {:id (:id org-2-team-empty)} {::db/remove-deleted false})
+            organization-1-updated-files (th/db-get :team {:id (:id organization-1-team-files)} {::db/remove-deleted false})
+            organization-1-updated-empty (th/db-get :team {:id (:id organization-1-team-empty)} {::db/remove-deleted false})
+            organization-2-updated-files (th/db-get :team {:id (:id organization-2-team-files)} {::db/remove-deleted false})
+            organization-2-updated-empty (th/db-get :team {:id (:id organization-2-team-empty)} {::db/remove-deleted false})
 
             ;; --- Extract published messages from the message bus mock ---
             msgs              (->> (:call-args-list @mbus-mock)
                                    (map #(apply hash-map (rest %)))
                                    (map :message)
                                    vec)
-            org-msg           (fn [org-name]
-                                (first (filter #(= org-name (:organization-name %)) msgs)))]
+            organization-msg           (fn [organization-name]
+                                         (first (filter #(= organization-name (:organization-name %)) msgs)))]
 
-        ;; --- Verify: nitrate was queried for owned orgs with correct params ---
+        ;; --- Verify: nitrate was queried for owned organizations with correct params ---
         (let [[_ method params] (:call-args @nitrate-mock)]
-          (t/is (= :get-owned-orgs method))
+          (t/is (= :get-owned-organizations method))
           (t/is (= {:profile-id (:id profile)} params)))
 
         ;; --- Verify: RPC returns success with no result payload ---
         (t/is (th/success? out))
         (t/is (nil? (:result out)))
 
-        ;; --- Verify: org-1 team with files kept, renamed, default flag removed ---
-        (t/is (false? (:is-default org-1-updated-files)))
-        (t/is (str/starts-with? (:name org-1-updated-files) org-1-prefix))
-        (t/is (nil? (:deleted-at org-1-updated-files)))
-        ;; --- Verify: org-1 empty team soft-deleted ---
-        (t/is (some? (:deleted-at org-1-updated-empty)))
+        ;; --- Verify: organization-1 team with files kept, renamed, default flag removed ---
+        (t/is (false? (:is-default organization-1-updated-files)))
+        (t/is (str/starts-with? (:name organization-1-updated-files) organization-1-prefix))
+        (t/is (nil? (:deleted-at organization-1-updated-files)))
+        ;; --- Verify: organization-1 empty team soft-deleted ---
+        (t/is (some? (:deleted-at organization-1-updated-empty)))
 
-        ;; --- Verify: org-2 team with files kept, renamed, default flag removed ---
-        (t/is (false? (:is-default org-2-updated-files)))
-        (t/is (str/starts-with? (:name org-2-updated-files) org-2-prefix))
-        (t/is (nil? (:deleted-at org-2-updated-files)))
-        ;; --- Verify: org-2 empty team soft-deleted ---
-        (t/is (some? (:deleted-at org-2-updated-empty)))
+        ;; --- Verify: organization-2 team with files kept, renamed, default flag removed ---
+        (t/is (false? (:is-default organization-2-updated-files)))
+        (t/is (str/starts-with? (:name organization-2-updated-files) organization-2-prefix))
+        (t/is (nil? (:deleted-at organization-2-updated-files)))
+        ;; --- Verify: organization-2 empty team soft-deleted ---
+        (t/is (some? (:deleted-at organization-2-updated-empty)))
 
         ;; --- Verify: two delete tasks submitted (one per empty team) ---
         (t/is (:called? @wrk-mock))
         (t/is (= 2 (:call-count @wrk-mock)))
 
-        ;; --- Verify: one organization-deleted event per org, all on correct topic ---
+        ;; --- Verify: one organization-deleted event per organization, all on correct topic ---
         (t/is (= 2 (count msgs)))
         (t/is (every? #(= uuid/zero (:topic %))
                       (->> (:call-args-list @mbus-mock)
                            (map #(apply hash-map (rest %))))))
         (t/is (= #{:organization-deleted} (set (map :type msgs))))
 
-        ;; --- Verify: each org-deleted event has correct org-specific payload ---
-        (let [m1 (org-msg org-1-name)
-              m2 (org-msg org-2-name)]
+        ;; --- Verify: each organization-deleted event has correct organization-specific payload ---
+        (let [m1 (organization-msg organization-1-name)
+              m2 (organization-msg organization-2-name)]
           (t/is (some? m1))
           (t/is (some? m2))
-          (t/is (= org-1-id (:organization-id m1)))
-          (t/is (= org-2-id (:organization-id m2)))
-          (t/is (= #{(:id org-1-team-files) (:id org-1-team-empty)}
+          (t/is (= organization-1-id (:organization-id m1)))
+          (t/is (= organization-2-id (:organization-id m2)))
+          (t/is (= #{(:id organization-1-team-files) (:id organization-1-team-empty)}
                    (set (:teams m1))))
-          (t/is (= #{(:id org-1-team-empty)}
+          (t/is (= #{(:id organization-1-team-empty)}
                    (set (:deleted-teams m1))))
-          (t/is (= #{(:id org-2-team-files) (:id org-2-team-empty)}
+          (t/is (= #{(:id organization-2-team-files) (:id organization-2-team-empty)}
                    (set (:teams m2))))
-          (t/is (= #{(:id org-2-team-empty)}
+          (t/is (= #{(:id organization-2-team-empty)}
                    (set (:deleted-teams m2)))))))))
 
 (t/deftest get-profile-by-email-success-and-not-found
@@ -528,15 +528,15 @@
       (t/is (= :profile-not-found (th/ex-code (:error ko-out)))))))
 
 (t/deftest get-organization-invitations-returns-valid-deduped-by-email
-  ;; --- Deferred org-summary: nil during setup, filled before RPC ---
-  (let [org-summary-ref (atom nil)]
+  ;; --- Deferred organization-summary: nil during setup, filled before RPC ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
       [;; --- Nitrate mock: return nil during profile/team creation,
-       ;; then serve the computed org-summary when the handler queries it ---
+       ;; then serve the computed organization-summary when the handler queries it ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (case method
-                                 :get-org-summary @org-summary-ref
+                                 :get-organization-summary @organization-summary-ref
                                  nil))}]
 
       ;; --- Setup: create profile, teams, and invitation data ---
@@ -545,21 +545,21 @@
             team-2       (th/create-team* 2 {:profile-id (:id profile)})
 
             ;; --- Data needed by the RPC call ---
-            org-id       (uuid/random)
-            org-summary  {:id org-id
-                          :teams [{:id (:id team-1)}
-                                  {:id (:id team-2)}]}
+            organization-id       (uuid/random)
+            organization-summary  {:id organization-id
+                                   :teams [{:id (:id team-1)}
+                                           {:id (:id team-2)}]}
             params       {::th/type :get-organization-invitations
                           ::rpc/profile-id (:id profile)
-                          :organization-id org-id}
-            ;; --- Publish org-summary so the mock can serve it ---
-            _            (reset! org-summary-ref org-summary)
+                          :organization-id organization-id}
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _            (reset! organization-summary-ref organization-summary)
 
             ;; --- Insert invitation records ---
-            ;; Same email appears in org and team invitations; only one should be returned.
+            ;; Same email appears in organization and team invitations; only one should be returned.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
-                                         :org-id org-id
+                                         :org-id organization-id
                                          :team-id nil
                                          :email-to "dup@example.com"
                                          :created-by (:id profile)
@@ -584,14 +584,14 @@
             ;; Expired invitation should be ignored.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
-                                         :org-id org-id
+                                         :org-id organization-id
                                          :team-id nil
                                          :email-to "expired@example.com"
                                          :created-by (:id profile)
                                          :role "editor"
                                          :valid-until (ct/in-past "1h")})
 
-            ;; --- Exercise: query org invitations ---
+            ;; --- Exercise: query organization invitations ---
             out          (th/management-command! params)
 
             ;; --- Extract results ---
@@ -601,10 +601,10 @@
                               (filter #(= "dup@example.com" (:email %)))
                               first)]
 
-        ;; --- Verify: nitrate was queried for the org summary ---
+        ;; --- Verify: nitrate was queried for the organization summary ---
         (let [[_ method params'] (:call-args @nitrate-mock)]
-          (t/is (= :get-org-summary method))
-          (t/is (= {:organization-id org-id} params')))
+          (t/is (= :get-organization-summary method))
+          (t/is (= {:organization-id organization-id} params')))
 
         ;; --- Verify: RPC returns success with deduplicated invitations ---
         (t/is (th/success? out))
@@ -618,56 +618,56 @@
         (t/is (nil? (:role dedup)))
         (t/is (nil? (:valid-until dedup)))))))
 
-(t/deftest get-organization-invitations-includes-org-level-invitations-when-no-teams
+(t/deftest get-organization-invitations-includes-organization-level-invitations-when-no-teams
   ;; --- Org-summary has no teams — computable before with-mocks, no deferral needed ---
-  (let [org-id       (uuid/random)
-        org-summary  {:id org-id :teams []}
+  (let [organization-id       (uuid/random)
+        organization-summary  {:id organization-id :teams []}
         params       {::th/type :get-organization-invitations
-                      :organization-id org-id}]
+                      :organization-id organization-id}]
     (with-mocks
-      [;; --- Nitrate mock: return the org-summary when the handler queries it ---
+      [;; --- Nitrate mock: return the organization-summary when the handler queries it ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (case method
-                                 :get-org-summary org-summary
+                                 :get-organization-summary organization-summary
                                  nil))}]
 
-      ;; --- Setup: create profile and insert an org-level invitation ---
+      ;; --- Setup: create profile and insert an organization-level invitation ---
       (let [profile (th/create-profile* 1 {:is-active true})
             _       (th/db-insert! :team-invitation
                                    {:id (uuid/random)
-                                    :org-id org-id
+                                    :org-id organization-id
                                     :team-id nil
-                                    :email-to "org-only@example.com"
+                                    :email-to "organization-only@example.com"
                                     :created-by (:id profile)
                                     :role "editor"
                                     :valid-until (ct/in-future "24h")})
 
-            ;; --- Exercise: query org invitations ---
+            ;; --- Exercise: query organization invitations ---
             out    (th/management-command! (assoc params ::rpc/profile-id (:id profile)))
             result (:result out)]
 
-        ;; --- Verify: nitrate was queried for the org summary ---
+        ;; --- Verify: nitrate was queried for the organization summary ---
         (let [[_ method params'] (:call-args @nitrate-mock)]
-          (t/is (= :get-org-summary method))
-          (t/is (= {:organization-id org-id} params')))
+          (t/is (= :get-organization-summary method))
+          (t/is (= {:organization-id organization-id} params')))
 
-        ;; --- Verify: the org-level invitation is returned ---
+        ;; --- Verify: the organization-level invitation is returned ---
         (t/is (th/success? out))
         (t/is (= 1 (count result)))
-        (t/is (= "org-only@example.com" (-> result first :email)))
+        (t/is (= "organization-only@example.com" (-> result first :email)))
         (t/is (some? (-> result first :sent-at)))))))
 
 (t/deftest get-organization-invitations-returns-existing-profile-data
   ;; --- Org-summary has no teams — computable before with-mocks, no deferral needed ---
-  (let [org-id      (uuid/random)
-        org-summary {:id org-id :teams []}]
+  (let [organization-id      (uuid/random)
+        organization-summary {:id organization-id :teams []}]
     (with-mocks
-      [;; --- Nitrate mock: return the org-summary when the handler queries it ---
+      [;; --- Nitrate mock: return the organization-summary when the handler queries it ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (case method
-                                 :get-org-summary org-summary
+                                 :get-organization-summary organization-summary
                                  nil))}]
 
       ;; --- Setup: create profiles, set photo on invited user, insert invitation ---
@@ -680,23 +680,23 @@
             _           (th/db-update! :profile {:photo-id photo-id} {:id (:id invited)})
             _           (th/db-insert! :team-invitation
                                        {:id (uuid/random)
-                                        :org-id org-id
+                                        :org-id organization-id
                                         :team-id nil
                                         :email-to (:email invited)
                                         :created-by (:id profile)
                                         :role "editor"
                                         :valid-until (ct/in-future "24h")})
 
-            ;; --- Exercise: query org invitations ---
+            ;; --- Exercise: query organization invitations ---
             out        (th/management-command! {::th/type :get-organization-invitations
                                                 ::rpc/profile-id (:id profile)
-                                                :organization-id org-id})
+                                                :organization-id organization-id})
             invitation (-> out :result first)]
 
-        ;; --- Verify: nitrate was queried for the org summary ---
+        ;; --- Verify: nitrate was queried for the organization summary ---
         (let [[_ method params'] (:call-args @nitrate-mock)]
-          (t/is (= :get-org-summary method))
-          (t/is (= {:organization-id org-id} params')))
+          (t/is (= :get-organization-summary method))
+          (t/is (= {:organization-id organization-id} params')))
 
         ;; --- Verify: invitation includes the invited user's existing profile data ---
         (t/is (th/success? out))
@@ -705,16 +705,16 @@
         (t/is (str/ends-with? (:photo-url invitation)
                               (str "/assets/by-id/" photo-id)))))))
 
-(t/deftest delete-organization-invitations-removes-org-and-org-team-invitations-for-email
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)
+(t/deftest delete-organization-invitations-removes-organization-and-organization-team-invitations-for-email
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)
         target-email    "target@example.com"]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary when handler queries it ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary when handler queries it ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (case method
-                                 :get-org-summary @org-summary-ref
+                                 :get-organization-summary @organization-summary-ref
                                  nil))}]
 
       ;; --- Setup: create profile, teams, and invitation data ---
@@ -722,24 +722,24 @@
             team-1       (th/create-team* 1 {:profile-id (:id profile)})
             team-2       (th/create-team* 2 {:profile-id (:id profile)})
             outside-team (th/create-team* 3 {:profile-id (:id profile)})
-            org-id       (uuid/random)
-            org-summary  {:id org-id
-                          :teams [{:id (:id team-1)}
-                                  {:id (:id team-2)}]}
-            ;; --- Publish org-summary so the mock can serve it ---
-            _            (reset! org-summary-ref org-summary)
+            organization-id       (uuid/random)
+            organization-summary  {:id organization-id
+                                   :teams [{:id (:id team-1)}
+                                           {:id (:id team-2)}]}
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _            (reset! organization-summary-ref organization-summary)
 
             ;; --- Insert invitation records ---
-            ;; Should be deleted: org-level invitation for same org+email.
+            ;; Should be deleted: organization-level invitation for same organization+email.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
-                                         :org-id org-id
+                                         :org-id organization-id
                                          :team-id nil
                                          :email-to target-email
                                          :created-by (:id profile)
                                          :role "editor"
                                          :valid-until (ct/in-future "24h")})
-            ;; Should be deleted: team-level invitation for teams in org summary.
+            ;; Should be deleted: team-level invitation for teams in organization summary.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
                                          :team-id (:id team-1)
@@ -757,7 +757,7 @@
                                          :created-by (:id profile)
                                          :role "editor"
                                          :valid-until (ct/in-future "24h")})
-            ;; Should remain: same email but outside org scope.
+            ;; Should remain: same email but outside organization scope.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
                                          :team-id (:id outside-team)
@@ -767,18 +767,18 @@
                                          :role "editor"
                                          :valid-until (ct/in-future "24h")})
 
-            ;; --- Exercise: delete org invitations for target email ---
+            ;; --- Exercise: delete organization invitations for target email ---
             out               (th/management-command! {::th/type :delete-organization-invitations
                                                        ::rpc/profile-id (:id profile)
-                                                       :organization-id org-id
+                                                       :organization-id organization-id
                                                        :email "TARGET@example.com"})
             remaining-target  (th/db-query :team-invitation {:email-to target-email})
             remaining-other   (th/db-query :team-invitation {:email-to "other@example.com"})]
 
-        ;; --- Verify: nitrate was queried for the org summary ---
+        ;; --- Verify: nitrate was queried for the organization summary ---
         (let [[_ method params'] (:call-args @nitrate-mock)]
-          (t/is (= :get-org-summary method))
-          (t/is (= {:organization-id org-id} params')))
+          (t/is (= :get-organization-summary method))
+          (t/is (= {:organization-id organization-id} params')))
 
         ;; --- Verify: RPC returns success with no result payload ---
         (t/is (th/success? out))
@@ -789,15 +789,15 @@
         ;; --- Verify: other-email invitation is untouched ---
         (t/is (= 1 (count remaining-other)))))))
 
-(t/deftest delete-all-organization-invitations-removes-org-and-org-team-invitations
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+(t/deftest delete-all-organization-invitations-removes-organization-and-organization-team-invitations
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary when handler queries it ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary when handler queries it ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (case method
-                                 :get-org-summary @org-summary-ref
+                                 :get-organization-summary @organization-summary-ref
                                  nil))}]
 
       ;; --- Setup: create profile, teams, and invitation data ---
@@ -805,24 +805,24 @@
             team-1       (th/create-team* 1 {:profile-id (:id profile)})
             team-2       (th/create-team* 2 {:profile-id (:id profile)})
             outside-team (th/create-team* 3 {:profile-id (:id profile)})
-            org-id       (uuid/random)
-            org-summary  {:id org-id
-                          :teams [{:id (:id team-1)}
-                                  {:id (:id team-2)}]}
-            ;; --- Publish org-summary so the mock can serve it ---
-            _            (reset! org-summary-ref org-summary)
+            organization-id       (uuid/random)
+            organization-summary  {:id organization-id
+                                   :teams [{:id (:id team-1)}
+                                           {:id (:id team-2)}]}
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _            (reset! organization-summary-ref organization-summary)
 
             ;; --- Insert invitation records ---
-            ;; Should be deleted: org-level invitation.
+            ;; Should be deleted: organization-level invitation.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
-                                         :org-id org-id
+                                         :org-id organization-id
                                          :team-id nil
                                          :email-to "alice@example.com"
                                          :created-by (:id profile)
                                          :role "editor"
                                          :valid-until (ct/in-future "24h")})
-            ;; Should be deleted: team-level invitation in team-1 (belongs to org).
+            ;; Should be deleted: team-level invitation in team-1 (belongs to organization).
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
                                          :team-id (:id team-1)
@@ -831,7 +831,7 @@
                                          :created-by (:id profile)
                                          :role "admin"
                                          :valid-until (ct/in-future "48h")})
-            ;; Should be deleted: team-level invitation in team-2 (belongs to org),
+            ;; Should be deleted: team-level invitation in team-2 (belongs to organization),
             ;; even if expired.
             _            (th/db-insert! :team-invitation
                                         {:id (uuid/random)
@@ -860,41 +860,41 @@
                                          :role "editor"
                                          :valid-until (ct/in-future "24h")})
 
-            ;; --- Exercise: delete all invitations in the org ---
+            ;; --- Exercise: delete all invitations in the organization ---
             out          (th/management-command! {::th/type :delete-all-organization-invitations
                                                   ::rpc/profile-id (:id profile)
-                                                  :organization-id org-id})
+                                                  :organization-id organization-id})
             present?     (fn [email] (seq (th/db-query :team-invitation {:email-to email})))]
 
-        ;; --- Verify: the handler's nitrate call was :get-org-summary with correct params ---
+        ;; --- Verify: the handler's nitrate call was :get-organization-summary with correct params ---
         ;; (The mock also recorded setup-phase calls from add-profile-to-team!,
         ;;  so :call-args reflects the LAST call — which is the handler's.)
         (let [[_ method params'] (:call-args @nitrate-mock)]
-          (t/is (= :get-org-summary method))
-          (t/is (= {:organization-id org-id} params')))
+          (t/is (= :get-organization-summary method))
+          (t/is (= {:organization-id organization-id} params')))
 
         ;; --- Verify: RPC returns success with no result payload ---
         (t/is (th/success? out))
         (t/is (nil? (:result out)))
 
-        ;; --- Verify: org-level + team-in-org invitations are deleted ---
+        ;; --- Verify: organization-level + team-in-organization invitations are deleted ---
         (t/is (not (present? "alice@example.com")))
         (t/is (not (present? "bob@example.com")))
         (t/is (not (present? "carol@example.com")))
 
-        ;; --- Verify: invitations outside the org survive ---
+        ;; --- Verify: invitations outside the organization survive ---
         (t/is (present? "dan@example.com"))
         (t/is (present? "erin@example.com"))))))
 
-(t/deftest delete-all-organization-invitations-handles-org-with-no-teams
-  (let [org-id  (uuid/random)
+(t/deftest delete-all-organization-invitations-handles-organization-with-no-teams
+  (let [organization-id  (uuid/random)
         params  {::th/type :delete-all-organization-invitations
-                 :organization-id org-id}]
+                 :organization-id organization-id}]
     (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}
                  nitrate-fn {:target 'app.nitrate/call
                              :return (fn [_cfg method _params]
                                        (case method
-                                         :get-org-summary {:id org-id :teams []}
+                                         :get-organization-summary {:id organization-id :teams []}
                                          nil))}]
       (let [profile (th/create-profile* 1 {:is-active true})]
 
@@ -902,7 +902,7 @@
         ;; Org-level invitation should still be deleted.
         (th/db-insert! :team-invitation
                        {:id (uuid/random)
-                        :org-id org-id
+                        :org-id organization-id
                         :team-id nil
                         :email-to "alice@example.com"
                         :created-by (:id profile)
@@ -910,7 +910,7 @@
                         :valid-until (ct/in-future "24h")})
 
         (let [out       (th/management-command! params)
-              remaining (th/db-query :team-invitation {:org-id org-id})]
+              remaining (th/db-query :team-invitation {:org-id organization-id})]
           (t/is (th/success? out))
           (t/is (nil? (:result out)))
           (t/is (empty? remaining)))))))
@@ -922,10 +922,10 @@
           team-1       (th/create-team* 1 {:profile-id (:id profile)})
           team-2       (th/create-team* 2 {:profile-id (:id profile)})
           outside-team (th/create-team* 3 {:profile-id (:id profile)})
-          org-id       (uuid/random)
+          organization-id       (uuid/random)
           base-params  {::th/type :exists-organization-team-invitations-for-non-members
                         ::rpc/profile-id (:id profile)
-                        :organization-id org-id
+                        :organization-id organization-id
                         :team-ids [(:id team-1) (:id team-2)]
                         :member-ids [(:id member1)]}
           exist!       (fn [] (-> (th/management-command! base-params)
@@ -946,7 +946,7 @@
 
       (th/db-insert! :team-invitation
                      {:id (uuid/random)
-                      :org-id org-id
+                      :org-id organization-id
                       :team-id nil
                       :email-to "pending@example.com"
                       :created-by (:id profile)
@@ -981,14 +981,14 @@
           team-1      (th/create-team* 1 {:profile-id (:id profile)})
           team-2      (th/create-team* 2 {:profile-id (:id profile)})
           outside-team (th/create-team* 3 {:profile-id (:id profile)})
-          org-id      (uuid/random)
+          organization-id      (uuid/random)
           params      {::th/type :delete-organization-team-invitations-for-non-members
                        ::rpc/profile-id (:id profile)
-                       :organization-id org-id
+                       :organization-id organization-id
                        :team-ids [(:id team-1) (:id team-2)]
                        :member-ids [(:id member1)]}]
 
-      ;; Should remain: member1 is an org member.
+      ;; Should remain: member1 is an organization member.
       (th/db-insert! :team-invitation
                      {:id (uuid/random)
                       :team-id (:id team-1)
@@ -1001,7 +1001,7 @@
       ;; Org-level invitation remains (out of team cleanup scope).
       (th/db-insert! :team-invitation
                      {:id (uuid/random)
-                      :org-id org-id
+                      :org-id organization-id
                       :team-id nil
                       :email-to "pending@example.com"
                       :created-by (:id profile)
@@ -1038,7 +1038,7 @@
                       :role "editor"
                       :valid-until (ct/in-past "1h")})
 
-      ;; Should remain: outside org scope.
+      ;; Should remain: outside organization scope.
       (th/db-insert! :team-invitation
                      {:id (uuid/random)
                       :team-id (:id outside-team)
@@ -1064,69 +1064,69 @@
 ;; Tests: remove-from-organization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- make-org-summary
-  [& {:keys [organization-id organization-name owner-id your-penpot-teams org-teams]
-      :or   {your-penpot-teams [] org-teams []}}]
+(defn- make-organization-summary
+  [& {:keys [organization-id organization-name owner-id your-penpot-teams organization-teams]
+      :or   {your-penpot-teams [] organization-teams []}}]
   {:id       organization-id
    :name     organization-name
    :owner-id owner-id
    :teams    (into
               (mapv (fn [id] {:id id :is-your-penpot true}) your-penpot-teams)
-              (mapv (fn [id] {:id id :is-your-penpot false}) org-teams))})
+              (mapv (fn [id] {:id id :is-your-penpot false}) organization-teams))})
 
 (defn- nitrate-call-mock
-  ([org-summary]
-   (nitrate-call-mock org-summary nil))
-  ([org-summary remove-profile-params]
+  ([organization-summary]
+   (nitrate-call-mock organization-summary nil))
+  ([organization-summary remove-profile-params]
    (fn [_cfg method params]
      (case method
-       :get-org-summary org-summary
-       :get-org-membership {:organization-id (:id org-summary)
-                            :is-member true}
-       :remove-profile-from-org (when remove-profile-params
-                                  (reset! remove-profile-params params))
+       :get-organization-summary organization-summary
+       :get-organization-membership {:organization-id (:id organization-summary)
+                                     :is-member true}
+       :remove-profile-from-organization (when remove-profile-params
+                                           (reset! remove-profile-params params))
        nil))))
 
 (t/deftest remove-from-organization-happy-path-no-extra-teams
   ;; User is only in its default team (which has files); it should be
   ;; kept, renamed and unset as default.  A notification must be sent.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref      (atom nil)
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref      (atom nil)
         remove-profile-params (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref remove-profile-params) args))}
+                               (apply (nitrate-call-mock @organization-summary-ref remove-profile-params) args))}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create profiles, team with files, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, team with files, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
-            org-team         (th/create-team* 1 {:profile-id (:id user)})
+            organization-team         (th/create-team* 1 {:profile-id (:id user)})
             project          (th/create-project* 1 {:profile-id (:id user)
-                                                    :team-id (:id org-team)})
+                                                    :team-id (:id organization-team)})
             _                (th/create-file* 1 {:profile-id (:id user)
                                                  :project-id (:id project)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
-            ;; --- Exercise: remove the user from the org ---
+            ;; --- Exercise: remove the user from the organization ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: nitrate was called (via nitrate-call-mock delegating) ---
         (t/is (:called? @nitrate-mock))
@@ -1134,104 +1134,104 @@
         ;; --- Verify: RPC returns success with no result payload ---
         (t/is (th/success? out))
         (t/is (nil? (:result out)))
-        (t/is (= (:id org-owner)
+        (t/is (= (:id organization-owner)
                  (:user-who-delete-member @remove-profile-params)))
         (t/is (= "organization-owner"
                  (:deleted-by-role @remove-profile-params)))
 
         ;; --- Verify: default team preserved, renamed and unset as default ---
-        (let [team (th/db-get :team {:id (:id org-team)})]
+        (let [team (th/db-get :team {:id (:id organization-team)})]
           (t/is (false? (:is-default team)))
           (t/is (str/starts-with? (:name team) "[Acme Org] ")))
 
         ;; --- Verify: exactly one notification sent to the user ---
         (t/is (:called? @mbus-mock))
         (let [msg (apply hash-map (rest (:call-args @mbus-mock)))]
-          (t/is (= :user-org-change (:type (:message msg))))
+          (t/is (= :user-organization-change (:type (:message msg))))
           (t/is (= (:id user) (:topic msg)))
           (t/is (= organization-id (:organization-id (:message msg))))
           (t/is (= "Acme Org" (:organization-name (:message msg))))
-          (t/is (= "dashboard.user-no-longer-belong-org" (:notification (:message msg)))))))))
+          (t/is (= "dashboard.user-no-longer-belong-organization" (:notification (:message msg)))))))))
 
 (t/deftest remove-from-organization-deletes-empty-default-team
   ;; When the default team has no files it should be soft-deleted.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref       (atom nil)
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref       (atom nil)
         remove-profile-params (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref remove-profile-params) args))}
+                               (apply (nitrate-call-mock @organization-summary-ref remove-profile-params) args))}
        ;; --- Message bus mock: swallow notifications ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create profiles, empty default team, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, empty default team, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
-            org-team         (th/create-team* 2 {:profile-id (:id user)})
+            organization-team         (th/create-team* 2 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
-            ;; --- Exercise: remove the user from the org ---
+            ;; --- Exercise: remove the user from the organization ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
                                ::rpc/profile-id    uuid/zero
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success ---
         (t/is (th/success? out))
         (t/is (nil? (:user-who-delete-member @remove-profile-params)))
         (t/is (nil? (:deleted-by-role @remove-profile-params)))
         ;; --- Verify: empty default team is soft-deleted ---
-        (let [team (th/db-get :team {:id (:id org-team)} {::db/remove-deleted false})]
+        (let [team (th/db-get :team {:id (:id organization-team)} {::db/remove-deleted false})]
           (t/is (some? (:deleted-at team))))))))
 
 (t/deftest remove-from-organization-deletes-sole-owner-team
-  ;; When the user is the sole member of an org team it should be deleted.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; When the user is the sole member of an organization team it should be deleted.
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}
        ;; --- Message bus mock: swallow notifications ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
             extra-team       (th/create-team* 3 {:profile-id (:id user)})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
-            ;; --- Exercise: remove the user from the org ---
+            ;; --- Exercise: remove the user from the organization ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success ---
         (t/is (th/success? out))
@@ -1242,43 +1242,43 @@
 (t/deftest remove-from-organization-transfers-ownership-of-multi-member-team
   ;; When the user owns a team that has another non-owner member, ownership
   ;; is transferred to that member by the endpoint automatically.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}
        ;; --- Message bus mock: swallow notifications ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
             candidate        (th/create-profile* 3 {:is-active true})
             extra-team       (th/create-team* 4 {:profile-id (:id user)})
             _                (th/create-team-role* {:team-id    (:id extra-team)
                                                     :profile-id (:id candidate)
                                                     :role       :editor})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
-            ;; --- Exercise: remove the user from the org ---
+            ;; --- Exercise: remove the user from the organization ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success ---
         (t/is (th/success? out))
@@ -1290,43 +1290,43 @@
           (t/is (true? (:is-owner rel))))))))
 
 (t/deftest remove-from-organization-exits-non-owned-team
-  ;; When the user is a non-owner member of an org team, they simply leave.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; When the user is a non-owner member of an organization team, they simply leave.
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}
        ;; --- Message bus mock: swallow notifications ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
-            extra-team       (th/create-team* 5 {:profile-id (:id org-owner)})
+            extra-team       (th/create-team* 5 {:profile-id (:id organization-owner)})
             _                (th/create-team-role* {:team-id    (:id extra-team)
                                                     :profile-id (:id user)
                                                     :role       :editor})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
-            ;; --- Exercise: remove the user from the org ---
+            ;; --- Exercise: remove the user from the organization ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success ---
         (t/is (th/success? out))
@@ -1340,17 +1340,17 @@
 (t/deftest remove-from-organization-error-nobody-to-reassign
   ;; When the user owns a multi-member team but every other member is
   ;; also an owner, the auto-selection query finds nobody and raises.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}
        ;; --- Message bus mock: swallow notifications ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
+      ;; --- Setup: create profiles, teams, organization-summary ---
       (let [other-owner      (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
             extra-team       (th/create-team* 6 {:profile-id (:id user)})
@@ -1360,25 +1360,25 @@
             _                (th/db-update! :team-profile-rel
                                             {:is-owner true :is-admin false}
                                             {:team-id (:id extra-team) :profile-id (:id other-owner)})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id other-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id other-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
-            ;; --- Exercise: remove the user from the org ---
+            ;; --- Exercise: remove the user from the organization ---
             out              (th/management-command!
                               {::th/type           :remove-from-organization
                                ::rpc/profile-id    (:id other-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
                                :organization-name  "Acme Org"
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns error ---
         (t/is (not (th/success? out)))
@@ -1390,35 +1390,35 @@
 
 (t/deftest get-remove-from-organization-summary-no-extra-teams
   ;; User only has a default team — nothing to delete/transfer/exit.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}]
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}]
 
-      ;; --- Setup: create profiles, team, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, team, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
-            org-team         (th/create-team* 1 {:profile-id (:id user)})
+            organization-team         (th/create-team* 1 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
             ;; --- Exercise: get the summary ---
             out              (th/management-command!
                               {::th/type           :get-remove-from-organization-summary
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success with all-zero summary ---
         (t/is (th/success? out))
@@ -1429,37 +1429,37 @@
                  (:result out)))))))
 
 (t/deftest get-remove-from-organization-summary-with-teams-to-delete
-  ;; User owns a sole-member extra org team → 1 to delete.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; User owns a sole-member extra organization team → 1 to delete.
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}]
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
             extra-team       (th/create-team* 3 {:profile-id (:id user)})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
             ;; --- Exercise: get the summary ---
             out              (th/management-command!
                               {::th/type           :get-remove-from-organization-summary
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success with 1 team to delete ---
         (t/is (th/success? out))
@@ -1470,41 +1470,41 @@
                  (:result out)))))))
 
 (t/deftest get-remove-from-organization-summary-with-teams-to-transfer
-  ;; User owns a multi-member extra org team → 1 to transfer.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; User owns a multi-member extra organization team → 1 to transfer.
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}]
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
             candidate        (th/create-profile* 3 {:is-active true})
             extra-team       (th/create-team* 4 {:profile-id (:id user)})
             _                (th/create-team-role* {:team-id    (:id extra-team)
                                                     :profile-id (:id candidate)
                                                     :role       :editor})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
             ;; --- Exercise: get the summary ---
             out              (th/management-command!
                               {::th/type           :get-remove-from-organization-summary
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success with 1 team to transfer ---
         (t/is (th/success? out))
@@ -1515,40 +1515,40 @@
                  (:result out)))))))
 
 (t/deftest get-remove-from-organization-summary-with-teams-to-exit
-  ;; User is a non-owner member of an org team → 1 to exit.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; User is a non-owner member of an organization team → 1 to exit.
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}]
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
-            extra-team       (th/create-team* 5 {:profile-id (:id org-owner)})
+            extra-team       (th/create-team* 5 {:profile-id (:id organization-owner)})
             _                (th/create-team-role* {:team-id    (:id extra-team)
                                                     :profile-id (:id user)
                                                     :role       :editor})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
             ;; --- Exercise: get the summary ---
             out              (th/management-command!
                               {::th/type           :get-remove-from-organization-summary
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: RPC returns success with 1 team to exit ---
         (t/is (th/success? out))
@@ -1560,46 +1560,46 @@
 
 (t/deftest get-remove-from-organization-summary-does-not-mutate
   ;; Calling the summary endpoint must not modify any teams.
-  ;; --- Deferred org-summary: depends on team IDs from setup ---
-  (let [org-summary-ref (atom nil)]
+  ;; --- Deferred organization-summary: depends on team IDs from setup ---
+  (let [organization-summary-ref (atom nil)]
     (with-mocks
-      [;; --- Nitrate mock: nil during setup, serve org-summary once available ---
+      [;; --- Nitrate mock: nil during setup, serve organization-summary once available ---
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [& args]
-                               (apply (nitrate-call-mock @org-summary-ref) args))}]
+                               (apply (nitrate-call-mock @organization-summary-ref) args))}]
 
-      ;; --- Setup: create profiles, teams, org-summary ---
-      (let [org-owner        (th/create-profile* 1 {:is-active true})
+      ;; --- Setup: create profiles, teams, organization-summary ---
+      (let [organization-owner        (th/create-profile* 1 {:is-active true})
             user             (th/create-profile* 2 {:is-active true})
             extra-team       (th/create-team* 6 {:profile-id (:id user)})
-            org-team         (th/create-team* 99 {:profile-id (:id user)})
+            organization-team         (th/create-team* 99 {:profile-id (:id user)})
             organization-id  (uuid/random)
-            org-summary      (make-org-summary
-                              :organization-id   organization-id
-                              :organization-name "Acme Org"
-                              :owner-id          (:id org-owner)
-                              :your-penpot-teams [(:id org-team)]
-                              :org-teams         [(:id extra-team)])
-            ;; --- Publish org-summary so the mock can serve it ---
-            _                (reset! org-summary-ref org-summary)
+            organization-summary      (make-organization-summary
+                                       :organization-id   organization-id
+                                       :organization-name "Acme Org"
+                                       :owner-id          (:id organization-owner)
+                                       :your-penpot-teams [(:id organization-team)]
+                                       :organization-teams         [(:id extra-team)])
+            ;; --- Publish organization-summary so the mock can serve it ---
+            _                (reset! organization-summary-ref organization-summary)
 
             ;; --- Exercise: call the summary endpoint ---
             _                (th/management-command!
                               {::th/type           :get-remove-from-organization-summary
-                               ::rpc/profile-id    (:id org-owner)
+                               ::rpc/profile-id    (:id organization-owner)
                                :profile-id         (:id user)
                                :organization-id    organization-id
-                               :default-team-id    (:id org-team)})]
+                               :default-team-id    (:id organization-team)})]
 
         ;; --- Verify: both teams still exist and are undeleted ---
-        (let [t1 (th/db-get :team {:id (:id org-team)})]
+        (let [t1 (th/db-get :team {:id (:id organization-team)})]
           (t/is (some? t1))
           (t/is (nil? (:deleted-at t1))))
         (let [t2 (th/db-get :team {:id (:id extra-team)})]
           (t/is (some? t2))
           (t/is (nil? (:deleted-at t2))))
         ;; --- Verify: user is still a member of both teams ---
-        (let [rel1 (th/db-get :team-profile-rel {:team-id (:id org-team) :profile-id (:id user)})]
+        (let [rel1 (th/db-get :team-profile-rel {:team-id (:id organization-team) :profile-id (:id user)})]
           (t/is (some? rel1)))
         (let [rel2 (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id user)})]
           (t/is (some? rel2)))))))
@@ -1613,17 +1613,17 @@
        nitrate-mock {:target 'app.nitrate/call
                      :return (fn [_cfg method _params]
                                (if-let [data @mock-data-ref]
-                                 (let [{:keys [owner-id member-id org-summary]} data]
+                                 (let [{:keys [owner-id member-id organization-summary]} data]
                                    (case method
-                                     :get-org-members [owner-id member-id]
-                                     :get-org-summary org-summary
+                                     :get-organization-members [owner-id member-id]
+                                     :get-organization-summary organization-summary
                                      nil))
                                  nil))}
        ;; --- Email mock: capture sent emails ---
        email-mock  {:target 'app.email/send!
                     :return (fn [params] (swap! sent conj params) nil)}]
 
-      ;; --- Setup: create profiles, team, org-summary ---
+      ;; --- Setup: create profiles, team, organization-summary ---
       (let [owner       (th/create-profile* 1 {:is-active true :fullname "Owner"})
             member      (th/create-profile* 2 {:is-active true
                                                :fullname "Member"
@@ -1631,14 +1631,14 @@
             invited     (th/create-profile* 3 {:is-active true
                                                :fullname "Invited User"
                                                :email "invited@example.com"})
-            org-id      (uuid/random)
-            org-name    "Acme Inc"
+            organization-id      (uuid/random)
+            organization-name    "Acme Inc"
             team        (th/create-team* 1 {:profile-id (:id owner)})
-            org-summary {:id org-id
-                         :name org-name
-                         :teams [{:id (:id team)}]}
+            organization-summary {:id organization-id
+                                  :name organization-name
+                                  :teams [{:id (:id team)}]}
             params      {::th/type :notify-organization-sso-change
-                         :organization-id org-id
+                         :organization-id organization-id
                          :updated-props false
                          :announce-activation true}]
 
@@ -1646,7 +1646,7 @@
         ;; Member also has a pending invitation: should still receive only one email.
         (th/db-insert! :team-invitation
                        {:id (uuid/random)
-                        :org-id org-id
+                        :org-id organization-id
                         :team-id nil
                         :email-to (:email member)
                         :created-by (:id owner)
@@ -1675,7 +1675,7 @@
         ;; --- Publish mock data so the mock can serve it ---
         (reset! mock-data-ref {:owner-id (:id owner)
                                :member-id (:id member)
-                               :org-summary org-summary})
+                               :organization-summary organization-summary})
 
         ;; --- Exercise: notify SSO change ---
         (th/management-command! params)
@@ -1689,7 +1689,7 @@
                      "external@example.com"}
                    emails))
           (doseq [email-params @sent]
-            (t/is (= org-name (:organization-name email-params)))
+            (t/is (= organization-name (:organization-name email-params)))
             (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))))
 
 (t/deftest notify-organization-sso-change-skips-email-when-not-active
@@ -1703,11 +1703,11 @@
     (t/is (empty? @sent))))
 
 (t/deftest check-organization-sso-returns-valid-true
-  (let [org-id (uuid/random)
+  (let [organization-id (uuid/random)
         out    (with-redefs [oidc/is-organization-sso-config-valid? (constantly true)]
                  (th/management-command!
                   {::th/type :check-organization-sso
-                   :organization-id org-id
+                   :organization-id organization-id
                    :client-id "test-client"
                    :client-secret "test-secret"
                    :issuer "https://idp.example.com"}))]
@@ -1724,14 +1724,14 @@
     (t/is (false? (-> out :result :valid)))))
 
 (t/deftest check-organization-sso-passes-issuer-to-validation
-  (let [org-id (uuid/random)
+  (let [organization-id (uuid/random)
         out    (with-redefs [oidc/is-organization-sso-config-valid?
                              (fn [_cfg sso]
                                (and (= "test-client" (:client-id sso))
                                     (= "https://idp.example.com/" (:issuer sso))))]
                  (th/management-command!
                   {::th/type :check-organization-sso
-                   :organization-id org-id
+                   :organization-id organization-id
                    :client-id "test-client"
                    :client-secret "test-secret"
                    :issuer "https://idp.example.com/"}))]

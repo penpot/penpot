@@ -769,13 +769,13 @@
   [value]
   (when-not (str/blank? value) value))
 
-(defn org-sso-discovery-uri
-  "Return the OIDC discovery URI from an org SSO config."
+(defn organization-sso-discovery-uri
+  "Return the OIDC discovery URI from an organization SSO config."
   [sso]
   (non-blank-uri (:issuer sso)))
 
-(defn prepare-org-sso-provider
-  "Build an OIDC provider map dynamically from the Nitrate org SSO config.
+(defn prepare-organization-sso-provider
+  "Build an OIDC provider map dynamically from the Nitrate organization SSO config.
   Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
   [cfg {:keys [client-id client-secret issuer]}]
   (prepare-oidc-provider cfg
@@ -788,18 +788,18 @@
                           :scopes           default-oidc-scopes
                           :skip-ssrf-check? true}))
 
-(defn build-org-sso-auth-redirect-uri
+(defn build-organization-sso-auth-redirect-uri
   "Build the OIDC authorization redirect URI for an organization SSO config.
   Raises if the config is incomplete or OIDC discovery fails."
   [cfg sso & {:keys [dest-url organization-id provider]}]
   (let [organization-id (or organization-id (:organization-id sso))
-        issuer          (org-sso-discovery-uri sso)
+        issuer          (organization-sso-discovery-uri sso)
         dest-url        (or dest-url (str (cf/get :public-uri)))]
     (when-not issuer
       (ex/raise :type :validation
                 :code :invalid-sso-config
                 :hint "missing issuer"))
-    (let [oidc-provider (or provider (prepare-org-sso-provider cfg sso))
+    (let [oidc-provider (or provider (prepare-organization-sso-provider cfg sso))
           state-token   (tokens/generate cfg {:iss             "oidc"
                                               :dest-url        dest-url
                                               :organization-id organization-id
@@ -839,7 +839,7 @@
         (and (= error "access_denied")
              (str/includes? description "unauthorized")))))
 
-(defn- probe-org-sso-client-credentials
+(defn- probe-organization-sso-client-credentials
   "Probe the token endpoint with a dummy authorization code.
   Valid client credentials are expected to answer with `invalid_grant`."
   [cfg provider]
@@ -864,10 +864,10 @@
   and the client credentials are accepted by the token endpoint."
   [cfg sso]
   (try
-    (if (org-sso-discovery-uri sso)
-      (let [provider (prepare-org-sso-provider cfg sso)]
-        (and (build-org-sso-auth-redirect-uri cfg sso :provider provider)
-             (probe-org-sso-client-credentials cfg provider)))
+    (if (organization-sso-discovery-uri sso)
+      (let [provider (prepare-organization-sso-provider cfg sso)]
+        (and (build-organization-sso-auth-redirect-uri cfg sso :provider provider)
+             (probe-organization-sso-client-credentials cfg provider)))
       false)
     (catch Throwable _ false)))
 
@@ -897,12 +897,12 @@
             state    (get params :state)
             state    (tokens/verify cfg {:token state :iss "oidc"})]
 
-        ;; Org SSO flow: state carries :dest-url — exchange the authorization
+        ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
         (if-let [dest-url (:dest-url state)]
           (let [organization-id (:organization-id state)
-                sso             (nitrate/call cfg :get-org-sso {:organization-id organization-id})
-                provider        (prepare-org-sso-provider cfg sso)
+                sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
+                provider        (prepare-organization-sso-provider cfg sso)
                 info            (get-info cfg provider state code)
                 session         (session/get-session request)
                 exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]

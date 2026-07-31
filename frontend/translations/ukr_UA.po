@@ -368,7 +368,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(копія)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Створити організацію"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439

@@ -167,12 +167,12 @@
    [:role ::sm/text]])
 
 (sv/defmethod ::notify-user-added-to-organization
-  "Notify to Penpot that an user has joined an org from nitrate"
+  "Notify to Penpot that an user has joined an organization from nitrate"
   {::doc/added "2.14"
    ::sm/params schema:notify-user-added-to-organization
    ::rpc/auth false}
   [cfg {:keys [profile-id organization-id]}]
-  (db/tx-run! cfg teams/create-default-org-team profile-id organization-id))
+  (db/tx-run! cfg teams/create-default-organization-team profile-id organization-id))
 
 
 ;; ---- API: get-managed-profiles
@@ -314,7 +314,7 @@ RETURNING id, deleted_at;")
   nil)
 
 (defn manage-deleted-organization-teams
-  "For a deleted organization, preserve org teams unchanged and only prefix or
+  "For a deleted organization, preserve organization teams unchanged and only prefix or
   delete member Your Penpot teams depending on whether they still contain files."
   [cfg {:keys [organization-id organization-name teams]}]
   (let [all-team-ids (->> teams
@@ -329,7 +329,7 @@ RETURNING id, deleted_at;")
                                   distinct
                                   (into []))]
     (when (seq all-team-ids)
-      (let [org-prefix (str "[" (d/sanitize-string organization-name) "] ")]
+      (let [organization-prefix (str "[" (d/sanitize-string organization-name) "] ")]
         (db/tx-run!
          cfg
          (fn [{:keys [::db/conn] :as cfg}]
@@ -343,11 +343,11 @@ RETURNING id, deleted_at;")
                  teams-to-prefix  (->> your-penpot-team-ids (filter teams-with-files) (into []))
                  teams-to-delete  (->> your-penpot-team-ids (remove teams-with-files) (into []))]
 
-             ;; Org teams move to the fallback org unchanged. Only imported
-             ;; Your Penpot teams keep the org prefix when they still have files.
+             ;; Organization teams move to the fallback organization unchanged. Only imported
+             ;; Your Penpot teams keep the organization prefix when they still have files.
              (when (seq teams-to-prefix)
                (db/exec! conn [sql:prefix-teams-name-and-unset-default
-                               org-prefix
+                               organization-prefix
                                (db/create-array conn "uuid" teams-to-prefix)]))
 
              ;; Empty imported Your Penpot teams disappear entirely.
@@ -358,16 +358,16 @@ RETURNING id, deleted_at;")
 
 
 (sv/defmethod ::notify-organization-deletion
-  "For a deleted organization, preserve org teams and only prefix or delete
+  "For a deleted organization, preserve organization teams and only prefix or delete
    imported Your Penpot teams before notifying connected users."
   {::doc/added "2.15"
    ::sm/params schema:notify-organization-deletion
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        teams       (:teams org-summary)]
-    (manage-deleted-organization-teams cfg {:organization-name (:name org-summary)
-                                            :organization-id (:id org-summary)
+  (let [organization-summary (nitrate/call cfg :get-organization-summary {:organization-id organization-id})
+        teams       (:teams organization-summary)]
+    (manage-deleted-organization-teams cfg {:organization-name (:name organization-summary)
+                                            :organization-id (:id organization-summary)
                                             :teams teams})
     nil))
 
@@ -378,18 +378,18 @@ RETURNING id, deleted_at;")
    [:profile-id ::sm/uuid]])
 
 (sv/defmethod ::notify-user-organizations-deletion
-  "For a given user, find all owned organizations and apply the deleted-org
+  "For a given user, find all owned organizations and apply the deleted-organization
    transfer rules to their imported Your Penpot teams."
   {::doc/added "2.18"
    ::sm/params schema:notify-user-organizations-deletion
    ::nitrate/sso false}
   [cfg {:keys [profile-id]}]
-  (let [owned-orgs (nitrate/call cfg :get-owned-orgs {:profile-id profile-id})]
-    (doseq [org owned-orgs]
-      (let [organization-name (:name org)
-            teams             (:teams org)]
+  (let [owned-organizations (nitrate/call cfg :get-owned-organizations {:profile-id profile-id})]
+    (doseq [organization owned-organizations]
+      (let [organization-name (:name organization)
+            teams             (:teams organization)]
         (manage-deleted-organization-teams cfg {:organization-name organization-name
-                                                :organization-id (:id org)
+                                                :organization-id (:id organization)
                                                 :teams teams}))))
   nil)
 
@@ -496,7 +496,7 @@ RETURNING id, deleted_at;")
                 [:organization schema:organization-with-avatar]]
    ::nitrate/sso false}
   [cfg params]
-  (db/tx-run! cfg ti/create-org-invitation params)
+  (db/tx-run! cfg ti/create-organization-invitation params)
   nil)
 
 
@@ -524,9 +524,9 @@ RETURNING id, deleted_at;")
    ::sm/result schema:get-organization-invitations-result
    ::nitrate/sso false}
   [cfg {:keys [organization-id]}]
-  (let [team-ids (noh/get-org-team-ids cfg organization-id)]
+  (let [team-ids (noh/get-organization-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
-                   (->> (noh/get-org-invitations conn organization-id team-ids)
+                   (->> (noh/get-organization-invitations conn organization-id team-ids)
                         (mapv (fn [{:keys [photo-id] :as invitation}]
                                 (cond-> (dissoc invitation :photo-id)
                                   photo-id
@@ -546,13 +546,13 @@ RETURNING id, deleted_at;")
    [:email ::sm/email]])
 
 (sv/defmethod ::delete-organization-invitations
-  "Delete all invitations for one email in an organization scope (org + org teams)."
+  "Delete all invitations for one email in an organization scope (organization + organization teams)."
   {::doc/added "2.16"
    ::sm/params schema:delete-organization-invitations-params
    ::nitrate/sso false}
   [cfg {:keys [organization-id email]}]
   (let [clean-email (profile/clean-email email)
-        team-ids    (noh/get-org-team-ids cfg organization-id)]
+        team-ids    (noh/get-organization-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
                      (db/exec! conn [sql:delete-organization-invitations clean-email organization-id ids-array]))))
@@ -571,14 +571,14 @@ RETURNING id, deleted_at;")
    [:organization-id ::sm/uuid]])
 
 (sv/defmethod ::delete-all-organization-invitations
-  "Delete every pending invitation associated with an organization (org-level + team-level).
+  "Delete every pending invitation associated with an organization (organization-level + team-level).
    Called from Nitrate when an organization is about to be deleted, so users that click
    their invitation token hit the existing invalid-token landing page."
   {::doc/added "2.18"
    ::sm/params schema:delete-all-organization-invitations-params
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
-  (let [team-ids (noh/get-org-team-ids cfg organization-id)]
+  (let [team-ids (noh/get-organization-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
                      (db/exec! conn [sql:delete-all-organization-invitations organization-id ids-array]))))
@@ -633,16 +633,16 @@ RETURNING id, deleted_at;")
         valid-teams-to-leave (into valid-teams-to-exit
                                    (map add-reassign-to valid-teams-to-transfer))]
 
-    (cnit/leave-org cfg (assoc params
-                               :id organization-id
-                               :name organization-name
-                               :teams-to-delete valid-teams-to-delete-ids
-                               :teams-to-leave valid-teams-to-leave
-                               :skip-validation true
-                               :user-who-delete-member actor-profile-id
-                               :deleted-by-role (when actor-profile-id
-                                                  "organization-owner")))
-    (notifications/notify-user-org-change cfg profile-id organization-id organization-name "dashboard.user-no-longer-belong-org")
+    (cnit/leave-organization cfg (assoc params
+                                        :id organization-id
+                                        :name organization-name
+                                        :teams-to-delete valid-teams-to-delete-ids
+                                        :teams-to-leave valid-teams-to-leave
+                                        :skip-validation true
+                                        :user-who-delete-member actor-profile-id
+                                        :deleted-by-role (when actor-profile-id
+                                                           "organization-owner")))
+    (notifications/notify-user-organization-change cfg profile-id organization-id organization-name "dashboard.user-no-longer-belong-organization")
     nil))
 
 ;; API: get-remove-from-organization-summary
@@ -673,11 +673,11 @@ RETURNING id, deleted_at;")
     (when-not valid-default-team
       (ex/raise :type :validation
                 :code :not-valid-teams))
-    (cnit/get-leave-org-summary cfg
-                                default-team-id
-                                valid-teams-to-delete-ids
-                                (count valid-teams-to-transfer)
-                                (count valid-teams-to-exit))))
+    (cnit/get-leave-organization-summary cfg
+                                         default-team-id
+                                         valid-teams-to-delete-ids
+                                         (count valid-teams-to-transfer)
+                                         (count valid-teams-to-exit))))
 
 ;; API: send-renewal-email
 
@@ -720,7 +720,7 @@ RETURNING id, deleted_at;")
     WHERE id = ANY(?)
       AND deleted_at IS NULL")
 
-(def ^:private sql:exists-non-member-org-team-invitations
+(def ^:private sql:exists-non-member-organization-team-invitations
   "SELECT EXISTS (
             SELECT 1
               FROM team_invitation
@@ -728,13 +728,13 @@ RETURNING id, deleted_at;")
                AND email_to <> ALL(?)
          ) AS non_member")
 
-(def ^:private sql:delete-non-member-org-team-invitations
+(def ^:private sql:delete-non-member-organization-team-invitations
   "DELETE FROM team_invitation
     WHERE team_id = ANY(?)
       AND email_to <> ALL(?)
    RETURNING email_to")
 
-(def ^:private schema:org-team-invitations-for-non-members-params
+(def ^:private schema:organization-team-invitations-for-non-members-params
   [:map
    [:team-ids [:vector ::sm/uuid]]
    [:member-ids [:vector ::sm/uuid]]])
@@ -742,8 +742,8 @@ RETURNING id, deleted_at;")
 (def ^:private schema:exists-organization-team-invitations-for-non-members-result
   [:map [:exists ::sm/boolean]])
 
-(defn- org-team-invitations-for-non-members-arrays
-  "Member emails and PG arrays used by exists/delete org team invitation endpoints."
+(defn- organization-team-invitations-for-non-members-arrays
+  "Member emails and PG arrays used by exists/delete organization team invitation endpoints."
   [conn {:keys [team-ids member-ids]}]
   (let [member-ids-array (db/create-array conn "uuid" member-ids)
         member-emails    (->> (db/exec! conn [sql:get-profile-emails-by-ids member-ids-array])
@@ -752,11 +752,11 @@ RETURNING id, deleted_at;")
     {:emails-array (db/create-array conn "text" (vec member-emails))
      :teams-array  (db/create-array conn "uuid" team-ids)}))
 
-(defn- non-member-org-team-invitations-exist?
+(defn- non-member-organization-team-invitations-exist?
   [conn params]
   (let [{:keys [emails-array teams-array]}
-        (org-team-invitations-for-non-members-arrays conn params)]
-    (-> (db/exec-one! conn [sql:exists-non-member-org-team-invitations
+        (organization-team-invitations-for-non-members-arrays conn params)]
+    (-> (db/exec-one! conn [sql:exists-non-member-organization-team-invitations
                             teams-array
                             emails-array])
         :non-member)))
@@ -764,24 +764,24 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::exists-organization-team-invitations-for-non-members
   "Return if there are any team invitations for emails that are not organization members."
   {::doc/added "2.18"
-   ::sm/params schema:org-team-invitations-for-non-members-params
+   ::sm/params schema:organization-team-invitations-for-non-members-params
    ::sm/result schema:exists-organization-team-invitations-for-non-members-result
    ::nitrate/sso false}
   [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 {:exists (boolean (non-member-org-team-invitations-exist? conn params))})))
+                 {:exists (boolean (non-member-organization-team-invitations-exist? conn params))})))
 
 (sv/defmethod ::delete-organization-team-invitations-for-non-members
   "Delete team invitations for emails that are not organization members."
   {::doc/added "2.18"
-   ::sm/params schema:org-team-invitations-for-non-members-params
+   ::sm/params schema:organization-team-invitations-for-non-members-params
    ::db/transaction true
    ::nitrate/sso false}
   [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (let [{:keys [emails-array teams-array]}
-                       (org-team-invitations-for-non-members-arrays conn params)]
-                   (db/exec! conn [sql:delete-non-member-org-team-invitations
+                       (organization-team-invitations-for-non-members-arrays conn params)]
+                   (db/exec! conn [sql:delete-non-member-organization-team-invitations
                                    teams-array
                                    emails-array])
                    nil))))
@@ -917,8 +917,8 @@ RETURNING id, deleted_at;")
    ::sm/result schema:get-teams-detail-result
    ::nitrate/sso false}
   [cfg {:keys [organization-id]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        team-ids    (into [] (comp d/xf:map-id (filter uuid?)) (:teams org-summary))]
+  (let [organization-summary (nitrate/call cfg :get-organization-summary {:organization-id organization-id})
+        team-ids    (into [] (comp d/xf:map-id (filter uuid?)) (:teams organization-summary))]
     (if (empty? team-ids)
       []
       (db/run! cfg
@@ -958,8 +958,8 @@ RETURNING id, deleted_at;")
    ::rpc/auth false}
   [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props announce-activation]}]
   (when updated-props
-    (rpc/invalidate-org-sso-cache-by-org! organization-id)
-    (session/clear-org-sso-sessions! pool organization-id))
+    (rpc/invalidate-organization-sso-cache-by-organization! organization-id)
+    (session/clear-organization-sso-sessions! pool organization-id))
   (notifications/notify-organization-change-sso cfg organization-id)
   (when announce-activation
     (neh/send-organization-setup-sso-emails! cfg organization-id))

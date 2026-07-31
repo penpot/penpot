@@ -147,10 +147,10 @@
     (let [public-uri (u/uri "https://example.com/penpot/")]
       (t/is (= "https://example.com/penpot/admin-console/"
                (dnt/build-admin-console-url public-uri "" nil)))
-      (t/is (= "https://example.com/penpot/admin-console/organization/my-org/organization-id/people/"
+      (t/is (= "https://example.com/penpot/admin-console/organization/my-organization/organization-id/people/"
                (dnt/build-admin-console-url
                 public-uri
-                "organization/my-org/organization-id/people/"
+                "organization/my-organization/organization-id/people/"
                 nil)))
       (t/is (= {:action "create-organization"
                 :origin "dashboard:organization-switcher"}

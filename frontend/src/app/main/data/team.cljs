@@ -93,7 +93,7 @@
     state))
 
 (defn with-refreshed-team
-  "Fetches fresh team data from the server to ensure up-to-date org
+  "Fetches fresh team data from the server to ensure up-to-date organization
   permissions, updates the app state, and calls f with the fresh team data.
   Returns an observable of events."
   [team-id f]
@@ -106,7 +106,7 @@
              (f team)))))))
 
 (defn check-and-create-team
-  "Fetches fresh team data from the server to ensure up-to-date org
+  "Fetches fresh team data from the server to ensure up-to-date organization
   permissions, then shows the team-form modal or a no-permission modal."
   [team-id]
   (ptk/reify ::check-and-create-team
@@ -116,23 +116,23 @@
         (with-refreshed-team team-id
           (fn [team]
             (let [organization (:organization team)
-                  in-org?      (and (contains? cf/flags :nitrate) organization)
-                  can-create?  (if in-org?
+                  in-organization?      (and (contains? cf/flags :nitrate) organization)
+                  can-create?  (if in-organization?
                                  (nitrate-perms/allowed? :create-team
-                                                         {:org-perms {:owner-id    (:owner-id organization)
-                                                                      :permissions (:permissions organization)}
+                                                         {:organization-perms {:owner-id    (:owner-id organization)
+                                                                               :permissions (:permissions organization)}
                                                           :profile-id profile-id
                                                           :team-perms (:permissions team)})
                                  true)]
               (rx/of (if can-create?
-                       (modal/show :team-form (if in-org?
+                       (modal/show :team-form (if in-organization?
                                                 {:organization-id   (:id organization)
                                                  :organization-name (:name organization)}
                                                 {}))
                        (modal/show :no-permission-modal {:type :create-team}))))))))))
 
 (defn check-and-delete-team
-  "Fetches fresh team data from the server to ensure up-to-date org
+  "Fetches fresh team data from the server to ensure up-to-date organization
   permissions, then shows the confirmation modal or a no-permission modal."
   [{:keys [team-id delete-fn]}]
   (ptk/reify ::check-and-delete-team
@@ -141,17 +141,17 @@
       (let [profile-id (dm/get-in state [:profile :id])]
         (with-refreshed-team team-id
           (fn [team]
-            (let [org         (:organization team)
-                  in-org?     (and (contains? cf/flags :nitrate) org)
-                  can-delete? (if in-org?
+            (let [organization         (:organization team)
+                  in-organization?     (and (contains? cf/flags :nitrate) organization)
+                  can-delete? (if in-organization?
                                 (nitrate-perms/allowed? :delete-team
-                                                        {:org-perms {:owner-id    (:owner-id org)
-                                                                     :permissions (:permissions org)}
+                                                        {:organization-perms {:owner-id    (:owner-id organization)
+                                                                              :permissions (:permissions organization)}
                                                          :profile-id profile-id
                                                          :team-perms (:permissions team)})
                                 (boolean (dm/get-in team [:permissions :is-owner])))
-                  message     (if in-org?
-                                (tr "modals.delete-org-team-confirm.message" (:name org))
+                  message     (if in-organization?
+                                (tr "modals.delete-organization-team-confirm.message" (:name organization))
                                 (tr "modals.delete-team-confirm.message"))]
               (rx/of (if can-delete?
                        (modal/show
@@ -163,7 +163,7 @@
                        (modal/show :no-permission-modal {:type :delete-team}))))))))))
 
 (defn- check-new-team-members-permission-and-show-invite-members
-  "Receives refreshed team data with up-to-date org
+  "Receives refreshed team data with up-to-date organization
   permissions, then shows the invite members modal or an appropriate alert."
   [{:keys [team invite-email origin]}]
   (ptk/reify ::check-new-team-members-permission-and-show-invite-members
@@ -175,16 +175,16 @@
                                             :invite-email invite-email}))]
         (if (and (contains? cf/flags :nitrate)
                  (not (nitrate-perms/allowed? :add-anybody-to-team
-                                              {:org-perms (:organization team)})))
-          (->> (rp/cmd! :all-org-members-in-team
+                                              {:organization-perms (:organization team)})))
+          (->> (rp/cmd! :all-organization-members-in-team
                         {:team-id (:id team)
                          :organization-id (get-in team [:organization :id])})
                (rx/mapcat
-                (fn [all-org-members-in-team?]
-                  (if all-org-members-in-team?
+                (fn [all-organization-members-in-team?]
+                  (if all-organization-members-in-team?
                     (rx/of (modal/show
                             {:type :alert
-                             :message (tr "modals.invite-restricted-members.all-org-members-in-team" (get-in team [:organization :name]))
+                             :message (tr "modals.invite-restricted-members.all-organization-members-in-team" (get-in team [:organization :name]))
                              :accept-label (tr "labels.accept")
                              :accept-style :primary
                              :title (tr "modals.invite-team-member.title")}))
@@ -192,7 +192,7 @@
           show-invite)))))
 
 (defn check-and-invite-members
-  "Fetches fresh team data from the server to ensure up-to-date org
+  "Fetches fresh team data from the server to ensure up-to-date organization
   permissions, then shows invite-members modal or a permission error."
   [{:keys [team-id origin invite-email]
     :or {origin :team}}]
@@ -202,10 +202,10 @@
       (let [profile-id (dm/get-in state [:profile :id])]
         (with-refreshed-team team-id
           (fn [team]
-            (let [org         (:organization team)
+            (let [organization         (:organization team)
                   can-invite? (nitrate-perms/can-send-invitations?
                                {:nitrate-enabled? (contains? cf/flags :nitrate)
-                                :organization org
+                                :organization organization
                                 :profile-id profile-id
                                 :team-permissions (:permissions team)})]
               (rx/of (if can-invite?
@@ -609,7 +609,7 @@
              (rx/catch on-error))))))
 
 (defn check-and-submit-invite-members
-  "Fetches fresh team data from the server to ensure up-to-date org
+  "Fetches fresh team data from the server to ensure up-to-date organization
   permissions, then submits member invitations or shows a restriction modal."
   [{:keys [team-id] :as params} origin do-invite-members]
   (ptk/reify ::check-and-submit-invite-members
@@ -619,9 +619,9 @@
         (with-refreshed-team team-id
           (fn [team]
             (if (not (nitrate-perms/allowed? :add-anybody-to-team
-                                             {:org-perms (:organization team)}))
-              (->> (rp/cmd! :check-org-members {:organization-id (get-in team [:organization :id])
-                                                :emails (vec (:emails params))})
+                                             {:organization-perms (:organization team)}))
+              (->> (rp/cmd! :check-organization-members {:organization-id (get-in team [:organization :id])
+                                                         :emails (vec (:emails params))})
                    (rx/mapcat
                     (fn [result]
                       (let [blocked (into [] (comp (filter (fn [[_ v]] (not v)))
@@ -830,5 +830,5 @@
 
 
 (defn team->organization [team]
-  (when-let [org (:organization team)]
-    (assoc org :default-team-id (:id team))))
+  (when-let [organization (:organization team)]
+    (assoc organization :default-team-id (:id team))))

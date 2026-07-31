@@ -363,7 +363,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(kopie)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Nieuwe org aanmaken"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439

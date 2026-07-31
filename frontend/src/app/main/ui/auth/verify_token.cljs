@@ -44,7 +44,7 @@
   (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
-  [{:keys [state team-id org-team-id organization-name invitation-token] :as tdata}]
+  [{:keys [state team-id organization-team-id organization-name invitation-token] :as tdata}]
   (when-let [{:keys [origin props]} (:organization-invitation-audit tdata)]
     (st/emit!
      (ev/event
@@ -54,11 +54,11 @@
 
   (case state
     :created
-    (if org-team-id
+    (if organization-team-id
       (st/emit!
        (du/refresh-profile)
-       (dcm/go-to-dashboard-recent :team-id org-team-id)
-       (ntf/success (tr "auth.notifications.org-invitation-accepted" organization-name)))
+       (dcm/go-to-dashboard-recent :team-id organization-team-id)
+       (ntf/success (tr "auth.notifications.organization-invitation-accepted" organization-name)))
       (st/emit!
        (du/refresh-profile)
        (dcm/go-to-dashboard-recent :team-id team-id)
@@ -99,10 +99,10 @@
                   (st/emit!
                    (rt/nav :dashboard-recent {:team-id team-id}))
 
-                  (= :org-not-found code)
+                  (= :organization-not-found code)
                   (st/emit!
                    (rt/nav :dashboard-recent {:team-id team-id})
-                   (ntf/error (tr "errors.org-not-found")))
+                   (ntf/error (tr "errors.organization-not-found")))
 
                   (= :canceled-invitation code)
                   (let [profile (:profile @st/state)

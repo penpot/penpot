@@ -98,7 +98,7 @@ msgid "auth.new-password"
 msgstr "പുതിയൊരു പാസ്‌വേഡ് ചേർക്കുക"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "നിങ്ങളിപ്പോൾ %s-ന്റെ ഭാഗമാണ്"
 
 #: src/app/main/ui/auth/recovery.cljs:36

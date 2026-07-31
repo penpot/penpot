@@ -32,7 +32,7 @@
         date-str        (when cancel-at
                           (ct/format-inst cancel-at "d MMMM, yyyy"))
 
-        on-create-org
+        on-create-organization
         (mf/use-fn
          (fn []
            (modal/hide!)
@@ -64,6 +64,6 @@
          (tr "nitrate.activation-success.enjoy")]
 
         [:> button* {:variant "primary"
-                     :on-click on-create-org
+                     :on-click on-create-organization
                      :class (stl/css :modal-button)}
-         (tr "nitrate.activation-success.create-org")]]]]]))
+         (tr "nitrate.activation-success.create-organization")]]]]]))

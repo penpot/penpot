@@ -98,7 +98,7 @@ msgid "auth.new-password"
 msgstr "Type a new password"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "You're now part of %s"
 
 #: src/app/main/ui/auth/recovery.cljs:36
@@ -297,7 +297,7 @@ msgid "common.unpublish"
 msgstr "Unpublish"
 
 #: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
+msgid "dashboard.leave-organization.toast"
 msgstr "You're no longer part of the %s organization."
 
 #: src/app/main/ui/dashboard/projects.cljs:90
@@ -367,25 +367,25 @@ msgid "dashboard.change-email"
 msgstr "Change email"
 
 #, unused
-msgid "dashboard.change-org-modal.accept"
+msgid "dashboard.change-organization-modal.accept"
 msgstr "MOVE TEAM"
 
 #, unused
-msgid "dashboard.change-org-modal.choose"
+msgid "dashboard.change-organization-modal.choose"
 msgstr "Move to:"
 
 #, unused
-msgid "dashboard.change-org-modal.select"
+msgid "dashboard.change-organization-modal.select"
 msgstr "Select an organization"
 
 #, unused
-msgid "dashboard.change-org-modal.text"
+msgid "dashboard.change-organization-modal.text"
 msgstr ""
 "Projects and files will remain available to team members. The team will get "
 "the configuration from the new organization."
 
 #: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
+msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
 #: src/app/main/ui/dashboard/deleted.cljs:316
@@ -397,7 +397,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Create org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -816,7 +816,7 @@ msgid "dashboard.invite-profile"
 msgstr "Invite people"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
+msgid "dashboard.leave-organization"
 msgstr "Leave org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:570, src/app/main/ui/dashboard/sidebar.cljs:577, src/app/main/ui/dashboard/sidebar.cljs:582, src/app/main/ui/dashboard/team.cljs:433
@@ -892,7 +892,7 @@ msgid "dashboard.no-matches-for"
 msgstr "No matches found for “%s“"
 
 #: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
+msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "You don't have permission to add teams to any of your organizations."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
@@ -962,7 +962,7 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Order by status"
 
 #: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
+msgid "dashboard.organization-deleted"
 msgstr "The %s organization has been deleted."
 
 #: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
@@ -1002,7 +1002,7 @@ msgid "dashboard.plugins.try-plugin"
 msgstr "Try plugin: "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
+msgid "dashboard.plus-create-new-organization"
 msgstr "+ Create org"
 
 #: src/app/main/data/dashboard.cljs:805
@@ -1090,35 +1090,35 @@ msgid "dashboard.section.teams"
 msgstr "Teams"
 
 #, unused
-msgid "dashboard.select-org-modal.accept"
+msgid "dashboard.select-organization-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
 #, unused
-msgid "dashboard.select-org-modal.choose"
+msgid "dashboard.select-organization-modal.choose"
 msgstr "Choose an organization:"
 
 #: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
+msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
 "\"%s\" only allows organization members to join its teams. Any pending "
 "invitations to people outside the organization will be revoked."
 
 #: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
 #, unused
-msgid "dashboard.select-org-modal.permission-info"
+msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Here you find all your organizations where you are allowed to create or add "
 "teams."
 
 #, unused
-msgid "dashboard.select-org-modal.select"
+msgid "dashboard.select-organization-modal.select"
 msgstr "Select an organization"
 
 #: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
+msgid "dashboard.select-organization-modal.title"
 msgstr "Add team to an organization"
 
 #: src/app/main/ui/settings/options.cljs:66
@@ -1242,7 +1242,7 @@ msgid "dashboard.success-move-project"
 msgstr "Your project has been moved successfully"
 
 #, unused
-msgid "dashboard.team-belong-org"
+msgid "dashboard.team-belong-organization"
 msgstr "This team now belongs to %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
@@ -1254,7 +1254,7 @@ msgid "dashboard.team-members"
 msgstr "Team members"
 
 #, unused
-msgid "dashboard.team-no-longer-belong-org"
+msgid "dashboard.team-no-longer-belong-organization"
 msgstr "This team no longer belongs to the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
@@ -1266,7 +1266,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Add to an organization"
 
 #: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
+msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr "You don't have permission to add this team to any of your organizations."
 
 #: src/app/main/ui/dashboard/team.cljs:1632
@@ -1274,7 +1274,7 @@ msgid "dashboard.team-organization.change"
 msgstr "Change team organization"
 
 #: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
+msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr "Only people within your organization can be invited."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
@@ -1340,7 +1340,7 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
 #, unused
-msgid "dashboard.user-no-longer-belong-org"
+msgid "dashboard.user-no-longer-belong-organization"
 msgstr "You are no longer a member of the organization %s"
 
 #: src/app/main/ui/settings/options.cljs:109
@@ -1727,15 +1727,15 @@ msgid "errors.only-creator-can-unlock"
 msgstr "Only the version creator can unlock it"
 
 #, unused
-msgid "errors.org-leave.no-valid-teams"
+msgid "errors.organization-leave.no-valid-teams"
 msgstr "There was a problem leaving the organization. Please try again."
 
 #, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
+msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "The organization owner can't leave the organization."
 
 #: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
+msgid "errors.organization-not-found"
 msgstr "That organization doesn't exists"
 
 #: src/app/main/ui/settings/password.cljs
@@ -3763,17 +3763,17 @@ msgid "modals.add-shared-confirm.message"
 msgstr "Add “%s” as Shared Library"
 
 #: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
+msgid "modals.before-leave-organization.message"
 msgstr ""
 "You are the only member of some of the teams. Those teams will be deleted "
 "along with its projects and files."
 
 #: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
+msgid "modals.before-leave-organization.title"
 msgstr "BEFORE YOU LEAVE THE ORGANIZATION"
 
 #: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
+msgid "modals.before-leave-organization.warning"
 msgstr "Any team where you’re the only member will be deleted."
 
 #: src/app/main/ui/workspace/nudge.cljs:59
@@ -3831,22 +3831,22 @@ msgstr "By removing your account you’ll lose all your current projects and arc
 
 #: src/app/main/ui/settings/delete_account.cljs
 #, unused
-msgid "modals.delete-account.info.with-orgs"
+msgid "modals.delete-account.info.with-organizations"
 msgstr ""
 "This action is irreversible. Your account, subscription, and organizations "
 "will be deleted immediately. You will also lose access to your current "
 "projects and files."
 
 #: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
+msgid "modals.delete-account.owned-organizations.list-title"
 msgstr "Organizations that will be deleted"
 
 #: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
+msgid "modals.delete-account.owned-organizations.members-count"
 msgstr "%s members"
 
 #: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
+msgid "modals.delete-account.owned-organizations.teams-count"
 msgstr "%s teams"
 
 #: src/app/main/ui/settings/delete_account.cljs:64
@@ -3930,7 +3930,7 @@ msgid "modals.delete-font.title"
 msgstr "Deleting font"
 
 #: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
+msgid "modals.delete-organization-team-confirm.message"
 msgstr "Are you sure you want to delete this team that is part of %s org?"
 
 #: src/app/main/ui/workspace/context_menu.cljs:707, src/app/main/ui/workspace/sidebar/sitemap.cljs:109
@@ -4082,7 +4082,7 @@ msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "No invitations were sent"
 
 #: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
 "Only \"%s\" organization's members can be invited to this team, and they "
 "are all already team members. If you need more information, contact the "
@@ -4169,35 +4169,35 @@ msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
+msgid "modals.leave-organization-and-reassign.hint"
 msgstr ""
 "You are the owner of some organization's teams. Please promote another "
 "member to become an owner."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
+msgid "modals.leave-organization-and-reassign.hint-delete"
 msgstr ""
 "You are the only member of some of the teams. Those teams will be deleted "
 "along with its projects and files."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
+msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr ""
 "Also, you are the owner of some organization's teams. Please promote "
 "another member to become an owner."
 
 #: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
+msgid "modals.leave-organization-confirm.accept"
 msgstr "Leave organization"
 
 #: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
+msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "You will permanently lose access to all teams, projects, and files within "
 "it."
 
 #: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
+msgid "modals.leave-organization-confirm.title"
 msgstr "Leaving %s organization?"
 
 #: src/app/main/ui/delete_shared.cljs:54
@@ -4272,21 +4272,21 @@ msgid "modals.remove-shared-confirm.message"
 msgstr "Remove “%s” as Shared Library"
 
 #: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
+msgid "modals.remove-team-organization.accept"
 msgstr "Remove from organization"
 
 #: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
+msgid "modals.remove-team-organization.info"
 msgstr ""
 "Projects and files will remain available to team members, but the "
 "organization's settings will no longer apply."
 
 #: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
+msgid "modals.remove-team-organization.text"
 msgstr "Are you sure you want to remove the '%s' team from the '%s' organization?"
 
 #: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
+msgid "modals.remove-team-organization.title"
 msgstr "REMOVE TEAM FROM THE ORGANIZATION"
 
 #: src/app/main/ui/workspace/nudge.cljs:52
@@ -4354,7 +4354,7 @@ msgid "nitrate.activation-success.active-until"
 msgstr "Your plan is active until %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
+msgid "nitrate.activation-success.create-organization"
 msgstr "Create organization"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
@@ -4409,7 +4409,7 @@ msgstr ""
 "To switch to this plan, please contact our sales team. We'll help you "
 "update your subscription and ensure everything is set up correctly."
 
-msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "Your organization will be deleted."
 
 msgid "nitrate.contact-sales.downgrade-storage-limited"
@@ -5863,7 +5863,7 @@ msgid "import-shortcuts.apply"
 msgstr "Apply"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
+msgid "subscription.banner.create-organization-info"
 msgstr ""
 "Create an organization and see exactly how Enterprise works. Set rules, "
 "manage your teams and discover a new level of control over your design "
@@ -6098,7 +6098,7 @@ msgstr "Flat monthly bill"
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "Unlimited storage"
 
-msgid "subscription.settings.enterprise.nitrate.multi-org-management"
+msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
 msgstr "Multi-Org Management:"
 
 msgid "subscription.settings.enterprise.nitrate.support-team"

@@ -158,11 +158,11 @@
 
         teams-loaded? (seq teams)
 
-        no-orgs-created? (mf/with-memo [teams]
-                           (and (seq teams)
-                                (->> teams
-                                     vals
-                                     (not-any? :organization))))
+        no-organizations-created? (mf/with-memo [teams]
+                                    (and (seq teams)
+                                         (->> teams
+                                              vals
+                                              (not-any? :organization))))
 
         handle-click
         (mf/use-fn
@@ -199,17 +199,17 @@
 
     [:*
      ;; TODO add translations for this texts when we have the definitive ones
-     (if (and nitrate? teams-loaded? no-orgs-created? (not show-subscription-warning?))
+     (if (and nitrate? teams-loaded? no-organizations-created? (not show-subscription-warning?))
        ;; Banner for users with active nitrate license but no organizations created
        [:div {:class (stl/css :nitrate-banner :highlighted)}
         [:div {:class (stl/css :nitrate-content)}
          [:span {:class (stl/css :nitrate-title)} (tr "subscription.banner.see-enterprise")]]
         [:div {:class (stl/css :nitrate-content)}
-         [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-org-info")]
+         [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-organization-info")]
          [:> button* {:variant "primary"
                       :type "button"
                       :class (stl/css :nitrate-bottom-button)
-                      :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-org")]]]
+                      :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-organization")]]]
 
        ;; Banner for users without nitrate license
        (when (not nitrate?)

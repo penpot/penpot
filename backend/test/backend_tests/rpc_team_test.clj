@@ -110,24 +110,24 @@
                audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [owner      (th/create-profile* 101 {:is-active true})
           invitee    (th/create-profile* 102 {:is-active true})
-          org-team   (th/create-team* 101 {:profile-id (:id owner)})
+          organization-team   (th/create-team* 101 {:profile-id (:id owner)})
           plain-team (th/create-team* 102 {:profile-id (:id owner)})
-          org-id     (uuid/random)
-          org         {:id org-id
-                       :name "Acme"
-                       :slug "acme"
-                       :owner-id (:id owner)
-                       :avatar-bg-url "https://example.com/avatar.svg"
-                       :permissions {:new-team-members "anyone"}}
+          organization-id     (uuid/random)
+          organization         {:id organization-id
+                                :name "Acme"
+                                :slug "acme"
+                                :owner-id (:id owner)
+                                :avatar-bg-url "https://example.com/avatar.svg"
+                                :permissions {:new-team-members "anyone"}}
           nitrate-call
           (fn [_cfg method params]
             (case method
-              :get-team-org
-              (if (= (:team-id params) (:id org-team))
-                {:organization org :is-your-penpot false}
+              :get-team-organization
+              (if (= (:team-id params) (:id organization-team))
+                {:organization organization :is-your-penpot false}
                 {:organization nil :is-your-penpot false})
 
-              :get-org-members
+              :get-organization-members
               [(:id invitee)]
 
               nil))
@@ -139,21 +139,21 @@
                                       :emails [email]}))]
       (with-redefs [cf/flags (conj cf/flags :nitrate :email-verification)
                     nitrate/call nitrate-call]
-        (t/is (th/success? (invite! org-team (:email invitee))))
-        (t/is (th/success? (invite! org-team (:email invitee))))
+        (t/is (th/success? (invite! organization-team (:email invitee))))
+        (t/is (th/success? (invite! organization-team (:email invitee))))
         (t/is (th/success? (invite! plain-team "external@example.com"))))
 
       (let [events       (mapv second (:call-args-list @audit-mock))
-            create-org   (first (filter #(and (= "create-team-invitation" (:name %))
-                                              (= (:email invitee)
-                                                 (get-in % [:props :member-email])))
-                                        events))
-            update-org   (first (filter #(= "update-team-invitation" (:name %)) events))
+            create-organization   (first (filter #(and (= "create-team-invitation" (:name %))
+                                                       (= (:email invitee)
+                                                          (get-in % [:props :member-email])))
+                                                 events))
+            update-organization   (first (filter #(= "update-team-invitation" (:name %)) events))
             create-plain (first (filter #(and (= "create-team-invitation" (:name %))
                                               (= "external@example.com"
                                                  (get-in % [:props :member-email])))
                                         events))]
-        (doseq [event [create-org update-org]]
+        (doseq [event [create-organization update-organization]]
           (t/is (true? (get-in event [:props :team-belongs-to-organization])))
           (t/is (true? (get-in event [:props :adds-invitee-to-organization])))
           (t/is (true? (get-in event [:props :invitee-already-organization-member]))))
@@ -486,11 +486,11 @@
                     nitrate/call
                     (fn [_cfg method _params]
                       (case method
-                        :get-org-membership {:organization-id organization-id
-                                             :is-member false}
-                        :get-org-members [(:id inviter) (uuid/random) (uuid/random)]
+                        :get-organization-membership {:organization-id organization-id
+                                                      :is-member false}
+                        :get-organization-members [(:id inviter) (uuid/random) (uuid/random)]
                         nil))
-                    teams/initialize-user-in-nitrate-org
+                    teams/initialize-user-in-nitrate-organization
                     (fn [& _] default-team-id)]
         (let [out (verify! direct-token)]
           (t/is (th/success? out))
@@ -531,10 +531,10 @@
                     nitrate/call
                     (fn [_cfg method _params]
                       (case method
-                        :get-org-membership-by-team {:organization-id organization-id
-                                                     :is-member false}
-                        :get-org-members (into [(:id inviter)]
-                                               (repeatedly 4 uuid/random))
+                        :get-organization-membership-by-team {:organization-id organization-id
+                                                              :is-member false}
+                        :get-organization-members (into [(:id inviter)]
+                                                        (repeatedly 4 uuid/random))
                         nil))
                     teams/add-profile-to-team! (fn [& _] nil)]
         (let [out (verify! team-token)]
@@ -574,9 +574,9 @@
                     nitrate/call
                     (fn [_cfg method _params]
                       (case method
-                        :get-org-membership-by-team {:organization-id organization-id
-                                                     :is-member true}
-                        :get-org-members (throw (ex-info "unexpected member count" {}))
+                        :get-organization-membership-by-team {:organization-id organization-id
+                                                              :is-member true}
+                        :get-organization-members (throw (ex-info "unexpected member count" {}))
                         nil))
                     teams/add-profile-to-team! (fn [& _] nil)]
         (let [out (verify! team-token)]

@@ -23,7 +23,7 @@
           current-url  (str "https://penpot.example.com/#/dashboard/recent?team-id=" team-id)
           redirect-url "https://idp.example.com/authorize"
           state        {:current-team-id team-id}
-          event        (dcm/handle-change-team-org
+          event        (dcm/handle-change-team-organization
                         {:team {:id team-id :organization organization}
                          :notification nil})]
       (mock/with-mocks
@@ -52,14 +52,14 @@
 (t/deftest organization-sso-activation-redirects-current-team
   (t/async done
     (let [team-id      (uuid/next)
-          org-id       (uuid/next)
+          organization-id       (uuid/next)
           current-url  (str "https://penpot.example.com/#/workspace?team-id=" team-id)
           redirect-url "https://idp.example.com/authorize"
           state        {:current-team-id team-id
                         :teams {team-id {:id team-id
-                                         :organization {:id org-id}}}}
+                                         :organization {:id organization-id}}}}
           event        (dcm/handle-organization-change-sso
-                        {:organization-id org-id})]
+                        {:organization-id organization-id})]
       (mock/with-mocks
         {cf/flags (conj cf/flags :nitrate)
          rp/cmd! (mock/stub
