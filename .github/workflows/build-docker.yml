@@ -21,53 +21,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-push:
-    name: Build and Push Penpot Docker Images
+  # ── 1. Resolve the build key shared by the whole image set ─────────────
+  prepare:
+    name: Prepare
     runs-on: penpot-runner-02
+    timeout-minutes: 10
+    outputs:
+      gh_ref: ${{ steps.vars.outputs.gh_ref }}
+      bundle_version: ${{ steps.vars.outputs.bundle_version }}
+      build_key: ${{ steps.vars.outputs.build_key }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Extract some useful variables
+        id: vars
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          GH_REF="${{ inputs.gh_ref || github.ref_name }}"
+          echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
+
+          BUNDLE_VERSION=$(aws s3api head-object \
+            --bucket ${{ secrets.S3_BUCKET }} \
+            --key "penpot-$GH_REF.zip" \
+            --query 'Metadata."bundle-version"' \
+            --output text)
+          echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
+
+          # Image content = bundle + docker build context, so the build key
+          # (used for immutable tags and the skip check) combines both.
+          CTX_HASH=$(git rev-parse "HEAD:docker/images" | cut -c1-12)
+          echo "build_key=${BUNDLE_VERSION}-${CTX_HASH}" >> $GITHUB_OUTPUT
+
+  # ── 2. One build per image, in parallel ────────────────────────────────
+  build:
+    name: Build ${{ matrix.image }}
+    runs-on: penpot-runner-02
+    timeout-minutes: 60
+    needs: prepare
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - image: backend
+            bundle: backend
+          - image: frontend
+            bundle: frontend
+          - image: exporter
+            bundle: exporter
+          - image: storybook
+            bundle: storybook
+          - image: mcp
+            bundle: mcp
 
     steps:
       - name: Set common environment variables
         run: |
           # Each job execution will use its own docker configuration.
-          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}-${{ matrix.image }}" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
-
-      - name: Extract some useful variables
-        id: vars
-        run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
-
-      - name: Download Penpot Bundles
-        id: bundles
-        env:
-          FILE_NAME: penpot-${{ steps.vars.outputs.gh_ref }}.zip
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-        run: |
-          tmp=$(aws s3api head-object \
-            --bucket ${{ secrets.S3_BUCKET }} \
-            --key "$FILE_NAME" \
-            --query 'Metadata."bundle-version"' \
-            --output text)
-          echo "bundle_version=$tmp" >> $GITHUB_OUTPUT
-          pushd docker/images
-          aws s3 cp s3://${{ secrets.S3_BUCKET }}/$FILE_NAME .
-          unzip $FILE_NAME > /dev/null
-          mv penpot/backend bundle-backend
-          mv penpot/frontend bundle-frontend
-          mv penpot/exporter bundle-exporter
-          mv penpot/storybook bundle-storybook
-          mv penpot/mcp bundle-mcp
-          popd
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Registry
         uses: docker/login-action@v4
@@ -85,103 +107,131 @@ jobs:
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
           password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
+      # Every build pushes an immutable `build-<key>` tag; if it already
+      # exists in the registry, this exact image was already built and the
+      # whole build can be skipped. Moving tags are handled by `promote`.
+      - name: Check if this image is already built
+        id: check
+        run: |
+          IMAGE="${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:build-${{ needs.prepare.outputs.build_key }}"
+          if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "### ⏭️ ${{ matrix.image }}: already built (\`${{ needs.prepare.outputs.build_key }}\`)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Penpot bundle
+        if: steps.check.outputs.exists == 'false'
+        env:
+          FILE_NAME: penpot-${{ needs.prepare.outputs.gh_ref }}.zip
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          pushd docker/images
+          aws s3 cp "s3://${{ secrets.S3_BUCKET }}/$FILE_NAME" .
+          # Extract only the bundle this job needs.
+          unzip -q "$FILE_NAME" "penpot/${{ matrix.bundle }}/*"
+          mv "penpot/${{ matrix.bundle }}" "bundle-${{ matrix.bundle }}"
+          rm -f "$FILE_NAME"
+          popd
+
+      - name: Set up QEMU (stable)
+        if: steps.check.outputs.exists == 'false'
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.exists == 'false'
+        uses: docker/setup-buildx-action@v4
+
       - name: Extract metadata (tags, labels)
+        if: steps.check.outputs.exists == 'false'
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images:
-            frontend
-            backend
-            exporter
-            storybook
-            mcp
+          images: ${{ matrix.image }}
           labels: |
-            bundle_version=${{ steps.bundles.outputs.bundle_version }}
+            bundle_version=${{ needs.prepare.outputs.bundle_version }}
 
-      - name: Build and push Backend Docker image
+      - name: Build and push Docker image
+        if: steps.check.outputs.exists == 'false'
         uses: docker/build-push-action@v7
-        env:
-          DOCKER_IMAGE: 'backend'
-          BUNDLE_PATH: './bundle-backend'
         with:
           context: ./docker/images/
-          file: ./docker/images/Dockerfile.backend
+          file: ./docker/images/Dockerfile.${{ matrix.image }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          # Immutable tag only; branch tags are moved atomically for the
+          # whole image set by the `promote` job.
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:build-${{ needs.prepare.outputs.build_key }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
-
-      - name: Build and push Frontend Docker image
-        uses: docker/build-push-action@v7
-        env:
-          DOCKER_IMAGE: 'frontend'
-          BUNDLE_PATH: './bundle-frontend'
-        with:
-          context: ./docker/images/
-          file: ./docker/images/Dockerfile.frontend
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
-
-      - name: Build and push Exporter Docker image
-        uses: docker/build-push-action@v7
-        env:
-          DOCKER_IMAGE: 'exporter'
-          BUNDLE_PATH: './bundle-exporter'
-        with:
-          context: ./docker/images/
-          file: ./docker/images/Dockerfile.exporter
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
-
-      - name: Build and push Storybook Docker image
-        uses: docker/build-push-action@v7
-        env:
-          DOCKER_IMAGE: 'storybook'
-          BUNDLE_PATH: './bundle-storybook'
-        with:
-          context: ./docker/images/
-          file: ./docker/images/Dockerfile.storybook
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
-
-      - name: Build and push MCP Docker image
-        uses: docker/build-push-action@v7
-        env:
-          DOCKER_IMAGE: 'mcp'
-          BUNDLE_PATH: './bundle-mcp'
-        with:
-          context: ./docker/images/
-          file: ./docker/images/Dockerfile.mcp
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
 
       - name: Notify Mattermost
         if: failure()
-        uses: mattermost/action-mattermost-notify@master
+        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e # v2.1.0
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
           MATTERMOST_CHANNEL: bot-alerts-cicd
           TEXT: |
-            ❌ 🐳 *[PENPOT] Error building penpot docker images.*
-            📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
-            📦 Bundle: `${{ steps.bundles.outputs.bundle_version }}`
+            ❌ 🐳 *[PENPOT] Error building the ${{ matrix.image }} docker image.*
+            📄 Triggered from ref: `${{ needs.prepare.outputs.gh_ref }}`
+            📦 Bundle: `${{ needs.prepare.outputs.bundle_version }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
+
+  # ── 3. Move the branch tags of ALL images together ─────────────────────
+  # This is what makes the set behave as a single block: either every image
+  # was built (or already existed) and all branch tags advance to the same
+  # build key, or none of them move.
+  promote:
+    name: Promote image set
+    runs-on: penpot-runner-02
+    timeout-minutes: 10
+    needs: [prepare, build]
+
+    steps:
+      - name: Set common environment variables
+        run: |
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Point branch tags to the new build key
+        run: |
+          set -e
+          for image in backend frontend exporter storybook mcp; do
+            docker buildx imagetools create \
+              -t "${{ secrets.DOCKER_REGISTRY }}/$image:${{ needs.prepare.outputs.gh_ref }}" \
+              "${{ secrets.DOCKER_REGISTRY }}/$image:build-${{ needs.prepare.outputs.build_key }}"
+          done
+          {
+            echo "### ✅ Image set promoted"
+            echo ""
+            echo "All \`:${{ needs.prepare.outputs.gh_ref }}\` tags now point to \`build-${{ needs.prepare.outputs.build_key }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e # v2.1.0
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 🐳 *[PENPOT] Error promoting the penpot docker image set.*
+            📄 Triggered from ref: `${{ needs.prepare.outputs.gh_ref }}`
+            📦 Bundle: `${{ needs.prepare.outputs.bundle_version }}`
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             @infra
