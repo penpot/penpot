@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-20 08:01+0000\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -8525,6 +8525,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} לא נמצא באף סדרה פעילה או שהערך שלו שגוי."
 
