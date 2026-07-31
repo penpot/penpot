@@ -14,22 +14,25 @@
    [app.db :as db]
    [app.email :as eml]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]))
 
 (declare ^:private send-user-feedback!)
 
-(def ^:private schema:send-user-feedback
+(def schema:send-user-feedback
   [:map {:title "send-user-feedback"}
    [:subject [:string {:max 500}]]
    [:content [:string {:max 2500}]]
    [:type {:optional true} :string]
    [:error-href {:optional true} [:string {:max 2500}]]
-   [:error-report {:optional true} :string]])
+   [:error-report {:optional true} [:string {:max 1048576}]]])
 
 (sv/defmethod ::send-user-feedback
-  {::doc/added "1.18"
+  {::climit/id [[:send-user-feedback/by-profile ::rpc/profile-id]
+                [:send-user-feedback/global]]
+   ::doc/added "1.18"
    ::sm/params schema:send-user-feedback}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
   (when-not (contains? cf/flags :user-feedback)
