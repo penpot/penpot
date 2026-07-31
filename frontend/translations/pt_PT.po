@@ -3007,10 +3007,6 @@ msgstr "Poderás enviar convites mais tarde"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Depois de nomeares a tua equipa, poderás convidar pessoas para entrar."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Escreve o nome da equipa"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Criar equipa"
@@ -3783,14 +3779,6 @@ msgstr "Ajustar à grade de píxeis"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "Iniciar edição"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Iniciar medição"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Parar medição"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

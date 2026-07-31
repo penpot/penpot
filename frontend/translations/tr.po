@@ -4338,14 +4338,6 @@ msgstr ""
 "Hesap ayarlarınızdaki Abonelik sayfasından aboneliğinizi istediğiniz zaman "
 "yönetebilirsiniz."
 
-#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "Business Nitrate'siniz!"
-
-#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Koda mı ihtiyacınız var? Bizimle iletişime geçin:"
-
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
 msgstr "Etkinleştirme kodunuzu girin"
@@ -4440,10 +4432,6 @@ msgstr "Takımlarınızın güvenli ve geniş ölçekte çalışabilmesi için g
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
 msgstr "üye başına aylık"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Etkinleştirme kodunuz var mı?"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
@@ -4732,10 +4720,6 @@ msgstr "Daha sonra davet edebileceksiniz"
 #: src/app/main/ui/onboarding/team_choice.cljs:193
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Takımınızı adlandırdıktan sonra, insanları katılmaya davet edebileceksiniz."
-
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Takımın adını girin"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
@@ -5547,14 +5531,6 @@ msgstr "Piksel ızgarasına tuttur"
 msgid "shortcuts.start-editing"
 msgstr "Düzenlemeye başla"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Ölçüme başla"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Ölçümü durdur"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Küçük resimleri ayarla"
@@ -5713,12 +5689,6 @@ msgstr "Sınırsız Deneyin"
 #: src/app/main/ui/dashboard/subscription.cljs:201
 msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Kurumsal plan özelliklerinin kilidini açın"
-
-#: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr ""
-"Takımınızın çok sevdiği açık kaynak özgürlüğünden ödün vermeden, ayrıntılı "
-"izinler belirleyin ve tasarım işlemlerinizin güvenliğini sağlayın."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -5984,10 +5954,6 @@ msgstr "aylık organizasyon üyesi"
 msgid "subscription.settings.other-plans"
 msgstr "Diğer penpot planları"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "aylık düzenleyici"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "aylık organizasyon"
@@ -6053,10 +6019,6 @@ msgstr "Penpot %s planını seçtiğiniz için teşekkür ederiz!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "%s oldunuz!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-msgid "subscription.settings.support-us-since"
-msgstr "Bu planla bizi şu zamandan beri destekliyorsunuz: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

@@ -3726,10 +3726,6 @@ msgstr ""
 "अपनी टीम का नाम रखने के बाद, आप लोगों को आमंत्रित कर सकेंगे शामिल होने के "
 "लिए।"
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "टीम का नाम दर्ज करें"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "टीम बनाएं"
@@ -4524,14 +4520,6 @@ msgstr "पिक्सेल ग्रिड से चिपकाएँ"
 msgid "shortcuts.start-editing"
 msgstr "संपादन शुरू करें"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "मापन शुरू करें"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "मापन बंद करें"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "थंबनेल सेट करें"
@@ -4878,10 +4866,6 @@ msgstr "अधिक जानकारी"
 msgid "subscription.settings.other-plans"
 msgstr "अन्य पेनपॉट योजनाएँ"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "प्रति माह संपादक"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "प्रति माह संगठन"
@@ -4935,10 +4919,6 @@ msgstr "पेनपोट %s योजना चुनने के लिए �
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "आप %s हैं!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-msgid "subscription.settings.support-us-since"
-msgstr "आप इस योजना के साथ %s से हमारा समर्थन कर रहे हैं"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8463,29 +8443,9 @@ msgstr "पथ पर एक token पहले से मौजूद है: %
 msgid "auth.check-email"
 msgstr "अपने ईमेल की जाँच करें!"
 
-#: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
-msgstr "अब आप %s का हिस्सा हैं।"
-
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-sent-email"
 msgstr "हमने इस पते पर एक वेरिफिकेशन ईमेल भेजा है:"
-
-#, fuzzy, unused
-msgid "dashboard.change-org-modal.choose"
-msgstr "करने के लिए कदम:"
-
-#, unused
-msgid "dashboard.change-org-modal.select"
-msgstr "एक संगठन चुनें"
-
-#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
-msgstr "टीम का संगठन बदलें"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
-msgstr "ऑर्गनाइज़ेशन बनाएँ"
 
 #: src/app/main/ui/dashboard/deleted.cljs:330
 #, fuzzy

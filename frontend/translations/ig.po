@@ -1952,10 +1952,6 @@ msgstr "Nabata ite mkpịsị !"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "I nye ha otu gị aha , I nwere ike ị kpọta ndị mmadụ ka ha sonye."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Denye aha otu"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Kpọta ndị otu"

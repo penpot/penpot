@@ -4282,10 +4282,6 @@ msgstr "Puoi inviare gli inviti più tardi"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Dopo aver nominato il tuo team, potrai invitare persone ad unirsi ad esso."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Inserisci il nome del team"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Crea team"
@@ -5082,14 +5078,6 @@ msgstr "Aggancia alla griglia pixel"
 msgid "shortcuts.start-editing"
 msgstr "Inizia a modificare"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Avvia misurazione"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Interrompi misurazione"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Imposta miniature"
@@ -5438,10 +5426,6 @@ msgstr "Ulteriori informazioni"
 msgid "subscription.settings.other-plans"
 msgstr "Altri piani Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per mese"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organizzazione per mese"
@@ -5495,11 +5479,6 @@ msgstr "Grazie per aver scelto il piano Penpot %s!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Sei %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Ci stai supportando con questo piano dal %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

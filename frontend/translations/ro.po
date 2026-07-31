@@ -3572,10 +3572,6 @@ msgstr "Poți invita și mai târziu"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "După ce îți denumești echipa, vei putea invita oameni să se alăture."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Introduceți numele echipei"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Creează echipă"
@@ -4372,14 +4368,6 @@ msgstr "Fixare la grila de pixeli"
 msgid "shortcuts.start-editing"
 msgstr "Începeți editarea"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Începeți măsurarea"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Opriți măsurarea"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Setează miniaturile"
@@ -4704,10 +4692,6 @@ msgstr "Mai multe informații"
 msgid "subscription.settings.other-plans"
 msgstr "Alte abonamente Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per lună"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organizație per lună"
@@ -4757,11 +4741,6 @@ msgstr "Mulțumim pentru că ai ales planul Penpot %s!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Ești %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Ne ai ajutat prin acest abonament din: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

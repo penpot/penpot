@@ -3842,10 +3842,6 @@ msgstr "Sie können später einladen"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Nach der Bennenung Ihres Teams, können Sie andere Personen einladen."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Geben Sie den Namen des Teams ein"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Team erstellen"
@@ -4638,14 +4634,6 @@ msgstr "Am Pixelraster ausrichten"
 msgid "shortcuts.start-editing"
 msgstr "Mit der Bearbeitung beginnen"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Mit der Vermessung beginnen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Mit der Vermessung abbrechen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Miniaturansichten festlegen"
@@ -4839,10 +4827,6 @@ msgstr "Penpot-Mitglied seit %s"
 #: src/app/main/ui/settings/subscription.cljs:685, src/app/main/ui/settings/subscription.cljs:699, src/app/main/ui/settings/subscription.cljs:715, src/app/main/ui/settings/subscription.cljs:731
 msgid "subscription.settings.more-information"
 msgstr "Mehr Informationen"
-
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "Redakteur pro Monat"
 
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"

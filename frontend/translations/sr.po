@@ -2531,10 +2531,6 @@ msgstr "Моћи ћете да позовете касније"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Након што дате име свом тиму, моћи ћете да позовете људе да се придруже."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Унесите име тима"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Направите тим"
@@ -3278,14 +3274,6 @@ msgstr "Залепи на мрежу пиксела"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "Започни уређивање"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Започни мерење"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Заустави мерење"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

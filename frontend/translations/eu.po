@@ -2178,10 +2178,6 @@ msgstr "Ongi etorri Penpotera!"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Taldeari izena eman ostean, pertsona gehiago gonbidatu ditzakezu."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Idatzi taldearen izena"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Gonbidatu kideak"
@@ -2752,14 +2748,6 @@ msgstr "Aktibatu sarea pixelera lerrokatzea"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "Hasi edizioa"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Hasi neurketa"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Amaitu neurketa"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

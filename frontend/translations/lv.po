@@ -3480,10 +3480,6 @@ msgstr ""
 "Pēc komandas nosaukuma piešķiršanas varēs uzaicināt cilvēkus tai "
 "pievienoties."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Jāievada komandas nosaukums"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Izveidot komandu"
@@ -4276,14 +4272,6 @@ msgstr "Pieķerties pikseļu režģim"
 msgid "shortcuts.start-editing"
 msgstr "Sākt labošanu"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Sākt mērīšanu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Beigt mērīšanu"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Iestatīt sīktēlus"
@@ -4562,10 +4550,6 @@ msgstr "Vairāk informācijas"
 msgid "subscription.settings.other-plans"
 msgstr "Citi Penpot plāni"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "redaktors mēnesī"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "apvienība mēnesī"
@@ -4599,11 +4583,6 @@ msgstr "Izbaudi savu plānu!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Tu esi %s."
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Tu atbalsti mūs ar šo plānu kopš: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

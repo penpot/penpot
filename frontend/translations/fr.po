@@ -3874,10 +3874,6 @@ msgstr ""
 "Après avoir nommé votre équipe, vous pourrez inviter des personnes à la "
 "rejoindre."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Entrez le nom de l'équipe"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Créer l'équipe"
@@ -4672,14 +4668,6 @@ msgstr "Aligner sur la grille de pixels"
 msgid "shortcuts.start-editing"
 msgstr "Commencer l'édition"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Commencer la mesure"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Arrêter la mesure"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Définir les vignettes"
@@ -5035,10 +5023,6 @@ msgstr "Plus d'informations"
 msgid "subscription.settings.other-plans"
 msgstr "Autres abonnements Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "éditeur par mois"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organisation par mois"
@@ -5096,11 +5080,6 @@ msgstr "Merci d'avoir choisi l'abonnement Penpot %s !"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Vous êtes %s !"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Vous nous soutenez avec cet abonnement depuis %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8674,14 +8653,6 @@ msgstr "Les versions auto-enregistrées seront conservées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
-
-#, unused
-msgid "dashboard.change-org-modal.choose"
-msgstr "Déplacer vers :"
-
-#, unused
-msgid "dashboard.change-org-modal.select"
-msgstr "Sélectionner une organisation"
 
 #: src/app/main/ui/dashboard/import.cljs:509
 msgid "dashboard.import.import-error.corrupt-file"

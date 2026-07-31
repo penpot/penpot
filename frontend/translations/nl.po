@@ -3878,10 +3878,6 @@ msgstr ""
 "Nadat je je team een naam hebt gegeven, kun je mensen uitnodigen om lid te "
 "worden."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Voer de naam van het team in"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Team aanmaken"
@@ -4678,14 +4674,6 @@ msgstr "Uitlijnen op pixelraster"
 msgid "shortcuts.start-editing"
 msgstr "Start met bewerken"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Meting starten"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Meting beëindigen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Miniaturen instellen"
@@ -5032,10 +5020,6 @@ msgstr "Meer informatie"
 msgid "subscription.settings.other-plans"
 msgstr "Overige Penpot-abonnementen"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per maand"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organisatie per maand"
@@ -5089,10 +5073,6 @@ msgstr "Bedankt voor het kiezen van het Penpot %s-abonnement!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Je bent %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-msgid "subscription.settings.support-us-since"
-msgstr "Je hebt ons gesteund met dit abonnement sinds: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8691,39 +8671,9 @@ msgstr "Klik om het pad te sluiten"
 msgid "auth.check-email"
 msgstr "Controleer je e-mail!"
 
-#: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
-msgstr "Je maakt nu deel uit van %s"
-
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-sent-email"
 msgstr "We hebben een verificatie-e-mail gestuurd naar:"
-
-#: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
-msgstr "Je maakt geen deel meer uit van de organisatie %s."
-
-#, unused
-msgid "dashboard.change-org-modal.accept"
-msgstr "TEAM VERPLAATSEN"
-
-#, unused
-msgid "dashboard.change-org-modal.choose"
-msgstr "Verplaatsen naar:"
-
-#, unused
-msgid "dashboard.change-org-modal.select"
-msgstr "Kies een organisatie"
-
-#, unused
-msgid "dashboard.change-org-modal.text"
-msgstr ""
-"Projecten en bestanden blijven beschikbaar voor teamleden. Het team krijgt "
-"de configuratie van de nieuwe organisatie."
-
-#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
-msgstr "De organisatie van het team wijzigen"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:376
 msgid "dashboard.go-to-admin-console"
@@ -8753,18 +8703,9 @@ msgstr ""
 "Je hebt geen toestemming om mensen uit te nodigen om zich bij dit team aan "
 "te sluiten of om uitnodigingen te bewerken of te verwijderen."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
-msgstr "Org verlaten"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
 msgstr "Mijn teams"
-
-#: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
-msgstr ""
-"Je hebt geen toestemming om teams toe te voegen aan een van je organisaties."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"
@@ -8784,56 +8725,9 @@ msgstr ""
 "Je mag geen teams verplaatsen die deel uitmaken van organisatie %s. Neem "
 "voor meer informatie contact op met de eigenaar van de organisatie."
 
-#: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
-msgstr "De organisatie %s is verwijderd."
-
-#: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
-msgstr "+ Org aanmaken"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:354
 msgid "dashboard.section.organizations"
 msgstr "Organizaties"
-
-#, unused
-msgid "dashboard.select-org-modal.accept"
-msgstr "TOEVOEGEN AAN ORGANISATIE"
-
-#, unused
-msgid "dashboard.select-org-modal.choose"
-msgstr "Kies een organisatie:"
-
-#: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
-msgstr ""
-"\"%s\" staat alleen organisatieleden toe om zich bij zijn teams aan te "
-"sluiten. Eventuele openstaande uitnodigingen aan mensen buiten de "
-"organisatie worden ingetrokken."
-
-#: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
-msgstr "Uitstaande uitnodigingen aan externe gebruikers worden geannuleerd."
-
-#, unused
-msgid "dashboard.select-org-modal.permission-info"
-msgstr "Hier vind je al je organisaties waar je teams mag maken of toevoegen."
-
-#, unused
-msgid "dashboard.select-org-modal.select"
-msgstr "Kies een organisatie"
-
-#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
-msgstr "Team toevoegen aan een organisatie"
-
-#, unused
-msgid "dashboard.team-belong-org"
-msgstr "Dit team behoort nu tot %s"
-
-#, unused
-msgid "dashboard.team-no-longer-belong-org"
-msgstr "Dit team behoort niet meer tot de organisatie %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
@@ -8843,19 +8737,9 @@ msgstr "Teamorganisatie"
 msgid "dashboard.team-organization.add"
 msgstr "Toevoegen aan een organisatie"
 
-#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
-msgstr ""
-"Je hebt geen toestemming om dit team aan een van je organisaties toe te "
-"voegen."
-
 #: src/app/main/ui/dashboard/team.cljs:1632
 msgid "dashboard.team-organization.change"
 msgstr "Teamorganisatie wijzigen"
-
-#: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
-msgstr "Alleen mensen binnen je organisatie kunnen worden uitgenodigd."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
 msgid "dashboard.team-organization.none"
@@ -8864,10 +8748,6 @@ msgstr "Dit team maakt geen deel uit van een organisatie"
 #: src/app/main/ui/dashboard/team.cljs:1635
 msgid "dashboard.team-organization.remove"
 msgstr "Team uit organisatie verwijderen"
-
-#, unused
-msgid "dashboard.user-no-longer-belong-org"
-msgstr "Je bent geen lid meer van de organisatie %s"
 
 #: src/app/main/ui/settings/options.cljs:109
 msgid "dashboard.webgl-switch.beta"
@@ -8955,12 +8835,6 @@ msgstr ""
 msgid "errors.invite-expired"
 msgstr ""
 "Deze uitnodiging is verlopen. Vraag de teameigenaar om een nieuwe te sturen."
-
-#, unused
-msgid "errors.org-leave.no-valid-teams"
-msgstr ""
-"Er was een probleem om de organisatie te verlaten. Probeer het alsjeblieft "
-"nog eens."
 
 #: common/src/app/common/types/team.cljc:26
 #, unused
@@ -9226,10 +9100,6 @@ msgstr ""
 "dat alles correct wordt ingesteld."
 
 #, unused
-msgid "nitrate.contact-sales.downgrade-org-deleted"
-msgstr "Jouw organisatie wordt verwijderd."
-
-#, unused
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
 "Je totale opslag, automatische versiegeschiedenis en bestandsherstelperiode "
@@ -9283,10 +9153,6 @@ msgstr "Alles wat jouw teams nodig hebben om veilig op schaal te werken:"
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
 msgstr "per deelnemer per maand"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Heb je een activeringscode?"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
@@ -9353,14 +9219,6 @@ msgstr "Unlimited"
 msgid "subscription.current-plan.unlimited-trial"
 msgstr "Unlimited Proefperiode"
 
-#, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
-msgstr "De eigenaar van de organisatie kan de organisatie niet verlaten."
-
-#: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
-msgstr "Die organisatie bestaat niet"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:466
 msgid "errors.team-leave.only-owner-can-delete"
 msgstr "Alleen de eigenaar kan een team verwijderen."
@@ -9414,43 +9272,9 @@ msgid_plural "labels.warning-count"
 msgstr[0] "%s waarschuwing"
 msgstr[1] "%s waarschuwingen"
 
-#: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
-msgstr ""
-"Je bent het enige lid van een aantal van de teams. Deze teams worden samen "
-"met de projecten en bestanden verwijderd."
-
-#: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
-msgstr "VOORDAT JE DE ORGANISATIE VERLAAT"
-
-#: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
-msgstr "Elk team waarvan je het enige lid bent, wordt verwijderd."
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "inspect.attributes.typography.mixed-font-family"
 msgstr "Gemengde lettertypen Families"
-
-#: src/app/main/ui/settings/delete_account.cljs
-#, unused
-msgid "modals.delete-account.info.with-orgs"
-msgstr ""
-"Deze actie is onomkeerbaar. Je account, abonnement en organisaties worden "
-"onmiddellijk verwijderd. Je verliest ook de toegang tot je huidige projecten "
-"en bestanden."
-
-#: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
-msgstr "Organisaties die zullen worden verwijderd"
-
-#: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
-msgstr "%s leden"
-
-#: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
-msgstr "%s teams"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
 msgid "modals.delete-asset-group.message"
@@ -9461,11 +9285,6 @@ msgstr[1] "Weet je zeker dat je deze %s activa wilt verwijderen?"
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
 msgid "modals.delete-asset-group.title"
 msgstr "Groep verwijderen"
-
-#: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
-msgstr ""
-"Weet je zeker dat je dit team dat deel uitmaakt van %s org wilt verwijderen?"
 
 #: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
 msgid "modals.import-library-tokens.description"
@@ -9491,13 +9310,6 @@ msgstr ""
 msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "Er zijn geen uitnodigingen verzonden"
 
-#: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
-msgstr ""
-"Alleen leden van de organisatie \"%s\" kunnen voor dit team worden "
-"uitgenodigd, en ze zijn allemaal al teamleden. Als je meer informatie nodig "
-"heeft, neem dan contact op met de eigenaar van de organisatie."
-
 #: src/app/main/ui/dashboard/team.cljs:308
 msgid "modals.invite-restricted-members.blocked-addresses"
 msgstr "Adressen die geen uitnodiging ontvangen"
@@ -9522,57 +9334,6 @@ msgstr "Enkele uitnodigingen kunnen niet worden verzonden"
 msgid "modals.invite-restricted-members.warning"
 msgstr "Sommige mensen op de lijst ontvangen de uitnodiging niet."
 
-#: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
-msgstr ""
-"Jij bent de eigenaar van de teams van sommige organisaties. Promoot een "
-"ander lid om eigenaar te worden."
-
-#: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
-msgstr ""
-"Je bent het enige lid van een aantal van de teams. Deze teams worden samen "
-"met de projecten en bestanden verwijderd."
-
-#: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
-msgstr ""
-"Bovendien ben jij de eigenaar van de teams van sommige organisaties. Promoot "
-"een ander lid om eigenaar te worden."
-
-#: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
-msgstr "Organisatie verlaten"
-
-#: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
-msgstr ""
-"Je verliest permanent de toegang tot alle teams, projecten en bestanden "
-"daarin."
-
-#: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
-msgstr "Organisatie %s verlaten?"
-
-#: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
-msgstr "Extern van organisatie"
-
-#: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
-msgstr ""
-"Projecten en bestanden blijven beschikbaar voor teamleden, maar de "
-"instellingen van de organisatie zijn niet langer van toepassing."
-
-#: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
-msgstr ""
-"Weet je zeker dat je het team '%s' uit de organisatie '%s' wilt verwijderen?"
-
-#: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
-msgstr "TEAM UIT DE ORGANISATIE VERWIJDEREN"
-
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
 msgid "nitrate.activation-code.expired-error"
 msgstr "Deze code is verlopen."
@@ -9581,23 +9342,11 @@ msgstr "Deze code is verlopen."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Ongeldige code."
 
-#: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
-msgstr "Organisatie aanmaken"
-
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
 "Je kunt je abonnement op elk gewenst moment beheren vanaf de "
 "Abonnementspagina in je accountinstellingen."
-
-#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "Je bent Business Nitrate!"
-
-#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Een code nodig? Neem contact met ons op:"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -9707,11 +9456,6 @@ msgstr "Abonnement annuleren"
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Verlengen met activeringscode"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr ""
-"Dit token bevindt zich niet in een actieve set of heeft een ongeldige waarde."
-
 #: src/app/main/data/workspace/mcp.cljs:185
 #, unused
 msgid "notifications.mcp.active-in-another-tab"
@@ -9761,13 +9505,6 @@ msgstr "Zoeken en Vervangen"
 msgid "shortcuts.paste-replace"
 msgstr "Plakken en vervangen"
 
-#: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
-msgstr ""
-"Maak een organisatie aan en ervaar hoe Enterprise werkt. Stel regels in, "
-"beheer je teams en ontdek een nieuw niveau van controle over je "
-"ontwerpworkflow."
-
 #: src/app/main/ui/dashboard/subscription.cljs:189
 msgid "subscription.banner.see-enterprise"
 msgstr "Enterprise in actie bekijken"
@@ -9799,12 +9536,6 @@ msgstr "Jouw Enterprise-abonnement is verlopen. (%s)"
 #: src/app/main/ui/dashboard/subscription.cljs:201
 msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Enterprise-functies ontgrendelen"
-
-#: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr ""
-"Stel fijnmazige machtigingen in en houd je ontwerpactiviteiten veilig, "
-"zonder afbreuk te doen aan de open-sourcevrijheid waar je team al van houdt."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"

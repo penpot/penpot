@@ -4362,14 +4362,6 @@ msgstr ""
 "Gère ton abonnement en tout temps à partir de la page Abonnement dans les "
 "paramètres du compte."
 
-#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "Tu es Nitrate d'affaires!"
-
-#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Besoin d'un code? Contacte-nous :"
-
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
 msgstr "Saisis ton code d'activation"
@@ -4468,10 +4460,6 @@ msgstr ""
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
 msgstr "par membre par mois"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Tu as un code d'activation?"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
@@ -4765,10 +4753,6 @@ msgstr "Tu pourras envoyer des invitations plus tard"
 #: src/app/main/ui/onboarding/team_choice.cljs:193
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Après avoir nommé ton équipe, tu pourras inviter des gens à la rejoindre."
-
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Nom de l'équipe"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
@@ -5582,14 +5566,6 @@ msgstr "Accrochage à la grille pixel"
 msgid "shortcuts.start-editing"
 msgstr "Commencer l'édition"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Commencer à mesurer"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Arrêter de mesurer"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Définir l'imagette"
@@ -5748,13 +5724,6 @@ msgstr "Illimité (Essai)"
 #: src/app/main/ui/dashboard/subscription.cljs:201
 msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Débloquer les fonctionnalités Enterprise"
-
-#: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr ""
-"Établis des permissions détaillées et garantis la sécurité des opérations "
-"de design, sans compromettre la liberté du code source ouvert que ton "
-"équipe aime tant."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -6021,10 +5990,6 @@ msgstr "membre d'organisation par mois"
 msgid "subscription.settings.other-plans"
 msgstr "Autres forfaits Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "éditeur par mois"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organisation par mois"
@@ -6092,11 +6057,6 @@ msgstr "Merci d'avoir choisi le forfait Penpot %s!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Tu es %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Tu nous encourages avec ce forfait depuis : %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

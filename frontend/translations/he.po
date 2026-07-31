@@ -3776,10 +3776,6 @@ msgstr "אפשר להזמין בהמשך"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "לאחר מתן שם לצוות שלך, יתאפשר לך להזמין אנשים להצטרף."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "נא למלא את שם הצוות"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "ליצור צוות"
@@ -4572,14 +4568,6 @@ msgstr "הצמדה לרשת פיקסלים"
 msgid "shortcuts.start-editing"
 msgstr "התחלת עריכה"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "התחלת מדידה"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "עצירת מדידה"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "הגדרת תמונות ממוזערות"
@@ -4921,10 +4909,6 @@ msgstr "פרטים נוספים"
 msgid "subscription.settings.other-plans"
 msgstr "תוכניות אחרות ב־Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "עורך לחודש"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "ארגון לחודש"
@@ -4976,10 +4960,6 @@ msgstr "תודה על הבחירה בתוכנית %s של Penpot!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "התוכנית שלך היא %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-msgid "subscription.settings.support-us-since"
-msgstr "תמכת בנו עם התוכנית הזאת מאז: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8560,38 +8540,9 @@ msgstr "כבר קיים אסימון בנתיב: %s או בקידומת תואמ
 msgid "auth.check-email"
 msgstr "נא לבדוק את תיבת הדוא״ל שלך!"
 
-#: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
-msgstr "הצטרפת להיות חלק מ־%s"
-
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-sent-email"
 msgstr "שלחנו לך הודעת אימות אל:"
-
-#: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
-msgstr "אינך חלק מהארגון %s יותר."
-
-#, unused
-msgid "dashboard.change-org-modal.accept"
-msgstr "העברת צוות"
-
-#, unused
-msgid "dashboard.change-org-modal.choose"
-msgstr "העברה אל:"
-
-#, unused
-msgid "dashboard.change-org-modal.select"
-msgstr "בחירת ארגון"
-
-#, unused
-msgid "dashboard.change-org-modal.text"
-msgstr ""
-"מיזמים וקבצים יישארו זמינים לחברי הצוות. הצוות יקבל את ההגדרות מהארגון החדש."
-
-#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
-msgstr "החלפת ארגון הצוות"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:376
 msgid "dashboard.go-to-admin-console"

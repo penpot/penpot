@@ -4333,14 +4333,6 @@ msgstr ""
 "Du kan hantera din prenumeration när som helst från prenumerationssidan i "
 "dina kontoinställningar."
 
-#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "Du är Business Nitrate!"
-
-#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Behöver du en kod? Kontakta oss:"
-
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
 msgstr "Ange din aktiveringskod"
@@ -4435,10 +4427,6 @@ msgstr "Allt dina team behöver för att arbeta säkert i stor skala:"
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
 msgstr "per medlem per månad"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Har du en aktiveringskod?"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
@@ -4728,10 +4716,6 @@ msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Efter att ha namngett ditt team kommer du att kunna bjuda in människor att "
 "gå med."
-
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Ange namnet på teamet"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
@@ -5545,14 +5529,6 @@ msgstr "Fäst till pixelrutnät"
 msgid "shortcuts.start-editing"
 msgstr "Börja redigera"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Starta mätningen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Stoppa mätningen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Ställ in miniatyrbilder"
@@ -5711,12 +5687,6 @@ msgstr "Unlimited-testversion"
 #: src/app/main/ui/dashboard/subscription.cljs:201
 msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Lås upp Enterprise-funktioner"
-
-#: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr ""
-"Ställ in detaljerade behörigheter och håll din designverksamhet säker, utan "
-"att kompromissa med friheten av öppen källkod som ditt team redan älskar."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -5977,10 +5947,6 @@ msgstr "org-medlem per månad"
 msgid "subscription.settings.other-plans"
 msgstr "Övriga Penpot-abonnemang"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "redaktör per månad"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organisation per månad"
@@ -6046,10 +6012,6 @@ msgstr "Tack för att du valt Penpot %s-abonnemanget!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Du är %!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-msgid "subscription.settings.support-us-since"
-msgstr "Du har stöttat oss med detta abonnemang sedan: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

@@ -2006,10 +2006,6 @@ msgstr "مرحبًا بك في Penpot!"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "بعد تسمية فريقك، ستتمكن من دعوة الأشخاص للانضمام."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "أدخل اسم الفريق"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "ادعُ أعضاء"
@@ -2116,7 +2112,6 @@ msgstr "محاذاة"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.generic"
 msgstr "عام"
-
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"

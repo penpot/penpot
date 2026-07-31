@@ -3560,10 +3560,6 @@ msgstr "나중에 초대할 수도 있습니다"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "팀 이름을 정한 후, 구성원들을 초대할 수 있습니다."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "팀 이름 입력"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "팀 생성"
@@ -4353,14 +4349,6 @@ msgstr "픽셀 그리드에 스냅"
 msgid "shortcuts.start-editing"
 msgstr "편집 시작"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "측정 시작"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "측정 중지"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "썸네일 설정"
@@ -4688,10 +4676,6 @@ msgstr "자세한 정보"
 msgid "subscription.settings.other-plans"
 msgstr "다른 Penpot 플랜"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "편집자당 월 비용"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "조직/월"
@@ -4735,11 +4719,6 @@ msgstr "계정 상세 정보의 '구독' 페이지에서 언제든지 구독 내
 #: src/app/main/ui/settings/subscription.cljs:373
 msgid "subscription.settings.success.dialog.thanks"
 msgstr "Penpot %s 플랜을 선택해주셔서 감사합니다!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "이 플랜으로 저희를 지원해주신 날짜: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

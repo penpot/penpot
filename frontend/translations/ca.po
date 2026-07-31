@@ -1927,10 +1927,6 @@ msgstr "Us donem la benvinguda a Penpot!"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Quan poseu un nom a l'equip, podreu convidar persones a unir-s'hi."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Introduïu el nom de l'equip"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membres"
@@ -2417,14 +2413,6 @@ msgstr "Ajusta a la graella de píxels"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "Comença a editar"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Comença a mesurar"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Deixa de mesurar"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

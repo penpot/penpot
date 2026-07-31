@@ -3811,10 +3811,6 @@ msgstr ""
 "Після того, як Ви назвали свою команду, Ви зможете запрошувати людей "
 "приєднатись до неї."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Вкажіть ім'я команди"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Створити команду"
@@ -4607,14 +4603,6 @@ msgstr "Прив'язати до піскельної сітки"
 msgid "shortcuts.start-editing"
 msgstr "Почати редагування"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Почати вимірювання"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Припинити вимірювання"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Вставити мініатюри"
@@ -4960,10 +4948,6 @@ msgstr "Більше інформації"
 msgid "subscription.settings.other-plans"
 msgstr "Інші плани Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "редакторів на місяць"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "організацій на місяць"
@@ -5017,11 +5001,6 @@ msgstr "Дякуємо за вибір плану %s Penpot!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Ви %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Ви підтримуєте нас цим планом з: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8608,39 +8587,9 @@ msgstr "Натисність щоб закінчити шлях"
 msgid "auth.check-email"
 msgstr "Перевірте поштову скриньку!"
 
-#: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
-msgstr "Відтепер Ви учасник %s"
-
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-sent-email"
 msgstr "Лист було надіслано на:"
-
-#: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
-msgstr "Ви більше не є учасником організації %s."
-
-#, unused
-msgid "dashboard.change-org-modal.accept"
-msgstr "ПЕРЕМІСТИТИ КОМАНДУ"
-
-#, unused
-msgid "dashboard.change-org-modal.choose"
-msgstr "Перемістити до:"
-
-#, unused
-msgid "dashboard.change-org-modal.select"
-msgstr "Обрати організацію"
-
-#, unused
-msgid "dashboard.change-org-modal.text"
-msgstr ""
-"Проєкти та файли залишаться доступними до учасників команди. Ця команда "
-"отримає сповіщення від нової."
-
-#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
-msgstr "Змінити організацію команди"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:376
 msgid "dashboard.go-to-admin-console"
@@ -8664,17 +8613,9 @@ msgstr ""
 "Ви не маєте дозволів на створення, редагування чи видалення запрошень до "
 "команди."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
-msgstr "Лишити організацію"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
 msgstr "Мої команди"
-
-#: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
-msgstr "Ви не маєте дозволів додавати команди до жодної з власних організацій."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"
@@ -8694,58 +8635,9 @@ msgstr ""
 "Ви не маєте дозволів переміщати команди, що належать організації %s. Для "
 "подробиць зверніться до її власника."
 
-#: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
-msgstr "Організація %s видалена."
-
-#: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
-msgstr "+ Створити орг"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:354
 msgid "dashboard.section.organizations"
 msgstr "Організації"
-
-#, unused
-msgid "dashboard.select-org-modal.accept"
-msgstr "ДОДАТИ ДО ОРГАНІЗАЦІЇ"
-
-#, unused
-msgid "dashboard.select-org-modal.choose"
-msgstr "Оберіть організацію:"
-
-#: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
-msgstr ""
-"Лише учасники \"%s\" можуть приєднуватись до команд організації. Будь-які "
-"запрошення у процесі розгляду будуть відхилені."
-
-#: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
-msgstr ""
-"Запрошення сторонніх користувачів, що у процесі розгляду, буде відхилено."
-
-#, unused
-msgid "dashboard.select-org-modal.permission-info"
-msgstr ""
-"Тут можна знайти усі організації, де Вам дозволено створювати чи додавати "
-"команди."
-
-#, unused
-msgid "dashboard.select-org-modal.select"
-msgstr "Оберіть організацію"
-
-#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
-msgstr "Додати команду до організації"
-
-#, unused
-msgid "dashboard.team-belong-org"
-msgstr "Ця команда тепер у %s"
-
-#, unused
-msgid "dashboard.team-no-longer-belong-org"
-msgstr "Ця команда більше не в організації %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
@@ -8755,17 +8647,9 @@ msgstr "Команда організації"
 msgid "dashboard.team-organization.add"
 msgstr "Додати до організації"
 
-#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
-msgstr "Ви не маєте дозволів на додавання команди до будь-якої з організацій."
-
 #: src/app/main/ui/dashboard/team.cljs:1632
 msgid "dashboard.team-organization.change"
 msgstr "Змінити команду організації"
-
-#: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
-msgstr "Лише люди з вашої організації можуть отримати запрошення."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
 msgid "dashboard.team-organization.none"
@@ -8774,10 +8658,6 @@ msgstr "Ця команда не належить до жодної з орга�
 #: src/app/main/ui/dashboard/team.cljs:1635
 msgid "dashboard.team-organization.remove"
 msgstr "Вилучити команду з організації"
-
-#, unused
-msgid "dashboard.user-no-longer-belong-org"
-msgstr "Ви більше не учасник організації %s"
 
 #: src/app/main/ui/settings/options.cljs:109
 msgid "dashboard.webgl-switch.beta"
@@ -8837,10 +8717,6 @@ msgstr ""
 #: src/app/main/ui/static.cljs:93
 msgid "errors.invite-expired"
 msgstr "Запрошення протерміноване. Запитайте власника команди про нове."
-
-#, unused
-msgid "errors.org-leave.no-valid-teams"
-msgstr "Сталась проблема під час виходу з організації. Спробуйте знову."
 
 #: src/app/main/ui/settings/integrations.cljs:581
 msgid "integrations.mcp-server.mcp-keys.info"

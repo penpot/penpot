@@ -3225,10 +3225,6 @@ msgstr "你可以稍后再邀请成员"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "为团队命名后，你就可以邀请其他人加入。"
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "输入团队名称"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "创建团队"
@@ -4010,14 +4006,6 @@ msgstr "对齐像素网格"
 msgid "shortcuts.start-editing"
 msgstr "开始编辑"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "开始测量"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "停止测量"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "设置缩略图"
@@ -4321,10 +4309,6 @@ msgstr "尽情使用你的方案吧！"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "你已开通 %s！"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-msgid "subscription.settings.support-us-since"
-msgstr "你从 %s 起一直通过此方案支持我们"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -7046,6 +7030,7 @@ msgstr "圆角半径"
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
 msgstr "{%s} 中的引用无效，或不属于任何活动令牌集"
+
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
 msgid "workspace.tokens.reference-error"
@@ -7408,10 +7393,6 @@ msgstr "单击以闭合路径"
 msgid "auth.check-email"
 msgstr "请检查你的邮箱！"
 
-#: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
-msgstr "你现在已加入 %s"
-
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-sent-email"
 msgstr "我们已将验证邮件发送至："
@@ -7419,10 +7400,6 @@ msgstr "我们已将验证邮件发送至："
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
 msgid "color-token.empty-state"
 msgstr "没有可用的颜色令牌。请检查已启用的令牌集或主题，或添加新的颜色令牌。"
-
-#: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
-msgstr "你不再是 %s 组织的一员。"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:209
 msgid "dashboard-restore-file-confirmation.description"
@@ -7432,33 +7409,9 @@ msgstr "你将要恢复 %s。"
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "恢复文件"
 
-#, unused
-msgid "dashboard.change-org-modal.accept"
-msgstr "移动团队"
-
-#, unused
-msgid "dashboard.change-org-modal.choose"
-msgstr "移动到："
-
-#, unused
-msgid "dashboard.change-org-modal.select"
-msgstr "选择一个组织"
-
-#, unused
-msgid "dashboard.change-org-modal.text"
-msgstr "团队成员仍可访问项目和文件。团队将采用新组织的配置。"
-
-#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
-msgstr "更改团队的组织"
-
 #: src/app/main/ui/dashboard/deleted.cljs:316
 msgid "dashboard.clear-trash-button"
 msgstr "清空回收站"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
-msgstr "创建新组织"
 
 #: src/app/main/ui/dashboard/deleted.cljs:265
 msgid "dashboard.delete-all-forever-confirmation.description"
@@ -7594,17 +7547,9 @@ msgstr "重新发送邀请"
 msgid "dashboard.invitations.no-permission"
 msgstr "你没有权限邀请他人加入此团队，也没有权限编辑或删除邀请。"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
-msgstr "离开组织"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
 msgstr "我的团队"
-
-#: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
-msgstr "你没有权限将团队添加到你的任何组织。"
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"
@@ -7625,14 +7570,6 @@ msgstr "按角色排序"
 #: src/app/main/ui/dashboard/team.cljs:1167
 msgid "dashboard.order-invitations-by-status"
 msgstr "按状态排序"
-
-#: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
-msgstr "%s 组织已被删除。"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
-msgstr "+ 创建组织"
 
 #: src/app/main/data/dashboard.cljs:805
 msgid "dashboard.progress-notification.deleting-files"
@@ -7686,42 +7623,6 @@ msgstr "已成功恢复 %s。"
 msgid "dashboard.section.organizations"
 msgstr "组织"
 
-#, unused
-msgid "dashboard.select-org-modal.accept"
-msgstr "添加到组织"
-
-#, unused
-msgid "dashboard.select-org-modal.choose"
-msgstr "选择一个组织："
-
-#: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
-msgstr "“%s”仅允许组织成员加入其团队。所有发给组织外人员的待处理邀请都将被撤销。"
-
-#: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
-msgstr "发给组织外用户的待处理邀请将被取消。"
-
-#, unused
-msgid "dashboard.select-org-modal.permission-info"
-msgstr "这里列出了你有权创建或添加团队的所有组织。"
-
-#, unused
-msgid "dashboard.select-org-modal.select"
-msgstr "选择一个组织"
-
-#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
-msgstr "将团队添加到组织"
-
-#, unused
-msgid "dashboard.team-belong-org"
-msgstr "这个团队现在属于 %s"
-
-#, unused
-msgid "dashboard.team-no-longer-belong-org"
-msgstr "这个团队不再属于 %s 组织"
-
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
 msgstr "团队组织"
@@ -7730,17 +7631,9 @@ msgstr "团队组织"
 msgid "dashboard.team-organization.add"
 msgstr "添加到组织"
 
-#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
-msgstr "你没有权限将此团队添加到你的任何组织。"
-
 #: src/app/main/ui/dashboard/team.cljs:1632
 msgid "dashboard.team-organization.change"
 msgstr "更改团队所属组织"
-
-#: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
-msgstr "只有组织内部人员才能被邀请。"
 
 #: src/app/main/ui/dashboard/team.cljs:1639
 msgid "dashboard.team-organization.none"
@@ -7774,10 +7667,6 @@ msgstr "所有设计和原型功能，以及社区支持。"
 #, unused
 msgid "workspace.tokens.no-remap-needed"
 msgstr "该令牌目前未用于你的设计，因此无需重新映射。"
-
-#, unused
-msgid "dashboard.user-no-longer-belong-org"
-msgstr "你已不再是 %s 组织的成员"
 
 #: src/app/main/ui/settings/options.cljs:109
 msgid "dashboard.webgl-switch.beta"
@@ -7834,18 +7723,6 @@ msgstr "此邀请已过期。请让团队所有者重新发送邀请。"
 #: src/app/main/ui/dashboard/team.cljs:1057
 msgid "errors.max-quote-reached"
 msgstr "已达到配额上限"
-
-#, unused
-msgid "errors.org-leave.no-valid-teams"
-msgstr "退出组织时出现问题，请重试。"
-
-#, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
-msgstr "组织所有者无法退出组织。"
-
-#: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
-msgstr "该组织不存在"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:466
 msgid "errors.team-leave.only-owner-can-delete"
@@ -8448,37 +8325,6 @@ msgid_plural "labels.warning-count"
 msgstr[0] "%s 条警告"
 msgstr[1] "%s 条警告"
 
-#: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
-msgstr "你是部分团队的唯一成员。这些团队及其项目和文件将被删除。"
-
-#: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
-msgstr "离开组织前"
-
-#: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
-msgstr "你是唯一成员的所有团队都将被删除。"
-
-#: src/app/main/ui/settings/delete_account.cljs
-#, unused
-msgid "modals.delete-account.info.with-orgs"
-msgstr ""
-"此操作无法撤销。你的账号、订阅和组织将被立即删除，你也将无法再访问当前的项目"
-"和文件。"
-
-#: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
-msgstr "将被删除的组织"
-
-#: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
-msgstr "%s 名成员"
-
-#: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
-msgstr "%s 个团队"
-
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
 msgid "modals.delete-asset-group.message"
 msgid_plural "modals.delete-asset-group.message"
@@ -8488,10 +8334,6 @@ msgstr[1] "确定要删除这 %s 个素材吗？"
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
 msgid "modals.delete-asset-group.title"
 msgstr "删除分组"
-
-#: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
-msgstr "确定要删除属于 %s 组织的这个团队吗？"
 
 #: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
 msgid "modals.import-library-tokens.description"
@@ -8512,12 +8354,6 @@ msgstr "只能邀请组织的现有成员。由于列表中的人员都不是组
 #: src/app/main/data/team.cljs:582
 msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "未发送任何邀请"
-
-#: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
-msgstr ""
-"只能邀请“%s”组织的成员加入此团队，而他们都已经是团队成员。如需更多信息，请联"
-"系组织所有者。"
 
 #: src/app/main/ui/dashboard/team.cljs:308
 msgid "modals.invite-restricted-members.blocked-addresses"
@@ -8543,46 +8379,6 @@ msgstr "部分邀请无法发送"
 msgid "modals.invite-restricted-members.warning"
 msgstr "列表中的部分人员不会收到邀请。"
 
-#: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
-msgstr "你是该组织部分团队的所有者。请将另一名成员提升为所有者。"
-
-#: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
-msgstr "你是部分团队的唯一成员。这些团队及其项目和文件将被删除。"
-
-#: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
-msgstr "此外，你还是该组织部分团队的所有者。请将另一名成员提升为所有者。"
-
-#: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
-msgstr "离开组织"
-
-#: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
-msgstr "你将永久失去对此组织内所有团队、项目和文件的访问权限。"
-
-#: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
-msgstr "要离开 %s 组织吗？"
-
-#: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
-msgstr "从组织中移除"
-
-#: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
-msgstr "团队成员仍可访问项目和文件，但组织设置将不再适用。"
-
-#: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
-msgstr "确定要将“%s”团队从“%s”组织中移除吗？"
-
-#: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
-msgstr "从组织中移除团队"
-
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
 msgid "nitrate.activation-code.expired-error"
 msgstr "此激活码已过期。"
@@ -8595,10 +8391,6 @@ msgstr "激活码无效。"
 msgid "nitrate.activation-success.active-until"
 msgstr "你的方案有效期至 %s。"
 
-#: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
-msgstr "创建组织"
-
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
 msgid "nitrate.activation-success.enjoy"
 msgstr "尽情使用你的方案吧！"
@@ -8606,14 +8398,6 @@ msgstr "尽情使用你的方案吧！"
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
 msgid "nitrate.activation-success.manage-info"
 msgstr "你可以随时在账号设置的“订阅”页面管理订阅。"
-
-#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "你已开通 Business Nitrate！"
-
-#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "需要激活码？请联系我们："
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -8644,10 +8428,6 @@ msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
 "如需切换到此方案，请联系我们的销售团队。我们会协助你更新订阅并确保一切设置妥"
 "当。"
-
-#, unused
-msgid "nitrate.contact-sales.downgrade-org-deleted"
-msgstr "你的组织将被删除。"
 
 #, unused
 msgid "nitrate.contact-sales.downgrade-storage-limited"
@@ -8701,10 +8481,6 @@ msgstr "为团队安全地规模化协作提供所需的一切："
 msgid "nitrate.form.enterprise.price"
 msgstr "每位成员每月"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "已有激活码？"
-
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
 msgstr "查看当前方案"
@@ -8720,10 +8496,6 @@ msgstr "解锁 Enterprise 功能"
 #: src/app/main/ui/dashboard/subscription.cljs:209, src/app/main/ui/nitrate/nitrate_form.cljs:75
 msgid "nitrate.form.try-free"
 msgstr "免费试用 14 天"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:74
-msgid "nitrate.form.upgrade"
-msgstr "升级"
 
 #: src/app/main/ui/settings/subscription.cljs:575
 msgid "nitrate.subscription.active-until"
@@ -8802,12 +8574,6 @@ msgstr "查找和替换"
 msgid "shortcuts.paste-replace"
 msgstr "粘贴并替换"
 
-#: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
-msgstr ""
-"创建组织，亲自体验 Enterprise 的工作方式。设置规则、管理团队，探索设计工作流"
-"中更高层次的控制能力。"
-
 #: src/app/main/ui/dashboard/subscription.cljs:189
 msgid "subscription.banner.see-enterprise"
 msgstr "查看 Enterprise 实际效果"
@@ -8859,10 +8625,6 @@ msgstr "你的 Enterprise 订阅已到期。（%s）"
 #: src/app/main/ui/dashboard/subscription.cljs:201
 msgid "subscription.dashboard.banner.unlock-features"
 msgstr "解锁 Enterprise 功能"
-
-#: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr "设置精细权限并保障设计运营安全，同时保留团队所喜爱的开源自由。"
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -8937,10 +8699,6 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.organization-member-month"
 msgstr "每名组织成员每月"
-
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "每名编辑者每月"
 
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
@@ -9840,7 +9598,3 @@ msgstr "如需提高此上限，请发送邮件至 [support@penpot.app](%s) 联�
 #: src/app/main/ui/workspace/sidebar/versions.cljs:463
 msgid "workspace.versions.warning.text"
 msgstr "自动保存的版本将保留 %s 天。"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr "此令牌不在任何有效集合中，或其值无效。"
