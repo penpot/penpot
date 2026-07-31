@@ -539,3 +539,67 @@
     ;; A position-only change in the main component must not propagate to copies
     ;; and therefore must produce no redo-changes.
     (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-sync-reorder-main-children-via-mod-obj
+  (let [;; ==== Setup
+        file        (-> (thf/sample-file :file1)
+                        (tho/add-frame-with-child :main-nested-root :main-nested-child)
+                        (thc/make-component :nested-comp :main-nested-root)
+                        (tho/add-frame :main-top-root)
+                        (thc/instantiate-component :nested-comp :nested-instance :parent-label :main-top-root)
+                        (ths/add-sample-shape :top-group {:type :group :parent-label :main-top-root})
+                        (thc/make-component :top-comp :main-top-root)
+                        (thc/instantiate-component :top-comp :top-copy))
+        page        (thf/current-page file)
+        main-root   (ths/get-shape file :main-top-root)
+        copy-root   (ths/get-shape file :top-copy)
+        main-order  (:shapes main-root)
+        copy-order  (:shapes copy-root)
+
+        ;; ==== Action
+        changes     {:redo-changes [{:type :mod-obj
+                                     :page-id (:id page)
+                                     :id (:id main-root)
+                                     :operations [{:type :set
+                                                   :attr :shapes
+                                                   :val (vec (reverse main-order))}]}]
+                     :undo-changes []}
+        file'       (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    ;; The copy children must be reordered to keep the component referential integrity.
+    (t/is (= (vec (reverse main-order))
+             (get-in file' [:data :pages-index (:id page) :objects (:id main-root) :shapes])))
+    (t/is (= (vec (reverse copy-order))
+             (get-in file' [:data :pages-index (:id page) :objects (:id copy-root) :shapes])))))
+
+(t/deftest test-sync-reorder-main-children-via-reorder-children
+  (let [;; ==== Setup
+        file        (-> (thf/sample-file :file1)
+                        (tho/add-frame-with-child :main-nested-root :main-nested-child)
+                        (thc/make-component :nested-comp :main-nested-root)
+                        (tho/add-frame :main-top-root)
+                        (thc/instantiate-component :nested-comp :nested-instance :parent-label :main-top-root)
+                        (ths/add-sample-shape :top-group {:type :group :parent-label :main-top-root})
+                        (thc/make-component :top-comp :main-top-root)
+                        (thc/instantiate-component :top-comp :top-copy))
+        page        (thf/current-page file)
+        main-root   (ths/get-shape file :main-top-root)
+        copy-root   (ths/get-shape file :top-copy)
+        main-order  (:shapes main-root)
+        copy-order  (:shapes copy-root)
+
+        ;; ==== Action
+        changes     {:redo-changes [{:type :reorder-children
+                                     :page-id (:id page)
+                                     :parent-id (:id main-root)
+                                     :shapes (vec (reverse main-order))}]
+                     :undo-changes []}
+        file'       (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    ;; The copy children must be reordered to keep the component referential integrity.
+    (t/is (= (vec (reverse main-order))
+             (get-in file' [:data :pages-index (:id page) :objects (:id main-root) :shapes])))
+    (t/is (= (vec (reverse copy-order))
+             (get-in file' [:data :pages-index (:id page) :objects (:id copy-root) :shapes])))))

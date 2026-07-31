@@ -42,7 +42,7 @@
    [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+(log/set-level! :trace)
 
 ;; Add uuids here to filter logs to only show specific shapes or containers (and all shapes
 ;; contained in them).
@@ -1192,7 +1192,9 @@
 
 (defn- compare-children
   [changes shape-inst children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
-  (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
+  (shape-log :trace (:id shape-inst) container-inst :msg "Compare children"
+             :children-inst (map :id children-inst)
+             :children-main (map :id children-main))
   (loop [children-inst (seq (or children-inst []))
          children-main (seq (or children-main []))
          changes       changes]

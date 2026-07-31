@@ -63,7 +63,7 @@
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+(log/set-level! :trace)
 
 (defn- debug-pretty-file
   [file-id state]
@@ -1459,6 +1459,12 @@
                       (into #{}
                             (mapcat (partial ch/components-changed old-data))
                             changes))]
+                (log/trace :hint "processing changes"
+                           :js/rchanges (log-changes
+                                         changes
+                                         old-data))
+                (log/trace :hint "changed components"
+                           :components (str changed-components))
                 (cond
                   (empty? changed-components)
                   (rx/empty)
