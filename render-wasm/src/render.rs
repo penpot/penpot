@@ -2376,9 +2376,12 @@ impl RenderState {
                 panic!("FrameType::None");
             }
             FrameType::Partial => {
-                // Partial frame: just flush GPU work. The display shows the last
-                // fully submitted frame; no need to copy or draw UI overlays here.
-                self.flush();
+                // Drain tile GPU work (Current / tile atlas / cache) without
+                // presenting Target and without re-snapshotting the tile atlas —
+                // composition stays deferred to Full (`01fc3c3e7d`). A Backbuffer
+                // flush alone left commands queued until present_frame's
+                // flush_and_submit, which stalled the browser on large files.
+                crate::get_gpu_state().context.flush_and_submit();
             }
             FrameType::Full => {
                 // A full-quality frame is now complete. Rebuild the per-shape crop
