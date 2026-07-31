@@ -31,13 +31,17 @@
 
      (and (ctl/fill-width? child)
           (ctl/grid-layout? child))
-     (let [children
-           (->> (cfh/get-immediate-children objects (:id child))
-                (remove ctl/position-absolute?)
-                (map #(vector @(get bounds (:id %)) %)))
-           layout-data (gd/calc-layout-data child @(get bounds (:id child)) children bounds objects true)]
-       (max (ctl/child-min-width child)
-            (gpo/width-points (gb/layout-content-bounds bounds child layout-data))))
+     (let [child-bounds-ref (get bounds (:id child))]
+       (if child-bounds-ref
+         (let [children
+               (->> (cfh/get-immediate-children objects (:id child))
+                    (remove ctl/position-absolute?)
+                    (keep #(when-let [b (get bounds (:id %))]
+                             [@b %])))
+               layout-data (gd/calc-layout-data child @child-bounds-ref children bounds objects true)]
+           (max (ctl/child-min-width child)
+                (gpo/width-points (gb/layout-content-bounds bounds child layout-data))))
+         (ctl/child-min-width child)))
 
      (ctl/fill-width? child)
      (ctl/child-min-width child)
@@ -63,11 +67,15 @@
      (let [children
            (->> (cfh/get-immediate-children objects (dm/get-prop child :id))
                 (remove ctl/position-absolute?)
-                (map  (fn [child] [@(get bounds (:id  child)) child])))
+                (keep (fn [c]
+                        (when-let [b (get bounds (:id c))]
+                          [@b c]))))
            layout-data (gd/calc-layout-data child (:points child) children bounds objects true)
            auto-bounds (gb/layout-content-bounds bounds child layout-data)]
-       (max (ctl/child-min-height child)
-            (gpo/height-points auto-bounds)))
+       (if auto-bounds
+         (max (ctl/child-min-height child)
+              (gpo/height-points auto-bounds))
+         (ctl/child-min-height child)))
 
      (ctl/fill-height? child)
      (ctl/child-min-height child)
