@@ -1199,7 +1199,8 @@ impl Surfaces {
         let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
         if let Some(tile_image) = tile_image_opt {
             if !skip_cache_surface {
-                // Draw to cache surface for render_from_cache
+                // Optional legacy Cache surface fill (debug). Pan/zoom preview
+                // uses DocAtlas + tile-atlas textures via render_from_cache.
                 self.cache.canvas().draw_image_rect(
                     &tile_image,
                     None,

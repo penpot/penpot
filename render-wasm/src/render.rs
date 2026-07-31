@@ -1091,16 +1091,10 @@ impl RenderState {
             return Ok(());
         }
 
-        let fast_mode = self.options.is_fast_mode();
-        // Decide *now* (at the first real cache blit) whether we need to clear Cache.
-        // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
-        // while still preventing stale pixels from surviving across full-quality renders.
-        if !fast_mode && !self.cache_cleared_this_render {
-            self.surfaces.clear_cache(self.background_color);
-            self.cache_cleared_this_render = true;
-        }
-        // In fast mode the viewport is moving (pan/zoom) so Cache surface
-        // positions would be wrong — only save to the tile HashMap.
+        // Track that this render painted tiles (drives cached_viewbox). The
+        // Cache surface itself is unused by `render_from_cache` (DocAtlas +
+        // tile atlas), so skip clearing/filling it here.
+        self.cache_cleared_this_render = true;
         let tile_rect = self.get_current_aligned_tile_bounds()?;
 
         let current_tile = *self
@@ -1112,11 +1106,14 @@ impl RenderState {
             crate::get_gpu_state().context.flush_and_submit();
         }
 
+        // Always skip the Cache surface blit: pan/zoom preview reads DocAtlas
+        // and tile-atlas textures, not Cache. Avoids a full-tile GPU copy per
+        // completed tile during progressive renders.
         self.surfaces.draw_current_tile_into_tile_atlas(
             &self.tile_viewbox,
             &current_tile,
             &tile_rect,
-            fast_mode,
+            true,
             self.render_area,
         );
 
@@ -3709,7 +3706,7 @@ impl RenderState {
                             self.surfaces.draw_current_tile_into_backbuffer(
                                 &tile_rect,
                                 self.background_color,
-                                surfaces::DrawOnCache::Yes,
+                                surfaces::DrawOnCache::No,
                             );
                         } else {
                             self.apply_render_to_final_canvas()?;
