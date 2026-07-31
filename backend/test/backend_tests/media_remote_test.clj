@@ -85,6 +85,19 @@
                    (get-in req-map [:headers "Content-Type"])
                    "multipart/form-data"))))))))
 
+(t/deftest info-includes-content-length-header
+  (t/testing "info sends Content-Length header for streaming multipart"
+    (with-mocks [mock {:target 'app.media.remote/service-request
+                       :return {:status 200
+                                :body (json-stream {:width 100 :height 100 :size 1})}}]
+      (with-redefs [cf/get (th/config-get-mock config-mock)]
+        (let [path (th/tempfile "backend_tests/test_files/sample.jpg")]
+          (media.remote/process (mk-system)
+                                {:cmd :info :input {:path path :mtype "image/jpeg"}})
+          (let [[_ req-map] (:call-args @mock)]
+            (t/is (some? (get-in req-map [:headers "Content-Length"])))
+            (t/is (pos? (Long/parseLong (get-in req-map [:headers "Content-Length"]))))))))))
+
 (t/deftest info-service-uri-not-configured
   (t/testing "info throws when service URI is not configured"
     (with-redefs [cf/get (th/config-get-mock {})]

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { convertFont } from "../src/services/font.js";
+import { convertFont, execCommand } from "../src/services/font.js";
 import { ProcessingError } from "../src/middleware/error-handler.js";
 
 const FIXTURES = join(import.meta.dirname, "fixtures");
@@ -193,5 +193,53 @@ describe("convertFont", () => {
         await rm(tempPath, { force: true });
       }
     });
+
+    it("ttf→woff with file path returns non-null Buffer", async () => {
+      const tempPath = join(tmpdir(), `test-font-${Date.now()}.ttf`);
+      try {
+        await writeFile(tempPath, ttfData);
+        const result = await convertFont(tempPath, "font/ttf", "font/woff");
+        expect(result).toBeInstanceOf(Buffer);
+        expect(result!.length).toBeGreaterThan(0);
+      } finally {
+        await rm(tempPath, { force: true });
+      }
+    });
+
+    it("woff2→ttf with file path returns non-null Buffer", async () => {
+      const tempPath = join(tmpdir(), `test-font-${Date.now()}.woff2`);
+      try {
+        await writeFile(tempPath, woff2Data);
+        const result = await convertFont(tempPath, "font/woff2", "font/ttf");
+        expect(result).toBeInstanceOf(Buffer);
+        expect(result!.length).toBeGreaterThan(0);
+      } finally {
+        await rm(tempPath, { force: true });
+      }
+    });
+  });
+});
+
+describe("execCommand", () => {
+  it("preserves killed and signal properties from child process errors", async () => {
+    try {
+      await execCommand("false", []);
+      expect.fail("should have thrown");
+    } catch (err) {
+      const error = err as Error & { killed?: boolean; signal?: string; code?: number };
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toContain("Command failed");
+    }
+  });
+
+  it("preserves error properties when command is killed by signal", async () => {
+    try {
+      await execCommand("sh", ["-c", "kill -KILL $$"], 5000);
+      expect.fail("should have thrown");
+    } catch (err) {
+      const error = err as Error & { killed?: boolean; signal?: string };
+      expect(error).toBeInstanceOf(Error);
+      expect(error.signal).toBe("SIGKILL");
+    }
   });
 });

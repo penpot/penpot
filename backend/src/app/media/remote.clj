@@ -126,7 +126,15 @@
         base-url    (service-base-url)
         request-uri (cond-> (uri/join base-url endpoint)
                       (seq query)
-                      (str "?" (uri/map->query-string query)))]
+                      (str "?" (uri/map->query-string query)))
+        file-size   (fs/size path)
+        header-bytes (.getBytes (str "--" boundary "\r\n"
+                                     "Content-Disposition: form-data; name=\"file\"; filename=\"file\"\r\n"
+                                     "Content-Type: " ctype "\r\n"
+                                     "\r\n")
+                                "UTF-8")
+        footer-bytes (.getBytes (str "\r\n--" boundary "--\r\n") "UTF-8")
+        total-size  (+ (alength header-bytes) file-size (alength footer-bytes))]
     (with-open [file-stream (io/input-stream path)]
       (let [body (build-multipart-stream boundary ctype file-stream)]
         (service-request system
@@ -134,6 +142,7 @@
                           :uri     request-uri
                           :body    body
                           :headers {"Content-Type" (str "multipart/form-data; boundary=" boundary)
+                                    "Content-Length" (str total-size)
                                     "x-shared-key" shared-key}
                           :timeout timeout})))))
 

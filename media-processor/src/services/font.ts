@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { writeFile, readFile, mkdtemp, rm } from "node:fs/promises";
+import { writeFile, readFile, mkdtemp, rm, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { throwValidation, throwProcessing } from "./errors.js";
@@ -18,7 +18,7 @@ export function configureFontLimits(opts: { mem: number; cpuTime: number; timeou
   fontTimeout = opts.timeout;
 }
 
-function execCommand(
+export function execCommand(
   cmd: string,
   args: string[],
   timeout?: number,
@@ -53,7 +53,11 @@ function execCommand(
       { timeout: effectiveTimeout, encoding: encoding === "buffer" ? null : encoding },
       (err, stdout, stderr) => {
         if (err) {
-          reject(new Error(`Command failed: ${finalCmd} ${finalArgs.join(" ")}\n${stderr}`));
+          const error = new Error(`Command failed: ${finalCmd} ${finalArgs.join(" ")}\n${stderr}`);
+          if (err.killed) (error as any).killed = err.killed;
+          if (err.signal) (error as any).signal = err.signal;
+          if (err.code !== null && err.code !== undefined) (error as any).code = err.code;
+          reject(error);
         } else {
           resolve({ stdout, stderr });
         }
@@ -120,10 +124,11 @@ async function sfntToWoff(input: FileInput): Promise<Buffer | null> {
   return withTempDir(async (dir) => {
     let inputPath: string;
     if (typeof input === "string") {
-      inputPath = input; // Use path directly
+      inputPath = join(dir, "input.ttf");
+      await copyFile(input, inputPath);
     } else {
       inputPath = join(dir, "input.ttf");
-      await writeFile(inputPath, input); // Write buffer to temp file
+      await writeFile(inputPath, input);
     }
 
     try {
@@ -161,10 +166,11 @@ async function woff2ToSfnt(input: FileInput): Promise<Buffer | null> {
   return withTempDir(async (dir) => {
     let inputPath: string;
     if (typeof input === "string") {
-      inputPath = input; // Use path directly
+      inputPath = join(dir, "input.woff2");
+      await copyFile(input, inputPath);
     } else {
       inputPath = join(dir, "input.woff2");
-      await writeFile(inputPath, input); // Write buffer to temp file
+      await writeFile(inputPath, input);
     }
 
     const output = join(dir, "input.ttf");
