@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:29+0000\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1488,6 +1488,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Abrir lista de tokens"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} no está disponible en ningún set o tiene un valor inválido."
 
@@ -2826,7 +2827,6 @@ msgstr "Panel"
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs
 msgid "labels.default"
 msgstr "Valor por defecto"
-
 
 #: src/app/main/ui/dashboard/file_menu.cljs:337, src/app/main/ui/dashboard/fonts.cljs:286, src/app/main/ui/dashboard/fonts.cljs:363, src/app/main/ui/dashboard/fonts.cljs:397, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1379, src/app/main/ui/settings/integrations.cljs:389, src/app/main/ui/settings/profile.cljs:117, src/app/main/ui/settings/profile.cljs:128, src/app/main/ui/settings/profile.cljs:129, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:258, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:378
 msgid "labels.delete"
@@ -4936,6 +4936,7 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "Este token no existe o ha sido borrado."
 
@@ -4967,7 +4968,6 @@ msgstr "Seleccionar elementos que usan este estilo"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:412
 msgid "shortcut-section.basics"
 msgstr "Básicos"
-
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:418
 msgid "shortcut-section.dashboard"
@@ -5903,6 +5903,7 @@ msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "El pago no se completó. Inténtalo de nuevo cuando quieras."
 
 #: src/app/main/ui/settings/subscription.cljs:427
+#, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el "
