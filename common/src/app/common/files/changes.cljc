@@ -1167,6 +1167,20 @@
               (check-shape parent-id [parent-id])
               shapes))))
 
+(defmethod components-changed :reorder-children
+  [file-data {:keys [page-id component-id parent-id]}]
+  (when (or page-id component-id)
+    (let [container (if page-id
+                      (ctpl/get-page file-data page-id)
+                      (get-in file-data [:components component-id]))
+          objects   (:objects container)
+          xform     (comp (filter :main-instance)
+                          (map :component-id))]
+      (when (some? container)
+        (into #{} xform
+              (map #(ctn/get-shape container %)
+                   (cons parent-id (cfh/get-parent-ids objects parent-id))))))))
+
 (defmethod components-changed :add-obj
   [file-data {:keys [parent-id page-id _component-id] :as change}]
   (when page-id
