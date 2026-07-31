@@ -1136,38 +1136,51 @@ impl Paragraph {
         &mut self.children
     }
 
-    fn chars(&self) -> impl Iterator<Item = char> + '_ {
-        self.children.iter().flat_map(|span| span.text.chars())
+    fn char_count(&self) -> usize {
+        self.children
+            .iter()
+            .map(|span| span.text.chars().count())
+            .sum()
     }
 
     /// Translate a character offset into the UTF-16 offset Skia indexes by.
-    /// Both only differ on astral-plane characters (emoji).
+    /// Both differ on astral-plane characters (emoji) and whenever a text
+    /// transform changes the length of the laid out text (`ß` -> `SS`).
     pub fn char_offset_to_utf16(&self, char_offset: usize) -> usize {
-        self.chars().take(char_offset).map(char::len_utf16).sum()
+        let mut remaining = char_offset;
+        let mut utf16 = 0;
+        for span in &self.children {
+            if remaining == 0 {
+                break;
+            }
+            let span_len = span.text.chars().count();
+            let take = remaining.min(span_len);
+            let prefix: String = span.text.chars().take(take).collect();
+            utf16 += span.transform_text(&prefix).encode_utf16().count();
+            remaining -= take;
+        }
+        utf16
     }
 
     /// Translate a UTF-16 offset coming from Skia into a character offset.
-    /// An offset inside a surrogate pair rounds up, so it never splits a glyph.
+    /// An offset inside a character rounds up, so it never splits a glyph.
     pub fn utf16_offset_to_char(&self, utf16_offset: usize) -> usize {
-        let mut utf16 = 0;
-        let mut chars = 0;
-        for ch in self.chars() {
-            if utf16 >= utf16_offset {
-                break;
+        let (mut low, mut high) = (0, self.char_count());
+        while low < high {
+            let middle = (low + high) / 2;
+            if self.char_offset_to_utf16(middle) < utf16_offset {
+                low = middle + 1;
+            } else {
+                high = middle;
             }
-            utf16 += ch.len_utf16();
-            chars += 1;
         }
-        chars
+        low
     }
 
     /// UTF-16 length of the character at `char_offset`, so a caret range covers
     /// the whole glyph.
     pub fn char_utf16_len_at(&self, char_offset: usize) -> usize {
-        self.chars()
-            .nth(char_offset)
-            .map(char::len_utf16)
-            .unwrap_or(1)
+        self.char_offset_to_utf16(char_offset + 1) - self.char_offset_to_utf16(char_offset)
     }
 
     pub fn line_height(&self) -> f32 {
@@ -1387,15 +1400,18 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
-    pub fn apply_text_transform(&self) -> String {
-        let browser = crate::with_state!(state, { state.current_browser });
-        let text = process_ignored_chars(&self.text, browser);
+    pub fn transform_text(&self, text: &str) -> String {
+        let text = process_ignored_chars(text, crate::globals::current_browser());
         match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
             Some(TextTransform::Capitalize) => capitalize_words(&text),
             None => text,
         }
+    }
+
+    pub fn apply_text_transform(&self) -> String {
+        self.transform_text(&self.text)
     }
 
     pub fn scale_content(&mut self, value: f32) {
@@ -1805,11 +1821,22 @@ mod tests {
     }
 
     #[test]
+    fn char_offsets_account_for_text_transforms() {
+        // Skia lays out the transformed text, where "Straße" is "STRASSE".
+        let mut para = test_paragraph(&["Straße"]);
+        para.children_mut()[0].text_transform = Some(TextTransform::Uppercase);
+
+        assert_eq!(para.char_offset_to_utf16(4), 4);
+        assert_eq!(para.char_offset_to_utf16(6), 7);
+        assert_eq!(para.char_utf16_len_at(4), 2);
+        assert_eq!(para.utf16_offset_to_char(7), 6);
+    }
+
+    #[test]
     fn char_utf16_len_at_covers_the_whole_glyph() {
         let para = test_paragraph(&["a😀b"]);
         assert_eq!(para.char_utf16_len_at(0), 1);
         assert_eq!(para.char_utf16_len_at(1), 2);
         assert_eq!(para.char_utf16_len_at(2), 1);
-        assert_eq!(para.char_utf16_len_at(3), 1);
     }
 }
