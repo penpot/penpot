@@ -1,15 +1,17 @@
-FROM nginxinc/nginx-unprivileged:1.31.1-alpine
+FROM dhi.io/nginx:1.31.1-debian13-dev
 LABEL maintainer="Penpot <docker@penpot.app>"
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 USER root
 
 RUN set -ex; \
-    apk update; \
-    apk upgrade; \
-    apk add --no-cache bash gettext; \
-    rm -rf /var/cache/apk/*; \
-    addgroup -g 1001 penpot; \
-    adduser -D -H -u 1001 -s /bin/false -h /opt/penpot -G penpot penpot; \
+    apt-get -qq update; \
+    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
+    apt-get -qqy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" --no-install-recommends install bash gettext-base passwd; \
+    rm -rf /var/lib/apt/lists/*; \
+    groupadd -f -g 1001 penpot; \
+    useradd -M -u 1001 -s /usr/sbin/nologin -d /opt/penpot -g penpot penpot; \
     mkdir -p /opt/data/assets; \
     chown -R penpot:penpot /opt/data; \
     mkdir -p /etc/nginx/overrides/main.d/; \
