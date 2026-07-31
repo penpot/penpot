@@ -270,6 +270,50 @@
     (t/is (clojure.string/includes? redirect (sto/object->relative-path object)))))
 
 ;; ----------------------------------------------------------------
+;; Tests: objects-handler — content disposition
+;; ----------------------------------------------------------------
+
+(t/deftest objects-handler-non-public-bucket-served-as-attachment
+  ;; A non-public bucket holds bytes the user uploaded and is reachable by
+  ;; direct navigation, so the response marks it as an attachment.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)]
+
+    (doseq [bucket ["profile"
+                    "tempfile"
+                    "file-data"
+                    "file-thumbnail"
+                    "file-change"]]
+      (t/testing (str "bucket: " bucket)
+        (let [object   (create-storage-object! storage bucket "some data")
+              request  {:path-params {:id (str (:id object))}
+                        ::session/profile-id (:id profile)}
+              response (assets/objects-handler cfg request)]
+          (t/is (= "attachment" (get (::yres/headers response) "content-disposition"))
+                (str "bucket " bucket " should be served as an attachment")))))))
+
+(t/deftest objects-handler-public-bucket-served-inline
+  ;; Public buckets are embedded by the viewer and by outgoing mail, so they
+  ;; keep being served without a disposition.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)]
+
+    (doseq [bucket ["file-media-object"
+                    "file-object-thumbnail"
+                    "team-font-variant"
+                    "file-data-fragment"
+                    "organization"]]
+      (t/testing (str "bucket: " bucket)
+        (let [object   (create-storage-object! storage bucket "some data")
+              request  {:path-params {:id (str (:id object))}}
+              response (assets/objects-handler cfg request)]
+          (t/is (nil? (get (::yres/headers response) "content-disposition"))
+                (str "bucket " bucket " should stay inline")))))))
+
+;; ----------------------------------------------------------------
 ;; Tests: objects-handler — cache headers
 ;; ----------------------------------------------------------------
 

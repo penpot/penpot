@@ -49,13 +49,21 @@
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]
   (let [sig-max-age (or signature-max-age default-signature-max-age)
         cch-max-age (or cache-max-age default-cache-max-age)
-        {:keys [host port] :as url} (sto/get-object-url storage obj {:max-age sig-max-age})
         bucket  (-> obj meta :bucket)
+        public? (contains? public-buckets bucket)
+        ;; The disposition is also signed into the presigned url: this
+        ;; response is a redirect, so the header below applies to the
+        ;; redirect itself and not to the bytes the client then fetches
+        ;; from the object store.
+        {:keys [host port] :as url} (sto/get-object-url storage obj
+                                                        (cond-> {:max-age sig-max-age}
+                                                          (not public?)
+                                                          (assoc :content-disposition "attachment")))
         headers (cond-> {"location" (str url)
                          "x-host"   (cond-> host port (str ":" port))
                          "x-mtype"  (-> obj meta :content-type)
                          "cache-control" (str "max-age=" (inst-ms cch-max-age))}
-                  (not (contains? public-buckets bucket))
+                  (not public?)
                   (assoc "content-disposition" "attachment"))]
     {::yres/status  307
      ::yres/headers headers}))
