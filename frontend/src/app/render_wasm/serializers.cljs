@@ -227,6 +227,22 @@
     :add-children    2
     :scale-content 3))
 
+(def ^:private reverse-enum
+  (memoize
+   (fn [id]
+     (let [values (unchecked-get wasm/serializers id)]
+       (reduce (fn [acc k] (assoc acc (unchecked-get values k) k))
+               {}
+               (js/Object.keys values))))))
+
+(defn- untranslate
+  "Reverse of `translate`: maps a wasm numeric discriminant back to its name.
+   Keywords (eg. `:multiple`) pass through untouched."
+  [id value default]
+  (if (keyword? value)
+    value
+    (d/nilv (get (reverse-enum id) value) default)))
+
 (defn translate-grow-type
   [grow-type]
   (let [values (unchecked-get wasm/serializers "grow-type")
@@ -239,11 +255,19 @@
         default (unchecked-get values "top")]
     (d/nilv (unchecked-get values (d/name vertical-align)) default)))
 
+(defn untranslate-vertical-align
+  [vertical-align]
+  (untranslate "vertical-align" vertical-align "top"))
+
 (defn translate-text-align
   [text-align]
   (let [values (unchecked-get wasm/serializers "text-align")
         default (unchecked-get values "left")]
     (d/nilv (unchecked-get values (d/name text-align)) default)))
+
+(defn untranslate-text-align
+  [text-align]
+  (untranslate "text-align" text-align "left"))
 
 
 ;; TODO: Find/Create a Rust enum for this
@@ -253,6 +277,10 @@
         default (unchecked-get values "none")]
     (d/nilv (unchecked-get values (d/name text-transform)) default)))
 
+(defn untranslate-text-transform
+  [text-transform]
+  (untranslate "text-transform" text-transform "none"))
+
 
 (defn translate-text-decoration
   [text-decoration]
@@ -260,11 +288,19 @@
         default (unchecked-get values "none")]
     (d/nilv (unchecked-get values (d/name text-decoration)) default)))
 
+(defn untranslate-text-decoration
+  [text-decoration]
+  (untranslate "text-decoration" text-decoration "none"))
+
 (defn translate-text-direction
   [text-direction]
   (let [values (unchecked-get wasm/serializers "text-direction")
         default (unchecked-get values "ltr")]
     (d/nilv (unchecked-get values (d/name text-direction)) default)))
+
+(defn untranslate-text-direction
+  [text-direction]
+  (untranslate "text-direction" text-direction "ltr"))
 
 
 (defn translate-font-style
@@ -278,6 +314,10 @@
       "regular" (unchecked-get values "normal")
       "italic" (unchecked-get values "italic")
       default)))
+
+(defn untranslate-font-style
+  [font-style]
+  (untranslate "font-style" font-style "normal"))
 
 (defn translate-browser
   [browser]
