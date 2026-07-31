@@ -98,14 +98,13 @@
 (defn get-file-data-for-thumbnail
   [{:keys [::db/conn] :as cfg} {:keys [data id] :as file} strip-frames-with-thumbnails]
   (letfn [;; function responsible on finding the frame marked to be
-          ;; used as thumbnail; the returned frame always have
-          ;; the :page-id set to the page that it belongs.
+          ;; used as thumbnail; returns a [frame page-id] pair.
           (get-thumbnail-frame [{:keys [data]}]
-            (d/seek #(or (:use-for-thumbnail %)
-                         (:use-for-thumbnail? %)) ; NOTE: backward comp (remove on v1.21)
+            (d/seek (fn [[frame]] (or (:use-for-thumbnail frame)
+                                      (:use-for-thumbnail? frame))) ; NOTE: backward comp (remove on v1.21)
                     (for [page  (-> data :pages-index vals)
                           frame (-> page :objects ctt/get-frames)]
-                      (assoc frame :page-id (:id page)))))
+                      [frame (:id page)])))
 
           ;; function responsible to filter objects data structure of
           ;; all unneeded shapes if a concrete frame is provided. If no
@@ -152,9 +151,9 @@
 
                 objects)))]
 
-    (let [frame     (get-thumbnail-frame file)
+    (let [[frame page-id] (get-thumbnail-frame file)
           frame-id  (:id frame)
-          page-id   (or (:page-id frame)
+          page-id   (or page-id
                         (-> data :pages first))
 
           page      (dm/get-in data [:pages-index page-id])
