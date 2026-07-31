@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -28,7 +29,9 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -97,7 +100,10 @@
   {::mf/private true
    ::mf/wrap [mf/memo]}
   [{:keys [group drawtool on-select-tool]}]
-  (let [default-tool*  (mf/use-state (active-group-tool group drawtool))
+  (let [li-ref         (mf/use-ref nil)
+        flyout-ref     (mf/use-ref nil)
+
+        default-tool*  (mf/use-state (active-group-tool group drawtool))
         default-tool   (deref default-tool*)
 
         open*          (mf/use-state false)
@@ -114,6 +120,7 @@
         on-select-tool
         (mf/use-fn
          (fn [event]
+           (reset! open* false)
            (on-select-tool event)))
 
         on-display-menu
@@ -138,7 +145,50 @@
             (ts/schedule 350
                          #(do
                             (reset! open* false)
-                            (mf/set-ref-val! close-timer* nil))))))]
+                            (mf/set-ref-val! close-timer* nil))))))
+
+        on-main-key-down
+        (mf/use-fn
+         (fn [event]
+           (cond
+             (kbd/space? event)
+             (do
+               (dom/prevent-default event)
+               (cancel-timer! close-timer*)
+               (reset! open* true))
+
+             (and open (kbd/esc? event))
+             (reset! open* false))))
+
+        on-flyout-key-down
+        (mf/use-fn
+         (fn [event]
+           (let [flyout (mf/ref-val flyout-ref)]
+             (when flyout
+               (let [items  (vec (dom/query-all flyout "[role=menuitemradio]"))
+                     active (dom/get-active)
+                     idx    (d/index-of-pred items #(identical? % active))]
+                 (cond
+                   (kbd/space? event)
+                   (when active
+                     (dom/prevent-default event)
+                     (dom/click active))
+
+                   (kbd/esc? event)
+                   (do
+                     (reset! open* false)
+                     (when-let [li (mf/ref-val li-ref)]
+                       (when-let [btn (.. li (querySelector "div[role=group] > button"))]
+                         (dom/focus! btn))))
+
+                   (kbd/tab? event)
+                   (do
+                     (dom/prevent-default event)
+                     (let [shift? (.-shiftKey ^js event)
+                           next-idx (if shift?
+                                      (if (or (nil? idx) (zero? idx)) (dec (count items)) (dec idx))
+                                      (if (or (nil? idx) (= idx (dec (count items)))) 0 (inc idx)))]
+                       (dom/focus! (nth items next-idx))))))))))]
 
     (mf/with-effect []
       (fn []
@@ -148,7 +198,14 @@
     (mf/with-effect [drawtool group]
       (reset! default-tool* (active-group-tool group drawtool)))
 
-    [:li {:class (stl/css :toolbar-group)
+    (mf/with-effect []
+      (let [subs (->> st/stream
+                      (rx/filter #(= % :interrupt))
+                      (rx/subs! #(reset! open* false)))]
+        #(rx/dispose! subs)))
+
+    [:li {:ref li-ref
+          :class (stl/css :toolbar-group)
           :on-pointer-enter on-display-menu
           :on-pointer-leave on-hide-menu}
      [:div {:role "group"
@@ -162,12 +219,15 @@
                         :has-tooltip false
                         :icon default-icon
                         :on-click on-select-tool
+                        :on-key-down on-main-key-down
                         :data-tool (name default-tool)}]
 
-      [:ul {:role "menu"
+      [:ul {:ref flyout-ref
+            :role "menu"
             :class (stl/css-case :toolbar-group-flyout true
                                  :open open)
-            :aria-label menu-label}
+            :aria-label menu-label
+            :on-key-down on-flyout-key-down}
 
        (for [[id {:keys [icon]}] subtools]
          [:li {:key (name id)
