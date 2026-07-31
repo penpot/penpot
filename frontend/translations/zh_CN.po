@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-14 13:01+0000\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
 "Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
@@ -7028,6 +7028,7 @@ msgid "workspace.tokens.radius"
 msgstr "圆角半径"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+#, fuzzy
 msgid "workspace.tokens.ref-not-valid"
 msgstr "{%s} 中的引用无效，或不属于任何活动令牌集"
 
@@ -7452,6 +7453,7 @@ msgid "workspace.options.more-token-colors"
 msgstr "更多颜色令牌"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} 令牌不属于任何已启用的令牌集，或其值无效。"
 
@@ -7548,6 +7550,7 @@ msgid "dashboard.invitations.no-permission"
 msgstr "你没有权限邀请他人加入此团队，也没有权限编辑或删除邀请。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+#, fuzzy
 msgid "dashboard.my-teams"
 msgstr "我的团队"
 
@@ -7848,6 +7851,7 @@ msgid "feedback.type.issue"
 msgstr "问题"
 
 #: src/app/main/ui/exports/files.cljs:131
+#, fuzzy
 msgid "files-download-modal.description-1"
 msgstr "你要下载的一个或多个文件使用了共享库。要如何处理其中的素材*？"
 
@@ -8396,6 +8400,7 @@ msgid "nitrate.activation-success.enjoy"
 msgstr "尽情使用你的方案吧！"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+#, fuzzy
 msgid "nitrate.activation-success.manage-info"
 msgstr "你可以随时在账号设置的“订阅”页面管理订阅。"
 
@@ -8474,6 +8479,7 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "保留完整的开源自由，同时满足组织的治理需求"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
+#, fuzzy
 msgid "nitrate.form.enterprise-intro"
 msgstr "为团队安全地规模化协作提供所需的一切："
 
@@ -8551,6 +8557,7 @@ msgid "onboarding.questions.team-size.more-than-5001"
 msgstr "5,001 人以上"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "此令牌不存在或已被删除。"
 
@@ -8643,6 +8650,7 @@ msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "付款尚未完成。准备好后可随时重试。"
 
 #: src/app/main/ui/settings/subscription.cljs:427
+#, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr "无法开始结算流程，请重试。如果问题仍然存在，请联系我们：support@penpot.app。"
 
@@ -8697,6 +8705,7 @@ msgstr ""
 "者时，每月固定收费 175 美元。"
 
 #: src/app/main/ui/settings/subscription.cljs:724
+#, fuzzy
 msgid "subscription.settings.organization-member-month"
 msgstr "每名组织成员每月"
 
