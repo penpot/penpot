@@ -7,8 +7,11 @@
 (ns app.main.data.workspace.drawing.common
   (:require
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
@@ -16,6 +19,31 @@
    [app.main.worker :as mw]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn- click-draw-box
+  [shape width height]
+  (-> shape
+      (assoc :width width)
+      (assoc :height height)
+      (assoc :selrect nil)
+      (assoc :points nil)
+      (cts/setup-shape)
+      (gsh/transform-shape (ctm/move-modifiers (- (/ width 2)) (- (/ height 2))))))
+
+(defn- click-draw-path
+  [shape]
+  (let [start-point (path/get-handler-point (:content shape) 0 nil)
+        center-x    (:x start-point)
+        center-y    (:y start-point)
+        start       (gpt/point (- center-x 50) center-y)
+        end         (gpt/point (+ center-x 50) center-y)
+        content     (path/points->content [start end])
+        selrect     (path/calc-selrect content)]
+    (-> shape
+        (assoc :content content)
+        (assoc :selrect selrect)
+        (assoc :points (grc/rect->points selrect))
+        (assoc :grow-type :fixed))))
 
 (defn clear-drawing
   ([] (clear-drawing nil))
@@ -60,15 +88,11 @@
                    (not click-draw?)
                    (assoc :grow-type :fixed)
 
-                   (and ^boolean click-draw? (not ^boolean text?))
-                   (-> (assoc :width width)
-                       (assoc :height height)
-                       ;; NOTE: we need to recalculate the selrect and
-                       ;; points, so we assign `nil` to it
-                       (assoc :selrect nil)
-                       (assoc :points nil)
-                       (cts/setup-shape)
-                       (gsh/transform-shape (ctm/move-modifiers (- (/ width 2)) (- (/ height 2)))))
+                   (and ^boolean click-draw? (not ^boolean text?) (not= :path (:type shape)))
+                   (click-draw-box width height)
+
+                   (and ^boolean click-draw? (= :path (:type shape)))
+                   (click-draw-path)
 
                    (and click-draw? text?)
                    (-> (assoc :height 17 :width 4 :grow-type :auto-width)
