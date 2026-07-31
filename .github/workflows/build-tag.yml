@@ -12,8 +12,6 @@ jobs:
     secrets: inherit
     with:
       gh_ref: ${{ github.ref_name }}
-      build_wasm: "yes"
-      build_storybook: "yes"
 
   build-docker:
     needs: build-bundle
