@@ -9,6 +9,7 @@
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.dashboard-test]
+   [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.store-test]
@@ -101,7 +102,8 @@
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.repo-test
-
+   'frontend-tests.data.store-test
+   'frontend-tests.data.exports-assets-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test

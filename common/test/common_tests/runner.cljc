@@ -23,6 +23,7 @@
    [common-tests.files.shapes-builder-test]
    [common-tests.files.validate-test]
    [common-tests.geom-align-test]
+   [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
    [common-tests.geom-flex-layout-test]
    [common-tests.geom-grid-layout-test]
@@ -99,6 +100,7 @@
    'common-tests.files-migrations-test
    'common-tests.files.validate-test
    'common-tests.geom-align-test
+   'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
    'common-tests.geom-flex-layout-test
    'common-tests.geom-grid-layout-test

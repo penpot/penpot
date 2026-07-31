@@ -127,6 +127,7 @@ export class PenpotMcpServer {
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
         this.tenant = process.env.PENPOT_TENANT ?? "default";
+        const toolTimeoutSecs = parseInt(process.env.PENPOT_MCP_TOOL_TIMEOUT_S ?? "120", 10);
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
@@ -147,7 +148,7 @@ export class PenpotMcpServer {
             this.redisBridge = new RedisBridge(redisUri, this.tenant);
         }
 
-        this.pluginBridge = new PluginBridge(this, this.webSocketPort, this.redisBridge);
+        this.pluginBridge = new PluginBridge(this, this.webSocketPort, toolTimeoutSecs, this.redisBridge);
         this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host);
     }
 

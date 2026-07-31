@@ -34,6 +34,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
    [app.main.data.plugins :as dp]
@@ -1560,13 +1561,13 @@
                           :profile-id (:profile-id @st/state)
                           :wait true
                           :is-wasm false
-                          :exports [{:file-id   file-id
-                                     :page-id   page-id
-                                     :object-id id
-                                     :name      (:name shape)
-                                     :type      (:type value :png)
-                                     :suffix    (:suffix value "")
-                                     :scale     (:scale value 1)}]}]
+                          :exports [(de/normalize-export {:file-id   file-id
+                                                          :page-id   page-id
+                                                          :object-id id
+                                                          :name      (:name shape)
+                                                          :type      (:type value :png)
+                                                          :suffix    (:suffix value "")
+                                                          :scale     (:scale value 1)})]}]
                      (js/Promise.
                       (fn [resolve reject]
                         ;; The exporter renders the file from its persisted

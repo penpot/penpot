@@ -34,6 +34,7 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
@@ -1174,16 +1175,16 @@
             page-id  (:current-page-id state)
             selected (first (dsh/lookup-selected state))
 
-            export {:file-id file-id
-                    :page-id page-id
-                    :object-id selected
-                    ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
-                    :type :png
-                    ;; Always use 2 to ensure good enough quality for wireframes.
-                    :scale 2
-                    :suffix ""
-                    :enabled true
-                    :name ""}
+            export (de/normalize-export {:file-id file-id
+                                         :page-id page-id
+                                         :object-id selected
+                                         ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
+                                         :type :png
+                                         ;; Always use 2 to ensure good enough quality for wireframes.
+                                         :scale 2
+                                         :suffix ""
+                                         :enabled true
+                                         :name ""})
 
             ;; Create a deferred promise immediately, before any async operations.
             ;; Registering the clipboard write NOW preserves the user-gesture security
