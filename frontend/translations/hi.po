@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-07-31 17:02+0000\n"
-"Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
 "hi/>\n"
 "Language: hi\n"
@@ -3976,6 +3976,7 @@ msgid "onboarding.welcome.alt"
 msgstr "पेनपॉट"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "यह token मौजूद नहीं है या हटा दिया गया है।"
 
