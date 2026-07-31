@@ -25,14 +25,13 @@
 
 .menu {
   top: $sz-48;
-  left: calc(var(--right-sidebar-width) - $sz-40);
+  left: calc(var(--left-sidebar-width) - px2rem(44));
   inline-size: $sz-192;
 }
 
 .sub-menu {
-  left: calc(var(--right-sidebar-width) + $sz-154);
-  min-width: $sz-284;
-  width: 115%;
+  left: calc(var(--left-sidebar-width) + px2rem(150));
+  min-width: $sz-364;
 
   &.pos-1 {
     top: calc($sz-16 + $sz-32);
