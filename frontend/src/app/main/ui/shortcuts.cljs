@@ -234,7 +234,9 @@
                                                 [k]
                                                 (conj parent-id k))
                                       item (if (:command item)
-                                             (assoc item :original-command (get original-commands k (:command item)))
+                                             (assoc item :original-command
+                                                    (or (:original-command item)
+                                                        (get original-commands k (:command item))))
                                              item)]
                                   [k (assoc item :id item-id :children (walk (:children item) item-id))]))]
                    (if sorted-comp
@@ -373,8 +375,11 @@
         conflict*              (mf/use-state nil)
         conflict               (deref conflict*)
 
-        reset-notification* (mf/use-state nil)
-        reset-pending*      (mf/use-state false)
+        reset-notification*    (mf/use-state nil)
+        reset-notification     (deref reset-notification*)
+
+        reset-pending*         (mf/use-state false)
+        reset-pending          (deref reset-pending*)
 
         clean-editing-state
         (fn []
@@ -524,7 +529,7 @@
                                            :customized-key customized?)} (:final-key display-parts)])
             (when-not (:finalized? display-parts)
               [:span {:class (stl/css :recording-ellipsis)} "..."])])]
-        (when-let [default-cmd @reset-notification*]
+        (when-let [default-cmd reset-notification]
           [:> context-notification* {:level :info :class (stl/css :modal-reset-msg)}
            (tr "shortcuts.edit-modal.reset-pending")
            [:> shortcuts-keys* {:content default-cmd
@@ -532,7 +537,7 @@
                                 :is-customized false
                                 :has-conflict? false}]])
 
-        (when (and recorded-command (not (deref reset-pending*)))
+        (when (and recorded-command (not reset-pending))
           (if conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
              (tr "shortcuts.edit-modal.conflict" (:name conflict))]

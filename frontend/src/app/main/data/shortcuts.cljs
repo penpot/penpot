@@ -159,6 +159,7 @@
          (if (and (contains? acc sc-key)
                   (not (:disabled (get acc sc-key))))
            (-> acc
+               (assoc-in [sc-key :original-command] (get-in acc [sc-key :command]))
                (assoc-in [sc-key :command] new-command)
                (update sc-key dissoc :show-command))
            acc))
