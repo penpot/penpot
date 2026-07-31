@@ -653,38 +653,14 @@ impl TextContent {
                 let position_with_affinity =
                     layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
-                    // Computed position keeps the current position in terms
-                    // of number of characters of text. This is used to know
-                    // in which span we are.
-                    let mut computed_position: usize = 0;
-
-                    // If paragraph has no spans, default to span 0, offset 0
-                    if !paragraph.children().is_empty() {
-                        for span in paragraph.children() {
-                            let length = span.text.chars().count();
-                            let start_position = computed_position;
-                            let end_position = computed_position + length;
-                            let current_position = position_with_affinity.position as usize;
-
-                            // Handle empty spans: if the span is empty and current position
-                            // matches the start, this is the right span
-                            if length == 0 && current_position == start_position {
-                                break;
-                            }
-
-                            if start_position <= current_position
-                                && end_position >= current_position
-                            {
-                                break;
-                            }
-                            computed_position += length;
-                        }
-                    }
+                    // Skia reports UTF-16 code units, the model counts characters.
+                    let offset =
+                        paragraph.utf16_offset_to_char(position_with_affinity.position as usize);
 
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
                         paragraph_index,
-                        position_with_affinity.position as usize,
+                        offset,
                     ));
                 }
             }
@@ -1158,6 +1134,40 @@ impl Paragraph {
 
     pub fn children_mut(&mut self) -> &mut Vec<TextSpan> {
         &mut self.children
+    }
+
+    fn chars(&self) -> impl Iterator<Item = char> + '_ {
+        self.children.iter().flat_map(|span| span.text.chars())
+    }
+
+    /// Translate a character offset into the UTF-16 offset Skia indexes by.
+    /// Both only differ on astral-plane characters (emoji).
+    pub fn char_offset_to_utf16(&self, char_offset: usize) -> usize {
+        self.chars().take(char_offset).map(char::len_utf16).sum()
+    }
+
+    /// Translate a UTF-16 offset coming from Skia into a character offset.
+    /// An offset inside a surrogate pair rounds up, so it never splits a glyph.
+    pub fn utf16_offset_to_char(&self, utf16_offset: usize) -> usize {
+        let mut utf16 = 0;
+        let mut chars = 0;
+        for ch in self.chars() {
+            if utf16 >= utf16_offset {
+                break;
+            }
+            utf16 += ch.len_utf16();
+            chars += 1;
+        }
+        chars
+    }
+
+    /// UTF-16 length of the character at `char_offset`, so a caret range covers
+    /// the whole glyph.
+    pub fn char_utf16_len_at(&self, char_offset: usize) -> usize {
+        self.chars()
+            .nth(char_offset)
+            .map(char::len_utf16)
+            .unwrap_or(1)
     }
 
     pub fn line_height(&self) -> f32 {
@@ -1731,5 +1741,75 @@ mod tests {
             process_ignored_chars("a\x01b", Browser::Firefox as u8),
             "ab"
         );
+    }
+
+    fn test_paragraph(texts: &[&str]) -> Paragraph {
+        let spans = texts
+            .iter()
+            .map(|text| {
+                TextSpan::new(
+                    text.to_string(),
+                    FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+                    14.0,
+                    1.2,
+                    0.0,
+                    None,
+                    None,
+                    TextDirection::LTR,
+                    400,
+                    Uuid::nil(),
+                    vec![],
+                )
+            })
+            .collect();
+
+        Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            spans,
+        )
+    }
+
+    #[test]
+    fn char_offsets_match_utf16_offsets_for_bmp_text() {
+        let para = test_paragraph(&["Añadir"]);
+        for offset in 0..=6 {
+            assert_eq!(para.char_offset_to_utf16(offset), offset);
+            assert_eq!(para.utf16_offset_to_char(offset), offset);
+        }
+    }
+
+    #[test]
+    fn char_offsets_account_for_astral_characters() {
+        let para = test_paragraph(&["a", "😀b"]);
+
+        assert_eq!(para.char_offset_to_utf16(0), 0);
+        assert_eq!(para.char_offset_to_utf16(1), 1);
+        assert_eq!(para.char_offset_to_utf16(2), 3);
+        assert_eq!(para.char_offset_to_utf16(3), 4);
+
+        assert_eq!(para.utf16_offset_to_char(0), 0);
+        assert_eq!(para.utf16_offset_to_char(1), 1);
+        assert_eq!(para.utf16_offset_to_char(3), 2);
+        assert_eq!(para.utf16_offset_to_char(4), 3);
+    }
+
+    #[test]
+    fn utf16_offset_inside_a_surrogate_pair_rounds_to_a_char_boundary() {
+        let para = test_paragraph(&["a😀b"]);
+        assert_eq!(para.utf16_offset_to_char(2), 2);
+    }
+
+    #[test]
+    fn char_utf16_len_at_covers_the_whole_glyph() {
+        let para = test_paragraph(&["a😀b"]);
+        assert_eq!(para.char_utf16_len_at(0), 1);
+        assert_eq!(para.char_utf16_len_at(1), 2);
+        assert_eq!(para.char_utf16_len_at(2), 1);
+        assert_eq!(para.char_utf16_len_at(3), 1);
     }
 }

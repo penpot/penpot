@@ -156,12 +156,13 @@ fn calculate_cursor_rect(
                 .map(|span| span.text.chars().count())
                 .sum();
 
+            // Skia ranges are UTF-16 code units, not characters.
             let (cursor_x, cursor_y, cursor_width, cursor_height) = if para_char_count == 0 {
                 // Empty paragraph - use default height
                 (0.0, 0.0, 1.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
-                    0..1,
+                    0..para.char_utf16_len_at(0),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -172,8 +173,10 @@ fn calculate_cursor_rect(
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else if char_pos >= para_char_count {
+                let last_char = para_char_count.saturating_sub(1);
+                let last_start = para.char_offset_to_utf16(last_char);
                 let rects = laid_out_para.get_rects_for_range(
-                    para_char_count.saturating_sub(1)..para_char_count,
+                    last_start..last_start + para.char_utf16_len_at(last_char),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -189,8 +192,9 @@ fn calculate_cursor_rect(
                     )
                 }
             } else {
+                let utf16_pos = para.char_offset_to_utf16(char_pos);
                 let rects = laid_out_para.get_rects_for_range(
-                    char_pos..char_pos + 1,
+                    utf16_pos..utf16_pos + para.char_utf16_len_at(char_pos),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -264,7 +268,7 @@ fn calculate_selection_rects(
         if range_start < range_end {
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
                 RectHeightStyle::Max,
                 RectWidthStyle::Tight,
             );

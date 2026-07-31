@@ -129,6 +129,63 @@ test("BUG 10467 - Auto-width text captures every typed character", async ({
   await workspace.waitForSelectedShapeName("hello world");
 });
 
+test.describe("BUG 10910 - Text is not replaced when there is a selection", () => {
+  // Non-ascii on purpose: selection offsets are counted in characters.
+  test("Typing over a selection replaces it", async ({ page }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, "Añadir");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("nuevo");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("nuevo");
+  });
+
+  test("Typing over a selection that contains emoji replaces it", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, "Hola 😀");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Backspace deletes the selection", async ({ page }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, "Añadir texto");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+});
+
 test("BUG 10531 - Entering the editor auto-selects the whole text", async ({
   page,
 }) => {
