@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-30 05:01+0000\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
 "hi/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -8427,6 +8427,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "पथ बंद करने के लिए क्लिक करें"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} यह token किसी भी सक्रिय सेट में नहीं है या इसका मान अमान्य है।"
 
