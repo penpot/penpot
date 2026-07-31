@@ -137,7 +137,7 @@
     :notification            (dc/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
     :team-membership-change  (dc/team-membership-change msg)
-    :team-org-change         (dc/handle-change-team-org msg)
+    :team-organization-change         (dc/handle-change-team-organization msg)
     :organization-change-sso (dc/handle-organization-change-sso msg)
     nil))
 

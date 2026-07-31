@@ -28,11 +28,11 @@
     WHERE email = ANY(?)
       AND deleted_at IS NULL")
 
-(defn- org-sso-active?
+(defn- organization-sso-active?
   "Return whether SSO is enabled for the organization."
   [cfg organization-id]
   (when (contains? cf/flags :nitrate)
-    (true? (:active (nitrate/call cfg :get-org-sso {:organization-id organization-id})))))
+    (true? (:active (nitrate/call cfg :get-organization-sso {:organization-id organization-id})))))
 
 (def ^:private xf:map-email (map :email))
 
@@ -61,44 +61,44 @@
                 :to email
                 :organization-name organization-name})))
 
-(defn- get-org-sso-notify-recipients
-  "Unique org members and pending org/team invitees for SSO activation emails."
-  [conn cfg organization-id org-summary]
-  (let [member-ids    (nitrate/call cfg :get-org-members {:organization-id organization-id})
-        team-ids      (neh/get-org-team-ids org-summary)
+(defn- get-organization-sso-notify-recipients
+  "Unique organization members and pending organization/team invitees for SSO activation emails."
+  [conn cfg organization-id organization-summary]
+  (let [member-ids    (nitrate/call cfg :get-organization-members {:organization-id organization-id})
+        team-ids      (neh/get-organization-team-ids organization-summary)
         member-emails (if (seq member-ids)
                         (let [ids-array (db/create-array conn "uuid" member-ids)]
                           (into #{} (map :email (db/exec! conn [sql:get-profile-emails-by-ids ids-array]))))
                         #{})
         invite-emails (into #{} (map :email
-                                     (neh/get-org-invitations conn organization-id team-ids)))
+                                     (neh/get-organization-invitations conn organization-id team-ids)))
         emails        (into #{} (concat member-emails invite-emails))]
     (recipients-by-emails conn emails)))
 
 (defn- get-team-sso-notify-recipients
-  "Team members who are not in `org-member-ids`, plus pending team invitations."
-  [conn team-id org-member-ids]
+  "Team members who are not in `organization-member-ids`, plus pending team invitations."
+  [conn team-id organization-member-ids]
   (let [team-members (->> (teams/get-team-members conn team-id)
-                          (remove #(contains? org-member-ids (:id %))))
+                          (remove #(contains? organization-member-ids (:id %))))
         invitations  (neh/get-team-invitation-emails conn team-id)]
     (->> (sequence xf:map-email (concat team-members invitations))
          (recipients-by-emails conn))))
 
 (defn send-organization-setup-sso-emails!
-  "Notify all org members and pending org/team invitees that SSO is active."
+  "Notify all organization members and pending organization/team invitees that SSO is active."
   [cfg organization-id]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})]
+  (let [organization-summary (nitrate/call cfg :get-organization-summary {:organization-id organization-id})]
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn]}]
-                  (doseq [recipient (get-org-sso-notify-recipients conn cfg organization-id org-summary)]
-                    (send-organization-setup-sso-email! conn (:name org-summary) recipient))))))
+                  (doseq [recipient (get-organization-sso-notify-recipients conn cfg organization-id organization-summary)]
+                    (send-organization-setup-sso-email! conn (:name organization-summary) recipient))))))
 
 (defn send-organization-setup-sso-emails-for-team!
-  "Notify team members who are not in `org-member-ids-before` and pending team invitees."
-  [cfg organization-id team-id org-member-ids-before]
-  (when (org-sso-active? cfg organization-id)
-    (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})]
+  "Notify team members who are not in `organization-member-ids-before` and pending team invitees."
+  [cfg organization-id team-id organization-member-ids-before]
+  (when (organization-sso-active? cfg organization-id)
+    (let [organization-summary (nitrate/call cfg :get-organization-summary {:organization-id organization-id})]
       (db/tx-run! cfg
                   (fn [{:keys [::db/conn]}]
-                    (doseq [recipient (get-team-sso-notify-recipients conn team-id org-member-ids-before)]
-                      (send-organization-setup-sso-email! conn (:name org-summary) recipient)))))))
+                    (doseq [recipient (get-team-sso-notify-recipients conn team-id organization-member-ids-before)]
+                      (send-organization-setup-sso-email! conn (:name organization-summary) recipient)))))))

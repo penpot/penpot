@@ -8,35 +8,35 @@
 @use "ds/colors.scss" as *;
 @use "ds/_utils.scss" as *;
 
-.org-avatar {
+.organization-avatar {
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
 }
 
-.org-avatar-custom {
+.organization-avatar-custom {
   object-fit: cover;
 }
 
-.org-avatar-xxxl {
+.organization-avatar-xxxl {
   width: px2rem(30);
   height: px2rem(30);
   border-radius: px2rem(6);
 }
 
-.org-avatar-xxl {
+.organization-avatar-xxl {
   width: var(--sp-xxl);
   height: var(--sp-xxl);
   border-radius: px2rem(5);
 }
 
-.org-avatar-xl {
+.organization-avatar-xl {
   width: px2rem(22);
   height: px2rem(22);
   border-radius: var(--sp-xs);
 }
 
-.org-avatar-bg {
+.organization-avatar-bg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -44,7 +44,7 @@
   object-fit: cover;
 }
 
-.org-avatar-initials {
+.organization-avatar-initials {
   display: flex;
   justify-content: center;
   align-items: center;

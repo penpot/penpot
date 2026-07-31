@@ -14,6 +14,9 @@
 .shortcuts-page {
   display: flex;
   justify-content: center;
+
+  // box-sizing: border-box;
+  // min-block-size: 100%;
   padding-block-end: px2rem(32);
 }
 
@@ -194,26 +197,20 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-s);
-  padding-block-start: var(--sp-m);
-}
-
-.shortcuts-info {
-  display: flex;
-  gap: var(--sp-s);
-  align-items: center;
-}
-
-.shortcuts-page-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-s);
-  padding-block-start: var(--sp-m);
+  margin-block-start: auto;
+  padding-block: var(--sp-m) var(--sp-s);
+  position: fixed;
+  bottom: 0;
+  background-color: var(--app-background);
+  min-inline-size: px2rem(590);
 }
 
 .shortcuts-info {
   @include t.use-typography("body-small");
 
+  display: flex;
+  gap: var(--sp-m);
+  align-items: center;
   color: var(--color-foreground-secondary);
 }
 
@@ -227,11 +224,6 @@
 
 .shortcuts-conflict-dot {
   background-color: var(--color-accent-error);
-}
-
-.shortcuts-info {
-  display: flex;
-  gap: var(--sp-m);
 }
 
 .shortcuts-info-wrapper {

@@ -157,8 +157,7 @@
         props   (get profile :props)
         section (get data :name)
         team    (mf/deref refs/team)
-        nitrate-entry-active? (dnt/nitrate-entry-active?)
-
+        nitrate-entry-active? (dnt/nitrate-entry-popup-pending?)
 
         show-question-modal?
         (and (contains? cf/flags :onboarding)

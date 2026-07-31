@@ -17,6 +17,6 @@
   @include use-typography("title-medium");
 
   line-height: 1.2;
-  color: var(--color-background-success);
+  color: var(--color-accent-primary);
   margin-inline: $sz-36;
 }

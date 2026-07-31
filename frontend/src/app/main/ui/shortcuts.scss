@@ -187,6 +187,11 @@
   color: var(--color-foreground-error);
 }
 
+.light-key {
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+}
+
 .space {
   margin: 0 var(--sp-xxs);
   color: var(--color-foreground-secondary);

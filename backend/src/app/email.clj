@@ -440,18 +440,18 @@
    :id ::invite-to-team
    :schema schema:invite-to-team))
 
-(def ^:private schema:invite-to-org
+(def ^:private schema:invite-to-organization
   [:map
    [:invited-by ::sm/text]
    [:user-name [:maybe ::sm/text]]
    [:token ::sm/text]
    [:organization schema:organization-data]])
 
-(def invite-to-org
-  "Org member invitation email."
+(def invite-to-organization
+  "Organization member invitation email."
   (template-factory
-   :id ::invite-to-org
-   :schema schema:invite-to-org))
+   :id ::invite-to-organization
+   :schema schema:invite-to-organization))
 
 (def ^:private schema:organization-setup-sso
   [:map

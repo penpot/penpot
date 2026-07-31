@@ -61,23 +61,23 @@ Avatar rendering is defined per option with `:render-fn`, so each avatar type ca
 
 ```clj
 ;; Example renderer for organization avatars
-(mf/defc render-org-avatar*
+(mf/defc render-organization-avatar*
   [{:keys [avatar]}]
   (when (= :organization (:type avatar))
-    [:> org-avatar* {:org (:organization avatar)
-                     :size (:size avatar)}]))
+    [:> organization-avatar* {:organization (:organization avatar)
+                              :size (:size avatar)}]))
 
 [:> combobox*
     {:options [{:label "Design Team"
-                :id "org-design"
-                :avatar {:render-fn render-org-avatar*
+                :id "organization-design"
+                :avatar {:render-fn render-organization-avatar*
                          :size "s"
                          :organization {:name "Design Team"
                                         :organization-avatar-bg-url "https://example.com/avatar-bg.svg"
                                         :organization-custom-photo nil}}}
                {:label "Engineering"
-                :id "org-engineering"
-                :avatar {:render-fn render-org-avatar*
+                :id "organization-engineering"
+                :avatar {:render-fn render-organization-avatar*
                          :size "s"
                          :organization {:name "Engineering"
                                         :organization-avatar-bg-url nil

@@ -932,47 +932,47 @@
 
 // SELECT ORGANIZATION MODAL
 
-.modal-select-org-container {
+.modal-select-organization-container {
   display: flex;
   flex-direction: column;
   inline-size: $sz-512;
 }
 
-.modal-select-org-header {
+.modal-select-organization-header {
   margin-block-end: var(--sp-xxxl);
 }
 
-.modal-select-org-body {
+.modal-select-organization-body {
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
 }
 
-.modal-select-org-warning {
+.modal-select-organization-warning {
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
 }
 
-.modal-select-org-content {
+.modal-select-organization-content {
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
 
-.modal-select-org-info {
+.modal-select-organization-info {
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
 
-.modal-select-org-title {
+.modal-select-organization-title {
   @include t.use-typography("headline-large");
 
   color: var(--color-foreground-primary);
 }
 
-.modal-select-org-text {
+.modal-select-organization-text {
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
@@ -984,7 +984,7 @@
 
 // ORGANIZATIONS SETTINGS
 
-.org-block-content {
+.organization-block-content {
   display: grid;
   grid-template-columns: var(--sp-xxxl) 1fr var(--sp-xxxl);
   align-items: center;
@@ -992,7 +992,7 @@
   inline-size: max-content;
 }
 
-.org-options-btn {
+.organization-options-btn {
   padding: 0;
   justify-content: center;
 
@@ -1003,7 +1003,7 @@
   }
 }
 
-.org-options-btn-open {
+.organization-options-btn-open {
   padding: 0;
   justify-content: center;
 
@@ -1013,7 +1013,7 @@
   position: relative;
 }
 
-.org-menu-icon {
+.organization-menu-icon {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1025,7 +1025,7 @@
   stroke: var(--stroke-color);
 }
 
-.org-dropdown {
+.organization-dropdown {
   box-shadow: var(--el-shadow-dark);
   display: flex;
   flex-direction: column;
@@ -1043,7 +1043,7 @@
   min-inline-size: $sz-160;
 }
 
-.org-dropdown-item {
+.organization-dropdown-item {
   @include t.use-typography("body-small");
 
   display: flex;

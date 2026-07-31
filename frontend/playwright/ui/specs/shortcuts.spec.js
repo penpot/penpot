@@ -77,10 +77,12 @@ test.describe("Shortcut Import", () => {
       workspace: { "align-bottom": "ctrl+y" },
     });
 
+    await shortcutsPage.confirmImportApply();
+
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
-    await shortcutsPage.searchForShortcut("Align bottom");
     await shortcutsPage.clickTab("Personalized");
+    await shortcutsPage.searchForShortcut("Align bottom");
     await shortcutsPage.expectShortcutVisible("Align bottom");
   });
 
@@ -116,6 +118,8 @@ test.describe("Shortcut Import", () => {
       dashboard: { "toggle-theme": "alt+m" },
     });
 
+    await shortcutsPage.confirmImportApply();
+
     await expect(
       page.getByRole("alert").filter({ hasText: /Invalid data/i }),
     ).not.toBeVisible();
@@ -143,6 +147,8 @@ test.describe("Shortcut Import", () => {
         "align-bottom": "alt+a",
       },
     });
+
+    await shortcutsPage.confirmImportApply();
 
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
@@ -182,6 +188,8 @@ test.describe("Shortcut Export", () => {
     await shortcutsPage.importShortcuts({
       workspace: { "align-bottom": "" },
     });
+
+    await shortcutsPage.confirmImportApply();
 
     await shortcutsPage.searchForShortcut("Align bottom");
     await shortcutsPage.expectShortcutDisabled("Align bottom");
@@ -228,9 +236,34 @@ test.describe("Shortcut Reset", () => {
     await shortcutsPage.importShortcuts({
       workspace: { "align-bottom": "ctrl+y" },
     });
+    await shortcutsPage.confirmImportApply();
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
     await shortcutsPage.restoreAllShortcuts();
+    await shortcutsPage.expectShortcutNotCustomized("Align bottom");
+  });
+
+  test("Reset button shows pending message and requires save to apply", async ({
+    page,
+  }) => {
+    const shortcutsPage = new ShortcutsPage(page);
+    await shortcutsPage.goToShortcuts();
+
+    await shortcutsPage.expandSubsection("Alignment");
+    await shortcutsPage.clickEditShortcut("Align bottom");
+    await shortcutsPage.pressKey("Control+y");
+    await shortcutsPage.saveShortcut();
+    await shortcutsPage.expectShortcutCustomized("Align bottom");
+
+    await shortcutsPage.clickEditShortcut("Align bottom");
+    await shortcutsPage.resetShortcut("Align bottom");
+
+    await expect(
+      page.getByText(/If you save, this shortcut will return/i),
+    ).toBeVisible();
+
+    await shortcutsPage.saveShortcut();
+
     await shortcutsPage.expectShortcutNotCustomized("Align bottom");
   });
 });
@@ -315,6 +348,7 @@ test.describe("Shortcut Round-Trip", () => {
     await shortcutsPage.expectShortcutNotCustomized("Align bottom");
 
     await shortcutsPage.importShortcuts(exported);
+    await shortcutsPage.confirmImportApply();
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
     const reExported = await shortcutsPage.getExportedJson();

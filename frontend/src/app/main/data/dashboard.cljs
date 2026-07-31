@@ -685,9 +685,9 @@
       (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
-(defn- handle-user-org-change
+(defn- handle-user-organization-change
   [{:keys [organization-id organization-name notification]}]
-  (ptk/reify ::handle-user-org-change
+  (ptk/reify ::handle-user-organization-change
     ptk/WatchEvent
     (watch [_ state _]
       (when (and notification (contains? cf/flags :nitrate))
@@ -698,7 +698,7 @@
                             :level :info
                             :timeout nil})
                  (dtm/fetch-teams)
-                 ;; When the user is currently on a team of the org
+                 ;; When the user is currently on a team of the organization
                  (when (= organization-id (dm/get-in team [:organization :id]))
                    (dcm/go-to-dashboard-recent {:team-id :default}))))))))
 
@@ -711,22 +711,22 @@
       (when (contains? cf/flags :nitrate)
         (let [team-id        (:current-team-id state)
               current-team   (dm/get-in state [:teams team-id])
-              current-org-id (dm/get-in current-team [:organization :id])
+              current-organization-id (dm/get-in current-team [:organization :id])
               teams-set      (set teams)
               notify?        (contains? teams-set team-id)
               fetch?         (some (:teams state) teams)
               go-to-default? (or (some #{team-id} deleted-teams)
-                                 (= organization-id current-org-id))]
+                                 (= organization-id current-organization-id))]
           (rx/concat
            (when go-to-default? ;; If the user is currently on one of the deleted teams
              (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
 
-           (when notify? ;; If the user is currently on one of the org teams
-             (rx/of (ntf/show {:content (tr "dashboard.org-deleted" organization-name)
+           (when notify? ;; If the user is currently on one of the organization teams
+             (rx/of (ntf/show {:content (tr "dashboard.organization-deleted" organization-name)
                                :type :toast
                                :level :info
                                :timeout nil})))
-           (when fetch? ;; If the user belonged to the org
+           (when fetch? ;; If the user belonged to the organization
              (rx/of (dtm/fetch-teams)))))))))
 
 (defn- process-message
@@ -735,8 +735,8 @@
     :notification            (dcm/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
     :team-membership-change  (dcm/team-membership-change msg)
-    :team-org-change         (dcm/handle-change-team-org msg)
-    :user-org-change         (handle-user-org-change msg)
+    :team-organization-change         (dcm/handle-change-team-organization msg)
+    :user-organization-change         (handle-user-organization-change msg)
     :organization-deleted    (handle-organization-deleted msg)
     :organization-change-sso (dcm/handle-organization-change-sso msg)
     nil))

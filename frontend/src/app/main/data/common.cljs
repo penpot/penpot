@@ -245,11 +245,11 @@
                           (rx/of (rt/nav-raw :uri (str redirect-uri)))
                           (rx/empty))))))))
 
-(defn handle-change-team-org
-  "Handle :team-org-change websocket messages on dashboard and workspace.
-  Updates local team org data and redirects to SSO when required."
+(defn handle-change-team-organization
+  "Handle :team-organization-change websocket messages on dashboard and workspace.
+  Updates local team organization data and redirects to SSO when required."
   [{:keys [team notification]}]
-  (ptk/reify ::handle-change-team-org
+  (ptk/reify ::handle-change-team-organization
     ptk/WatchEvent
     (watch [_ state _]
       (let [current-team-id (:current-team-id state)
@@ -279,7 +279,7 @@
 
 (defn handle-organization-change-sso
   "Handle :organization-change-sso websocket messages on dashboard and workspace.
-  Redirects to the org SSO login when the current team belongs to that org."
+  Redirects to the organization SSO login when the current team belongs to that organization."
   [{:keys [organization-id]}]
   (ptk/reify ::handle-organization-change-sso
     ptk/WatchEvent
@@ -287,8 +287,8 @@
       (when (contains? cf/flags :nitrate)
         (let [team-id (:current-team-id state)
               team    (dm/get-in state [:teams team-id])
-              org-id  (dm/get-in team [:organization :id])]
-          (when (= organization-id org-id)
+              team-organization-id (dm/get-in team [:organization :id])]
+          (when (= organization-id team-organization-id)
             (check-team-sso team-id)))))))
 
 

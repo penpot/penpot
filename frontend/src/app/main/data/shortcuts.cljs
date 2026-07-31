@@ -159,6 +159,7 @@
          (if (and (contains? acc sc-key)
                   (not (:disabled (get acc sc-key))))
            (-> acc
+               (assoc-in [sc-key :original-command] (get-in acc [sc-key :command]))
                (assoc-in [sc-key :command] new-command)
                (update sc-key dissoc :show-command))
            acc))
@@ -207,13 +208,16 @@
        (remove #(:disabled (second %)))
        (run! (fn [[key {:keys [command fn type overwrite]}]]
                (let [callback  (wrap-cb key fn)
-                     undefined (js* "(void 0)")
                      commands  (if (vector? command)
                                  (into-array command)
                                  #js [command])]
-                 (if type
-                   (mousetrap/bind commands callback type overwrite)
-                   (mousetrap/bind commands callback undefined overwrite)))))))
+                 (if (vector? type)
+                   (do (mousetrap/bind commands callback (nth type 0) overwrite)
+                       (mousetrap/bind commands callback (nth type 1) overwrite))
+                   (let [undefined (js* "(void 0)")]
+                     (if type
+                       (mousetrap/bind commands callback type overwrite)
+                       (mousetrap/bind commands callback undefined overwrite)))))))))
 
 (defn- reset!
   ([]

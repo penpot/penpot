@@ -352,7 +352,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(עותק)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "יצירת ארגון חדש"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439

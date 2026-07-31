@@ -196,7 +196,7 @@
   grid-template-columns: 1fr auto;
 }
 
-.org-dropdown-item {
+.organization-dropdown-item {
   @extend %menu-item-base;
 
   display: grid;
@@ -238,7 +238,7 @@
   margin: 0;
 }
 
-.org-section-label {
+.organization-section-label {
   @include t.use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
@@ -559,7 +559,7 @@
   stroke: var(--icon-foreground);
 }
 
-.add-org-icon {
+.add-organization-icon {
   @extend %button-icon;
 
   width: var(--sp-l);
@@ -606,7 +606,7 @@
   color: var(--color-accent-tertiary);
 }
 
-.orgs-container {
+.organizations-container {
   align-items: center;
   display: flex;
   height: calc(2 * var(--sp-xxxl));
@@ -615,7 +615,7 @@
   padding: 0 var(--sp-l);
 }
 
-.selected-org {
+.selected-organization {
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-primary);
@@ -626,12 +626,12 @@
   gap: var(--sp-s);
 }
 
-.create-org {
+.create-organization {
   margin-inline-start: auto;
   text-transform: uppercase;
 }
 
-.org-penpot-icon {
+.organization-penpot-icon {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -647,7 +647,7 @@
   }
 }
 
-.org-icon {
+.organization-icon {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -685,12 +685,12 @@
   }
 }
 
-.sidebar-org-switch {
+.sidebar-organization-switch {
   position: relative;
   width: 100%;
 }
 
-.current-org {
+.current-organization {
   @include deprecated.button-style;
 
   text-transform: none;
@@ -703,15 +703,15 @@
   width: 100%;
 }
 
-.current-org-no-options {
+.current-organization-no-options {
   gap: 0;
 }
 
-.current-org .arrow-icon {
+.current-organization .arrow-icon {
   margin-inline-end: var(--sp-xs);
 }
 
-.org-options {
+.organization-options {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -720,7 +720,7 @@
   height: 100%;
 }
 
-.org-switch-content {
+.organization-switch-content {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -728,7 +728,7 @@
   width: 100%;
 }
 
-.org-options-btn {
+.organization-options-btn {
   --icon-stroke: var(--icon-foreground);
 
   display: flex;
@@ -742,13 +742,13 @@
   }
 }
 
-.org-menu-icon {
+.organization-menu-icon {
   @extend %button-icon;
 
   stroke: var(--icon-stroke);
 }
 
-.org-menu-icon-open {
+.organization-menu-icon-open {
   @extend %button-icon;
 
   stroke: var(--color-accent-primary);

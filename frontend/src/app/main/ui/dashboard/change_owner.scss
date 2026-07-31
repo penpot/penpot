@@ -78,20 +78,20 @@
   width: 100%;
 }
 
-.modal-org-container {
+.modal-organization-container {
   @extend %modal-container-base;
 
   overflow-y: auto;
   max-height: $sz-512;
 }
 
-.modal-org-title {
+.modal-organization-title {
   @include t.use-typography("headline-large");
 
   color: var(--modal-title-foreground-color);
 }
 
-.modal-org-msg {
+.modal-organization-msg {
   @include t.use-typography("body-large");
 
   color: var(--modal-text-foreground-color);

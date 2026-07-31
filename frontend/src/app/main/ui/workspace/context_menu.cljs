@@ -106,7 +106,7 @@
      (constantly on-unmount))
 
     (if icon
-      [:li {:class (stl/css :icon-menu-item)
+      [:li {:class (stl/css :menu-item-icon)
             :disabled disabled
             :data-value value
             :ref set-dom-node
@@ -114,21 +114,23 @@
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
        [:span
-        {:class (stl/css :icon-wrapper)}
-        (if is-selected [:span {:class (stl/css :selected-icon)}
-                         [:> icon* {:icon-id i/tick :size "s"}]]
-            [:span {:class (stl/css :selected-icon)}])
-        [:span {:class (stl/css :shape-icon)}
+        {:class (stl/css :menu-item-icon-group)}
+        (if is-selected
+          [:span {:class (stl/css :icon)}
+           [:> icon* {:icon-id i/tick :size "s"}]]
+          [:span {:class (stl/css :icon)}])
+        [:span {:class (stl/css :icon)}
          [:> icon* {:icon-id icon :size "s"}]]]
-       [:span {:class (stl/css :title)} title]]
-      [:li {:class (stl/css :context-menu-item)
+       [:span {:class (stl/css :menu-item-title)} title]]
+
+      [:li {:class (stl/css :menu-item)
             :disabled disabled
             :ref set-dom-node
             :data-value value
             :on-click on-click'
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
-       [:span {:class (stl/css :title)} title]
+       [:span {:class (stl/css :menu-item-title)} title]
        (when shortcut
          [:span   {:class (stl/css :shortcut)}
           (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
@@ -137,11 +139,11 @@
                                          :customized-key customized?)} sc])])
 
        (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)}
+         [:span {:class (stl/css :icon)}
           [:> icon* {:icon-id i/arrow :size "s"}]])
 
        (when (> (count children) 1)
-         [:ul {:class (stl/css :workspace-context-submenu)
+         [:ul {:class (stl/css :submenu)
                :ref submenu-ref
                :style {:display "none" :left 250}
                :on-context-menu prevent-default}
@@ -172,28 +174,35 @@
         enabled-paste-props* (mf/use-state false)
 
         handle-copy-css
-        (mf/use-callback #(st/emit! (dw/copy-selected-css)))
+        (mf/use-fn
+         #(st/emit! (dw/copy-selected-css)))
 
         handle-copy-css-nested
-        (mf/use-callback #(st/emit! (dw/copy-selected-css-nested)))
+        (mf/use-fn
+         #(st/emit! (dw/copy-selected-css-nested)))
 
         handle-copy-props
-        (mf/use-callback #(st/emit! (dw/copy-selected-props)))
+        (mf/use-fn
+         #(st/emit! (dw/copy-selected-props)))
 
         handle-paste-props
-        (mf/use-callback #(st/emit! (dw/paste-selected-props)))
+        (mf/use-fn
+         #(st/emit! (dw/paste-selected-props)))
 
         handle-copy-svg
-        (mf/use-callback #(st/emit! (dw/copy-selected-svg)))
+        (mf/use-fn
+         #(st/emit! (dw/copy-selected-svg)))
 
         handle-copy-text
-        (mf/use-callback #(st/emit! (dw/copy-selected-text)))
+        (mf/use-fn
+         #(st/emit! (dw/copy-selected-text)))
 
         handle-copy-as-image
-        (mf/use-callback #(st/emit! (dw/copy-as-image)))
+        (mf/use-fn
+         #(st/emit! (dw/copy-as-image)))
 
         handle-hover-copy-paste
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (->> (clipboard/from-navigator)
                 (rx/mapcat #(.text %))
@@ -1011,8 +1020,8 @@
                      (dwg/remove-guide guide))))]
 
     [:*
-     [:li {:class (stl/css :context-menu-item :guide-color-label)}
-      [:span {:class (stl/css :title)}
+     [:li {:class (stl/css :menu-item :guide-color-label)}
+      [:span {:class (stl/css :menu-item-title)}
        (tr "workspace.context-menu.guides.change-color")]]
      [:li {:class (stl/css :guide-color-swatches)}
       (for [color guide-color-presets]
@@ -1051,13 +1060,13 @@
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
-     [:div {:class (stl/css :workspace-context-menu)
+     [:div {:class (stl/css :menu-wrapper)
             :ref dropdown-ref
             :style {:top top :left left}
             :data-testid "context-menu"
             :on-context-menu prevent-default}
 
-      [:ul {:class (stl/css :context-list)}
+      [:ul {:class (stl/css :menu)}
        (if ^boolean read-only?
          [:> viewport-context-menu* {:mdata mdata}]
          (case (:kind mdata)
