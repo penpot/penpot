@@ -362,6 +362,19 @@
 (def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
 (def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
 (def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+(def ^:const FRAME_TYPE_VIEWPORT_READY 3) ;; Viewport presented; interest tiles may still be pending.
+
+(defn- needs-more-render-frames?
+  "True when WASM still has progressive tile work (visible or interest ring)."
+  []
+  (or (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+      (= wasm/internal-frame-type FRAME_TYPE_VIEWPORT_READY)))
+
+(defn- frame-presented-target?
+  "True when this frame recomposited Target (full or early viewport present)."
+  []
+  (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL))
+
 (def ^:const RENDER-FLAG-SYNC-TILES 4) ;; Rebuild tile index without ending fast mode (pan/zoom pause).
 
 (defn- internal-render
@@ -371,7 +384,7 @@
    (internal-render timestamp wasm/internal-frame-type))
   ([timestamp flags]
    (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp flags))
-   (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+   (when (needs-more-render-frames?)
      (request-render "frame-type-partial"))))
 
 (defn- build-reload-payload
@@ -468,13 +481,13 @@
       (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
         ;; Only repaint the overlay when this frame recomposited Target (a full
-        ;; frame). A partial frame is flushed but not presented — Target still
-        ;; shows the last presented frame with the overlay already on it — so
-        ;; repainting the translucent selection over it stacks another layer
-        ;; every progressive frame: it darkens, then snaps back when the final
-        ;; frame presents from the clean Backbuffer (the blink at the end of a
-        ;; zoom over a selection, gh-10709).
-        (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+        ;; frame or early viewport present). A partial frame is flushed but not
+        ;; presented - Target still shows the last presented frame with the
+        ;; overlay already on it - so repainting the translucent selection over
+        ;; it stacks another layer every progressive frame: it darkens, then
+        ;; snaps back when the final frame presents from the clean Backbuffer
+        ;; (the blink at the end of a zoom over a selection, gh-10709).
+        (when (frame-presented-target?)
           (text-editor/text-editor-render-overlay))
         ;; Drain editor events. Only content/layout changes need a full shape
         ;; re-render; selection/style changes are already reflected by the
@@ -1376,14 +1389,14 @@
 
 (defn- render-text-editor-overlay-after-frame!
   "Repaint the overlay after a direct `internal-render`, but only when that
-   render recomposited Target (a full frame). A partial frame is only flushed —
-   Target keeps the last presented frame with the overlay already on it — so
-   repainting the translucent selection then stacks another layer and it visibly
-   darkens across the progressive frames before snapping back on the final
-   present (the blink at the end of a zoom over a selection, gh-10709). The
-   final full frame's own repaint keeps the overlay in place."
+   render recomposited Target (a full frame or early viewport present). A partial
+   frame is only flushed - Target keeps the last presented frame with the overlay
+   already on it - so repainting the translucent selection then stacks another
+   layer and it visibly darkens across the progressive frames before snapping
+   back on the final present (the blink at the end of a zoom over a selection,
+   gh-10709). The final full frame's own repaint keeps the overlay in place."
   []
-  (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+  (when (frame-presented-target?)
     (render-text-editor-overlay-if-active!)))
 
 (defn finalize-view-interaction!
