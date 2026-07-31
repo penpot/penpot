@@ -27,6 +27,29 @@ const TILE_DRAWABLE_RECT: IRect = IRect {
 };
 const DOC_ATLAS_MAX_DIM: i32 = 4096;
 
+/// GPU→GPU copy of `src` from `from` into `dst` on `to_canvas`, without
+/// `image_snapshot` (avoids per-tile sync stalls on WebGL).
+fn draw_surface_src_rect_to_dst(
+    from: &mut skia::Surface,
+    to_canvas: &skia::Canvas,
+    src: skia::Rect,
+    dst: skia::Rect,
+    sampling: skia::SamplingOptions,
+) {
+    if src.is_empty() || dst.is_empty() {
+        return;
+    }
+    to_canvas.save();
+    to_canvas.clip_rect(dst, None, true);
+    let sx = dst.width() / src.width();
+    let sy = dst.height() / src.height();
+    to_canvas.translate((dst.left, dst.top));
+    to_canvas.scale((sx, sy));
+    to_canvas.translate((-src.left, -src.top));
+    from.draw(to_canvas, (0.0, 0.0), sampling, None);
+    to_canvas.restore();
+}
+
 pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
     let TileRect(isx, isy, iex, iey) =
@@ -238,17 +261,20 @@ impl DocAtlas {
         Ok(())
     }
 
-    fn blit_tile_image_into_atlas(
+    /// Blit a Current-surface drawable rect into the doc atlas without
+    /// `image_snapshot` (GPU→GPU draw; avoids per-tile sync stalls).
+    fn blit_current_drawable_into_atlas(
         &mut self,
         gpu_state: &mut GpuState,
-        tile_image: &skia::Image,
+        current: &mut skia::Surface,
+        drawable_src: skia::Rect,
         tile_doc_rect: skia::Rect,
+        sampling: skia::SamplingOptions,
     ) -> Result<()> {
-        if tile_doc_rect.is_empty() {
+        if tile_doc_rect.is_empty() || drawable_src.is_empty() {
             return Ok(());
         }
 
-        // Clamp to document bounds (if any) and compute a matching source-rect in tile pixels.
         let mut clipped_doc_rect = tile_doc_rect;
         if let Some(bounds) = self.doc_bounds {
             if !clipped_doc_rect.intersect(bounds) {
@@ -261,7 +287,6 @@ impl DocAtlas {
 
         self.ensure_atlas_contains(gpu_state, clipped_doc_rect)?;
 
-        // Destination is document-space rect mapped into atlas pixel coords.
         let dst = skia::Rect::from_xywh(
             (clipped_doc_rect.left - self.origin.x) * self.scale,
             (clipped_doc_rect.top - self.origin.y) * self.scale,
@@ -269,24 +294,18 @@ impl DocAtlas {
             clipped_doc_rect.height() * self.scale,
         );
 
-        // Compute source rect in tile_image pixel coordinates.
-        let img_w = tile_image.width() as f32;
-        let img_h = tile_image.height() as f32;
         let tw = tile_doc_rect.width().max(1.0);
         let th = tile_doc_rect.height().max(1.0);
-
-        let sx = ((clipped_doc_rect.left - tile_doc_rect.left) / tw) * img_w;
-        let sy = ((clipped_doc_rect.top - tile_doc_rect.top) / th) * img_h;
-        let sw = (clipped_doc_rect.width() / tw) * img_w;
-        let sh = (clipped_doc_rect.height() / th) * img_h;
-        let src = skia::Rect::from_xywh(sx, sy, sw, sh);
-
-        self.surface.canvas().draw_image_rect(
-            tile_image,
-            Some((&src, skia::canvas::SrcRectConstraint::Fast)),
-            dst,
-            &skia::Paint::default(),
+        let dw = drawable_src.width();
+        let dh = drawable_src.height();
+        let src = skia::Rect::from_xywh(
+            drawable_src.left + ((clipped_doc_rect.left - tile_doc_rect.left) / tw) * dw,
+            drawable_src.top + ((clipped_doc_rect.top - tile_doc_rect.top) / th) * dh,
+            (clipped_doc_rect.width() / tw) * dw,
+            (clipped_doc_rect.height() / th) * dh,
         );
+
+        draw_surface_src_rect_to_dst(current, self.surface.canvas(), src, dst, sampling);
         Ok(())
     }
 
@@ -1198,34 +1217,34 @@ impl Surfaces {
         tile_doc_rect: skia::Rect,
     ) {
         let gpu_state = get_gpu_state();
-        let rect = TILE_DRAWABLE_RECT;
+        let src = skia::Rect::from(TILE_DRAWABLE_RECT);
+        let sampling = self.sampling_options;
 
-        let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
-        if let Some(tile_image) = tile_image_opt {
-            if !skip_cache_surface {
-                // Draw to cache surface for render_from_cache
-                self.cache.canvas().draw_image_rect(
-                    &tile_image,
-                    None,
-                    tile_rect,
-                    &skia::Paint::default(),
-                );
-            }
+        // DocAtlas + tile atlas via Surface::draw (no image_snapshot sync).
+        let _ = self.atlas.blit_current_drawable_into_atlas(
+            gpu_state,
+            &mut self.current,
+            src,
+            tile_doc_rect,
+            sampling,
+        );
+        self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
 
-            // Incrementally update persistent 1:1 atlas in document space.
-            // `tile_doc_rect` is in world/document coordinates (1 unit == 1 px at 100%).
-            let _ = self
-                .atlas
-                .blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
-            self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
+        let tile_ref = self.tiles.add(tile_viewbox, tile);
+        let dst = tile_ref.rect;
+        let mut current = self.current.clone();
+        draw_surface_src_rect_to_dst(&mut current, self.tile_atlas.canvas(), src, dst, sampling);
 
-            // Draws current tile into tile atlas
-            let tile_ref = self.tiles.add(tile_viewbox, tile);
-            self.tile_atlas.canvas().draw_image_rect(
-                &tile_image,
-                None,
-                tile_ref.rect,
-                &skia::Paint::default(),
+        if !skip_cache_surface {
+            // Optional legacy Cache surface fill (debug). Pan/zoom preview
+            // uses DocAtlas + tile-atlas textures via render_from_cache.
+            let mut current = self.current.clone();
+            draw_surface_src_rect_to_dst(
+                &mut current,
+                self.cache.canvas(),
+                src,
+                *tile_rect,
+                sampling,
             );
         }
     }
