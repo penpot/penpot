@@ -24,6 +24,7 @@
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.router :as rt]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
@@ -334,4 +335,5 @@
     (watch [_ state _]
       (when (contains? (:files state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
-               (dwl/notify-sync-file))))))
+               (dwl/notify-sync-file)
+               (dwtp/propagate-workspace-tokens))))))
