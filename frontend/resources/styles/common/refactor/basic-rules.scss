@@ -976,7 +976,7 @@
   margin: 0;
   margin-top: $s-1;
   border-radius: $br-8;
-  z-index: $z-index-4;
+  z-index: var(--z-index-dropdown);
   overflow: hidden auto;
   background-color: var(--menu-background-color);
   color: var(--menu-foreground-color);
