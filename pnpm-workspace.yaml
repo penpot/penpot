@@ -1,3 +1,9 @@
 allowBuilds:
   esbuild: true
-  opencode-ai: true
+
+minimumReleaseAgeExclude:
+  - playwright-core@1.62.1
+  - playwright@1.62.1
+
+overrides:
+  "playwright@>=1.61.1 <2.0.0-0": "1.62.1"
