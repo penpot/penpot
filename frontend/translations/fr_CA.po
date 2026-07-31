@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-02 01:01+0000\n"
+"PO-Revision-Date: 2026-07-31 17:03+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -876,6 +876,7 @@ msgid "dashboard.move-to-other-team"
 msgstr "Déplacer vers une autre équipe"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+#, fuzzy
 msgid "dashboard.my-teams"
 msgstr "Mes équipes"
 
@@ -4357,6 +4358,7 @@ msgid "nitrate.activation-success.enjoy"
 msgstr "Profite de ton abonnement!"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+#, fuzzy
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
 "Gère ton abonnement en tout temps à partir de la page Abonnement dans les "
@@ -4452,10 +4454,11 @@ msgstr ""
 "organisation a besoin"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
+#, fuzzy
 msgid "nitrate.form.enterprise-intro"
 msgstr ""
-"Tout ce dont les équipes ont besoin pour travailler de manière sécuritaire "
-"à grande échelle :"
+"Tout ce dont les équipes ont besoin pour travailler de manière sécuritaire à "
+"grande échelle :"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
@@ -5846,10 +5849,11 @@ msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Le paiement ne s'est pas complété. Essayer de nouveau."
 
 #: src/app/main/ui/settings/subscription.cljs:427
+#, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
-"Nous n'avons pas pu initier le processus de paiement. Essayer de nouveau. "
-"Si le problème persiste, contacte-nous : support@penpot.app."
+"Nous n'avons pas pu initier le processus de paiement. Essayer de nouveau. Si "
+"le problème persiste, contacte-nous : support@penpot.app."
 
 #: src/app/main/ui/settings/subscription.cljs:407
 msgid "subscription.error.nitrate.checkout-finish-failed"
@@ -5983,6 +5987,7 @@ msgid "subscription.settings.more-information"
 msgstr "En savoir plus"
 
 #: src/app/main/ui/settings/subscription.cljs:724
+#, fuzzy
 msgid "subscription.settings.organization-member-month"
 msgstr "membre d'organisation par mois"
 
