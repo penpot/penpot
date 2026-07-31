@@ -354,16 +354,16 @@
 ;; That are special case server-errors that should be treated
 ;; differently.
 
-(derive :not-found ::exceptional-state)
-(derive :bad-gateway ::exceptional-state)
-(derive :service-unavailable ::exceptional-state)
-(derive :nitrate-unavailable ::exceptional-state)
-
-(defmethod ptk/handle-error ::exceptional-state
+(defn- handle-exceptional-state
   [error]
   (when-let [instance (get error ::instance)]
     (ex/print-throwable instance :prefix "Exceptional State"))
   (ts/schedule #(st/emit! (rt/assign-exception error))))
+
+(defmethod ptk/handle-error :not-found [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
 
 (defn- redirect-to-dashboard
   []

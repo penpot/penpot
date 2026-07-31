@@ -4,21 +4,21 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.12.0+sha512.820a6fbd0d9f04c226638002aead1e45340a9139dd5dc077c1d83ef44aa2481c8eb6637b4c9aa696a3c7e35ba818e49cf27213e5f2b91138d09b7a3e26e898ba",
+  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
   "type": "module",
   "devDependencies": {
-    "@playwright/mcp": "^0.0.76",
-    "@playwright/test": "^1.61.1",
-    "@types/node": "^26.0.1",
-    "commander": "^14.0.1",
-    "dotenv": "^16.4.7",
+    "@playwright/mcp": "^0.0.78",
+    "@playwright/test": "^1.62.0",
+    "@types/node": "^26.1.2",
+    "commander": "^15.0.0",
+    "dotenv": "^17.4.2",
     "esbuild": "^0.28.1",
-    "mdts": "^0.20.3",
+    "mdts": "^0.20.6",
     "nrepl-client": "^0.3.0",
-    "playwright": "^1.61.1"
+    "playwright": "^1.62.0"
   }
 }

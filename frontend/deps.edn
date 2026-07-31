@@ -5,7 +5,7 @@
 
   org.clojure/clojure {:mvn/version "1.12.2"}
   binaryage/devtools {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.9.1"}
+  metosin/reitit-core {:mvn/version "0.10.1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
   funcool/tubax
@@ -50,11 +50,10 @@
               "--enable-native-access=ALL-UNNAMED"]
 
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "3.2.2"}
+   {thheller/shadow-cljs {:mvn/version "3.4.11"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    criterium/criterium {:mvn/version "0.4.6"}
-    cider/cider-nrepl {:mvn/version "0.57.0"}}}
+    criterium/criterium {:mvn/version "0.4.6"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]

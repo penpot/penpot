@@ -24,22 +24,21 @@
   ],
   "author": "",
   "license": "MIT",
-  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
+  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "express": "^5.2.1",
     "ioredis": "^5.11.1",
-    "js-yaml": "^5.2.0",
+    "js-yaml": "^5.2.2",
     "nrepl-client": "^0.3.0",
-    "penpot-mcp": "file:..",
     "pino": "^10.3.1",
     "pino-loki": "^3.0.0",
     "pino-pretty": "^13.1.3",
     "reflect-metadata": "^0.2.2",
-    "sharp": "^0.35.2",
-    "ws": "^8.21.0",
+    "sharp": "^0.35.3",
+    "ws": "^8.21.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -51,7 +50,7 @@
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.1",
     "ts-node": "^10.9.2",
-    "tsx": "^4.22.4",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3"
   },
   "ts-node": {
