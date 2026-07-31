@@ -30,7 +30,7 @@ See `mem:workflow/creating-commits` for emoji codes. Squash merge uses the PR ti
 
 Include concise sections covering:
 - what changed and why;
-- related GitHub issues or Taiga stories (`Fixes #NNNN`, `Relates to #NNNN`, `Taiga #NNNN`);
+- related GitHub issues or Taiga stories (`Closes #NNNN`, `Relates to #NNNN`, `Taiga #NNNN`);
 - screenshots or recordings for UI-visible changes;
 - testing performed and residual risk;
 - breaking changes or migration notes, if any.
