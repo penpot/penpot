@@ -1,7 +1,7 @@
 export const parseTranslate = (el: HTMLElement | null) => {
   let x = 0;
   let y = 0;
-  if (el && window['DOMMatrixReadOnly']) {
+  if (el instanceof Element && window['DOMMatrixReadOnly']) {
     const cs = window.getComputedStyle(el);
     const matrix = new DOMMatrixReadOnly(cs.transform);
     x = matrix.m41;
