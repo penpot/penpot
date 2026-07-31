@@ -495,10 +495,10 @@
                 {:id profile-id})
 
     ;; Delete owned organizations on the fly (no grace period).
-    ;; Nitrate iterates the user's owned orgs and, per org, calls
+    ;; Nitrate iterates the user's owned organizations and, per organization, calls
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
-    ;; (during delete-owned-orgs) and ::notify-organization-deletion.
-    ;; Both preserve org teams unchanged and only prefix or delete
+    ;; (during delete-owned-organizations) and ::notify-organization-deletion.
+    ;; Both preserve organization teams unchanged and only prefix or delete
     ;; imported "Your Penpot" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
@@ -562,7 +562,7 @@
    ::sm/result schema:get-owned-organizations-summary-result}
   [cfg {:keys [::rpc/profile-id]}]
   (if (contains? cf/flags :nitrate)
-    (or (nitrate/call cfg :get-owned-orgs-summary {:profile-id profile-id}) [])
+    (or (nitrate/call cfg :get-owned-organizations-summary {:profile-id profile-id}) [])
     []))
 
 ;; --- HELPERS

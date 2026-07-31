@@ -612,7 +612,7 @@
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
                          :benefits-title (tr "subscription.settings.benefits.nitrate-unlimited-benefits")
-                         :benefits [{:label (tr "subscription.settings.enterprise.nitrate.multi-org-management")
+                         :benefits [{:label (tr "subscription.settings.enterprise.nitrate.multi-organization-management")
                                      :description (tr "subscription.settings.enterprise.nitrate.support-team")}
                                     {:label (tr "subscription.settings.enterprise.nitrate.enterprise-security")
                                      :description (tr "subscription.settings.enterprise.nitrate.native-sso")}
@@ -770,7 +770,7 @@
                          :price-value "$25"
                          :price-period (tr "subscription.settings.organization-member-month")
                          :benefits-title (tr "subscription.settings.benefits.nitrate-unlimited-benefits")
-                         :benefits [{:label (tr "subscription.settings.enterprise.nitrate.multi-org-management")
+                         :benefits [{:label (tr "subscription.settings.enterprise.nitrate.multi-organization-management")
                                      :description (tr "subscription.settings.enterprise.nitrate.support-team")}
                                     {:label (tr "subscription.settings.enterprise.nitrate.enterprise-security")
                                      :description (tr "subscription.settings.enterprise.nitrate.native-sso")}
@@ -877,7 +877,7 @@
        [:div {:class (stl/css :modal-text-medium)}
         (tr "nitrate.contact-sales.downgrade-title")]
        [:ul {:class (stl/css :downgrade-list)}
-        [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-org-deleted")]
+        [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-organization-deleted")]
         [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-teams-available")]
         [:li {:class (stl/css :downgrade-item)} (tr "nitrate.contact-sales.downgrade-storage-limited")]]
 

@@ -162,7 +162,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private schema:org-summary
+(def ^:private schema:organization-summary
   [:map
    [:id ::sm/uuid]
    [:name ::sm/text]
@@ -189,7 +189,7 @@
      :decode/json ct/inst
      :encode/json inst-ms}}))
 
-(def ^:private schema:profile-org
+(def ^:private schema:profile-organization
   [:map
    [:is-member :boolean]
    [:organization-id {:optional true} [:maybe ::sm/uuid]]
@@ -253,13 +253,13 @@
   [:map
    [:licenses ::sm/boolean]])
 
-(defn- get-team-org-api
+(defn- get-team-organization-api
   [cfg {:keys [team-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri "api/teams/" team-id)
                       cto/schema:team-with-organization params))
 
-(defn- get-org-membership-api
+(defn- get-organization-membership-api
   [cfg {:keys [profile-id organization-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
@@ -267,9 +267,9 @@
                        organization-id
                        "members/"
                        profile-id)
-                      schema:profile-org params))
+                      schema:profile-organization params))
 
-(defn- get-org-membership-by-team-api
+(defn- get-organization-membership-by-team-api
   [cfg {:keys [profile-id team-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
@@ -277,28 +277,28 @@
                        team-id
                        "users/"
                        profile-id)
-                      schema:profile-org params))
+                      schema:profile-organization params))
 
-(defn- get-org-summary-api
+(defn- get-organization-summary-api
   [cfg {:keys [organization-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
                        organization-id
                        "summary")
-                      schema:org-summary params))
+                      schema:organization-summary params))
 
-(defn- get-owned-orgs-api
+(defn- get-owned-organizations-api
   [cfg {:keys [profile-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/users/"
                        profile-id
                        "owned-organizations")
-                      [:vector schema:org-summary]
+                      [:vector schema:organization-summary]
                       params))
 
-(def ^:private schema:org-summary-counts
+(def ^:private schema:organization-summary-counts
   [:map
    [:id ::sm/uuid]
    [:name ::sm/text]
@@ -308,20 +308,20 @@
    [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
    [:logo-id {:optional true} [:maybe ::sm/uuid]]])
 
-(defn- get-owned-orgs-summary-api
+(defn- get-owned-organizations-summary-api
   [cfg {:keys [profile-id] :as params}]
-  (let [orgs (request-to-nitrate cfg :get
-                                 (generate-nitrate-uri
-                                  "api/users/"
-                                  profile-id
-                                  "owned-organizations-summary")
-                                 [:vector schema:org-summary-counts]
-                                 params)]
-    (mapv (fn [org]
-            (if-let [logo-id (:logo-id org)]
-              (assoc org :custom-photo (generate-public-uri "assets/by-id/" logo-id))
-              org))
-          orgs)))
+  (let [organizations (request-to-nitrate cfg :get
+                                          (generate-nitrate-uri
+                                           "api/users/"
+                                           profile-id
+                                           "owned-organizations-summary")
+                                          [:vector schema:organization-summary-counts]
+                                          params)]
+    (mapv (fn [organization]
+            (if-let [logo-id (:logo-id organization)]
+              (assoc organization :custom-photo (generate-public-uri "assets/by-id/" logo-id))
+              organization))
+          organizations)))
 
 (defn- cleanup-deleted-penpot-user-api
   [cfg {:keys [profile-id] :as params}]
@@ -332,7 +332,7 @@
                        "cleanup-after-deletion")
                       nil params))
 
-(defn- set-team-org-api
+(defn- set-team-organization-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
   (let [params (assoc params :request-params {:team-id team-id
                                               :is-your-penpot (true? is-default)})
@@ -348,7 +348,7 @@
       custom-photo
       (assoc-in [:organization :custom-photo] custom-photo))))
 
-(defn- add-profile-to-org-api
+(defn- add-profile-to-organization-api
   [cfg {:keys [profile-id organization-id team-id email] :as params}]
   (let [request-params (cond-> {:user-id profile-id :team-id team-id}
                          (some? email) (assoc :email email))
@@ -358,9 +358,9 @@
                          "api/organizations/"
                          organization-id
                          "add-user")
-                        schema:profile-org params)))
+                        schema:profile-organization params)))
 
-(defn- remove-profile-from-org-api
+(defn- remove-profile-from-organization-api
   [cfg {:keys [profile-id organization-id user-who-delete-member deleted-by-role] :as params}]
   (let [request-params (cond-> {:user-id profile-id}
                          (some? user-who-delete-member)
@@ -375,7 +375,7 @@
                          "remove-user")
                         nil params)))
 
-(defn- remove-team-from-org-api
+(defn- remove-team-from-organization-api
   [cfg {:keys [team-id organization-id] :as params}]
   (let [params (assoc params :request-params {:team-id team-id})]
     (request-to-nitrate cfg :post
@@ -433,7 +433,7 @@
   [:map
    [:cancel-at [:maybe schema:timestamp]]])
 
-(defn- get-org-permissions-api
+(defn- get-organization-permissions-api
   [cfg {:keys [organization-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
@@ -446,7 +446,7 @@
                        [:permissions [:map-of :keyword :string]]]
                       params))
 
-(defn- get-org-sso-api
+(defn- get-organization-sso-api
   "Fetches the SSO configuration for an organization from Nitrate."
   [cfg {:keys [organization-id] :as params}]
   (request-to-nitrate cfg :get
@@ -457,14 +457,14 @@
                       schema:nitrate-sso
                       params))
 
-(defn- get-org-sso-by-team-api
+(defn- get-organization-sso-by-team-api
   [cfg {:keys [team-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri "api/teams/" team-id "sso")
                       schema:nitrate-sso
                       params))
 
-(defn- get-org-members-api
+(defn- get-organization-members-api
   [cfg {:keys [organization-id] :as params}]
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
@@ -488,22 +488,22 @@
 (defmethod ig/init-key ::client
   [_ cfg]
   (when (contains? cf/flags :nitrate)
-    {:get-team-org                 (partial get-team-org-api cfg)
-     :set-team-org                 (partial set-team-org-api cfg)
-     :get-org-membership           (partial get-org-membership-api cfg)
-     :get-org-membership-by-team   (partial get-org-membership-by-team-api cfg)
-     :get-org-summary              (partial get-org-summary-api cfg)
-     :get-owned-orgs               (partial get-owned-orgs-api cfg)
-     :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
-     :get-org-members              (partial get-org-members-api cfg)
+    {:get-team-organization                 (partial get-team-organization-api cfg)
+     :set-team-organization                 (partial set-team-organization-api cfg)
+     :get-organization-membership           (partial get-organization-membership-api cfg)
+     :get-organization-membership-by-team   (partial get-organization-membership-by-team-api cfg)
+     :get-organization-summary              (partial get-organization-summary-api cfg)
+     :get-owned-organizations               (partial get-owned-organizations-api cfg)
+     :get-owned-organizations-summary       (partial get-owned-organizations-summary-api cfg)
+     :get-organization-members              (partial get-organization-members-api cfg)
      :cleanup-deleted-penpot-user  (partial cleanup-deleted-penpot-user-api cfg)
-     :add-profile-to-org           (partial add-profile-to-org-api cfg)
-     :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
-     :get-org-permissions          (partial get-org-permissions-api cfg)
-     :get-org-sso-by-team          (partial get-org-sso-by-team-api cfg)
-     :get-org-sso                  (partial get-org-sso-api cfg)
+     :add-profile-to-organization           (partial add-profile-to-organization-api cfg)
+     :remove-profile-from-organization      (partial remove-profile-from-organization-api cfg)
+     :get-organization-permissions          (partial get-organization-permissions-api cfg)
+     :get-organization-sso-by-team          (partial get-organization-sso-by-team-api cfg)
+     :get-organization-sso                  (partial get-organization-sso-api cfg)
      :delete-team                  (partial delete-team-api cfg)
-     :remove-team-from-org         (partial remove-team-from-org-api cfg)
+     :remove-team-from-organization         (partial remove-team-from-organization-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
      :get-subscription-warning     (partial get-subscription-warning-api cfg)
      :connectivity                 (partial get-connectivity-api cfg)
@@ -514,9 +514,9 @@
 ;; UTILS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce ^:private team-org-owner-cache
+(defonce ^:private team-organization-owner-cache
   ;; Short TTL: permission checks run on the read path, so we avoid an
-  ;; HTTP call to nitrate per check. The org owner of a team rarely
+  ;; HTTP call to nitrate per check. The organization owner of a team rarely
   ;; changes, and stale entries only grant read access for a few seconds.
   (cache/create :expire "30s" :max-size 2048))
 
@@ -526,24 +526,24 @@
   [cfg]
   (and (map? cfg) (some? (get cfg ::client))))
 
-(def ^:private cache-miss ::no-org-owner)
+(def ^:private cache-miss ::no-organization-owner)
 
-(defn- get-team-org-owner-id
+(defn- get-team-organization-owner-id
   "Returns the organization owner-id for `team-id`, or nil. Cached
   briefly, including negative results (teams with no organization) so
   repeated unauthorized probes don't each hit nitrate."
   [cfg team-id]
-  (let [owner-id (cache/get team-org-owner-cache team-id
+  (let [owner-id (cache/get team-organization-owner-cache team-id
                             (fn [team-id]
-                              (let [team-with-org (call cfg :get-team-org {:team-id team-id})]
-                                (or (get-in team-with-org [:organization :owner-id])
+                              (let [team-with-organization (call cfg :get-team-organization {:team-id team-id})]
+                                (or (get-in team-with-organization [:organization :owner-id])
                                     cache-miss))))]
     (when-not (= owner-id cache-miss)
       owner-id)))
 
 (defn organization-owner-of-team?
   "True if `profile-id` is the owner of the organization that owns
-  `team-id`. Used to grant non-member org owners read-only access to the
+  `team-id`. Used to grant non-member organization owners read-only access to the
   teams of their organizations. `cfg` must be a config map with the
   nitrate client; raw db connections/pools yield false so internal
   callers are unaffected. Returns false when the :nitrate flag is off."
@@ -553,17 +553,17 @@
               (nitrate-client? cfg)
               (some? team-id)
               (some? profile-id))
-     (= profile-id (get-team-org-owner-id cfg team-id)))))
+     (= profile-id (get-team-organization-owner-id cfg team-id)))))
 
 (defn sso-session-authorized?
-  "Fetches the org-SSO config for the given organization or team and checks
+  "Fetches the organization-SSO config for the given organization or team and checks
   whether the HTTP request has a valid session entry for it. Returns a map
   with :authorized and :sso keys."
   [cfg organization-id team-id request]
   (let [session (session/get-session request)
         sso     (if organization-id
-                  (call cfg :get-org-sso {:organization-id organization-id})
-                  (call cfg :get-org-sso-by-team {:team-id team-id}))]
+                  (call cfg :get-organization-sso {:organization-id organization-id})
+                  (call cfg :get-organization-sso-by-team {:team-id team-id}))]
     (if-not (:active sso)
       {:authorized true :sso sso}
       (if-not (str/blank? (:issuer sso))
@@ -596,21 +596,21 @@
                    :cause cause)
           profile)))))
 
-(defn add-org-info-to-team
+(defn add-organization-info-to-team
   "Enriches a team map with organization information from Nitrate.
   Adds organization-id, organization-name, organization-slug, organization-owner-id, and your-penpot fields.
-  Returns the original team unchanged if the request fails or org data is nil.
+  Returns the original team unchanged if the request fails or organization data is nil.
   Propagates `:nitrate-unavailable` so the request is rejected when Nitrate is unreachable."
   [cfg team params]
   (try
     (let [params        (assoc (or params {}) :team-id (:id team))
-          team-with-org (call cfg :get-team-org params)
-          org           (:organization team-with-org)]
-      (if (some? org)
-        (-> (cto/apply-organization team (assoc org :custom-photo
-                                                (when-let [logo-id (:logo-id org)]
+          team-with-organization (call cfg :get-team-organization params)
+          organization           (:organization team-with-organization)]
+      (if (some? organization)
+        (-> (cto/apply-organization team (assoc organization :custom-photo
+                                                (when-let [logo-id (:logo-id organization)]
                                                   (generate-public-uri "assets/by-id/" logo-id))))
-            (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-org)))))
+            (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-organization)))))
         team))
     (catch Throwable cause
       (if (= :nitrate-unavailable (-> cause ex-data :type))
@@ -630,10 +630,10 @@
                       :team-id (:id team)
                       :organization-id (:organization-id params)
                       :is-default (:is-default params))
-        result (call cfg :set-team-org params)]
+        result (call cfg :set-team-organization params)]
     (when (nil? result)
       (ex/raise :type :internal
-                :code :failed-to-set-team-org
+                :code :failed-to-set-team-organization
                 :context {:team-id (:id team)
                           :organization-id (:organization-id params)}))
     team))
