@@ -21,7 +21,6 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(def ^:private nitrate-entry-active-key ::nitrate-entry-active)
 (def ^:private nitrate-entry-pending-popup-key ::nitrate-entry-pending-popup)
 (defn account-age-days
   [profile]
@@ -31,12 +30,7 @@
   []
   (binding [storage/*sync* true]
     (swap! storage/storage assoc
-           nitrate-entry-active-key true
            nitrate-entry-pending-popup-key true)))
-
-(defn nitrate-entry-active?
-  []
-  (true? (get storage/storage nitrate-entry-active-key)))
 
 (defn nitrate-entry-popup-pending?
   []
@@ -46,7 +40,6 @@
   []
   (binding [storage/*sync* true]
     (swap! storage/storage dissoc
-           nitrate-entry-active-key
            nitrate-entry-pending-popup-key)))
 
 (defn show-nitrate-popup
