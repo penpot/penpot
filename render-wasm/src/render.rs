@@ -413,6 +413,10 @@ pub(crate) struct RenderState {
     /// a tile before its text glyph uploads complete (blank first/center tile).
     /// One explicit flush warms the submit path for the rest of the pass.
     pub tile_atlas_flushed: bool,
+    /// Whether we've touched DropShadows→Current once this tile when shadows
+    /// are skipped. A full skip made flush_and_submit very slow (Skia ops-task
+    /// ordering); doing it per shape was wasted GPU work.
+    pub drop_shadows_ops_warmed: bool,
 }
 
 pub struct InteractiveDragCrop {
@@ -596,6 +600,7 @@ impl RenderState {
             preserve_target_during_render: false,
             backbuffer_crop_cache: HashMap::default(),
             tile_atlas_flushed: false,
+            drop_shadows_ops_warmed: false,
         })
     }
 
@@ -3475,6 +3480,7 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )?;
+                    self.drop_shadows_ops_warmed = true;
                 }
 
                 // Render background blur BEFORE save_layer so it modifies
@@ -3507,10 +3513,15 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )?;
-                } else {
-                    // This is necessary or the later flush_and_submit will be very slow
+                    // Real shadow composite already clears DropShadows.
+                    self.drop_shadows_ops_warmed = true;
+                } else if !self.drop_shadows_ops_warmed {
+                    // Touch DropShadows→Current once per tile when shadows are
+                    // skipped. Omitting this entirely made flush_and_submit very
+                    // slow (ops-task ordering); repeating it per shape was waste.
                     self.surfaces
                         .draw_into(SurfaceId::DropShadows, target_surface, None);
+                    self.drop_shadows_ops_warmed = true;
                 }
 
                 // For frames without clip_content, inner strokes must render after children in
@@ -3542,10 +3553,6 @@ impl RenderState {
                     None,
                     target_surface,
                 )?;
-
-                self.surfaces
-                    .canvas(SurfaceId::DropShadows)
-                    .clear(skia::Color::TRANSPARENT);
             } else if visited_children {
                 self.draw_shape_surface_stack_into(Some(element), target_surface);
             }
@@ -3712,6 +3719,7 @@ impl RenderState {
                 // empty tile.
                 self.current_tile_had_shapes = false;
                 self.tile_atlas_flushed = false;
+                self.drop_shadows_ops_warmed = false;
 
                 let viewer_masked_pass = self.viewer_masked_pass();
 
