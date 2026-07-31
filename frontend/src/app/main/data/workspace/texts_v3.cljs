@@ -15,8 +15,11 @@
   (ptk/reify ::v3-update-text-editor-styles
     ptk/UpdateEvent
     (update [_ state]
-      (let [merged-styles (merge (txt/get-default-text-attrs)
-                                 (fonts/valid-default-font
-                                  (get-in state [:workspace-global :default-font]))
-                                 new-styles)]
-        (update-in state [:workspace-wasm-editor-styles id] (fnil merge {}) merged-styles)))))
+      (if (not= id (get-in state [:workspace-local :edition]))
+        state
+        (let [defaults (merge (txt/get-default-text-attrs)
+                              (fonts/valid-default-font
+                               (get-in state [:workspace-global :default-font])))]
+          (update-in state [:workspace-wasm-editor-styles id]
+                     (fn [current-styles]
+                       (merge defaults current-styles new-styles))))))))
