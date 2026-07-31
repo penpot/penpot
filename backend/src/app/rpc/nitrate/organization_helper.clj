@@ -10,7 +10,7 @@
    [app.db :as db]
    [app.nitrate :as nitrate]))
 
-(def ^:private sql:get-org-invitations
+(def ^:private sql:get-organization-invitations
   "SELECT DISTINCT ON (email_to)
           ti.id,
           ti.org_id AS organization_id,
@@ -35,24 +35,24 @@ LEFT JOIN profile AS p
       AND ti.valid_until >= now()
     ORDER BY ti.email_to, ti.valid_until DESC, ti.created_at DESC;")
 
-(defn get-org-team-ids
+(defn get-organization-team-ids
   "Return team ids for an organization.
 
-  Accepts either `cfg` and `organization-id` (fetches the org summary from
-  Nitrate) or an already-resolved org summary map."
+  Accepts either `cfg` and `organization-id` (fetches the organization summary from
+  Nitrate) or an already-resolved organization summary map."
   ([cfg organization-id]
-   (get-org-team-ids (nitrate/call cfg :get-org-summary {:organization-id organization-id})))
-  ([org-summary]
-   (->> (:teams org-summary)
+   (get-organization-team-ids (nitrate/call cfg :get-organization-summary {:organization-id organization-id})))
+  ([organization-summary]
+   (->> (:teams organization-summary)
         (map :id)
         (filter uuid?)
         (vec))))
 
-(defn get-org-invitations
-  "Fetch valid org-level and team-level invitations for an organization."
+(defn get-organization-invitations
+  "Fetch valid organization-level and team-level invitations for an organization."
   [conn organization-id team-ids]
   (let [ids-array (db/create-array conn "uuid" team-ids)]
-    (db/exec! conn [sql:get-org-invitations organization-id ids-array])))
+    (db/exec! conn [sql:get-organization-invitations organization-id ids-array])))
 
 (defn get-team-invitation-emails
   "Return distinct valid team invitation recipient emails."

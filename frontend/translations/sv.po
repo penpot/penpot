@@ -96,7 +96,7 @@ msgid "auth.new-password"
 msgstr "Skriv ett nytt lösenord"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "Du är nu med i %s"
 
 #: src/app/main/ui/auth/recovery.cljs:36
@@ -293,7 +293,7 @@ msgid "common.unpublish"
 msgstr "Avpublicera"
 
 #: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
+msgid "dashboard.leave-organization.toast"
 msgstr "Du är inte längre med i organisationen %s."
 
 #: src/app/main/ui/dashboard/projects.cljs:90
@@ -363,25 +363,25 @@ msgid "dashboard.change-email"
 msgstr "Ändra e-post"
 
 #, unused
-msgid "dashboard.change-org-modal.accept"
+msgid "dashboard.change-organization-modal.accept"
 msgstr "FLYTTA TEAM"
 
 #, unused
-msgid "dashboard.change-org-modal.choose"
+msgid "dashboard.change-organization-modal.choose"
 msgstr "Flytta till:"
 
 #, unused
-msgid "dashboard.change-org-modal.select"
+msgid "dashboard.change-organization-modal.select"
 msgstr "Välj en organisation"
 
 #, unused
-msgid "dashboard.change-org-modal.text"
+msgid "dashboard.change-organization-modal.text"
 msgstr ""
 "Projekt och filer kommer att förbli tillgängliga för teammedlemmar. Teamet "
 "kommer att hämta konfigurationen från den nya organisationen."
 
 #: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
+msgid "dashboard.change-organization-modal.title"
 msgstr "Ändra teamets organisation"
 
 #: src/app/main/ui/dashboard/deleted.cljs:316
@@ -393,7 +393,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(kopia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Skapa org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -812,7 +812,7 @@ msgid "dashboard.invite-profile"
 msgstr "Bjud in personer"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
+msgid "dashboard.leave-organization"
 msgstr "Lämna org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:570, src/app/main/ui/dashboard/sidebar.cljs:577, src/app/main/ui/dashboard/sidebar.cljs:582, src/app/main/ui/dashboard/team.cljs:433
@@ -888,7 +888,7 @@ msgid "dashboard.no-matches-for"
 msgstr "Inga träffar hittades för ”%s”"
 
 #: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
+msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "Du har inte behörighet att lägga till team i någon av dina organisationer."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
@@ -958,7 +958,7 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Sortera efter status"
 
 #: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
+msgid "dashboard.organization-deleted"
 msgstr "Organisationen %s har tagits bort."
 
 #: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
@@ -998,7 +998,7 @@ msgid "dashboard.plugins.try-plugin"
 msgstr "Testa plugin: "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
+msgid "dashboard.plus-create-new-organization"
 msgstr "+ Skapa org"
 
 #: src/app/main/data/dashboard.cljs:805
@@ -1083,36 +1083,36 @@ msgid "dashboard.section.organizations"
 msgstr "Organisationer"
 
 #, unused
-msgid "dashboard.select-org-modal.accept"
+msgid "dashboard.select-organization-modal.accept"
 msgstr "LÄGG TILL I ORGANISATION"
 
 #, unused
-msgid "dashboard.select-org-modal.choose"
+msgid "dashboard.select-organization-modal.choose"
 msgstr "Välj en organisation:"
 
 #: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
+msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
 "\"%s\" tillåter endast organisationsmedlemmar att gå med i dess team. Alla "
 "väntande inbjudningar till personer utanför organisationen kommer att "
 "återkallas."
 
 #: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Väntande inbjudningar till externa användare kommer att avbrytas."
 
 #, unused
-msgid "dashboard.select-org-modal.permission-info"
+msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Här hittar du alla dina organisationer där du har rätt att skapa eller "
 "lägga till team."
 
 #, unused
-msgid "dashboard.select-org-modal.select"
+msgid "dashboard.select-organization-modal.select"
 msgstr "Välj en organisation"
 
 #: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
+msgid "dashboard.select-organization-modal.title"
 msgstr "Lägg till team i en organisation"
 
 #: src/app/main/ui/settings/options.cljs:66
@@ -1236,7 +1236,7 @@ msgid "dashboard.success-move-project"
 msgstr "Ditt projekt har flyttats"
 
 #, unused
-msgid "dashboard.team-belong-org"
+msgid "dashboard.team-belong-organization"
 msgstr "Detta team tillhör nu %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
@@ -1248,7 +1248,7 @@ msgid "dashboard.team-members"
 msgstr "Teammedlemmar"
 
 #, unused
-msgid "dashboard.team-no-longer-belong-org"
+msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Detta team tillhör inte längre organisation %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
@@ -1260,7 +1260,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Lägg till i en organisation"
 
 #: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
+msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr ""
 "Du har inte behörighet att lägga till det här teamet i någon av dina "
 "organisationer."
@@ -1270,7 +1270,7 @@ msgid "dashboard.team-organization.change"
 msgstr "Ändra teamorganisation"
 
 #: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
+msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr "Endast personer inom din organisation kan bjudas in."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
@@ -1336,7 +1336,7 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Gratis Penpot"
 
 #, unused
-msgid "dashboard.user-no-longer-belong-org"
+msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Du är inte längre medlem i organisation %s"
 
 #: src/app/main/ui/settings/options.cljs:109
@@ -1712,15 +1712,15 @@ msgid "errors.only-creator-can-unlock"
 msgstr "Endast skaparen av versionen kan låsa upp den"
 
 #, unused
-msgid "errors.org-leave.no-valid-teams"
+msgid "errors.organization-leave.no-valid-teams"
 msgstr "Det uppstod ett fel när du skulle lämna organisationen. Försök igen."
 
 #, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
+msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "Organisationsägaren kan inte lämna organisationen."
 
 #: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
+msgid "errors.organization-not-found"
 msgstr "Den organisationen finns inte"
 
 #: src/app/main/ui/settings/password.cljs
@@ -3731,17 +3731,17 @@ msgid "modals.add-shared-confirm.message"
 msgstr "Lägg till \"%s\" som delat bibliotek"
 
 #: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
+msgid "modals.before-leave-organization.message"
 msgstr ""
 "Du är den enda medlemmen i vissa av teamen. Dessa team kommer att raderas "
 "tillsammans med deras projekt och filer."
 
 #: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
+msgid "modals.before-leave-organization.title"
 msgstr "INNAN DU LÄMNAR ORGANISATIONEN"
 
 #: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
+msgid "modals.before-leave-organization.warning"
 msgstr "Alla team där du är den enda medlemmen kommer att raderas."
 
 #: src/app/main/ui/workspace/nudge.cljs:59
@@ -3801,22 +3801,22 @@ msgstr "Genom att ta bort ditt konto förlorar du alla dina projekt och arkiv."
 
 #: src/app/main/ui/settings/delete_account.cljs
 #, unused
-msgid "modals.delete-account.info.with-orgs"
+msgid "modals.delete-account.info.with-organizations"
 msgstr ""
 "Denna åtgärd kan inte ångras. Ditt konto, din prenumeration och dina "
 "organisationer kommer att raderas omedelbart. Du kommer också att förlora "
 "åtkomsten till dina nuvarande projekt och filer."
 
 #: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
+msgid "modals.delete-account.owned-organizations.list-title"
 msgstr "Organisationer som kommer att raderas"
 
 #: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
+msgid "modals.delete-account.owned-organizations.members-count"
 msgstr "%s medlemmar"
 
 #: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
+msgid "modals.delete-account.owned-organizations.teams-count"
 msgstr "%s team"
 
 #: src/app/main/ui/settings/delete_account.cljs:64
@@ -3900,7 +3900,7 @@ msgid "modals.delete-font.title"
 msgstr "Tar bort typsnitt"
 
 #: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
+msgid "modals.delete-organization-team-confirm.message"
 msgstr ""
 "Är du säker på att du vill ta bort det här teamet som är en del av "
 "organisation %s?"
@@ -4048,7 +4048,7 @@ msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "Inga inbjudningar skickades"
 
 #: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
 "Endast medlemmar i organisationen \"%s\" kan bjudas in till det här teamet, "
 "och de är alla redan teammedlemmar. Om du behöver mer information, kontakta "
@@ -4135,35 +4135,35 @@ msgid "modals.leave-confirm.title"
 msgstr "Lämnar teamet"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
+msgid "modals.leave-organization-and-reassign.hint"
 msgstr ""
 "Du är ägare till teamen i vissa organisationer. Vänligen befordra en annan "
 "medlem till att bli ägare."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
+msgid "modals.leave-organization-and-reassign.hint-delete"
 msgstr ""
 "Du är den enda medlemmen i vissa av teamen. Dessa team kommer att raderas "
 "tillsammans med deras projekt och filer."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
+msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr ""
 "Du är också ägare till vissa organisationers team. Vänligen befordra en "
 "annan medlem till att bli ägare."
 
 #: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
+msgid "modals.leave-organization-confirm.accept"
 msgstr "Lämna organisation"
 
 #: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
+msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "Du kommer permanent att förlora åtkomsten till alla team, projekt och filer "
 "i den."
 
 #: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
+msgid "modals.leave-organization-confirm.title"
 msgstr "Lämnar du organisation %s?"
 
 #: src/app/main/ui/delete_shared.cljs:54
@@ -4239,21 +4239,21 @@ msgid "modals.remove-shared-confirm.message"
 msgstr "Ta bort \"%s\" som delat bibliotek"
 
 #: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
+msgid "modals.remove-team-organization.accept"
 msgstr "Ta bort från organisationen"
 
 #: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
+msgid "modals.remove-team-organization.info"
 msgstr ""
 "Projekt och filer kommer att förbli tillgängliga för teammedlemmar, men "
 "organisationens inställningar kommer inte längre att gälla."
 
 #: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
+msgid "modals.remove-team-organization.text"
 msgstr "Är du säker på att du vill ta bort teamet '%s' från organisationen '%s'?"
 
 #: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
+msgid "modals.remove-team-organization.title"
 msgstr "TA BORT TEAMET FRÅN ORGANISATIONEN"
 
 #: src/app/main/ui/workspace/nudge.cljs:52
@@ -4321,7 +4321,7 @@ msgid "nitrate.activation-success.active-until"
 msgstr "Ditt abonnemang är aktivt till %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
+msgid "nitrate.activation-success.create-organization"
 msgstr "Skapa organisation"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
@@ -4374,7 +4374,7 @@ msgstr ""
 "korrekt konfigurerat."
 
 #, unused
-msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "Din organisation kommer att raderas."
 
 #, unused
@@ -5671,7 +5671,7 @@ msgid "shortcuts.zoom-selected"
 msgstr "Zooma in markerad"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
+msgid "subscription.banner.create-organization-info"
 msgstr ""
 "Skapa en organisation och se exakt hur Enterprise fungerar. Sätt regler, "
 "hantera dina team och upptäck en ny nivå av kontroll över ditt "

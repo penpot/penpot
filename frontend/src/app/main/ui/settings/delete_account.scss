@@ -60,7 +60,7 @@
   color: var(--modal-title-foreground-color);
 }
 
-.orgs-section {
+.organizations-section {
   @include t.use-typography("body-medium");
 
   display: flex;
@@ -70,7 +70,7 @@
   gap: var(--sp-l);
 }
 
-.orgs-section-toggle {
+.organizations-section-toggle {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -81,20 +81,20 @@
   cursor: pointer;
 }
 
-.orgs-section-title {
+.organizations-section-title {
   color: var(--color-accent-tertiary);
 }
 
-.orgs-section-arrow {
+.organizations-section-arrow {
   color: var(--color-accent-tertiary);
   transition: transform 0.15s ease;
 }
 
-.orgs-section-arrow.expanded {
+.organizations-section-arrow.expanded {
   transform: rotate(90deg);
 }
 
-.org-list {
+.organization-list {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -106,23 +106,23 @@
   overflow-y: auto;
 }
 
-.org-item {
+.organization-item {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: var(--sp-s);
 }
 
-.org-info {
+.organization-info {
   display: flex;
   flex-direction: column;
 }
 
-.org-name {
+.organization-name {
   color: var(--modal-title-foreground-color);
 }
 
-.org-counts {
+.organization-counts {
   display: flex;
   flex-direction: row;
   gap: var(--sp-s);

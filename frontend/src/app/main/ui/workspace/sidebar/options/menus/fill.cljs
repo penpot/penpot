@@ -84,8 +84,10 @@
         empty-fills?   (and (not multiple?)
                             (= 0 (count fills)))
 
-        open*          (mf/use-state has-fills?)
-        open?          (deref open*)
+        ;; Derive the open state from `has-fills?` on every render so it stays
+        ;; in sync even when the fills arrive after mount (editor v3)
+        open*          (mf/use-state true)
+        open?          (and has-fills? (deref open*))
 
         toggle-content (mf/use-fn #(swap! open* not))
         open-content   (mf/use-fn #(reset! open* true))

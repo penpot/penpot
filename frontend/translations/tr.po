@@ -98,7 +98,7 @@ msgid "auth.new-password"
 msgstr "Yeni bir parola gir"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "Artık %s organizasyonunun bir parçasısınız"
 
 #: src/app/main/ui/auth/recovery.cljs:36
@@ -294,7 +294,7 @@ msgid "common.unpublish"
 msgstr "Yayından kaldır"
 
 #: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
+msgid "dashboard.leave-organization.toast"
 msgstr "Artık %s organizasyonunun bir parçası değilsiniz."
 
 #: src/app/main/ui/dashboard/projects.cljs:90
@@ -364,25 +364,25 @@ msgid "dashboard.change-email"
 msgstr "E-posta adresini değiştir"
 
 #, unused
-msgid "dashboard.change-org-modal.accept"
+msgid "dashboard.change-organization-modal.accept"
 msgstr "TAKIMI TAŞI"
 
 #, unused
-msgid "dashboard.change-org-modal.choose"
+msgid "dashboard.change-organization-modal.choose"
 msgstr "Şuraya taşı:"
 
 #, unused
-msgid "dashboard.change-org-modal.select"
+msgid "dashboard.change-organization-modal.select"
 msgstr "Organizasyon seç"
 
 #, unused
-msgid "dashboard.change-org-modal.text"
+msgid "dashboard.change-organization-modal.text"
 msgstr ""
 "Projeler ve dosyalar takım üyeleri tarafından erişilebilir olmaya devam "
 "edecek. Takım, yeni organizasyondan yapılandırmayı alacak."
 
 #: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
+msgid "dashboard.change-organization-modal.title"
 msgstr "Takımın organizasyonunu değiştir"
 
 #: src/app/main/ui/dashboard/deleted.cljs:316
@@ -394,7 +394,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(kopya)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Yeni organizasyon oluştur"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -816,7 +816,7 @@ msgid "dashboard.invite-profile"
 msgstr "İnsanları davet et"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
+msgid "dashboard.leave-organization"
 msgstr "Organizasyondan ayrıl"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:570, src/app/main/ui/dashboard/sidebar.cljs:577, src/app/main/ui/dashboard/sidebar.cljs:582, src/app/main/ui/dashboard/team.cljs:433
@@ -894,7 +894,7 @@ msgid "dashboard.no-matches-for"
 msgstr "\"%s\" için sonuç bulunamadı"
 
 #: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
+msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "Hiçbir organizasyonunuza takım ekleme izniniz yok."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
@@ -964,7 +964,7 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Duruma göre sırala"
 
 #: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
+msgid "dashboard.organization-deleted"
 msgstr "%s organizasyonu silindi."
 
 #: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
@@ -1004,7 +1004,7 @@ msgid "dashboard.plugins.try-plugin"
 msgstr "Eklentiyi deneyin: "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
+msgid "dashboard.plus-create-new-organization"
 msgstr "+ Organizasyon oluştur"
 
 #: src/app/main/data/dashboard.cljs:805
@@ -1091,36 +1091,36 @@ msgid "dashboard.section.organizations"
 msgstr "Organizasyonlar"
 
 #, unused
-msgid "dashboard.select-org-modal.accept"
+msgid "dashboard.select-organization-modal.accept"
 msgstr "ORGANİZASYONA EKLE"
 
 #, unused
-msgid "dashboard.select-org-modal.choose"
+msgid "dashboard.select-organization-modal.choose"
 msgstr "Organizasyon seç:"
 
 #: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
+msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
 "\"%s\", yalnızca organizasyon üyelerinin takımlarına katılmasına izin "
 "veriyor. Organizasyon dışındaki kişilere gönderilmiş bekleyen davetler "
 "iptal edilecektir."
 
 #: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Dış kullanıcılara gönderilen bekleyen davetler iptal edilecektir."
 
 #, unused
-msgid "dashboard.select-org-modal.permission-info"
+msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Burada, takım oluşturmanıza veya eklemenize izin verilen tüm "
 "organizasyonlarınızı bulabilirsiniz."
 
 #, unused
-msgid "dashboard.select-org-modal.select"
+msgid "dashboard.select-organization-modal.select"
 msgstr "Organizasyon seç"
 
 #: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
+msgid "dashboard.select-organization-modal.title"
 msgstr "Takımı bir organizasyona ekle"
 
 #: src/app/main/ui/settings/options.cljs:66
@@ -1244,7 +1244,7 @@ msgid "dashboard.success-move-project"
 msgstr "Projen başarıyla taşındı"
 
 #, unused
-msgid "dashboard.team-belong-org"
+msgid "dashboard.team-belong-organization"
 msgstr "Bu takım artık %s organizasyonuna ait"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
@@ -1256,7 +1256,7 @@ msgid "dashboard.team-members"
 msgstr "Takım üyeleri"
 
 #, unused
-msgid "dashboard.team-no-longer-belong-org"
+msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Bu takım artık %s organizasyonuna ait değil"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
@@ -1268,7 +1268,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Organizasyona ekle"
 
 #: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
+msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr "Bu takımı hiçbir organizasyonunuza ekleme izniniz yok."
 
 #: src/app/main/ui/dashboard/team.cljs:1632
@@ -1276,7 +1276,7 @@ msgid "dashboard.team-organization.change"
 msgstr "Takım organizasyonunu değiştir"
 
 #: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
+msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr "Yalnızca organizasyonunuzdaki kişiler davet edilebilir."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
@@ -1342,7 +1342,7 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Ücretsiz"
 
 #, unused
-msgid "dashboard.user-no-longer-belong-org"
+msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Artık %s organizasyonunun üyesi değilsiniz"
 
 #: src/app/main/ui/settings/options.cljs:109
@@ -1719,15 +1719,15 @@ msgid "errors.only-creator-can-unlock"
 msgstr "Yalnızca sürüm oluşturucu onun kilidini açabilir"
 
 #, unused
-msgid "errors.org-leave.no-valid-teams"
+msgid "errors.organization-leave.no-valid-teams"
 msgstr "Organizasyondan ayrılma sırasında bir hata oluştu. Lütfen tekrar deneyin."
 
 #, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
+msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "Organizasyon sahibi organizasyondan ayrılamaz."
 
 #: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
+msgid "errors.organization-not-found"
 msgstr "Bu organizasyon yok"
 
 #: src/app/main/ui/settings/password.cljs
@@ -3737,17 +3737,17 @@ msgid "modals.add-shared-confirm.message"
 msgstr "Paylaşılmış Kütüphane olarak “%s” Ekle"
 
 #: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
+msgid "modals.before-leave-organization.message"
 msgstr ""
 "Bazı takımların tek üyesi sizsiniz. Bu takımlar, projeleriyle ve "
 "dosyalarıyla birlikte silinecek."
 
 #: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
+msgid "modals.before-leave-organization.title"
 msgstr "ORGANİZASYONDAN AYRILMADAN ÖNCE"
 
 #: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
+msgid "modals.before-leave-organization.warning"
 msgstr "Tek üyesi olduğunuz tüm takımlar silinecektir."
 
 #: src/app/main/ui/workspace/nudge.cljs:59
@@ -3807,22 +3807,22 @@ msgstr "Hesabını silerek tüm projelerini ve arşivlerini kaybedeceksin."
 
 #: src/app/main/ui/settings/delete_account.cljs
 #, unused
-msgid "modals.delete-account.info.with-orgs"
+msgid "modals.delete-account.info.with-organizations"
 msgstr ""
 "Bu işlem geri alınamaz. Hesabınız, aboneliğiniz ve organizasyonlarınız "
 "hemen silinecektir. Ayrıca var olan projelerinize ve dosyalarınıza "
 "erişiminizi de kaybedeceksiniz."
 
 #: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
+msgid "modals.delete-account.owned-organizations.list-title"
 msgstr "Silinecek organizasyonlar"
 
 #: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
+msgid "modals.delete-account.owned-organizations.members-count"
 msgstr "%s üye"
 
 #: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
+msgid "modals.delete-account.owned-organizations.teams-count"
 msgstr "%s takım"
 
 #: src/app/main/ui/settings/delete_account.cljs:64
@@ -3906,7 +3906,7 @@ msgid "modals.delete-font.title"
 msgstr "Yazı tipini sil"
 
 #: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
+msgid "modals.delete-organization-team-confirm.message"
 msgstr ""
 "%s organizasyonunun parçası olan bu takımı silmek istediğinizden emin "
 "misiniz?"
@@ -4054,7 +4054,7 @@ msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "Davet gönderilmedi"
 
 #: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
 "Bu takıma yalnızca \"%s\" organizasyonunun üyeleri davet edilebilir ve bu "
 "kişiler zaten takımın üyeleridir. Daha fazla bilgiye ihtiyacınız varsa, "
@@ -4141,35 +4141,35 @@ msgid "modals.leave-confirm.title"
 msgstr "Takımdan ayrıl"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
+msgid "modals.leave-organization-and-reassign.hint"
 msgstr ""
 "Bazı organizasyon takımlarının sahibi sizsiniz. Lütfen başka bir üyeyi "
 "sahibi olarak atayın."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
+msgid "modals.leave-organization-and-reassign.hint-delete"
 msgstr ""
 "Bazı takımların tek üyesi sizsiniz. Bu takımlar, projeleriyle ve "
 "dosyalarıyla birlikte silinecek."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
+msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr ""
 "Ayrıca, bazı organizasyon takımlarının sahibi sizsiniz. Lütfen başka bir "
 "üyeyi sahibi olarak atayın."
 
 #: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
+msgid "modals.leave-organization-confirm.accept"
 msgstr "Organizasyondan ayrıl"
 
 #: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
+msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "İçindeki tüm takımlara, projelere ve dosyalara erişiminizi kalıcı olarak "
 "kaybedeceksiniz."
 
 #: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
+msgid "modals.leave-organization-confirm.title"
 msgstr "%s organizasyonundan ayrılıyor musunuz?"
 
 #: src/app/main/ui/delete_shared.cljs:54
@@ -4244,21 +4244,21 @@ msgid "modals.remove-shared-confirm.message"
 msgstr "“%s” Paylaşılan Kütüphanesini Kaldır"
 
 #: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
+msgid "modals.remove-team-organization.accept"
 msgstr "Organizasyondan kaldır"
 
 #: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
+msgid "modals.remove-team-organization.info"
 msgstr ""
 "Projeler ve dosyalar takım üyeleri tarafından kullanılabilir olmaya devam "
 "edecek, ancak organizasyonun ayarları artık geçerli olmayacaktır."
 
 #: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
+msgid "modals.remove-team-organization.text"
 msgstr "'%s' takımını '%s' organizasyonundan kaldırmak istediğinizden emin misiniz?"
 
 #: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
+msgid "modals.remove-team-organization.title"
 msgstr "TAKIMI ORGANİZASYONDAN KALDIR"
 
 #: src/app/main/ui/workspace/nudge.cljs:52
@@ -4326,7 +4326,7 @@ msgid "nitrate.activation-success.active-until"
 msgstr "Planınız %s tarihine kadar etkindir."
 
 #: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
+msgid "nitrate.activation-success.create-organization"
 msgstr "Organizasyon oluştur"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
@@ -4379,7 +4379,7 @@ msgstr ""
 "ayarlandığından emin olacağız."
 
 #, unused
-msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "Organizasyonunuz silinecek."
 
 #, unused
@@ -5673,7 +5673,7 @@ msgid "shortcuts.zoom-selected"
 msgstr "Seçilene yakınlaştır"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
+msgid "subscription.banner.create-organization-info"
 msgstr ""
 "Bir organizasyon oluşturun ve Kurumsal planın tam olarak nasıl çalıştığını "
 "görün. Kurallar belirleyin, takımlarınızı yönetin ve tasarım iş akışınız "

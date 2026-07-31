@@ -14,29 +14,29 @@
    :new-team-members "anyone"})
 
 (defn- can-create-team?
-  [{:keys [is-org-owner? permission-value]}]
-  (or is-org-owner?
+  [{:keys [is-organization-owner? permission-value]}]
+  (or is-organization-owner?
       (= permission-value "any")))
 
 (defn- can-delete-team?
-  [{:keys [is-org-owner? permission-value team-perms]}]
+  [{:keys [is-organization-owner? permission-value team-perms]}]
   (cond
-    ;; Org owners can always delete teams inside their organizations.
-    is-org-owner?
+    ;; Organization owners can always delete teams inside their organizations.
+    is-organization-owner?
     true
     (= permission-value "onlyOwners")
     (boolean (:is-owner team-perms))
     :else false))
 
 (defn- can-move-team?
-  [{:keys [permission-value target-org-same-owner?]}]
+  [{:keys [permission-value target-organization-same-owner?]}]
   (cond
     (= permission-value "never")
     false
     (= permission-value "always")
     true
     (= permission-value "myOrganizations")
-    (true? target-org-same-owner?)
+    (true? target-organization-same-owner?)
     :else false))
 
 (defn- can-invite-to-team?
@@ -67,36 +67,36 @@
    :add-anybody-to-team  {:permission-key :new-team-members
                           :check-fn       can-add-anybody-to-team?}})
 
-(defn- normalize-org-permissions
-  [org-perms]
-  (merge defaults (or (:permissions org-perms) {})))
+(defn- normalize-organization-permissions
+  [organization-perms]
+  (merge defaults (or (:permissions organization-perms) {})))
 
 (defn- owner?
-  [org-perms profile-id]
-  (= profile-id (:owner-id org-perms)))
+  [organization-perms profile-id]
+  (= profile-id (:owner-id organization-perms)))
 
 (defn allowed?
   "Returns true only for explicitly allowed actions (fail-closed)."
-  [action {:keys [org-perms profile-id team-perms target-org-same-owner?]}]
+  [action {:keys [organization-perms profile-id team-perms target-organization-same-owner?]}]
   (let [{:keys [permission-key check-fn] :as rule}
         (get action-rules action)
-        permissions (normalize-org-permissions org-perms)
-        is-org-owner? (owner? org-perms profile-id)
+        permissions (normalize-organization-permissions organization-perms)
+        is-organization-owner? (owner? organization-perms profile-id)
         permission-value (get permissions permission-key)]
     (cond
       (nil? rule) false
-      :else (boolean (check-fn {:is-org-owner? is-org-owner?
+      :else (boolean (check-fn {:is-organization-owner? is-organization-owner?
                                 :permission-value permission-value
                                 :team-perms team-perms
-                                :target-org-same-owner? target-org-same-owner?})))))
+                                :target-organization-same-owner? target-organization-same-owner?})))))
 
 (defn can-send-invitations?
   [{:keys [nitrate-enabled? organization profile-id team-permissions]}]
-  (let [in-org? (and nitrate-enabled? organization)]
-    (if in-org?
+  (let [in-organization? (and nitrate-enabled? organization)]
+    (if in-organization?
       (allowed? :send-invitations
-                {:org-perms {:owner-id    (:owner-id organization)
-                             :permissions (:permissions organization)}
+                {:organization-perms {:owner-id    (:owner-id organization)
+                                      :permissions (:permissions organization)}
                  :profile-id profile-id
                  :team-perms team-permissions})
       (or (boolean (:is-owner team-permissions))

@@ -148,23 +148,19 @@
                           :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/start-editing-selected))}
 
-   :start-measure        {:tooltip (ds/alt "")
-                          :command ["alt" "."]
-                          :type "keydown"
-                          :subsections [:edit]
-                          :section [:workspace]
-                          :fn #(emit-when-no-readonly (dw/toggle-distances-display true))}
-
-   :stop-measure         {:tooltip (ds/alt "")
-                          :command ["alt" "."]
-                          :type "keyup"
-                          :subsections [:edit]
-                          :section [:workspace]
-                          :fn #(emit-when-no-readonly (dw/toggle-distances-display false))}
+   :show-measure        {:tooltip (ds/alt "")
+                         :command ["alt" "."]
+                         :type ["keydown" "keyup"]
+                         :subsections [:tools]
+                         :section [:workspace]
+                         :fn #(emit-when-no-readonly
+                               (let [type (.-type %)]
+                                 (dw/toggle-distances-display (if (= type "keydown") true false))))}
 
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
@@ -191,6 +187,7 @@
    :ungroup              {:tooltip (ds/shift "G")
                           :command "shift+g"
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/ungroup-selected))}
 
    :mask                 {:tooltip (ds/meta "M")
@@ -363,11 +360,13 @@
    :draw-line            {:tooltip "L"
                           :command "l"
                           :subsections [:tools]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :line))}
 
    :draw-arrow           {:tooltip (ds/shift "L")
                           :command "shift+l"
                           :subsections [:tools]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :arrow))}
 
    :draw-curve           {:tooltip (ds/shift "C")

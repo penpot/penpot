@@ -250,13 +250,13 @@
     f))
 
 
-(defonce ^:private org-sso-auth-cache
+(defonce ^:private organization-sso-auth-cache
   (cache/create :expire "15m" :max-size 1024))
 
-(defn invalidate-org-sso-cache-by-org!
-  "Invalidates all org-SSO authorization cache entries for the given organization-id."
+(defn invalidate-organization-sso-cache-by-organization!
+  "Invalidates all organization-SSO authorization cache entries for the given organization-id."
   [organization-id]
-  (cache/invalidate-if org-sso-auth-cache #(= (:organization-id %) organization-id)))
+  (cache/invalidate-if organization-sso-auth-cache #(= (:organization-id %) organization-id)))
 
 (defn- wrap-nitrate-sso
   "Enforce Nitrate organization SSO authentication for RPC handlers.
@@ -268,16 +268,16 @@
    4. Explicit :file-id param -> lookup file's team via join
    5. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
 
-   Once the context is resolved, checks if the user is authorized within that org's
+   Once the context is resolved, checks if the user is authorized within that organization's
    SSO session using nitrate/sso-session-authorized?. Authorized results are cached
    by [profile-id cache-ref] for 15 minutes to avoid repeated lookups.
 
    Only activates when:
    - Nitrate flag is enabled
    - Endpoint requires authentication (::auth true by default)
-   - Endpoint is not marked with ::nitrate/org-sso false
+   - Endpoint is not marked with ::nitrate/organization-sso false
 
-   Raises :nitrate-sso-required error if user is not authorized in the org."
+   Raises :nitrate-sso-required error if user is not authorized in the organization."
   [_ f mdata]
   (if (and (contains? cf/flags :nitrate)
            (::auth mdata true) ;; only for endpoints that needs auth
@@ -299,7 +299,7 @@
           (let [cache-ref  (or organization-id team-id project-id file-id)
 
                 cache-key  [profile-id cache-ref]
-                cached     (cache/get org-sso-auth-cache cache-key)
+                cached     (cache/get organization-sso-auth-cache cache-key)
                 result     (if (some? cached)
                              cached
                              (let [team-id                  (when-not organization-id
@@ -314,7 +314,7 @@
                                    entry                    {:authorized      authorized
                                                              :organization-id (:organization-id sso)}]
                                (when authorized
-                                 (cache/get org-sso-auth-cache cache-key (constantly entry)))
+                                 (cache/get organization-sso-auth-cache cache-key (constantly entry)))
                                entry))]
             (if (:authorized result)
               (f cfg params)

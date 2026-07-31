@@ -46,7 +46,9 @@
                                   (drop-last default-chars-list))
 
         ctx-customs             (get custom-shortcuts context {})
-        current-command         (or (get ctx-customs shortcut-key) default-command)
+        custom-val              (get ctx-customs shortcut-key)
+        current-command         (or custom-val default-command)
+        customized?             (and (some? custom-val) (seq custom-val) (not= custom-val default-command))
 
         current-managed-list    (if (coll? current-command)
                                   current-command
@@ -59,7 +61,7 @@
         current-short-char-list (if (= 1 (count current-chars-list))
                                   current-chars-list
                                   (drop-last current-chars-list))]
-    [default-last-element default-short-char-list current-last-element current-command current-short-char-list]))
+    [default-last-element default-short-char-list current-last-element current-command current-short-char-list customized?]))
 
 (mf/defc restore-all-modal
   {::mf/register modal/components
@@ -107,9 +109,11 @@
                   default-short-char-list
                   current-last-element
                   current-command
-                  current-short-char-list] (extract-shortcut-keys shortcut-key custom-shortcuts context)
+                  current-short-char-list
+                  customized?] (extract-shortcut-keys shortcut-key custom-shortcuts context)
                  current-penultimate     (last current-short-char-list)
-                 default-penultimate     (last default-short-char-list)]
+                 default-penultimate     (last default-short-char-list)
+                 command-class           (if customized? (stl/css :customized-command) (stl/css :default-command))]
              [:tr {:key (dm/str (name context) "-" (name shortcut-key))
                    :class (stl/css :shortcuts-list-item)}
               [:td {:class (stl/css :shortcut-name)}
@@ -122,7 +126,7 @@
                     (for [char chars]
                       [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
                                                :char char
-                                               :class (stl/css :default-command)
+                                               :class command-class
                                                :command shortcut-key}])
                     (when (not= chars current-penultimate) [:span {:class (stl/css :space)} ","])]))
                (when (not= current-last-element current-penultimate)
@@ -131,7 +135,7 @@
                   (for [char current-last-element]
                     [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
                                              :char char
-                                             :class (stl/css :default-command)
+                                             :class command-class
                                              :command shortcut-key}])])]
 
               [:td {:class (stl/css :shortcut-command)}

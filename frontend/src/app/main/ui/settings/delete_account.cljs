@@ -13,7 +13,7 @@
    [app.main.data.profile :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.components.org-avatar :refer [org-avatar*]]
+   [app.main.ui.components.organization-avatar :refer [organization-avatar*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -33,9 +33,9 @@
   {::mf/register modal/components
    ::mf/register-as :delete-account}
   []
-  (let [orgs* (mf/use-state nil)
-        orgs  (deref orgs*)
-        has-orgs? (seq orgs)
+  (let [organizations* (mf/use-state nil)
+        organizations  (deref organizations*)
+        has-organizations? (seq organizations)
 
         expanded* (mf/use-state true)
         expanded? (deref expanded*)
@@ -51,11 +51,11 @@
       (if (contains? cf/flags :nitrate)
         (let [sub (->> (rp/cmd! :get-owned-organizations-summary {})
                        (rx/subs!
-                        (fn [result] (reset! orgs* (or result [])))
-                        (fn [_] (reset! orgs* []))))]
+                        (fn [result] (reset! organizations* (or result [])))
+                        (fn [_] (reset! organizations* []))))]
           (fn []
             (rx/dispose! sub)))
-        (reset! orgs* [])))
+        (reset! organizations* [])))
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -69,33 +69,33 @@
        [:div {:class (stl/css :warning-notice)}
         [:& context-notification
          {:level :warning
-          :content (tr (if has-orgs?
-                         "modals.delete-account.info.with-orgs"
+          :content (tr (if has-organizations?
+                         "modals.delete-account.info.with-organizations"
                          "modals.delete-account.info"))}]]
 
-       (when has-orgs?
-         [:div {:class (stl/css :orgs-section)}
-          [:button {:class (stl/css :orgs-section-toggle)
+       (when has-organizations?
+         [:div {:class (stl/css :organizations-section)}
+          [:button {:class (stl/css :organizations-section-toggle)
                     :type "button"
                     :aria-expanded expanded?
                     :on-click on-toggle}
-           [:span {:class (stl/css :orgs-section-title)}
-            (tr "modals.delete-account.owned-orgs.list-title")]
+           [:span {:class (stl/css :organizations-section-title)}
+            (tr "modals.delete-account.owned-organizations.list-title")]
            [:> icon* {:icon-id i/arrow
                       :size "s"
-                      :class (stl/css-case :orgs-section-arrow true
+                      :class (stl/css-case :organizations-section-arrow true
                                            :expanded expanded?)}]]
           (when expanded?
-            [:ul {:class (stl/css :org-list)}
-             (for [{:keys [id name team-count member-count] :as org} orgs]
-               [:li {:class (stl/css :org-item) :key id}
-                [:> org-avatar* {:org org :size "xxl"}]
-                [:div {:class (stl/css :org-info)}
-                 [:span {:class (stl/css :org-name)} name]
-                 [:div {:class (stl/css :org-counts)}
-                  [:span (tr "modals.delete-account.owned-orgs.teams-count"
+            [:ul {:class (stl/css :organization-list)}
+             (for [{:keys [id name team-count member-count] :as organization} organizations]
+               [:li {:class (stl/css :organization-item) :key id}
+                [:> organization-avatar* {:organization organization :size "xxl"}]
+                [:div {:class (stl/css :organization-info)}
+                 [:span {:class (stl/css :organization-name)} name]
+                 [:div {:class (stl/css :organization-counts)}
+                  [:span (tr "modals.delete-account.owned-organizations.teams-count"
                              (i18n/c (or team-count 0)))]
-                  [:span (tr "modals.delete-account.owned-orgs.members-count"
+                  [:span (tr "modals.delete-account.owned-organizations.members-count"
                              (i18n/c (or member-count 0)))]]]])])])]
 
       [:div {:class (stl/css :modal-footer)}

@@ -266,53 +266,6 @@
      2 :multiple
      0)))
 
-(defn- text-editor-translate-vertical-align
-  [vertical-align]
-  (case vertical-align
-    0 "top"
-    1 "center"
-    2 "bottom"))
-
-(defn- text-editor-translate-text-align
-  [text-align]
-  (case text-align
-    0 "left"
-    1 "center"
-    2 "right"
-    text-align))
-
-(defn- text-editor-translate-text-direction
-  [text-direction]
-  (case text-direction
-    0 "ltr"
-    1 "rtl"
-    text-direction))
-
-(defn- text-editor-translate-text-transform
-  [text-transform]
-  (case text-transform
-    0 "none"
-    1 "lowercase"
-    2 "uppercase"
-    3 "capitalize"
-    text-transform))
-
-(defn- text-editor-translate-text-decoration
-  [text-decoration]
-  (case text-decoration
-    0 "none"
-    1 "underline"
-    2 "linethrough"
-    3 "overline"
-    text-decoration))
-
-(defn- text-editor-translate-font-style
-  [font-style]
-  (case font-style
-    0 "normal"
-    1 "italic"
-    font-style))
-
 (defn- text-editor-compute-font-variant-id
   [font-id font-weight font-style]
   (let [font-data (main-fonts/get-font-data font-id)
@@ -362,7 +315,7 @@
               line-height-value (aget heap-f32 (+ u32-offset 29))
               letter-spacing-value (aget heap-f32 (+ u32-offset 30))
               font-id (fonts/uuid->font-id font-family-id-value)
-              font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
+              font-style-value (sr/untranslate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
               ;; A font variant is defined by its family + weight + style, so it
               ;; is "mixed" when any of those is mixed. When the family itself is
@@ -387,11 +340,11 @@
               selected-colors (if (= multiple-fills 1) fills nil)
               fills (if (= multiple-fills 1) :multiple fills)
 
-              result {:vertical-align (text-editor-translate-vertical-align vertical-align)
-                      :text-align (text-editor-translate-text-align (text-editor-get-style-property text-align-state text-align-value))
-                      :text-direction (text-editor-translate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
-                      :text-decoration (text-editor-translate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
-                      :text-transform (text-editor-translate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
+              result {:vertical-align (sr/untranslate-vertical-align vertical-align)
+                      :text-align (sr/untranslate-text-align (text-editor-get-style-property text-align-state text-align-value))
+                      :text-direction (sr/untranslate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
+                      :text-decoration (sr/untranslate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
+                      :text-transform (sr/untranslate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
                       :line-height (text-editor-get-style-property line-height-state line-height-value)
                       :letter-spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)
                       :font-size (text-editor-get-style-property font-size-state font-size-value)
