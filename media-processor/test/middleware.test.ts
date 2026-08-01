@@ -194,6 +194,24 @@ describe("errorHandler", () => {
       hint: "Internal server error",
     });
   });
+
+  it("does not write response if headers already sent", () => {
+    const err = new ProcessingError(400, {
+      type: "validation",
+      code: "bad-input",
+      hint: "invalid value",
+    });
+
+    const resWithHeadersSent = {
+      ...res,
+      headersSent: true,
+    };
+
+    errorHandler(err, mockReq(), resWithHeadersSent, next);
+
+    expect(resWithHeadersSent.status).not.toHaveBeenCalled();
+    expect(resWithHeadersSent.json).not.toHaveBeenCalled();
+  });
 });
 
 describe("sharedKeyAuth", () => {

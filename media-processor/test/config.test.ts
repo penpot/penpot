@@ -17,7 +17,7 @@ describe("loadConfig", () => {
     expect(config.port).toBe(6065);
     expect(config.host).toBe("0.0.0.0");
     expect(config.maxConcurrentRequests).toBe(10);
-    expect(config.requestTimeout).toBe(60000);
+    expect(config.requestTimeout).toBe(180000);
     expect(config.maxFileSize).toBe(367001600);
     expect(config.memoryThreshold).toBe(10485760);
   });

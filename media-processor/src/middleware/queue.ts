@@ -29,8 +29,8 @@ export function createQueueMiddleware(concurrency: number) {
 
             // Fallback: release when response finishes (covers error handler path)
             // This ensures queue slot is released even if Multer throws before route handler runs
+            // Note: We do NOT release on "close" because processing should continue until completion
             res.on("finish", release);
-            res.on("close", release);
 
             next();
           })

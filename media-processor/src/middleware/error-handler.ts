@@ -17,6 +17,10 @@ export class ProcessingError extends Error {
 }
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
+  if (res.headersSent) {
+    return;
+  }
+
   if (err instanceof ProcessingError) {
     logger.warn({ err, statusCode: err.statusCode }, "Processing error");
     res.status(err.statusCode).json(err.errorBody);

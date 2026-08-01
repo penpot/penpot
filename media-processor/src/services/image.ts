@@ -58,6 +58,10 @@ function validateOutputDimensions(width: number, height: number): void {
 }
 
 export async function getImageInfo(input: FileInput, size: number, signal?: AbortSignal): Promise<ImageInfo> {
+  if (signal?.aborted) {
+    throw new Error("Request cancelled");
+  }
+
   let metadata;
   try {
     metadata = await sharp(input).metadata();

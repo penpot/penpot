@@ -338,4 +338,39 @@ describe("queueMiddleware", () => {
     // Second request should proceed
     expect(next2).toHaveBeenCalled();
   });
+
+  it("holds queue slot when client disconnects (close event)", async () => {
+    const middleware = createQueueMiddleware(1);
+    const req1 = mockReq();
+    const res1 = mockRes();
+    const next1 = vi.fn();
+
+    const req2 = mockReq();
+    const res2 = mockRes();
+    const next2 = vi.fn();
+
+    middleware(req1, res1, next1);
+    middleware(req2, res2, next2);
+
+    // First request is processing, second is queued
+    expect(next1).toHaveBeenCalled();
+    expect(next2).not.toHaveBeenCalled();
+
+    // Simulate client disconnect (close event)
+    res1.emit("close");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Second request should NOT proceed because slot is still held
+    expect(next2).not.toHaveBeenCalled();
+
+    // Now release the slot (simulating processing completion)
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Now second request should proceed
+    expect(next2).toHaveBeenCalled();
+  });
 });

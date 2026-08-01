@@ -6,7 +6,7 @@ const envSchema = z.object({
   PENPOT_MEDIA_PROCESSOR_PORT: z.coerce.number().int().positive().default(6065),
   PENPOT_MEDIA_PROCESSOR_HOST: z.string().default("0.0.0.0"),
   PENPOT_MEDIA_PROCESSOR_MAX_CONCURRENT_REQUESTS: z.coerce.number().int().min(1).default(10),
-  PENPOT_MEDIA_PROCESSOR_REQUEST_TIMEOUT: z.coerce.number().int().nonnegative().default(60000),
+  PENPOT_MEDIA_PROCESSOR_REQUEST_TIMEOUT: z.coerce.number().int().nonnegative().default(180000),
   PENPOT_MEDIA_PROCESSOR_MAX_FILE_SIZE: z.coerce.number().int().positive().default(367001600), // 350 MB
   PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD: z.coerce.number().int().positive().default(10485760), // 10 MB — uploads below this use memory storage; above use disk storage
   PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_PIXELS: z.coerce.number().int().positive().default(128_000_000),

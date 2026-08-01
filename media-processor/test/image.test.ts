@@ -213,6 +213,25 @@ describe("getImageInfo", () => {
       expect(pe.errorBody.code).toBe("image-pixel-count-exceeded");
     }
   });
+
+  it("throws when signal is aborted before processing", async () => {
+    const buffer = await sharp({
+      create: { width: 100, height: 80, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .png()
+      .toBuffer();
+
+    const controller = new AbortController();
+    controller.abort();
+
+    try {
+      await getImageInfo(buffer, buffer.length, controller.signal);
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error);
+      expect((err as Error).message).toBe("Request cancelled");
+    }
+  });
 });
 
 describe("generateThumbnail", () => {
@@ -764,6 +783,31 @@ describe("generateThumbnail", () => {
     const meta = await sharp(data).metadata();
     expect(meta.width).toBe(100);
     expect(meta.height).toBe(100);
+  });
+
+  it("throws when signal is aborted before processing", async () => {
+    const buffer = await createImage(100, 80);
+
+    const controller = new AbortController();
+    controller.abort();
+
+    try {
+      await generateThumbnail(
+        buffer,
+        {
+          width: 50,
+          height: 40,
+          quality: 85,
+          format: "jpeg",
+          mode: "fit",
+        },
+        controller.signal
+      );
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error);
+      expect((err as Error).message).toBe("Request cancelled");
+    }
   });
 });
 
