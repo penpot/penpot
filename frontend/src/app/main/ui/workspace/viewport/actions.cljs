@@ -115,6 +115,12 @@
                    (when-not read-only?
                      (st/emit! (dw/start-move-selected id shift?)))))))))))))
 
+(defn on-pointer-down-capture
+  [pointer-down-pos-ref]
+  (mf/use-callback
+   (fn [event]
+     (mf/set-ref-val! pointer-down-pos-ref (dom/get-client-position event)))))
+
 (defn on-move-selected
   [hover hover-ids selected space? z? read-only?]
   (mf/use-callback
@@ -160,7 +166,7 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path? drawing-tool space? selrect z?]
+  [hover selected edition drawing-path? drawing-tool space? selrect z? pointer-down-pos-ref]
   (mf/use-callback
    (mf/deps @hover selected edition drawing-path? drawing-tool @space? selrect @z?)
    (fn [event]
@@ -174,12 +180,19 @@
              meta? (kbd/meta? event)
              hovering? (some? @hover)
              raw-pt (dom/get-client-position event)
-             pt     (uwvv/point->viewport raw-pt)]
+             pt     (uwvv/point->viewport raw-pt)
+             ;; click fired after a drag, hover can be stale here so
+             ;; dont reselect (same 10px as start-move-selected)
+             down-pt  (mf/ref-val pointer-down-pos-ref)
+             dragged? (and (some? down-pt)
+                           (> (gpt/distance down-pt raw-pt) 10))]
+         (mf/set-ref-val! pointer-down-pos-ref nil)
          (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
 
          ;; FIXME: Maybe we can transform this into a cond instead
          ;; of multiple (when)s.
          (when (and hovering?
+                    (not dragged?)
                     (not @space?)
                     (not edition)
                     (not drawing-path?)

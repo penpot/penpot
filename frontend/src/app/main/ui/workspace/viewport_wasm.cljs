@@ -264,6 +264,7 @@
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
+        pointer-down-pos-ref (mf/use-ref nil)
         in-viewport-ref   (mf/use-ref false)
 
         ;; STREAMS
@@ -329,7 +330,7 @@
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
         transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
-        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
+        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z? pointer-down-pos-ref)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
         on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
@@ -341,6 +342,7 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
+        on-pointer-down-capture (actions/on-pointer-down-capture pointer-down-pos-ref)
         on-pointer-up     (actions/on-pointer-up disable-paste-ref)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
@@ -757,6 +759,7 @@
        :on-drag-end      on-drag-end
        :on-drop          on-drop
        :on-pointer-down  on-pointer-down
+       :on-pointer-down-capture on-pointer-down-capture
        :on-pointer-enter on-pointer-enter
        :on-pointer-leave on-pointer-leave
        :on-pointer-move  on-pointer-move
