@@ -14,10 +14,24 @@ export function createQueueMiddleware(concurrency: number) {
               return;
             }
 
+            let released = false;
+            const release = () => {
+              if (!released) {
+                released = true;
+                resolve();
+              }
+            };
+
             // Store releaseQueue callback on res.locals so route handlers can call it
             // when processing completes (in finally block)
             (res as any).locals = (res as any).locals || {};
-            (res as any).locals.releaseQueue = resolve;
+            (res as any).locals.releaseQueue = release;
+
+            // Fallback: release when response finishes (covers error handler path)
+            // This ensures queue slot is released even if Multer throws before route handler runs
+            res.on("finish", release);
+            res.on("close", release);
+
             next();
           })
       )

@@ -225,7 +225,10 @@ describe("queueMiddleware", () => {
     expect(next3).toHaveBeenCalled();
   });
 
-  it("does NOT release slot when response finishes before releaseQueue is called", async () => {
+  it("releases slot when response finishes (covers Multer error path)", async () => {
+    // This test verifies the fallback behavior: when response finishes
+    // (e.g., error handler sent response), the queue slot is released.
+    // This covers the Multer error case where the route handler never runs.
     const middleware = createQueueMiddleware(1);
     const req1 = mockReq();
     const res1 = mockRes();
@@ -242,12 +245,12 @@ describe("queueMiddleware", () => {
     expect(next1).toHaveBeenCalled();
     expect(next2).not.toHaveBeenCalled();
 
-    // Response finishes (e.g., timeout sent response)
+    // Simulate response finishing (e.g., error handler sent response)
     res1.emit("finish");
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    // Second request should NOT proceed yet (processing still ongoing)
-    expect(next2).not.toHaveBeenCalled();
+    // Second request should proceed because slot was released
+    expect(next2).toHaveBeenCalled();
   });
 
   it("releases slot when releaseQueue callback is called", async () => {
@@ -303,6 +306,36 @@ describe("queueMiddleware", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Second request should proceed even after error
+    expect(next2).toHaveBeenCalled();
+  });
+
+  it("releaseQueue is idempotent (can be called multiple times)", async () => {
+    const middleware = createQueueMiddleware(1);
+    const req1 = mockReq();
+    const res1 = mockRes();
+    const next1 = vi.fn();
+
+    const req2 = mockReq();
+    const res2 = mockRes();
+    const next2 = vi.fn();
+
+    middleware(req1, res1, next1);
+    middleware(req2, res2, next2);
+
+    // First request is processing, second is queued
+    expect(next1).toHaveBeenCalled();
+    expect(next2).not.toHaveBeenCalled();
+
+    // Call releaseQueue multiple times
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
+    releaseQueue(); // Should not throw or cause issues
+    releaseQueue();
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Second request should proceed
     expect(next2).toHaveBeenCalled();
   });
 });
