@@ -88,20 +88,24 @@
               (ex/raise :type :validation
                         :code :unable-to-download-image
                         :hint (str/ffmt "unable to download image from '%': I/O error" uri)
-                        :cause cause)))
+                        :cause cause)))]
 
-          {:keys [size mtype]} (parse-and-validate response)
-          path    (tmp/tempfile :prefix "penpot.media.download.")]
+      (if body
+        (with-open [body body]
+          (let [{:keys [size mtype]} (parse-and-validate response)
+                path    (tmp/tempfile :prefix "penpot.media.download.")
+                written (io/write* path body :size size)]
 
-      (with-open [body body]
-        (let [written (io/write* path body :size size)]
-          (when (not= written size)
-            (ex/raise :type :internal
-                      :code :mismatch-write-size
-                      :hint "unexpected state: unable to write to file"))))
+            (when (not= written size)
+              (ex/raise :type :internal
+                        :code :mismatch-write-size
+                        :hint "unexpected state: unable to write to file"))
 
-      ;; Sanitize: strip trailing data after image EOF markers
-      (let [new-size (sanitize/truncate-after-eof path mtype)]
-        {:path  path
-         :mtype mtype
-         :size  new-size}))))
+            ;; Sanitize: strip trailing data after image EOF markers
+            (let [new-size (sanitize/truncate-after-eof path mtype)]
+              {:path  path
+               :mtype mtype
+               :size  new-size})))
+
+        ;; No body - validation will raise appropriate error
+        (parse-and-validate response)))))

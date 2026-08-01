@@ -396,7 +396,25 @@
         (let [cfg    {::http/client :mock-client}
               result (media/download-image cfg "https://example.com/image.png")]
           (t/is (some? result))
-          (t/is @closed? "body stream should be closed after successful download"))))))
+          (t/is @closed? "body stream should be closed after successful download")))))
+
+  (t/testing "response body stream is closed on validation error"
+    (let [closed? (atom false)
+          body    (proxy [java.io.ByteArrayInputStream] [(byte-array 100)]
+                    (close [] (reset! closed? true)))]
+      (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                              :return {:status 404
+                                       :headers {"content-type" "text/html"
+                                                 "content-length" "100"}
+                                       :body body}}]
+        (let [cfg {::http/client :mock-client}
+              err (try
+                    (media/download-image cfg "https://example.com/not-found.png")
+                    nil
+                    (catch clojure.lang.ExceptionInfo e e))]
+          (t/is (some? err))
+          (t/is (= :unable-to-download-image (:code (ex-data err))))
+          (t/is @closed? "body stream should be closed even on validation error"))))))
 ;; --------------------------------------------------------------------
 
 (defn- split-file-into-chunks
