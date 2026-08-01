@@ -42,7 +42,12 @@ function validateImageDimensions(width: number, height: number): void {
 }
 
 export async function getImageInfo(input: FileInput, size: number): Promise<ImageInfo> {
-  const metadata = await sharp(input).metadata();
+  let metadata;
+  try {
+    metadata = await sharp(input).metadata();
+  } catch (err) {
+    throwValidation("invalid-image", `Failed to decode image: ${(err as Error).message}`);
+  }
 
   if (!metadata.width || !metadata.height) {
     throwValidation("invalid-image", "Could not read image dimensions");
@@ -84,7 +89,13 @@ export async function generateThumbnail(
   // (dimensions, orientation) from the image header without fully decoding
   // the pixel data, then reuses the instance for the resize operations.
   const source = sharp(input);
-  const srcMeta = await source.metadata();
+  let srcMeta;
+  try {
+    srcMeta = await source.metadata();
+  } catch (err) {
+    throwValidation("invalid-image", `Failed to decode image: ${(err as Error).message}`);
+  }
+
   if (srcMeta.width == null || srcMeta.height == null) {
     throwValidation("invalid-image", "Could not read source image dimensions");
   }
@@ -107,7 +118,13 @@ export async function generateThumbnail(
     "Generating thumbnail"
   );
 
-  let pipeline = source.rotate().flatten({ background: { r: 255, g: 255, b: 255 } });
+  let pipeline = source.rotate();
+
+  // Only flatten for JPEG output (which doesn't support transparency).
+  // PNG and WebP support alpha, so preserve it.
+  if (params.format === "jpeg") {
+    pipeline = pipeline.flatten({ background: { r: 255, g: 255, b: 255 } });
+  }
 
   if (params.mode === "fit") {
     pipeline = pipeline.resize(params.width, params.height, {
@@ -133,6 +150,12 @@ export async function generateThumbnail(
       break;
   }
 
-  const data = await pipeline.toBuffer();
+  let data: Buffer;
+  try {
+    data = await pipeline.toBuffer();
+  } catch (err) {
+    throwValidation("invalid-image", `Failed to process image: ${(err as Error).message}`);
+  }
+
   return { data, mtype: FORMAT_MIMES[params.format] };
 }
