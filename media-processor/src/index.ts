@@ -7,11 +7,11 @@ import { createFontRoutes } from "./routes/font.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { timeoutMiddleware } from "./middleware/timeout.js";
 import { sharedKeyAuth } from "./middleware/auth.js";
+import { createQueueMiddleware } from "./middleware/queue.js";
 import { configureImageLimits } from "./services/image.js";
 import { configureFontLimits } from "./services/font.js";
 import { configureUploadLimits } from "./upload.js";
 import sharp from "sharp";
-import PQueue from "p-queue";
 
 // Auth is enforced via x-shared-key header (sharedKeyAuth middleware).
 // When no key is configured, all requests are rejected (403).
@@ -40,20 +40,7 @@ configureFontLimits({
 
 configureUploadLimits({ maxFileSize: config.maxFileSize, memoryThreshold: config.memoryThreshold });
 
-const queue = new PQueue({ concurrency: config.maxConcurrentRequests });
-
-function queueMiddleware(_req: Request, res: Response, next: NextFunction): void {
-  queue
-    .add(
-      () =>
-        new Promise<void>((resolve) => {
-          res.on("finish", resolve);
-          res.on("close", resolve);
-          next();
-        })
-    )
-    .catch(() => next(new Error("Request processing failed")));
-}
+const queueMiddleware = createQueueMiddleware(config.maxConcurrentRequests);
 
 app.use(timeoutMiddleware(config.requestTimeout));
 

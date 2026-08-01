@@ -88,6 +88,12 @@ export async function generateThumbnail(
   if (srcMeta.width == null || srcMeta.height == null) {
     throwValidation("invalid-image", "Could not read source image dimensions");
   }
+
+  // Validate source image format
+  if (srcMeta.format && !SUPPORTED_MIMES.has(`image/${srcMeta.format}`)) {
+    throwValidation("unsupported-image-format", `Unsupported image format: ${srcMeta.format}`);
+  }
+
   const orientation = srcMeta.orientation ?? 1;
   const { width: displayWidth, height: displayHeight } = orientationSwapDimensions(
     srcMeta.width,

@@ -41,10 +41,6 @@ class LokiLogTransport implements LogTransportProvider {
     this.host = lokiUri;
   }
 
-  public isEnabled(): boolean {
-    return this.host !== null;
-  }
-
   public getTarget(): TransportTargetSpec | null {
     if (this.host === null) {
       return null;

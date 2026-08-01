@@ -544,6 +544,32 @@ describe("generateThumbnail", () => {
       await rm(tempPath, { force: true });
     }
   });
+
+  it("throws validation error for unsupported source format (TIFF)", async () => {
+    const pngBuffer = await sharp({
+      create: { width: 100, height: 80, channels: 3, background: { r: 128, g: 128, b: 128 } },
+    })
+      .png()
+      .toBuffer();
+
+    const tiffBuffer = await sharp(pngBuffer).tiff().toBuffer();
+
+    try {
+      await generateThumbnail(tiffBuffer, {
+        width: 50,
+        height: 40,
+        quality: 85,
+        format: "jpeg",
+        mode: "fit",
+      });
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProcessingError);
+      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      expect(pe.statusCode).toBe(400);
+      expect(pe.errorBody.code).toBe("unsupported-image-format");
+    }
+  });
 });
 
 describe("parseQuality", () => {

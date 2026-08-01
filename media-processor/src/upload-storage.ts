@@ -39,7 +39,7 @@ export function createHybridStorage(opts: HybridStorageOptions): multer.StorageE
   return {
     _handleFile(req: Request, file: Express.Multer.File, cb: (error?: any, info?: Partial<FileInfo>) => void): void {
       const contentLength = getContentLength(req);
-      const useDisk = contentLength >= 0 && contentLength >= opts.memoryThreshold;
+      const useDisk = contentLength < 0 || contentLength >= opts.memoryThreshold;
 
       if (!useDisk) {
         memoryStorage._handleFile(req, file, cb);

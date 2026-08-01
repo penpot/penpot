@@ -139,8 +139,8 @@ async function otfToTtf(input: FileInput): Promise<Buffer | null> {
   return fontConvert(".otf", ".ttf", input);
 }
 
-async function sfntToWoff(input: FileInput): Promise<Buffer | null> {
-  return withTempInput(".ttf", input, async (dir, inputPath) => {
+async function sfntToWoff(input: FileInput, ext: string = ".ttf"): Promise<Buffer | null> {
+  return withTempInput(ext, input, async (dir, inputPath) => {
     try {
       await execCommand("sfnt2woff", [inputPath]);
       const output = join(dir, "input.woff");
@@ -221,14 +221,14 @@ export async function convertFont(input: FileInput, sourceMtype: string, targetM
   // Source is TTF
   if (sourceType === "ttf") {
     if (targetType === "otf") return ttfToOtf(input);
-    if (targetType === "woff") return sfntToWoff(input);
+    if (targetType === "woff") return sfntToWoff(input, ".ttf");
     return null;
   }
 
   // Source is OTF
   if (sourceType === "otf") {
     if (targetType === "ttf") return otfToTtf(input);
-    if (targetType === "woff") return sfntToWoff(input);
+    if (targetType === "woff") return sfntToWoff(input, ".otf");
     return null;
   }
 
@@ -237,12 +237,6 @@ export async function convertFont(input: FileInput, sourceMtype: string, targetM
     const sfnt = await woffToSfnt(input);
     if (!sfnt) {
       throwValidation("invalid-font", "Could not extract SFNT from WOFF");
-    }
-    if (targetType === "woff") {
-      if (typeof input === "string") {
-        return readFile(input); // Read file into Buffer for same-type return
-      }
-      return input; // preserve original
     }
     return convertFromSfnt(sfnt, targetType);
   }
