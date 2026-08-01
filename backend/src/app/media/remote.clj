@@ -81,9 +81,13 @@
                             :timeout timeout})
             status (:status resp)]
         (when (not (<= 200 status 299))
-          (let [body (try (parse-json-response (:body resp)) (catch Exception _ nil))
-                err  (translate-error status body)]
-            (ex/raise :type (:type err) :code (:code err) :hint (:hint err))))
+          (let [body (:body resp)]
+            (try
+              (let [parsed (try (parse-json-response body) (catch Exception _ nil))
+                    err    (translate-error status parsed)]
+                (ex/raise :type (:type err) :code (:code err) :hint (:hint err)))
+              (finally
+                (.close body)))))
         resp)
       (catch ConnectException _cause
         (ex/raise :type :internal
@@ -157,13 +161,17 @@
    Accepts source font data as a filesystem Path. Returns a tempfile Path."
   [system source-mtype target-mtype data]
   (let [resp (service-multipart-request system {:endpoint "api/font/convert"
-                                                :path     data
-                                                :mtype    source-mtype
-                                                :query    {:target-type target-mtype}
-                                                :timeout  180000})
+                                                 :path     data
+                                                 :mtype    source-mtype
+                                                 :query    {:target-type target-mtype}
+                                                 :timeout  180000})
         ext  (cm/mtype->extension target-mtype)
-        tmp  (tmp/tempfile :prefix "penpot.font." :suffix ext)]
-    (io/write* tmp (:body resp))
+        tmp  (tmp/tempfile :prefix "penpot.font." :suffix ext)
+        body (:body resp)]
+    (try
+      (io/write* tmp body)
+      (finally
+        (.close body)))
     tmp))
 
 (defn- font-missing-variants
@@ -191,22 +199,26 @@
         (merge input info {:ts (ct/now) :size (fs/size path)}))
       ;; Raster: delegate to media-processor
       (let [resp (service-multipart-request system {:endpoint "api/image/info"
-                                                    :path     path
-                                                    :mtype    mtype})
-            info (parse-json-response (:body resp))
-            detected-mtype (:mtype info)]
-        (when (and (string? mtype)
-                   (string? detected-mtype)
-                   (not= (str/lower mtype) (str/lower detected-mtype)))
-          (ex/raise :type :validation
-                    :code :media-type-mismatch
-                    :hint (str "File content does not match the declared type. "
-                               "Expected: " mtype ". Got: " detected-mtype)))
-        (assoc input
-               :width  (:width info)
-               :height (:height info)
-               :size   (fs/size path)
-               :ts     (ct/now))))))
+                                                     :path     path
+                                                     :mtype    mtype})
+            body (:body resp)]
+        (try
+          (let [info (parse-json-response body)
+                detected-mtype (:mtype info)]
+            (when (and (string? mtype)
+                       (string? detected-mtype)
+                       (not= (str/lower mtype) (str/lower detected-mtype)))
+              (ex/raise :type :validation
+                        :code :media-type-mismatch
+                        :hint (str "File content does not match the declared type. "
+                                   "Expected: " mtype ". Got: " detected-mtype)))
+            (assoc input
+                   :width  (:width info)
+                   :height (:height info)
+                   :size   (fs/size path)
+                   :ts     (ct/now)))
+          (finally
+            (.close body)))))))
 
 (defn- thumbnail-request
   "Shared implementation for generic-thumbnail and profile-thumbnail."
@@ -215,17 +227,21 @@
         {:keys [path mtype]} (validation/check-input input)
         fmt        (name (or format (cm/mtype->format mtype) :jpeg))
         resp       (service-multipart-request system {:endpoint "api/image/thumbnail"
-                                                      :path     path
-                                                      :mtype    mtype
-                                                      :query    {:width   width
-                                                                 :height  height
-                                                                 :quality quality
-                                                                 :format  fmt
-                                                                 :mode    mode}})
+                                                       :path     path
+                                                       :mtype    mtype
+                                                       :query    {:width   width
+                                                                  :height  height
+                                                                  :quality quality
+                                                                  :format  fmt
+                                                                  :mode    mode}})
         out-format (or format (cm/mtype->format mtype) :jpeg)
         ext        (cm/format->extension out-format)
         tmp        (tmp/tempfile :prefix "penpot.media." :suffix ext)
-        _          (io/write* tmp (:body resp))]
+        body       (:body resp)]
+    (try
+      (io/write* tmp body)
+      (finally
+        (.close body)))
     (assoc params
            :format out-format
            :mtype  (cm/format->mtype out-format)

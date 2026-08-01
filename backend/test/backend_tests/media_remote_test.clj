@@ -520,3 +520,75 @@
             ;; System passed through correctly
             (t/is (= "my-secret-key-123"
                      (-> system-arg ::setup/shared-keys :media-processor)))))))))
+
+;; ---------------------------------------------------------------------------
+;; Stream closure
+;; ---------------------------------------------------------------------------
+
+(defn- tracking-stream
+  "Create an InputStream that tracks whether it was closed.
+   Returns a map with :stream (the InputStream) and :closed (an atom)."
+  [^bytes data]
+  (let [closed (atom false)
+        delegate (ByteArrayInputStream. data)
+        stream (proxy [java.io.InputStream] []
+                 (read
+                   ([] (.read delegate))
+                   ([^bytes b] (.read delegate b))
+                   ([^bytes b off len] (.read delegate b off len)))
+                 (close []
+                   (reset! closed true)
+                   (.close delegate)))]
+    {:stream stream :closed closed}))
+
+(t/deftest info-closes-response-stream
+  (t/testing "info closes the response stream after parsing JSON"
+    (let [json-str "{\"width\":100,\"height\":100,\"mtype\":\"image/jpeg\",\"size\":1,\"orientation\":1}"
+          json-data (.getBytes json-str "UTF-8")
+          {:keys [stream closed]} (tracking-stream json-data)]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200
+                                  :body stream}}]
+        (with-redefs [cf/get (th/config-get-mock config-mock)]
+          (let [path (th/tempfile "backend_tests/test_files/sample.jpg")]
+            (media.remote/process (mk-system)
+                                  {:cmd   :info
+                                   :input {:path path :mtype "image/jpeg"}})
+            ;; Stream should be closed after processing
+            (t/is @closed)))))))
+
+(t/deftest font-convert-closes-response-stream
+  (t/testing "font-convert closes the response stream after writing"
+    (let [{:keys [stream closed]} (tracking-stream (.getBytes "fake-font-data" "UTF-8"))]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200
+                                  :body stream}}]
+        (with-redefs [cf/get (th/config-get-mock config-mock)]
+          (let [ttfbytes (io/read* (io/resource "backend_tests/test_files/font-1.ttf"))
+                ttfpath  (write-font-tmp ttfbytes ".ttf")]
+            (try
+              (media.remote/process (mk-system)
+                                    {:cmd   :generate-fonts
+                                     :input {"font/ttf" ttfpath}})
+              ;; Stream should be closed after processing
+              (t/is @closed)
+              (finally
+                (fs/delete ttfpath)))))))))
+
+(t/deftest thumbnail-closes-response-stream
+  (t/testing "thumbnail closes the response stream after writing"
+    (let [{:keys [stream closed]} (tracking-stream (.getBytes "fake-thumbnail-data" "UTF-8"))]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200
+                                  :body stream}}]
+        (with-redefs [cf/get (th/config-get-mock config-mock)]
+          (let [path (th/tempfile "backend_tests/test_files/sample.jpg")]
+            (media.remote/process (mk-system)
+                                  {:cmd    :generic-thumbnail
+                                   :input  {:path path :mtype "image/jpeg"}
+                                   :format :jpeg
+                                   :quality 85
+                                   :width  200
+                                   :height 200})
+            ;; Stream should be closed after processing
+            (t/is @closed)))))))
