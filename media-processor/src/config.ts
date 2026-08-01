@@ -3,18 +3,18 @@ import { hkdfSync } from "node:crypto";
 import type { AppConfig } from "./types.js";
 
 const envSchema = z.object({
-  PENPOT_MEDIA_PROCESSOR_PORT: z.coerce.number().default(6065),
+  PENPOT_MEDIA_PROCESSOR_PORT: z.coerce.number().int().positive().default(6065),
   PENPOT_MEDIA_PROCESSOR_HOST: z.string().default("0.0.0.0"),
-  PENPOT_MEDIA_PROCESSOR_MAX_CONCURRENT_REQUESTS: z.coerce.number().default(10),
-  PENPOT_MEDIA_PROCESSOR_REQUEST_TIMEOUT: z.coerce.number().default(60000),
-  PENPOT_MEDIA_PROCESSOR_MAX_FILE_SIZE: z.coerce.number().default(367001600), // 350 MB
-  PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD: z.coerce.number().default(10485760), // 10 MB — uploads below this use memory storage; above use disk storage
-  PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_PIXELS: z.coerce.number().default(128_000_000),
-  PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_WIDTH: z.coerce.number().default(16384),
-  PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_HEIGHT: z.coerce.number().default(16384),
-  PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_MEM: z.coerce.number().default(512),
-  PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME: z.coerce.number().default(30),
-  PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT: z.coerce.number().default(120000),
+  PENPOT_MEDIA_PROCESSOR_MAX_CONCURRENT_REQUESTS: z.coerce.number().int().min(1).default(10),
+  PENPOT_MEDIA_PROCESSOR_REQUEST_TIMEOUT: z.coerce.number().int().nonnegative().default(60000),
+  PENPOT_MEDIA_PROCESSOR_MAX_FILE_SIZE: z.coerce.number().int().positive().default(367001600), // 350 MB
+  PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD: z.coerce.number().int().positive().default(10485760), // 10 MB — uploads below this use memory storage; above use disk storage
+  PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_PIXELS: z.coerce.number().int().positive().default(128_000_000),
+  PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_WIDTH: z.coerce.number().int().positive().default(16384),
+  PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_HEIGHT: z.coerce.number().int().positive().default(16384),
+  PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_MEM: z.coerce.number().int().positive().default(512),
+  PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME: z.coerce.number().int().positive().default(30),
+  PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT: z.coerce.number().int().positive().default(120000),
   PENPOT_MEDIA_PROCESSOR_SHARED_KEY: z.string().optional(),
   PENPOT_SECRET_KEY: z.string().optional(),
   PENPOT_MEDIA_PROCESSOR_LOG_LEVEL: z

@@ -16,6 +16,7 @@ export function createFontRoutes(): IRouter {
     upload.single("file"),
     cleanupMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
+      const releaseQueue = (res as any).locals?.releaseQueue;
       try {
         if (!req.file) {
           throwValidation("invalid-font", "No file uploaded");
@@ -43,6 +44,8 @@ export function createFontRoutes(): IRouter {
         res.send(result);
       } catch (err) {
         next(err);
+      } finally {
+        if (releaseQueue) releaseQueue();
       }
     }
   );

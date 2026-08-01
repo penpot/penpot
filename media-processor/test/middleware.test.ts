@@ -284,6 +284,30 @@ describe("sharedKeyAuth", () => {
       process.env.NODE_ENV = originalEnv;
     }
   });
+
+  it("returns 403 for multibyte Unicode with same string length but different byte length", () => {
+    const middleware = sharedKeyAuth("test-key");
+    const req = { headers: { "x-shared-key": "test-ké" } } as unknown as Request;
+    middleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 for emoji input (multibyte)", () => {
+    const middleware = sharedKeyAuth("test-key");
+    const req = { headers: { "x-shared-key": "test-k🔑" } } as unknown as Request;
+    middleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 for accented characters with same string length", () => {
+    const middleware = sharedKeyAuth("abcdefgh");
+    const req = { headers: { "x-shared-key": "ábcdefgh" } } as unknown as Request;
+    middleware(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
 });
 
 describe("timeoutMiddleware", () => {

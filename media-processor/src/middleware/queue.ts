@@ -13,8 +13,11 @@ export function createQueueMiddleware(concurrency: number) {
               resolve();
               return;
             }
-            res.on("finish", resolve);
-            res.on("close", resolve);
+
+            // Store releaseQueue callback on res.locals so route handlers can call it
+            // when processing completes (in finally block)
+            (res as any).locals = (res as any).locals || {};
+            (res as any).locals.releaseQueue = resolve;
             next();
           })
       )

@@ -60,15 +60,17 @@ describe("queueMiddleware", () => {
     middleware(req2, res2, next2);
     expect(next2).not.toHaveBeenCalled();
 
-    // Finish first request
-    res1.emit("finish");
+    // Release first request's queue slot (simulating processing completion)
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
 
     // Now second request should proceed
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(next2).toHaveBeenCalled();
   });
 
-  it("resolves promise when response finishes", async () => {
+  it("resolves promise when releaseQueue is called", async () => {
     const middleware = createQueueMiddleware(1);
     const req1 = mockReq();
     const res1 = mockRes();
@@ -81,28 +83,10 @@ describe("queueMiddleware", () => {
     middleware(req1, res1, next1);
     middleware(req2, res2, next2);
 
-    // Finish first request
-    res1.emit("finish");
-
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(next2).toHaveBeenCalled();
-  });
-
-  it("resolves promise when response closes", async () => {
-    const middleware = createQueueMiddleware(1);
-    const req1 = mockReq();
-    const res1 = mockRes();
-    const next1 = vi.fn();
-
-    const req2 = mockReq();
-    const res2 = mockRes();
-    const next2 = vi.fn();
-
-    middleware(req1, res1, next1);
-    middleware(req2, res2, next2);
-
-    // Close first request
-    res1.emit("close");
+    // Release first request's queue slot
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
 
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(next2).toHaveBeenCalled();
@@ -133,16 +117,20 @@ describe("queueMiddleware", () => {
     expect(next2).not.toHaveBeenCalled();
     expect(next3).not.toHaveBeenCalled();
 
-    // Finish first request
-    res1.emit("finish");
+    // Release first request's queue slot
+    const releaseQueue1 = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue1).toBeDefined();
+    releaseQueue1();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Now second should be called
     expect(next2).toHaveBeenCalled();
     expect(next3).not.toHaveBeenCalled();
 
-    // Finish second request
-    res2.emit("finish");
+    // Release second request's queue slot
+    const releaseQueue2 = (res2 as any).locals?.releaseQueue;
+    expect(releaseQueue2).toBeDefined();
+    releaseQueue2();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Now third should be called
@@ -187,8 +175,10 @@ describe("queueMiddleware", () => {
     middleware(req1, res1, next1);
     middleware(req2, res2, next2);
 
-    // Simulate error by emitting close on first request
-    res1.emit("close");
+    // Simulate error by releasing queue slot (as would happen in finally block)
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
@@ -225,11 +215,94 @@ describe("queueMiddleware", () => {
     middleware(req3, res3, next3);
     expect(next3).not.toHaveBeenCalled();
 
-    // Finish first request
-    res1.emit("finish");
+    // Release first request's queue slot
+    const releaseQueue1 = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue1).toBeDefined();
+    releaseQueue1();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Now third should proceed
     expect(next3).toHaveBeenCalled();
+  });
+
+  it("does NOT release slot when response finishes before releaseQueue is called", async () => {
+    const middleware = createQueueMiddleware(1);
+    const req1 = mockReq();
+    const res1 = mockRes();
+    const next1 = vi.fn();
+
+    const req2 = mockReq();
+    const res2 = mockRes();
+    const next2 = vi.fn();
+
+    middleware(req1, res1, next1);
+    middleware(req2, res2, next2);
+
+    // First request is processing, second is queued
+    expect(next1).toHaveBeenCalled();
+    expect(next2).not.toHaveBeenCalled();
+
+    // Response finishes (e.g., timeout sent response)
+    res1.emit("finish");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Second request should NOT proceed yet (processing still ongoing)
+    expect(next2).not.toHaveBeenCalled();
+  });
+
+  it("releases slot when releaseQueue callback is called", async () => {
+    const middleware = createQueueMiddleware(1);
+    const req1 = mockReq();
+    const res1 = mockRes();
+    const next1 = vi.fn();
+
+    const req2 = mockReq();
+    const res2 = mockRes();
+    const next2 = vi.fn();
+
+    middleware(req1, res1, next1);
+    middleware(req2, res2, next2);
+
+    // First request is processing, second is queued
+    expect(next1).toHaveBeenCalled();
+    expect(next2).not.toHaveBeenCalled();
+
+    // Simulate processing completing by calling releaseQueue
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Now second request should proceed
+    expect(next2).toHaveBeenCalled();
+  });
+
+  it("releases slot on processing error (via finally block)", async () => {
+    const middleware = createQueueMiddleware(1);
+    const req1 = mockReq();
+    const res1 = mockRes();
+    const next1 = vi.fn();
+
+    const req2 = mockReq();
+    const res2 = mockRes();
+    const next2 = vi.fn();
+
+    middleware(req1, res1, next1);
+    middleware(req2, res2, next2);
+
+    // First request is processing, second is queued
+    expect(next1).toHaveBeenCalled();
+    expect(next2).not.toHaveBeenCalled();
+
+    // Simulate processing error and release in finally block
+    const releaseQueue = (res1 as any).locals?.releaseQueue;
+    expect(releaseQueue).toBeDefined();
+    releaseQueue();
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Second request should proceed even after error
+    expect(next2).toHaveBeenCalled();
   });
 });

@@ -10,11 +10,15 @@ export function sharedKeyAuth(expectedKey: string | null) {
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const provided = req.headers["x-shared-key"];
-    if (
-      typeof provided === "string" &&
-      provided.length === expectedKey.length &&
-      timingSafeEqual(Buffer.from(provided), Buffer.from(expectedKey))
-    ) {
+    if (typeof provided !== "string") {
+      res.status(403).json({ type: "internal", code: "forbidden" });
+      return;
+    }
+
+    const providedBuf = Buffer.from(provided);
+    const expectedBuf = Buffer.from(expectedKey);
+
+    if (providedBuf.length === expectedBuf.length && timingSafeEqual(providedBuf, expectedBuf)) {
       next();
     } else {
       res.status(403).json({ type: "internal", code: "forbidden" });

@@ -684,6 +684,87 @@ describe("generateThumbnail", () => {
     // PNG should preserve alpha channel (4 channels)
     expect(meta.channels).toBe(4);
   });
+
+  it("throws restriction when requested width exceeds limit (crop mode)", async () => {
+    configureImageLimits({ maxPixels: 128_000_000, maxWidth: 100, maxHeight: 16384 });
+    const buffer = await createImage(50, 50);
+
+    try {
+      await generateThumbnail(buffer, {
+        width: 200,
+        height: 50,
+        quality: 85,
+        format: "jpeg",
+        mode: "crop",
+      });
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProcessingError);
+      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      expect(pe.statusCode).toBe(413);
+      expect(pe.errorBody.code).toBe("output-dimensions-exceeded");
+    }
+  });
+
+  it("throws restriction when requested height exceeds limit (crop mode)", async () => {
+    configureImageLimits({ maxPixels: 128_000_000, maxWidth: 16384, maxHeight: 100 });
+    const buffer = await createImage(50, 50);
+
+    try {
+      await generateThumbnail(buffer, {
+        width: 50,
+        height: 200,
+        quality: 85,
+        format: "jpeg",
+        mode: "crop",
+      });
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProcessingError);
+      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      expect(pe.statusCode).toBe(413);
+      expect(pe.errorBody.code).toBe("output-dimensions-exceeded");
+    }
+  });
+
+  it("throws restriction when requested pixel count exceeds limit (crop mode)", async () => {
+    configureImageLimits({ maxPixels: 10000, maxWidth: 16384, maxHeight: 16384 });
+    const buffer = await createImage(50, 50);
+
+    try {
+      await generateThumbnail(buffer, {
+        width: 200,
+        height: 200,
+        quality: 85,
+        format: "jpeg",
+        mode: "crop",
+      });
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProcessingError);
+      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      expect(pe.statusCode).toBe(413);
+      expect(pe.errorBody.code).toBe("output-pixel-count-exceeded");
+    }
+  });
+
+  it("accepts requested dimensions at the limit (crop mode)", async () => {
+    configureImageLimits({ maxPixels: 10000, maxWidth: 100, maxHeight: 100 });
+    const buffer = await createImage(50, 50);
+
+    const { data, mtype } = await generateThumbnail(buffer, {
+      width: 100,
+      height: 100,
+      quality: 85,
+      format: "jpeg",
+      mode: "crop",
+    });
+
+    expect(mtype).toBe("image/jpeg");
+    const meta = await sharp(data).metadata();
+    expect(meta.width).toBe(100);
+    expect(meta.height).toBe(100);
+  });
 });
 
 describe("parseQuality", () => {

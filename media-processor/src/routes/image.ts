@@ -20,6 +20,7 @@ export function createImageRoutes(): IRouter {
     upload.single("file"),
     cleanupMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
+      const releaseQueue = (res as any).locals?.releaseQueue;
       try {
         if (!req.file) {
           throwValidation("invalid-image", "No file uploaded");
@@ -31,6 +32,8 @@ export function createImageRoutes(): IRouter {
         res.json(info);
       } catch (err) {
         next(err);
+      } finally {
+        if (releaseQueue) releaseQueue();
       }
     }
   );
@@ -40,6 +43,7 @@ export function createImageRoutes(): IRouter {
     upload.single("file"),
     cleanupMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
+      const releaseQueue = (res as any).locals?.releaseQueue;
       try {
         if (!req.file) {
           throwValidation("invalid-image", "No file uploaded");
@@ -83,6 +87,8 @@ export function createImageRoutes(): IRouter {
         res.send(data);
       } catch (err) {
         next(err);
+      } finally {
+        if (releaseQueue) releaseQueue();
       }
     }
   );

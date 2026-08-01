@@ -41,6 +41,22 @@ function validateImageDimensions(width: number, height: number): void {
   }
 }
 
+function validateOutputDimensions(width: number, height: number): void {
+  if (width > imageMaxWidth || height > imageMaxHeight) {
+    throwRestriction(
+      "output-dimensions-exceeded",
+      `Requested output dimensions ${width}x${height} exceed maximum ${imageMaxWidth}x${imageMaxHeight}`
+    );
+  }
+  const pixels = width * height;
+  if (pixels > imageMaxPixels) {
+    throwRestriction(
+      "output-pixel-count-exceeded",
+      `Requested output pixel count ${pixels} exceeds maximum ${imageMaxPixels}`
+    );
+  }
+}
+
 export async function getImageInfo(input: FileInput, size: number): Promise<ImageInfo> {
   let metadata;
   try {
@@ -112,6 +128,9 @@ export async function generateThumbnail(
     orientation
   );
   validateImageDimensions(displayWidth, displayHeight);
+
+  // Validate requested output dimensions (important for crop mode which can enlarge)
+  validateOutputDimensions(params.width, params.height);
 
   logger.debug(
     { width: params.width, height: params.height, format: params.format, mode: params.mode },
