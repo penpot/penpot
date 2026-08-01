@@ -91,13 +91,14 @@
                         :cause cause)))
 
           {:keys [size mtype]} (parse-and-validate response)
-          path    (tmp/tempfile :prefix "penpot.media.download.")
-          written (io/write* path body :size size)]
+          path    (tmp/tempfile :prefix "penpot.media.download.")]
 
-      (when (not= written size)
-        (ex/raise :type :internal
-                  :code :mismatch-write-size
-                  :hint "unexpected state: unable to write to file"))
+      (with-open [body body]
+        (let [written (io/write* path body :size size)]
+          (when (not= written size)
+            (ex/raise :type :internal
+                      :code :mismatch-write-size
+                      :hint "unexpected state: unable to write to file"))))
 
       ;; Sanitize: strip trailing data after image EOF markers
       (let [new-size (sanitize/truncate-after-eof path mtype)]

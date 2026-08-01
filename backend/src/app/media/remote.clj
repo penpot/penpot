@@ -161,10 +161,10 @@
    Accepts source font data as a filesystem Path. Returns a tempfile Path."
   [system source-mtype target-mtype data]
   (let [resp (service-multipart-request system {:endpoint "api/font/convert"
-                                                 :path     data
-                                                 :mtype    source-mtype
-                                                 :query    {:target-type target-mtype}
-                                                 :timeout  180000})
+                                                :path     data
+                                                :mtype    source-mtype
+                                                :query    {:target-type target-mtype}
+                                                :timeout  180000})
         ext  (cm/mtype->extension target-mtype)
         tmp  (tmp/tempfile :prefix "penpot.font." :suffix ext)
         body (:body resp)]
@@ -199,8 +199,8 @@
         (merge input info {:ts (ct/now) :size (fs/size path)}))
       ;; Raster: delegate to media-processor
       (let [resp (service-multipart-request system {:endpoint "api/image/info"
-                                                     :path     path
-                                                     :mtype    mtype})
+                                                    :path     path
+                                                    :mtype    mtype})
             body (:body resp)]
         (try
           (let [info (parse-json-response body)
@@ -227,13 +227,13 @@
         {:keys [path mtype]} (validation/check-input input)
         fmt        (name (or format (cm/mtype->format mtype) :jpeg))
         resp       (service-multipart-request system {:endpoint "api/image/thumbnail"
-                                                       :path     path
-                                                       :mtype    mtype
-                                                       :query    {:width   width
-                                                                  :height  height
-                                                                  :quality quality
-                                                                  :format  fmt
-                                                                  :mode    mode}})
+                                                      :path     path
+                                                      :mtype    mtype
+                                                      :query    {:width   width
+                                                                 :height  height
+                                                                 :quality quality
+                                                                 :format  fmt
+                                                                 :mode    mode}})
         out-format (or format (cm/mtype->format mtype) :jpeg)
         ext        (cm/format->extension out-format)
         tmp        (tmp/tempfile :prefix "penpot.media." :suffix ext)
