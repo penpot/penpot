@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { getImageInfo, generateThumbnail, configureImageLimits } from "../src/services/image.js";
+import { parseQuality } from "../src/routes/image.js";
 import { ProcessingError } from "../src/middleware/error-handler.js";
 import sharp from "sharp";
 import { writeFile, rm } from "node:fs/promises";
@@ -499,6 +500,25 @@ describe("generateThumbnail", () => {
     expect(low.data.length).toBeLessThan(high.data.length);
   });
 
+  it("accepts quality=1 (minimum valid quality)", async () => {
+    const buffer = await sharp({
+      create: { width: 100, height: 80, channels: 3, background: { r: 128, g: 128, b: 128 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const { data, mtype } = await generateThumbnail(buffer, {
+      width: 50,
+      height: 40,
+      quality: 1,
+      format: "jpeg",
+      mode: "fit",
+    });
+    expect(data).toBeInstanceOf(Buffer);
+    expect(data.length).toBeGreaterThan(0);
+    expect(mtype).toBe("image/jpeg");
+  });
+
   it("accepts file path input for thumbnail generation", async () => {
     const buffer = await sharp({
       create: { width: 100, height: 80, channels: 3, background: { r: 128, g: 128, b: 128 } },
@@ -523,5 +543,40 @@ describe("generateThumbnail", () => {
     } finally {
       await rm(tempPath, { force: true });
     }
+  });
+});
+
+describe("parseQuality", () => {
+  it("returns default when value is undefined", () => {
+    expect(parseQuality(undefined)).toBe(85);
+  });
+
+  it("returns default when value is empty string", () => {
+    expect(parseQuality("")).toBe(85);
+  });
+
+  it("returns default when value is not a number", () => {
+    expect(parseQuality("abc")).toBe(85);
+  });
+
+  it("returns parsed value when valid", () => {
+    expect(parseQuality("50")).toBe(50);
+  });
+
+  it("preserves quality=0 (explicit zero)", () => {
+    expect(parseQuality("0")).toBe(0);
+  });
+
+  it("preserves quality=1 (minimum valid)", () => {
+    expect(parseQuality("1")).toBe(1);
+  });
+
+  it("preserves quality=100 (maximum valid)", () => {
+    expect(parseQuality("100")).toBe(100);
+  });
+
+  it("uses custom default value", () => {
+    expect(parseQuality(undefined, 75)).toBe(75);
+    expect(parseQuality("abc", 75)).toBe(75);
   });
 });

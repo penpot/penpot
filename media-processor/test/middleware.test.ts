@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProcessingError, errorHandler } from "../src/middleware/error-handler.js";
 import { sharedKeyAuth } from "../src/middleware/auth.js";
+import { timeoutMiddleware } from "../src/middleware/timeout.js";
 import { throwValidation, throwRestriction } from "../src/services/errors.js";
 import multer from "multer";
 import type { Request, Response, NextFunction } from "express";
+import { EventEmitter } from "node:events";
 
 function mockRes() {
   const res = {
@@ -280,5 +282,117 @@ describe("sharedKeyAuth", () => {
     } finally {
       process.env.NODE_ENV = originalEnv;
     }
+  });
+});
+
+describe("timeoutMiddleware", () => {
+  it("calls next() immediately", () => {
+    const middleware = timeoutMiddleware(1000);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it("clears timer when response finishes", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(1000);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    const next = vi.fn();
+
+    middleware(req, res, next);
+    res.emit("finish");
+
+    // Advance past timeout - should not throw
+    vi.advanceTimersByTime(2000);
+    vi.useRealTimers();
+  });
+
+  it("clears timer when response closes", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(1000);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    const next = vi.fn();
+
+    middleware(req, res, next);
+    res.emit("close");
+
+    // Advance past timeout - should not throw
+    vi.advanceTimersByTime(2000);
+    vi.useRealTimers();
+  });
+
+  it("sends 504 response when timeout expires before response", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(100);
+    const req = new EventEmitter() as unknown as Request;
+    (req as any).destroy = vi.fn();
+    const res = new EventEmitter() as unknown as Response;
+    (res as any).headersSent = false;
+    (res as any).status = vi.fn().mockReturnThis();
+    (res as any).json = vi.fn().mockReturnThis();
+    const next = vi.fn();
+
+    middleware(req, res, next);
+    vi.advanceTimersByTime(150);
+
+    expect(res.status).toHaveBeenCalledWith(504);
+    expect(res.json).toHaveBeenCalledWith({
+      type: "internal",
+      code: "processing-timeout",
+      hint: "Request timed out",
+    });
+    vi.useRealTimers();
+  });
+
+  it("does not send response if headers already sent", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(100);
+    const req = new EventEmitter() as unknown as Request;
+    (req as any).destroy = vi.fn();
+    const res = new EventEmitter() as unknown as Response;
+    (res as any).headersSent = true;
+    (res as any).status = vi.fn().mockReturnThis();
+    (res as any).json = vi.fn().mockReturnThis();
+    const next = vi.fn();
+
+    middleware(req, res, next);
+    vi.advanceTimersByTime(150);
+
+    expect(res.status).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("destroys request AFTER response finishes (not before)", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(100);
+    const req = new EventEmitter() as unknown as Request;
+    (req as any).destroy = vi.fn();
+    const res = new EventEmitter() as unknown as Response;
+    (res as any).headersSent = false;
+    (res as any).status = vi.fn().mockReturnThis();
+    (res as any).json = vi.fn().mockReturnThis();
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    // Advance to timeout - this triggers the 504 response
+    vi.advanceTimersByTime(100);
+
+    // req.destroy should NOT be called yet (response not finished)
+    expect(req.destroy).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(504);
+
+    // Now simulate response finishing
+    res.emit("finish");
+
+    // Now req.destroy should be called
+    expect(req.destroy).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

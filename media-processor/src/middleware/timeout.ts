@@ -9,8 +9,8 @@ export function timeoutMiddleware(timeout: number) {
           code: "processing-timeout",
           hint: "Request timed out",
         });
+        res.on("finish", () => req.destroy());
       }
-      req.destroy();
     }, timeout);
 
     res.on("finish", () => clearTimeout(timer));

@@ -80,6 +80,22 @@ async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
   }
 }
 
+async function withTempInput<T>(
+  ext: string,
+  input: FileInput,
+  fn: (dir: string, inputPath: string) => Promise<T>
+): Promise<T> {
+  return withTempDir(async (dir) => {
+    const inputPath = join(dir, `input${ext}`);
+    if (typeof input === "string") {
+      await copyFile(input, inputPath);
+    } else {
+      await writeFile(inputPath, input);
+    }
+    return fn(dir, inputPath);
+  });
+}
+
 async function fontConvert(inputExt: string, outputExt: string, input: FileInput): Promise<Buffer | null> {
   return withTempDir(async (dir) => {
     let inputPath: string;
@@ -95,6 +111,9 @@ async function fontConvert(inputExt: string, outputExt: string, input: FileInput
       // Escape single quotes for FontForge's string parser (not shell).
       // execFile passes args as an array — no shell injection vector.
       // FontForge's own lexer uses doubled single quotes for escaping.
+      // Note: This only handles single quotes. Temp paths from os.tmpdir()
+      // are safe (no special chars), but user-supplied paths with double
+      // quotes, backslashes, or other special chars may fail.
       const escInput = inputPath.replace(/'/g, "''");
       const escOutput = outputPath.replace(/'/g, "''");
       await execCommand("fontforge", ["-lang=ff", "-c", `Open('${escInput}'); Generate('${escOutput}')`]);
@@ -121,16 +140,7 @@ async function otfToTtf(input: FileInput): Promise<Buffer | null> {
 }
 
 async function sfntToWoff(input: FileInput): Promise<Buffer | null> {
-  return withTempDir(async (dir) => {
-    let inputPath: string;
-    if (typeof input === "string") {
-      inputPath = join(dir, "input.ttf");
-      await copyFile(input, inputPath);
-    } else {
-      inputPath = join(dir, "input.ttf");
-      await writeFile(inputPath, input);
-    }
-
+  return withTempInput(".ttf", input, async (dir, inputPath) => {
     try {
       await execCommand("sfnt2woff", [inputPath]);
       const output = join(dir, "input.woff");
@@ -143,15 +153,7 @@ async function sfntToWoff(input: FileInput): Promise<Buffer | null> {
 }
 
 async function woffToSfnt(input: FileInput): Promise<Buffer | null> {
-  return withTempDir(async (dir) => {
-    let inputPath: string;
-    if (typeof input === "string") {
-      inputPath = input; // Use path directly
-    } else {
-      inputPath = join(dir, "input.woff");
-      await writeFile(inputPath, input); // Write buffer to temp file
-    }
-
+  return withTempInput(".woff", input, async (_dir, inputPath) => {
     try {
       const { stdout } = await execCommand("woff2sfnt", [inputPath], undefined, { encoding: "buffer" });
       return stdout as Buffer;
@@ -163,16 +165,7 @@ async function woffToSfnt(input: FileInput): Promise<Buffer | null> {
 }
 
 async function woff2ToSfnt(input: FileInput): Promise<Buffer | null> {
-  return withTempDir(async (dir) => {
-    let inputPath: string;
-    if (typeof input === "string") {
-      inputPath = join(dir, "input.woff2");
-      await copyFile(input, inputPath);
-    } else {
-      inputPath = join(dir, "input.woff2");
-      await writeFile(inputPath, input);
-    }
-
+  return withTempInput(".woff2", input, async (dir, inputPath) => {
     const output = join(dir, "input.ttf");
     try {
       await execCommand("woff2_decompress", [inputPath]);

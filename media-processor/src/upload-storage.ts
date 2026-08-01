@@ -1,5 +1,6 @@
 import multer from "multer";
 import { mkdtemp, rm } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -50,7 +51,7 @@ export function createHybridStorage(opts: HybridStorageOptions): multer.StorageE
           const filename = `${randomBytes(16).toString("hex")}${getExt(file.originalname)}`;
           const filepath = join(dir, filename);
 
-          const ws = require("fs").createWriteStream(filepath);
+          const ws = createWriteStream(filepath);
 
           file.stream.pipe(ws);
 

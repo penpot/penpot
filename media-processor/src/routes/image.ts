@@ -4,6 +4,12 @@ import { getImageInfo, generateThumbnail } from "../services/image.js";
 import { throwValidation } from "../services/errors.js";
 import type { ThumbnailParams } from "../types.js";
 
+export function parseQuality(value: string | undefined, defaultValue = 85): number {
+  if (value === undefined) return defaultValue;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
 export function createImageRoutes(): IRouter {
   const router: IRouter = Router();
   const upload = getUpload();
@@ -32,7 +38,7 @@ export function createImageRoutes(): IRouter {
       const input = getFileInput(req.file!);
       const width = parseInt(req.query.width as string, 10);
       const height = parseInt(req.query.height as string, 10);
-      const quality = parseInt(req.query.quality as string, 10) || 85;
+      const quality = parseQuality(req.query.quality as string);
       const format = (req.query.format as string) || "jpeg";
       const mode = (req.query.mode as string) || "fit";
 

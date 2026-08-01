@@ -80,7 +80,9 @@ export async function generateThumbnail(
   params: ThumbnailParams
 ): Promise<{ data: Buffer; mtype: string }> {
   // Pre-validate source image dimensions using the same sharp instance
-  // that will be used for the resize pipeline — avoids decoding the image twice.
+  // that will be used for the resize pipeline. Sharp reads metadata
+  // (dimensions, orientation) from the image header without fully decoding
+  // the pixel data, then reuses the instance for the resize operations.
   const source = sharp(input);
   const srcMeta = await source.metadata();
   if (srcMeta.width == null || srcMeta.height == null) {
