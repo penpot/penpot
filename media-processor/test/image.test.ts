@@ -570,6 +570,120 @@ describe("generateThumbnail", () => {
       expect(pe.errorBody.code).toBe("unsupported-image-format");
     }
   });
+
+  it("throws invalid-image for corrupted image data", async () => {
+    // Create corrupted image by truncating valid image
+    const validBuffer = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    // Truncate to create corrupted data
+    const corruptedBuffer = validBuffer.subarray(0, Math.floor(validBuffer.length / 2));
+
+    try {
+      await getImageInfo(corruptedBuffer, corruptedBuffer.length);
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProcessingError);
+      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      expect(pe.statusCode).toBe(400);
+      expect(pe.errorBody.code).toBe("invalid-image");
+    }
+  });
+
+  it("throws invalid-image for truncated image data in generateThumbnail", async () => {
+    const validBuffer = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    // Truncate to create corrupted data
+    const corruptedBuffer = validBuffer.subarray(0, Math.floor(validBuffer.length / 2));
+
+    try {
+      await generateThumbnail(corruptedBuffer, {
+        width: 50,
+        height: 50,
+        quality: 85,
+        format: "jpeg",
+        mode: "fit",
+      });
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProcessingError);
+      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      expect(pe.statusCode).toBe(400);
+      expect(pe.errorBody.code).toBe("invalid-image");
+    }
+  });
+
+  it("preserves alpha channel in PNG output from transparent PNG", async () => {
+    // Create a transparent PNG with alpha < 1
+    const transparentPng = await sharp({
+      create: { width: 100, height: 100, channels: 4, background: { r: 255, g: 0, b: 0, alpha: 0.5 } },
+    })
+      .png()
+      .toBuffer();
+
+    const { data, mtype } = await generateThumbnail(transparentPng, {
+      width: 50,
+      height: 50,
+      quality: 85,
+      format: "png",
+      mode: "fit",
+    });
+
+    expect(mtype).toBe("image/png");
+    const meta = await sharp(data).metadata();
+    // PNG should preserve alpha channel (4 channels)
+    expect(meta.channels).toBe(4);
+  });
+
+  it("preserves alpha channel in WebP output from transparent PNG", async () => {
+    const transparentPng = await sharp({
+      create: { width: 100, height: 100, channels: 4, background: { r: 0, g: 255, b: 0, alpha: 0.5 } },
+    })
+      .png()
+      .toBuffer();
+
+    const { data, mtype } = await generateThumbnail(transparentPng, {
+      width: 50,
+      height: 50,
+      quality: 85,
+      format: "webp",
+      mode: "fit",
+    });
+
+    expect(mtype).toBe("image/webp");
+    const meta = await sharp(data).metadata();
+    // WebP should preserve alpha channel (4 channels)
+    expect(meta.channels).toBe(4);
+  });
+
+  it("preserves alpha channel in PNG output from transparent WebP", async () => {
+    // Create a transparent WebP
+    const transparentWebp = await sharp({
+      create: { width: 100, height: 100, channels: 4, background: { r: 0, g: 0, b: 255, alpha: 0.5 } },
+    })
+      .webp()
+      .toBuffer();
+
+    const { data, mtype } = await generateThumbnail(transparentWebp, {
+      width: 50,
+      height: 50,
+      quality: 85,
+      format: "png",
+      mode: "fit",
+    });
+
+    expect(mtype).toBe("image/png");
+    const meta = await sharp(data).metadata();
+    // PNG should preserve alpha channel (4 channels)
+    expect(meta.channels).toBe(4);
+  });
 });
 
 describe("parseQuality", () => {

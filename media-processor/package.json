@@ -29,8 +29,10 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.0.0",
     "@types/node": "^26.1.2",
+    "@types/supertest": "^7.2.1",
     "esbuild": "^0.28.1",
     "prettier": "^3.6.2",
+    "supertest": "^7.2.2",
     "tsx": "^4.22.4",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

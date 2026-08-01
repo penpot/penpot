@@ -128,4 +128,57 @@ describe("createHybridStorage", () => {
       });
     });
   });
+
+  it("uses memory storage when Content-Length is 0", async () => {
+    const req = mockReq("0");
+    const file = mockFile("");
+
+    await new Promise<void>((resolve, reject) => {
+      storage._handleFile(req, file, (err, info) => {
+        if (err) reject(err);
+        else {
+          expect(info).toBeDefined();
+          expect((info as any).path).toBeUndefined();
+          expect((info as any).buffer).toBeDefined();
+          resolve();
+        }
+      });
+    });
+  });
+
+  it("uses disk storage when Content-Length equals threshold", async () => {
+    const req = mockReq("1024");
+    const file = mockFile("x".repeat(1024));
+
+    await new Promise<void>((resolve, reject) => {
+      storage._handleFile(req, file, (err, info) => {
+        if (err) reject(err);
+        else {
+          expect(info).toBeDefined();
+          expect((info as any).path).toBeDefined();
+          expect((info as any).destination).toBeDefined();
+          tempDirs.push((info as any).destination);
+          resolve();
+        }
+      });
+    });
+  });
+
+  it("uses disk storage when Content-Length is very large", async () => {
+    const req = mockReq("1073741824"); // 1GB
+    const file = mockFile("x"); // Small actual content, but large Content-Length
+
+    await new Promise<void>((resolve, reject) => {
+      storage._handleFile(req, file, (err, info) => {
+        if (err) reject(err);
+        else {
+          expect(info).toBeDefined();
+          expect((info as any).path).toBeDefined();
+          expect((info as any).destination).toBeDefined();
+          tempDirs.push((info as any).destination);
+          resolve();
+        }
+      });
+    });
+  });
 });

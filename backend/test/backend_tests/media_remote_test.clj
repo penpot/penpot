@@ -51,7 +51,7 @@
   (t/testing "info returns dimensions and merges into input"
     (with-mocks [mock {:target 'app.media.remote/service-request
                        :return {:status 200
-                                :body (json-stream {:width 800 :height 600})}}]
+                                :body (json-stream {:width 800 :height 600 :mtype "image/jpeg" :size 12345 :orientation 1})}}]
       (with-redefs [cf/get (th/config-get-mock config-mock)]
         (let [path   (th/tempfile "backend_tests/test_files/sample.jpg")
               result (media.remote/process (mk-system)
@@ -69,7 +69,7 @@
   (t/testing "info sends correct endpoint, method, and x-shared-key header"
     (with-mocks [mock {:target 'app.media.remote/service-request
                        :return {:status 200
-                                :body (json-stream {:width 100 :height 100 :size 1})}}]
+                                :body (json-stream {:width 100 :height 100 :mtype "image/jpeg" :size 1 :orientation 1})}}]
       (with-redefs [cf/get (th/config-get-mock config-mock)]
         (let [path (th/tempfile "backend_tests/test_files/sample.jpg")]
           (media.remote/process (mk-system)
@@ -89,7 +89,7 @@
   (t/testing "info sends Content-Length header for streaming multipart"
     (with-mocks [mock {:target 'app.media.remote/service-request
                        :return {:status 200
-                                :body (json-stream {:width 100 :height 100 :size 1})}}]
+                                :body (json-stream {:width 100 :height 100 :mtype "image/jpeg" :size 1 :orientation 1})}}]
       (with-redefs [cf/get (th/config-get-mock config-mock)]
         (let [path (th/tempfile "backend_tests/test_files/sample.jpg")]
           (media.remote/process (mk-system)
@@ -509,7 +509,7 @@
   (t/testing "x-shared-key header matches the system's shared key"
     (with-mocks [mock {:target 'app.media.remote/service-request
                        :return {:status 200
-                                :body (json-stream {:width 1 :height 1 :size 1})}}]
+                                :body (json-stream {:width 1 :height 1 :mtype "image/jpeg" :size 1 :orientation 1})}}]
       (with-redefs [cf/get (th/config-get-mock config-mock)]
         (let [system {::setup/shared-keys {:media-processor "my-secret-key-123"}}]
           (media.remote/process system
