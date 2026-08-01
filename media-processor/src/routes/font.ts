@@ -17,6 +17,7 @@ export function createFontRoutes(): IRouter {
     cleanupMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
       const releaseQueue = (res as any).locals?.releaseQueue;
+      const signal = (req as any).abortController?.signal;
       try {
         if (!req.file) {
           throwValidation("invalid-font", "No file uploaded");
@@ -34,7 +35,7 @@ export function createFontRoutes(): IRouter {
         }
 
         res.locals.opMeta = `src=${sourceMtype}, dest=${targetMtype}`;
-        const result = await convertFont(input, sourceMtype, targetMtype);
+        const result = await convertFont(input, sourceMtype, targetMtype, signal);
 
         if (!result) {
           throwValidation("invalid-font", `Conversion from ${sourceMtype} to ${targetMtype} is not supported`);

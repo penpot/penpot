@@ -2,6 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 
 export function timeoutMiddleware(timeout: number) {
   return (req: Request, res: Response, next: NextFunction): void => {
+    // Create AbortController for request cancellation
+    const abortController = new AbortController();
+    (req as any).abortController = abortController;
+
     const timer = setTimeout(() => {
       if (!res.headersSent) {
         res.status(504).json({
@@ -9,6 +13,8 @@ export function timeoutMiddleware(timeout: number) {
           code: "processing-timeout",
           hint: "Request timed out",
         });
+        // Abort the signal to cancel ongoing processing
+        abortController.abort();
         res.on("finish", () => req.destroy());
       }
     }, timeout);

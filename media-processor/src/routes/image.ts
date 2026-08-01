@@ -21,13 +21,14 @@ export function createImageRoutes(): IRouter {
     cleanupMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
       const releaseQueue = (res as any).locals?.releaseQueue;
+      const signal = (req as any).abortController?.signal;
       try {
         if (!req.file) {
           throwValidation("invalid-image", "No file uploaded");
         }
 
         const input = getFileInput(req.file!);
-        const info = await getImageInfo(input, req.file!.size);
+        const info = await getImageInfo(input, req.file!.size, signal);
         res.locals.opMeta = `mtype=${info.mtype}, size=${info.width}x${info.height}`;
         res.json(info);
       } catch (err) {
@@ -44,6 +45,7 @@ export function createImageRoutes(): IRouter {
     cleanupMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
       const releaseQueue = (res as any).locals?.releaseQueue;
+      const signal = (req as any).abortController?.signal;
       try {
         if (!req.file) {
           throwValidation("invalid-image", "No file uploaded");
@@ -82,7 +84,7 @@ export function createImageRoutes(): IRouter {
         };
 
         res.locals.opMeta = `size=${width}x${height}, fmt=${format}, mode=${mode}, q=${params.quality}`;
-        const { data, mtype } = await generateThumbnail(input, params);
+        const { data, mtype } = await generateThumbnail(input, params, signal);
         res.setHeader("Content-Type", mtype);
         res.send(data);
       } catch (err) {

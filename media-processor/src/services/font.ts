@@ -22,7 +22,7 @@ export function execCommand(
   cmd: string,
   args: string[],
   timeout?: number,
-  options?: { encoding?: BufferEncoding | "buffer" }
+  options?: { encoding?: BufferEncoding | "buffer"; signal?: AbortSignal }
 ): Promise<{ stdout: string | Buffer; stderr: string | Buffer }> {
   const effectiveTimeout = timeout ?? fontTimeout;
   const encoding = options?.encoding ?? "utf8";
@@ -50,7 +50,11 @@ export function execCommand(
     execFile(
       finalCmd,
       finalArgs,
-      { timeout: effectiveTimeout, encoding: encoding === "buffer" ? null : encoding },
+      {
+        timeout: effectiveTimeout,
+        encoding: encoding === "buffer" ? null : encoding,
+        signal: options?.signal,
+      },
       (err, stdout, stderr) => {
         if (err) {
           const error = new Error(`Command failed: ${finalCmd} ${finalArgs.join(" ")}\n${stderr}`);
@@ -96,7 +100,12 @@ async function withTempInput<T>(
   });
 }
 
-async function fontConvert(inputExt: string, outputExt: string, input: FileInput): Promise<Buffer | null> {
+async function fontConvert(
+  inputExt: string,
+  outputExt: string,
+  input: FileInput,
+  signal?: AbortSignal
+): Promise<Buffer | null> {
   return withTempDir(async (dir) => {
     let inputPath: string;
     if (typeof input === "string") {
@@ -116,7 +125,9 @@ async function fontConvert(inputExt: string, outputExt: string, input: FileInput
       // quotes, backslashes, or other special chars may fail.
       const escInput = inputPath.replace(/'/g, "''");
       const escOutput = outputPath.replace(/'/g, "''");
-      await execCommand("fontforge", ["-lang=ff", "-c", `Open('${escInput}'); Generate('${escOutput}')`]);
+      await execCommand("fontforge", ["-lang=ff", "-c", `Open('${escInput}'); Generate('${escOutput}')`], undefined, {
+        signal,
+      });
       return await readFile(outputPath);
     } catch (err: unknown) {
       const error = err as NodeJS.ErrnoException & { killed?: boolean; signal?: string };
@@ -131,18 +142,18 @@ async function fontConvert(inputExt: string, outputExt: string, input: FileInput
   });
 }
 
-async function ttfToOtf(input: FileInput): Promise<Buffer | null> {
-  return fontConvert(".ttf", ".otf", input);
+async function ttfToOtf(input: FileInput, signal?: AbortSignal): Promise<Buffer | null> {
+  return fontConvert(".ttf", ".otf", input, signal);
 }
 
-async function otfToTtf(input: FileInput): Promise<Buffer | null> {
-  return fontConvert(".otf", ".ttf", input);
+async function otfToTtf(input: FileInput, signal?: AbortSignal): Promise<Buffer | null> {
+  return fontConvert(".otf", ".ttf", input, signal);
 }
 
-async function sfntToWoff(input: FileInput, ext: string = ".ttf"): Promise<Buffer | null> {
+async function sfntToWoff(input: FileInput, ext: string = ".ttf", signal?: AbortSignal): Promise<Buffer | null> {
   return withTempInput(ext, input, async (dir, inputPath) => {
     try {
-      await execCommand("sfnt2woff", [inputPath]);
+      await execCommand("sfnt2woff", [inputPath], undefined, { signal });
       const output = join(dir, "input.woff");
       return await readFile(output);
     } catch (err) {
@@ -152,10 +163,10 @@ async function sfntToWoff(input: FileInput, ext: string = ".ttf"): Promise<Buffe
   });
 }
 
-async function woffToSfnt(input: FileInput): Promise<Buffer | null> {
+async function woffToSfnt(input: FileInput, signal?: AbortSignal): Promise<Buffer | null> {
   return withTempInput(".woff", input, async (_dir, inputPath) => {
     try {
-      const { stdout } = await execCommand("woff2sfnt", [inputPath], undefined, { encoding: "buffer" });
+      const { stdout } = await execCommand("woff2sfnt", [inputPath], undefined, { encoding: "buffer", signal });
       return stdout as Buffer;
     } catch (err) {
       logger.warn({ err }, "woff2sfnt conversion failed");
@@ -164,11 +175,11 @@ async function woffToSfnt(input: FileInput): Promise<Buffer | null> {
   });
 }
 
-async function woff2ToSfnt(input: FileInput): Promise<Buffer | null> {
+async function woff2ToSfnt(input: FileInput, signal?: AbortSignal): Promise<Buffer | null> {
   return withTempInput(".woff2", input, async (dir, inputPath) => {
     const output = join(dir, "input.ttf");
     try {
-      await execCommand("woff2_decompress", [inputPath]);
+      await execCommand("woff2_decompress", [inputPath], undefined, { signal });
       return await readFile(output);
     } catch (err) {
       logger.warn({ err }, "woff2_decompress failed");
@@ -189,24 +200,29 @@ function getSfntType(data: Buffer): "ttf" | "otf" {
   }
 }
 
-async function convertFromSfnt(sfnt: Buffer, targetType: string): Promise<Buffer | null> {
+async function convertFromSfnt(sfnt: Buffer, targetType: string, signal?: AbortSignal): Promise<Buffer | null> {
   if (targetType === "ttf") {
     const stype = getSfntType(sfnt);
     if (stype === "ttf") return sfnt;
-    return otfToTtf(sfnt);
+    return otfToTtf(sfnt, signal);
   }
   if (targetType === "otf") {
     const stype = getSfntType(sfnt);
     if (stype === "otf") return sfnt;
-    return ttfToOtf(sfnt);
+    return ttfToOtf(sfnt, signal);
   }
   if (targetType === "woff") {
-    return sfntToWoff(sfnt);
+    return sfntToWoff(sfnt, ".ttf", signal);
   }
   return null;
 }
 
-export async function convertFont(input: FileInput, sourceMtype: string, targetMtype: string): Promise<Buffer | null> {
+export async function convertFont(
+  input: FileInput,
+  sourceMtype: string,
+  targetMtype: string,
+  signal?: AbortSignal
+): Promise<Buffer | null> {
   const sourceType = sourceMtype.replace("font/", "");
   const targetType = targetMtype.replace("font/", "");
 
@@ -220,31 +236,31 @@ export async function convertFont(input: FileInput, sourceMtype: string, targetM
 
   // Source is TTF
   if (sourceType === "ttf") {
-    if (targetType === "otf") return ttfToOtf(input);
-    if (targetType === "woff") return sfntToWoff(input, ".ttf");
+    if (targetType === "otf") return ttfToOtf(input, signal);
+    if (targetType === "woff") return sfntToWoff(input, ".ttf", signal);
     return null;
   }
 
   // Source is OTF
   if (sourceType === "otf") {
-    if (targetType === "ttf") return otfToTtf(input);
-    if (targetType === "woff") return sfntToWoff(input, ".otf");
+    if (targetType === "ttf") return otfToTtf(input, signal);
+    if (targetType === "woff") return sfntToWoff(input, ".otf", signal);
     return null;
   }
 
   // Source is WOFF: extract sfnt first, then convert
   if (sourceType === "woff") {
-    const sfnt = await woffToSfnt(input);
+    const sfnt = await woffToSfnt(input, signal);
     if (!sfnt) {
       throwValidation("invalid-font", "Could not extract SFNT from WOFF");
     }
-    return convertFromSfnt(sfnt, targetType);
+    return convertFromSfnt(sfnt, targetType, signal);
   }
 
   // Source is WOFF2: decompress to sfnt, then convert
-  const sfnt = await woff2ToSfnt(input);
+  const sfnt = await woff2ToSfnt(input, signal);
   if (!sfnt) {
     throwValidation("invalid-font", "Could not decompress WOFF2");
   }
-  return convertFromSfnt(sfnt, targetType);
+  return convertFromSfnt(sfnt, targetType, signal);
 }

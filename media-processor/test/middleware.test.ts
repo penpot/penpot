@@ -420,6 +420,63 @@ describe("timeoutMiddleware", () => {
     expect(req.destroy).toHaveBeenCalled();
     vi.useRealTimers();
   });
+
+  it("creates AbortController and attaches to request", () => {
+    const middleware = timeoutMiddleware(1000);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    expect((req as any).abortController).toBeDefined();
+    expect((req as any).abortController.signal).toBeDefined();
+    expect((req as any).abortController.signal.aborted).toBe(false);
+  });
+
+  it("aborts signal when timeout fires", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(100);
+    const req = new EventEmitter() as unknown as Request;
+    (req as any).destroy = vi.fn();
+    const res = new EventEmitter() as unknown as Response;
+    (res as any).headersSent = false;
+    (res as any).status = vi.fn().mockReturnThis();
+    (res as any).json = vi.fn().mockReturnThis();
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    // Signal should not be aborted yet
+    expect((req as any).abortController.signal.aborted).toBe(false);
+
+    // Advance to timeout
+    vi.advanceTimersByTime(150);
+
+    // Signal should now be aborted
+    expect((req as any).abortController.signal.aborted).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it("does not abort signal when response finishes before timeout", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(1000);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    // Response finishes before timeout
+    res.emit("finish");
+
+    // Advance past timeout
+    vi.advanceTimersByTime(2000);
+
+    // Signal should NOT be aborted (timer was cleared)
+    expect((req as any).abortController.signal.aborted).toBe(false);
+    vi.useRealTimers();
+  });
 });
 
 describe("cleanupMiddleware", () => {

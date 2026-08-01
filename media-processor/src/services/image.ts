@@ -57,7 +57,7 @@ function validateOutputDimensions(width: number, height: number): void {
   }
 }
 
-export async function getImageInfo(input: FileInput, size: number): Promise<ImageInfo> {
+export async function getImageInfo(input: FileInput, size: number, signal?: AbortSignal): Promise<ImageInfo> {
   let metadata;
   try {
     metadata = await sharp(input).metadata();
@@ -98,8 +98,14 @@ const FORMAT_MIMES: Record<string, string> = {
 
 export async function generateThumbnail(
   input: FileInput,
-  params: ThumbnailParams
+  params: ThumbnailParams,
+  signal?: AbortSignal
 ): Promise<{ data: Buffer; mtype: string }> {
+  // Check if request was cancelled before starting
+  if (signal?.aborted) {
+    throw new Error("Request cancelled");
+  }
+
   // Pre-validate source image dimensions using the same sharp instance
   // that will be used for the resize pipeline. Sharp reads metadata
   // (dimensions, orientation) from the image header without fully decoding
@@ -110,6 +116,11 @@ export async function generateThumbnail(
     srcMeta = await source.metadata();
   } catch (err) {
     throwValidation("invalid-image", `Failed to decode image: ${(err as Error).message}`);
+  }
+
+  // Check again after metadata read
+  if (signal?.aborted) {
+    throw new Error("Request cancelled");
   }
 
   if (srcMeta.width == null || srcMeta.height == null) {
