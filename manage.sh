@@ -511,11 +511,12 @@ function create-devenv {
     instance-compose ws0 create
 }
 
-# Stop instances. ws0 is the worker-bearer and must be the last one to stop;
-# shared infra is shut down together with ws0. Flags are mutually exclusive.
+# Stop instances. Each workspace is independent and can be stopped in any
+# order. Shared infra is shut down only when no instances remain running.
+# Flags are mutually exclusive.
 #
 #   --ws N (N>=1)  stop just that workspace. Leaves ws0 and infra alone.
-#   --ws 0 | (no flag)  stop ws0 + shared infra. Refused if any ws1+ is running.
+#   --ws 0 | (no flag)  stop ws0; shuts down shared infra only if no ws1+ is running.
 #   --all          stop every wsN highest-first, then ws0, then infra.
 function stop-devenv {
     local target=""
@@ -555,21 +556,19 @@ function stop-devenv {
     [[ -z "$target" ]] && target="ws0"
 
     if [[ "$target" == "ws0" ]]; then
-        local non_main=""
-        for ws in $running; do
-            [[ "$ws" != "ws0" ]] && non_main="$non_main $ws"
-        done
-        if [[ -n "$non_main" ]]; then
-            echo "stop-devenv: cannot stop ws0 while other instances are running:${non_main}." >&2
-            echo "Stop them first (--ws N) or use --all." >&2
-            return 1
-        fi
         if printf '%s\n' $running | grep -qx ws0; then
             stop-instance ws0
         else
             echo "[ws0] not running."
         fi
-        infra-compose down -t 2
+        # Only stop shared infra when no other instances are still running.
+        local remaining=""
+        for ws in $(list-running-instances); do
+            [[ "$ws" != "ws0" ]] && remaining="$remaining $ws"
+        done
+        if [[ -z "$remaining" ]]; then
+            infra-compose down -t 2
+        fi
         return 0
     fi
 
@@ -1346,14 +1345,14 @@ function usage {
     echo "                                                           honouring per-repo local overrides; see"
     echo "                                                           devenv.md > 'Git identity inside the container')."
     echo "- create-devenv                    Create ws0 + shared-infra compose services without starting them."
-    echo "- stop-devenv                      Stop one or more workspaces. Shared infra stops with the last one."
-    echo "                                   Options: --ws N (stop wsN, N >= 1) | (no flag) (stop ws0 + infra;"
-    echo "                                            refused if any wsN is still running) | --all (stop every wsN"
-    echo "                                            highest first, then ws0 + infra)."
+    echo "- stop-devenv                      Stop one or more workspaces. Shared infra stops when no instances remain."
+    echo "                                   Options: --ws N (stop wsN) | (no flag) (stop ws0; shared infra only"
+    echo "                                            if no other ws is running) | --all (stop every wsN highest"
+    echo "                                            first, then ws0 + infra)."
     echo "- drop-devenv                      Same CLI and invariants as stop-devenv (see above), plus removal of"
     echo "                                   the shared devenv image on full teardowns (no flag, --ws 0, or --all)."
-    echo "                                   Refused if any wsN (N >= 1) is still running. A single --ws N (N >= 1)"
-    echo "                                   keeps the image since other workspaces still need it."
+    echo "                                   A single --ws N (N >= 1) keeps the image since other workspaces still"
+    echo "                                   need it."
     echo "- log-devenv                       Tail a workspace's compose logs."
     echo "                                   Options: --ws N (default: 0)."
     echo ""

@@ -100,7 +100,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.18.4
+ENV OPENCODE_VERSION=1.18.11
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -160,7 +160,7 @@ RUN set -eux; \
 FROM base AS setup-jvm
 
 # https://clojure.org/releases/tools
-ENV CLOJURE_VERSION=1.12.5.1654
+ENV CLOJURE_VERSION=1.12.5.1664
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -242,12 +242,12 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.05.25 \
-    BABASHKA_VERSION=1.12.218 \
-    CLJFMT_VERSION=0.16.4 \
-    PIXI_VERSION=0.67.2 \
-    GITHUB_CLI_VERSION=2.96.0 \
-    UV_VERSION=0.11.9 \
+ENV CLJKONDO_VERSION=2026.07.24 \
+    BABASHKA_VERSION=1.13.219 \
+    CLJFMT_VERSION=0.16.5 \
+    PIXI_VERSION=0.75.0 \
+    GITHUB_CLI_VERSION=2.97.0 \
+    UV_VERSION=0.12.1 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
