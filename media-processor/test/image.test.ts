@@ -809,6 +809,36 @@ describe("generateThumbnail", () => {
       expect((err as Error).message).toBe("Request cancelled");
     }
   });
+
+  it("aborts during toBuffer when signal fires", async () => {
+    const buffer = await createImage(2000, 2000);
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const promise = generateThumbnail(
+      buffer,
+      {
+        width: 1000,
+        height: 1000,
+        quality: 85,
+        format: "jpeg",
+        mode: "fit",
+      },
+      signal
+    );
+
+    setTimeout(() => controller.abort(), 10);
+
+    try {
+      await promise;
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error);
+      const message = (err as Error).message;
+      expect(message.includes("Request cancelled") || message.includes("abort")).toBe(true);
+    }
+  });
 });
 
 describe("parseQuality", () => {

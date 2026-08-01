@@ -186,7 +186,24 @@ export async function generateThumbnail(
 
   let data: Buffer;
   try {
-    data = await pipeline.toBuffer();
+    const bufferPromise = pipeline.toBuffer();
+
+    if (signal) {
+      data = await Promise.race([
+        bufferPromise,
+        new Promise<Buffer>((_, reject) => {
+          if (signal.aborted) {
+            reject(new Error("Request cancelled"));
+            return;
+          }
+          signal.addEventListener("abort", () => {
+            reject(new Error("Request cancelled"));
+          });
+        }),
+      ]);
+    } else {
+      data = await bufferPromise;
+    }
   } catch (err) {
     throwValidation("invalid-image", `Failed to process image: ${(err as Error).message}`);
   }
