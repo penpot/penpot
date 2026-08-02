@@ -495,6 +495,51 @@ describe("timeoutMiddleware", () => {
     expect((req as any).abortController.signal.aborted).toBe(false);
     vi.useRealTimers();
   });
+
+  it("aborts signal when response closes (client disconnect)", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(1000);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    // Signal should not be aborted initially
+    expect((req as any).abortController.signal.aborted).toBe(false);
+
+    // Simulate client disconnect (response closes)
+    res.emit("close");
+
+    // Signal should now be aborted
+    expect((req as any).abortController.signal.aborted).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it("does not abort signal again if already aborted when response closes", async () => {
+    vi.useFakeTimers();
+    const middleware = timeoutMiddleware(100);
+    const req = new EventEmitter() as unknown as Request;
+    const res = new EventEmitter() as unknown as Response;
+    (res as any).headersSent = false;
+    (res as any).status = vi.fn().mockReturnValue({ json: vi.fn() });
+    const next = vi.fn();
+
+    middleware(req, res, next);
+
+    // Advance past timeout to trigger abort
+    vi.advanceTimersByTime(200);
+
+    // Signal should be aborted from timeout
+    expect((req as any).abortController.signal.aborted).toBe(true);
+
+    // Simulate client disconnect (response closes)
+    res.emit("close");
+
+    // Signal should still be aborted (no error thrown)
+    expect((req as any).abortController.signal.aborted).toBe(true);
+    vi.useRealTimers();
+  });
 });
 
 describe("cleanupMiddleware", () => {

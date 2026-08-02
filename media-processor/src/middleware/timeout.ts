@@ -19,8 +19,17 @@ export function timeoutMiddleware(timeout: number) {
       }
     }, timeout);
 
+    // Clear timer on finish (successful completion)
     res.on("finish", () => clearTimeout(timer));
-    res.on("close", () => clearTimeout(timer));
+
+    // Clear timer and abort signal on close (client disconnect)
+    res.on("close", () => {
+      clearTimeout(timer);
+      if (!abortController.signal.aborted) {
+        abortController.abort();
+      }
+    });
+
     next();
   };
 }

@@ -835,8 +835,36 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(Error);
-      const message = (err as Error).message;
-      expect(message.includes("Request cancelled") || message.includes("abort")).toBe(true);
+      expect((err as Error).message).toBe("Request cancelled");
+    }
+  });
+
+  it("waits for Sharp to complete before checking signal", async () => {
+    const buffer = await createImage(100, 80);
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const promise = generateThumbnail(
+      buffer,
+      {
+        width: 50,
+        height: 40,
+        quality: 85,
+        format: "jpeg",
+        mode: "fit",
+      },
+      signal
+    );
+
+    controller.abort();
+
+    try {
+      await promise;
+      expect.fail("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error);
+      expect((err as Error).message).toBe("Request cancelled");
     }
   });
 });

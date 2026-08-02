@@ -225,10 +225,10 @@ describe("queueMiddleware", () => {
     expect(next3).toHaveBeenCalled();
   });
 
-  it("releases slot when response finishes (covers Multer error path)", async () => {
-    // This test verifies the fallback behavior: when response finishes
-    // (e.g., error handler sent response), the queue slot is released.
-    // This covers the Multer error case where the route handler never runs.
+  it("releases slot when error handler calls releaseQueue (covers Multer error path)", async () => {
+    // This test verifies that the error handler releases the queue slot
+    // by calling releaseQueue from res.locals. This covers the Multer error
+    // case where the route handler never runs.
     const middleware = createQueueMiddleware(1);
     const req1 = mockReq();
     const res1 = mockRes();
@@ -245,8 +245,9 @@ describe("queueMiddleware", () => {
     expect(next1).toHaveBeenCalled();
     expect(next2).not.toHaveBeenCalled();
 
-    // Simulate response finishing (e.g., error handler sent response)
-    res1.emit("finish");
+    // Simulate error handler calling releaseQueue (e.g., Multer error)
+    const releaseQueue = (res1 as any).locals.releaseQueue;
+    releaseQueue();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Second request should proceed because slot was released
