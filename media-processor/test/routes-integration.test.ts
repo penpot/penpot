@@ -171,10 +171,40 @@ describe("HTTP upload cleanup", () => {
   });
 
   it("removes disk-backed file after timeout", async () => {
-    // This test is tricky because we need to trigger a timeout
-    // For now, we'll skip this test as it requires more complex setup
-    // The cleanup middleware should handle timeouts via the 'close' event
-    expect(true).toBe(true);
+    // Create a test app with very short timeout
+    const timeoutApp = express();
+    configureImageLimits({ maxPixels: 128_000_000, maxWidth: 16384, maxHeight: 16384 });
+    configureUploadLimits({ maxFileSize: 10 * 1024 * 1024, memoryThreshold: 10 });
+    const queueMiddleware = createQueueMiddleware(10);
+    timeoutApp.use(timeoutMiddleware(10)); // 10ms timeout - very aggressive
+    timeoutApp.use("/api/image", sharedKeyAuth("test-key"), queueMiddleware, createImageRoutes());
+    timeoutApp.use(errorHandler);
+
+    const beforeFiles = await getTempFiles();
+
+    // Create a large image that will take time to process
+    const imageBuffer = await sharp({
+      create: { width: 4000, height: 4000, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .jpeg({ quality: 100 })
+      .toBuffer();
+
+    const response = await request(timeoutApp)
+      .post("/api/image/thumbnail?width=2000&height=2000&format=jpeg&mode=fit")
+      .set("x-shared-key", "test-key")
+      .attach("file", imageBuffer, { filename: "large.jpg", contentType: "image/jpeg" });
+
+    // Should timeout
+    expect(response.status).toBe(504);
+    expect(response.body.type).toBe("internal");
+    expect(response.body.code).toBe("processing-timeout");
+
+    // Wait for processing to settle (Sharp may still be working in background)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const afterFiles = await getTempFiles();
+    const newFiles = afterFiles.filter((f) => !beforeFiles.includes(f));
+    expect(newFiles.length).toBe(0);
   });
 });
 

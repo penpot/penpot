@@ -27,13 +27,13 @@ function getContentLength(req: Request): number {
 export function createHybridStorage(opts: HybridStorageOptions): multer.StorageEngine {
   const memoryStorage = multer.memoryStorage();
 
-  let tempDir: string | null = null;
+  let tempDirPromise: Promise<string> | null = null;
 
   async function ensureTempDir(): Promise<string> {
-    if (!tempDir) {
-      tempDir = await mkdtemp(join(tmpdir(), "penpot.upload."));
+    if (!tempDirPromise) {
+      tempDirPromise = mkdtemp(join(tmpdir(), "penpot.upload."));
     }
-    return tempDir;
+    return tempDirPromise;
   }
 
   return {

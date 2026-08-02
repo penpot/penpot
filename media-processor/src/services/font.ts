@@ -156,7 +156,12 @@ async function sfntToWoff(input: FileInput, ext: string = ".ttf", signal?: Abort
       await execCommand("sfnt2woff", [inputPath], undefined, { signal });
       const output = join(dir, "input.woff");
       return await readFile(output);
-    } catch (err) {
+    } catch (err: unknown) {
+      const error = err as NodeJS.ErrnoException & { killed?: boolean; signal?: string };
+      if (error.killed || error.signal === "SIGKILL" || error.signal === "SIGXCPU") {
+        logger.warn({ err }, "sfnt2woff killed by resource limits");
+        throwProcessing("resource-limit-exceeded", "Font processing exceeded resource limits");
+      }
       logger.warn({ err }, "sfnt2woff conversion failed");
       return null;
     }
@@ -168,7 +173,12 @@ async function woffToSfnt(input: FileInput, signal?: AbortSignal): Promise<Buffe
     try {
       const { stdout } = await execCommand("woff2sfnt", [inputPath], undefined, { encoding: "buffer", signal });
       return stdout as Buffer;
-    } catch (err) {
+    } catch (err: unknown) {
+      const error = err as NodeJS.ErrnoException & { killed?: boolean; signal?: string };
+      if (error.killed || error.signal === "SIGKILL" || error.signal === "SIGXCPU") {
+        logger.warn({ err }, "woff2sfnt killed by resource limits");
+        throwProcessing("resource-limit-exceeded", "Font processing exceeded resource limits");
+      }
       logger.warn({ err }, "woff2sfnt conversion failed");
       return null;
     }
@@ -181,7 +191,12 @@ async function woff2ToSfnt(input: FileInput, signal?: AbortSignal): Promise<Buff
     try {
       await execCommand("woff2_decompress", [inputPath], undefined, { signal });
       return await readFile(output);
-    } catch (err) {
+    } catch (err: unknown) {
+      const error = err as NodeJS.ErrnoException & { killed?: boolean; signal?: string };
+      if (error.killed || error.signal === "SIGKILL" || error.signal === "SIGXCPU") {
+        logger.warn({ err }, "woff2_decompress killed by resource limits");
+        throwProcessing("resource-limit-exceeded", "Font processing exceeded resource limits");
+      }
       logger.warn({ err }, "woff2_decompress failed");
       return null;
     }
@@ -217,6 +232,37 @@ async function convertFromSfnt(sfnt: Buffer, targetType: string, signal?: AbortS
   return null;
 }
 
+function validateFontSignature(data: Buffer, expectedType: string): void {
+  if (data.length < 4) {
+    throwValidation("invalid-font", "Font data too short");
+  }
+
+  const magic = data.subarray(0, 4).toString("hex");
+
+  switch (expectedType) {
+    case "ttf":
+      if (magic !== "00010000") {
+        throwValidation("invalid-font", "Invalid TTF signature");
+      }
+      break;
+    case "otf":
+      if (magic !== "4f54544f") {
+        throwValidation("invalid-font", "Invalid OTF signature");
+      }
+      break;
+    case "woff":
+      if (magic !== "774f4646") {
+        throwValidation("invalid-font", "Invalid WOFF signature");
+      }
+      break;
+    case "woff2":
+      if (magic !== "774f4632") {
+        throwValidation("invalid-font", "Invalid WOFF2 signature");
+      }
+      break;
+  }
+}
+
 export async function convertFont(
   input: FileInput,
   sourceMtype: string,
@@ -226,12 +272,16 @@ export async function convertFont(
   const sourceType = sourceMtype.replace("font/", "");
   const targetType = targetMtype.replace("font/", "");
 
-  // Same type: return data as-is
+  // Same type: validate signature and return data as-is
   if (sourceType === targetType) {
+    let data: Buffer;
     if (typeof input === "string") {
-      return readFile(input); // Read file into Buffer for same-type return
+      data = await readFile(input);
+    } else {
+      data = input;
     }
-    return input;
+    validateFontSignature(data, sourceType);
+    return data;
   }
 
   // Source is TTF

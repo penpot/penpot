@@ -186,6 +186,11 @@ export async function generateThumbnail(
 
   let data: Buffer;
   try {
+    // Sharp 0.35.3 does not support cancellation of native libvips operations.
+    // toBuffer() only accepts { resolveWithObject: boolean }, no AbortSignal.
+    // We hold the queue slot until Sharp completes fully, then check signal
+    // to throw if the request was cancelled during processing. This prevents
+    // concurrency limit violations and handles timeouts gracefully.
     data = await pipeline.toBuffer();
   } catch (err) {
     throwValidation("invalid-image", `Failed to process image: ${(err as Error).message}`);

@@ -126,6 +126,58 @@ describe("convertFont", () => {
         expect(pe.errorBody.code).toBe("invalid-font");
       }
     });
+
+    it("ttf→ttf with invalid magic bytes throws validation error", async () => {
+      const invalidTtf = Buffer.from("00000000", "hex");
+      try {
+        await convertFont(invalidTtf, "font/ttf", "font/ttf");
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(ProcessingError);
+        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        expect(pe.statusCode).toBe(400);
+        expect(pe.errorBody.code).toBe("invalid-font");
+      }
+    });
+
+    it("otf→otf with invalid magic bytes throws validation error", async () => {
+      const invalidOtf = Buffer.from("00000000", "hex");
+      try {
+        await convertFont(invalidOtf, "font/otf", "font/otf");
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(ProcessingError);
+        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        expect(pe.statusCode).toBe(400);
+        expect(pe.errorBody.code).toBe("invalid-font");
+      }
+    });
+
+    it("woff→woff with invalid magic bytes throws validation error", async () => {
+      const invalidWoff = Buffer.from("00000000", "hex");
+      try {
+        await convertFont(invalidWoff, "font/woff", "font/woff");
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(ProcessingError);
+        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        expect(pe.statusCode).toBe(400);
+        expect(pe.errorBody.code).toBe("invalid-font");
+      }
+    });
+
+    it("woff2→woff2 with invalid magic bytes throws validation error", async () => {
+      const invalidWoff2 = Buffer.from("00000000", "hex");
+      try {
+        await convertFont(invalidWoff2, "font/woff2", "font/woff2");
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(ProcessingError);
+        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        expect(pe.statusCode).toBe(400);
+        expect(pe.errorBody.code).toBe("invalid-font");
+      }
+    });
   });
 
   describe("data integrity", () => {

@@ -181,4 +181,32 @@ describe("createHybridStorage", () => {
       });
     });
   });
+
+  it("reuses the same temp directory for concurrent uploads", async () => {
+    const req1 = mockReq("2048");
+    const file1 = mockFile("x".repeat(2048));
+    const req2 = mockReq("2048");
+    const file2 = mockFile("y".repeat(2048));
+
+    const [info1, info2] = await Promise.all([
+      new Promise<any>((resolve, reject) => {
+        storage._handleFile(req1, file1, (err, info) => {
+          if (err) reject(err);
+          else resolve(info);
+        });
+      }),
+      new Promise<any>((resolve, reject) => {
+        storage._handleFile(req2, file2, (err, info) => {
+          if (err) reject(err);
+          else resolve(info);
+        });
+      }),
+    ]);
+
+    tempDirs.push(info1.destination);
+    tempDirs.push(info2.destination);
+
+    // Both uploads should use the same temp directory
+    expect(info1.destination).toBe(info2.destination);
+  });
 });
