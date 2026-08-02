@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-31 17:02+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-08-03 06:04+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -4024,7 +4024,6 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-#, fuzzy
 msgid "options.deleted-token"
 msgstr "האסימון הזה לא קיים או שנמחק."
 
@@ -8526,9 +8525,8 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} לא נמצא באף סדרה פעילה או שהערך שלו שגוי."
+msgstr "האסימון {%s} לא נמצא באף סדרה פעילה או שהערך שלו שגוי."
 
 #: src/app/main/data/common.cljs:82
 msgid "notifications.by-code.upgrade-version"
@@ -8557,3 +8555,401 @@ msgstr "לא הצלחנו לאמת את הקובץ הזה."
 #: src/app/main/ui/dashboard/import.cljs:509
 msgid "dashboard.import.import-error.corrupt-file"
 msgstr "נראה שהקובץ הזה פגום."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "הצוותים שלי"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-organization-allows-create-team.message"
+msgstr "אין לך הרשאות להוסיף צוותים לאף אחד מהארגונים שלך."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"אסור לך ליצור צוותים בארגון %s. למידע נוסף, נא ליצור קשר עם בעלי הארגון."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"אסור לך למחוק צוותים שהם חלק מהארגון %s. למידע נוסף, נא ליצור קשר עם בעלי "
+"הארגון."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"אסור לך להעביר צוותים שהם חלק מהארגון %s. למידע נוסף, נא ליצור קשר עם בעלי "
+"הארגון."
+
+#: src/app/main/data/dashboard.cljs:753
+msgid "dashboard.organization-deleted"
+msgstr "הארגון %s נמחק."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-organization"
+msgstr "+ יצירת ארגון"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "ארגונים"
+
+msgid "dashboard.section.teams"
+msgstr "צוותים"
+
+#, unused
+msgid "dashboard.select-organization-modal.accept"
+msgstr "הוספה לארגון"
+
+#, unused
+msgid "dashboard.select-organization-modal.choose"
+msgstr "בחירת ארגון:"
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
+msgstr "הזמנות ממתינות למשתמשים חיצוניים תבוטלנה."
+
+#, unused
+msgid "dashboard.select-organization-modal.permission-info"
+msgstr "כאן אפשר למצוא את כל הארגונים שלך שבהם מותר לך ליצור או להוסיף צוותים."
+
+#, unused
+msgid "dashboard.select-organization-modal.select"
+msgstr "בחירת ארגון"
+
+#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-organization-modal.title"
+msgstr "הוספת צוות לארגון"
+
+#, unused
+msgid "dashboard.team-belong-organization"
+msgstr "הצוות הזה שייך מעתה ל־%s"
+
+#, unused
+msgid "dashboard.team-no-longer-belong-organization"
+msgstr "הצוות הזה לא שייך יותר לארגון %s"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "ארגון הצוות"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "הוספה לארגון"
+
+#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
+msgid "dashboard.team-organization.add.no-valid-organizations"
+msgstr "אין לך הרשאה להוסיף את הצוות הזה לאף אחד מהארגונים שלך."
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "החלפת ארגון הצוות"
+
+#: src/app/main/ui/dashboard/team.cljs:905
+msgid "dashboard.team-organization.disabled-organization-tooltip"
+msgstr "אפשר להזמין רק אנשים מהארגון שלך."
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "הצוות הזה אינו חלק מאף ארגון"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "הסרת צוות מארגון"
+
+#, unused
+msgid "dashboard.user-no-longer-belong-organization"
+msgstr "נושלת מחברות בארגון %s"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "בטא"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.organization-invitation-accepted"
+msgstr "חברת אל %s"
+
+#: src/app/main/data/nitrate.cljs:165
+msgid "dashboard.leave-organization.toast"
+msgstr "הורחקת מהארגון %s."
+
+#, unused
+msgid "dashboard.change-organization-modal.accept"
+msgstr "העברת צוות"
+
+#, unused
+msgid "dashboard.change-organization-modal.choose"
+msgstr "העברה אל:"
+
+#, unused
+msgid "dashboard.change-organization-modal.select"
+msgstr "בחירת ארגון"
+
+#, unused
+msgid "dashboard.change-organization-modal.text"
+msgstr ""
+"מיזמים וקבצים יישארו זמינים לחברי הצוות. הצוות יקבל את ההגדרות מהארגון החדש."
+
+#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-organization-modal.title"
+msgstr "החלפת ארגון הצוות"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "תצוגת רשת"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "תצוגת רשימה"
+
+#: src/app/main/ui/dashboard/import.cljs:512
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "משהו השתבש בעת עיבוד הקובץ הזה."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr "אין לך הרשאה להזמין אנשים להצטרף לצוות הזה או לערוך או למחוק הזמנות."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-organization"
+msgstr "עזיבת הארגון"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.disabled"
+msgstr "כבוי"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.enabled"
+msgstr "פעיל"
+
+#: src/app/main/ui/settings/options.cljs:116
+msgid "dashboard.webgl-switch.feedback"
+msgstr "שליחת משוב"
+
+#: src/app/main/ui/settings/options.cljs:112
+msgid "dashboard.webgl-switch.status"
+msgstr "מצב"
+
+#: src/app/main/ui/settings/options.cljs:108
+msgid "dashboard.webgl-switch.title"
+msgstr "תיצוג עם WebGL"
+
+msgid "dashboard.my-files"
+msgstr "הקבצים שלי"
+
+msgid "errors.circular-library-reference"
+msgstr "אי אפשר להוסיף ספרייה: תיווצר תלות מעגלית בעקבות זאת"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"ה־API של לוח הגזירים לא זמין. יש לארח את Penpot דרך HTTPS כדי להפעיל גישה "
+"ללוח גזירים"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"הגישה ללוח הגזירים נדחתה. נא לספק הרשאה לוח הגזירים בדפדפן שלך כדי להדביק "
+"תוכן"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"שם משפחת הגופן יכולה להכיל רק אותיות, מספרים, רווחים, מינוסים, קווים תחתיים "
+"ונקודות."
+
+#: src/app/main/ui/static.cljs:89
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"ההזמנה הזאת היא לכתובת דוא״ל אחרת. יש לצאת ולהיכנס עם החשבון שקיבל את ההזמנה "
+"או לבקש מבעלי הצוות להוציא הזמנה חדשה."
+
+#: src/app/main/ui/static.cljs:93
+msgid "errors.invite-expired"
+msgstr "התוקף של ההזמנה הזאת פג. נא לבקש מבלי הצוות לשלוח לך אחת חדשה."
+
+#, unused
+msgid "errors.organization-leave.no-valid-teams"
+msgstr "אירעה תקלה בעזיבת הארגון. נא לנסות שוב."
+
+#, unused
+msgid "errors.organization-leave.organization-owner-cannot-leave"
+msgstr "בעלי הארגון לא יכולים לעזוב את הארגון."
+
+#: src/app/main/ui/auth/verify_token.cljs:97
+msgid "errors.organization-not-found"
+msgstr "הארגון הזה לא קיים"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:466
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "רק בעלי הצוות יכולים למחוק אותו."
+
+#: common/src/app/common/types/team.cljc:26
+#, unused
+msgid "errors.team-name-invalid-chars"
+msgstr "שם הצוות לא יכול להכיל אף אחת מהאותיות האלה: ‚.’, ‚:’ או ‚/’"
+
+#: src/app/main/data/media.cljs:74
+#, unused
+msgid "errors.token-theme-not-existing-sets"
+msgstr "ערכת העיצוב מתייחס לכל מיני ערכות שאינן קיימות: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "errors.tokens.circular-reference"
+msgstr "לאסימון יש הפניה מעגלית"
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
+msgid "errors.tokens.empty-field"
+msgstr "השדה הזה לא יכול להישאר ריק"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "משפחות גופנים מעורבבות"
+
+#: src/app/main/ui/settings/integrations.cljs:629
+msgid "integrations.access-tokens.create"
+msgstr "יצירת אסימון גישה חדש"
+
+#: src/app/main/ui/settings/integrations.cljs:645
+msgid "integrations.access-tokens.empty.add-one"
+msgstr "לחיצה על הכפתור „יצירת אסימון גישה חדש” תיצור אחד."
+
+#: src/app/main/ui/settings/integrations.cljs:644
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "אין לך אסימון נכון לעכשיו."
+
+#: src/app/main/ui/settings/integrations.cljs:619
+msgid "integrations.access-tokens.personal"
+msgstr "אסימוני גישה אישית"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"תיצוג WebGL יכול לשפר את הביצועים אבל הוא בשלב בטא (התנסות) ועלול להיות פחות "
+"יציב. חלק מההבדלים החזותיים עלולים להופיע בין משטח הציור, החומרים המיוצאים "
+"(SVG/PDF) ומצב התצוגה."
+
+#: src/app/main/ui/settings/integrations.cljs:624
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"אסימוני גישה אישית מתנהגים כמו חלופה למערכת האימות באמצעות שם משתמש/סיסמה "
+"ואפשר להשתמש בהם כדי לאפשר ליישום לגשת ל־API הפנימי של Penpot"
+
+#: src/app/main/ui/settings/integrations.cljs:68
+msgid "integrations.copy-to-clipboard"
+msgstr "העתקה ללוח הגזירים"
+
+#: src/app/main/ui/settings/integrations.cljs:266
+msgid "integrations.create-access-token.title"
+msgstr "יצירת אסימון גישה"
+
+#: src/app/main/ui/settings/integrations.cljs:265
+msgid "integrations.create-access-token.title.created"
+msgstr "אסימון גישה נוצר"
+
+#: src/app/main/ui/settings/integrations.cljs:384
+msgid "integrations.delete-token.accept"
+msgstr "מחיקת אסימון"
+
+#: src/app/main/ui/settings/integrations.cljs:383
+msgid "integrations.delete-token.message"
+msgstr "למחוק את האסימון הזה?"
+
+#: src/app/main/ui/settings/integrations.cljs:382
+msgid "integrations.delete-token.title"
+msgstr "מחיקת אסימון"
+
+#: src/app/main/ui/settings/integrations.cljs:226
+msgid "integrations.expiration-180-days"
+msgstr "180 יום"
+
+#: src/app/main/ui/settings/integrations.cljs:223
+msgid "integrations.expiration-30-days"
+msgstr "30 יום"
+
+#: src/app/main/ui/settings/integrations.cljs:224
+msgid "integrations.expiration-60-days"
+msgstr "60 יום"
+
+#: src/app/main/ui/settings/integrations.cljs:225
+msgid "integrations.expiration-90-days"
+msgstr "90 יום"
+
+#: src/app/main/ui/settings/integrations.cljs:221
+msgid "integrations.expiration-date.label"
+msgstr "תאריך תפוגה"
+
+#: src/app/main/ui/settings/integrations.cljs:222
+msgid "integrations.expiration-never"
+msgstr "אף פעם"
+
+#: src/app/main/ui/settings/integrations.cljs:406
+msgid "integrations.expired-on"
+msgstr "התוקף פג ב־%s"
+
+#: src/app/main/ui/settings/integrations.cljs:407
+msgid "integrations.expires-on"
+msgstr "התוקף יפוג ב־%s"
+
+#: src/app/main/ui/settings/integrations.cljs:307
+msgid "integrations.generate-mcp-key.title"
+msgstr "יצירת מפתח MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:305
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "מפתח MCP נוצר"
+
+#: src/app/main/ui/settings/integrations.cljs:124
+msgid "integrations.info.mcp-client-config"
+msgstr "יש להוסיף את ההגדרות האלו ללקוח ה־MCP שלך (למשל: ‎~/​​​​​​.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:206
+msgid "integrations.info.mcp-server"
+msgstr ""
+"שרת ה־MCP של Penpot מפעיל לקוחות MCP לתפעול ישיר של קובצי עיצוב של Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.mcp-key.will-expire"
+msgstr "מפתח ה־MCP יפוג ב־%s"
+
+#: src/app/main/ui/settings/integrations.cljs:116
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "למפתח ה־MCP אין תאריך תפוגה"
+
+#: src/app/main/ui/settings/integrations.cljs:415
+#, unused
+msgid "integrations.mcp-server.mcp-keys.copy"
+msgstr "העתקת קישור"
+
+#: src/app/main/ui/settings/integrations.cljs:594
+msgid "integrations.mcp-server.mcp-keys.help"
+msgstr "איך להגדיר לקוחות MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:581
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"זאת כתובת השרת שצריך להגדיר בלקוח ה־MCP שלך כדי שיוכל להתחבר לשרת ה־MCP של "
+"Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:561
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "יצירת מפתח MCP מחדש"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "מפתח MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:562
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "מפתח ה־MCP נחוץ להקמת לקוח ה־MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:517
+msgid "integrations.mcp-server.status"
+msgstr "מצב"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.status.disabled"
+msgstr "כבוי"
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.status.enabled"
+msgstr "פעיל"
