@@ -27,7 +27,7 @@
                         {:team {:id team-id :organization organization}
                          :notification nil})]
       (mock/with-mocks
-        {cf/flags (conj cf/flags :nitrate)
+        {cf/flags (conj cf/flags :admin-console)
          rp/cmd! (mock/stub
                   (fn [cmd params]
                     (if (= [:check-nitrate-sso
@@ -61,7 +61,7 @@
           event        (dcm/handle-organization-change-sso
                         {:organization-id organization-id})]
       (mock/with-mocks
-        {cf/flags (conj cf/flags :nitrate)
+        {cf/flags (conj cf/flags :admin-console)
          rp/cmd! (mock/stub
                   (fn [cmd params]
                     (if (= [:check-nitrate-sso

@@ -48,7 +48,7 @@
                      (with-meta {} {:on-error on-error}))))]
 
     (mf/with-effect []
-      (if (contains? cf/flags :nitrate)
+      (if (contains? cf/flags :admin-console)
         (let [sub (->> (rp/cmd! :get-owned-organizations-summary {})
                        (rx/subs!
                         (fn [result] (reset! organizations* (or result [])))

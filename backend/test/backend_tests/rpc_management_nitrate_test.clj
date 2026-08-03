@@ -25,7 +25,7 @@
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once (t/compose-fixtures
-                       (partial th/init-config [:enable-nitrate])
+                       (partial th/init-config [:enable-admin-console])
                        th/init-system))
 
 (t/use-fixtures :each th/database-reset)

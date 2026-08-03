@@ -96,7 +96,7 @@
 
 (defn- with-nitrate-licence
   [profile cfg]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (nitrate/add-nitrate-licence-to-profile cfg profile)
     profile))
 
@@ -503,7 +503,7 @@
     ;; imported "Your Penpot" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
-    (when (contains? cf/flags :nitrate)
+    (when (contains? cf/flags :admin-console)
       (nitrate/call cfg :cleanup-deleted-penpot-user
                     {:profile-id profile-id}))
 
@@ -562,7 +562,7 @@
   {::doc/added "2.18"
    ::sm/result schema:get-owned-organizations-summary-result}
   [cfg {:keys [::rpc/profile-id]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (or (nitrate/call cfg :get-owned-organizations-summary {:profile-id profile-id}) [])
     []))
 

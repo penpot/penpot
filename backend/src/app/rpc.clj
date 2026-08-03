@@ -279,7 +279,7 @@
 
    Raises :nitrate-sso-required error if user is not authorized in the organization."
   [_ f mdata]
-  (if (and (contains? cf/flags :nitrate)
+  (if (and (contains? cf/flags :admin-console)
            (::auth mdata true) ;; only for endpoints that needs auth
            (::nitrate/sso mdata true))
     (fn [cfg params]
@@ -430,7 +430,7 @@
   [cfg]
   (let [cfg  (assoc cfg ::module "management" ::type "command" ::metrics-id :rpc-management-timing)
         mods (cond->> (list 'app.rpc.management.exporter)
-               (contains? cf/flags :nitrate)
+               (contains? cf/flags :admin-console)
                (cons 'app.rpc.management.nitrate))]
 
     (->> (apply sv/scan-ns mods)

@@ -101,7 +101,7 @@
                             :team-id (:id team)
                             :url "https://penpot.example.com/#/workspace"}
                            {::http/request {}})]
-    (binding [cf/flags (conj cf/flags :nitrate)]
+    (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/call
                     (active-sso-call-mock
                      (:id team)
@@ -124,7 +124,7 @@
                            :team-id (:id team)
                            :url "https://penpot.example.com/#/workspace"}
                           {::http/request {}})]
-    (binding [cf/flags (conj cf/flags :nitrate)]
+    (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/call
                     (active-sso-call-mock
                      (:id team)
@@ -150,7 +150,7 @@
                            :team-id (:id team)
                            :url "https://penpot.example.com/#/workspace"}
                           {::http/request {}})]
-    (binding [cf/flags (conj cf/flags :nitrate)]
+    (binding [cf/flags (conj cf/flags :admin-console)]
       (with-redefs [nitrate/organization-owner-of-team?
                     (fn [_cfg profile-id team-id]
                       (and (= (:id organization-owner) profile-id)
@@ -851,7 +851,7 @@
         organization-id-1      (uuid/random)
         organization-id-2      (uuid/random)
         calls         (atom [])]
-    (with-redefs [cf/flags (conj cf/flags :nitrate)
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
                   nitrate/call (fn [_cfg method params]
                                  (swap! calls conj [method params])
                                  (case method
@@ -882,7 +882,7 @@
         organization-id-1      (uuid/random)
         organization-id-2      (uuid/random)
         calls         (atom [])]
-    (with-redefs [cf/flags (conj cf/flags :nitrate)
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
                   nitrate/call (fn [_cfg method params]
                                  (swap! calls conj [method params])
                                  (case method
@@ -990,7 +990,7 @@
                     :role "editor"
                     :valid-until (ct/in-future "48h")})
 
-    (with-redefs [cf/flags (conj cf/flags :nitrate)
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
                   nitrate/call (add-team-to-organization-nitrate-mock
                                 {:organization-id organization-id
                                  :organization-summary organization-summary
@@ -999,7 +999,7 @@
                                  :team-id (:id team)
                                  :sso-active? true
                                  :set-team-params set-team-params})
-                  teams/initialize-user-in-nitrate-organization (fn [& _] nil)
+                  teams/initialize-user-in-organization (fn [& _] nil)
                   eml/send! (fn [params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
@@ -1066,7 +1066,7 @@
                     :role "editor"
                     :valid-until (ct/in-future "48h")})
 
-    (with-redefs [cf/flags (conj cf/flags :nitrate)
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
                   nitrate/call (add-team-to-organization-nitrate-mock
                                 {:organization-id organization-id
                                  :organization-summary organization-summary
@@ -1074,7 +1074,7 @@
                                  :owner-id (:id owner)
                                  :team-id (:id team)
                                  :sso-active? false})
-                  teams/initialize-user-in-nitrate-organization (fn [& _] nil)
+                  teams/initialize-user-in-organization (fn [& _] nil)
                   eml/send! (fn [params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
@@ -1088,7 +1088,7 @@
         nitrate-id "nitrate-instance-1"
         public-key "-----BEGIN PUBLIC KEY-----\nMIIB\n-----END PUBLIC KEY-----"
         now        (ct/now)]
-    (with-redefs [cf/flags     (conj cf/flags :nitrate)
+    (with-redefs [cf/flags     (conj cf/flags :admin-console)
                   ct/now       (constantly now)
                   nitrate/call (fn [_cfg method _params]
                                  (t/is (= :get-identity method))
@@ -1117,7 +1117,7 @@
 
 (t/deftest get-nitrate-activation-code-request-identity-unavailable
   (let [profile (th/create-profile* 1 {:is-active true})]
-    (with-redefs [cf/flags     (conj cf/flags :nitrate)
+    (with-redefs [cf/flags     (conj cf/flags :admin-console)
                   nitrate/call (fn [_cfg _method _params] nil)]
       (let [out (th/command! {::th/type :get-nitrate-activation-code-request
                               ::rpc/profile-id (:id profile)})]

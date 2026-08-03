@@ -14,7 +14,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar schema:nitrate-sso]]
+   [app.common.types.organization :as cto]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.common.uuid :as uuid]
@@ -152,7 +152,7 @@
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
   {::doc/added "2.14"
-   ::sm/params schema:team-with-organization
+   ::sm/params cto/schema:team-with-organization
    ::rpc/auth false}
   [cfg team]
   (notifications/notify-team-change cfg (select-keys team [:id :is-your-penpot :organization]) nil)
@@ -493,7 +493,7 @@ RETURNING id, deleted_at;")
   {::doc/added "2.15"
    ::sm/params [:map
                 [:email ::sm/email]
-                [:organization schema:organization-with-avatar]]
+                [:organization cto/schema:organization-with-avatar]]
    ::nitrate/sso false}
   [cfg params]
   (db/tx-run! cfg ti/create-organization-invitation params)
@@ -688,7 +688,7 @@ RETURNING id, deleted_at;")
    [:user-name [:maybe ::sm/text]]
    [:renewal-date :string]
    [:estimated-amount :double]
-   [:organizations [:vector schema:organization-with-avatar]]])
+   [:organizations [:vector cto/schema:organization-with-avatar]]])
 
 (sv/defmethod ::send-renewal-email
   "Send an Enterprise subscription renewal notice email to a user."
@@ -941,7 +941,7 @@ RETURNING id, deleted_at;")
   Nitrate calls this while configuring SSO to verify client credentials and OIDC
   discovery before saving the settings."
   {::doc/added "2.20"
-   ::sm/params schema:nitrate-sso
+   ::sm/params cto/schema:nitrate-sso
    ::sm/result schema:check-organization-sso-result
    ::rpc/auth false}
   [cfg params]
@@ -997,7 +997,7 @@ RETURNING id, deleted_at;")
    created users skip email verification and onboarding. Emails that already
    belong to an existing profile are skipped. Intended for the Nitrate admin
    bulk-creation screen; access is gated by the shared key and, in Nitrate, an
-   email allow-list. Requires the `nitrate-bulk-create-profiles` flag, disabled
+   email allow-list. Requires the `admin-console-bulk-create-profiles` flag, disabled
    by default so it is only available on test environments."
   {::doc/added "2.19"
    ::sm/params schema:bulk-create-profiles-params
@@ -1005,9 +1005,9 @@ RETURNING id, deleted_at;")
    ::rpc/auth false}
   [cfg {:keys [password emails]}]
 
-  (when-not (contains? cf/flags :nitrate-bulk-create-profiles)
+  (when-not (contains? cf/flags :admin-console-bulk-create-profiles)
     (ex/raise :type :restriction
-              :code :nitrate-bulk-create-profiles-not-allowed
+              :code :bulk-create-profiles-not-allowed
               :hint "Bulk profile creation is disabled by config."))
 
   (let [derived (aauth/derive-password password)]

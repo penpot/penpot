@@ -1,7 +1,7 @@
 (ns app.main.data.nitrate
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -84,9 +84,8 @@
 
 (defn can-send-invitations?
   [{:keys [organization profile-id team-permissions]}]
-  (nitrate-perms/can-send-invitations?
-   {:nitrate-enabled? (contains? cf/flags :nitrate)
-    :organization organization
+  (cto/can-send-invitations?
+   {:organization organization
     :profile-id profile-id
     :team-permissions team-permissions}))
 
@@ -149,7 +148,7 @@
 
 (defn is-valid-license?
   [profile]
-  (and (contains? cf/flags :nitrate)
+  (and (contains? cf/flags :admin-console)
        ;; Possible values: "active" "canceled" "incomplete" "incomplete_expired" "past_due" "paused" "trialing" "unpaid"
        (contains? #{"active" "past_due" "trialing"}
                   (dm/get-in profile [:subscription :status]))))
@@ -279,7 +278,7 @@
         (dt/with-refreshed-team team-id
           (fn [team]
             (let [source-organization (:organization team)
-                  can-move?  (nitrate-perms/allowed?
+                  can-move?  (cto/allowed?
                               :move-team
                               {:organization-perms {:owner-id    (:owner-id source-organization)
                                                     :permissions (:permissions source-organization)}
@@ -357,8 +356,8 @@
    Organizations where :add-anybody-to-team is permitted are pre-approved;
    the rest are verified via :all-team-members-in-organizations."
   [team-id organizations]
-  (let [add-anybody-organizations (filterv #(nitrate-perms/allowed? :add-anybody-to-team {:organization-perms %}) organizations)
-        organizations-to-check    (filterv #(not (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms %})) organizations)
+  (let [add-anybody-organizations (filterv #(cto/allowed? :add-anybody-to-team {:organization-perms %}) organizations)
+        organizations-to-check    (filterv #(not (cto/allowed? :add-anybody-to-team {:organization-perms %})) organizations)
         organization-ids-to-check (mapv :id organizations-to-check)]
     (if (empty? organization-ids-to-check)
       (rx/of (into {} (map (fn [organization] [(:id organization) true])) organizations))

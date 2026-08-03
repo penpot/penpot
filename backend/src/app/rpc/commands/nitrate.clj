@@ -14,7 +14,7 @@
    [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.config :as cf]
    [app.db :as db]
    [app.nitrate :as nitrate]
@@ -423,16 +423,16 @@
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
   ;; Check moveTeams permission on the source organization
-  (when (contains? cf/flags :nitrate)
+  (when (contains? cf/flags :admin-console)
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
                                            {:organization-id organization-id})]
       (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "Unable to verify organization permissions")
-        (when-not (nitrate-perms/allowed? :move-team
-                                          {:organization-perms organization-perms
-                                           :profile-id profile-id})
+        (when-not (cto/allowed? :move-team
+                                {:organization-perms organization-perms
+                                 :profile-id profile-id})
           (ex/raise :type :validation
                     :code :not-allowed
                     :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))))
@@ -462,7 +462,7 @@
    Returns {:allows-anybody bool :external-emails [...]}"
   [{:keys [::db/conn] :as cfg} team-id organization-id]
   (let [organization-perms      (nitrate/call cfg :get-organization-permissions {:organization-id organization-id})
-        allows-anybody (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms organization-perms})]
+        allows-anybody (cto/allowed? :add-anybody-to-team {:organization-perms organization-perms})]
     (if allows-anybody
       {:allows-anybody true :external-emails []}
       (let [emails (map :email (noh/get-team-invitation-emails conn team-id))]
@@ -493,7 +493,7 @@
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
 
-  (when (contains? cf/flags :nitrate)
+  (when (contains? cf/flags :admin-console)
     (let [organization-member-ids-before (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
           team-with-organization         (nitrate/call cfg :get-team-organization {:team-id team-id})
           source-organization-id         (get-in team-with-organization [:organization :id])
@@ -517,18 +517,18 @@
           (ex/raise :type :validation
                     :code :not-allowed
                     :hint "Unable to verify organization permissions"))
-        (when-not (nitrate-perms/allowed? :move-team
-                                          {:organization-perms source-organization-perms
-                                           :profile-id profile-id
-                                           :target-organization-same-owner? target-organization-same-owner?})
+        (when-not (cto/allowed? :move-team
+                                {:organization-perms source-organization-perms
+                                 :profile-id profile-id
+                                 :target-organization-same-owner? target-organization-same-owner?})
           (ex/raise :type :validation
                     :code :not-allowed
                     :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))
 
       ;; Always check target create-teams permission (new/add and move flows).
-      (when-not (nitrate-perms/allowed? :create-team
-                                        {:organization-perms target-organization-perms
-                                         :profile-id profile-id})
+      (when-not (cto/allowed? :create-team
+                              {:organization-perms target-organization-perms
+                               :profile-id profile-id})
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "You are not allowed to add teams in this organization"))
@@ -540,7 +540,7 @@
                                 (remove #{profile-id})
                                 (remove organization-member-ids-before))]
         (doseq [member-id new-member-ids]
-          (teams/initialize-user-in-nitrate-organization cfg member-id organization-id)))
+          (teams/initialize-user-in-organization cfg member-id organization-id)))
 
       ;; Api call to nitrate
       (let [team (nitrate/call cfg :set-team-organization {:team-id team-id
@@ -574,7 +574,7 @@
    ::sm/result [:map-of :string :boolean]
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id organization-id emails]}]
-  (or (when (contains? cf/flags :nitrate)
+  (or (when (contains? cf/flags :admin-console)
         (assert-membership cfg profile-id organization-id)
         (let [emails-array   (db/create-array conn "text" emails)
               profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
@@ -598,7 +598,7 @@
    ::sm/params schema:all-organization-members-in-team-params
    ::sm/result ::sm/boolean}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (let [perms (teams/get-permissions cfg profile-id team-id)]
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
@@ -622,7 +622,7 @@
    ::sm/params schema:all-team-members-in-organizations-params
    ::sm/result [:map-of ::sm/uuid ::sm/boolean]}
   [cfg {:keys [::rpc/profile-id team-id organization-ids]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (let [perms (teams/get-permissions cfg profile-id team-id)]
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
@@ -659,7 +659,7 @@
    ::sm/result schema:check-team-external-invitations-result
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (let [perms (teams/get-permissions cfg profile-id team-id)]
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
@@ -692,7 +692,7 @@
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id team-id organization-id url] :as params}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (if (and team-id
              (not (teams/has-read-permissions? cfg profile-id team-id)))
       ;; Let the destination RPC enforce its own permissions. Starting SSO before

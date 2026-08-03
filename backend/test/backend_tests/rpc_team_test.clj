@@ -137,7 +137,7 @@
                                       :team-id (:id team)
                                       :role :editor
                                       :emails [email]}))]
-      (with-redefs [cf/flags (conj cf/flags :nitrate :email-verification)
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
                     nitrate/call nitrate-call]
         (t/is (th/success? (invite! organization-team (:email invitee))))
         (t/is (th/success? (invite! organization-team (:email invitee))))
@@ -482,7 +482,7 @@
                    :role "editor"
                    :valid-until (ct/in-future "48h")})
 
-      (with-redefs [cf/flags (conj cf/flags :nitrate)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
                     nitrate/call
                     (fn [_cfg method _params]
                       (case method
@@ -490,7 +490,7 @@
                                                       :is-member false}
                         :get-organization-members [(:id inviter) (uuid/random) (uuid/random)]
                         nil))
-                    teams/initialize-user-in-nitrate-organization
+                    teams/initialize-user-in-organization
                     (fn [& _] default-team-id)]
         (let [out (verify! direct-token)]
           (t/is (th/success? out))
@@ -527,7 +527,7 @@
                    :role "editor"
                    :valid-until (ct/in-future "48h")})
 
-      (with-redefs [cf/flags (conj cf/flags :nitrate)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
                     nitrate/call
                     (fn [_cfg method _params]
                       (case method
@@ -570,7 +570,7 @@
                    :role "editor"
                    :valid-until (ct/in-future "48h")})
 
-      (with-redefs [cf/flags (conj cf/flags :nitrate)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
                     nitrate/call
                     (fn [_cfg method _params]
                       (case method
