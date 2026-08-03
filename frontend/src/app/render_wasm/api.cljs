@@ -1417,7 +1417,7 @@
     ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
     ;; ends (e.g. selecting a shape opens the options panel and resizes the
     ;; viewport), which previously blanked.
-    (internal-render 0 RENDER-FLAG-SYNC-TILES)
+    (internal-render (js/performance.now) RENDER-FLAG-SYNC-TILES)
     ;; The direct render above bypasses the rAF `render` loop, so repaint the
     ;; editor overlay explicitly. Only when this was a full frame: a progressive
     ;; render keeps painting through the rAF loop and its partial frames must not
@@ -1432,7 +1432,7 @@
               (if (view-gesture-active?)
                 ;; Pan/zoom pause: render without ending the interaction.
                 (do
-                  (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                  (internal-render (js/performance.now) RENDER-FLAG-SYNC-TILES)
                   (render-text-editor-overlay-after-frame!))
                 (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
