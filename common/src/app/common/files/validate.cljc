@@ -438,15 +438,15 @@
                   shape file page)))
 
 (defn- check-required-swap-slot
-  "Validate that the shape has swap-slot if it's a subinstance head and the ref shape is not the
-   matching shape by position in the near main."
+  "Validate that the shape has a swap slot if it's a subinstance head that has been
+   swapped (see `ctf/swapped-subhead?`)."
   [shape file page libraries]
   ;; Guard first: if the shape already has a swap slot the invariant is satisfied
-  ;; and we can avoid the expensive `find-near-match` call entirely.
-  (when (nil? (ctk/get-swap-slot shape))
+  ;; and we can avoid the ref-shape lookups entirely.
+  (when (and (nil? (ctk/get-swap-slot shape))
+             (ctf/swapped-subhead? shape page #(find-ref-shape* file page libraries %)))
     (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
-      (when (and (some? near-match)
-                 (not= (:shape-ref shape) (:id near-match)))
+      (when (some? near-match)
         (report-error :missing-slot
                       "Shape has been swapped, should have swap slot"
                       shape file page

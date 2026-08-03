@@ -60,7 +60,7 @@
       (st/emit! (dtm/fetch-shared-files team-id)
                 (dd/clear-selected-files)))
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries :dashboard)
 
     [:*
      [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -366,7 +366,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(copie)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Créer une organisation"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -3874,10 +3874,6 @@ msgstr ""
 "Après avoir nommé votre équipe, vous pourrez inviter des personnes à la "
 "rejoindre."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Entrez le nom de l'équipe"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Créer l'équipe"
@@ -4128,6 +4124,7 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "Ce token n'existe pas ou a été supprimé."
 
@@ -4178,11 +4175,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Modifier"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Générique"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Générique"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -4676,14 +4669,6 @@ msgstr "Aligner sur la grille de pixels"
 msgid "shortcuts.start-editing"
 msgstr "Commencer l'édition"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Commencer la mesure"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Arrêter la mesure"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Définir les vignettes"
@@ -5039,10 +5024,6 @@ msgstr "Plus d'informations"
 msgid "subscription.settings.other-plans"
 msgstr "Autres abonnements Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "éditeur par mois"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organisation par mois"
@@ -5100,11 +5081,6 @@ msgstr "Merci d'avoir choisi l'abonnement Penpot %s !"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Vous êtes %s !"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Vous nous soutenez avec cet abonnement depuis %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8678,3 +8654,12 @@ msgstr "Les versions auto-enregistrées seront conservées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/dashboard/import.cljs:509
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Ce fichier semble endommagé."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+#, fuzzy
+msgid "dashboard.my-teams"
+msgstr "Mes équipes"

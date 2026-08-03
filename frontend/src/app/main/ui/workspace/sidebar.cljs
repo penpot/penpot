@@ -33,7 +33,6 @@
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
-   [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox*]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
@@ -41,7 +40,6 @@
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
-   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -55,7 +53,7 @@
   {::mf/private true}
   []
   ;; NOTE: This custom button may be replace by an action button when this variant is designed
-  [:button {:class (stl/css :collapse-sidebar-button)
+  [:button {:class (stl/css :collapse-button)
             :on-click toggle-collapse-left-sidebar}
    [:> icon* {:icon-id i/arrow
               :size "s"
@@ -73,6 +71,7 @@
               :title (tr "workspace.sidebar.expand")
               :on-click toggle-collapse-left-sidebar}
      [:> icon* {:icon-id i/arrow
+                :class (stl/css :collapsed-button-icon)
                 :size "s"
                 :aria-label (tr "workspace.sidebar.expand")}]]]])
 
@@ -107,12 +106,12 @@
                    :on-toggle-collapsed on-toggle-sitemap-collapsed}]
 
      (when-not ^boolean sitemap-collapsed?
-       [:div {:class (stl/css :resize-area-horiz)
+       [:div {:class (stl/css :layers-tab-resize-area)
               :on-pointer-down on-pointer-down
               :on-lost-pointer-capture on-lost-pointer-capture
               :on-pointer-move on-pointer-move}
 
-        [:div {:class (stl/css :resize-handle-horiz)}]])
+        [:div {:class (stl/css :layers-tab-resize-handle)}]])
 
      [:> layers-toolbox* {:size-parent width}]]))
 
@@ -167,11 +166,10 @@
                 :id "assets"}])))
 
         aside-class
-        (stl/css-case
-         :left-settings-bar true
-         :global/two-row    (<= width 300)
-         :global/three-row  (and (> width 300) (<= width 400))
-         :global/four-row   (> width 400))
+        (stl/css-case :left-sidebar      true
+                      :global/two-row    (<= width 300)
+                      :global/three-row  (and (> width 300) (<= width 400))
+                      :global/four-row   (> width 400))
 
         tabs-action-button
         (mf/with-memo []
@@ -189,22 +187,22 @@
       [:> left-header* {:file file
                         :layout layout
                         :project project
-                        :class (stl/css :left-header)}]
+                        :class (stl/css :left-sidebar-header)}]
 
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture
              :on-pointer-move on-pointer-move
-             :class (stl/css :resize-area)}]
+             :class (stl/css :left-sidebar-resize-area)}]
 
       (cond
         (true? shortcuts?)
-        [:> shortcuts-container* {:class (stl/css :settings-bar-content)}]
+        [:> shortcuts-container* {:class (stl/css :left-sidebar-content)}]
 
         (true? show-debug?)
-        [:> debug-panel* {:class (stl/css :settings-bar-content)}]
+        [:> debug-panel* {:class (stl/css :left-sidebar-content)}]
 
         :else
-        [:div {:class (stl/css  :settings-bar-content)}
+        [:div {:class (stl/css  :left-sidebar-content)}
          [:> tab-switcher* {:tabs tabs
                             :default "layers"
                             :selected (name section)
@@ -215,20 +213,17 @@
 
           (case section
             :assets
-            [:> assets-toolbox*
-             {:size (- width  58)
-              :file-id file-id}]
+            [:> assets-toolbox* {:size (- width  58)
+                                 :file-id file-id}]
 
             :tokens
-            [:> tokens-sidebar-tab*
-             {:tokens-lib tokens-lib
-              :active-tokens active-tokens
-              :resolved-active-tokens resolved-active-tokens}]
+            [:> tokens-sidebar-tab* {:tokens-lib tokens-lib
+                                     :active-tokens active-tokens
+                                     :resolved-active-tokens resolved-active-tokens}]
 
             :layers
-            [:> layers-content*
-             {:layout layout
-              :width width}])]])]]))
+            [:> layers-content* {:layout layout
+                                 :width width}])]])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -247,7 +242,8 @@
         (deref selected*)
 
         on-change-tab
-        (mf/use-fn #(reset! selected* %))
+        (mf/use-fn
+         #(reset! selected* %))
 
         tabs
         (mf/with-memo []
@@ -285,18 +281,16 @@
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
-
-        dbg-shape-panel? (dbg/enabled? :shape-panel)
+        is-debug?        (= section :debug)
 
         current-section* (mf/use-state :info)
         current-section  (deref current-section*)
 
         can-be-expanded?
-        (or dbg-shape-panel?
-            (and (not is-comments?)
-                 (not is-history?)
-                 is-inspect?
-                 (= current-section :code)))
+        (and (not is-comments?)
+             (not is-history?)
+             is-inspect?
+             (= current-section :code))
 
         {on-pointer-down :on-pointer-down
          on-lost-pointer-capture :on-lost-pointer-capture
@@ -306,7 +300,8 @@
         (use-resize-hook :code right-sidebar-default-width right-sidebar-default-width right-sidebar-default-max-width :x true :right)
 
         on-change-section
-        (mf/use-fn #(reset! current-section* %))
+        (mf/use-fn
+         #(reset! current-section* %))
 
         on-expand
         (mf/use-fn
@@ -323,17 +318,18 @@
     [:> (mf/provider muc/sidebar) {:value :right}
      [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
       [:aside
-       {:class (stl/css-case :right-settings-bar true
+       {:class (stl/css-case :right-sidebar true
                              :not-expand (not can-be-expanded?)
-                             :expanded (> width right-sidebar-default-width))
+                             :expanded (or is-debug? (> width right-sidebar-default-width)))
 
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
         :on-context-menu dom/prevent-default-context-menu
-        :style {:--right-sidebar-width (if can-be-expanded?
-                                         (dm/str width "px")
-                                         (dm/str right-sidebar-default-width "px"))}}
+        :style {:--right-sidebar-width (cond
+                                         is-debug? (dm/str right-sidebar-default-max-width "px")
+                                         can-be-expanded? (dm/str width "px")
+                                         :else (dm/str right-sidebar-default-width "px"))}}
 
        (when can-be-expanded?
          [:div {:class (stl/css :resize-area)
@@ -341,16 +337,12 @@
                 :on-lost-pointer-capture on-lost-pointer-capture
                 :on-pointer-move on-pointer-move}])
 
-       [:> right-header*
-        {:file-id file-id
-         :layout layout
-         :page-id page-id}]
+       [:> right-header* {:file-id file-id
+                          :layout layout
+                          :page-id page-id}]
 
-       [:div {:class (stl/css :settings-bar-inside)}
+       [:div {:class (stl/css :right-sidebar-content)}
         (cond
-          dbg-shape-panel?
-          [:> debug-shape-info*]
-
           is-comments?
           [:> comments-sidebar* {}]
 

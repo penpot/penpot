@@ -12,7 +12,9 @@ pub fn render_overlay(
     editor_state: &TextEditorState,
     shape: &Shape,
 ) {
-    if !editor_state.has_focus {
+    let has_selection = editor_state.selection.is_selection();
+
+    if !editor_state.has_focus && !has_selection {
         return;
     }
 
@@ -25,12 +27,13 @@ pub fn render_overlay(
     canvas.scale((zoom, zoom));
     canvas.translate((-viewbox.area.left, -viewbox.area.top));
 
-    if editor_state.selection.is_selection() {
+    if has_selection {
+        // With an active selection there is no blinking caret (the caret is one
+        // end of the selection); drawing it would make it toggle on top of the
+        // highlight while the selection is held.
         render_selection(canvas, editor_state, text_content, shape);
-    }
-
-    if editor_state.cursor_visible {
-        render_cursor(canvas, zoom, editor_state, text_content, shape);
+    } else if editor_state.has_focus && editor_state.cursor_visible {
+        render_cursor(canvas, zoom, options.dpr, editor_state, text_content, shape);
     }
 
     canvas.restore();
@@ -39,6 +42,7 @@ pub fn render_overlay(
 fn render_cursor(
     canvas: &Canvas,
     zoom: f32,
+    dpr: f32,
     editor_state: &TextEditorState,
     text_content: &TextContent,
     shape: &Shape,
@@ -54,7 +58,7 @@ fn render_cursor(
         if editor_state.is_overtype_mode {
             rect.width()
         } else {
-            editor_state.theme.cursor_width / zoom
+            editor_state.theme.cursor_width / zoom * dpr
         },
         rect.height(),
     );
@@ -64,6 +68,11 @@ fn render_cursor(
     if editor_state.is_overtype_mode {
         paint.set_blend_mode(BlendMode::Exclusion);
         paint.set_color(Color::WHITE);
+    } else if editor_state.theme.cursor_invert {
+        // Default (no solid fill to match): a white caret with a Difference
+        // blend renders the inverted color of whatever is behind it.
+        paint.set_blend_mode(BlendMode::Difference);
+        paint.set_color(editor_state.theme.cursor_color);
     } else {
         paint.set_blend_mode(BlendMode::SrcOver);
         paint.set_color(editor_state.theme.cursor_color);

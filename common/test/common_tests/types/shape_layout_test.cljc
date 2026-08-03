@@ -1211,7 +1211,29 @@
       ;; so shape-id-2 before shape-id-1 in new order; reorder-grid-children reverses
       (let [result (layout/reorder-grid-children parent)]
         (t/is (vector? (:shapes result)))
-        (t/is (= 2 (count (:shapes result))))))))
+        (t/is (= [shape-id-1 shape-id-2] (:shapes result)))))))
+
+(t/deftest reorder-grid-children-keeps-cell-less-children-in-place-test
+  ;; Cell-less children keep their index while cell children follow grid order.
+  (let [shape-id-1 (uuid/next)
+        shape-id-2 (uuid/next)
+        hidden-id  (uuid/next)
+        ;; Grid storage reverses the visual cell order.
+        cell-a (make-cell :row 1 :column 1 :shapes [shape-id-2])
+        cell-b (make-cell :row 1 :column 2 :shapes [shape-id-1])
+        parent {:layout-grid-dir :row
+                :shapes [shape-id-2 shape-id-1 hidden-id]
+                :layout-grid-cells {(:id cell-a) cell-a
+                                    (:id cell-b) cell-b}}]
+
+    (t/testing "cell-less child at the end stays at the end"
+      (let [result (layout/reorder-grid-children parent)]
+        (t/is (= [shape-id-1 shape-id-2 hidden-id] (:shapes result)))))
+
+    (t/testing "cell-less child in the middle stays in the middle"
+      (let [parent (assoc parent :shapes [shape-id-2 hidden-id shape-id-1])
+            result (layout/reorder-grid-children parent)]
+        (t/is (= [shape-id-1 hidden-id shape-id-2] (:shapes result)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; merge-cells

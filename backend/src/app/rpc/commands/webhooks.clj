@@ -172,6 +172,6 @@
    ::sm/params schema:get-webhooks}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (->> (db/exec! conn [sql:get-webhooks team-id])
          (mapv decode-row))))

@@ -156,4 +156,4 @@ pnpm --filter example-plugin build
 
 For more detailed information on plugin development, check out our guides:
 
-- [Plugin Usage Documentation](,/plugin-usage.md)
+- [Using plugins in Penpot](https://help.penpot.app/user-guide/plugins-integrations/)

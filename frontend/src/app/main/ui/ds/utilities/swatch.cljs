@@ -65,7 +65,7 @@
         (uc/gradient-type->string (:type gradient))
 
         (some? image)
-        (tr "media.image")))))
+        (:name image)))))
 
 (def ^:private schema:swatch
   [:map {:title "SchemaSwatch"}

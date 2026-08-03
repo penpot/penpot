@@ -2946,10 +2946,6 @@ msgstr "Moći ćete pozvati kasnije"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Nakon što imenuješ svoj tim, moći ćeš pozvati ljude da se pridruže."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Unesi naziv tima"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Stvorite tim"
@@ -3246,11 +3242,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Uredi"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Generičko"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Generičko"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -3724,14 +3716,6 @@ msgstr "Priključi na \"pixel grid\""
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "Počni uređivanje"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Počni mjerenje"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Zaustavi mjerenje"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

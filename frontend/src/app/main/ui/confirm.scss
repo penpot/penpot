@@ -4,68 +4,84 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
-  @extend %modal-overlay-base;
-
-  &.transparent {
-    background-color: transparent;
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
 }
 
 .modal-container {
-  @extend %modal-container-base;
-
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-inline-size: px2rem(364);
+  min-block-size: $sz-192;
+  max-inline-size: $sz-512;
+  max-block-size: $sz-512;
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.headline-medium-typography;
-
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
   position: absolute;
-  top: var(--sp-m);
-  right: var(--sp-m);
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
 }
 
 .modal-content {
-  @include deprecated.body-large-typography;
+  @include use-typography("body-large");
 }
 
 .modal-item-element {
-  @include deprecated.flex-row;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
 .modal-component-icon {
-  @include deprecated.flex-center;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: var(--color-foreground-secondary);
 }
 
 .modal-component-name {
-  @include deprecated.body-large-typography;
+  @include use-typography("body-large");
 
   color: var(--color-foreground-secondary);
 }
 
-.action-buttons {
-  @extend %modal-action-btns;
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-l);
 }
 
+// TODO: `.modal-subtitle` appears unused in `confirm.cljs` — verify before removal
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include deprecated.body-large-typography;
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .modal-error-msg {
-  margin: var(--sp-xxl) 0;
+  margin-block: var(--sp-xxl);
 }

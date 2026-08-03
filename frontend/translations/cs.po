@@ -2947,10 +2947,6 @@ msgstr "Budete moci pozvat později"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Po pojmenování svého týmu budete moci pozvat lidi, aby se přidali."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Zadejte název týmu"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Vytvořte tým"
@@ -3242,16 +3238,8 @@ msgstr "Pracovní plocha"
 msgid "shortcut-subsection.alignment"
 msgstr "Zarovnání"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
-msgid "shortcut-subsection.edit"
-msgstr "Upravit"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Obecný"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Obecný"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -3725,14 +3713,6 @@ msgstr "Přichytit k mřížce pixelů"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "Začít upravovat"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Začít měření"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Zastavit měření"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
@@ -6307,7 +6287,6 @@ msgstr "Momentálně nemáte žádné motivy."
 #, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Původní hodnota: %s"
-
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
 #, fuzzy

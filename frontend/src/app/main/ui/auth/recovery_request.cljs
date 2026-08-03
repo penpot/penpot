@@ -22,8 +22,8 @@
   [:map {:title "RecoverRequestForm"}
    [:email ::sm/email]])
 
-(mf/defc recovery-form
-  [{:keys [on-success-callback] :as props}]
+(mf/defc recovery-form*
+  [{:keys [on-success-callback]}]
   (let [form      (fm/use-form :schema schema:recovery-request-form
                                :initial {})
         submitted (mf/use-state false)
@@ -86,8 +86,8 @@
 
 ;; --- Recovery Request Page
 
-(mf/defc recovery-request-page
-  [{:keys [params on-success-callback go-back-callback] :as props}]
+(mf/defc recovery-request-page*
+  [{:keys [params on-success-callback go-back-callback]}]
   (let [default-go-back #(st/emit! (rt/nav :auth-login))
         go-back (or go-back-callback default-go-back)]
     [:div {:class (stl/css :auth-form-wrapper)}
@@ -95,7 +95,7 @@
      [:div {:class (stl/css :auth-subtitle)} (tr "auth.recovery-request-subtitle")]
      [:hr {:class (stl/css :separator)}]
 
-     [:& recovery-form {:params params :on-success-callback on-success-callback}]
+     [:> recovery-form* {:params params :on-success-callback on-success-callback}]
      [:hr {:class (stl/css :separator)}]
      [:div {:class (stl/css :go-back)}
       [:> lk/link* {:action go-back
@@ -104,8 +104,7 @@
        (tr "labels.go-back")]]]))
 
 
-(mf/defc recovery-sent-page
-  {::mf/props :obj}
+(mf/defc recovery-sent-page*
   [{:keys [email]}]
   [:div {:class (stl/css :auth-form-wrapper :register-success)}
    [:div {:class (stl/css :auth-title-wrapper)}

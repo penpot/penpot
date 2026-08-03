@@ -258,7 +258,7 @@
 
             dest-shape (cond-> dest-shape
                          (some? thumbnail-data)
-                         (assoc :thumbnail thumbnail-data))]
+                         (assoc :thumbnail (:uri thumbnail-data)))]
         [:g {:on-pointer-down start-move-position
              :on-pointer-enter #(reset! is-hover-disabled true)
              :on-pointer-leave #(reset! is-hover-disabled false)}

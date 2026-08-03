@@ -54,18 +54,23 @@
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]
    [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
    [:notifications {:optional true} schema:props-notifications]
-   [:workspace-visited {:optional true} ::sm/boolean]])
+   [:workspace-visited {:optional true} ::sm/boolean]
+   [:custom-shortcuts {:optional true}
+    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]])
 
 (def schema:profile
   [:map {:title "Profile"}
    [:id ::sm/uuid]
    [:fullname [::sm/word-string {:max 250}]]
    [:email ::sm/email]
+   [:theme {:optional true} :string]
+   [:is-admin {:optional true} ::sm/boolean]
    [:is-active {:optional true} ::sm/boolean]
    [:is-blocked {:optional true} ::sm/boolean]
    [:is-demo {:optional true} ::sm/boolean]
@@ -491,10 +496,10 @@
                 {:id profile-id})
 
     ;; Delete owned organizations on the fly (no grace period).
-    ;; Nitrate iterates the user's owned orgs and, per org, calls
+    ;; Nitrate iterates the user's owned organizations and, per organization, calls
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
-    ;; (during delete-owned-orgs) and ::notify-organization-deletion.
-    ;; Both preserve org teams unchanged and only prefix or delete
+    ;; (during delete-owned-organizations) and ::notify-organization-deletion.
+    ;; Both preserve organization teams unchanged and only prefix or delete
     ;; imported "Your Penpot" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
@@ -558,7 +563,7 @@
    ::sm/result schema:get-owned-organizations-summary-result}
   [cfg {:keys [::rpc/profile-id]}]
   (if (contains? cf/flags :nitrate)
-    (or (nitrate/call cfg :get-owned-orgs-summary {:profile-id profile-id}) [])
+    (or (nitrate/call cfg :get-owned-organizations-summary {:profile-id profile-id}) [])
     []))
 
 ;; --- HELPERS

@@ -129,23 +129,45 @@ If you just want to try Penpot AI workflows quickly through the MCP, follow this
    ![MCP Server in Penpot Integrations, copy server url](/img/mcp/mcp-server-url.webp)
 
 4. #### Add the server to your MCP client
-   In your MCP-aware IDE/agent (Cursor, Claude Code, etc.), add a new server pointing to that URL.
-   **Example (generic JSON config):**
-   ```json
-   {
-     "mcpServers": {
-       "penpot": {
-         "url": "https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY"
-       }
-     }
-   }
+   We recommend using the [add-mcp](https://github.com/neon-solutions/add-mcp) project for connecting your MCP client to the Penpot MCP server.
+   With `npx` available, call
+
+   ```shell
+   npx -y add-mcp -g -n penpot <URL>
    ```
+
+   and follow the interactive setup. Alternatively, follow your client's instructions for connecting
+   to a remote MCP server. For Claude Desktop, we recommend adding the Penpot MCP Server as a
+   custom [connector](http://claude.ai/customize/connectors).
+   See the section **Connect your MCP client** for more details on how to connect.
+
 5. #### Open a Penpot file and connect MCP
    In Penpot, open a design file and use **File → MCP Server → Connect** to connect the plugin to your current file.
 
 ![Managing MCP Server from Penpot Integrations](/img/mcp/mcp-manage.webp)
 
 Once all five steps are done, your AI client should list Penpot tools.
+
+### Keep the Penpot tab active
+
+The MCP plugin runs inside your Penpot browser tab. If the browser puts that tab to sleep, freezes it, or unloads it to save memory, the MCP server cannot run tasks in Penpot until the tab wakes up again.
+
+When this happens, MCP fails fast instead of waiting for a long task timeout:
+
+* In Chrome and Chromium-based browsers, the plugin can report when the tab is being frozen.
+* In Firefox, Safari, and other browsers that do not expose the same freeze event, MCP uses plugin heartbeats. If the browser stops running the plugin JavaScript, the heartbeat becomes stale and the MCP server reports that the Penpot tab appears to be suspended.
+* If the browser unloads the tab completely, the plugin disconnects and MCP reports that no Penpot plugin instance is connected.
+
+To recover, open or focus the Penpot tab again, wait until MCP reconnects, and retry the prompt.
+
+To reduce the chances of the browser putting Penpot to sleep during long MCP sessions:
+
+| Browser | Recommended setting |
+| --- | --- |
+| Chrome | Go to **Settings → Performance → Always keep these sites active** and add your Penpot site. Pinning the Penpot tab also helps prevent Chrome tab deactivation. |
+| Edge | Go to **Settings → System and performance** and add your Penpot site to the list of sites that should never be put to sleep, if that option is available in your Edge version. |
+| Firefox | Firefox does not provide the same per-site keep-awake control. If tab unloading is a problem, advanced users can disable tab unloading with `browser.tabs.unloadOnLowMemory=false` in `about:config`, but this can increase memory use. |
+| Safari | Safari does not provide a comparable per-site keep-awake setting. Keep the Penpot tab open and active during long MCP sessions. |
 
 ### First prompts to try
 
@@ -195,84 +217,21 @@ You can use Penpot MCP server in two main ways:
 
 ## Connect your MCP client
 
-Use the same client setup flow for both modes. What changes is the server URL and authentication method.
-
-### Connection values by mode
-
 * **Remote MCP**
-  * URL: `https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY`
-  * Auth: MCP key in `userToken`
+  * URL (copy from your Penpot account overview): `https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY`
+  * Configure your MCP client with `npx -y add-mcp -g -n penpot <URL>` or by following your client's instructions for connecting to a remote MCP server.
+    For Claude Desktop, the server can be added as a custom [connector](http://claude.ai/customize/connectors).
 * **Local MCP**
-  * URL: `http://localhost:4401/mcp`
-  * Auth: none (uses your active Penpot browser session)
+  * Configure your MCP client with `npx -y add-mcp -g -n penpot http://localhost:4401/mcp` (adjust the port if you changed `PENPOT_MCP_SERVER_PORT`) or by following your client's instructions for connecting to an HTTP MCP server.
 
-### Cursor
-
-1. Open Cursor MCP/tool configuration.
-2. Add a Penpot MCP server entry:
+Note: For clients that do not support HTTP servers directly (like Claude Desktop), the local MCP server can be connected via [mcp-remote](https://github.com/geelen/mcp-remote) as follows:
 
 ```json
 {
   "mcpServers": {
     "penpot": {
-      "url": "REMOTE_OR_LOCAL_URL",
-      "type": "http"
-    }
-  }
-}
-```
-
-Replace `REMOTE_OR_LOCAL_URL` with the URL for your mode.
-
-### Claude Code
-
-1. Open MCP configuration in Claude Code.
-2. Add a Penpot server with `http` transport and the URL for your mode.
-3. Restart Claude Code or reload tools.
-
-```json
-{
-  "mcpServers": {
-    "penpot": {
-      "transport": "http",
-      "url": "REMOTE_OR_LOCAL_URL"
-    }
-  }
-}
-```
-
-
-### VS Code / Copilot
-
-1. Open external MCP server configuration in your extension/settings.
-2. Add Penpot with the URL for your mode.
-3. Save and reload tools.
-
-```json
-{
-  "mcp.servers": {
-    "penpot": {
-      "transport": "http",
-      "url": "REMOTE_OR_LOCAL_URL"
-    }
-  }
-}
-```
-
-### Codex / OpenCode etc
-
-1. Use your client's "Add MCP server" flow.
-2. Set the URL for your mode.
-3. Reload tools and verify Penpot tools are available.
-
-```json
-{
-  "servers": {
-    "penpot": {
-      "url": "REMOTE_OR_LOCAL_URL",
-      "transport": {
-        "type": "http"
-      }
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "<URL>", "--allow-http"]
     }
   }
 }
@@ -305,9 +264,8 @@ Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted 
 <a id="connect-remote"></a>
 ### Connect
 
-For client-specific setup, use the shared section **Connect your MCP client**.
-
 For remote mode, use the URL shown in **Your account → Integrations → MCP Server**, which includes your `userToken`.
+See the section **Connect your MCP client** for details on how to connect.
 
 ### Setup videos
 
@@ -443,9 +401,7 @@ For advanced or repository-based workflows, see the [MCP README](https://github.
 <a id="connect-local"></a>
 ### Connect
 
-For client-specific setup, use the shared section **Connect your MCP client**.
-
-For local mode, use `http://localhost:4401/mcp` with HTTP transport (no MCP key; authentication uses your active Penpot browser session).
+See the section **Connect your MCP client** for details on how to connect.
 
 <a id="use-local"></a>
 ### Use

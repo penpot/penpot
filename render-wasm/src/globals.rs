@@ -4,12 +4,16 @@ use macros::wasm_error;
 use crate::emscripten::init_gl;
 
 use crate::mem;
-use crate::render::{gpu_state::GpuState, RenderState};
+use crate::render::{gpu_state::GpuState, RenderResources, RenderState};
 use crate::state::{State, TextEditorState, UIState};
 
 static mut DESIGN_STATE: *mut State = std::ptr::null_mut();
+static mut GPU_STATE: *mut GpuState = std::ptr::null_mut();
+static mut RENDER_STATE: *mut RenderState = std::ptr::null_mut();
+static mut UI_STATE: *mut UIState = std::ptr::null_mut();
+static mut TEXT_EDITOR_STATE: *mut TextEditorState = std::ptr::null_mut();
+static mut RENDER_RESOURCES: *mut RenderResources = std::ptr::null_mut();
 
-/// Design State.
 pub(crate) fn get_design_state() -> &'static mut State {
     unsafe {
         debug_assert!(!DESIGN_STATE.is_null(), "Design State is null");
@@ -17,19 +21,16 @@ pub(crate) fn get_design_state() -> &'static mut State {
     }
 }
 
-/// GPU State.
-static mut GPU_STATE: *mut GpuState = std::ptr::null_mut();
-
 #[inline(always)]
 pub(crate) fn get_gpu_state() -> &'static mut GpuState {
     unsafe {
-        debug_assert!(!GPU_STATE.is_null(), "GPU State is null");
+        assert!(
+            !GPU_STATE.is_null(),
+            "GPU State is null (headless instance?)"
+        );
         &mut *GPU_STATE
     }
 }
-
-/// Render State.
-static mut RENDER_STATE: *mut RenderState = std::ptr::null_mut();
 
 #[inline(always)]
 pub(crate) fn get_render_state() -> &'static mut RenderState {
@@ -39,8 +40,18 @@ pub(crate) fn get_render_state() -> &'static mut RenderState {
     }
 }
 
-/// Text Editor State
-static mut TEXT_EDITOR_STATE: *mut TextEditorState = std::ptr::null_mut();
+#[inline(always)]
+pub(crate) fn has_render_state() -> bool {
+    unsafe { !RENDER_STATE.is_null() }
+}
+
+#[inline(always)]
+pub(crate) fn get_resources() -> &'static mut RenderResources {
+    unsafe {
+        debug_assert!(!RENDER_RESOURCES.is_null(), "Render Resources is null");
+        &mut *RENDER_RESOURCES
+    }
+}
 
 #[inline(always)]
 pub(crate) fn get_text_editor_state() -> &'static mut TextEditorState {
@@ -49,9 +60,6 @@ pub(crate) fn get_text_editor_state() -> &'static mut TextEditorState {
         &mut *TEXT_EDITOR_STATE
     }
 }
-
-/// UI State
-static mut UI_STATE: *mut UIState = std::ptr::null_mut();
 
 #[inline(always)]
 pub(crate) fn get_ui_state() -> &'static mut UIState {
@@ -113,6 +121,23 @@ fn render_init(width: i32, height: i32) {
     }
 }
 
+/// Initializes the interactive RenderResources (GPU image store).
+fn resources_init() {
+    unsafe {
+        let resources = RenderResources::try_new().expect("Cannot initialize RenderResources");
+        RENDER_RESOURCES = Box::into_raw(Box::new(resources));
+    }
+}
+
+/// Initializes GPU-free RenderResources for the headless export path.
+fn resources_init_headless() {
+    unsafe {
+        let resources = RenderResources::try_new_headless()
+            .expect("Cannot initialize headless RenderResources");
+        RENDER_RESOURCES = Box::into_raw(Box::new(resources));
+    }
+}
+
 /// Initializes DesignState.
 fn design_init() {
     unsafe {
@@ -143,10 +168,24 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     #[cfg(target_arch = "wasm32")]
     init_gl!();
     gpu_init();
+    resources_init();
     render_init(width, height);
     text_editor_init();
     design_init();
     ui_init();
+    Ok(())
+}
+
+/// Boots the engine for headless export with no GPU/WebGL context: only
+/// `RenderResources` (GPU-free) + the design state. The export (raster/PDF)
+/// paths render onto their own surface; the interactive render loop is not
+/// available on an instance initialized this way. `width`/`height` are kept for
+/// API symmetry with `init` but unused — the export sizes from shape bounds.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn init_headless(_width: i32, _height: i32) -> Result<()> {
+    resources_init_headless();
+    design_init();
     Ok(())
 }
 

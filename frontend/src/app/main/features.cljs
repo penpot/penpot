@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as log]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.render-wasm :as wasm]
@@ -66,7 +67,7 @@
 (defn get-enabled-features
   "An explicit lookup of enabled features for the current team"
   [state team-id]
-  (let [team (dm/get-in state [:teams team-id])]
+  (let [team (dsh/lookup-team state team-id)]
     (-> global-enabled-features
         (set/union (get state :features-runtime #{}))
         (set/intersection cfeat/no-migration-features)

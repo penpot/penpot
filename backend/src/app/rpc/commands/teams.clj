@@ -60,6 +60,11 @@
        :can-edit (or is-owner is-admin can-edit)
        :can-read true})))
 
+(defn get-read-permissions
+  [cfg profile-id team-id]
+  (or (get-permissions cfg profile-id team-id)
+      (perms/get-organization-owner-permissions cfg profile-id :team-id team-id)))
+
 (def has-admin-permissions?
   (perms/make-admin-predicate-fn get-permissions))
 
@@ -67,7 +72,7 @@
   (perms/make-edition-predicate-fn get-permissions))
 
 (def has-read-permissions?
-  (perms/make-read-predicate-fn get-permissions))
+  (perms/make-read-predicate-fn get-read-permissions))
 
 (def check-admin-permissions!
   (perms/make-check-fn has-admin-permissions?))
@@ -180,7 +185,6 @@
         sql     (if (contains? cf/flags :subscriptions)
                   sql:get-teams-with-permissions-and-subscription
                   sql:get-teams-with-permissions)]
-
     (->> (db/exec! conn [sql (:default-team-id profile) profile-id])
          (into [] xform:process-teams))))
 
@@ -194,7 +198,7 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-info-to-team cfg % params))
+      (map #(nitrate/add-organization-info-to-team cfg % params))
       (contains? cf/flags :nitrate)
       (remove #(get-in % [:organization :expired-license])))))
 
@@ -238,19 +242,34 @@
   {::doc/added "1.17"
    ::rpc/id-type :team
    ::sm/params schema:get-team}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id id file-id]}]
-  (get-team pool :profile-id profile-id :team-id id :file-id file-id))
+  [cfg {:keys [::rpc/profile-id id file-id] :as params}]
+  (let [team (get-team cfg :profile-id profile-id :team-id id :file-id file-id)]
+    (if (contains? cf/flags :nitrate)
+      (nitrate/add-organization-info-to-team cfg team params)
+      team)))
+
+(defn- get-organization-owner-viewer-team
+  "When `profile-id` is a non-member owner of the organization that owns
+  the requested team, returns the team shaped with viewer permissions;
+  otherwise nil. `cfg` must carry the nitrate client."
+  [cfg profile-id default-team-id params]
+  (when-let [team-id (perms/resolve-team-id cfg params)]
+    (when (nitrate/organization-owner-of-team? cfg profile-id team-id)
+      (when-let [team (db/get* cfg :team {:id team-id})]
+        (when-not (db/is-row-deleted? team)
+          (-> team
+              (decode-row)
+              (merge perms/viewer-role-flags)
+              (assoc :is-default (= team-id default-team-id))
+              (process-permissions)))))))
 
 (defn get-team
-  [conn & {:keys [profile-id team-id project-id file-id] :as params}]
+  [cfg & {:keys [profile-id team-id project-id file-id] :as params}]
 
   (assert (uuid? profile-id) "profile-id is mandatory")
-  (assert (or (db/connection? conn)
-              (db/pool? conn))
-          "connection or pool is mandatory")
 
   (let [{:keys [default-team-id] :as profile}
-        (profile/get-profile conn profile-id)
+        (profile/get-profile cfg profile-id)
 
         sql
         (if (contains? cf/flags :subscriptions)
@@ -262,14 +281,14 @@
           (some? team-id)
           (let [sql (str "WITH teams AS (" sql ") "
                          "SELECT * FROM teams WHERE id=?")]
-            (db/exec-one! conn [sql default-team-id profile-id team-id]))
+            (db/exec-one! cfg [sql default-team-id profile-id team-id]))
 
           (some? project-id)
           (let [sql (str "WITH teams AS (" sql ") "
                          "SELECT t.* FROM teams AS t "
                          "  JOIN project AS p ON (p.team_id = t.id) "
                          " WHERE p.id=?")]
-            (db/exec-one! conn [sql default-team-id profile-id project-id]))
+            (db/exec-one! cfg [sql default-team-id profile-id project-id]))
 
           (some? file-id)
           (let [sql (str "WITH teams AS (" sql ") "
@@ -277,17 +296,18 @@
                          "  JOIN project AS p ON (p.team_id = t.id) "
                          "  JOIN file AS f ON (f.project_id = p.id) "
                          " WHERE f.id=?")]
-            (db/exec-one! conn [sql default-team-id profile-id file-id]))
+            (db/exec-one! cfg [sql default-team-id profile-id file-id]))
 
           :else
           (throw (IllegalArgumentException. "invalid arguments")))]
 
-    (when-not result
-      (ex/raise :type :not-found
-                :code :team-does-not-exist))
-    (-> result
-        (decode-row)
-        (process-permissions))))
+    (if result
+      (-> result
+          (decode-row)
+          (process-permissions))
+      (or (get-organization-owner-viewer-team cfg profile-id default-team-id params)
+          (ex/raise :type :not-found
+                    :code :team-does-not-exist)))))
 
 ;; --- Query: Team Members
 
@@ -316,7 +336,7 @@
    ::sm/params schema:get-team-memebrs}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (get-team-members conn team-id)))
 
 ;; --- Query: Team Users
@@ -342,10 +362,10 @@
   (dm/with-open [conn (db/open pool)]
     (if team-id
       (do
-        (check-read-permissions! conn profile-id team-id)
+        (check-read-permissions! cfg profile-id team-id)
         (get-users conn team-id))
       (let [{team-id :id} (get-team-for-file conn file-id)]
-        (check-read-permissions! conn profile-id team-id)
+        (check-read-permissions! cfg profile-id team-id)
         (get-users conn team-id)))))
 
 ;; This is a similar query to team members but can contain more data
@@ -432,7 +452,7 @@
    ::sm/params schema:get-team-stats}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (get-team-stats conn team-id)))
 
 (def sql:team-stats
@@ -468,7 +488,7 @@
    ::sm/params schema:get-team-invitations}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (get-team-invitations conn team-id)))
 
 
@@ -515,17 +535,17 @@
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
 
-  ;; When creating inside an org, verify the user has permission to do so.
-  ;; Fail closed: if org permissions cannot be fetched, deny the operation.
+  ;; When creating inside an organization, verify the user has permission to do so.
+  ;; Fail closed: if organization permissions cannot be fetched, deny the operation.
   (when (and organization-id (contains? cf/flags :nitrate))
-    (let [org-perms (nitrate/call cfg :get-org-permissions
-                                  {:organization-id organization-id})]
-      (if (nil? org-perms)
+    (let [organization-perms (nitrate/call cfg :get-organization-permissions
+                                           {:organization-id organization-id})]
+      (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "Unable to verify organization permissions")
         (when-not (nitrate-perms/allowed? :create-team
-                                          {:org-perms org-perms
+                                          {:organization-perms organization-perms
                                            :profile-id profile-id})
           (ex/raise :type :validation
                     :code :not-allowed
@@ -543,7 +563,7 @@
       {::audit/props {:id (:id team)}})))
 
 
-(defn create-default-org-team
+(defn create-default-organization-team
   [cfg profile-id organization-id]
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
@@ -559,11 +579,11 @@
         team     (create-team cfg params)]
     (select-keys team [:id])))
 
-(defn initialize-user-in-nitrate-org
+(defn initialize-user-in-nitrate-organization
   "If needed, create a default team for the user on the organization,
-   and notify Nitrate that an user has been added to an org."
+   and notify Nitrate that a user has been added to an organization."
   ([cfg profile-id organization-id]
-   (initialize-user-in-nitrate-org cfg profile-id organization-id nil))
+   (initialize-user-in-nitrate-organization cfg profile-id organization-id nil))
   ([cfg profile-id organization-id email]
    (assert (db/connection-map? cfg)
            "expected cfg with valid connection")
@@ -572,24 +592,24 @@
       cfg
       (fn [{:keys [::db/conn] :as tx-cfg}]
 
-        (let [membership (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                                :organization-id organization-id})]
+        (let [membership (nitrate/call cfg :get-organization-membership {:profile-id profile-id
+                                                                         :organization-id organization-id})]
           ;; Only when the user doesn't belong to the organization yet
           (when (and
                  (some? (:organization-id membership)) ;; the organization exists
-                 (not (:is-member membership)))        ;; the user is not a member of the org yet
+                 (not (:is-member membership)))        ;; the user is not a member of the organization yet
 
 
             (let [organization-id           organization-id
-                  default-team     (create-default-org-team (assoc tx-cfg ::db/conn conn) profile-id organization-id)
+                  default-team     (create-default-organization-team (assoc tx-cfg ::db/conn conn) profile-id organization-id)
                   default-team-id  (:id default-team)
-                  result           (nitrate/call tx-cfg :add-profile-to-org (cond-> {:profile-id profile-id
-                                                                                     :team-id default-team-id
-                                                                                     :organization-id organization-id}
-                                                                              (some? email) (assoc :email email)))]
+                  result           (nitrate/call tx-cfg :add-profile-to-organization (cond-> {:profile-id profile-id
+                                                                                              :team-id default-team-id
+                                                                                              :organization-id organization-id}
+                                                                                       (some? email) (assoc :email email)))]
               (when (not (:is-member result))
                 (ex/raise :type :internal
-                          :code :failed-add-profile-org-nitrate
+                          :code :failed-add-profile-organization-nitrate
                           :context {:profile-id profile-id
                                     :organization-id organization-id
                                     :default-team-id default-team-id}))
@@ -602,13 +622,13 @@
    (assert (db/connection-map? cfg)
            "expected cfg with valid connection")
    (when (contains? cf/flags :nitrate)
-     (let [membership (nitrate/call cfg :get-org-membership-by-team {:profile-id profile-id :team-id team-id})]
+     (let [membership (nitrate/call cfg :get-organization-membership-by-team {:profile-id profile-id :team-id team-id})]
        ;; Only when the team belong to an organization and the user is not a member
        (when (and
               (some? (:organization-id membership)) ;; the team do belong to an organization
-              (not (:is-member membership)))        ;; the user is not a member of the org yet
-         (initialize-user-in-nitrate-org cfg profile-id (:organization-id membership)))))
-   (db/insert! conn :team-profile-rel params options)))
+              (not (:is-member membership)))        ;; the user is not a member of the organization yet
+         (initialize-user-in-nitrate-organization cfg profile-id (:organization-id membership)))))
+   (db/insert! conn :team-profile-rel (assoc params :id (uuid/next)) options)))
 
 (defn create-team
   "This is a complete team creation process, it creates the team
@@ -679,7 +699,8 @@
 (defn create-project-role
   [conn profile-id project-id role]
   (let [params {:project-id project-id
-                :profile-id profile-id}]
+                :profile-id profile-id
+                :id (uuid/next)}]
     (->> (perms/assign-role-flags params role)
          (db/insert! conn :project-profile-rel))))
 
@@ -783,16 +804,16 @@
 
   (let [team  (get-team conn :profile-id profile-id :team-id team-id)
         team  (if (contains? cf/flags :nitrate)
-                (nitrate/add-org-info-to-team cfg team params)
+                (nitrate/add-organization-info-to-team cfg team params)
                 team)
         perms (get team :permissions)
-        org   (:organization team)
-        in-org? (and (contains? cf/flags :nitrate) org)
+        organization   (:organization team)
+        in-organization? (and (contains? cf/flags :nitrate) organization)
         can-delete?
-        (if in-org?
+        (if in-organization?
           (nitrate-perms/allowed? :delete-team
-                                  {:org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
-                                               :permissions (dm/get-in team [:organization :permissions])}
+                                  {:organization-perms {:owner-id    (dm/get-in team [:organization :owner-id])
+                                                        :permissions (dm/get-in team [:organization :permissions])}
                                    :profile-id profile-id
                                    :team-perms perms})
           (boolean (:is-owner perms)))]
@@ -802,8 +823,8 @@
                 :code :only-owner-can-delete-team))
 
     ;; Protect the user's personal default team from deletion.
-    ;; Org-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
-    (when (and (:is-default team) (not in-org?))
+    ;; Organization-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    (when (and (:is-default team) (not in-organization?))
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
@@ -930,12 +951,23 @@
 
     (db/delete! conn :team-profile-rel {:profile-id member-id
                                         :team-id team-id})
-    (mbus/pub! msgbus
-               :topic member-id
-               :message {:type :team-membership-change
-                         :change :removed
-                         :team-id team-id
-                         :team-name (:name team)})
+
+    ;; A removed member that owns the organization of this team keeps
+    ;; read-only access to it, so instead of kicking them out we degrade
+    ;; their session to viewer, same as any other role change.
+    (if (nitrate/organization-owner-of-team? cfg member-id team-id)
+      (mbus/pub! msgbus
+                 :topic member-id
+                 :message {:type :team-role-change
+                           :topic member-id
+                           :team-id team-id
+                           :role :viewer})
+      (mbus/pub! msgbus
+                 :topic member-id
+                 :message {:type :team-membership-change
+                           :change :removed
+                           :team-id team-id
+                           :team-name (:name team)}))
 
     nil))
 

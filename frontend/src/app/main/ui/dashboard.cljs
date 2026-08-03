@@ -41,6 +41,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.session-state :as ss]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -263,17 +264,41 @@
           (swap! storage/session dissoc :template))))))
 
 (defn- use-nitrate-entry-popup
-  []
-  (mf/with-effect []
-    (when (dnt/nitrate-entry-popup-pending?)
-      (dnt/consume-nitrate-entry-popup!)
-      (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
-                (dnt/show-nitrate-popup :nitrate-form)))))
+  [onboarding-viewed? nitrate-onboarding-viewed?]
+  (let [nitrate-popup-pending? (dnt/nitrate-entry-popup-pending?)]
+    (mf/with-effect [nitrate-popup-pending? onboarding-viewed? nitrate-onboarding-viewed?]
+      (when nitrate-popup-pending?
+        (dnt/consume-nitrate-entry-popup!)
+        (st/emit! (dprof/update-profile-props
+                   (cond-> {}
+                     (not (or nitrate-onboarding-viewed? onboarding-viewed?))
+                     (assoc :nitrate-onboarding-viewed false)
+
+                     (not onboarding-viewed?)
+                     (assoc :onboarding-viewed true
+                            :release-notes-viewed (:main cf/version))))
+                  (dnt/show-nitrate-popup :nitrate-form))))))
+
+(defn- use-pending-action
+  "Consumes a pending dashboard action from session storage and resumes it"
+  [pending-action-id]
+  (mf/with-effect [pending-action-id]
+    (when (some? pending-action-id)
+      (dom/replace-history-state!
+       (dom/remove-query-param (rt/get-current-href) :pending-action-id))
+      (when-let [action (ss/consume-pending-action! (str pending-action-id))]
+        (case (:type action)
+          :add-team-to-organization
+          (st/emit! (dnt/add-team-to-organization {:team-id         (:team-id action)
+                                                   :organization-id (:organization-id action)
+                                                   :skip-audit?     true}))
+          nil)))))
 
 (mf/defc dashboard*
-  [{:keys [profile project-id team-id search-term plugin-url template section]}]
+  [{:keys [profile project-id team-id search-term plugin-url template section pending-action-id]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
+        props           (get profile :props)
 
         project         (get projects project-id)
         projects        (mf/with-memo [projects team-id]
@@ -290,7 +315,7 @@
                (filter :is-default)
                (first)))]
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts-dashboard)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-dashboard :dashboard)
 
     (mf/with-effect [team-id]
       (st/emit! (dd/initialize team-id))
@@ -308,7 +333,8 @@
 
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
-    (use-nitrate-entry-popup)
+    (use-nitrate-entry-popup (:onboarding-viewed props) (:nitrate-onboarding-viewed props))
+    (use-pending-action pending-action-id)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]

@@ -34,36 +34,44 @@
 (def shortcuts
   {:escape          {:tooltip (ds/esc)
                      :command ["escape" "enter" "v"]
+                     :section [:workspace]
                      :fn #(st/emit! (esc-pressed))}
 
    :undo            {:tooltip (ds/meta "Z")
                      :command (ds/c-mod "z")
+                     :section [:workspace]
                      :fn #(st/emit! dwu/undo)}
 
    :redo            {:tooltip (ds/meta "Y")
                      :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
+                     :section [:workspace]
                      :fn #(st/emit! dwu/redo)}
 
    ;; ZOOM
 
    :increase-zoom   {:tooltip "+"
                      :command "+"
+                     :section [:workspace]
                      :fn #(st/emit! (dw/increase-zoom nil))}
 
    :decrease-zoom   {:tooltip "-"
                      :command "-"
+                     :section [:workspace]
                      :fn #(st/emit! (dw/decrease-zoom nil))}
 
    :reset-zoom      {:tooltip (ds/shift "0")
                      :command "shift+0"
+                     :section [:workspace]
                      :fn #(st/emit! dw/reset-zoom)}
 
    :fit-all         {:tooltip (ds/shift "1")
                      :command "shift+1"
+                     :section [:workspace]
                      :fn #(st/emit! dw/zoom-to-fit-all)}
 
    :zoom-selected   {:tooltip (ds/shift "2")
                      :command "shift+2"
+                     :section [:workspace]
                      :fn #(st/emit! dw/zoom-to-selected-shape)}})
 
 (defn get-tooltip [shortcut]

@@ -419,10 +419,19 @@
    :id ::change-email
    :schema schema:change-email))
 
+(def ^:private schema:organization-data
+  [:map
+   [:name ::sm/text]
+   [:initials {:optional true} [:maybe :string]]
+   [:logo {:optional true} [:maybe ::sm/uri]]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:sso-active {:optional true} [:maybe ::sm/boolean]]])
+
 (def ^:private schema:invite-to-team
   [:map
    [:invited-by ::sm/text]
    [:team ::sm/text]
+   [:organization {:optional true} [:maybe schema:organization-data]]
    [:token ::sm/text]])
 
 (def invite-to-team
@@ -431,27 +440,28 @@
    :id ::invite-to-team
    :schema schema:invite-to-team))
 
-(def ^:private schema:organization-data
-  [:map
-   [:name ::sm/text]
-   [:initials [:maybe :string]]
-   [:logo [:maybe ::sm/uri]]
-   [:avatar-bg-url [:maybe ::sm/uri]]])
-
-(def ^:private schema:invite-to-org
+(def ^:private schema:invite-to-organization
   [:map
    [:invited-by ::sm/text]
    [:user-name [:maybe ::sm/text]]
    [:token ::sm/text]
    [:organization schema:organization-data]])
 
-(def invite-to-org
-  "Org member invitation email."
+(def invite-to-organization
+  "Organization member invitation email."
   (template-factory
-   :id ::invite-to-org
-   :schema schema:invite-to-org))
+   :id ::invite-to-organization
+   :schema schema:invite-to-organization))
 
+(def ^:private schema:organization-setup-sso
+  [:map
+   [:organization-name ::sm/text]])
 
+(def organization-setup-sso
+  "Email when an organization set up SSO"
+  (template-factory
+   :id ::organization-setup-sso
+   :schema schema:organization-setup-sso))
 
 (def ^:private schema:renewal-notice
   [:map

@@ -31,7 +31,8 @@
   #{"file-media-object"
     "file-object-thumbnail"
     "team-font-variant"
-    "file-data-fragment"})
+    "file-data-fragment"
+    "organization"})
 
 (defn get-id
   [{:keys [path-params]}]

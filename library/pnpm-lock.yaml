@@ -5,21 +5,21 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@zip.js/zip.js@2.8.26': 7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95
+  '@zip.js/zip.js@2.8.34': 7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95
 
 importers:
 
   .:
     devDependencies:
       '@types/node':
-        specifier: ^26.0.1
-        version: 26.0.1
+        specifier: ^26.1.2
+        version: 26.1.2
       '@zip.js/zip.js':
-        specifier: 2.8.26
-        version: 2.8.26(patch_hash=7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95)
+        specifier: 2.8.34
+        version: 2.8.34(patch_hash=7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95)
       concurrently:
-        specifier: ^10.0.3
-        version: 10.0.3
+        specifier: ^10.0.4
+        version: 10.0.4
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
@@ -32,11 +32,11 @@ importers:
 
 packages:
 
-  '@types/node@26.0.1':
-    resolution: {integrity: sha512-fc3KiUoBt6kie0N9bIW3E47vZsuaMf0PM2AaUpLCLT0s/LvX1nxAim6Fc049cNxODPpGm6qRAuUOB86SkRuPQw==}
+  '@types/node@26.1.2':
+    resolution: {integrity: sha512-Vu4a5UFA9rIIFJ7rB/Vaafh9lrCQszopTCx6KjFboXTGQbPNasehVR5TEiithSDGyd1DEiUByggTZsg8jukeIg==}
 
-  '@zip.js/zip.js@2.8.26':
-    resolution: {integrity: sha512-RQ4h9F6DOiHxpdocUDrOl6xBM+yOtz+LkUol47AVWcfebGBDpZ7w7Xvz9PS24JgXvLGiXXzSAfdCdVy1tPlaFA==}
+  '@zip.js/zip.js@2.8.34':
+    resolution: {integrity: sha512-+6a3lyqq69rpseLbvDPiVIWsZ/HdTGAAD6afFtug6ECPDGttb2dHnPC6cJgdPofYkzL9OvXizegq+DQVfL2rnA==}
     engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=18.0.0'}
 
   ansi-regex@6.2.2:
@@ -82,8 +82,8 @@ packages:
     resolution: {integrity: sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w==}
     engines: {node: '>=20'}
 
-  concurrently@10.0.3:
-    resolution: {integrity: sha512-hc3LH4UaKWd/bbyDK/IGVa4RB6PtQ3CUYwtrkzqHn+wIG3Hr5fhpRlk0L/gCa8ZE1L/Ufj50Zho69cI5w8SQBA==}
+  concurrently@10.0.4:
+    resolution: {integrity: sha512-trZql+7l/0+WRAsAnEdctr4+iiOS6ZrViI6H8QWcCF9MFS/LT0dKpe8vluB1to6it+OxSI4VospFTIFMW8DJRw==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -185,8 +185,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  shell-quote@1.8.4:
-    resolution: {integrity: sha512-VsC6n6vz1ihYYyZZwX7YZSF5l5x36ca17OC+a69h94YqB7X6XLwf+5MOgynYir2SLFUbl8gIYvBo8K8RoNQ6bQ==}
+  shell-quote@1.9.0:
+    resolution: {integrity: sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA==}
     engines: {node: '>= 0.4'}
 
   simple-update-notifier@2.0.0:
@@ -255,11 +255,11 @@ packages:
 
 snapshots:
 
-  '@types/node@26.0.1':
+  '@types/node@26.1.2':
     dependencies:
       undici-types: 8.3.0
 
-  '@zip.js/zip.js@2.8.26(patch_hash=7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95)': {}
+  '@zip.js/zip.js@2.8.34(patch_hash=7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95)': {}
 
   ansi-regex@6.2.2: {}
 
@@ -304,11 +304,11 @@ snapshots:
       strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
 
-  concurrently@10.0.3:
+  concurrently@10.0.4:
     dependencies:
       chalk: 5.6.2
       rxjs: 7.8.2
-      shell-quote: 1.8.4
+      shell-quote: 1.9.0
       supports-color: 10.2.2
       tree-kill: 1.2.2
       yargs: 18.0.0
@@ -391,7 +391,7 @@ snapshots:
 
   semver@7.8.5: {}
 
-  shell-quote@1.8.4: {}
+  shell-quote@1.9.0: {}
 
   simple-update-notifier@2.0.0:
     dependencies:

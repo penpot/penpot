@@ -11,6 +11,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.viewport-wasm :as dwvw]
+   [app.main.streams :as ms]
    [potok.v2.core :as ptk]))
 
 (defn hover-grid-cell
@@ -88,7 +89,11 @@
   (ptk/reify ::stop-grid-layout-editing
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-grid-edition dissoc grid-id))))
+      (update state :workspace-grid-edition dissoc grid-id))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (ms/clear-transform-preview!))))
 
 (defn locate-board
   [grid-id]

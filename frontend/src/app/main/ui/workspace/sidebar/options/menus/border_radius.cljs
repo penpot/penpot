@@ -300,7 +300,7 @@
                            :else
                            "--")
             :min 0
-            :nillable true
+            :is-nillable true
             :on-change on-all-radius-change
             :value (if all-values-equal?
                      (if (nil? (:r1 values))

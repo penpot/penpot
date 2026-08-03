@@ -22,6 +22,11 @@
    :border-start-end-radius
    :border-end-start-radius
    :border-end-end-radius
+   ;; side strokes
+   :border-block-start-width
+   :border-inline-end-width
+   :border-block-end-width
+   :border-inline-start-width
    :transform])
 
 (def ^:private shape-prop->border-radius-prop

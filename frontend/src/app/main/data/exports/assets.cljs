@@ -196,6 +196,15 @@
   (and (wasm-export-enabled? state)
        (contains? wasm-export-types (:type export))))
 
+(defn- request-simple-export-wasm
+  [export]
+  (ptk/reify ::request-simple-export-wasm
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (case (:type export)
+        :pdf (wasm.exports/export-pdf export)
+        (wasm.exports/export-image export)))))
+
 (defn request-simple-export
   [{:keys [export]}]
   (let [export (normalize-export export)]
@@ -209,17 +218,13 @@
       ptk/WatchEvent
       (watch [_ state _]
         (if (use-wasm-export? state export)
-          (do
-            (case (:type export)
-              :pdf (wasm.exports/export-pdf export)
-              (wasm.exports/export-image export))
-            (rx/empty))
+          (rx/of (request-simple-export-wasm export))
           (let [profile-id (:profile-id state)
-                params (normalize-export-shapes-params {:exports [export]
-                                                        :profile-id profile-id
-                                                        :cmd :export-shapes
-                                                        :wait true
-                                                        :is-wasm (wasm-export-enabled? state)})]
+                params     (normalize-export-shapes-params {:exports [export]
+                                                            :profile-id profile-id
+                                                            :cmd :export-shapes
+                                                            :wait true
+                                                            :is-wasm (wasm-export-enabled? state)})]
             (rx/concat
              (dwp/force-persist-and-wait 400)
 

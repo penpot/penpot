@@ -1,0 +1,1 @@
+“{{ organization-name|abbreviate:25 }}” uses single sign-on

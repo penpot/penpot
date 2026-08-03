@@ -571,7 +571,7 @@
               :no-validate true
               :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
               :on-change on-width-change
-              :disabled disabled-width-sizing?
+              :is-disabled disabled-width-sizing?
               :class (stl/css :numeric-input)
               :value (:width values)}]]
            [:div {:class (stl/css-case :height true
@@ -582,7 +582,7 @@
                                                  :no-validate true
                                                  :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
                                                  :on-change on-height-change
-                                                 :disabled disabled-height-sizing?
+                                                 :is-disabled disabled-height-sizing?
                                                  :class (stl/css :numeric-input)
                                                  :value (:height values)}]]])
 
@@ -632,7 +632,7 @@
             [:> deprecated-input/numeric-input* {:no-validate true
                                                  :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
                                                  :on-change on-pos-x-change
-                                                 :disabled disabled-position?
+                                                 :is-disabled disabled-position?
                                                  :class (stl/css :numeric-input)
                                                  :value (:x values)}]]
 

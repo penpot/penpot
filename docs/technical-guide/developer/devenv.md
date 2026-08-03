@@ -69,13 +69,12 @@ The devenv runs as separate compose projects:
        (default `~/.penpot/penpot_workspaces/`). You can explicitly sync them
        with the `--sync` flag (automatic on first start).
 
-Each call to `run-devenv` brings up one instance, and ws0 is always
-running whenever any ws1+ is — `--ws N` (N≥1) auto-starts ws0 first if it
-isn't already up:
+Each call to `run-devenv` brings up one instance. Workspaces are independent
+and can be started and stopped in any order:
 
 ```bash
 ./manage.sh run-devenv                 # main (ws0)
-./manage.sh run-devenv --ws 1          # ws0 if needed, then ws1
+./manage.sh run-devenv --ws 1          # ws1
 ./manage.sh run-devenv --ws 2 --sync   # ws2, re-seeding from the live repo
 ```
 
@@ -91,12 +90,12 @@ the frontend's MCP flag) is copied into each workspace on its initial sync
 only. After that the developer maintains it in each workspace; subsequent
 `--sync` runs leave the workspace copy alone.
 
-Stopping mirrors the start invariant — ws0 is the last to stop, and shared
-infra stops with it:
+Stopping is equally flexible — each workspace is independent. Shared infra
+stops only when no instances remain running:
 
 ```bash
 ./manage.sh stop-devenv --ws 1           # stops ws1; ws0 + infra stay up
-./manage.sh stop-devenv                  # stops ws0 + infra; errors if ws1+ still running
+./manage.sh stop-devenv                  # stops ws0; infra stays up if ws1+ still running
 ./manage.sh stop-devenv --all            # stops every ws1+ first, then ws0 + infra
 ```
 
@@ -150,12 +149,14 @@ file-summary cache, rate-limit counters) isolated.
 Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
 disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
 `task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
-runs them against the shared DB and MinIO. The "ws0 always up when ws1+ is
-up" invariant exists for this reason: it keeps a single worker-bearer and
-avoids the multi-instance cron-dedup race (the lock on `scheduled_task` is
-released when the task body finishes, so two cron timers firing the same
-scheduled instant with a gap larger than the body's runtime can both
-execute it).
+runs them against the shared DB and MinIO. Workers are fire-and-forget:
+`wrk/submit!` inserts a row and returns; RPC handlers never wait on
+completion. The "ws0 only" policy avoids multi-instance worker races (cron
+dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across
+submitters).
+
+Each workspace is independent and can be started and stopped in any order.
+Shared infrastructure shuts down only when no instances remain running.
 
 ### Upgrading from a pre-parallel devenv
 

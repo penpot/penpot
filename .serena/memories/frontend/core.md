@@ -23,7 +23,7 @@ From `frontend/`:
 - JS lint currently no-ops via `pnpm run lint:js`.
 - SCSS lint: `pnpm run lint:scss`.
 - Format checks: `pnpm run check-fmt:clj`, `pnpm run check-fmt:js`, `pnpm run check-fmt:scss`.
-- Format fix: `pnpm run fmt`, or targeted `fmt:clj` / `fmt:js` / `fmt:scss`.
+- Format fix: `pnpm run fmt`, or targeted `fmt:clj` / `fmt:js` / `fmt:scss`. After running `fmt:*`, `check-fmt:*` is redundant.
 - Translation formatting after i18n edits: `pnpm run translations`.
 
 **Before linting:** if delimiter errors are suspected (after LLM edits, or

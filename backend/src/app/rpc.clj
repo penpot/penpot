@@ -250,64 +250,71 @@
     f))
 
 
-(defonce ^:private org-sso-auth-cache
+(defonce ^:private organization-sso-auth-cache
   (cache/create :expire "15m" :max-size 1024))
 
-(defn invalidate-org-sso-cache-by-org!
-  "Invalidates all org-SSO authorization cache entries for the given organization-id."
+(defn invalidate-organization-sso-cache-by-organization!
+  "Invalidates all organization-SSO authorization cache entries for the given organization-id."
   [organization-id]
-  (cache/invalidate-if org-sso-auth-cache #(= (:organization-id %) organization-id)))
+  (cache/invalidate-if organization-sso-auth-cache #(= (:organization-id %) organization-id)))
 
 (defn- wrap-nitrate-sso
   "Enforce Nitrate organization SSO authentication for RPC handlers.
 
-   Resolves the team context from request params using priority order:
-   1. Explicit :team-id param
-   2. Explicit :project-id param → lookup project.team_id
-   3. Explicit :file-id param → lookup file's team via join
-   4. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
+   Resolves the organization/team context from request params using priority order:
+   1. Explicit :organization-id param
+   2. Explicit :team-id param
+   3. Explicit :project-id param -> lookup project.team_id
+   4. Explicit :file-id param -> lookup file's team via join
+   5. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
 
-   Once team-id is resolved, checks if the user is authorized within that org's SSO
-   session using nitrate/sso-session-authorized?. Results are cached by [profile-id cache-ref]
-   for 15 minutes to avoid repeated lookups.
+   Once the context is resolved, checks if the user is authorized within that organization's
+   SSO session using nitrate/sso-session-authorized?. Authorized results are cached
+   by [profile-id cache-ref] for 15 minutes to avoid repeated lookups.
 
    Only activates when:
    - Nitrate flag is enabled
    - Endpoint requires authentication (::auth true by default)
-   - Endpoint is not marked with ::nitrate/org-sso false
+   - Endpoint is not marked with ::nitrate/organization-sso false
 
-   Raises :nitrate-sso-required error if user is not authorized in the org."
+   Raises :nitrate-sso-required error if user is not authorized in the organization."
   [_ f mdata]
   (if (and (contains? cf/flags :nitrate)
            (::auth mdata true) ;; only for endpoints that needs auth
            (::nitrate/sso mdata true))
     (fn [cfg params]
       ;; Resolve team/project/file from explicit keys or from :id via metadata
-      (let [id-type    (::id-type mdata)
-            id         (uuid/coerce (:id params))
-            team-id    (or (uuid/coerce (:team-id params))
-                           (when (= id-type :team) id))
-            project-id (or (uuid/coerce (:project-id params))
-                           (when (= id-type :project) id))
-            file-id    (or (uuid/coerce (:file-id params))
-                           (when (= id-type :file) id))]
-        (if (or team-id project-id file-id)
-          (let [cache-ref  (or team-id project-id file-id)
-                profile-id (::profile-id params)
+      (let [profile-id      (::profile-id params)
+            organization-id (uuid/coerce (:organization-id params))
+            id-type         (::id-type mdata)
+            id              (uuid/coerce (:id params))
+            team-id         (or (uuid/coerce (:team-id params))
+                                (when (= id-type :team) id))
+            project-id      (or (uuid/coerce (:project-id params))
+                                (when (= id-type :project) id))
+            file-id         (or (uuid/coerce (:file-id params))
+                                (when (= id-type :file) id))]
+        (if (and profile-id
+                 (or organization-id team-id project-id file-id))
+          (let [cache-ref  (or organization-id team-id project-id file-id)
+
                 cache-key  [profile-id cache-ref]
-                cached     (cache/get org-sso-auth-cache cache-key)
+                cached     (cache/get organization-sso-auth-cache cache-key)
                 result     (if (some? cached)
                              cached
-                             (let [team-id                  (or team-id
-                                                                (when project-id
-                                                                  (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
-                                                                (:id (teams/get-team-for-file cfg file-id)))
+                             (let [team-id                  (when-not organization-id
+                                                              (or team-id
+                                                                  (when project-id
+                                                                    (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
+                                                                  (:id (teams/get-team-for-file cfg file-id))))
                                    request                  (-> (meta params) (get ::http/request))
-                                   {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg team-id request)
+                                   {:keys [authorized sso]} (if organization-id
+                                                              (nitrate/sso-session-authorized? cfg organization-id nil request)
+                                                              (nitrate/sso-session-authorized? cfg nil team-id request))
                                    entry                    {:authorized      authorized
                                                              :organization-id (:organization-id sso)}]
                                (when authorized
-                                 (cache/get org-sso-auth-cache cache-key (constantly entry)))
+                                 (cache/get organization-sso-auth-cache cache-key (constantly entry)))
                                entry))]
             (if (:authorized result)
               (f cfg params)

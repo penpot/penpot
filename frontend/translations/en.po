@@ -98,7 +98,7 @@ msgid "auth.new-password"
 msgstr "Type a new password"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "You're now part of %s"
 
 #: src/app/main/ui/auth/recovery.cljs:36
@@ -297,7 +297,7 @@ msgid "common.unpublish"
 msgstr "Unpublish"
 
 #: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
+msgid "dashboard.leave-organization.toast"
 msgstr "You're no longer part of the %s organization."
 
 #: src/app/main/ui/dashboard/projects.cljs:90
@@ -367,25 +367,25 @@ msgid "dashboard.change-email"
 msgstr "Change email"
 
 #, unused
-msgid "dashboard.change-org-modal.accept"
+msgid "dashboard.change-organization-modal.accept"
 msgstr "MOVE TEAM"
 
 #, unused
-msgid "dashboard.change-org-modal.choose"
+msgid "dashboard.change-organization-modal.choose"
 msgstr "Move to:"
 
 #, unused
-msgid "dashboard.change-org-modal.select"
+msgid "dashboard.change-organization-modal.select"
 msgstr "Select an organization"
 
 #, unused
-msgid "dashboard.change-org-modal.text"
+msgid "dashboard.change-organization-modal.text"
 msgstr ""
 "Projects and files will remain available to team members. The team will get "
 "the configuration from the new organization."
 
 #: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
+msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
 #: src/app/main/ui/dashboard/deleted.cljs:316
@@ -397,7 +397,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Create org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -489,6 +489,14 @@ msgstr "Once a project member creates a file, it will be displayed here."
 #: src/app/main/ui/dashboard/deleted.cljs:174, src/app/main/ui/dashboard/files.cljs:197, src/app/main/ui/dashboard/projects.cljs:282
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "No files yet."
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Grid view"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "List view"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:117
 #, markdown
@@ -808,7 +816,7 @@ msgid "dashboard.invite-profile"
 msgstr "Invite people"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
+msgid "dashboard.leave-organization"
 msgstr "Leave org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:570, src/app/main/ui/dashboard/sidebar.cljs:577, src/app/main/ui/dashboard/sidebar.cljs:582, src/app/main/ui/dashboard/team.cljs:433
@@ -861,7 +869,7 @@ msgstr "Move to other team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
-msgstr "My teams"
+msgstr "My Teams"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -884,7 +892,7 @@ msgid "dashboard.no-matches-for"
 msgstr "No matches found for “%s“"
 
 #: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
+msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "You don't have permission to add teams to any of your organizations."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
@@ -954,7 +962,7 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Order by status"
 
 #: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
+msgid "dashboard.organization-deleted"
 msgstr "The %s organization has been deleted."
 
 #: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
@@ -994,7 +1002,7 @@ msgid "dashboard.plugins.try-plugin"
 msgstr "Try plugin: "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
+msgid "dashboard.plus-create-new-organization"
 msgstr "+ Create org"
 
 #: src/app/main/data/dashboard.cljs:805
@@ -1078,36 +1086,39 @@ msgstr "Searching for “%s“…"
 msgid "dashboard.section.organizations"
 msgstr "Organizations"
 
+msgid "dashboard.section.teams"
+msgstr "Teams"
+
 #, unused
-msgid "dashboard.select-org-modal.accept"
+msgid "dashboard.select-organization-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
 #, unused
-msgid "dashboard.select-org-modal.choose"
+msgid "dashboard.select-organization-modal.choose"
 msgstr "Choose an organization:"
 
 #: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
+msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
 "\"%s\" only allows organization members to join its teams. Any pending "
 "invitations to people outside the organization will be revoked."
 
 #: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
 #, unused
-msgid "dashboard.select-org-modal.permission-info"
+msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Here you find all your organizations where you are allowed to create or add "
 "teams."
 
 #, unused
-msgid "dashboard.select-org-modal.select"
+msgid "dashboard.select-organization-modal.select"
 msgstr "Select an organization"
 
 #: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
+msgid "dashboard.select-organization-modal.title"
 msgstr "Add team to an organization"
 
 #: src/app/main/ui/settings/options.cljs:66
@@ -1231,7 +1242,7 @@ msgid "dashboard.success-move-project"
 msgstr "Your project has been moved successfully"
 
 #, unused
-msgid "dashboard.team-belong-org"
+msgid "dashboard.team-belong-organization"
 msgstr "This team now belongs to %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
@@ -1243,7 +1254,7 @@ msgid "dashboard.team-members"
 msgstr "Team members"
 
 #, unused
-msgid "dashboard.team-no-longer-belong-org"
+msgid "dashboard.team-no-longer-belong-organization"
 msgstr "This team no longer belongs to the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
@@ -1255,7 +1266,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Add to an organization"
 
 #: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
+msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr "You don't have permission to add this team to any of your organizations."
 
 #: src/app/main/ui/dashboard/team.cljs:1632
@@ -1263,7 +1274,7 @@ msgid "dashboard.team-organization.change"
 msgstr "Change team organization"
 
 #: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
+msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr "Only people within your organization can be invited."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
@@ -1329,7 +1340,7 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Free"
 
 #, unused
-msgid "dashboard.user-no-longer-belong-org"
+msgid "dashboard.user-no-longer-belong-organization"
 msgstr "You are no longer a member of the organization %s"
 
 #: src/app/main/ui/settings/options.cljs:109
@@ -1421,6 +1432,9 @@ msgstr "Your name"
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
+
+msgid "dashboard.my-files"
+msgstr "My Files"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
@@ -1713,15 +1727,15 @@ msgid "errors.only-creator-can-unlock"
 msgstr "Only the version creator can unlock it"
 
 #, unused
-msgid "errors.org-leave.no-valid-teams"
+msgid "errors.organization-leave.no-valid-teams"
 msgstr "There was a problem leaving the organization. Please try again."
 
 #, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
+msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "The organization owner can't leave the organization."
 
 #: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
+msgid "errors.organization-not-found"
 msgstr "That organization doesn't exists"
 
 #: src/app/main/ui/settings/password.cljs
@@ -2862,6 +2876,11 @@ msgstr "Create new team"
 msgid "labels.create-team.placeholder"
 msgstr "Enter new team name"
 
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.current"
+msgstr "Current"
+
 #, unused
 msgid "labels.custom-fonts"
 msgstr "Custom fonts"
@@ -2869,6 +2888,10 @@ msgstr "Custom fonts"
 #: src/app/main/ui/settings/sidebar.cljs:82
 msgid "labels.dashboard"
 msgstr "Dashboard"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.default"
+msgstr "Default"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:337, src/app/main/ui/dashboard/fonts.cljs:286, src/app/main/ui/dashboard/fonts.cljs:363, src/app/main/ui/dashboard/fonts.cljs:397, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1379, src/app/main/ui/settings/integrations.cljs:389, src/app/main/ui/settings/profile.cljs:117, src/app/main/ui/settings/profile.cljs:128, src/app/main/ui/settings/profile.cljs:129, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:258, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:378
 msgid "labels.delete"
@@ -3740,17 +3763,17 @@ msgid "modals.add-shared-confirm.message"
 msgstr "Add “%s” as Shared Library"
 
 #: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
+msgid "modals.before-leave-organization.message"
 msgstr ""
 "You are the only member of some of the teams. Those teams will be deleted "
 "along with its projects and files."
 
 #: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
+msgid "modals.before-leave-organization.title"
 msgstr "BEFORE YOU LEAVE THE ORGANIZATION"
 
 #: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
+msgid "modals.before-leave-organization.warning"
 msgstr "Any team where you’re the only member will be deleted."
 
 #: src/app/main/ui/workspace/nudge.cljs:59
@@ -3808,22 +3831,22 @@ msgstr "By removing your account you’ll lose all your current projects and arc
 
 #: src/app/main/ui/settings/delete_account.cljs
 #, unused
-msgid "modals.delete-account.info.with-orgs"
+msgid "modals.delete-account.info.with-organizations"
 msgstr ""
 "This action is irreversible. Your account, subscription, and organizations "
 "will be deleted immediately. You will also lose access to your current "
 "projects and files."
 
 #: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
+msgid "modals.delete-account.owned-organizations.list-title"
 msgstr "Organizations that will be deleted"
 
 #: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
+msgid "modals.delete-account.owned-organizations.members-count"
 msgstr "%s members"
 
 #: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
+msgid "modals.delete-account.owned-organizations.teams-count"
 msgstr "%s teams"
 
 #: src/app/main/ui/settings/delete_account.cljs:64
@@ -3907,7 +3930,7 @@ msgid "modals.delete-font.title"
 msgstr "Deleting font"
 
 #: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
+msgid "modals.delete-organization-team-confirm.message"
 msgstr "Are you sure you want to delete this team that is part of %s org?"
 
 #: src/app/main/ui/workspace/context_menu.cljs:707, src/app/main/ui/workspace/sidebar/sitemap.cljs:109
@@ -3917,6 +3940,14 @@ msgstr "Are you sure you want to delete this page?"
 #: src/app/main/ui/workspace/context_menu.cljs:706, src/app/main/ui/workspace/sidebar/sitemap.cljs:108, src/app/main/ui/workspace/sidebar/sitemap.cljs:225
 msgid "modals.delete-page.title"
 msgstr "Delete page"
+
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "Are you sure you want to delete the selected pages?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Delete pages"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
@@ -4051,7 +4082,7 @@ msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "No invitations were sent"
 
 #: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
 "Only \"%s\" organization's members can be invited to this team, and they "
 "are all already team members. If you need more information, contact the "
@@ -4138,35 +4169,35 @@ msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
+msgid "modals.leave-organization-and-reassign.hint"
 msgstr ""
 "You are the owner of some organization's teams. Please promote another "
 "member to become an owner."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
+msgid "modals.leave-organization-and-reassign.hint-delete"
 msgstr ""
 "You are the only member of some of the teams. Those teams will be deleted "
 "along with its projects and files."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
+msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr ""
 "Also, you are the owner of some organization's teams. Please promote "
 "another member to become an owner."
 
 #: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
+msgid "modals.leave-organization-confirm.accept"
 msgstr "Leave organization"
 
 #: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
+msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "You will permanently lose access to all teams, projects, and files within "
 "it."
 
 #: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
+msgid "modals.leave-organization-confirm.title"
 msgstr "Leaving %s organization?"
 
 #: src/app/main/ui/delete_shared.cljs:54
@@ -4241,21 +4272,21 @@ msgid "modals.remove-shared-confirm.message"
 msgstr "Remove “%s” as Shared Library"
 
 #: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
+msgid "modals.remove-team-organization.accept"
 msgstr "Remove from organization"
 
 #: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
+msgid "modals.remove-team-organization.info"
 msgstr ""
 "Projects and files will remain available to team members, but the "
 "organization's settings will no longer apply."
 
 #: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
+msgid "modals.remove-team-organization.text"
 msgstr "Are you sure you want to remove the '%s' team from the '%s' organization?"
 
 #: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
+msgid "modals.remove-team-organization.title"
 msgstr "REMOVE TEAM FROM THE ORGANIZATION"
 
 #: src/app/main/ui/workspace/nudge.cljs:52
@@ -4323,7 +4354,7 @@ msgid "nitrate.activation-success.active-until"
 msgstr "Your plan is active until %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
+msgid "nitrate.activation-success.create-organization"
 msgstr "Create organization"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
@@ -4333,16 +4364,22 @@ msgstr "Enjoy your plan!"
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
-"You can manage your subscription anytime from the Subscription page in your "
-"account settings."
+"You can edit your subscription at any time from the 'Subscription' page in your "
+"account details."
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "You are Business Nitrate!"
+msgid "nitrate.modal-success.title"
+msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Need a code? Contact us:"
+msgid "nitrate.code-activation.footer-before"
+msgstr "Need a code? Download your "
+
+msgid "nitrate.code-activation.footer-link"
+msgstr "activation code request"
+
+msgid "nitrate.code-activation.footer-after"
+msgstr " and contact us:"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -4364,37 +4401,30 @@ msgstr "Activate"
 msgid "nitrate.code-activation.title"
 msgstr "Activate Nitrate"
 
-#, unused
 msgid "nitrate.contact-sales.button"
 msgstr "Contact sales"
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
 "To switch to this plan, please contact our sales team. We'll help you "
 "update your subscription and ensure everything is set up correctly."
 
-#, unused
-msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "Your organization will be deleted."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
 "Your total storage, auto-version history, and file recovery period will be "
 "limited."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr ""
 "The teams, projects and files will no longer be part of any organization "
 "but they will remain available."
 
-#, unused
 msgid "nitrate.contact-sales.downgrade-title"
 msgstr "When you downgrade:"
 
-#, unused
 msgid "nitrate.contact-sales.title"
 msgstr "Switch to %s plan?"
 
@@ -4430,21 +4460,32 @@ msgstr "Full open-source freedom, with the governance your org needs"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
 msgid "nitrate.form.enterprise-intro"
-msgstr "Everything your teams need to work securely at scale:"
+msgstr "Everything your teams need to work securely at scale%s"
+
+msgid "nitrate.form.enterprise-description"
+msgstr "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."
+
+msgid "nitrate.form.contact-us-free-trial"
+msgstr "Contact us to try the Enterprise plan for 14 days:"
+
+msgid "nitrate.form.contact-us-upgrade"
+msgstr "Contact us to upgrade to the Enterprise plan:"
+
+msgid "nitrate.form.free-trial-button"
+msgstr "Try 14 days for free"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
 msgstr "per member per month"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Have an activation code?"
+msgid "nitrate.form.subscribe-with-code"
+msgstr "Subscribe with an activation code"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
 msgstr "See my current plan"
 
-#, unused
 msgid "nitrate.form.start-enterprise"
 msgstr "Get started with Enterprise"
 
@@ -4455,11 +4496,6 @@ msgstr "Unlock Enterprise features"
 #: src/app/main/ui/dashboard/subscription.cljs:209, src/app/main/ui/nitrate/nitrate_form.cljs:75
 msgid "nitrate.form.try-free"
 msgstr "Try it free for 14 days"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:74
-#, fuzzy
-msgid "nitrate.form.upgrade"
-msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:575
 msgid "nitrate.subscription.active-until"
@@ -4472,6 +4508,9 @@ msgstr "Your Nitrate subscription has been renewed."
 #: src/app/main/ui/settings/subscription.cljs:584
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "Cancel subscription"
+
+msgid "nitrate.subscription.settings.manual-contact-us"
+msgstr "To cancel your Nitrate subscription, please contact us at:"
 
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
@@ -5026,9 +5065,17 @@ msgstr "This token does not exist or has been deleted."
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
-#: src/app/plugins/utils.cljs:318
+#: src/app/plugins/utils.cljs:533
+msgid "plugins.validation.invalid-value"
+msgstr "expected %s, got %s (%s)"
+
+#: src/app/plugins/utils.cljs:547
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
+
+#: src/app/plugins/utils.cljs:536
+msgid "plugins.validation.received-value"
+msgstr "got %s (%s)"
 
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
@@ -5072,16 +5119,12 @@ msgstr "Workspace"
 msgid "shortcut-subsection.alignment"
 msgstr "Alignment"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.edit"
 msgstr "Edit"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Generic"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Generic"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -5588,22 +5631,90 @@ msgid "shortcuts.start-editing"
 msgstr "Start editing"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Start measurement"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Stop measurement"
+msgid "shortcuts.show-measure"
+msgstr "Show measurements"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
 
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Shortcuts page"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Keyboard shortcuts"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reset"
+msgstr "Reset to default"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disable"
+msgstr "Disable shortcut"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled-shortcut"
+msgstr "Disabled shortcut"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.overwritten-by"
+msgstr "This shortcut has been reassigned to %s"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "Head to All to start customizing your shortcuts."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-disabled"
+msgstr "There are not disabled shortcuts"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reload-hint"
+msgstr "After editing shortcuts, reload any other open Penpot tabs to apply the changes."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "There are no shortcuts that match your search"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalized"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled"
+msgstr "Disabled"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-arrow"
+msgstr "Arrow"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-line"
+msgstr "Line"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Import/Export"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Press the key combination"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Combination assigned to \"%s\". Saving will remove it there."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "If you save, this shortcut will return to the original value:"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr "This key combination is available and can be assigned without conflicts."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.toggle-alignment"
 msgstr "Toggle dynamic alignment"
 
@@ -5614,6 +5725,10 @@ msgstr "Toggle assets"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Toggle color palette"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.toggle-comments-visibility"
+msgstr "Toggle comments visibility"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
 msgid "shortcuts.toggle-focus-mode"
@@ -5711,8 +5826,44 @@ msgstr "Zoom lense increase"
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.edit-on-settings"
+msgstr "Customize on settings"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-title"
+msgstr "Restore to default configuration"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-text"
+msgstr "The following shortcuts will be restored to their default values."
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.acction"
+msgstr "Acction"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.restore"
+msgstr "Restore"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-title"
+msgstr "Import shortcuts"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-text"
+msgstr "The following shortcuts will be changed by the imported configuration."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.no-changes"
+msgstr "No differences found between the current and imported shortcuts."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.apply"
+msgstr "Apply"
+
 #: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
+msgid "subscription.banner.create-organization-info"
 msgstr ""
 "Create an organization and see exactly how Enterprise works. Set rules, "
 "manage your teams and discover a new level of control over your design "
@@ -5771,10 +5922,10 @@ msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Unlock Enterprise features"
 
 #: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
+msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Set fine-grained permissions and keep your design operations secure, "
-"without compromising the open-source freedom your team already loves."
+"Set fine-grained permissions and stay in control, "
+"without compromising the open-source freedom your team loves."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -5891,8 +6042,8 @@ msgstr "Payment was not completed. Try again whenever you're ready."
 #: src/app/main/ui/settings/subscription.cljs:427
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
-"We couldn't start the checkout. Please try again. If the problem persists, "
-"contact us: support@penpot.app."
+"The payment was not completed. Please try again. "
+"If the problem persists, contact us: support@penpot.app."
 
 #: src/app/main/ui/settings/subscription.cljs:407
 msgid "subscription.error.nitrate.checkout-finish-failed"
@@ -5920,6 +6071,9 @@ msgstr "All Professional plan benefits and:"
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
 
+msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
+msgstr "All Unlimited plan benefits, plus:"
+
 #: src/app/main/ui/settings/subscription.cljs:62
 msgid "subscription.settings.editors"
 msgstr "(x %s editors)"
@@ -5943,6 +6097,27 @@ msgstr "Flat monthly bill"
 #: src/app/main/ui/settings/subscription.cljs:631, src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:710
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "Unlimited storage"
+
+msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
+msgstr "Multi-Org Management:"
+
+msgid "subscription.settings.enterprise.nitrate.support-team"
+msgstr "Support for complex team hierarchies and separate sub-organizations."
+
+msgid "subscription.settings.enterprise.nitrate.enterprise-security"
+msgstr "Enterprise Security:"
+
+msgid "subscription.settings.enterprise.nitrate.native-sso"
+msgstr "Native SAML/​​SSO and full Audit Trail logging for compliance reporting."
+
+msgid "subscription.settings.enterprise.nitrate.advanced-control"
+msgstr "Advanced Control:"
+
+msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
+msgstr "Granular plugin whitelisting, including our secure, isolated MCP Server for AI connectivity."
+
+msgid "subscription.settings.admin-console"
+msgstr "Admin Console"
 
 #: src/app/main/ui/dashboard/subscription.cljs:287, src/app/main/ui/settings/subscription.cljs:583, src/app/main/ui/settings/subscription.cljs:610, src/app/main/ui/settings/subscription.cljs:622, src/app/main/ui/settings/subscription.cljs:634, src/app/main/ui/settings/subscription.cljs:644
 msgid "subscription.settings.manage-your-subscription"
@@ -6023,15 +6198,15 @@ msgstr "More information"
 
 #: src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.organization-member-month"
-msgstr "org member per month"
+msgstr "org member / month"
 
 #: src/app/main/ui/settings/subscription.cljs:665
 msgid "subscription.settings.other-plans"
 msgstr "Other penpot plans"
 
 #: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per month"
+msgid "subscription.settings.price-user-month"
+msgstr "user / month"
 
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
@@ -6099,10 +6274,9 @@ msgstr "Thank your for chosing the Penpot %s plan!"
 msgid "subscription.settings.success.dialog.title"
 msgstr "You are %s!"
 
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "You've been supporting us with this plan since: %s"
+#: src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.subscribed-since"
+msgstr "You've been on the %s plan since %s."
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -6432,6 +6606,10 @@ msgstr "Your items are going to be named automatically as \"group name / item na
 #: src/app/main/ui/workspace/context_menu.cljs:716, src/app/main/ui/workspace/sidebar/assets/colors.cljs:265, src/app/main/ui/workspace/sidebar/assets/components.cljs:670, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:541
 msgid "workspace.assets.delete"
 msgstr "Delete"
+
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Delete pages"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
 msgid "workspace.assets.delete-group"
@@ -8379,6 +8557,30 @@ msgstr "Gap"
 msgid "workspace.options.stroke-width"
 msgstr "Stroke width"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-top"
+msgstr "Top (block start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-right"
+msgstr "Right (inline end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-bottom"
+msgstr "Bottom (block end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-left"
+msgstr "Left (inline start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side"
+msgstr "Stroke per side"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side-disabled"
+msgstr "Strokes per side feature is only available in the new render. Switch render to use it."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:209
 msgid "workspace.options.stroke.add-stroke"
 msgstr "Add stroke color"
@@ -8778,6 +8980,9 @@ msgstr "Copy as CSS (nested layers)"
 #: src/app/main/ui/workspace/context_menu.cljs:206
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copy link"
+
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copy id"
 
 #: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-paste-as"
@@ -9723,6 +9928,9 @@ msgstr "The value is not valid"
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name"
 
+msgid "workspace.toolbar.arrow"
+msgstr "Arrow (%s)"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
@@ -9759,6 +9967,9 @@ msgstr "Create board. Click and drag to define its size. (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:116, src/app/main/ui/workspace/top_toolbar.cljs:117
 msgid "workspace.toolbar.image"
 msgstr "Image (%s)"
+
+msgid "workspace.toolbar.line"
+msgstr "Line (%s)"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
 msgid "workspace.toolbar.mcp"
@@ -10097,3 +10308,6 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "notifications.invitation-canceled"
+msgstr "This invitation is no longer available."

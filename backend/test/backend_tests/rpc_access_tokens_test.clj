@@ -9,6 +9,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
+   [app.http.access-token :as actoken]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
@@ -205,3 +206,29 @@
           (t/is (not (contains? all-ids (:id first-mcp))))
           (t/is (not (contains? all-ids (:id second-mcp))))
           (t/is (contains? all-ids (:id third-mcp))))))))
+
+(t/deftest mcp-tokens-cannot-be-used-as-access-tokens
+  (let [prof (th/create-profile* 1 {:is-active true})
+        cfg  th/*system*]
+
+    (t/testing "MCP tokens use different issuer claim"
+      (let [{:keys [result]} (th/command! {::th/type :create-access-token
+                                           ::rpc/profile-id (:id prof)
+                                           :type "mcp"
+                                           :name "mcp token"})
+            mcp-token (:token result)
+
+            ;; Try to decode as access token (should fail)
+            decoded (actoken/decode-token cfg mcp-token)]
+        (t/is (nil? decoded))))
+
+    (t/testing "Regular access tokens use access-token issuer claim"
+      (let [{:keys [result]} (th/command! {::th/type :create-access-token
+                                           ::rpc/profile-id (:id prof)
+                                           :name "regular token"})
+            access-token (:token result)
+
+            ;; Should decode successfully
+            decoded (actoken/decode-token cfg access-token)]
+        (t/is (some? decoded))
+        (t/is (= (:id prof) (:uid decoded)))))))

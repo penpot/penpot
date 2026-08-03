@@ -117,28 +117,54 @@
 ;; geometric attributes of the shapes.
 
 (defn- check-delta
-  "If the shape is a component instance, check its relative position and rotation respect
-  the root of the component, and see if it changes after applying a transformation."
-  [shape root transformed-shape transformed-root]
-  (let [shape-delta
-        (when root
-          (gpt/point (- (gsh/left-bound shape) (gsh/left-bound root))
-                     (- (gsh/top-bound shape) (gsh/top-bound root))))
+  "If the shape is a component instance, check whether the transformation is a
+  free change that must not mark the shape as touched.
 
-        transformed-shape-delta
-        (when transformed-root
-          (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
-                     (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
+  For the instance ROOT, position is free placement, but its rotation and flips
+  are inherited content: transforming the copy as a whole overrides them, so a
+  change there marks the root as touched.
+
+  For DESCENDANTS, position, size, rotation and flips are compared RELATIVE TO
+  THE ROOT: a transformation of the whole instance preserves them all and does
+  not mark the descendants as touched; editing an individual shape does."
+  [shape root transformed-shape transformed-root]
+  (let [is-root?     (and (some? root)
+                          (= (dm/get-prop shape :id) (dm/get-prop root :id)))
+
+        center       (fn [shape]
+                       (grc/rect->center (:selrect shape)))
+
+        rel-pos      (fn [shape root]
+                       (when root
+                         ;; vector from the root center to the shape center,
+                         ;; expressed in the root's local (untransformed) axes
+                         (-> (gpt/subtract (center shape) (center root))
+                             (gpt/transform (:transform-inverse root (gmt/matrix))))))
+
+        orientation  (fn [shape root]
+                       ;; the shape's rotation/flip orientation taken from its
+                       ;; transform matrix, so it is reliable regardless of how the
+                       ;; transform was applied (the WASM apply-transform path does
+                       ;; not refresh the :rotation attribute). For the ROOT the
+                       ;; absolute orientation; for a DESCENDANT the orientation
+                       ;; relative to the root — invariant when the whole instance
+                       ;; is rotated or flipped as a unit.
+                       (let [t (:transform shape (gmt/matrix))]
+                         (if is-root?
+                           t
+                           (gmt/multiply (:transform-inverse root (gmt/matrix)) t))))
+
+        pos-before   (rel-pos shape root)
+        pos-after    (rel-pos transformed-shape transformed-root)
 
         distance
-        (if (and shape-delta transformed-shape-delta)
-          (gpt/distance-vector shape-delta transformed-shape-delta)
+        (if (and pos-before pos-after)
+          (gpt/distance-vector pos-before pos-after)
           (gpt/point 0 0))
 
-        rotation-delta
-        (if (and (some? (:rotation shape)) (some? (:rotation shape)))
-          (- (:rotation transformed-shape) (:rotation shape))
-          0)
+        orientation-unchanged?
+        (gmt/close? (orientation shape root)
+                    (orientation transformed-shape transformed-root))
 
         selrect (:selrect shape)
         transformed-selrect (:selrect transformed-shape)]
@@ -152,7 +178,7 @@
     (and (and (< (:x distance) 1) (< (:y distance) 1))
          (mth/close? (:width selrect) (:width transformed-selrect))
          (mth/close? (:height selrect) (:height transformed-selrect))
-         (mth/close? rotation-delta 0))))
+         orientation-unchanged?)))
 
 (defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
@@ -657,7 +683,7 @@
         ty (.-f first-matrix)]
     (if-let [base @cache]
       (translate-selrect base tx ty)
-      (let [computed (wasm.api/get-selection-rect ids)]
+      (when-let [computed (wasm.api/get-selection-rect ids)]
         (vreset! cache (translate-selrect computed (- tx) (- ty)))
         computed))))
 
@@ -703,15 +729,27 @@
             (vreset! wasm-structure-modifiers-active? true)))
         (let [geometry-entries (parse-geometry-modifiers modif-tree)
               root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
+              wasm-ready?      (wasm.api/initialized?)
+              ;; While the GL context is down (lost / mid-reload), keep the
+              ;; root transforms so SVG selection/preview can still move.
+              ;; `propagate-modifiers` returns [] when not ready, do not
+              ;; treat that as "no modifiers".
               modifiers
-              (if (and translation? (not snap-pixel?))
+              (cond
+                (or (not wasm-ready?)
+                    (and translation? (not snap-pixel?)))
                 root-modifiers
-                (wasm.api/propagate-modifiers geometry-entries snap-pixel?))]
-          (wasm.api/set-modifiers modifiers)
+
+                :else
+                (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
+                  (if (seq propagated) propagated root-modifiers)))]
+          (when wasm-ready?
+            (wasm.api/set-modifiers modifiers))
           (let [ids     (into [] xf:map-key geometry-entries)
-                selrect (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
-                          (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
-                          (wasm.api/get-selection-rect ids))]
+                selrect (when wasm-ready?
+                          (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
+                            (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
+                            (wasm.api/get-selection-rect ids)))]
             (rx/of (set-temporary-selrect selrect)
                    (set-temporary-modifiers modifiers))))))))
 
@@ -744,7 +782,7 @@
                         subtree-ids-by-id]
                  :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-transation? true}
                  :as params}]
-  (ptk/reify ::apply-wasm-modifiesr
+  (ptk/reify ::apply-wasm-modifiers
     ptk/WatchEvent
     (watch [_ state _]
       (let [translation?
@@ -769,7 +807,8 @@
               (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
               transforms
-              (if (and translation? (not snap-pixel?))
+              (cond
+                (and translation? (not snap-pixel?))
                 ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
                 ;; translation matrix onto every descendant. Without
                 ;; this step the commit would only touch the dragged
@@ -789,6 +828,26 @@
                      (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
                  {}
                  geometry-entries)
+
+                ;; Context lost / mid-reload: do not call into WASM. Use
+                ;; root transforms (and splat translation onto descendants
+                ;; when we can) so the commit still lands in file data.
+                (not (wasm.api/initialized?))
+                (if translation?
+                  (reduce
+                   (fn [acc [id data]]
+                     (let [t (:transform data)
+                           subtree-ids
+                           (or (get subtree-ids-by-id id)
+                               (cfh/get-children-ids-with-self objects id))]
+                       (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
+                   {}
+                   geometry-entries)
+                  (into {}
+                        (map (fn [[id data]] [id (:transform data)]))
+                        geometry-entries))
+
+                :else
                 (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
 
               ignore-tree

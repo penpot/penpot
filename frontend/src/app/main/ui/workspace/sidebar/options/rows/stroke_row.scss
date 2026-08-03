@@ -98,3 +98,24 @@
 .stroke-style-icon-select {
   --dropdown-width: var(--four-columns-width);
 }
+
+.stroke-options-tokens-with-toggle {
+  grid-template-columns: 1.5fr 1fr 1fr auto;
+}
+
+.stroke-style-select-compact {
+  grid-column: span 2;
+}
+
+.stroke-sides-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-xs) var(--sp-xs);
+}
+
+.stroke-side-input {
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  padding-inline-start: var(--sp-xs);
+}

@@ -54,18 +54,37 @@ function prepareRuntimeRoot() {
   return runtimeRoot;
 }
 
-const root = prepareRuntimeRoot();
-
-// pnpm-lock.yaml is hard-excluded by npm pack; it is shipped as pnpm-lock.dist.yaml
-// and restored here before bootstrap runs.
-const distLock = path.join(root, "pnpm-lock.dist.yaml");
-const lock = path.join(root, "pnpm-lock.yaml");
-if (fs.existsSync(distLock)) {
-  fs.copyFileSync(distLock, lock);
+// check arguments
+const cliArgs = process.argv.slice(2);
+if (cliArgs[0] === "client-setup") {
+  // when invoked as `penpot-mcp client-setup [...]`, configure an MCP client
+  // instead of bootstrapping/starting the server. This must run before the
+  // runtime-directory copy and bootstrap, neither of which client setup needs.
+  try {
+    require("./client-setup.js").runClientSetup(cliArgs.slice(1));
+    process.exit(0);
+  } catch (error) {
+    process.exit(error.status ?? 1);
+  }
 }
+else {
+  // regular case: run bootstrap, building and starting the servers
 
-try {
-  execSync(`npx -y pnpm@${pnpmVersion()} run bootstrap`, { cwd: root, stdio: "inherit" });
-} catch (error) {
-  process.exit(error.status ?? 1);
+  // get runtime root
+  const root = prepareRuntimeRoot();
+
+  // pnpm-lock.yaml is hard-excluded by npm pack; it is shipped as pnpm-lock.dist.yaml
+  // and restored here before bootstrap runs.
+  const distLock = path.join(root, "pnpm-lock.dist.yaml");
+  const lock = path.join(root, "pnpm-lock.yaml");
+  if (fs.existsSync(distLock)) {
+    fs.copyFileSync(distLock, lock);
+  }
+
+  // run the bootstrap command
+  try {
+    execSync(`npx -y pnpm@${pnpmVersion()} run bootstrap`, { cwd: root, stdio: "inherit" });
+  } catch (error) {
+    process.exit(error.status ?? 1);
+  }
 }

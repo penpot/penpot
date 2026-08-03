@@ -24,7 +24,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.components.org-avatar :refer [org-avatar*]]
+   [app.main.ui.components.organization-avatar :refer [organization-avatar*]]
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.subscription :refer [members-cta*
                                                show-subscription-members-banner?
@@ -34,6 +34,11 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
+   [app.main.ui.forms :as fc]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -51,8 +56,8 @@
 (def ^:private menu-icon
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
-(def ^:private org-menu-icon
-  (deprecated-icon/icon-xref :menu (stl/css :org-menu-icon)))
+(def ^:private organization-menu-icon
+  (deprecated-icon/icon-xref :menu (stl/css :organization-menu-icon)))
 
 (def ^:private warning-icon
   (deprecated-icon/icon-xref :msg-warning (stl/css :warning-icon)))
@@ -72,9 +77,8 @@
 (def ^:private group-icon
   (deprecated-icon/icon-xref :group (stl/css :group-icon)))
 
-(mf/defc header
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+(mf/defc header*
+  {::mf/wrap [mf/memo]}
   [{:keys [section team profile]}]
   (let [on-nav-members       (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
         on-nav-settings      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-settings)))
@@ -127,15 +131,12 @@
        [:li {:class (when settings-section? (stl/css :active))}
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
-      (if (and (or invitations-section? members-section?) (not-empty invitations))
-        [:button
-         {:class (stl/css :btn-secondary :btn-small)
-          :type "button"
-          :disabled (not can-invite?)
-          :on-click on-invite-member
-          :data-testid "invite-member"}
-         (tr "dashboard.invite-profile")]
-        [:div {:class (stl/css :blank-space)}])]]))
+      (when (and (or invitations-section? members-section?) (not-empty invitations))
+        [:> button* {:variant "secondary"
+                     :on-click on-invite-member
+                     :disabled (not can-invite?)
+                     :data-testid "invite-member"}
+         (tr "dashboard.invite-profile")])]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS MODAL
@@ -143,10 +144,10 @@
 
 (defn get-available-roles
   [permissions]
-  (->> [{:value "viewer" :label (tr "labels.viewer")}
-        {:value "editor" :label (tr "labels.editor")}
+  (->> [{:id "viewer" :value "viewer" :label (tr "labels.viewer")}
+        {:id "editor" :value "editor" :label (tr "labels.editor")}
         (when (:is-admin permissions)
-          {:value "admin" :label (tr "labels.admin")})]
+          {:id "admin" :value "admin" :label (tr "labels.admin")})]
        (filterv identity)))
 
 (def ^:private schema:invite-member-form
@@ -237,46 +238,55 @@
                         :on-error   (partial on-error form)}]
             (st/emit! (dtm/check-and-submit-invite-members (with-meta params mdata) origin do-invite-members!))))]
 
+    (mf/with-effect [team-id]
+      (st/emit! (dtm/fetch-members team-id)))
+
     [:div {:class (stl/css-case :modal-team-container true
                                 :modal-team-container-workspace (= origin :workspace)
                                 :hero (= origin :hero))}
-     [:& fm/form {:on-submit on-submit :form form}
-      [:div {:class (stl/css :modal-title)}
+     [:> fc/form* {:form form
+                   :class (stl/css :form-wrapper)
+                   :on-submit on-submit}
+      [:> heading* {:level 2
+                    :typography t/headline-medium
+                    :class (stl/css :color-light)}
        (tr "modals.invite-team-member.title")]
 
       (when (= :workspace origin)
-        [:div {:class (stl/css :invite-team-member-text)}
+        [:> text* {:as "p"
+                   :typography t/body-large
+                   :class (stl/css :color-light)}
          (tr "modals.invite-team-member.text")])
 
       (when-not (= "" @error-text)
-        [:& context-notification {:content  @error-text
-                                  :level :error}])
+        [:> context-notification* {:level :error}
+         @error-text])
 
       (when (some current-data-emails current-members-emails)
-        [:& context-notification {:content  (tr "modals.invite-member.repeated-invitation")
-                                  :level :warning}])
+        [:> context-notification* {:level :warning}
+         (tr "modals.invite-member.repeated-invitation")])
 
-      [:div {:class (stl/css :role-select)}
-       [:p {:class (stl/css :role-title)}
+      [:div {:class (stl/css :form-group)}
+       [:> text* {:as "label"
+                  :typography t/body-medium
+                  :class (stl/css :color-light)}
         (tr "onboarding.choice.team-up.roles")]
-       [:& fm/select {:name :role :options roles}]]
+       [:> fc/form-select* {:name :role
+                            :default-selected "editor"
+                            :options roles}]
+       [:> fc/form-multi-input* {:type "email"
+                                 :name :emails
+                                 :auto-focus? true
+                                 :trim true
+                                 :valid-item-fn sm/parse-email
+                                 :caution-item-fn current-members-emails
+                                 :placeholder (tr "modals.invite-member.emails")}]]
 
-      [:div {:class (stl/css :invitation-row)}
-       [:& fm/multi-input {:type "email"
-                           :class (stl/css :email-input)
-                           :name :emails
-                           :auto-focus? true
-                           :trim true
-                           :valid-item-fn sm/parse-email
-                           :caution-item-fn current-members-emails
-                           :label (tr "modals.invite-member.emails")}]]
-
-      [:div {:class (stl/css :action-buttons)}
-       [:> fm/submit-button*
-        {:label (tr "modals.invite-member-confirm.accept")
-         :class (stl/css :accept-btn)
-         :disabled (and (boolean (some current-data-emails current-members-emails))
-                        (empty? (remove current-members-emails current-data-emails)))}]]]]))
+      [:div {:class (stl/css :form-buttons)}
+       [:> fc/form-submit*
+        {:disabled (and (boolean (some current-data-emails current-members-emails))
+                        (empty? (remove current-members-emails current-data-emails)))}
+        (tr "modals.invite-member-confirm.accept")]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITE RESTRICTED MEMBERS MODAL
@@ -340,8 +350,7 @@
 ;; MEMBERS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc member-info
-  {::mf/props :obj}
+(mf/defc member-info*
   [{:keys [member profile]}]
   (let [is-you? (= (:id profile) (:id member))]
     [:*
@@ -553,7 +562,7 @@
 
     [:div {:class (stl/css :table-row)}
      [:div {:class (stl/css :table-field :field-name)}
-      [:& member-info {:member member :profile profile}]]
+      [:> member-info* {:member member :profile profile}]]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> rol-info*  {:member member
@@ -623,9 +632,9 @@
     (st/emit! (dtm/fetch-members)))
 
   [:*
-   [:& header {:section :dashboard-team-members
-               :team team
-               :profile profile}]
+   [:> header* {:section :dashboard-team-members
+                :team team
+                :profile profile}]
    [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
 
     [:> team-members*
@@ -823,15 +832,13 @@
     [:div {:class (stl/css :empty-invitations)}
      [:div (tr "labels.no-invitations")]
      (if ^boolean can-invite
-       [[:div (tr "labels.no-invitations-gather-people")]
-        [:div {:class (stl/css :empty-invitations-buttons)}
-         [:a
-          {:class (stl/css :btn-empty-invitations)
-           :role "button"
-           :on-click on-invite-member
-           :data-testid "invite-member"}
-          (tr "dashboard.invite-profile")]]
-        [:div {:class (stl/css :blank-space)}]]
+       [:*
+        [:div (tr "labels.no-invitations-gather-people")]
+        [:> button* {:variant "primary"
+                     :class (stl/css :btn-empty-invitations)
+                     :on-click on-invite-member
+                     :data-testid "invite-member"}
+         (tr "dashboard.invite-profile")]]
        [:div {:class (stl/css :no-permission-text)} (tr "dashboard.invitations.no-permission")])]))
 
 (mf/defc invitation-modal
@@ -881,41 +888,41 @@
 (def schema:organization-form [:map {:title "SelectOrgForm"}
                                [:selected-id ::sm/uuid]])
 
-(mf/defc render-org-combobox-avatar*
+(mf/defc render-organization-combobox-avatar*
   [{:keys [avatar]}]
-  [:> org-avatar* {:org (:organization avatar)
-                   :size (:size avatar)}])
+  [:> organization-avatar* {:organization (:organization avatar)
+                            :size (:size avatar)}])
 
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations orgs-allowed current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key team-id]}]
+  [{:keys [organizations organizations-allowed current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key team-id]}]
   (let [valid-organizations (mf/with-memo [organizations]
                               (remove #(= (:id %) current-organization-id) organizations))
-        options (mf/with-memo [valid-organizations orgs-allowed]
+        options (mf/with-memo [valid-organizations organizations-allowed]
                   (mapv (fn [organization]
-                          (let [org-id (:id organization)
-                                ;; orgs-allowed is a map of org-id and a boolean indicating if it is allowed
-                                enabled? (or (nil? orgs-allowed)
-                                             (true? (get orgs-allowed org-id)))]
-                            (cond-> {:id (str org-id)
+                          (let [organization-id (:id organization)
+                                ;; organizations-allowed is a map of organization-id and a boolean indicating if it is allowed
+                                enabled? (or (nil? organizations-allowed)
+                                             (true? (get organizations-allowed organization-id)))]
+                            (cond-> {:id (str organization-id)
                                      :label (:name organization)
                                      :disabled (not enabled?)
                                      :dimmed (not enabled?)
-                                     :avatar {:render-fn render-org-combobox-avatar*
+                                     :avatar {:render-fn render-organization-combobox-avatar*
                                               :organization organization
                                               :size "xl"}}
                               (not enabled?)
-                              (assoc :title (tr "dashboard.team-organization.disabled-org-tooltip")))))
+                              (assoc :title (tr "dashboard.team-organization.disabled-organization-tooltip")))))
                         valid-organizations))
 
         form (fm/use-form :schema schema:organization-form :initial {})
 
         warning-info* (mf/use-state nil)
         warning-info (deref warning-info*)
-        selected-org (mf/with-memo [warning-info valid-organizations]
-                       (when warning-info
-                         (d/seek #(= (:id %) (:organization-id warning-info)) valid-organizations)))
+        selected-organization (mf/with-memo [warning-info valid-organizations]
+                                (when warning-info
+                                  (d/seek #(= (:id %) (:organization-id warning-info)) valid-organizations)))
 
         on-change
         (mf/use-fn
@@ -924,13 +931,13 @@
            (uforms/on-input-change form :selected-id id)
            ;; Check for external invitations when selection changes
            (when (and team-id id)
-             (let [org-id (d/parse-uuid id)]
+             (let [organization-id (d/parse-uuid id)]
                (->> (rp/cmd! :check-team-external-invitations
                              {:team-id team-id
-                              :organization-id org-id})
+                              :organization-id organization-id})
                     (rx/subs!
                      (fn [result]
-                       (reset! warning-info* (assoc result :organization-id org-id)))
+                       (reset! warning-info* (assoc result :organization-id organization-id)))
                      (fn [_]
                        (reset! warning-info* nil))))))))
 
@@ -940,22 +947,22 @@
          (fn []
            (on-confirm (dm/get-in @form [:clean-data :selected-id]))))]
     [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-select-org-container :modal-container)}
-      [:div {:class (stl/css :modal-select-org-header)}
-       [:h2 {:class (stl/css :modal-select-org-title)}
+     [:div {:class (stl/css :modal-select-organization-container :modal-container)}
+      [:div {:class (stl/css :modal-select-organization-header)}
+       [:h2 {:class (stl/css :modal-select-organization-title)}
         (tr title-key)]
 
        [:button {:class (stl/css :modal-close-btn)
                  :on-click modal/hide!} deprecated-icon/close]]
 
       (when text-key
-        [:div {:class (stl/css :modal-content :modal-select-org-text)} (tr text-key)])
+        [:div {:class (stl/css :modal-content :modal-select-organization-text)} (tr text-key)])
 
-      [:div {:class (stl/css :modal-select-org-body)}
+      [:div {:class (stl/css :modal-select-organization-body)}
        (when info-message-key
-         [:div {:class (stl/css :modal-select-org-info)}
+         [:div {:class (stl/css :modal-select-organization-info)}
           (tr info-message-key)])
-       [:div {:class (stl/css :modal-select-org-content)}
+       [:div {:class (stl/css :modal-select-organization-content)}
         (tr choose-key)]
        [:> combobox* {:id "selected-id"
                       :class (stl/css :team-member)
@@ -969,14 +976,14 @@
        (when (and warning-info
                   (:has-external-invitations warning-info)
                   (not (:allows-anybody warning-info))
-                  selected-org)
-         [:div {:class (stl/css :modal-select-org-warning)}
+                  selected-organization)
+         [:div {:class (stl/css :modal-select-organization-warning)}
           [:& context-notification
-           {:content (tr "dashboard.select-org-modal.external-invitations-will-be-canceled")
+           {:content (tr "dashboard.select-organization-modal.external-invitations-will-be-canceled")
             :class (stl/css :external-invitations-warning)
             :level :warning}]
-          [:div {:class (stl/css :modal-select-org-content)}
-           (tr "dashboard.select-org-modal.external-invitations-warning" (:name selected-org))]])]
+          [:div {:class (stl/css :modal-select-organization-content)}
+           (tr "dashboard.select-organization-modal.external-invitations-warning" (:name selected-organization))]])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}
@@ -1199,9 +1206,9 @@
     (st/emit! (dtm/fetch-invitations)))
 
   [:*
-   [:& header {:section :dashboard-team-invitations
-               :team team
-               :profile profile}]
+   [:> header* {:section :dashboard-team-invitations
+                :team team
+                :profile profile}]
    [:section {:class (stl/css :dashboard-team-invitations)}
 
     [:> invitation-section* {:team team :profile profile}]
@@ -1479,7 +1486,7 @@
       (st/emit! (dtm/fetch-webhooks)))
 
     [:*
-     [:& header {:team team :section :dashboard-team-webhooks}]
+     [:> header* {:team team :section :dashboard-team-webhooks}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-webhooks)}
       [:*
        [:> webhooks-hero* {}]
@@ -1519,36 +1526,37 @@
                                  (filter :organization)
                                  (map dtm/team->organization)))
 
-        ;; Filter to orgs where user is allowed to create/add teams
+        ;; Filter to organizations where user is allowed to create/add teams
         organizations (mf/with-memo [all-organizations profile-id]
                         (->> all-organizations
-                             (filter (fn [org]
-                                       (let [perm      (get-in org [:permissions :create-teams])
-                                             is-owner? (= profile-id (:owner-id org))]
+                             (filter (fn [organization]
+                                       (let [perm      (get-in organization [:permissions :create-teams])
+                                             is-owner? (= profile-id (:owner-id organization))]
                                          (or (= perm "any") is-owner?))))))
 
-        ;; Keep parity with UX requirement: hide only when user belongs to one org.
+        ;; Keep parity with UX requirement: hide only when user belongs to one organization.
         can-change-organization? (mf/with-memo [all-organizations]
                                    (> (count all-organizations) 1))
 
-        can-add-to-organization? (mf/with-memo [organizations all-organizations]
-                                   (and (pos? (count all-organizations))
+        can-add-to-organization? (mf/with-memo [organizations all-organizations permissions]
+                                   (and (:is-owner permissions)
+                                        (pos? (count all-organizations))
                                         (not (:is-default team))))
 
-        show-org-options-menu*
+        show-organization-options-menu*
         (mf/use-state false)
 
-        show-org-options-menu?
-        (deref show-org-options-menu*)
+        show-organization-options-menu?
+        (deref show-organization-options-menu*)
 
         on-show-options-click
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! show-org-options-menu* not)))
+           (swap! show-organization-options-menu* not)))
 
-        close-org-options-menu
-        (mf/use-fn #(reset! show-org-options-menu* false))
+        close-organization-options-menu
+        (mf/use-fn #(reset! show-organization-options-menu* false))
 
         on-image-click
         (mf/use-fn #(dom/click (mf/ref-val finput)))
@@ -1557,23 +1565,23 @@
         (fn [file]
           (st/emit! (dtm/update-team-photo file)))
 
-        on-remove-team-from-org
+        on-remove-team-from-organization
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (dnt/show-remove-team-from-org-modal {:team-id (:id team)}))))
+           (st/emit! (dnt/show-remove-team-from-organization-modal {:team-id (:id team)}))))
 
-        on-add-team-to-org
+        on-add-team-to-organization
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (dnt/show-add-team-to-org-modal {:team-id (:id team)}))))
+           (st/emit! (dnt/show-add-team-to-organization-modal {:team-id (:id team)}))))
 
-        on-change-team-org
+        on-change-team-organization
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (dnt/show-change-team-org-modal {:team-id (:id team)}))))]
+           (st/emit! (dnt/show-change-team-organization-modal {:team-id (:id team)}))))]
 
     (mf/with-effect [team]
       (dom/set-html-title (tr "title.team-settings"
@@ -1586,7 +1594,7 @@
                 (dtm/fetch-stats)))
 
     [:*
-     [:& header {:section :dashboard-team-settings :team team}]
+     [:> header* {:section :dashboard-team-settings :team team}]
      [:section {:class (stl/css :dashboard-team-settings)}
       [:div {:class (stl/css :settings-container)}
        [:div {:class (stl/css :block :info-block)}
@@ -1614,8 +1622,8 @@
           (let [organization (:organization team)]
             (if organization
               [:div {:class (stl/css :block-content)}
-               [:div {:class (stl/css :org-block-content)}
-                [:> org-avatar* {:org (dtm/team->organization team) :size "xxxl"}]
+               [:div {:class (stl/css :organization-block-content)}
+                [:> organization-avatar* {:organization (dtm/team->organization team) :size "xxxl"}]
                 [:span {:class (stl/css :block-text)}
                  (:name organization)]
 
@@ -1623,19 +1631,19 @@
                   [:*
                    [:> button* {:variant "ghost"
                                 :type "button"
-                                :class (stl/css-case :org-options-btn (not show-org-options-menu?) :org-options-btn-open show-org-options-menu?)
+                                :class (stl/css-case :organization-options-btn (not show-organization-options-menu?) :organization-options-btn-open show-organization-options-menu?)
                                 :on-click on-show-options-click}
-                    org-menu-icon
+                    organization-menu-icon
 
-                    [:& dropdown {:show show-org-options-menu? :on-close close-org-options-menu :dropdown-id "org-options"}
-                     [:ul {:class (stl/css :org-dropdown)
+                    [:& dropdown {:show show-organization-options-menu? :on-close close-organization-options-menu :dropdown-id "organization-options"}
+                     [:ul {:class (stl/css :organization-dropdown)
                            :role "listbox"}
                       (when can-change-organization?
-                        [:li {:on-click on-change-team-org
-                              :class (stl/css :org-dropdown-item)}
+                        [:li {:on-click on-change-team-organization
+                              :class (stl/css :organization-dropdown-item)}
                          (tr "dashboard.team-organization.change")])
-                      [:li {:on-click on-remove-team-from-org
-                            :class (stl/css :org-dropdown-item)}
+                      [:li {:on-click on-remove-team-from-organization
+                            :class (stl/css :organization-dropdown-item)}
                        (tr "dashboard.team-organization.remove")]]]]])]]
               [:*
                [:div {:class (stl/css :block-content)}
@@ -1644,7 +1652,7 @@
                (when can-add-to-organization?
                  [:div {:class (stl/css :block-content)}
                   [:span {:class (stl/css :block-text)}
-                   [:a {:on-click on-add-team-to-org} (tr "dashboard.team-organization.add")]]])]))])
+                   [:a {:on-click on-add-team-to-organization} (tr "dashboard.team-organization.add")]]])]))])
 
        [:div {:class (stl/css :block)}
         [:div {:class (stl/css :block-label)}

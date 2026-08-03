@@ -4,236 +4,155 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/mixins.scss" as *;
 
 .sitemap {
   position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
-  width: 100%;
-  height: var(--height, deprecated.$s-200);
+  inline-size: 100%;
+  block-size: var(--height, $sz-200);
 }
 
-.title {
-  margin-left: deprecated.$s-2;
-  color: var(--title-foreground-color-hover);
+.sitemap-title {
+  padding-inline-start: var(--sp-s);
+  margin-block: var(--sp-s) var(--sp-xs);
 }
 
-.resize-area {
-  position: absolute;
-  bottom: calc(-1 * deprecated.$s-8);
-  left: 0;
-  width: 100%;
-  height: deprecated.$s-12;
-  border-top: deprecated.$s-2 solid var(--resize-area-border-color);
-  background-color: var(--resize-area-background-color);
-  cursor: ns-resize;
-
-  &:hover {
-    border-color: var(--resize-area-border-color);
-  }
-}
-
-.tool-window-content {
+.sitemap-content {
   display: flex;
   flex-direction: column;
-  height: calc(-38px + var(--height, deprecated.$s-200));
-  width: var(--left-sidebar-width);
+  inline-size: var(--left-sidebar-width);
   overflow: hidden auto;
   scrollbar-gutter: stable;
-
-  .element-list {
-    display: grid;
-  }
 }
 
-.pages-list {
-  width: 100%;
-  max-height: deprecated.$s-152;
-  margin-bottom: deprecated.$s-12;
-}
+.page-item {
+  @include t.use-typography("body-small");
 
-.page-delete-button {
-  --delete-button-display: none;
-}
-
-.page-delete-button-icon {
-  display: var(--delete-button-display);
-}
-
-.page-element {
-  @include deprecated.body-small-typography;
-
-  min-height: deprecated.$s-32;
-  width: 100%;
-  cursor: pointer;
+  min-block-size: $sz-32;
+  inline-size: 100%;
 
   &.dnd-over-top {
-    border-top: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
+    border-block-start: $b-1 solid var(--layer-row-foreground-color-drag);
   }
 
   &.dnd-over-bot {
-    border-bottom: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
+    border-block-end: $b-1 solid var(--layer-row-foreground-color-drag);
   }
 
-  .dnd-over > .element-list-body {
-    border: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
-  }
-
-  .element-list-body {
+  .page-item-body {
     display: flex;
     align-items: center;
-    height: deprecated.$s-32;
-    width: 100%;
-    padding: 0 deprecated.$s-12 0 0;
+    block-size: $sz-32;
+    inline-size: 100%;
+    padding: 0 var(--sp-m) 0 0;
     transition: none;
     color: var(--layer-row-foreground-color);
+    user-select: none;
 
-    .page-name {
-      @include deprecated.text-ellipsis;
-
-      flex-grow: 1;
-      padding-left: deprecated.$s-2;
-    }
-
-    .page-icon {
-      @include deprecated.flex-center;
-
-      padding: 0 deprecated.$s-4 0 deprecated.$s-8;
-    }
-
-    .page-actions {
-      height: deprecated.$s-32;
-      display: flex;
-      align-items: center;
-    }
-
-    .element-name {
-      @include deprecated.text-ellipsis;
-
-      color: var(--layer-row-foreground-color-focus);
-    }
-
-    input.element-name {
-      @include deprecated.text-ellipsis;
-      @include deprecated.body-small-typography;
-      @include deprecated.remove-input-style;
-
-      flex-grow: 1;
-      height: deprecated.$s-28;
-      max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
-      padding-left: deprecated.$s-6;
-      margin: 0;
-      border-radius: deprecated.$br-8;
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
-      color: var(--layer-row-foreground-color);
+    &.separator {
+      block-size: auto;
+      min-block-size: var(--sp-xxxl);
+      padding: 0;
     }
   }
 
-  &:active,
-  &.on-drag {
-    .element-list-body {
-      color: var(--layer-row-foreground-color-drag);
-      background-color: var(--layer-row-background-color-drag);
+  .page-item-label {
+    @include text-ellipsis;
 
-      .page-icon svg {
-        stroke: var(--layer-row-foreground-color-drag);
-      }
-    }
+    flex-grow: 1;
+    padding-inline-start: var(--sp-xxs);
   }
 
-  &.selected,
-  &.selected:hover {
-    .element-list-body {
-      color: var(--layer-row-foreground-color-selected);
-      background-color: var(--layer-row-background-color-selected);
-      box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-        var(--layer-row-background-color-selected);
-
-      .page-icon svg {
-        stroke: var(--layer-row-foreground-color-selected);
-      }
-    }
+  .page-item-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 var(--sp-xs) 0 var(--sp-s);
   }
 
-  &:hover,
-  &.hover {
-    .element-list-body {
-      color: var(--layer-row-foreground-color-hover);
-      background-color: var(--layer-row-background-color-hover);
-      box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-        var(--layer-row-background-color-hover);
-
-      .page-actions button {
-        opacity: deprecated.$op-10;
-
-        --delete-button-display: initial;
-      }
-
-      .page-icon svg {
-        stroke: var(--layer-row-foreground-color-hover);
-      }
-    }
+  .page-item-actions {
+    block-size: $sz-32;
+    display: flex;
+    align-items: center;
   }
 
-  &:focus {
-    .element-list-body {
-      color: var(--layer-row-foreground-color-focus);
-      border: deprecated.$s-1 solid var(--layer-row-border-color-focus);
-      outline: none;
+  .page-item-input {
+    @include text-ellipsis;
+    @include t.use-typography("body-small");
 
-      .page-actions button {
-        opacity: deprecated.$op-10;
-      }
-    }
+    background: none;
+    outline: none;
+    flex-grow: 1;
+    block-size: $sz-28;
+    max-inline-size: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+    padding-inline-start: $sz-6;
+    margin: 0;
+    border-radius: $br-8;
+    border: $b-1 solid var(--input-border-color-focus);
+    color: var(--layer-row-foreground-color);
   }
 
-  &:focus-within {
-    .element-list-body {
-      outline: none;
-
-      .page-actions button {
-        opacity: deprecated.$op-10;
-      }
-    }
+  &:active .page-item-body {
+    color: var(--layer-row-foreground-color-drag);
+    background-color: var(--layer-row-background-color-drag);
   }
 
-  &.hidden {
-    .element-list-body {
-      color: var(--layer-row-foreground-color-hidden);
-      background-color: var(--layer-row-background-color-hidden);
-      opacity: deprecated.$op-7;
+  &.selected .page-item-body,
+  &.selected:hover .page-item-body {
+    color: var(--layer-row-foreground-color-selected);
+    background-color: var(--layer-row-background-color-selected);
+    box-shadow: $sz-16 0 0 0 var(--layer-row-background-color-selected);
+  }
 
-      .page-icon svg {
-        stroke: var(--layer-row-foreground-color-hidden);
-      }
-    }
+  &:hover .page-item-body,
+  &.hover .page-item-body {
+    color: var(--layer-row-foreground-color-hover);
+    background-color: var(--layer-row-background-color-hover);
+    box-shadow: $sz-16 0 0 0 var(--layer-row-background-color-hover);
+  }
+
+  &:hover .page-delete-btn,
+  &.hover .page-delete-btn {
+    --delete-button-display: initial;
+  }
+
+  &:focus .page-item-body {
+    color: var(--layer-row-foreground-color-focus);
+    border: $b-1 solid var(--layer-row-border-color-focus);
+    outline: none;
+  }
+
+  &:focus-within .page-item-body {
+    outline: none;
+  }
+
+  &.separator:hover .page-item-body,
+  &.separator.hover .page-item-body {
+    color: var(--layer-row-foreground-color);
+    background-color: transparent;
+    box-shadow: none;
   }
 }
 
-.element-list-body.separator-body {
-  height: auto;
-  min-height: var(--sp-xxxl);
-  padding: 0;
-}
-
-.page-separator {
-  width: 100%;
-  height: $b-1;
+.page-divider {
+  inline-size: 100%;
+  block-size: $b-1;
   margin: var(--sp-s);
   background-color: var(--color-background-quaternary);
 }
 
-.page-element.separator:hover .element-list-body,
-.page-element.separator.hover .element-list-body {
-  color: var(--layer-row-foreground-color);
-  background-color: transparent;
-  box-shadow: none;
+.page-delete-btn {
+  --delete-button-display: none;
 }
 
-.title-spacing-sitemap {
-  padding-inline-start: deprecated.$s-8;
-  margin-block: deprecated.$s-8 deprecated.$s-4;
+.page-delete-icon {
+  display: var(--delete-button-display);
 }

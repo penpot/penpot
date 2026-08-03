@@ -239,7 +239,7 @@
               :fill "none"}
 
         (when include-metadata
-          [:& export/export-page {:page data}])
+          [:> export/export-page* {:page data}])
 
         (let [shapes (->> shapes
                           (remove cfh/frame-shape?)

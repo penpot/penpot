@@ -66,6 +66,7 @@
       "justifyContent",
       "justifyItems",
       "leftPadding",
+      "paddingType",
       "remove",
       "rightPadding",
       "rowGap",
@@ -113,7 +114,8 @@
       "uploadMediaData",
       "uploadMediaUrl",
       "version",
-      "viewport"
+      "viewport",
+      "waitForLayoutUpdate"
     ],
     "ContextGeometryUtils": ["center"],
     "ContextTypesUtils": [
@@ -254,6 +256,7 @@
       "horizontalMargin",
       "horizontalSizing",
       "leftMargin",
+      "marginType",
       "maxHeight",
       "maxWidth",
       "minHeight",
@@ -452,6 +455,7 @@
       "switchVariant",
       "tokens",
       "visible",
+      "waitForLayoutUpdate",
       "width",
       "x",
       "y"
@@ -465,6 +469,7 @@
       "strokeColorGradient",
       "strokeColorRefFile",
       "strokeColorRefId",
+      "strokeImage",
       "strokeOpacity",
       "strokeStyle",
       "strokeWidth"
@@ -1210,6 +1215,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -1710,6 +1721,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -2032,6 +2049,12 @@
         "type": null,
         "array": false
       },
+      "paddingType": {
+        "decl": "CommonLayout",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
       "horizontalSizing": {
         "decl": "CommonLayout",
         "kind": "getset",
@@ -2302,6 +2325,12 @@
         "decl": "Context",
         "kind": "method",
         "type": "VariantContainer",
+        "array": false
+      },
+      "waitForLayoutUpdate": {
+        "decl": "Context",
+        "kind": "method",
+        "type": null,
         "array": false
       }
     },
@@ -2836,6 +2865,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -3242,6 +3277,12 @@
         "type": null,
         "array": false
       },
+      "paddingType": {
+        "decl": "CommonLayout",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
       "horizontalSizing": {
         "decl": "CommonLayout",
         "kind": "getset",
@@ -3585,6 +3626,12 @@
         "array": false
       },
       "leftPadding": {
+        "decl": "CommonLayout",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "paddingType": {
         "decl": "CommonLayout",
         "kind": "getset",
         "type": null,
@@ -4061,6 +4108,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -4650,6 +4703,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -4863,6 +4922,12 @@
         "array": false
       },
       "leftMargin": {
+        "decl": "LayoutChildProperties",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "marginType": {
         "decl": "LayoutChildProperties",
         "kind": "getset",
         "type": null,
@@ -6272,6 +6337,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -6592,6 +6663,12 @@
         "decl": "Context",
         "kind": "method",
         "type": "VariantContainer",
+        "array": false
+      },
+      "waitForLayoutUpdate": {
+        "decl": "Context",
+        "kind": "method",
+        "type": null,
         "array": false
       }
     },
@@ -7097,6 +7174,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -7630,6 +7713,12 @@
         "type": null,
         "array": false
       },
+      "waitForLayoutUpdate": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -7764,6 +7853,12 @@
         "decl": "Stroke",
         "kind": "getset",
         "type": "Gradient",
+        "array": false
+      },
+      "strokeImage": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": "ImageData",
         "array": false
       }
     },
@@ -8183,6 +8278,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -8749,6 +8850,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -11047,6 +11154,12 @@
         "array": false
       },
       "remove": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "waitForLayoutUpdate": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,

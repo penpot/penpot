@@ -16,6 +16,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -94,7 +95,10 @@
                                 (not migrate))
                        (st/emit! (dwt/resize-text id width height)))))
 
-                 (st/emit! (dwt/clean-text-modifier id))))))
+                 (st/emit! (dwt/clean-text-modifier id))))
+       ;; Swallowed so a text whose position data cannot be computed still
+       ;; settles and still reports its measurement as finished.
+       (p/catch (fn [_] nil))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
@@ -183,11 +187,17 @@
         (mf/use-fn
          (fn [shape node]
            ;; Unique to indentify the pending state
-           (let [uid (uuid/next)]
-             (swap! pending-update* assoc uid (:id shape))
-             (p/then
-              (update-text-shape shape node)
-              #(swap! pending-update* dissoc uid)))))]
+           (let [uid (uuid/next)
+                 id  (:id shape)]
+             (swap! pending-update* assoc uid id)
+             ;; Callback refs run at the DOM commit boundary. Track the exact
+             ;; measurement promise from that acknowledgement; any resize it
+             ;; schedules owns the following task in the chain.
+             (wrf/run-pending!
+              :text-measure
+              [id]
+              #(-> (update-text-shape shape node)
+                   (p/finally (fn [] (swap! pending-update* dissoc uid))))))))]
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]

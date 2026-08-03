@@ -1,4 +1,4 @@
-use crate::get_render_state;
+use crate::get_resources;
 use crate::shapes::text::TextContent;
 use skia_safe::{
     self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
@@ -174,7 +174,7 @@ impl TextPaths {
     ) -> Option<(skia::Path, skia::Rect)> {
         let utf16_text = span_text.encode_utf16().collect::<Vec<u16>>();
         let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
-        let emoji_font = get_render_state().fonts().get_emoji_font(font.size());
+        let emoji_font = get_resources().fonts.get_emoji_font(font.size());
         let use_font = emoji_font.as_ref().unwrap_or(font);
 
         if let Some(mut text_blob) = TextBlob::from_text(text, use_font) {
