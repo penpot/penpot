@@ -886,12 +886,16 @@ describe("parseQuality", () => {
     expect(parseQuality("50")).toBe(50);
   });
 
-  it("preserves quality=0 (explicit zero)", () => {
-    expect(parseQuality("0")).toBe(0);
+  it("clamps quality=0 to 1 (minimum valid)", () => {
+    expect(parseQuality("0")).toBe(1);
   });
 
   it("preserves quality=1 (minimum valid)", () => {
     expect(parseQuality("1")).toBe(1);
+  });
+
+  it("clamps quality=101 to 100 (maximum valid)", () => {
+    expect(parseQuality("101")).toBe(100);
   });
 
   it("preserves quality=100 (maximum valid)", () => {

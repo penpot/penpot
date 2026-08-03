@@ -254,3 +254,43 @@ describe("HTTP malformed image handling", () => {
     expect(response.body.code).toBe("invalid-image");
   });
 });
+
+describe("HTTP quality parameter clamping", () => {
+  let app: ReturnType<typeof createTestApp>;
+
+  beforeAll(() => {
+    app = createTestApp();
+  });
+
+  it("clamps quality=0 to 1 at route level", async () => {
+    const imageBuffer = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const response = await request(app)
+      .post("/api/image/thumbnail?width=50&height=50&quality=0&format=jpeg&mode=fit")
+      .set("x-shared-key", "test-key")
+      .attach("file", imageBuffer, { filename: "test.jpg", contentType: "image/jpeg" });
+
+    expect(response.status).toBe(200);
+    expect(response.headers["content-type"]).toMatch(/image\/jpeg/);
+  });
+
+  it("clamps quality=101 to 100 at route level", async () => {
+    const imageBuffer = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 255, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const response = await request(app)
+      .post("/api/image/thumbnail?width=50&height=50&quality=101&format=jpeg&mode=fit")
+      .set("x-shared-key", "test-key")
+      .attach("file", imageBuffer, { filename: "test.jpg", contentType: "image/jpeg" });
+
+    expect(response.status).toBe(200);
+    expect(response.headers["content-type"]).toMatch(/image\/jpeg/);
+  });
+});

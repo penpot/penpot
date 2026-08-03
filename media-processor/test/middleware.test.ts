@@ -229,7 +229,7 @@ describe("sharedKeyAuth", () => {
     middleware(req, res, next);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
-      type: "internal",
+      type: "authorization",
       code: "forbidden",
       hint: "Shared key not configured",
     });
@@ -263,7 +263,7 @@ describe("sharedKeyAuth", () => {
     const req = { headers: { "x-shared-key": "wrong-key" } } as unknown as Request;
     middleware(req, res, next);
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ type: "internal", code: "forbidden" });
+    expect(res.json).toHaveBeenCalledWith({ type: "authorization", code: "forbidden" });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -272,7 +272,7 @@ describe("sharedKeyAuth", () => {
     const req = { headers: {} } as unknown as Request;
     middleware(req, res, next);
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ type: "internal", code: "forbidden" });
+    expect(res.json).toHaveBeenCalledWith({ type: "authorization", code: "forbidden" });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -293,7 +293,7 @@ describe("sharedKeyAuth", () => {
       middleware(req, res, next);
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        type: "internal",
+        type: "authorization",
         code: "forbidden",
         hint: "Shared key not configured",
       });

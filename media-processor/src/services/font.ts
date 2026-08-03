@@ -117,12 +117,14 @@ async function fontConvert(
 
     const outputPath = join(dir, `input${outputExt}`);
     try {
+      // Ensure input path is from tmpdir to prevent injection
+      if (!inputPath.startsWith(tmpdir())) {
+        throw new Error("Font path must be from tmpdir");
+      }
+
       // Escape single quotes for FontForge's string parser (not shell).
       // execFile passes args as an array — no shell injection vector.
       // FontForge's own lexer uses doubled single quotes for escaping.
-      // Note: This only handles single quotes. Temp paths from os.tmpdir()
-      // are safe (no special chars), but user-supplied paths with double
-      // quotes, backslashes, or other special chars may fail.
       const escInput = inputPath.replace(/'/g, "''");
       const escOutput = outputPath.replace(/'/g, "''");
       await execCommand("fontforge", ["-lang=ff", "-c", `Open('${escInput}'); Generate('${escOutput}')`], undefined, {

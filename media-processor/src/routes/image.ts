@@ -8,7 +8,8 @@ import type { ThumbnailParams } from "../types.js";
 export function parseQuality(value: string | undefined, defaultValue = 85): number {
   if (value === undefined) return defaultValue;
   const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? defaultValue : parsed;
+  if (isNaN(parsed)) return defaultValue;
+  return Math.min(100, Math.max(1, parsed));
 }
 
 export function createImageRoutes(): IRouter {
@@ -78,7 +79,7 @@ export function createImageRoutes(): IRouter {
         const params: ThumbnailParams = {
           width,
           height,
-          quality: Math.min(100, Math.max(1, quality)),
+          quality,
           format: format as "jpeg" | "webp" | "png",
           mode: mode as "fit" | "crop",
         };

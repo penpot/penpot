@@ -29,6 +29,6 @@ export function createQueueMiddleware(concurrency: number) {
             next();
           })
       )
-      .catch(() => next(new Error("Request processing failed")));
+      .catch((err) => next(err instanceof Error ? err : new Error("Request processing failed")));
   };
 }
