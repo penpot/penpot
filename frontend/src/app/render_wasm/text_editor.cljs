@@ -623,10 +623,9 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
-(defn- apply-attrs-to-paragraph
-  "Apply attrs to spans within [sel-start, sel-end) char range of a single paragraph.
-   Splits spans at boundaries as needed."
-  [para sel-start sel-end attrs]
+(defn apply-attrs-to-paragraph
+  "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
+  [para sel-start sel-end styles]
   (let [spans  (:children para)
 
         result (loop [spans spans
@@ -645,8 +644,10 @@
                        (recur (rest spans) span-end (conj acc span))
                        (let [before   (when (> ol-start pos)
                                         (assoc span :text (subs text 0 (- ol-start pos))))
-                             selected (merge span attrs
-                                             {:text (subs text (- ol-start pos) (- ol-end pos))})
+                             selected (-> (if (fn? styles)
+                                            (styles span)
+                                            (merge span styles))
+                                          (assoc :text (subs text (- ol-start pos) (- ol-end pos))))
                              after    (when (< ol-end span-end)
                                         (assoc span :text (subs text (- ol-end pos))))]
                          (recur (rest spans) span-end
@@ -658,15 +659,50 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
+(defn- paragraph-selected-spans
+  "Return the spans of `para` that overlap the [sel-start, sel-end) char range."
+  [para sel-start sel-end]
+  (loop [spans (:children para)
+         pos   0
+         acc   []]
+    (if (empty? spans)
+      acc
+      (let [span     (first spans)
+            span-end (+ pos (count (:text span)))
+            overlap? (< (max pos sel-start) (min span-end sel-end))]
+        (recur (rest spans) span-end (cond-> acc overlap? (conj span)))))))
+
+(defn selection-fills
+  "The selection's fills: shared vector if all spans match, `:multiple` if not, nil if empty."
+  [content {:keys [start-para start-offset end-para end-offset]}]
+  (let [paragraphs (:children (first (:children content)))
+        selected   (mapcat (fn [idx para]
+                             (cond
+                               (or (< idx start-para) (> idx end-para)) nil
+                               (= start-para end-para) (paragraph-selected-spans para start-offset end-offset)
+                               (= idx start-para)      (paragraph-selected-spans para start-offset (para-char-count para))
+                               (= idx end-para)        (paragraph-selected-spans para 0 end-offset)
+                               :else                   (paragraph-selected-spans para 0 (para-char-count para))))
+                           (range (count paragraphs))
+                           paragraphs)
+        fills-set  (into #{} (map :fills) selected)]
+    (cond
+      (empty? selected)       nil
+      (= 1 (count fills-set)) (first fills-set)
+      :else                   :multiple)))
+
 (defn apply-styles-to-selection
-  [attrs use-shape-fn set-shape-text-content-fn]
+  "Apply `styles` (attrs map, or a fn per span) to the selected spans; `:with-fills?` also returns `:fills`."
+  [styles use-shape-fn set-shape-text-content-fn & [{:keys [with-fills?]}]]
   (when (wasm/ready?)
     (let [;; Drop nil-valued attrs so they are never merged onto text spans.
           ;; The DOM editor path strips these in `attrs->styles`; the WASM merge
           ;; here (`apply-attrs-to-paragraph`) does not, so an unresolved attr
           ;; (e.g. nil :font-family/:font-weight/:font-style from an unloaded
           ;; font) would corrupt the span and fail the backend schema.
-          attrs     (into {} (remove (comp nil? val)) attrs)
+          styles    (if (fn? styles)
+                      styles
+                      (into {} (remove (comp nil? val)) styles))
           shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
 
@@ -691,19 +727,19 @@
 
                               ;; same paragraph.
                               (= start-para end-para)
-                              (apply-attrs-to-paragraph para start-offset end-offset attrs)
+                              (apply-attrs-to-paragraph para start-offset end-offset styles)
 
                               ;; first paragraph
                               (= idx start-para)
-                              (apply-attrs-to-paragraph para start-offset (para-char-count para) attrs)
+                              (apply-attrs-to-paragraph para start-offset (para-char-count para) styles)
 
                               ;; final paragraph
                               (= idx end-para)
-                              (apply-attrs-to-paragraph para 0 end-offset attrs)
+                              (apply-attrs-to-paragraph para 0 end-offset styles)
 
                               ;; any other paragraph
                               :else
-                              (apply-attrs-to-paragraph para 0 (para-char-count para) attrs)))
+                              (apply-attrs-to-paragraph para 0 (para-char-count para) styles)))
 
                           (range (count paragraphs))
                           paragraphs))
@@ -716,5 +752,7 @@
                 (update-cached-content! shape-id new-content)
                 (use-shape-fn shape-id)
                 (set-shape-text-content-fn shape-id new-content)
-                {:shape-id shape-id
-                 :content  new-content}))))))))
+                (cond-> {:shape-id shape-id
+                         :content  new-content}
+                  with-fills?
+                  (assoc :fills (selection-fills new-content normalized-selection)))))))))))

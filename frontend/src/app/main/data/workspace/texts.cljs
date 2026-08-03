@@ -30,6 +30,7 @@
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts-v3 :as dwt-v3]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -699,13 +700,19 @@
 
            (rx/concat (rx/of (dwsh/update-shapes shape-ids update-shape options))
                       (when (features/active-feature? state "text-editor-wasm/v1")
-                        (let [styles ((comp update-node-fn migrate-node))
-                              result (wasm.api/apply-styles-to-selection styles)]
+                        ;; Transform each span so add-fill preserves its existing fills.
+                        (let [result (wasm.api/apply-styles-to-selection
+                                      (comp update-node-fn migrate-node)
+                                      {:with-fills? true})]
                           (when result
                             (rx/of (v2-update-text-shape-content
                                     (:shape-id result)
                                     (:content result)
-                                    :update-name? true)))))))))
+                                    :update-name? true)
+                                   ;; Refresh the panel now, not only after a reselect.
+                                   (dwt-v3/v3-update-text-editor-styles
+                                    (:shape-id result)
+                                    {:fills (:fills result)})))))))))
 
      ptk/EffectEvent
      (effect [_ state _]
