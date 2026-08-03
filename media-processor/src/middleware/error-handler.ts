@@ -16,6 +16,11 @@ export class ProcessingError extends Error {
   }
 }
 
+function releaseSlot(res: Response): void {
+  const releaseQueue = (res as any).locals?.releaseQueue;
+  if (releaseQueue) releaseQueue();
+}
+
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   if (res.headersSent) {
     return;
@@ -24,8 +29,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
   if (err instanceof ProcessingError) {
     logger.warn({ err, statusCode: err.statusCode }, "Processing error");
     res.status(err.statusCode).json(err.errorBody);
-    const releaseQueue = (res as any).locals?.releaseQueue;
-    if (releaseQueue) releaseQueue();
+    releaseSlot(res);
     return;
   }
 
@@ -36,8 +40,7 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
         type: "restriction",
         code: "payload-too-large",
       });
-      const releaseQueue = (res as any).locals?.releaseQueue;
-      if (releaseQueue) releaseQueue();
+      releaseSlot(res);
       return;
     }
   }
@@ -48,6 +51,5 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     code: "processing-error",
     hint: "Internal server error",
   });
-  const releaseQueue = (res as any).locals?.releaseQueue;
-  if (releaseQueue) releaseQueue();
+  releaseSlot(res);
 }

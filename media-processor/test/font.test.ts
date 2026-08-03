@@ -270,6 +270,19 @@ describe("convertFont", () => {
       }
     });
   });
+
+  describe("path validation", () => {
+    it("rejects string input path outside tmpdir", async () => {
+      const outsidePath = "/etc/passwd";
+      try {
+        await convertFont(outsidePath, "font/ttf", "font/otf");
+        expect.fail("should have thrown");
+      } catch (err) {
+        const error = err as Error;
+        expect(error.message).toContain("Font processing denied: input path is outside expected directory");
+      }
+    });
+  });
 });
 
 describe("execCommand", () => {

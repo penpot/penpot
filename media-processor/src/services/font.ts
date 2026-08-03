@@ -75,12 +75,7 @@ async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
   try {
     return await fn(dir);
   } finally {
-    // Cleanup is best-effort; temp dir auto-cleaned on reboot
-    try {
-      await rm(dir, { recursive: true, force: true }).catch(() => {});
-    } catch {
-      // ignore
-    }
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -115,13 +110,13 @@ async function fontConvert(
       await writeFile(inputPath, input); // Write buffer to temp file
     }
 
+    // Ensure input path is from tmpdir to prevent injection
+    if (!inputPath.startsWith(tmpdir())) {
+      throw new Error("Font processing denied: input path is outside expected directory");
+    }
+
     const outputPath = join(dir, `input${outputExt}`);
     try {
-      // Ensure input path is from tmpdir to prevent injection
-      if (!inputPath.startsWith(tmpdir())) {
-        throw new Error("Font path must be from tmpdir");
-      }
-
       // Escape single quotes for FontForge's string parser (not shell).
       // execFile passes args as an array — no shell injection vector.
       // FontForge's own lexer uses doubled single quotes for escaping.

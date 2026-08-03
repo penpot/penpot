@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import express, { type Express } from "express";
 import { loadConfig } from "./config.js";
 import { initLogger, logger, logActiveTransports } from "./logger.js";
 import { healthRoutes } from "./routes/health.js";
@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { timeoutMiddleware } from "./middleware/timeout.js";
 import { sharedKeyAuth } from "./middleware/auth.js";
 import { createQueueMiddleware } from "./middleware/queue.js";
+import { loggingMiddleware } from "./middleware/logging.js";
 import { configureImageLimits } from "./services/image.js";
 import { configureFontLimits } from "./services/font.js";
 import { configureUploadLimits } from "./upload.js";
@@ -43,25 +44,7 @@ configureUploadLimits({ maxFileSize: config.maxFileSize, memoryThreshold: config
 const queueMiddleware = createQueueMiddleware(config.maxConcurrentRequests);
 
 app.use(timeoutMiddleware(config.requestTimeout));
-
-const OP_NAMES: Record<string, string> = {
-  "POST /api/image/info": "image/info",
-  "POST /api/image/thumbnail": "image/thumbnail",
-  "POST /api/font/convert": "font/convert",
-};
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    const path = req.originalUrl?.split("?")[0];
-    const op = OP_NAMES[`${req.method} ${path}`];
-    if (op) {
-      const meta = res.locals.opMeta ? `, ${res.locals.opMeta}` : "";
-      logger.info(`op=${op}${meta}, status=${res.statusCode}, elapsed=${Date.now() - start}ms`);
-    }
-  });
-  next();
-});
+app.use(loggingMiddleware);
 
 app.get("/api/health", healthRoutes);
 app.use("/api/image", sharedKeyAuth(config.sharedKey), queueMiddleware, createImageRoutes());

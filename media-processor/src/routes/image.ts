@@ -52,11 +52,6 @@ export function createImageRoutes(): IRouter {
           throwValidation("invalid-image", "No file uploaded");
         }
 
-        const supportedMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-        if (!supportedMimes.has(req.file.mimetype)) {
-          throwValidation("unsupported-image-format", `Unsupported image format: ${req.file.mimetype}`);
-        }
-
         const input = getFileInput(req.file!);
         const width = parseInt(req.query.width as string, 10);
         const height = parseInt(req.query.height as string, 10);

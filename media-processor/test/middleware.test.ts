@@ -212,6 +212,43 @@ describe("errorHandler", () => {
     expect(resWithHeadersSent.status).not.toHaveBeenCalled();
     expect(resWithHeadersSent.json).not.toHaveBeenCalled();
   });
+
+  it("calls releaseQueue for ProcessingError", () => {
+    const releaseQueue = vi.fn();
+    const resWithLocals = { ...res, locals: { releaseQueue } } as any;
+    const err = new ProcessingError(400, { type: "validation", code: "test" });
+
+    errorHandler(err, mockReq(), resWithLocals, next);
+
+    expect(releaseQueue).toHaveBeenCalled();
+  });
+
+  it("calls releaseQueue for MulterError LIMIT_FILE_SIZE", () => {
+    const releaseQueue = vi.fn();
+    const resWithLocals = { ...res, locals: { releaseQueue } } as any;
+    const err = new multer.MulterError("LIMIT_FILE_SIZE");
+
+    errorHandler(err, mockReq(), resWithLocals, next);
+
+    expect(releaseQueue).toHaveBeenCalled();
+  });
+
+  it("calls releaseQueue for generic Error", () => {
+    const releaseQueue = vi.fn();
+    const resWithLocals = { ...res, locals: { releaseQueue } } as any;
+    const err = new Error("something broke");
+
+    errorHandler(err, mockReq(), resWithLocals, next);
+
+    expect(releaseQueue).toHaveBeenCalled();
+  });
+
+  it("does not throw when releaseQueue is not set", () => {
+    const resWithNoLocals = { ...res, locals: {} } as any;
+    const err = new ProcessingError(400, { type: "validation", code: "test" });
+
+    expect(() => errorHandler(err, mockReq(), resWithNoLocals, next)).not.toThrow();
+  });
 });
 
 describe("sharedKeyAuth", () => {

@@ -2,17 +2,15 @@ import pino, { type TransportTargetOptions } from "pino";
 import { loadConfig } from "./config.js";
 import type { AppConfig } from "./types.js";
 
-type TransportTargetSpec = TransportTargetOptions;
-
 interface LogTransportProvider {
-  getTarget(): TransportTargetSpec | null;
+  getTarget(): TransportTargetOptions | null;
   getStartupMessage(): string | null;
 }
 
 class ConsoleLogTransport implements LogTransportProvider {
   public constructor(private readonly config: AppConfig) {}
 
-  public getTarget(): TransportTargetSpec {
+  public getTarget(): TransportTargetOptions {
     return {
       target: "pino-pretty",
       level: this.config.logLevel,
@@ -41,7 +39,7 @@ class LokiLogTransport implements LogTransportProvider {
     this.host = lokiUri;
   }
 
-  public getTarget(): TransportTargetSpec | null {
+  public getTarget(): TransportTargetOptions | null {
     if (this.host === null) {
       return null;
     }
@@ -88,7 +86,9 @@ function buildLogger(config: AppConfig) {
     level: config.logLevel,
     timestamp: pino.stdTimeFunctions.isoTime,
     transport: {
-      targets: transports.map((t) => t.getTarget()).filter((target): target is TransportTargetSpec => target !== null),
+      targets: transports
+        .map((t) => t.getTarget())
+        .filter((target): target is TransportTargetOptions => target !== null),
     },
   });
 
