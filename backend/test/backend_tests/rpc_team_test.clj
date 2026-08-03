@@ -490,7 +490,7 @@
                                                       :is-member false}
                         :get-organization-members [(:id inviter) (uuid/random) (uuid/random)]
                         nil))
-                    teams/initialize-user-in-nitrate-organization
+                    teams/initialize-user-in-organization
                     (fn [& _] default-team-id)]
         (let [out (verify! direct-token)]
           (t/is (th/success? out))

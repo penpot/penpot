@@ -14,7 +14,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -167,7 +167,7 @@
         (if organization
           ;; Insert the invited member to the organization
           (when (contains? cf/flags :admin-console)
-            (teams/initialize-user-in-nitrate-organization cfg (:id member) (:id organization) email))
+            (teams/initialize-user-in-organization cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
           (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
 
@@ -351,7 +351,7 @@
                            team)
         organization              (:organization team)
         organization-id           (:id organization)
-        restricted?      (and organization-id (not (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms organization})))
+        restricted?      (and organization-id (not (cto/allowed? :add-anybody-to-team {:organization-perms organization})))
         all-organization-member-ids
         (when organization-id
           (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id})))

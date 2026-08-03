@@ -14,7 +14,7 @@
    [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.config :as cf]
    [app.db :as db]
    [app.nitrate :as nitrate]
@@ -430,9 +430,9 @@
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "Unable to verify organization permissions")
-        (when-not (nitrate-perms/allowed? :move-team
-                                          {:organization-perms organization-perms
-                                           :profile-id profile-id})
+        (when-not (cto/allowed? :move-team
+                                {:organization-perms organization-perms
+                                 :profile-id profile-id})
           (ex/raise :type :validation
                     :code :not-allowed
                     :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))))
@@ -462,7 +462,7 @@
    Returns {:allows-anybody bool :external-emails [...]}"
   [{:keys [::db/conn] :as cfg} team-id organization-id]
   (let [organization-perms      (nitrate/call cfg :get-organization-permissions {:organization-id organization-id})
-        allows-anybody (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms organization-perms})]
+        allows-anybody (cto/allowed? :add-anybody-to-team {:organization-perms organization-perms})]
     (if allows-anybody
       {:allows-anybody true :external-emails []}
       (let [emails (map :email (noh/get-team-invitation-emails conn team-id))]
@@ -517,18 +517,18 @@
           (ex/raise :type :validation
                     :code :not-allowed
                     :hint "Unable to verify organization permissions"))
-        (when-not (nitrate-perms/allowed? :move-team
-                                          {:organization-perms source-organization-perms
-                                           :profile-id profile-id
-                                           :target-organization-same-owner? target-organization-same-owner?})
+        (when-not (cto/allowed? :move-team
+                                {:organization-perms source-organization-perms
+                                 :profile-id profile-id
+                                 :target-organization-same-owner? target-organization-same-owner?})
           (ex/raise :type :validation
                     :code :not-allowed
                     :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))
 
       ;; Always check target create-teams permission (new/add and move flows).
-      (when-not (nitrate-perms/allowed? :create-team
-                                        {:organization-perms target-organization-perms
-                                         :profile-id profile-id})
+      (when-not (cto/allowed? :create-team
+                              {:organization-perms target-organization-perms
+                               :profile-id profile-id})
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "You are not allowed to add teams in this organization"))
@@ -540,7 +540,7 @@
                                 (remove #{profile-id})
                                 (remove organization-member-ids-before))]
         (doseq [member-id new-member-ids]
-          (teams/initialize-user-in-nitrate-organization cfg member-id organization-id)))
+          (teams/initialize-user-in-organization cfg member-id organization-id)))
 
       ;; Api call to nitrate
       (let [team (nitrate/call cfg :set-team-organization {:team-id team-id

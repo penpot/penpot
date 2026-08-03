@@ -999,7 +999,7 @@
                                  :team-id (:id team)
                                  :sso-active? true
                                  :set-team-params set-team-params})
-                  teams/initialize-user-in-nitrate-organization (fn [& _] nil)
+                  teams/initialize-user-in-organization (fn [& _] nil)
                   eml/send! (fn [params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
@@ -1074,7 +1074,7 @@
                                  :owner-id (:id owner)
                                  :team-id (:id team)
                                  :sso-active? false})
-                  teams/initialize-user-in-nitrate-organization (fn [& _] nil)
+                  teams/initialize-user-in-organization (fn [& _] nil)
                   eml/send! (fn [params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)

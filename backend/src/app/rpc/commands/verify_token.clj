@@ -137,7 +137,7 @@
           accepted-team-id (if organization-id
                              ;; Insert the invited member to the organization
                              (when (contains? cf/flags :admin-console)
-                               (teams/initialize-user-in-nitrate-organization cfg id-member organization-id member-email))
+                               (teams/initialize-user-in-organization cfg id-member organization-id member-email))
                              ;; Insert the invited member to the team
                              (do (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
                                  team-id))]
