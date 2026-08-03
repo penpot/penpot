@@ -796,6 +796,7 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not read-only?)
                   (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
