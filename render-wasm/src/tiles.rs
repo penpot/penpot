@@ -423,6 +423,10 @@ impl PendingTiles {
         true
     }
 
+    pub fn has_deferred_interest(&self) -> bool {
+        !self.deferred_interest.is_empty()
+    }
+
     pub fn pop(&mut self) -> Option<Tile> {
         self.list.pop()
     }

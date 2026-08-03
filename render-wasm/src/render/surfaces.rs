@@ -14,11 +14,12 @@ use std::collections::{HashMap, HashSet};
 const TEXTURES_CACHE_CAPACITY: usize = 1024;
 const TEXTURES_BATCH_DELETE: usize = 256;
 
-// This is the amount of extra space we're going to give to all the surfaces to render shapes.
-// If it's too big it could affect performance.
+// Per-tile blur/shadow spill into the paint surface. Also used as the
+// outer pad when Current covers a multi-tile region.
 const TILE_SIZE: i32 = tiles::TILE_SIZE as i32;
 const TILE_SIZE_MULTIPLIER: i32 = 2;
 const TILE_MARGIN_SIZE: i32 = TILE_SIZE * TILE_SIZE_MULTIPLIER / 4;
+/// Drawable 512² for the legacy single-tile path (content starts after margins).
 const TILE_DRAWABLE_RECT: IRect = IRect {
     left: TILE_MARGIN_SIZE,
     top: TILE_MARGIN_SIZE,
@@ -26,6 +27,21 @@ const TILE_DRAWABLE_RECT: IRect = IRect {
     bottom: TILE_MARGIN_SIZE + TILE_SIZE,
 };
 const DOC_ATLAS_MAX_DIM: i32 = 4096;
+
+/// Pixel size for Current + layer surfaces: viewport plus interest ring and
+/// blur margins. Resized only with the window (not on zoom HQ passes).
+pub fn paint_surface_dims(
+    viewport_w: i32,
+    viewport_h: i32,
+    interest_tiles: i32,
+    max_texture_size: i32,
+) -> skia::ISize {
+    let interest = interest_tiles.max(0);
+    let pad = interest * TILE_SIZE + TILE_MARGIN_SIZE;
+    let w = (viewport_w + 2 * pad).clamp(TILE_SIZE + 2 * TILE_MARGIN_SIZE, max_texture_size);
+    let h = (viewport_h + 2 * pad).clamp(TILE_SIZE + 2 * TILE_MARGIN_SIZE, max_texture_size);
+    skia::ISize::new(w, h)
+}
 
 /// GPU→GPU copy of `src` from `from` into `dst` on `to_canvas`, without
 /// `image_snapshot` (avoids per-tile sync stalls on WebGL).
@@ -463,14 +479,16 @@ impl Surfaces {
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
         tile_dims: skia::ISize,
+        interest_tiles: i32,
     ) -> Result<Self> {
         let gpu_state = get_gpu_state();
+        let max_texture_size = gpu_state.max_texture_size();
 
-        let extra_tile_dims = skia::ISize::new(
-            tile_dims.width * TILE_SIZE_MULTIPLIER,
-            tile_dims.height * TILE_SIZE_MULTIPLIER,
-        );
-        let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
+        // Current + layers cover viewport + interest + blur margins so a
+        // paint-once region pass needs no surface recreate on zoom.
+        let extra_tile_dims =
+            paint_surface_dims(width, height, interest_tiles, max_texture_size);
+        let margins = skia::ISize::new(TILE_MARGIN_SIZE, TILE_MARGIN_SIZE);
 
         let target = gpu_state.create_target_surface(width, height)?;
         let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims)?;
@@ -478,7 +496,6 @@ impl Surfaces {
         let backbuffer =
             gpu_state.create_surface_with_dimensions("backbuffer".to_string(), width, height)?;
 
-        let max_texture_size = gpu_state.max_texture_size();
         let tile_atlas = gpu_state.create_surface_with_dimensions(
             "tile_atlas".to_string(),
             max_texture_size,
@@ -498,7 +515,7 @@ impl Surfaces {
             gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims)?;
         let shape_strokes =
             gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims)?;
-        let export = gpu_state.create_surface_with_isize("export".to_string(), extra_tile_dims)?;
+        let export = gpu_state.create_surface_with_isize("export".to_string(), tile_dims)?;
 
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
@@ -665,11 +682,65 @@ impl Surfaces {
         self.margins
     }
 
-    pub fn resize(&mut self, new_width: i32, new_height: i32) -> Result<()> {
+    pub fn resize(
+        &mut self,
+        new_width: i32,
+        new_height: i32,
+        interest_tiles: i32,
+    ) -> Result<()> {
         let gpu_state = get_gpu_state();
 
         self.reset_from_target(gpu_state.create_target_surface(new_width, new_height)?)?;
+        self.resize_paint_surfaces(new_width, new_height, interest_tiles)?;
         Ok(())
+    }
+
+    /// Recreate Current + layer surfaces for the viewport (+ interest pad).
+    /// Called only from window resize / init — not from zoom HQ passes.
+    pub fn resize_paint_surfaces(
+        &mut self,
+        viewport_w: i32,
+        viewport_h: i32,
+        interest_tiles: i32,
+    ) -> Result<()> {
+        let max_texture_size = get_gpu_state().max_texture_size();
+        let dims = paint_surface_dims(viewport_w, viewport_h, interest_tiles, max_texture_size);
+        if dims == self.extra_tile_dims {
+            return Ok(());
+        }
+        self.extra_tile_dims = dims;
+        self.margins = skia::ISize::new(TILE_MARGIN_SIZE, TILE_MARGIN_SIZE);
+
+        let recreate = |name: &str, surface: &mut skia::Surface| -> Result<()> {
+            *surface = surface
+                .new_surface_with_dimensions(dims)
+                .ok_or(Error::CriticalError(format!(
+                    "Failed to recreate {name} surface"
+                )))?;
+            Ok(())
+        };
+
+        recreate("current", &mut self.current)?;
+        recreate("filter", &mut self.filter)?;
+        recreate("drop_shadows", &mut self.drop_shadows)?;
+        recreate("inner_shadows", &mut self.inner_shadows)?;
+        recreate("text_drop_shadows", &mut self.text_drop_shadows)?;
+        recreate("shape_fills", &mut self.shape_fills)?;
+        recreate("shape_strokes", &mut self.shape_strokes)?;
+        self.clear_all_dirty();
+        Ok(())
+    }
+
+    pub fn paint_surface_size(&self) -> skia::ISize {
+        self.extra_tile_dims
+    }
+
+    pub fn tile_margin_size() -> i32 {
+        TILE_MARGIN_SIZE
+    }
+
+    pub fn single_tile_drawable_rect() -> IRect {
+        TILE_DRAWABLE_RECT
     }
 
     pub fn snapshot(&mut self, id: SurfaceId) -> skia::Image {
@@ -1212,8 +1283,27 @@ impl Surfaces {
         skip_cache_surface: bool,
         tile_doc_rect: skia::Rect,
     ) {
+        self.draw_current_src_into_tile_atlas(
+            tile_viewbox,
+            tile,
+            tile_rect,
+            skip_cache_surface,
+            tile_doc_rect,
+            skia::Rect::from(TILE_DRAWABLE_RECT),
+        );
+    }
+
+    /// Upload an arbitrary Current src rect (region paint-once crop) into the atlases.
+    pub fn draw_current_src_into_tile_atlas(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        tile: &Tile,
+        tile_rect: &skia::Rect,
+        skip_cache_surface: bool,
+        tile_doc_rect: skia::Rect,
+        src: skia::Rect,
+    ) {
         let gpu_state = get_gpu_state();
-        let src = skia::Rect::from(TILE_DRAWABLE_RECT);
         let sampling = self.sampling_options;
 
         // DocAtlas + tile atlas via Surface::draw (no image_snapshot sync).
@@ -1249,6 +1339,27 @@ impl Surfaces {
                 sampling,
             );
         }
+    }
+
+    /// Whether a doc-space region (with blur margins) fits in Current at `scale`.
+    pub fn region_fits_paint_surface(&self, render_area: skia::Rect, scale: f32) -> bool {
+        let need_w =
+            (render_area.width() * scale).ceil() as i32 + 2 * self.margins.width;
+        let need_h =
+            (render_area.height() * scale).ceil() as i32 + 2 * self.margins.height;
+        need_w <= self.current.width() && need_h <= self.current.height()
+    }
+
+    /// Pixel rect inside Current for a tile given the region `render_area` and scale.
+    pub fn tile_drawable_src_in_region(
+        &self,
+        tile_doc_rect: skia::Rect,
+        render_area: skia::Rect,
+        scale: f32,
+    ) -> skia::Rect {
+        let x = self.margins.width as f32 + (tile_doc_rect.left - render_area.left) * scale;
+        let y = self.margins.height as f32 + (tile_doc_rect.top - render_area.top) * scale;
+        skia::Rect::from_xywh(x, y, TILE_SIZE as f32, TILE_SIZE as f32)
     }
 
     pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
@@ -1383,42 +1494,33 @@ impl Surfaces {
         draw_on_cache: DrawOnCache,
     ) {
         let sampling_options = self.sampling_options;
-        let src_rect = IRect::from_xywh(
-            self.margins.width,
-            self.margins.height,
-            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
-            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        // Current is viewport-sized for paint-once regions. During interactive
+        // drag we still paint one tile into the top-left padded slot; blit only
+        // that slot or we wipe the rest of Target with cleared Current pixels.
+        let pad = (TILE_SIZE + 2 * TILE_MARGIN_SIZE) as f32;
+        let src = skia::Rect::from_xywh(0.0, 0.0, pad, pad);
+        let dst = skia::Rect::from_xywh(
+            tile_rect.left - TILE_MARGIN_SIZE as f32,
+            tile_rect.top - TILE_MARGIN_SIZE as f32,
+            pad,
+            pad,
         );
-        let src_rect_f = skia::Rect::from(src_rect);
 
-        let backbuffer_canvas = self.backbuffer.canvas();
-
-        // Draw background
-        // let mut paint = skia::Paint::default();
-        // paint.set_color(color);
-        // backbuffer_canvas.draw_rect(tile_rect, &paint);
-
-        // Draw current surface directly to target (no snapshot)
-        self.current.draw(
-            backbuffer_canvas,
-            (
-                tile_rect.left - src_rect_f.left,
-                tile_rect.top - src_rect_f.top,
-            ),
+        draw_surface_src_rect_to_dst(
+            &mut self.current,
+            self.backbuffer.canvas(),
+            src,
+            dst,
             sampling_options,
-            None,
         );
 
-        // Also draw to cache for render_from_cache
         if draw_on_cache == DrawOnCache::Yes {
-            self.current.draw(
+            draw_surface_src_rect_to_dst(
+                &mut self.current,
                 self.cache.canvas(),
-                (
-                    tile_rect.left - src_rect_f.left,
-                    tile_rect.top - src_rect_f.top,
-                ),
+                src,
+                dst,
                 sampling_options,
-                None,
             );
         }
     }
