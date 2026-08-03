@@ -358,16 +358,31 @@ pub extern "C" fn set_view_end() -> Result<()> {
         render_state.options.set_fast_mode(false);
         render_state.tile_viewbox.update(&render_state.viewbox);
 
+        let zoom_changed = render_state.zoom_changed();
+        if zoom_changed {
+            render_state.zoom_perf_begin("set_view_end");
+        }
+
         if render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
-        } else if render_state.zoom_changed() {
+        } else if zoom_changed {
             // Zoom changed: tile sizes differ so all cached tile
             // textures are invalid (wrong scale).  Rebuild the tile
             // index and clear the tile texture cache, but *preserve*
             // the cache canvas so render_from_cache can show a scaled
             // preview of the old content while new tiles render.
+            let t0 = performance::get_time();
             render_state.rebuild_tile_index(&state.shapes);
+            render_state.zoom_perf_log(&format!(
+                "set_view_end.rebuild_tile_index {}ms",
+                performance::get_time() - t0
+            ));
+            let t1 = performance::get_time();
             render_state.surfaces.invalidate_tile_cache();
+            render_state.zoom_perf_log(&format!(
+                "set_view_end.invalidate_tile_cache {}ms",
+                performance::get_time() - t1
+            ));
         } else {
             // Pure pan at the same zoom level: tile contents have not
             // changed — only the viewport position moved. Update the
@@ -379,6 +394,9 @@ pub extern "C" fn set_view_end() -> Result<()> {
         // Avoid `reset_canvas` on the post-gesture render (pan at stable zoom).
         if !render_state.options.is_profile_rebuild_tiles() {
             render_state.preserve_target_during_render = true;
+        }
+        if zoom_changed {
+            render_state.zoom_perf_log("set_view_end done");
         }
         performance::end_measure!("set_view_end");
     });

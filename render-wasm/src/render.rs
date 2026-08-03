@@ -425,6 +425,32 @@ pub(crate) struct RenderState {
     /// Visible tiles were already presented this pass; interest-ring fill may
     /// still be running. Final Full should not re-present.
     pub viewport_presented: bool,
+    /// Temporary: log post-zoom timings to the console (`[ZOOM-PERF]`).
+    zoom_perf_active: bool,
+    zoom_perf_t0: i32,
+    zoom_perf_frame: u32,
+    /// Per tile-chunk walker breakdown (reset before each uncached pass).
+    zoom_perf_shape_ms: i32,
+    zoom_perf_text_ms: i32,
+    zoom_perf_shadow_ms: i32,
+    zoom_perf_blur_ms: i32,
+    zoom_perf_enter_ms: i32,
+    zoom_perf_shadow_warmup_ms: i32,
+    zoom_perf_nodes: u32,
+    zoom_perf_text_nodes: u32,
+    zoom_perf_shadow_nodes: u32,
+    zoom_perf_direct_n: u32,
+    zoom_perf_layered_n: u32,
+    zoom_perf_fills_ms: i32,
+    zoom_perf_strokes_ms: i32,
+    zoom_perf_blit_ms: i32,
+    /// Layered deny reason counters (first-match; only when zoom_perf_active).
+    zoom_perf_layered_type_n: u32,
+    zoom_perf_layered_shadow_n: u32,
+    zoom_perf_layered_blur_n: u32,
+    zoom_perf_layered_blend_n: u32,
+    zoom_perf_layered_nested_n: u32,
+    zoom_perf_layered_other_n: u32,
     /// Multi-tile paint-once into Current, then crop to atlas slots.
     paint_region: Option<PaintRegion>,
 }
@@ -619,8 +645,122 @@ impl RenderState {
             tile_atlas_flushed: false,
             drop_shadows_ops_warmed: false,
             viewport_presented: false,
+            zoom_perf_active: false,
+            zoom_perf_t0: 0,
+            zoom_perf_frame: 0,
+            zoom_perf_shape_ms: 0,
+            zoom_perf_text_ms: 0,
+            zoom_perf_shadow_ms: 0,
+            zoom_perf_blur_ms: 0,
+            zoom_perf_enter_ms: 0,
+            zoom_perf_shadow_warmup_ms: 0,
+            zoom_perf_nodes: 0,
+            zoom_perf_text_nodes: 0,
+            zoom_perf_shadow_nodes: 0,
+            zoom_perf_direct_n: 0,
+            zoom_perf_layered_n: 0,
+            zoom_perf_fills_ms: 0,
+            zoom_perf_strokes_ms: 0,
+            zoom_perf_blit_ms: 0,
+            zoom_perf_layered_type_n: 0,
+            zoom_perf_layered_shadow_n: 0,
+            zoom_perf_layered_blur_n: 0,
+            zoom_perf_layered_blend_n: 0,
+            zoom_perf_layered_nested_n: 0,
+            zoom_perf_layered_other_n: 0,
             paint_region: None,
         })
+    }
+
+    /// Temporary zoom profiling: println with ms since zoom-end started.
+    #[inline]
+    pub fn zoom_perf_log(&self, msg: &str) {
+        if !self.zoom_perf_active {
+            return;
+        }
+        let dt = performance::get_time() - self.zoom_perf_t0;
+        println!("[ZOOM-PERF] +{dt}ms {msg}");
+    }
+
+    fn zoom_perf_reset_walker(&mut self) {
+        self.zoom_perf_shape_ms = 0;
+        self.zoom_perf_text_ms = 0;
+        self.zoom_perf_shadow_ms = 0;
+        self.zoom_perf_blur_ms = 0;
+        self.zoom_perf_enter_ms = 0;
+        self.zoom_perf_shadow_warmup_ms = 0;
+        self.zoom_perf_nodes = 0;
+        self.zoom_perf_text_nodes = 0;
+        self.zoom_perf_shadow_nodes = 0;
+        self.zoom_perf_direct_n = 0;
+        self.zoom_perf_layered_n = 0;
+        self.zoom_perf_fills_ms = 0;
+        self.zoom_perf_strokes_ms = 0;
+        self.zoom_perf_blit_ms = 0;
+        self.zoom_perf_layered_type_n = 0;
+        self.zoom_perf_layered_shadow_n = 0;
+        self.zoom_perf_layered_blur_n = 0;
+        self.zoom_perf_layered_blend_n = 0;
+        self.zoom_perf_layered_nested_n = 0;
+        self.zoom_perf_layered_other_n = 0;
+        self.surfaces.reset_paint_diag_counters();
+    }
+
+    fn zoom_perf_walker_summary(&self) -> String {
+        format!(
+            "nodes={} text_n={} shadow_n={} direct={} layered={} (type={} shadow={} blur={} blend={} nested={} other={}) shape={}ms text={}ms fills={}ms strokes={}ms blit={}ms shadow={}ms blur={}ms enter={}ms shadow_warm={}ms | {}",
+            self.zoom_perf_nodes,
+            self.zoom_perf_text_nodes,
+            self.zoom_perf_shadow_nodes,
+            self.zoom_perf_direct_n,
+            self.zoom_perf_layered_n,
+            self.zoom_perf_layered_type_n,
+            self.zoom_perf_layered_shadow_n,
+            self.zoom_perf_layered_blur_n,
+            self.zoom_perf_layered_blend_n,
+            self.zoom_perf_layered_nested_n,
+            self.zoom_perf_layered_other_n,
+            self.zoom_perf_shape_ms,
+            self.zoom_perf_text_ms,
+            self.zoom_perf_fills_ms,
+            self.zoom_perf_strokes_ms,
+            self.zoom_perf_blit_ms,
+            self.zoom_perf_shadow_ms,
+            self.zoom_perf_blur_ms,
+            self.zoom_perf_enter_ms,
+            self.zoom_perf_shadow_warmup_ms,
+            self.surfaces.paint_diag_summary()
+        )
+    }
+
+    pub fn zoom_perf_begin(&mut self, reason: &str) {
+        self.zoom_perf_active = true;
+        self.zoom_perf_t0 = performance::get_time();
+        self.zoom_perf_frame = 0;
+        self.surfaces.set_paint_diag(true);
+        println!(
+            "[ZOOM-PERF] BEGIN {reason} zoom={:.4} vbox=({:.1},{:.1},{:.1}x{:.1}) {}",
+            self.viewbox.zoom,
+            self.viewbox.area.left,
+            self.viewbox.area.top,
+            self.viewbox.area.width(),
+            self.viewbox.area.height(),
+            self.surfaces.paint_diag_summary()
+        );
+    }
+
+    pub fn zoom_perf_end(&mut self, reason: &str) {
+        if !self.zoom_perf_active {
+            return;
+        }
+        let dt = performance::get_time() - self.zoom_perf_t0;
+        println!(
+            "[ZOOM-PERF] END {reason} total={dt}ms frames={} {}",
+            self.zoom_perf_frame,
+            self.surfaces.paint_diag_summary()
+        );
+        self.surfaces.set_paint_diag(false);
+        self.zoom_perf_active = false;
     }
 
     /// Combines every visible layer blur currently active (ancestors + shape)
@@ -1145,6 +1285,11 @@ impl RenderState {
     /// This function draws the "surface stack" into the specified "target" surface.
     pub fn draw_shape_surface_stack_into(&mut self, shape: Option<&Shape>, target: SurfaceId) {
         performance::begin_measure!("apply_drawing_to_render_canvas");
+        let t_blit = if self.zoom_perf_active {
+            performance::get_time()
+        } else {
+            0
+        };
 
         let paint = skia::Paint::default();
 
@@ -1202,6 +1347,9 @@ impl RenderState {
             self.surfaces.clear_dirty(dirty_surfaces_to_clear);
         }
 
+        if self.zoom_perf_active {
+            self.zoom_perf_blit_ms += performance::get_time() - t_blit;
+        }
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -1439,13 +1587,27 @@ impl RenderState {
                 });
             }
 
+            let zoom_perf = self.zoom_perf_active;
+            let t_fills = if zoom_perf {
+                performance::get_time()
+            } else {
+                0
+            };
             fills::render(self, shape, &shape.fills, antialias, target_surface, None)?;
+            if zoom_perf {
+                self.zoom_perf_fills_ms += performance::get_time() - t_fills;
+            }
 
             // Clipped frames draw strokes in render_shape_exit over children.
             let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
             if !skip_strokes {
                 // Pass strokes in natural order; stroke merging handles top-most ordering internally.
                 let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+                let t_strokes = if zoom_perf {
+                    performance::get_time()
+                } else {
+                    0
+                };
                 strokes::render(
                     self,
                     shape,
@@ -1454,6 +1616,12 @@ impl RenderState {
                     antialias,
                     outset,
                 )?;
+                if zoom_perf {
+                    self.zoom_perf_strokes_ms += performance::get_time() - t_strokes;
+                }
+            }
+            if zoom_perf {
+                self.zoom_perf_direct_n += 1;
             }
 
             self.surfaces.apply_mut(target_surface as u32, |s| {
@@ -1466,6 +1634,28 @@ impl RenderState {
             }
 
             return Ok(());
+        }
+
+        if self.zoom_perf_active {
+            self.zoom_perf_layered_n += 1;
+            // Count the first matching deny reason.
+            if !type_ok {
+                self.zoom_perf_layered_type_n += 1;
+            } else if shadows_need_layered {
+                self.zoom_perf_layered_shadow_n += 1;
+            } else if shape.blur.is_some()
+                || shape.background_blur.is_some()
+                || has_inherited_blur
+                || shape.has_frame_clip_layer_blur()
+            {
+                self.zoom_perf_layered_blur_n += 1;
+            } else if shape.blend_mode().0 != skia::BlendMode::SrcOver {
+                self.zoom_perf_layered_blend_n += 1;
+            } else if needs_nested_fills {
+                self.zoom_perf_layered_nested_n += 1;
+            } else {
+                self.zoom_perf_layered_other_n += 1;
+            }
         }
 
         // Only save canvas state if we have clipping or transforms
@@ -1900,7 +2090,13 @@ impl RenderState {
                 }
 
                 let shape = &shape;
+                let zoom_perf = self.zoom_perf_active;
 
+                let t_fills = if zoom_perf {
+                    performance::get_time()
+                } else {
+                    0
+                };
                 if shape.fills.is_empty()
                     && !matches!(shape.shape_type, Type::Group(_))
                     && !matches!(shape.shape_type, Type::Frame(_))
@@ -1930,6 +2126,9 @@ impl RenderState {
                         outset,
                     )?;
                 }
+                if zoom_perf {
+                    self.zoom_perf_fills_ms += performance::get_time() - t_fills;
+                }
 
                 // Skip stroke rendering for clipped frames - they are drawn in render_shape_exit
                 // over the children. Drawing twice would cause incorrect opacity blending.
@@ -1937,6 +2136,11 @@ impl RenderState {
                 if !skip_strokes {
                     // Pass strokes in natural order; stroke merging handles top-most ordering internally.
                     let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+                    let t_strokes = if zoom_perf {
+                        performance::get_time()
+                    } else {
+                        0
+                    };
                     strokes::render(
                         self,
                         shape,
@@ -1945,6 +2149,9 @@ impl RenderState {
                         antialias,
                         outset,
                     )?;
+                    if zoom_perf {
+                        self.zoom_perf_strokes_ms += performance::get_time() - t_strokes;
+                    }
                     if !skip_effects {
                         for stroke in &visible_strokes {
                             shadows::render_stroke_inner_shadows(
@@ -2293,12 +2500,23 @@ impl RenderState {
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
+        let zoom_perf = self.zoom_perf_active;
+        if zoom_perf {
+            self.zoom_perf_log("start_render_loop begin");
+        }
+
         // Compute and set document-space bounds (1 unit == 1 doc px @ 100% zoom)
         // to clamp atlas updates. This prevents zoom-out tiles from forcing atlas
         // growth far beyond real content.
         let t_bounds = performance::get_time();
         let doc_bounds = self.compute_document_bounds(base_object, tree);
         self.surfaces.atlas.set_doc_bounds(doc_bounds);
+        if zoom_perf {
+            self.zoom_perf_log(&format!(
+                "compute_document_bounds {}ms",
+                performance::get_time() - t_bounds
+            ));
+        }
 
         self.cache_cleared_this_render = false;
         let preserve_target = self.preserve_target_during_render;
@@ -2307,6 +2525,12 @@ impl RenderState {
         if preserve_target && self.options.is_fast_mode() {
             let t_idx = performance::get_time();
             self.rebuild_tile_index(tree);
+            if zoom_perf {
+                self.zoom_perf_log(&format!(
+                    "start_render_loop.rebuild_tile_index {}ms",
+                    performance::get_time() - t_idx
+                ));
+            }
         }
 
         if self.options.is_interactive_transform() {
@@ -2365,6 +2589,16 @@ impl RenderState {
         let only_visible = self.options.is_interactive_transform();
         self.pending_tiles
             .update(&self.tile_viewbox, &self.surfaces, only_visible);
+        if zoom_perf {
+            self.zoom_perf_log(&format!(
+                "pending_tiles.update {}ms pending={} visible_uncached={} deferred_interest~={}",
+                performance::get_time() - t_pending,
+                self.pending_tiles.list.len(),
+                self.pending_tiles.visible_uncached.len(),
+                self.pending_tiles.interest_uncached.len()
+                    + self.pending_tiles.interest_cached.len()
+            ));
+        }
         performance::end_measure!("tile_cache");
 
         performance::end_timed_log!("tile_cache_update", _tile_start);
@@ -2382,6 +2616,13 @@ impl RenderState {
                 !preserve_target || self.zoom_changed() || self.options.is_interactive_transform();
             let t_cont = performance::get_time();
             frame_type = self.continue_render_loop(base_object, tree, timestamp, allow_stop)?;
+            if zoom_perf {
+                self.zoom_perf_log(&format!(
+                    "start_render_loop.first_continue {}ms -> {:?}",
+                    performance::get_time() - t_cont,
+                    frame_type as u8
+                ));
+            }
 
             // This is an option to debug frames.
             if self.options.capture_frames > 0 {
@@ -2445,6 +2686,9 @@ impl RenderState {
     ) -> Result<FrameType> {
         performance::begin_measure!("continue_render_loop");
         let timestamp = self.render_budget_start(timestamp);
+        if self.zoom_perf_active {
+            self.zoom_perf_frame += 1;
+        }
         let t0 = performance::get_time();
         let pending_before = self.pending_tiles.list.len();
 
@@ -2452,6 +2696,16 @@ impl RenderState {
             self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
         let t_tree = performance::get_time();
+        if self.zoom_perf_active {
+            self.zoom_perf_log(&format!(
+                "frame#{} render_shape_tree {}ms pending {}->{} type={}",
+                self.zoom_perf_frame,
+                t_tree - t0,
+                pending_before,
+                self.pending_tiles.list.len(),
+                frame_type as u8
+            ));
+        }
 
         // `draw_atlas` needs a snapshot of the tile atlas. Partial frames are not
         // presented (only flushed), so defer composition until the viewport is
@@ -2468,6 +2722,13 @@ impl RenderState {
                 &self.tile_viewbox,
                 self.background_color,
             );
+            if self.zoom_perf_active {
+                self.zoom_perf_log(&format!(
+                    "frame#{} draw_tile_atlas_to_backbuffer {}ms",
+                    self.zoom_perf_frame,
+                    performance::get_time() - t_c
+                ));
+            }
         }
 
         match frame_type {
@@ -2480,6 +2741,13 @@ impl RenderState {
                 // Composition stays deferred until ViewportReady/Full.
                 let t_f = performance::get_time();
                 crate::get_gpu_state().context.flush_and_submit();
+                if self.zoom_perf_active {
+                    self.zoom_perf_log(&format!(
+                        "frame#{} Partial.flush_and_submit {}ms",
+                        self.zoom_perf_frame,
+                        performance::get_time() - t_f
+                    ));
+                }
             }
             FrameType::ViewportReady => {
                 // Visible tiles are done: present now so the user sees the
@@ -2488,11 +2756,26 @@ impl RenderState {
                 if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
                     let t_crop = performance::get_time();
                     self.rebuild_backbuffer_crop_cache(tree);
+                    if self.zoom_perf_active {
+                        self.zoom_perf_log(&format!(
+                            "frame#{} rebuild_backbuffer_crop_cache {}ms",
+                            self.zoom_perf_frame,
+                            performance::get_time() - t_crop
+                        ));
+                    }
                 }
                 self.present_frame(tree);
                 self.viewport_presented = true;
                 wapi::notify_tiles_render_complete!();
                 crate::get_gpu_state().context.flush_and_submit();
+                if self.zoom_perf_active {
+                    self.zoom_perf_log(&format!(
+                        "frame#{} ViewportReady.present+flush {}ms",
+                        self.zoom_perf_frame,
+                        performance::get_time() - t_p
+                    ));
+                    self.zoom_perf_end("ViewportReady (visible tiles done)");
+                }
             }
             FrameType::Full => {
                 if !self.viewport_presented {
@@ -2504,9 +2787,20 @@ impl RenderState {
                     }
                     self.present_frame(tree);
                     wapi::notify_tiles_render_complete!();
+                    if self.zoom_perf_active {
+                        self.zoom_perf_log(&format!(
+                            "frame#{} Full.present {}ms",
+                            self.zoom_perf_frame,
+                            performance::get_time() - t_p
+                        ));
+                        self.zoom_perf_end("Full");
+                    }
                 }
                 // If we already presented at ViewportReady, interest fill is
                 // done; Target already shows the viewport.
+                if self.zoom_perf_active {
+                    self.zoom_perf_end("Full (after ViewportReady interest fill)");
+                }
                 performance::end_measure!("render");
             }
         }
@@ -3612,6 +3906,11 @@ impl RenderState {
                     && element.drop_shadows_visible().next().is_some();
 
                 if shadow_before_layer {
+                    let t_shadow = if self.zoom_perf_active {
+                        performance::get_time()
+                    } else {
+                        0
+                    };
                     if self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
@@ -3621,6 +3920,10 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )? {
+                        if self.zoom_perf_active {
+                            self.zoom_perf_shadow_ms += performance::get_time() - t_shadow;
+                            self.zoom_perf_shadow_nodes += 1;
+                        }
                         self.drop_shadows_ops_warmed = true;
                     }
                 }
@@ -3628,10 +3931,26 @@ impl RenderState {
                 // Render background blur BEFORE save_layer so it modifies
                 // the backdrop independently of the shape's opacity.
                 if !node_render_state.is_root() && self.focus_mode.is_active() {
+                    let t_blur = if self.zoom_perf_active {
+                        performance::get_time()
+                    } else {
+                        0
+                    };
                     self.render_background_blur(element, target_surface);
+                    if self.zoom_perf_active {
+                        self.zoom_perf_blur_ms += performance::get_time() - t_blur;
+                    }
                 }
 
+                let t_enter = if self.zoom_perf_active {
+                    performance::get_time()
+                } else {
+                    0
+                };
                 self.render_shape_enter(element, mask, clip_bounds.as_ref(), target_surface);
+                if self.zoom_perf_active {
+                    self.zoom_perf_enter_ms += performance::get_time() - t_enter;
+                }
             }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
@@ -3646,6 +3965,11 @@ impl RenderState {
                     && !shadows_already_rendered
                     && !matches!(element.shape_type, Type::Text(_))
                 {
+                    let t_shadow = if self.zoom_perf_active {
+                        performance::get_time()
+                    } else {
+                        0
+                    };
                     if self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
@@ -3655,6 +3979,10 @@ impl RenderState {
                         &node_render_state,
                         target_surface,
                     )? {
+                        if self.zoom_perf_active {
+                            self.zoom_perf_shadow_ms += performance::get_time() - t_shadow;
+                            self.zoom_perf_shadow_nodes += 1;
+                        }
                         // Real shadow composite already clears DropShadows.
                         self.drop_shadows_ops_warmed = true;
                     }
@@ -3665,8 +3993,16 @@ impl RenderState {
                     // composited real shadows yet. Omitting this entirely made
                     // flush_and_submit very slow (ops-task ordering); repeating
                     // it per shape was wasted GPU work.
+                    let t_warm = if self.zoom_perf_active {
+                        performance::get_time()
+                    } else {
+                        0
+                    };
                     self.surfaces
                         .draw_into(SurfaceId::DropShadows, target_surface, None);
+                    if self.zoom_perf_active {
+                        self.zoom_perf_shadow_warmup_ms += performance::get_time() - t_warm;
+                    }
                     self.drop_shadows_ops_warmed = true;
                 }
 
@@ -3687,6 +4023,11 @@ impl RenderState {
                 };
 
                 let is_text = matches!(element_for_inline.shape_type, Type::Text(_));
+                let t_shape = if self.zoom_perf_active {
+                    performance::get_time()
+                } else {
+                    0
+                };
                 self.render_shape(
                     &element_for_inline,
                     clip_bounds.clone(),
@@ -3700,6 +4041,15 @@ impl RenderState {
                     None,
                     target_surface,
                 )?;
+                if self.zoom_perf_active {
+                    let dt = performance::get_time() - t_shape;
+                    self.zoom_perf_shape_ms += dt;
+                    self.zoom_perf_nodes += 1;
+                    if is_text {
+                        self.zoom_perf_text_ms += dt;
+                        self.zoom_perf_text_nodes += 1;
+                    }
+                }
             } else if visited_children {
                 self.draw_shape_surface_stack_into(Some(element), target_surface);
             }
@@ -3891,6 +4241,25 @@ impl RenderState {
             return Ok(false);
         }
 
+        if self.zoom_perf_active {
+            self.zoom_perf_log(&format!(
+                "region={} START tiles={} shapes={} roots={} bg_blur={} skip_shadows={} zoom={:.3} scale={:.3} area=({:.1},{:.1},{:.1}x{:.1}) {}",
+                label,
+                region_tiles.len(),
+                shape_ids.len(),
+                valid_ids.len(),
+                region_has_bg_blur,
+                self.should_skip_drop_shadows(),
+                self.viewbox.zoom,
+                self.get_scale(),
+                area.left,
+                area.top,
+                area.width(),
+                area.height(),
+                self.surfaces.paint_diag_summary()
+            ));
+        }
+
         self.pending_nodes
             .extend(valid_ids.into_iter().map(|id| NodeRenderState {
                 id,
@@ -3964,9 +4333,23 @@ impl RenderState {
                 // a previous pass; otherwise pass-1 pixels can leak into pass 2.
                 if self.viewer_masked_pass() || !self.surfaces.has_cached_tile_surface(current_tile)
                 {
+                    let zoom_perf = self.zoom_perf_active;
+                    let t_tile = performance::get_time();
+                    let shapes_n = self
+                        .tiles
+                        .get_shapes_at(current_tile)
+                        .map(|ids| ids.len())
+                        .unwrap_or(0);
+                    let nodes_before = self.pending_nodes.len();
+                    let shadows_before = self.drop_shadows_ops_warmed;
+                    if zoom_perf {
+                        self.zoom_perf_reset_walker();
+                    }
+
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self
                         .render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
+                    let walker_ms = performance::get_time() - t_tile;
 
                     #[cfg(target_arch = "wasm32")]
                     if self.options.capture_frames > 0 {
@@ -3974,14 +4357,62 @@ impl RenderState {
                     }
 
                     if early_return {
+                        if zoom_perf {
+                            let breakdown = self.zoom_perf_walker_summary();
+                            if let Some(ref region) = self.paint_region {
+                                self.zoom_perf_log(&format!(
+                                    "region={} YIELD walker={}ms tiles={} nodes {}->{} shadows_warmed={}->{} | {}",
+                                    region.label,
+                                    walker_ms,
+                                    region.tiles.len(),
+                                    nodes_before,
+                                    self.pending_nodes.len(),
+                                    shadows_before,
+                                    self.drop_shadows_ops_warmed,
+                                    breakdown
+                                ));
+                            } else {
+                                self.zoom_perf_log(&format!(
+                                    "tile=({},{}) YIELD walker={}ms shapes={} nodes {}->{} shadows_warmed={}->{} | {}",
+                                    current_tile.0,
+                                    current_tile.1,
+                                    walker_ms,
+                                    shapes_n,
+                                    nodes_before,
+                                    self.pending_nodes.len(),
+                                    shadows_before,
+                                    self.drop_shadows_ops_warmed,
+                                    breakdown
+                                ));
+                            }
+                        }
                         self.viewer_render_root = None;
                         return Ok(FrameType::Partial);
                     }
                     performance::end_measure!("render_shape_tree::uncached");
 
+                    let mut apply_ms = 0;
                     if let Some(region) = self.paint_region.take() {
                         if !is_empty || self.current_tile_had_shapes {
+                            let t_apply = performance::get_time();
                             self.apply_paint_region_to_atlas(&region)?;
+                            apply_ms = performance::get_time() - t_apply;
+                        }
+                        if zoom_perf {
+                            let breakdown = self.zoom_perf_walker_summary();
+                            self.zoom_perf_log(&format!(
+                                "region={} DONE walker={}ms crop={}ms total={}ms tiles={} nodes {}->{} shadows_warmed={}->{} | {}",
+                                region.label,
+                                walker_ms,
+                                apply_ms,
+                                performance::get_time() - t_tile,
+                                region.tiles.len(),
+                                nodes_before,
+                                self.pending_nodes.len(),
+                                shadows_before,
+                                self.drop_shadows_ops_warmed,
+                                breakdown
+                            ));
                         }
                     } else {
                         let tile_rect = self.get_current_tile_bounds()?;
@@ -3990,6 +4421,7 @@ impl RenderState {
                         // (`current_tile_had_shapes` was set when we populated pending_nodes
                         // for this tile).
                         if !is_empty || self.current_tile_had_shapes {
+                            let t_apply = performance::get_time();
                             if self.options.is_interactive_transform() {
                                 // During drag, avoid snapshot-based caching. Draw Current directly
                                 // into Target (and Cache) to reduce stalls.
@@ -4001,6 +4433,7 @@ impl RenderState {
                             } else {
                                 self.apply_render_to_final_canvas()?;
                             }
+                            apply_ms = performance::get_time() - t_apply;
 
                             if self.options.is_debug_visible() {
                                 debug::render_workspace_current_tile(
@@ -4010,6 +4443,23 @@ impl RenderState {
                                     tile_rect,
                                 );
                             }
+                        }
+                        if zoom_perf {
+                            let breakdown = self.zoom_perf_walker_summary();
+                            self.zoom_perf_log(&format!(
+                                "tile=({},{}) DONE walker={}ms apply={}ms total={}ms shapes={} nodes {}->{} shadows_warmed={}->{} | {}",
+                                current_tile.0,
+                                current_tile.1,
+                                walker_ms,
+                                apply_ms,
+                                performance::get_time() - t_tile,
+                                shapes_n,
+                                nodes_before,
+                                self.pending_nodes.len(),
+                                shadows_before,
+                                self.drop_shadows_ops_warmed,
+                                breakdown
+                            ));
                         }
                     }
                 } else if self.tiles.is_empty_at(current_tile) {
@@ -4040,7 +4490,9 @@ impl RenderState {
 
                 let viewer_masked_pass = self.viewer_masked_pass();
 
-                let valid_ids = {
+                // Scope the `tiles` borrow from `get_shapes_at` so it ends
+                // before `zoom_perf_log` (needs `&self`).
+                let (shapes_n, valid_ids, tile_has_bg_blur) = {
                     let Some(ids) = self.tiles.get_shapes_at(next_tile) else {
                         // If the tile is empty we do not need to render it.
                         continue;
@@ -4069,7 +4521,8 @@ impl RenderState {
                     // tiles (we clear the tile rect before drawing Current), so we must render
                     // all root shapes that can contribute to this tile; otherwise, unchanged
                     // siblings inside the same tile would disappear.
-                    let mut valid_ids = Vec::with_capacity(ids.len());
+                    let shapes_n = ids.len();
+                    let mut valid_ids = Vec::with_capacity(shapes_n);
                     if self.options.is_interactive_transform() || tile_has_bg_blur {
                         valid_ids.extend(root_ids.iter().copied());
                     } else {
@@ -4079,8 +4532,19 @@ impl RenderState {
                             }
                         }
                     }
-                    valid_ids
+                    (shapes_n, valid_ids, tile_has_bg_blur)
                 };
+
+                if self.zoom_perf_active {
+                    self.zoom_perf_log(&format!(
+                        "tile=({},{}) START shapes={} roots={} bg_blur={}",
+                        next_tile.0,
+                        next_tile.1,
+                        shapes_n,
+                        valid_ids.len(),
+                        tile_has_bg_blur
+                    ));
+                }
 
                 if !valid_ids.is_empty() {
                     self.current_tile_had_shapes = true;
@@ -4325,6 +4789,14 @@ impl RenderState {
                     }
                 }
             }
+        }
+        if self.zoom_perf_active {
+            self.zoom_perf_log(&format!(
+                "rebuild_tile_index inner {}ms top_level_shapes={} zoom_changed={}",
+                performance::get_time() - t0,
+                shapes_visited,
+                zoom_changed
+            ));
         }
         performance::end_measure!("rebuild_tile_index");
     }

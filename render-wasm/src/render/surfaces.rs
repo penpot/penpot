@@ -471,6 +471,10 @@ pub struct Surfaces {
     dirty_surfaces: u32,
     extra_tile_dims: skia::ISize,
     dpr: f32,
+    /// When true, accumulate draw_into wall time (ZOOM-PERF diagnosis).
+    paint_diag: bool,
+    draw_into_ms: i32,
+    draw_into_n: u32,
 }
 
 #[allow(dead_code)]
@@ -550,6 +554,9 @@ impl Surfaces {
             dirty_surfaces: 0,
             extra_tile_dims,
             dpr: 1.0,
+            paint_diag: false,
+            draw_into_ms: 0,
+            draw_into_n: 0,
         })
     }
 
@@ -849,6 +856,11 @@ impl Surfaces {
 
     pub fn draw_into(&mut self, from: SurfaceId, to: SurfaceId, paint: Option<&skia::Paint>) {
         let sampling_options = self.sampling_options;
+        let t0 = if self.paint_diag {
+            performance::get_time()
+        } else {
+            0
+        };
 
         self.get_mut(from).clone().draw(
             self.canvas_and_mark_dirty(to),
@@ -856,6 +868,34 @@ impl Surfaces {
             sampling_options,
             paint,
         );
+
+        if self.paint_diag {
+            self.draw_into_ms += performance::get_time() - t0;
+            self.draw_into_n += 1;
+        }
+    }
+
+    pub fn set_paint_diag(&mut self, enabled: bool) {
+        self.paint_diag = enabled;
+        if enabled {
+            self.draw_into_ms = 0;
+            self.draw_into_n = 0;
+        }
+    }
+
+    pub fn reset_paint_diag_counters(&mut self) {
+        self.draw_into_ms = 0;
+        self.draw_into_n = 0;
+    }
+
+    pub fn paint_diag_summary(&self) -> String {
+        format!(
+            "current={}x{} draw_into={}ms n={}",
+            self.current.width(),
+            self.current.height(),
+            self.draw_into_ms,
+            self.draw_into_n
+        )
     }
 
     pub fn cache_dimensions(&self) -> skia::ISize {
