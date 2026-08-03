@@ -1258,6 +1258,57 @@ impl RenderState {
         )
     }
 
+    /// Apply frame clip stack in document space on the given surface bitmask.
+    /// Caller must already have those surfaces in doc transform (Fills-style
+    /// scale + tile translation, or Current after the same). Hard (non-AA)
+    /// clips avoid alpha seams on semi-transparent overflow.
+    fn apply_clip_stack_to_surfaces(
+        &mut self,
+        clips: &ClipStack,
+        surface_ids: u32,
+        scale: f32,
+        debug_fill_surface: Option<SurfaceId>,
+    ) {
+        for (mut bounds, corners, transform) in clips.iter() {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().concat(transform);
+            });
+
+            // Outset clip by ~0.5 to include edge pixels that
+            // aliased clip misclassifies as outside (causing artifacts).
+            let outset = 0.5 / scale;
+            bounds.outset((outset, outset));
+
+            if let Some(corners) = corners {
+                let rrect = RRect::new_rect_radii(bounds, corners);
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
+                });
+            } else {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, false);
+                });
+            }
+
+            if self.options.is_debug_visible() {
+                if let Some(fills_surface_id) = debug_fill_surface {
+                    let mut paint = skia::Paint::default();
+                    paint.set_style(skia::PaintStyle::Stroke);
+                    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                    paint.set_stroke_width(4.);
+                    self.surfaces
+                        .canvas(fills_surface_id)
+                        .draw_rect(bounds, &paint);
+                }
+            }
+
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas()
+                    .concat(&transform.invert().unwrap_or(Matrix::default()));
+            });
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
@@ -1281,16 +1332,6 @@ impl RenderState {
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
 
-        // Only save canvas state if we have clipping or transforms
-        // For simple shapes without clipping, skip expensive save/restore
-        let needs_save =
-            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
-
-        if needs_save {
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas().save();
-            });
-        }
         let fast_mode = self.options.is_fast_mode();
         // Skip anti-aliasing entirely during fast_mode (interactive
         // gestures + pan/zoom). AA edge sampling is per-pixel and adds
@@ -1307,19 +1348,39 @@ impl RenderState {
             && self.nested_blurs.iter().flatten().any(|blur| {
                 !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
             });
+
+        // Empty non-masked groups paint nothing here (children are separate walker
+        // nodes). Skip the layered Fills/Strokes path entirely.
+        if matches!(shape.shape_type, Type::Group(g) if !g.masked)
+            && shape.fills.is_empty()
+            && !shape.has_visible_strokes()
+            && shape.shadows.is_empty()
+            && shape.blur.is_none()
+            && shape.background_blur.is_none()
+            && !has_inherited_blur
+            && parent_shadows.is_none()
+        {
+            return Ok(());
+        }
+
+        // Clip is allowed: we apply the same stack on Current after scale+translate.
+        // Opacity < 1 with SrcOver is OK: render_shape_enter already opened a
+        // save_layer on Current; painting fills/strokes into that layer matches
+        // the layered path without Fills/Strokes blits.
+        // Non-SrcOver blend, frame clip blur, and masked groups stay layered.
         let can_render_directly = apply_to_current_surface
-            && clip_bounds.is_none()
             && offset.is_none()
             && parent_shadows.is_none()
-            && !shape.needs_layer()
+            && shape.blend_mode().0 == skia::BlendMode::SrcOver
+            && !shape.has_frame_clip_layer_blur()
+            && !matches!(shape.shape_type, Type::Group(g) if g.masked)
             && shape.blur.is_none()
             && shape.background_blur.is_none()
             && !has_inherited_blur
             && shape.shadows.is_empty()
-            && shape.transform.is_identity()
             && matches!(
                 shape.shape_type,
-                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
+                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
             )
             && !(shape.fills.is_empty() && has_nested_fills)
             && !shape
@@ -1341,17 +1402,36 @@ impl RenderState {
                 canvas.translate(translation);
             });
 
+            if let Some(clips) = clip_bounds.as_ref() {
+                self.apply_clip_stack_to_surfaces(clips, target_surface as u32, scale, None);
+            }
+
+            if !shape.transform.is_identity() {
+                let center = shape.center();
+                let mut matrix = shape.transform;
+                matrix.post_translate(center);
+                matrix.pre_translate(-center);
+                self.surfaces.apply_mut(target_surface as u32, |s| {
+                    s.canvas().concat(&matrix);
+                });
+            }
+
             fills::render(self, shape, &shape.fills, antialias, target_surface, None)?;
-            // Pass strokes in natural order; stroke merging handles top-most ordering internally.
-            let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
-            strokes::render(
-                self,
-                shape,
-                &visible_strokes,
-                Some(target_surface),
-                antialias,
-                outset,
-            )?;
+
+            // Clipped frames draw strokes in render_shape_exit over children.
+            let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
+            if !skip_strokes {
+                // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+                let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+                strokes::render(
+                    self,
+                    shape,
+                    &visible_strokes,
+                    Some(target_surface),
+                    antialias,
+                    outset,
+                )?;
+            }
 
             self.surfaces.apply_mut(target_surface as u32, |s| {
                 s.canvas().restore();
@@ -1362,62 +1442,29 @@ impl RenderState {
                 debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
             }
 
-            if needs_save {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().restore();
-                });
-            }
             return Ok(());
+        }
+
+        // Only save canvas state if we have clipping or transforms
+        // For simple shapes without clipping, skip expensive save/restore
+        let needs_save =
+            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
+
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().save();
+            });
         }
 
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
             let scale = self.get_scale();
-            for (mut bounds, corners, transform) in clips.iter() {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().concat(transform);
-                });
-
-                // Outset clip by ~0.5 to include edge pixels that
-                // aliased clip misclassifies as outside (causing artifacts).
-                let outset = 0.5 / scale;
-                bounds.outset((outset, outset));
-
-                // Hard clip edge (antialias = false) to avoid alpha seam when clipping
-                // semi-transparent content larger than the frame.
-                if let Some(corners) = corners {
-                    let rrect = RRect::new_rect_radii(bounds, corners);
-                    self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
-                    });
-                } else {
-                    self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, false);
-                    });
-                }
-
-                // This renders a red line around clipped
-                // shapes (frames).
-                if self.options.is_debug_visible() {
-                    let mut paint = skia::Paint::default();
-                    paint.set_style(skia::PaintStyle::Stroke);
-                    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-                    paint.set_stroke_width(4.);
-                    self.surfaces
-                        .canvas(fills_surface_id)
-                        .draw_rect(bounds, &paint);
-                }
-
-                // Uncomment to debug the render_position_data
-                // if let Type::Text(text_content) = &shape.shape_type {
-                //     text::render_position_data(self, fills_surface_id, &shape, text_content);
-                // }
-
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .concat(&transform.invert().unwrap_or(Matrix::default()));
-                });
-            }
+            self.apply_clip_stack_to_surfaces(
+                clips,
+                surface_ids,
+                scale,
+                Some(fills_surface_id),
+            );
         }
 
         // We don't want to change the value in the global state
@@ -3156,7 +3203,14 @@ impl RenderState {
         scale: f32,
         node_render_state: &NodeRenderState,
         target_surface: SurfaceId,
-    ) -> Result<()> {
+    ) -> Result<bool> {
+        // Avoid a blank DropShadows→Current blit + clear on every shape without
+        // shadows. Callers must still touch DropShadows once per tile when this
+        // returns false (see `drop_shadows_ops_warmed`).
+        if element.drop_shadows_visible().next().is_none() {
+            return Ok(false);
+        }
+
         let element_extrect = extrect.get_or_insert_with(|| element.extrect(tree, scale));
         let inherited_layer_blur = match element.shape_type {
             Type::Frame(_) | Type::Group(_) => element.blur,
@@ -3271,7 +3325,7 @@ impl RenderState {
         self.surfaces
             .canvas(SurfaceId::DropShadows)
             .clear(skia::Color::TRANSPARENT);
-        Ok(())
+        Ok(true)
     }
 
     pub fn render_shape_tree_partial_uncached(
@@ -3512,7 +3566,7 @@ impl RenderState {
                     && element.drop_shadows_visible().next().is_some();
 
                 if shadow_before_layer {
-                    self.render_element_drop_shadows_and_composite(
+                    if self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
                         &mut extrect,
@@ -3520,8 +3574,9 @@ impl RenderState {
                         scale,
                         &node_render_state,
                         target_surface,
-                    )?;
-                    self.drop_shadows_ops_warmed = true;
+                    )? {
+                        self.drop_shadows_ops_warmed = true;
+                    }
                 }
 
                 // Render background blur BEFORE save_layer so it modifies
@@ -3545,7 +3600,7 @@ impl RenderState {
                     && !shadows_already_rendered
                     && !matches!(element.shape_type, Type::Text(_))
                 {
-                    self.render_element_drop_shadows_and_composite(
+                    if self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
                         &mut extrect,
@@ -3553,15 +3608,25 @@ impl RenderState {
                         scale,
                         &node_render_state,
                         target_surface,
-                    )?;
-                    // Real shadow composite already clears DropShadows.
-                    self.drop_shadows_ops_warmed = true;
-                } else if !self.drop_shadows_ops_warmed {
-                    // Touch DropShadows→Current once per tile when shadows are
-                    // skipped. Omitting this entirely made flush_and_submit very
-                    // slow (ops-task ordering); repeating it per shape was waste.
+                    )? {
+                        // Real shadow composite already clears DropShadows.
+                        self.drop_shadows_ops_warmed = true;
+                    }
+                }
+
+                if !self.drop_shadows_ops_warmed {
+                    // Touch DropShadows→Current once per tile when no shape has
+                    // composited real shadows yet. Omitting this entirely made
+                    // flush_and_submit very slow (ops-task ordering); repeating
+                    // it per shape was waste.
+                    self.surfaces.draw_into(
+                        SurfaceId::DropShadows,
+                        target_surface,
+                        Some(&skia::Paint::default()),
+                    );
                     self.surfaces
-                        .draw_into(SurfaceId::DropShadows, target_surface, None);
+                        .canvas(SurfaceId::DropShadows)
+                        .clear(skia::Color::TRANSPARENT);
                     self.drop_shadows_ops_warmed = true;
                 }
 
