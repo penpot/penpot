@@ -121,74 +121,79 @@
 (defn layout-content-points
   [bounds parent children objects]
 
-  (let [parent-id     (dm/get-prop parent :id)
-        parent-bounds @(get bounds parent-id)
-        reverse?      (ctl/reverse? parent)
-        children      (cond->> children (not reverse?) reverse)]
+  (let [parent-id       (dm/get-prop parent :id)
+        parent-bounds   (get bounds parent-id)]
+    (when-let [parent-bounds (some-> parent-bounds deref)]
+      (let [reverse? (ctl/reverse? parent)
+            children (cond->> children (not reverse?) reverse)]
 
-    (loop [children  (seq children)
-           result    (transient [])
-           correct-v (gpt/point 0)]
+        (loop [children  (seq children)
+               result    (transient [])
+               correct-v (gpt/point 0)]
 
-      (if (not children)
-        (persistent! result)
+          (if (not children)
+            (persistent! result)
 
-        (let [child (first children)
-              child-id (dm/get-prop child :id)
-              child-bounds @(get bounds child-id)
-              [margin-top margin-right margin-bottom margin-left] (ctl/child-margins child)
+            (let [child (first children)
+                  child-id (dm/get-prop child :id)
+                  child-bounds-ref (get bounds child-id)
+                  child-bounds (some-> child-bounds-ref deref)
+                  [margin-top margin-right margin-bottom margin-left] (ctl/child-margins child)
 
-              [child-bounds correct-v]
-              (if (or (ctl/fill-width? child) (ctl/fill-height? child))
-                (child-layout-bound-points parent child parent-bounds child-bounds correct-v bounds objects)
-                [(->> child-bounds (map #(gpt/add % correct-v))) correct-v])
+                  [child-bounds correct-v]
+                  (if (and child-bounds
+                           (or (ctl/fill-width? child) (ctl/fill-height? child)))
+                    (child-layout-bound-points parent child parent-bounds child-bounds correct-v bounds objects)
+                    [(when child-bounds
+                       (->> child-bounds (map #(gpt/add % correct-v))))
+                     correct-v])
 
-              child-bounds
-              (when (d/not-empty? child-bounds)
-                (-> (gpo/parent-coords-bounds child-bounds parent-bounds)
-                    (gpo/pad-points (- margin-top) (- margin-right) (- margin-bottom) (- margin-left))))]
+                  child-bounds
+                  (when (d/not-empty? child-bounds)
+                    (-> (gpo/parent-coords-bounds child-bounds parent-bounds)
+                        (gpo/pad-points (- margin-top) (- margin-right) (- margin-bottom) (- margin-left))))]
 
-          (recur (next children)
-                 (cond-> result (some? child-bounds) (conj! child-bounds))
-                 correct-v))))))
+              (recur (next children)
+                     (cond-> result (some? child-bounds) (conj! child-bounds))
+                     correct-v))))))))
 
 (defn layout-content-bounds
   [bounds {:keys [layout-padding] :as parent} children objects]
 
-  (let [parent-id (:id parent)
-        parent-bounds @(get bounds parent-id)
+  (let [parent-id       (:id parent)
+        parent-bounds   (get bounds parent-id)]
+    (when-let [parent-bounds (some-> parent-bounds deref)]
+      (let [row?            (ctl/row? parent)
+            col?            (ctl/col? parent)
+            space-around?   (ctl/space-around? parent)
+            space-evenly?   (ctl/space-evenly? parent)
+            content-evenly? (ctl/content-evenly? parent)
+            [layout-gap-row layout-gap-col] (ctl/gaps parent)
 
-        row?            (ctl/row? parent)
-        col?            (ctl/col? parent)
-        space-around?   (ctl/space-around? parent)
-        space-evenly?   (ctl/space-evenly? parent)
-        content-evenly? (ctl/content-evenly? parent)
-        [layout-gap-row layout-gap-col] (ctl/gaps parent)
+            row-pad (if (or (and col? space-evenly?)
+                            (and col? space-around?)
+                            (and row? content-evenly?))
+                      layout-gap-row
+                      0)
 
-        row-pad (if (or (and col? space-evenly?)
-                        (and col? space-around?)
-                        (and row? content-evenly?))
-                  layout-gap-row
-                  0)
+            col-pad (if (or (and row? space-evenly?)
+                            (and row? space-around?)
+                            (and col? content-evenly?))
+                      layout-gap-col
+                      0)
 
-        col-pad (if (or (and row? space-evenly?)
-                        (and row? space-around?)
-                        (and col? content-evenly?))
-                  layout-gap-col
-                  0)
+            {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
+            pad-top    (+ (or pad-top 0) row-pad)
+            pad-right  (+ (or pad-right 0) col-pad)
+            pad-bottom (+ (or pad-bottom 0) row-pad)
+            pad-left   (+ (or pad-left 0) col-pad)
 
-        {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
-        pad-top    (+ (or pad-top 0) row-pad)
-        pad-right  (+ (or pad-right 0) col-pad)
-        pad-bottom (+ (or pad-bottom 0) row-pad)
-        pad-left   (+ (or pad-left 0) col-pad)
+            layout-points
+            (layout-content-points bounds parent children objects)]
 
-        layout-points
-        (layout-content-points bounds parent children objects)]
-
-    (if (d/not-empty? layout-points)
-      (-> layout-points
-          (gpo/merge-parent-coords-bounds parent-bounds)
-          (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))
-      ;; Cannot create some bounds from the children so we return the parent's
-      parent-bounds)))
+        (if (d/not-empty? layout-points)
+          (-> layout-points
+              (gpo/merge-parent-coords-bounds parent-bounds)
+              (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))
+          ;; Cannot create some bounds from the children so we return the parent's
+          parent-bounds)))))

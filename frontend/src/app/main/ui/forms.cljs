@@ -121,28 +121,29 @@
         on-paste
         (mf/use-fn
          (fn [event]
-           (let [paste-data (-> event .-clipboardData (.getData "text"))]
-             (when (and (string? paste-data)
-                        (re-find #"[,\s]" paste-data))
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
+           (when-let [clipboard-data (.-clipboardData event)]
+             (let [paste-data (.getData clipboard-data "text")]
+               (when (and (string? paste-data)
+                          (re-find #"[,\s]" paste-data))
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
 
-               ;; Mark as touched
-               (swap! form assoc-in [:touched name] true)
+                 ;; Mark as touched
+                 (swap! form assoc-in [:touched name] true)
 
-               ;; Split pasted text by commas and/or whitespace, add each valid part
-               (let [parts (->> (str/split paste-data #",|\s+")
-                                (map str/trim)
-                                (remove str/empty?))]
-                 (doseq [part parts]
-                   (when (valid-item-fn part)
-                     (swap! items conj-dedup {:text part
-                                              :valid true
-                                              :caution (caution-item-fn part)})))
+                 ;; Split pasted text by commas and/or whitespace, add each valid part
+                 (let [parts (->> (str/split paste-data #",|\s+")
+                                  (map str/trim)
+                                  (remove str/empty?))]
+                   (doseq [part parts]
+                     (when (valid-item-fn part)
+                       (swap! items conj-dedup {:text part
+                                                :valid true
+                                                :caution (caution-item-fn part)})))
 
-                 ;; Reset input value and mark as untouched after successful paste
-                 (reset! value "")
-                 (swap! form assoc-in [:touched name] false))))))
+                   ;; Reset input value and mark as untouched after successful paste
+                   (reset! value "")
+                   (swap! form assoc-in [:touched name] false)))))))
 
         on-blur
         (mf/use-fn

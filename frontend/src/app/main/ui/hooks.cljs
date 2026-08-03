@@ -281,6 +281,16 @@
       (mf/set-ref-val! ref val))
     (mf/ref-val ref)))
 
+;; FIXME: replace with rumext
+(defn use-focus-timer-ref
+  "Returns a ref for scheduling focus timers and disposes any pending
+   timer on component unmount."
+  []
+  (let [ref (mf/use-ref nil)]
+    (mf/with-effect []
+      #(some-> (mf/ref-val ref) ts/dispose!))
+    ref))
+
 ;; FIXME: rename to use-focus-objects
 (defn with-focus-objects
   ([objects]
