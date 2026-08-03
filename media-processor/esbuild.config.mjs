@@ -7,7 +7,7 @@ await build({
   target: "node24",
   format: "esm",
   outfile: "dist/index.js",
-  external: ["sharp"],
+  external: ["sharp", "pino", "pino-pretty", "pino-loki"],
   banner: {
     js: `
 import { createRequire } from 'node:module';
