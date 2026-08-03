@@ -222,6 +222,12 @@
   (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
 
+(defn text-editor-pointer-down-extend
+  "Extends the selection up to the pointer instead of collapsing the caret."
+  [{:keys [x y]}]
+  (when (wasm/ready?)
+    (h/call wasm/internal-module "_text_editor_pointer_down_extend" x y)))
+
 (defn text-editor-pointer-move
   [{:keys [x y]}]
   (when (wasm/ready?)

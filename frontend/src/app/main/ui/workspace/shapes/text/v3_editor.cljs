@@ -99,6 +99,18 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- input-surface-class
+  "Class list for the contenteditable capture surface.
+
+  Mousetrap's `stopCallback` drops every keystroke whose target is
+  contentEditable, so without the `mousetrap` class (as in V1/V2) the text
+  shortcuts (Ctrl+B, Ctrl+I, …) never reach the dispatcher."
+  [rotation]
+  (dm/str "mousetrap "
+          (cur/get-dynamic "text" rotation)
+          " "
+          (stl/css :text-editor-container)))
+
 (mf/defc text-editor*
   "Contenteditable element positioned over the text shape to capture input events."
   [{:keys [shape]}]
@@ -359,7 +371,9 @@
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
              (mf/set-ref-val! dragging-ref true)
-             (wasm.api/text-editor-pointer-down off-pt)
+             (if (.-shiftKey event)
+               (wasm.api/text-editor-pointer-down-extend off-pt)
+               (wasm.api/text-editor-pointer-down off-pt))
              ;; Repaint the caret over the cached tiles instead of a full render,
              ;; which flashes at high zoom (see `render-text-editor-overlay!`).
              (wasm.api/render-text-editor-overlay!))))
@@ -505,7 +519,5 @@
          :on-focus on-focus
          :on-blur on-blur
          :id "text-editor-wasm-input"
-         :class (dm/str (cur/get-dynamic "text" (:rotation shape))
-                        " "
-                        (stl/css :text-editor-container))
+         :class (input-surface-class (:rotation shape))
          :data-testid "text-editor-container"}]]]]))
