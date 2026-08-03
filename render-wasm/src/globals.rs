@@ -41,6 +41,17 @@ pub(crate) fn get_render_state() -> &'static mut RenderState {
 }
 
 #[inline(always)]
+pub(crate) fn current_browser() -> u8 {
+    unsafe {
+        if DESIGN_STATE.is_null() {
+            0
+        } else {
+            (*DESIGN_STATE).current_browser
+        }
+    }
+}
+
+#[inline(always)]
 pub(crate) fn has_render_state() -> bool {
     unsafe { !RENDER_STATE.is_null() }
 }

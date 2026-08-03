@@ -1060,17 +1060,40 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
-    if !get_text_editor_state().selection.is_selection() {
-        return false;
-    }
-    let sel = &get_text_editor_state().selection;
-    unsafe {
-        *buffer_ptr = sel.anchor.paragraph as u32;
-        *buffer_ptr.add(1) = sel.anchor.offset as u32;
-        *buffer_ptr.add(2) = sel.focus.paragraph as u32;
-        *buffer_ptr.add(3) = sel.focus.offset as u32;
-    }
-    true
+    with_state!(state, {
+        if !get_text_editor_state().selection.is_selection() {
+            return false;
+        }
+
+        let sel = get_text_editor_state().selection;
+
+        // The frontend indexes these offsets into JS strings, which are UTF-16.
+        let (anchor_offset, focus_offset) = match get_text_editor_state()
+            .active_shape_id
+            .and_then(|shape_id| state.shapes.get(&shape_id))
+            .map(|shape| &shape.shape_type)
+        {
+            Some(Type::Text(text_content)) => {
+                let paragraphs = text_content.paragraphs();
+                let to_utf16 = |position: TextPositionWithAffinity| {
+                    paragraphs
+                        .get(position.paragraph)
+                        .map(|para| para.char_offset_to_utf16(position.offset))
+                        .unwrap_or(position.offset)
+                };
+                (to_utf16(sel.anchor), to_utf16(sel.focus))
+            }
+            _ => (sel.anchor.offset, sel.focus.offset),
+        };
+
+        unsafe {
+            *buffer_ptr = sel.anchor.paragraph as u32;
+            *buffer_ptr.add(1) = anchor_offset as u32;
+            *buffer_ptr.add(2) = sel.focus.paragraph as u32;
+            *buffer_ptr.add(3) = focus_offset as u32;
+        }
+        true
+    })
 }
 
 // ============================================================================
@@ -1099,11 +1122,11 @@ fn get_cursor_rect(
     let mut y_offset = valign_offset;
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.offset;
+            let utf16_pos = paragraphs[cursor.paragraph].char_offset_to_utf16(cursor.offset);
 
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let rects = laid_out_para.get_rects_for_range(
-                char_pos..char_pos,
+                utf16_pos..utf16_pos,
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );
@@ -1187,7 +1210,7 @@ fn get_selection_rects(
         if range_start < range_end {
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );
