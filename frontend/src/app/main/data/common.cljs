@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :as co]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
@@ -273,7 +273,7 @@
               organization (:organization team)]
           (d/update-in-when state [:teams team-id]
                             (fn [team]
-                              (cond-> (co/apply-organization team organization)
+                              (cond-> (cto/apply-organization team organization)
                                 team-name (assoc :name team-name)))))
         state))))
 
