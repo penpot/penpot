@@ -85,8 +85,8 @@
                    (get-in req-map [:headers "Content-Type"])
                    "multipart/form-data"))))))))
 
-(t/deftest info-includes-content-length-header
-  (t/testing "info sends Content-Length header for streaming multipart"
+(t/deftest info-no-content-length-header
+  (t/testing "info does not send Content-Length header (JDK uses chunked encoding)"
     (with-mocks [mock {:target 'app.media.remote/service-request
                        :return {:status 200
                                 :body (json-stream {:width 100 :height 100 :mtype "image/jpeg" :size 1 :orientation 1})}}]
@@ -95,8 +95,7 @@
           (media.remote/process (mk-system)
                                 {:cmd :info :input {:path path :mtype "image/jpeg"}})
           (let [[_ req-map] (:call-args @mock)]
-            (t/is (some? (get-in req-map [:headers "Content-Length"])))
-            (t/is (pos? (Long/parseLong (get-in req-map [:headers "Content-Length"]))))))))))
+            (t/is (nil? (get-in req-map [:headers "Content-Length"])))))))))
 
 (t/deftest info-service-uri-not-configured
   (t/testing "info throws when service URI is not configured"
