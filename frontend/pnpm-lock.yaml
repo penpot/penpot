@@ -268,8 +268,8 @@ importers:
   packages/draft-js:
     dependencies:
       draft-js:
-        specifier: penpot/draft-js.git#ba3b26ed63a01227a3560e440531b69d79c03f35
-        version: https://codeload.github.com/penpot/draft-js/tar.gz/ba3b26ed63a01227a3560e440531b69d79c03f35(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: penpot/draft-js.git#c58ebd9429a6359d72a88cff87e078aaf6fe285d
+        version: https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       immutable:
         specifier: ^5.1.9
         version: 5.1.9
@@ -2895,8 +2895,8 @@ packages:
     resolution: {integrity: sha512-qI4JLRKnSzqFqr7hAlS5xQDusBCjKSEG4t4+7aNrIQMHBcsC2TGEhuyABJdYkgSewL57PNLYEiibY2iPKhKpaA==}
     engines: {node: '>=20.19.0'}
 
-  draft-js@https://codeload.github.com/penpot/draft-js/tar.gz/ba3b26ed63a01227a3560e440531b69d79c03f35:
-    resolution: {gitHosted: true, integrity: sha512-IN2r8sw36jcH32WPP9eBFXNglirhkFIsqgoKzwwSDxiCbeipumeKXjYB3vw82CxYRwKc+oRTMcZ5jNnCWnmnBw==, tarball: https://codeload.github.com/penpot/draft-js/tar.gz/ba3b26ed63a01227a3560e440531b69d79c03f35}
+  draft-js@https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d:
+    resolution: {gitHosted: true, integrity: sha512-Ji/UoFEm11scM7Zbp1O+7f498Ly5zkGRCJNvxR8BRL0xhqEs1ubgckZdmopjNxi+xjepHopa5hIv9pJTRaQOgg==, tarball: https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d}
     version: 0.11.7
     peerDependencies:
       react: '>=0.14.0'
@@ -8249,7 +8249,7 @@ snapshots:
       domelementtype: 3.0.0
       domhandler: 6.0.1
 
-  draft-js@https://codeload.github.com/penpot/draft-js/tar.gz/ba3b26ed63a01227a3560e440531b69d79c03f35(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  draft-js@https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       fbjs: 3.0.5(encoding@0.1.13)
       immutable: 3.8.3
