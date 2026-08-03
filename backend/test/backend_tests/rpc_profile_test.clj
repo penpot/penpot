@@ -91,7 +91,7 @@
           (t/is (not (contains? result :password))))))
 
     (t/testing "update profile"
-      (with-redefs [app.config/flags #{:nitrate}]
+      (with-redefs [app.config/flags #{:admin-console}]
         (with-redefs [nitrate/add-nitrate-licence-to-profile
                       (fn [_ profile]
                         (assoc profile :subscription {:plan :pro}))]
@@ -1160,3 +1160,45 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :email-as-password))))
+
+
+(t/deftest update-profile-props-rejects-subscription
+  ;; N1-16: Mass Assignment — :subscription must not be writable via RPC
+  ;; The closed schema rejects :subscription at validation time
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:subscription {:type "unlimited" :status "active"}}}
+        out     (th/command! data)]
+
+    ;; The call must fail with validation error
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))
+
+    ;; And :subscription must NOT be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (nil? (get-in props [:props :subscription]))
+            ":subscription must not be writable via update-profile-props"))))
+
+
+(t/deftest update-profile-props-accepts-valid-keys
+  ;; Verify that valid props keys still work after closing the schema
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:onboarding-viewed true
+                         :newsletter-updates false
+                         :renderer :wasm}}
+        out     (th/command! data)]
+
+    ;; The call should succeed
+    (t/is (nil? (:error out)))
+
+    ;; And all valid keys should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (true? (get-in props [:props :onboarding-viewed])))
+      (t/is (false? (get-in props [:props :newsletter-updates])))
+      (t/is (= :wasm (get-in props [:props :renderer]))))))

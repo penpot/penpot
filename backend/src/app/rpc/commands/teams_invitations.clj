@@ -14,7 +14,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -147,7 +147,7 @@
 
     ;; When nitrate is active and the team belongs to an organization, check that
     ;; the email is already an organization member unless the organization explicitly allows adding anybody.
-    (when (and (contains? cf/flags :nitrate)
+    (when (and (contains? cf/flags :admin-console)
                (:organization team))
       (assert-email-can-be-invited member organization-member-ids))
 
@@ -166,8 +166,8 @@
 
         (if organization
           ;; Insert the invited member to the organization
-          (when (contains? cf/flags :nitrate)
-            (teams/initialize-user-in-nitrate-organization cfg (:id member) (:id organization) email))
+          (when (contains? cf/flags :admin-console)
+            (teams/initialize-user-in-organization cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
           (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
 
@@ -253,7 +253,7 @@
 
           (when (allow-invitation-emails? member)
             (if organization
-              (when (contains? cf/flags :nitrate)
+              (when (contains? cf/flags :admin-console)
                 (eml/send! {::eml/conn conn
                             ::eml/factory eml/invite-to-organization
                             :public-uri (cf/get :public-uri)
@@ -346,12 +346,12 @@
   - invitations (vector of {:email :role} maps)"
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
   (let [;; Enrich team with organization info once for all invitations when nitrate is active
-        team             (if (contains? cf/flags :nitrate)
+        team             (if (contains? cf/flags :admin-console)
                            (nitrate/add-organization-info-to-team cfg team {})
                            team)
         organization              (:organization team)
         organization-id           (:id organization)
-        restricted?      (and organization-id (not (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms organization})))
+        restricted?      (and organization-id (not (cto/allowed? :add-anybody-to-team {:organization-perms organization})))
         all-organization-member-ids
         (when organization-id
           (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id})))

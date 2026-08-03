@@ -31,7 +31,7 @@
     ["/recovery"          :auth-recovery]
     ["/verify-token"      :auth-verify-token]]
 
-   (when (contains? cf/flags :nitrate)
+   (when (contains? cf/flags :admin-console)
      ["/subscribe-nitrate" :nitrate-entry])
 
    ["/settings"
@@ -105,7 +105,7 @@
   or redirects to the SSO provider URL."
   [match send-event-info? url]
   (let [route-name     (name (get-in match [:data :name]))
-        relevant?      (and (contains? cf/flags :nitrate)
+        relevant?      (and (contains? cf/flags :admin-console)
                             (or (str/starts-with? route-name "dashboard")
                                 (str/starts-with? route-name "workspace")))
         team-id-str    (when relevant?

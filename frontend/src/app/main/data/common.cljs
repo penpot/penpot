@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :as co]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
@@ -255,7 +255,7 @@
       (let [current-team-id (:current-team-id state)
             organization    (:organization team)
             current-team?   (= (:id team) current-team-id)]
-        (when (and (contains? cf/flags :nitrate)
+        (when (and (contains? cf/flags :admin-console)
                    current-team?)
           (rx/concat
            (when notification
@@ -267,13 +267,13 @@
              (check-team-sso current-team-id))))))
     ptk/UpdateEvent
     (update [_ state]
-      (if (contains? cf/flags :nitrate)
+      (if (contains? cf/flags :admin-console)
         (let [team-id      (:id team)
               team-name    (:name team)
               organization (:organization team)]
           (d/update-in-when state [:teams team-id]
                             (fn [team]
-                              (cond-> (co/apply-organization team organization)
+                              (cond-> (cto/apply-organization team organization)
                                 team-name (assoc :name team-name)))))
         state))))
 
@@ -284,7 +284,7 @@
   (ptk/reify ::handle-organization-change-sso
     ptk/WatchEvent
     (watch [_ state _]
-      (when (contains? cf/flags :nitrate)
+      (when (contains? cf/flags :admin-console)
         (let [team-id (:current-team-id state)
               team    (dm/get-in state [:teams team-id])
               team-organization-id (dm/get-in team [:organization :id])]

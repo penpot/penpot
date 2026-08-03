@@ -45,8 +45,12 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def system-managed-props
+  "Props keys managed by the system (not user-writable via RPC)."
+  #{:subscription})
+
 (def schema:props
-  [:map {:title "ProfileProps"}
+  [:map {:title "ProfileProps" :closed true}
    [:plugins {:optional true} schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
@@ -96,7 +100,7 @@
 
 (defn- with-nitrate-licence
   [profile cfg]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (nitrate/add-nitrate-licence-to-profile cfg profile)
     profile))
 
@@ -454,7 +458,7 @@
                                  (assoc props k v))
                                props))
                            (:props profile)
-                           props)]
+                           (apply dissoc props system-managed-props))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
@@ -503,7 +507,7 @@
     ;; imported "Your Penpot" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
-    (when (contains? cf/flags :nitrate)
+    (when (contains? cf/flags :admin-console)
       (nitrate/call cfg :cleanup-deleted-penpot-user
                     {:profile-id profile-id}))
 
@@ -562,7 +566,7 @@
   {::doc/added "2.18"
    ::sm/result schema:get-owned-organizations-summary-result}
   [cfg {:keys [::rpc/profile-id]}]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (or (nitrate/call cfg :get-owned-organizations-summary {:profile-id profile-id}) [])
     []))
 

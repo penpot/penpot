@@ -87,7 +87,7 @@
 
 (defn- with-nitrate-licence
   [profile cfg]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (nitrate/add-nitrate-licence-to-profile cfg profile)
     profile))
 
@@ -136,8 +136,8 @@
 
           accepted-team-id (if organization-id
                              ;; Insert the invited member to the organization
-                             (when (contains? cf/flags :nitrate)
-                               (teams/initialize-user-in-nitrate-organization cfg id-member organization-id member-email))
+                             (when (contains? cf/flags :admin-console)
+                               (teams/initialize-user-in-organization cfg id-member organization-id member-email))
                              ;; Insert the invited member to the team
                              (do (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
                                  team-id))]
@@ -206,7 +206,7 @@
                                         {:columns [:id :email :default-team-id]})
         registration-disabled? (not (contains? cf/flags :registration))
 
-        organization-invitation?        (and (contains? cf/flags :nitrate) organization-id)]
+        organization-invitation?        (and (contains? cf/flags :admin-console) organization-id)]
 
     (if profile
       (do
@@ -229,7 +229,7 @@
         ;; would call nitrate needlessly and could mask the clean
         ;; :canceled-invitation/:invalid-token response with a generic error.
         (let [membership
-              (when (contains? cf/flags :nitrate)
+              (when (contains? cf/flags :admin-console)
                 (cond
                   organization-id
                   (nitrate/call cfg :get-organization-membership {:profile-id profile-id
