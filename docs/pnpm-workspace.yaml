@@ -1,3 +1,5 @@
 minimumReleaseAgeExclude:
-  - undici@7.28.0
-  - js-yaml@3.15.0
+  - undici@7.28.0 || 7.29.0
+  - js-yaml@3.15.0 || 4.3.0
+  - brace-expansion@1.1.16 || 1.1.17 || 1.1.18
+  - liquidjs@10.27.1

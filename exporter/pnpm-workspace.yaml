@@ -4,6 +4,7 @@ minimumReleaseAgeExclude:
   - lodash@4.17.23 || 4.17.24
   - playwright-core@1.62.1
   - playwright@1.62.1
+  - brace-expansion@5.0.7 || 5.0.8 || 5.0.9
 overrides:
   lodash@<=4.17.23: ^4.17.24
   lodash@>=4.0.0 <=4.17.22: ^4.17.23

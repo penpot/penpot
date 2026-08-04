@@ -1,5 +1,5 @@
 ---
-description: Execute a ready plan end-to-end — create a GitHub issue, branch issue-NNNN, implement the plan, then commit via the commiter subagent
+description: Execute a ready plan end-to-end — create a GitHub issue, branch issue-NNNN, implement the plan, then commit via the create-commit skill
 agent: build
 ---
 
@@ -32,12 +32,11 @@ Implement the prepared plan from the session context. Work methodically, keeping
 changes focused on what the issue requires. Do not commit — the commit happens in
 step 4.
 
-## 4. Commit with the commiter subagent
+## 4. Commit with the create-commit skill
 
-After the implementation is complete, delegate the commit to the **`commiter`**
-subagent. Give it a brief summary of what was implemented and why, the issue
-reference (`issue-NNNN`), and the model name you are running as so it sets the
-`AI-assisted-by` trailer correctly. The subagent owns the commit format and
-conventions.
+After the implementation is complete, load the **`create-commit`** skill and
+follow its workflow to commit the changes. Provide a brief summary of what was
+implemented and why, the issue reference (`issue-NNNN`), and the model name you
+are running as so the `AI-assisted-by` trailer is set correctly.
 
 Do not push. Pushing is handled separately by the user.

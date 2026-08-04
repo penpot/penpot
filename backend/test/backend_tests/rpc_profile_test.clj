@@ -1202,3 +1202,72 @@
       (t/is (true? (get-in props [:props :onboarding-viewed])))
       (t/is (false? (get-in props [:props :newsletter-updates])))
       (t/is (= :wasm (get-in props [:props :renderer]))))))
+
+
+(t/deftest update-profile-props-accepts-onboarding-questions
+  ;; The onboarding questions flow sends these props on the final "START" step
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:onboarding-questions-answered true
+                         :onboarding-questions
+                         {:expected-use "work"
+                          :role "ux"
+                          :start-with "prototyping"}}}
+        out     (th/command! data)]
+
+    ;; The call should succeed
+    (t/is (nil? (:error out)))
+
+    ;; And all keys should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (true? (get-in props [:props :onboarding-questions-answered])))
+      (t/is (= {:expected-use "work"
+                :role "ux"
+                :start-with "prototyping"}
+               (get-in props [:props :onboarding-questions]))))))
+
+
+(t/deftest update-profile-props-rejects-invalid-onboarding-questions
+  ;; The schema is closed and :onboarding-questions only accepts string values
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:onboarding-questions {:expected-use 42}}}
+        out     (th/command! data)]
+
+    ;; The call must fail with validation error
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+
+(t/deftest update-profile-props-accepts-nudge
+  ;; Nudge settings are persisted per-profile via update-profile-props
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:nudge {:big 20 :small 0.5}}}
+        out     (th/command! data)]
+
+    ;; The call should succeed
+    (t/is (nil? (:error out)))
+
+    ;; And the nudge values should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (= {:big 20 :small 0.5} (get-in props [:props :nudge]))))))
+
+(t/deftest update-profile-props-rejects-invalid-nudge
+  ;; The nudge map only accepts :big/:small numbers
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:nudge {:big "ten"}}}
+        out     (th/command! data)]
+
+    ;; The call must fail with validation error
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

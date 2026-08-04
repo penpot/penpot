@@ -14,6 +14,8 @@ automatically pull the identity from the local git config `user.name` and `user.
 :emoji: Subject line (imperative, capitalized, no period, <=70 chars)
 
 Body explaining what changed and why.
+Wrap lines at 72 characters — git log and tooling
+render long lines poorly. Keep each line concise.
 
 AI-assisted-by: model-name
 ```
