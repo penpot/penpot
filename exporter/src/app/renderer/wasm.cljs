@@ -25,6 +25,7 @@
    [app.common.geom.point]
    [app.common.geom.rect]
    [app.common.logging :as l]
+   [app.common.render-wasm.builtin-fonts :as bfonts]
    [app.common.render-wasm.fallback-fonts :as fbf]
    [app.common.render-wasm.gfonts :as gf]
    [app.common.render-wasm.resources :as resources]
@@ -167,8 +168,8 @@
 ;;
 ;; The text serializer keeps each font's real uuid, so `wasm/fonts-for-shape`
 ;; reports it. Custom (team) fonts resolve through the file's font variants,
-;; google fonts through the shared `app.common.render-wasm.gfonts` catalog; builtin falls back to
-;; the bundled default.
+;; google fonts through the shared `app.common.render-wasm.gfonts` catalog; builtin fonts
+;; through `app.common.render-wasm.builtin-fonts` + the frontend's static `/fonts/`.
 
 (defn- fetch-font-variants
   "Team (custom) font variants for the file, or nil — a failure here degrades
@@ -189,47 +190,52 @@
                            :uri uri :detail (explain cause) :cause cause)
                    (p/resolved nil))))))
 
-(defn- fetch-asset-bytes
-  "Downloads a stored asset (font TTF) by id, returning a promise of an
-  ArrayBuffer (or nil)."
-  [asset-id {:keys [token]}]
-  (let [headers (asset-headers token)
-        uri     (internal-uri (str "assets/by-id/" asset-id))]
-    (->> (fetch! uri #js {:method "GET" :headers headers})
-         (p/mcat (fn [^js resp]
-                   (if (= 200 (.-status resp))
-                     (.arrayBuffer resp)
-                     (p/resolved nil))))
-         (p/merr (fn [cause]
-                   (l/warn :hint "wasm render: font asset fetch failed"
-                           :asset-id (str asset-id) :uri uri
-                           :detail (explain cause) :cause cause)
-                   (p/resolved nil))))))
+(defn- fetch-ttf-bytes
+  "Downloads a TTF, returning a promise of an ArrayBuffer (or nil). A failure
+  here degrades to fallback fonts, it does not fail the export."
+  ([uri] (fetch-ttf-bytes uri #js {:method "GET"}))
+  ([uri opts]
+   (->> (fetch! uri opts)
+        (p/mcat (fn [^js resp]
+                  (if (= 200 (.-status resp))
+                    (.arrayBuffer resp)
+                    (p/resolved nil))))
+        (p/merr (fn [cause]
+                  (l/warn :hint "wasm render: font fetch failed"
+                          :uri uri :detail (explain cause) :cause cause)
+                  (p/resolved nil))))))
 
-(defn- gfont-proxy-url
-  "Rewrites a gstatic ttf url to the local gfonts proxy (same rewrite as the
-  browser's `google-font-ttf-url`)."
-  [ttf-url]
-  (gf/gstatic->proxy-url ttf-url (internal-uri "internal/gfonts/font")))
+;; TTF bytes cached for the process lifetime, keyed by whatever identifies the
+;; variant (a gfont id+weight+style, a builtin file name).
+(defonce ^:private font-bytes* (atom {}))
+
+(defn- cached-ttf-bytes
+  [cache-key fetch-fn]
+  (if-let [bytes (get @font-bytes* cache-key)]
+    (p/resolved bytes)
+    (->> (fetch-fn)
+         (p/fmap (fn [buf]
+                   (when buf (swap! font-bytes* assoc cache-key buf))
+                   buf)))))
+
+(defn- fetch-asset-bytes
+  [asset-id {:keys [token]}]
+  (fetch-ttf-bytes (internal-uri (str "assets/by-id/" asset-id))
+                   #js {:method "GET" :headers (asset-headers token)}))
 
 (defn- fetch-gfont-bytes
-  "Downloads a google font TTF through the local gfonts proxy."
   [ttf-url]
-  (let [uri (gfont-proxy-url ttf-url)]
-    (->> (fetch! uri #js {:method "GET"})
-         (p/mcat (fn [^js resp]
-                   (if (= 200 (.-status resp))
-                     (.arrayBuffer resp)
-                     (p/resolved nil))))
-         (p/merr (fn [cause]
-                   (l/warn :hint "wasm render: gfont fetch failed"
-                           :url uri :detail (explain cause) :cause cause)
-                   (p/resolved nil))))))
+  (fetch-ttf-bytes (gf/gstatic->proxy-url ttf-url (internal-uri "internal/gfonts/font"))))
+
+(defn- fetch-builtin-font-bytes
+  [ttf-file]
+  (cached-ttf-bytes ttf-file #(fetch-ttf-bytes (internal-uri (str "fonts/" ttf-file)))))
 
 (defn- make-resolve-font
   "Builds a `resolve-font` fn (family map -> promise of TTF bytes). Custom
   variants first, matching uuid+weight+style then degrading to uuid+weight then
-  uuid; google catalog after that; nil when nothing matches."
+  uuid; the bundled fonts for `uuid/zero`, which is what `font-id->uuid` maps
+  every builtin family to; google catalog otherwise."
   [variants params]
   (fn [{:keys [id weight style]}]
     (let [font-uuid (uuid/from-unsigned-parts (aget id 0) (aget id 1) (aget id 2) (aget id 3))
@@ -242,8 +248,14 @@
                                              (= (:font-weight v) weight)))
                                 variants)
                         (d/seek (fn [v] (= (:font-id v) font-uuid)) variants))]
-      (if-let [ttf-id (:ttf-file-id variant)]
-        (fetch-asset-bytes ttf-id params)
+      (cond
+        (:ttf-file-id variant)
+        (fetch-asset-bytes (:ttf-file-id variant) params)
+
+        (= uuid/zero font-uuid)
+        (fetch-builtin-font-bytes (bfonts/resolve-ttf-file weight style))
+
+        :else
         (if-let [gurl (gf/resolve-ttf-url font-uuid weight style)]
           (fetch-gfont-bytes gurl)
           (p/resolved nil))))))
@@ -272,25 +284,14 @@
      (cond-> (fbf/add-noto-fonts [] langs)
        emoji? (fbf/add-emoji-font)))))
 
-(defonce ^:private fallback-font-bytes* (atom {}))
-
 (defn- fetch-fallback-font-bytes
-  "Downloads (and caches for the process lifetime) one fallback font's TTF.
-  Keyed by the whole variant, not just `font-id`: `resolve-ttf-url` picks a
-  different TTF per weight/style, so a font-id-only key would serve the first
-  downloaded variant for every other one."
+  "Downloads one fallback font's TTF. Cached by the whole variant, not just
+  `font-id`: `resolve-ttf-url` picks a different TTF per weight/style, so a
+  font-id-only key would serve the first downloaded variant for every other one."
   [{:keys [font-id weight style]}]
-  (let [cache-key [font-id weight style]]
-    (if-let [bytes (get @fallback-font-bytes* cache-key)]
-      (p/resolved bytes)
-      (let [font-uuid (gf/gfont-id->uuid font-id)
-            ttf-url   (some-> font-uuid (gf/resolve-ttf-url weight style))]
-        (if ttf-url
-          (->> (fetch-gfont-bytes ttf-url)
-               (p/fmap (fn [buf]
-                         (when buf (swap! fallback-font-bytes* assoc cache-key buf))
-                         buf)))
-          (p/resolved nil))))))
+  (if-let [ttf-url (some-> (gf/gfont-id->uuid font-id) (gf/resolve-ttf-url weight style))]
+    (cached-ttf-bytes [font-id weight style] #(fetch-gfont-bytes ttf-url))
+    (p/resolved nil)))
 
 (defn- provision-fallback-fonts!
   [scene]
