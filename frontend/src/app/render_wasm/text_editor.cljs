@@ -762,3 +762,29 @@
                          :content  new-content}
                   with-fills?
                   (assoc :fills (selection-fills new-content normalized-selection)))))))))))
+
+(defn apply-paragraph-attrs-to-selection
+  "Apply paragraph level attrs (text-align, text-direction) to the whole
+   paragraphs the editor selection touches; a collapsed caret means just the one
+   it sits in."
+  [attrs use-shape-fn set-shape-text-content-fn]
+  (when (wasm/ready?)
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+      (when (and shape-id selection)
+        (when-let [content (get-cached-content shape-id)]
+          (let [{:keys [start-para end-para]} (normalize-selection selection)
+                paragraph-set  (first (:children content))
+                new-paragraphs (into []
+                                     (map-indexed (fn [idx para]
+                                                    (if (<= start-para idx end-para)
+                                                      (merge para attrs)
+                                                      para)))
+                                     (:children paragraph-set))
+                new-content    (assoc content :children
+                                      [(assoc paragraph-set :children new-paragraphs)])]
+            (update-cached-content! shape-id new-content)
+            (use-shape-fn shape-id)
+            (set-shape-text-content-fn shape-id new-content)
+            {:shape-id shape-id
+             :content  new-content}))))))

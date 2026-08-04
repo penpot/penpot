@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout, Stroke,
-        StrokeKind, TextContent,
+        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
+        ParagraphLayout, Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -55,7 +55,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                builder.add_text(&text);
+                add_text_with_tabs(builder, &text, span.font_size);
             }
         }
 
