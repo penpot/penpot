@@ -20,10 +20,18 @@ jobs:
     with:
       gh_ref: ${{ github.ref_name }}
 
+  build-docker-admin-console:
+    uses: ./.github/workflows/build-docker-admin-console.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ github.ref_name }}
+
   notify:
     name: Notifications
     runs-on: ubuntu-24.04
-    needs: build-docker
+    needs:
+      - build-docker
+      - build-docker-admin-console
     steps:
       - name: Notify Mattermost
         uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e # v2.1.0
@@ -37,7 +45,9 @@ jobs:
 
   publish-final-tag:
     if: ${{ !contains(github.ref_name, '-RC') && !contains(github.ref_name, '-alpha') && !contains(github.ref_name, '-beta')  && contains(github.ref_name, '.') }}
-    needs: build-docker
+    needs:
+      - build-docker
+      - build-docker-admin-console
     uses: ./.github/workflows/release.yml
     secrets: inherit
     with:
