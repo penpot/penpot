@@ -9,7 +9,9 @@ const FILE = {
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
   // WASM_FLAGS already enables render-wasm; add the WASM text editor on top.
-  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-text-editor-wasm"]);
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    "enable-feature-text-editor-wasm",
+  ]);
 });
 
 async function openEditorAndSelectAll(workspace) {
@@ -22,12 +24,12 @@ async function openEditorAndSelectAll(workspace) {
 }
 
 test.describe("BUG 10502 - Mixed families and variants", () => {
-  test("Multiple variants of the same font family", async ({
-    page,
-  }) => {
+  test("Multiple variants of the same font family", async ({ page }) => {
     const workspace = new WasmWorkspacePage(page, { textEditor: true });
     await workspace.setupEmptyFile();
-    await workspace.mockGetFile("text-editor/get-file-10502-mixed-variants.json");
+    await workspace.mockGetFile(
+      "text-editor/get-file-10502-mixed-variants.json",
+    );
 
     await workspace.goToWorkspace(FILE);
     await workspace.waitForFirstRender();
@@ -47,10 +49,14 @@ test.describe("BUG 10502 - Mixed families and variants", () => {
     await expect(fontVariant).toHaveText("--");
   });
 
-  test("Mixed font families appear as such in the dropdown", async ({ page }) => {
+  test("Mixed font families appear as such in the dropdown", async ({
+    page,
+  }) => {
     const workspace = new WasmWorkspacePage(page, { textEditor: true });
     await workspace.setupEmptyFile();
-    await workspace.mockGetFile("text-editor/get-file-10502-mixed-families.json");
+    await workspace.mockGetFile(
+      "text-editor/get-file-10502-mixed-families.json",
+    );
     // Serve a stand-in TTF for Sora so the render doesn't wait on a real fetch.
     // Glyphs are irrelevant here: the assertion only inspects the sidebar.
     await workspace.mockGoogleFont("sora", "render-wasm/assets/ebgaramond.ttf");
@@ -204,9 +210,94 @@ test("BUG 10531 - Entering the editor auto-selects the whole text", async ({
   await workspace.copy("keyboard");
 
   // Assert the text was copied correctly
-  const copiedText = await page.evaluate(() =>
-    navigator.clipboard.readText(),
-  );
+  const copiedText = await page.evaluate(() => navigator.clipboard.readText());
   expect(copiedText).toBe("Lorem ipsum");
 });
 
+test.describe("BUG 10934 - Double-clicking a text side handle sets auto-size", () => {
+  // Sets up the workspace and loads a text shape whose size is larger than its text
+  async function setupFixedSizeText(page) {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    // Enable token inputs so they use the new component with accessible DOM
+    await workspace.mockConfigFlags(["enable-feature-token-input"]);
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("text-editor/get-file-fixed-size-text.json");
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    // Select the text and zoom to fit, so it is fully visible in the viewport
+    await workspace.clickLeafLayer("Fixed text");
+    await page.keyboard.press("Shift+1");
+    await workspace.waitForIdle();
+
+    return workspace;
+  }
+
+  async function doubleClickSideHandle(workspace, position) {
+    const handle = workspace.viewport.getByTestId(
+      `resize-side-handler-${position}`,
+    );
+    await handle.waitFor();
+    const box = await handle.boundingBox();
+    await workspace.page.mouse.dblclick(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+    );
+  }
+
+  function measureInput(workspace, name) {
+    return workspace.rightSidebar
+      .getByRole("region", { name: "shape-measures-section" })
+      .getByRole("textbox", { name, exact: true });
+  }
+
+  test("Double-clicking the right handle switches to auto-width", async ({
+    page,
+  }) => {
+    const workspace = await setupFixedSizeText(page);
+
+    const widthInput = workspace.rightSidebar
+      .getByRole("region", { name: "shape-measures-section" })
+      .getByRole("textbox", { name: "Width", exact: true });
+    const initialWidth = Number(await widthInput.inputValue());
+
+    await doubleClickSideHandle(workspace, "right");
+
+    // Assert auto-width is selected and that the width has shrunk. The resize
+    // is debounced, so poll the value (auto-retrying) rather than reading once.
+    await expect(
+      workspace.rightSidebar.getByRole("button", {
+        name: "Auto width",
+        pressed: true,
+      }),
+    ).toBeVisible();
+    await expect
+      .poll(async () => Number(await widthInput.inputValue()))
+      .toBeLessThan(initialWidth);
+  });
+
+  test("Double-clicking the bottom handle switches to auto-height", async ({
+    page,
+  }) => {
+    const workspace = await setupFixedSizeText(page);
+
+    const heightInput = workspace.rightSidebar
+      .getByRole("region", { name: "shape-measures-section" })
+      .getByRole("textbox", { name: "Height", exact: true });
+    const initialHeight = Number(await heightInput.inputValue());
+
+    await doubleClickSideHandle(workspace, "bottom");
+
+    // Assert auto-height is selected and that the height has shrunk. The resize
+    // is debounced, so poll the value (auto-retrying) rather than reading once.
+    await expect(
+      workspace.rightSidebar.getByRole("button", {
+        name: "Auto height",
+        pressed: true,
+      }),
+    ).toBeVisible();
+    await expect
+      .poll(async () => Number(await heightInput.inputValue()))
+      .toBeLessThan(initialHeight);
+  });
+});
