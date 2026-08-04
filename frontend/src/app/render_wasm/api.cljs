@@ -281,6 +281,7 @@
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-toggle-overtype-mode text-editor/text-editor-toggle-overtype-mode)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
+(def text-editor-pointer-down-extend text-editor/text-editor-pointer-down-extend)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
 (def text-editor-get-current-styles text-editor/text-editor-get-current-styles)

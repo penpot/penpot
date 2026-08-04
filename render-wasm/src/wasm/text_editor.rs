@@ -192,6 +192,35 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     });
 }
 
+/// Like `text_editor_pointer_down`, but keeps the current anchor and moves the
+/// focus to the pointer instead of collapsing the caret there (Shift+click).
+#[no_mangle]
+pub extern "C" fn text_editor_pointer_down_extend(x: f32, y: f32) {
+    with_state!(state, {
+        if !get_text_editor_state().has_focus {
+            return;
+        }
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+        let point = Point::new(x, y);
+        get_text_editor_state().start_pointer_selection();
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            get_text_editor_state().extend_selection_from_position(&position);
+            // The click after pointerup would collapse the caret and drop the
+            // selection we just extended.
+            get_text_editor_state().is_click_event_skipped = true;
+            get_text_editor_state().update_styles(text_content);
+        }
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
     with_state!(state, {

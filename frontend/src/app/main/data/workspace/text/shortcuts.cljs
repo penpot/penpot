@@ -11,6 +11,7 @@
    [app.common.types.text :as txt]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts-v3 :as dwt-v3]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
@@ -170,6 +171,8 @@
                 :else props)]
 
     (when (and shape props)
+      (when (features/active-feature? @st/state "text-editor-wasm/v1")
+        (st/emit! (dwt-v3/v3-update-text-editor-styles (:id shape) props)))
       (st/emit! (dwt/update-attrs (:id shape) props)))))
 
 (defn blend-props
