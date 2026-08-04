@@ -65,13 +65,13 @@
     :misplaced-slot
     :missing-slot
     :shape-ref-cycle
-    :not-a-variant
-    :invalid-variant-id
+    :main-instance-not-a-variant
+    :main-instance-invalid-variant-id
     :invalid-variant-properties
     :variant-not-main
     :parent-not-variant
-    :variant-bad-name
-    :variant-bad-variant-name
+    :variant-main-bad-name
+    :variant-main-bad-variant-name
     :variant-component-bad-name
     :variant-component-bad-id})
 
@@ -573,19 +573,23 @@
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
               (if (not (ctk/is-variant? child))
-                (report-error :not-a-variant
-                              (str/ffmt "Shape % should be a variant" (:id child))
-                              child file page)
+                (report-error :main-instance-not-a-variant
+                              (str/ffmt "Main instance shape % should be a variant" (:id child))
+                              child file page
+                              :variant-id shape-id)
                 (do
                   (when (not= (:variant-id child) shape-id)
-                    (report-error :invalid-variant-id
-                                  (str/ffmt "Variant % has invalid variant-id %" (:id child) (:variant-id child))
-                                  child file page))
+                    (report-error :main-instance-invalid-variant-id
+                                  (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
+                                  child file page
+                                  :variant-id shape-id))
                   (when (not= prop-names (cfv/extract-properties-names child file-data))
                     (report-error :invalid-variant-properties
                                   (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
-                                  child file page))))))
+                                  child file page
+                                  :prop-names prop-names))))))
           shapes)))
+
 (defn- check-variant
   "Shape is a variant, so
      -it should be a main component
@@ -594,9 +598,9 @@
      -its name should be the same as its parent's
    "
   [shape file page]
-  (let [parent    (ctst/get-shape page (:parent-id shape))
-        component (ctkl/get-component (:data file) (:component-id shape) true)
-        name      (ctv/properties-to-name (:variant-properties component))]
+  (let [parent       (ctst/get-shape page (:parent-id shape))
+        component    (ctkl/get-component (:data file) (:component-id shape) true)
+        variant-name (ctv/properties-to-name (:variant-properties component))]
     (when-not (ctk/main-instance? shape)
       (report-error :variant-not-main
                     (str/ffmt "Variant % is not a main instance" (:id shape))
@@ -605,23 +609,26 @@
       (report-error :parent-not-variant
                     (str/ffmt "Variant % has an invalid parent" (:id shape))
                     shape file page))
-
-    (when-not (= name (:variant-name shape))
-      (report-error :variant-bad-variant-name
+    (when-not (= variant-name (:variant-name shape))
+      (report-error :variant-main-bad-variant-name
                     (str/ffmt "Variant % has an invalid variant-name" (:id shape))
-                    shape file page))
+                    shape file page
+                    :variant-name variant-name))
     (when-not (= (:name parent) (:name shape))
-      (report-error :variant-bad-name
-                    (str/ffmt "Variant % has an invalid name" (:id shape))
-                    shape file page))
+      (report-error :variant-main-bad-name
+                    (str/ffmt "Main instance inside variant % has an invalid name" (:id shape))
+                    shape file page
+                    :variant-name (:name parent)))
     (when-not (= (:name parent) (cpn/merge-path-item (:path component) (:name component)))
       (report-error :variant-component-bad-name
                     (str/ffmt "Component % has an invalid name" (:id shape))
-                    shape file page))
+                    shape file page
+                    :variant-container-name (:name parent)))
     (when-not (= (:variant-id component) (:variant-id shape))
       (report-error :variant-component-bad-id
                     (str/ffmt "Variant % has adifferent variant-id than its component" (:id shape))
-                    shape file page))))
+                    shape file page
+                    :variant-id (:variant-id component)))))
 
 (defn- check-shape
   "Validate referential integrity and semantic coherence of
@@ -740,14 +747,15 @@
      -It should have at least one variant property"
   [component file]
   (let [component-page (ctf/get-component-page (:data file) component)
-        main-component (if (:deleted component)
+        main-instance  (if (:deleted component)
                          (dm/get-in component [:objects (:main-instance-id component)])
                          (ctst/get-shape component-page (:main-instance-id component)))]
-    (when (and main-component
-               (not (ctk/is-variant? main-component)))
-      (report-error :not-a-variant
-                    (str/ffmt "Shape % should be a variant" (:id main-component))
-                    main-component file component-page))))
+    (when (and main-instance
+               (not (ctk/is-variant? main-instance)))
+      (report-error :main-instance-not-a-variant
+                    (str/ffmt "Main instance shape % should be a variant" (:id main-instance))
+                    main-instance file component-page
+                    :variant-id (:variant-id component)))))
 
 (defn- check-main-inside-main
   [component file]
