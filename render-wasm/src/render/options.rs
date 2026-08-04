@@ -4,15 +4,25 @@ const PROFILE_REBUILD_TILES: u32 = 0x02;
 const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
 
-// Render performance options
-// This is the extra area used for tile rendering (tiles beyond viewport).
-// Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
+// Extra tiles beyond the viewport for pre-render. Kept in *tile* units (not
+// scaled by DPR): world tile count already matches DPR=1 (`BASE/zoom`).
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
-const MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 const ANTIALIAS_THRESHOLD: f32 = 7.0;
+
+/// Raster resolution for tile textures relative to the view DPR.
+///
+/// Interactive keeps raster tiles at 512 px (effective paint DPR = min(view_dpr, 1))
+/// for the soft settle pass; Full uses `512 * dpr` after promote.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+pub enum ContentQuality {
+    Interactive,
+    #[default]
+    Full,
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RenderOptions {
     pub flags: u32,
@@ -23,6 +33,7 @@ pub struct RenderOptions {
     /// keeps per-frame flushing enabled (unlike pan/zoom, where
     /// `render_from_cache` drives target presentation).
     interactive_transform: bool,
+    content_quality: ContentQuality,
     /// Minimum on-screen size (CSS px at 1:1 zoom) above which vector antialiasing is enabled.
     pub antialias_threshold: f32,
     pub viewport_interest_area_threshold: i32,
@@ -40,6 +51,7 @@ impl Default for RenderOptions {
             dpr: 1.0,
             fast_mode: false,
             interactive_transform: false,
+            content_quality: ContentQuality::Full,
             antialias_threshold: ANTIALIAS_THRESHOLD,
             viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
             dpr_viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
@@ -60,7 +72,6 @@ impl RenderOptions {
         self.flags & PROFILE_REBUILD_TILES == PROFILE_REBUILD_TILES
     }
 
-    /// Use fast mode to enable / disable expensive operations
     pub fn is_fast_mode(&self) -> bool {
         self.fast_mode
     }
@@ -69,19 +80,41 @@ impl RenderOptions {
         self.fast_mode = enabled;
     }
 
+    pub fn content_quality(&self) -> ContentQuality {
+        self.content_quality
+    }
+
+    /// Returns `true` when the quality value changed.
+    pub fn set_content_quality(&mut self, quality: ContentQuality) -> bool {
+        if self.content_quality != quality {
+            self.content_quality = quality;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Device-pixel size used to rasterize each tile atlas sprite.
+    pub fn raster_tile_size_px(&self) -> i32 {
+        match self.content_quality {
+            ContentQuality::Interactive if self.dpr > 1.05 => crate::tiles::TILE_SIZE_BASE as i32,
+            _ => crate::tiles::tile_size_px_i32(self.dpr),
+        }
+    }
+
+    pub fn needs_full_quality_upgrade(&self) -> bool {
+        self.content_quality == ContentQuality::Interactive && self.dpr > 1.05
+    }
+
     #[cfg(target_arch = "wasm32")]
     pub fn set_capture_frames(&mut self, capture_frames: i32) {
         self.capture_frames = capture_frames;
     }
 
-    /// Updates the dpr viewport interest area threshold.
-    /// This function is updated when the dpr or the
-    /// viewport_interest_area_threshold is changed
     fn update_dpr_viewport_interest_area_threshold(&mut self) {
-        // TODO: this will likely need to change once we have the tile atlas in place
-        self.dpr_viewport_interest_area_threshold =
-            ((self.dpr * self.viewport_interest_area_threshold as f32).ceil() as i32)
-                .min(MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD);
+        // Interest stays in tile units; do not multiply by DPR (that ballooned
+        // the cache/Current pad after DPR-stable world tiles).
+        self.dpr_viewport_interest_area_threshold = self.viewport_interest_area_threshold;
     }
 
     /// Sets the devicePixelRatio.
@@ -94,10 +127,6 @@ impl RenderOptions {
         false
     }
 
-    /// Interactive transform is ON while the user is dragging, resizing
-    /// or rotating a shape. Callers use it to keep per-frame flushing
-    /// enabled and to render visible tiles in a single frame so tiles
-    /// never appear sequentially or flicker during the gesture.
     pub fn is_interactive_transform(&self) -> bool {
         self.interactive_transform
     }

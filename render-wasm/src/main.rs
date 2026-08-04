@@ -371,17 +371,24 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // index and clear the tile texture cache, but *preserve*
             // the cache canvas so render_from_cache can show a scaled
             // preview of the old content while new tiles render.
+            //
+            // At HiDPI, refill first at interactive (512 px) quality so
+            // progressive fill-rate matches DPR=1, then promote to sharp.
             let t0 = performance::get_time();
+            render_state.enter_interactive_content_quality()?;
+            let t_idx = performance::get_time();
             render_state.rebuild_tile_index(&state.shapes);
             render_state.zoom_perf_log(&format!(
-                "set_view_end.rebuild_tile_index {}ms",
-                performance::get_time() - t0
+                "set_view_end.rebuild_tile_index {}ms (after enter_interactive {}ms)",
+                performance::get_time() - t_idx,
+                t_idx - t0
             ));
             let t1 = performance::get_time();
             render_state.surfaces.invalidate_tile_cache();
             render_state.zoom_perf_log(&format!(
-                "set_view_end.invalidate_tile_cache {}ms",
-                performance::get_time() - t1
+                "set_view_end.invalidate_tile_cache {}ms | {}",
+                performance::get_time() - t1,
+                render_state.surfaces.surfaces_size_summary()
             ));
         } else {
             // Pure pan at the same zoom level: tile contents have not
