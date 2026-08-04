@@ -18,7 +18,7 @@
   "devDependencies": {
     "cross-env": "^10.1.0",
     "typescript": "^6.0.3",
-    "vite": "^8.1.5",
+    "vite": "^8.2.0",
     "vite-live-preview": "^0.4.0"
   }
 }

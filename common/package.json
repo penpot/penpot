@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "type": "module",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
     "nodemon": "^3.1.14",
     "prettier": "3.9.6",
     "source-map-support": "^0.5.21",
-    "ws": "^8.21.1"
+    "ws": "^8.21.2"
   },
   "dependencies": {
     "date-fns": "^4.4.0"
