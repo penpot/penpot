@@ -17,6 +17,8 @@
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
+   [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.util.websocket :as ws]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
@@ -131,14 +133,15 @@
       (mbus/pub! msgbus :topic topic :message msg))))
 
 (defmethod handle-message :subscribe-team
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [team-id] :as params}]
+  [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [team-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
+  (teams/check-read-permissions! cfg profile-id team-id)
   (let [prev-subs (get @state ::team-subscription)
         channel   (sp/chan :buf (sp/dropping-buffer 64)
                            :xf  (remove #(= (:session-id %) session-id)))]
 
     (sp/pipe channel output-ch false)
-    (mbus/sub! msgbus :topic team-id :chan channel)
+    (mbus/sub! (::mbus/msgbus cfg) :topic team-id :chan channel)
 
     (let [subs {:team-id team-id :channel channel :topic team-id}]
       (swap! state assoc ::team-subscription subs))
@@ -146,12 +149,13 @@
     ;; Close previous subscription if exists
     (when-let [ch (:channel prev-subs)]
       (sp/close! ch)
-      (mbus/purge! msgbus [ch]))))
+      (mbus/purge! (::mbus/msgbus cfg) [ch]))))
 
 
 (defmethod handle-message :subscribe-file
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
+  (files/check-read-permissions! cfg profile-id file-id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
                       :xf  (remove #(= (:session-id %) session-id)))]
@@ -162,7 +166,7 @@
     ;; Close previous subscription if exists
     (when-let [ch (:channel psub)]
       (sp/close! ch)
-      (mbus/purge! msgbus [ch]))
+      (mbus/purge! (::mbus/msgbus cfg) [ch]))
 
     (sp/go-loop []
       (when-let [{:keys [type] :as message} (sp/take! fch)]
@@ -174,20 +178,20 @@
                          :file-id file-id
                          :session-id session-id
                          :profile-id profile-id}]
-            (mbus/pub! msgbus
+            (mbus/pub! (::mbus/msgbus cfg)
                        :topic file-id
                        :message message)))
         (recur)))
 
     ;; Subscribe to file topic
-    (mbus/sub! msgbus :topic file-id :chan fch)
+    (mbus/sub! (::mbus/msgbus cfg) :topic file-id :chan fch)
 
     ;; Notifify the rest of participants of the new connection.
     (let [message {:type :join-file
                    :file-id file-id
                    :session-id session-id
                    :profile-id profile-id}]
-      (mbus/pub! msgbus :topic file-id :message message))))
+      (mbus/pub! (::mbus/msgbus cfg) :topic file-id :message message))))
 
 (defmethod handle-message :unsubscribe-file
   [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id] :as params}]
@@ -220,12 +224,13 @@
 
 (defmethod handle-message :pointer-update
   [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} {:keys [file-id] :as message}]
-  (when (::file-subscription @state)
-    (let [message (-> message
-                      (assoc :subs-id file-id)
-                      (assoc :profile-id profile-id)
-                      (assoc :session-id session-id))]
-      (mbus/pub! msgbus :topic file-id :message message))))
+  (when-let [subs (::file-subscription @state)]
+    (when (= file-id (:file-id subs))
+      (let [message (-> message
+                        (assoc :subs-id file-id)
+                        (assoc :profile-id profile-id)
+                        (assoc :session-id session-id))]
+        (mbus/pub! msgbus :topic file-id :message message)))))
 
 (defmethod handle-message :default
   [_ {:keys [::ws/id]} message]
