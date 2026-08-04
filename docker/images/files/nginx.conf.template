@@ -151,14 +151,6 @@ http {
             proxy_pass $PENPOT_BACKEND_URI/ws/notifications;
         }
 
-        location /admin-console {
-            proxy_http_version 1.1;
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Real-IP $http_cf_connecting_ip;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_pass $PENPOT_ADMIN_CONSOLE_URI$request_uri;
-        }
-
         include /etc/nginx/overrides/server.d/*.conf;
 
         location / {
