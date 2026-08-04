@@ -45,6 +45,11 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def schema:nudge
+  [:map {:title "Nudge"}
+   [:big {:optional true} ::sm/number]
+   [:small {:optional true} ::sm/number]])
+
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
   #{:subscription})
@@ -58,6 +63,8 @@
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]
    [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:onboarding-questions {:optional true} [:map-of :keyword :string]]
+   [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
@@ -66,7 +73,8 @@
    [:notifications {:optional true} schema:props-notifications]
    [:workspace-visited {:optional true} ::sm/boolean]
    [:custom-shortcuts {:optional true}
-    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]])
+    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
+   [:nudge {:optional true} schema:nudge]])
 
 (def schema:profile
   [:map {:title "Profile"}
