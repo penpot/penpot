@@ -105,13 +105,18 @@
   [{:keys [font]}]
   (let [font-id    (:id font)
         sprite     (mf/deref fonts/preview-sprite)
-        in-sprite? (contains? (:ids sprite) font-id)
 
-        ;; Fallback is ONLY for custom fonts: ones the (ready) sprite doesn't
-        ;; cover. If the sprite isn't ready (loading/error) we show the plain name
-        ;; rather than runtime-loading the whole catalog.
-        fallback?  (and (= :ready (:status sprite))
-                        (not in-sprite?))
+        ;; The sprite is only referenceable once it's been attached to the DOM,
+        ;; so the `<use>` glyph is gated on `attached?`. Until then we show the
+        ;; plain name: no blank rows, and no per-font load storm either (see
+        ;; `fallback?` below).
+        attached?  (pos? (:refs sprite))
+
+        ;; Fallback is ONLY for custom fonts: ones the (attached) sprite doesn't
+        ;; cover. If the sprite isn't ready (loading/error) or not yet attached,
+        ;; we show the plain name rather than runtime-loading the whole catalog.
+        in-sprite? (and attached? (contains? (:ids sprite) font-id))
+        fallback?  (and (= :ready (:status sprite)) attached? (not in-sprite?))
         loaded?    (use-font-lazy-load font-id fallback?)]
     (if in-sprite?
       ;; `fill: currentColor` (scss) makes the sprite glyph follow the row color.
@@ -257,13 +262,20 @@
 
     ;; FLAG :font-preview — materialize the preview sprite into the DOM only while
     ;; the picker is open (markup is prefetched on workspace load), removing it on
-    ;; close so its ~2000 nodes aren't kept around idle. Remove the flag clause to
-    ;; drop the feature.
+    ;; close so its ~2000 nodes aren't kept around idle. The attachment is deferred
+    ;; so the dropdown can paint first with plain names, then the sprite swaps in
+    ;; on the next tick. Remove the flag clause to drop the feature.
     (mf/with-effect [sprite-status]
       (when (and (contains? cf/flags :font-preview)
                  (= :ready sprite-status))
-        (let [node (fonts/attach-preview-sprite!)]
-          #(fonts/detach-preview-sprite! node))))
+        (let [node*  (volatile! nil)
+              task   (tm/schedule
+                      (fn []
+                        (vreset! node* (fonts/attach-preview-sprite!))))]
+          (fn []
+            (tm/dispose! task)
+            (when-some [n @node*]
+              (fonts/detach-preview-sprite! n))))))
 
     (mf/with-effect [@selected]
       (when-let [inst (mf/ref-val flist)]
