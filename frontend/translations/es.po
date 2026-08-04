@@ -4266,7 +4266,7 @@ msgstr "Pega aquí tu código de activación"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
 msgid "nitrate.code-activation.renew-title"
-msgstr "RENOVAR NITRATE"
+msgstr "RENOVAR ENTERPRISE"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:101
 msgid "nitrate.code-activation.submit"
@@ -4274,7 +4274,7 @@ msgstr "Activar"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
 msgid "nitrate.code-activation.title"
-msgstr "Activar Nitrate"
+msgstr "Activar Enterprise"
 
 msgid "nitrate.contact-sales.button"
 msgstr "Contactar con ventas"
@@ -4381,14 +4381,14 @@ msgstr "Activo hasta el %s"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
 msgid "nitrate.subscription.renew-success"
-msgstr "Tu suscripción de Nitrate se ha renovado."
+msgstr "Tu suscripción de Enterprise se ha renovado."
 
 #: src/app/main/ui/settings/subscription.cljs:584
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "Cancelar subscripción"
 
 msgid "nitrate.subscription.settings.manual-contact-us"
-msgstr "Para cancelar tu suscripción a Nitrate, ponte en contacto con nosotros en:"
+msgstr "Para cancelar tu suscripción a Enterprise, ponte en contacto con nosotros en:"
 
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
