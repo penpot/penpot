@@ -22,4 +22,13 @@
 - `set_modifiers_end` disables fast/interactive state and cancels pending async render; the caller must request the final full-quality render.
 - Plain viewport fast mode (`options.is_viewport_interaction()`) renders from cache and does not flush target output inside `process_animation_frame`; interactive transforms do flush.
 - Zoom changes rebuild the tile index while preserving cached tile textures. Avoid replacing that path with shallow rebuilds if blur/shadow cache preservation matters.
+- Two-phase HiDPI zoom settle: (1) **Interactive** — one paint-once of **visible** tiles at DPR≤1 fill-rate (`tile_px=512`, `paint_scale≈zoom`); present + notify. (2) Deferred **Full** — `512*dpr` sprites, **visible+interest**, paint-once when the region fits (else per-tile). At DPR≤1 there is no Interactive phase. CTM must use `get_paint_scale()` / `get_raster_scale()`.
+- Soft settle schedules `pending_sharp_promote` (next `continue`); do not stay Interactive forever.
+- Partial frames **skip** GPU flush; hard sync in `present_frame` / ViewportReady.
+- Paint-once **resizes Current** to the region, restores viewport pad after present.
+- Zoom-gesture preview: **DocAtlas only** when `zoom_changed` (no tile-sprite overlay). `invalidate_tile_cache` clears sprites only — not `DocAtlas::reset()`. `continue_render_loop` no-ops while `fast_mode && zoom_changed`.
+- Full-quality `tile_px=1024` → ~16 atlas slots; `TileTextureCache::add` must not panic (see harden rules below).
+- `rebuild_backbuffer_crop_cache` caps crop windows to the backbuffer size (not `max_texture_size`) so crops use cheap Backbuffer `snapshot_rect`; doc-atlas snapshot + scratch are lazy and only for off-viewport fallback. Avoid eager 4096² scratch after pan/zoom Full frames.
+- Cache surface growth must compare against the live `cache` width/height, not `get_cache_size(cached_viewbox)`. The latter re-created the same large cache on every progressive frame while `cached_viewbox` lagged.
+- `start_render_loop` always sets `allow_stop=true` so tile work yields under `max_blocking_time_ms`. Do not gate yielding on `preserve_target && !zoom_changed`: that forced a full interest-area sync pass after pan and froze HiDPI deep-zoom sessions. `preserve_target` alone keeps the last frame visible during progressive fill-in.
 - Pending tile priority is intentionally reversed by pop order; check the queue construction before changing tile scheduling.

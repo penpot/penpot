@@ -32,12 +32,12 @@ impl Tile {
     }
 
     #[inline(always)]
-    pub fn get_rect_with_offset(&self, offset: &skia::Point) -> skia::Rect {
+    pub fn get_rect_with_offset(&self, offset: &skia::Point, tile_size_px: f32) -> skia::Rect {
         skia::Rect::from_xywh(
-            self.0 as f32 * TILE_SIZE - offset.x,
-            self.1 as f32 * TILE_SIZE - offset.y,
-            TILE_SIZE,
-            TILE_SIZE,
+            self.0 as f32 * tile_size_px - offset.x,
+            self.1 as f32 * tile_size_px - offset.y,
+            tile_size_px,
+            tile_size_px,
         )
     }
 }
@@ -209,11 +209,40 @@ impl TileViewbox {
     }
 }
 
-pub const TILE_SIZE: f32 = 512.;
+/// Base tile texture size at DPR=1 (device pixels).
+pub const TILE_SIZE_BASE: f32 = 512.;
+
+/// Alias for [`TILE_SIZE_BASE`]. Prefer [`device_tile_size_px`] for layout size.
+pub const TILE_SIZE: f32 = TILE_SIZE_BASE;
+
+/// Device-pixel coverage of one tile on the backbuffer at the given view DPR.
+/// At DPR=2 this is 1024 — used for placing sprites, not necessarily for
+/// rasterizing them (see content-quality / interactive LOD).
+#[inline(always)]
+pub fn device_tile_size_px(dpr: f32) -> f32 {
+    (TILE_SIZE_BASE * dpr.max(0.01)).round().max(1.0)
+}
 
 #[inline(always)]
-pub fn get_tile_dimensions() -> skia::ISize {
-    (TILE_SIZE as i32, TILE_SIZE as i32).into()
+pub fn device_tile_size_px_i32(dpr: f32) -> i32 {
+    device_tile_size_px(dpr) as i32
+}
+
+/// Alias kept for call sites that mean "full-quality raster size == device coverage".
+#[inline(always)]
+pub fn tile_size_px(dpr: f32) -> f32 {
+    device_tile_size_px(dpr)
+}
+
+#[inline(always)]
+pub fn tile_size_px_i32(dpr: f32) -> i32 {
+    device_tile_size_px_i32(dpr)
+}
+
+#[inline(always)]
+pub fn get_tile_dimensions(dpr: f32) -> skia::ISize {
+    let s = device_tile_size_px_i32(dpr);
+    (s, s).into()
 }
 
 pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> TileRect {
@@ -227,7 +256,7 @@ pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> TileRect {
 }
 
 pub fn get_tiles_for_viewbox(viewbox: &Viewbox) -> TileRect {
-    let tile_size = get_tile_size(viewbox.get_scale());
+    let tile_size = get_tile_size(viewbox.get_scale(), viewbox.dpr);
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
@@ -241,20 +270,22 @@ pub fn get_tile_center_for_viewbox(viewbox: &Viewbox) -> Tile {
     Tile((ex - sx) / 2, (ey - sy) / 2)
 }
 
-pub fn get_tile_pos(Tile(x, y): Tile, scale: f32) -> (f32, f32) {
-    (
-        x as f32 * get_tile_size(scale),
-        y as f32 * get_tile_size(scale),
-    )
+pub fn get_tile_pos(Tile(x, y): Tile, scale: f32, dpr: f32) -> (f32, f32) {
+    let ts = get_tile_size(scale, dpr);
+    (x as f32 * ts, y as f32 * ts)
 }
 
-pub fn get_tile_size(scale: f32) -> f32 {
-    1. / scale * TILE_SIZE
+/// World/document size of one tile at `scale = zoom * dpr`.
+/// Always `BASE / zoom` so viewport tile *count* matches DPR=1 regardless of
+/// the raster tile texture size used for LOD.
+pub fn get_tile_size(scale: f32, dpr: f32) -> f32 {
+    let zoom = (scale / dpr.max(0.01)).max(1e-6);
+    TILE_SIZE_BASE / zoom
 }
 
-pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
-    let (tx, ty) = get_tile_pos(tile, scale);
-    let ts = get_tile_size(scale);
+pub fn get_tile_rect(tile: Tile, scale: f32, dpr: f32) -> skia::Rect {
+    let (tx, ty) = get_tile_pos(tile, scale, dpr);
+    let ts = get_tile_size(scale, dpr);
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 
@@ -345,11 +376,9 @@ impl PendingTiles {
         self.list.clear();
         self.deferred_interest.clear();
 
-        // During interactive transform, skip the interest-area ring
-        // entirely: the user is dragging, every rAF is on the critical
-        // path, and pre-rendering tiles outside the viewport is wasted
-        // work that just gets evicted on the next pointer move. The ring
-        // is repopulated naturally on gesture end / on idle rAFs.
+        // During interactive transform / soft HiDPI settle, skip the interest
+        // ring — every rAF is on the critical path. The ring is repopulated on
+        // gesture end or the full-quality upgrade pass.
         let tile_rect = if only_visible {
             &tile_viewbox.visible_rect
         } else {
@@ -388,7 +417,11 @@ impl PendingTiles {
         for (_, tile) in self.tile_order.iter() {
             let tile = *tile;
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
-            let is_cached = surfaces.has_cached_tile_surface(tile);
+            // Interest tiles that were drawn but could not get an atlas slot must
+            // not be re-queued (would loop forever with DPR-scaled 16-slot atlases).
+            // Once they become visible, `has` is false until they get a real slot.
+            let is_cached = surfaces.has_cached_tile_surface(tile)
+                || (!is_visible && surfaces.was_rendered_without_atlas_slot(tile));
 
             match (is_visible, is_cached) {
                 (true, true) => self.visible_cached.push(tile),

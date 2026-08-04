@@ -99,7 +99,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     paint.set_color(skia::Color::MAGENTA);
     paint.set_stroke_width(1.);
 
-    let tile_size = tiles::get_tile_size(scale);
+    let tile_size = tiles::get_tile_size(scale, render_state.viewbox.dpr);
     let tile_rect = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
     let tiles::TileRect(sx, sy, ex, ey) = tile_rect;
 
@@ -108,7 +108,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     let debug_font = get_resources().fonts.debug_font();
     canvas.draw_str(str_rect, skia::Point::new(100.0, 100.0), debug_font, &paint);
 
-    let tile_size = tiles::get_tile_size(scale);
+    let tile_size = tiles::get_tile_size(scale, render_state.viewbox.dpr);
     for tile in tile_rect.iter(true) {
         let tiles::Tile(x, y) = tile;
         let rect = tile.get_rect_with_size(tile_size);
