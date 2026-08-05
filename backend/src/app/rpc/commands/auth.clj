@@ -258,7 +258,8 @@
   (validate-register-attempt! cfg params)
 
   (let [email   (profile/clean-email email)
-        profile (profile/get-profile-by-email pool email)]
+        profile (profile/get-profile-by-email pool email)
+        fullname (d/normalize-string fullname)]
 
     ;; SECURITY: refuse to issue a prepared-register token when an active
     ;; profile already exists for this email.
@@ -359,6 +360,9 @@
         is-active (:is-active params false)
         theme     (:theme params nil)
         email     (str/lower email)
+        fullname  (d/normalize-string (:fullname params))
+        locale    (d/normalize-string locale)
+        theme     (d/normalize-string theme)
 
         photo-id  (some->> (or (:oidc/picture props)
                                (:google/picture props)
@@ -367,7 +371,7 @@
                            (import-profile-picture cfg))
 
         params    {:id id
-                   :fullname (:fullname params)
+                   :fullname fullname
                    :email email
                    :auth-backend backend
                    :lang locale
