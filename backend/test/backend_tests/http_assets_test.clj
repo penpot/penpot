@@ -110,7 +110,8 @@
     (doseq [bucket ["file-media-object"
                     "file-object-thumbnail"
                     "team-font-variant"
-                    "file-data-fragment"]]
+                    "file-data-fragment"
+                    "organization"]]
       (t/testing (str "bucket: " bucket)
         (let [object  (create-storage-object! storage bucket "public data")
               request {:path-params {:id (str (:id object))}}
@@ -119,6 +120,19 @@
                 (str "bucket " bucket " should not require auth"))
           (t/is (not= 404 (::yres/status response))
                 (str "bucket " bucket " object should exist")))))))
+
+(t/deftest objects-handler-organization-logo-no-auth
+  ;; Organization logos are embedded in unauthenticated contexts, such as
+  ;; the invitation email image shown to a not-yet-registered invitee, so
+  ;; they must be servable without a session or access token.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "organization" "logo data")
+        request  {:path-params {:id (str (:id object))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (not= 401 (::yres/status response)))
+    (t/is (not= 404 (::yres/status response)))))
 
 (t/deftest objects-handler-public-bucket-with-auth
   ;; Objects in public buckets should also be accessible WITH authentication.

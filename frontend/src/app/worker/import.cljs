@@ -7,6 +7,7 @@
 (ns app.worker.import
   (:refer-clojure :exclude [resolve])
   (:require
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.schema :as sm]
@@ -44,10 +45,15 @@
 
 (def conjv (fnil conj []))
 
-(defn- read-zip-manifest
+(defn read-zip-manifest
   [zip-reader]
   (->> (rx/from (uz/get-entry zip-reader "manifest.json"))
-       (rx/mapcat uz/read-as-text)
+       (rx/mapcat (fn [entry]
+                    (if (nil? entry)
+                      (rx/throw (ex/error :type :validation
+                                          :code :invalid-penpot-file
+                                          :hint "Not a valid Penpot file: manifest.json is missing"))
+                      (uz/read-as-text entry))))
        (rx/map json/decode)))
 
 (defn slurp-uri
@@ -98,7 +104,7 @@
                                      (if (= (:type manifest) "penpot/export-files")
                                        (let [manifest (decode-manifest manifest)]
                                          (assoc file :type :binfile-v3 :files (:files manifest)))
-                                       (assoc file :type :legacy-zip :body body))))
+                                       (assoc file :type :unknown))))
                                   (rx/finalize (partial uz/close zip-reader))))
 
                            (= "application/octet-stream" mtype)

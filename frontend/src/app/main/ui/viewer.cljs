@@ -406,7 +406,7 @@
            (when (not (dom/fullscreen?))
              (st/emit! (dv/exit-fullscreen)))))]
 
-    (hooks/use-shortcuts ::viewer sc/shortcuts)
+    (hooks/use-shortcuts ::viewer sc/shortcuts :viewer)
     (when (nil? page)
       (ex/raise :type :not-found))
 

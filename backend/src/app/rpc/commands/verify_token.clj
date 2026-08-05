@@ -85,12 +85,32 @@
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))
 
+(defn- with-nitrate-licence
+  [profile cfg]
+  (if (contains? cf/flags :admin-console)
+    (nitrate/add-nitrate-licence-to-profile cfg profile)
+    profile))
+
 (defmethod process-token :auth
   [{:keys [::db/conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/get-profile conn profile-id)]
+  (let [profile (-> (profile/get-profile conn profile-id)
+                    (profile/strip-private-attrs)
+                    (update :props profile/filter-props)
+                    (with-nitrate-licence cfg))]
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
+
+(def ^:private sql:get-organization-invitation
+  "SELECT *
+     FROM team_invitation
+    WHERE email_to = ?
+      AND org_id = ?")
+
+(def ^:private sql:delete-organization-invitation
+  "DELETE FROM team_invitation
+    WHERE email_to = ?
+      AND org_id = ?")
 
 (defn- accept-invitation
   [{:keys [::db/conn] :as cfg}
@@ -115,9 +135,9 @@
                   (get types.team/permissions-for-role role))
 
           accepted-team-id (if organization-id
-                             ;; Insert the invited member to the org
-                             (when (contains? cf/flags :nitrate)
-                               (teams/initialize-user-in-nitrate-org cfg id-member organization-id member-email))
+                             ;; Insert the invited member to the organization
+                             (when (contains? cf/flags :admin-console)
+                               (teams/initialize-user-in-organization cfg id-member organization-id member-email))
                              ;; Insert the invited member to the team
                              (do (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
                                  team-id))]
@@ -136,10 +156,11 @@
                     {:id id-member}))
 
       ;; Delete the invitation
-      (db/delete! conn :team-invitation
-                  (cond-> {:email-to member-email}
-                    team-id (assoc :team-id team-id)
-                    organization-id  (assoc :org-id organization-id)))
+      (if organization-id
+        (db/exec-one! conn [sql:delete-organization-invitation member-email organization-id])
+        (db/delete! conn :team-invitation
+                    {:email-to member-email
+                     :team-id team-id}))
 
       ;; Delete any request (only applicable for team invitations)
       (when team-id
@@ -175,22 +196,17 @@
               :code :invalid-invitation-token
               :hint "invitation token contains unexpected data"))
 
-  (let [invitation             (db/get* conn :team-invitation
-                                        (cond-> {:email-to member-email}
-                                          team-id (assoc :team-id team-id)
-                                          organization-id  (assoc :org-id organization-id)))
+  (let [invitation             (if organization-id
+                                 (db/exec-one! conn [sql:get-organization-invitation member-email organization-id])
+                                 (db/get* conn :team-invitation
+                                          {:email-to member-email
+                                           :team-id team-id}))
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
         registration-disabled? (not (contains? cf/flags :registration))
 
-        org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
-        ;; Membership only makes sense for a logged-in profile; querying it for
-        ;; an anonymous recipient would call nitrate with a nil profile-id and
-        ;; mask the clean :invalid-token response with a generic error.
-        membership             (when (and profile org-invitation?)
-                                 (nitrate/call cfg :get-org-membership {:profile-id profile-id
-                                                                        :organization-id organization-id}))]
+        organization-invitation?        (and (contains? cf/flags :admin-console) organization-id)]
 
     (if profile
       (do
@@ -201,62 +217,130 @@
                     :reason :email-mismatch
                     :hint "logged-in user does not matches the invitation"))
 
-        (when (:is-member membership)
-          (ex/raise :type :validation
-                    :code :already-an-org-member
-                    :team-id (:default-team-id membership)
-                    :hint "the user is already a member of the organization"))
-
-        (when (and org-invitation? (not (:organization-id membership)))
-          (ex/raise :type :validation
-                    :code :org-not-found
-                    :team-id (:default-team-id profile)
-                    :hint "the organization doesn't exist"))
-
         (when (nil? invitation)
           (ex/raise :type :validation
-                    :code :invalid-token
-                    :hint "no invitation associated with the token"))
+                    :code (if organization-id :canceled-invitation :invalid-token)
+                    :hint (if organization-id
+                            "the invitation has been canceled"
+                            "no invitation associated with the token")))
 
+        ;; Membership only makes sense for a logged-in profile with an
+        ;; existing invitation; querying it when the invitation is absent
+        ;; would call nitrate needlessly and could mask the clean
+        ;; :canceled-invitation/:invalid-token response with a generic error.
+        (let [membership
+              (when (contains? cf/flags :admin-console)
+                (cond
+                  organization-id
+                  (nitrate/call cfg :get-organization-membership {:profile-id profile-id
+                                                                  :organization-id organization-id})
 
-        ;; if we have logged-in user and it matches the invitation we proceed
-        ;; with accepting the invitation and joining the current profile to the
-        ;; invited team.
-        (let [props {:team-id (:team-id claims)
-                     :role (:role claims)
-                     :invitation-id (:id invitation)}]
+                  team-id
+                  (nitrate/call cfg :get-organization-membership-by-team {:profile-id profile-id
+                                                                          :team-id team-id})))
 
-          (audit/submit cfg
-                        (-> (audit/event-from-rpc-params params)
-                            (assoc :name "accept-team-invitation")
-                            (assoc :props props)))
+              organization-id-on-add
+              (when (and (:organization-id membership)
+                         (not (:is-member membership)))
+                (:organization-id membership))
 
-          ;; NOTE: Backward compatibility; old invitations can
-          ;; have the `created-by` to be nil; so in this case we
-          ;; don't submit this event to the audit-log
-          (when-let [created-by (:created-by invitation)]
-            (audit/submit cfg
-                          (-> (audit/event-from-rpc-params params)
-                              (assoc :profile-id created-by)
-                              (assoc :name "accept-team-invitation-from")
-                              (assoc :props (assoc props
-                                                   :profile-id (:id profile)
-                                                   :email (:email profile))))))
+              organization-add-source
+              (when organization-id-on-add
+                (if organization-id
+                  "direct-organization-invitation"
+                  "team-invitation"))
 
-          (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
-            (cond-> (assoc claims :state :created)
-              ;; when the invitation is to an org, instead of a team, add the
-              ;; accepted-team-id as :org-team-id
-              (:organization-id claims)
-              (assoc :org-team-id accepted-team-id)))))
+              organization-event-origin
+              (when organization-id-on-add
+                (if organization-id
+                  "organization-invitation-acceptance"
+                  "team-invitation-acceptance"))
+
+              organization-member-count-before
+              (when organization-id-on-add
+                (count
+                 (nitrate/call cfg :get-organization-members
+                               {:organization-id organization-id-on-add})))]
+
+          (when (:is-member membership)
+            (when organization-invitation?
+              (ex/raise :type :validation
+                        :code :already-an-organization-member
+                        :team-id (:default-team-id membership)
+                        :hint "the user is already a member of the organization")))
+
+          (when (and organization-invitation? (not (:organization-id membership)))
+            (ex/raise :type :validation
+                      :code :organization-not-found
+                      :team-id (:default-team-id profile)
+                      :hint "the organization doesn't exist"))
+
+          ;; if we have logged-in user and it matches the invitation we proceed
+          ;; with accepting the invitation and joining the current profile to the
+          ;; invited team.
+          (let [props {:team-id (:team-id claims)
+                       :role (:role claims)
+                       :invitation-id (:id invitation)}]
+
+            (when team-id
+              (audit/submit cfg
+                            (-> (audit/event-from-rpc-params params)
+                                (assoc :name "accept-team-invitation")
+                                (assoc :props props)))
+
+              ;; NOTE: Backward compatibility; old invitations can
+              ;; have the `created-by` to be nil; so in this case we
+              ;; don't submit this event to the audit-log
+              (when-let [created-by (:created-by invitation)]
+                (audit/submit cfg
+                              (-> (audit/event-from-rpc-params params)
+                                  (assoc :profile-id created-by)
+                                  (assoc :name "accept-team-invitation-from")
+                                  (assoc :props (assoc props
+                                                       :profile-id (:id profile)
+                                                       :email (:email profile)))))))
+
+            (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
+              (when organization-id-on-add
+                (audit/submit
+                 cfg
+                 (-> (audit/event-from-rpc-params params)
+                     (assoc :name "accept-organization-invitation")
+                     (assoc :props
+                            (-> props
+                                (assoc :organization-id organization-id-on-add)
+                                (audit/clean-props))))))
+
+              (cond-> (assoc claims :state :created)
+                ;; when the invitation is to an organization, instead of a team, add the
+                ;; accepted-team-id as :organization-team-id
+                (:organization-id claims)
+                (assoc :organization-team-id accepted-team-id)
+
+                organization-id-on-add
+                (assoc :organization-invitation-audit
+                       {:origin organization-event-origin
+                        :props
+                        (-> props
+                            (assoc :organization-id organization-id-on-add
+                                   :organization-member-add-source organization-add-source
+                                   :belongs-to-team-on-add (boolean team-id)
+                                   :organization-member-count-before
+                                   organization-member-count-before)
+                            (audit/clean-props))}))))))
 
       (do
-        ;; If the user is not logged-in and the token is invalid we throw the error
-        ;; Taiga issue #14182
+        ;; If the user is not logged-in and the invitation has been canceled
+        ;; we return a specific error code so the frontend can redirect to
+        ;; login with an appropriate message instead of showing the error page.
+        ;; This only applies to organization invitations; team invitations keep the
+        ;; existing :invalid-token behavior.
         (when (nil? invitation)
           (ex/raise :type :validation
-                    :code :invalid-token
-                    :hint "no invitation associated with the token"))
+                    :code (if organization-id :canceled-invitation :invalid-token)
+                    :hint (if organization-id
+                            "the invitation has been canceled"
+                            "no invitation associated with the token")))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
         ;; redirect user to login, if no member-id is present and  in the invitation
@@ -272,4 +356,3 @@
   [_ _ _]
   (ex/raise :type :validation
             :code :invalid-token))
-

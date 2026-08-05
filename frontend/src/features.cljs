@@ -7,22 +7,22 @@
 ;; This namespace is only to export the functions for toggle features
 (ns features
   (:require
-   [app.main.features :as features]
+   [app.main.features :as feat]
    [app.main.store :as st]
    [app.plugins :as plugins]
    [app.util.timers :as tm]))
 
 (defn ^:export grid []
-  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "layout/grid")))
+  (tm/schedule-on-idle #(st/emit! (feat/toggle-feature "layout/grid")))
   nil)
 
 (defn ^:export get-enabled []
-  (clj->js features/global-enabled-features))
+  (clj->js feat/global-enabled-features))
 
 (defn ^:export get-team-enabled []
   (clj->js (get @st/state :features)))
 
 (defn ^:export plugins []
-  (st/emit! (features/enable-feature "plugins/runtime"))
+  (st/emit! (feat/enable-feature "plugins/runtime"))
   (plugins/init-plugins-runtime)
   nil)

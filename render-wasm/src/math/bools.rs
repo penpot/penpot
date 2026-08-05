@@ -82,14 +82,31 @@ pub fn split_intersections(segment: Bezier, intersections: &[f64]) -> Vec<Bezier
     }
 
     let mut result = Vec::new();
-    let mut intersections = intersections.to_owned();
+    // Clamp to the valid parametric range: `intersections()`/`project()` can
+    // return values a hair outside [0,1] due to float error, which would make
+    // `split` panic on its `(0.0..=1.).contains(&t)` assertion below.
+    let mut intersections: Vec<f64> = intersections.iter().map(|t| t.clamp(0.0, 1.0)).collect();
     intersections.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
 
     let mut prev = 0.0;
     let mut cur_segment = segment;
 
     for t_i in &intersections {
-        let rti = (t_i - prev) / (1.0 - prev);
+        // Skip duplicated split points (the same crossing can be reported by
+        // two adjacent opposing segments that share an endpoint): re-splitting
+        // at (almost) the same t would emit a zero-length sliver segment whose
+        // midpoint containment test is unstable in union/difference/intersection.
+        if *t_i - prev < 1e-6 {
+            continue;
+        }
+        let denom = 1.0 - prev;
+        // Degenerate split (prev already at the segment end); nothing left to cut.
+        if denom <= f64::EPSILON {
+            continue;
+        }
+        // Re-normalize the global t into the remaining segment, clamped so float
+        // noise / out-of-order duplicates can never push it outside [0,1].
+        let rti = ((t_i - prev) / denom).clamp(0.0, 1.0);
         let [s, rest] = cur_segment.split(TValue::Parametric(rti));
         prev = *t_i;
         cur_segment = rest;
@@ -110,21 +127,52 @@ pub fn split_segments(path_a: &Path, path_b: &Path) -> (Vec<Bezier>, Vec<Bezier>
     let mut intersects_b = Vec::<Vec<f64>>::with_capacity(path_b.len());
     intersects_b.resize_with(path_b.len(), Default::default);
 
+    // Broad-phase: precompute a conservative (control-hull) AABB per segment,
+    // padded by the intersection tolerance. Two segments can only intersect if
+    // their boxes overlap, so we skip the expensive `intersections()` call for
+    // the (typically vast) majority of non-overlapping pairs. This turns the
+    // O(A*B) inner loop from A*B curve-subdivision solves into A*B cheap box
+    // tests plus only the handful of solves that can actually produce a hit.
+    let bbox = |b: &Bezier| {
+        let [min, max] = b.bounding_box_of_anchors_and_handles();
+        [
+            DVec2::new(min.x - INTERSECT_ERROR, min.y - INTERSECT_ERROR),
+            DVec2::new(max.x + INTERSECT_ERROR, max.y + INTERSECT_ERROR),
+        ]
+    };
+    let boxes_a: Vec<[DVec2; 2]> = path_a.iter().map(bbox).collect();
+    let boxes_b: Vec<[DVec2; 2]> = path_b.iter().map(bbox).collect();
+
     for i in 0..path_a.len() {
+        let [amin, amax] = boxes_a[i];
         for j in 0..path_b.len() {
+            let [bmin, bmax] = boxes_b[j];
+            // AABB overlap test; skip pairs that cannot intersect.
+            if amin.x > bmax.x || bmin.x > amax.x || amin.y > bmax.y || bmin.y > amax.y {
+                continue;
+            }
             let segment_a = path_a[i];
             let segment_b = path_b[j];
-            let intersections_a = segment_a.intersections(
+            let mut intersections_a = segment_a.intersections(
                 &segment_b,
                 Some(INTERSECT_ERROR),
                 Some(INTERSECT_MIN_SEPARATION),
             );
 
+            // Clamp at the source: float error can report a t just outside
+            // [0,1], and every `TValue::Parametric` consumer downstream
+            // (`evaluate`, `project`, `split`) asserts `(0.0..=1.).contains(&t)`.
+            for t in intersections_a.iter_mut() {
+                *t = t.clamp(0.0, 1.0);
+            }
+
             intersects_b[j].extend(intersections_a.iter().map(|t_a| {
-                segment_b.project(
-                    segment_a.evaluate(TValue::Parametric(*t_a)),
-                    Some(PROJECT_OPTS),
-                )
+                segment_b
+                    .project(
+                        segment_a.evaluate(TValue::Parametric(*t_a)),
+                        Some(PROJECT_OPTS),
+                    )
+                    .clamp(0.0, 1.0)
             }));
 
             intersects_a[i].extend(intersections_a);

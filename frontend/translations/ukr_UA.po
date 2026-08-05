@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
-"Language-Team: Ukrainian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
+"frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -368,7 +368,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(копія)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Створити організацію"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -3811,10 +3811,6 @@ msgstr ""
 "Після того, як Ви назвали свою команду, Ви зможете запрошувати людей "
 "приєднатись до неї."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Вкажіть ім'я команди"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Створити команду"
@@ -4113,11 +4109,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Редагувати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Загальні"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Загальні"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -4611,14 +4603,6 @@ msgstr "Прив'язати до піскельної сітки"
 msgid "shortcuts.start-editing"
 msgstr "Почати редагування"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Почати вимірювання"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Припинити вимірювання"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Вставити мініатюри"
@@ -4964,10 +4948,6 @@ msgstr "Більше інформації"
 msgid "subscription.settings.other-plans"
 msgstr "Інші плани Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "редакторів на місяць"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "організацій на місяць"
@@ -5021,11 +5001,6 @@ msgstr "Дякуємо за вибір плану %s Penpot!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Ви %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Ви підтримуєте нас цим планом з: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -8607,3 +8582,169 @@ msgstr "Автозбережені версії зберігатимуться �
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Перевірте поштову скриньку!"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "Лист було надіслано на:"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Перейти до Адмін. Панелі"
+
+#: src/app/main/ui/dashboard/import.cljs:505
+msgid "dashboard.import.import-error.check-error"
+msgstr "Не вдалось перевірити файл."
+
+#: src/app/main/ui/dashboard/import.cljs:509
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Файл здається пошкодженим."
+
+#: src/app/main/ui/dashboard/import.cljs:512
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Щось пішло не так під час обробки файлу."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Ви не маєте дозволів на створення, редагування чи видалення запрошень до "
+"команди."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+#, fuzzy
+msgid "dashboard.my-teams"
+msgstr "Мої команди"
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Ви не маєте дозволів на створення команд у організації %s. Для подробиць "
+"зверніться до її власника."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Ви не маєте дозволів на видалення команд що є частиною організації %s. Для "
+"подробить зверніться до її власника."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Ви не маєте дозволів переміщати команди, що належать організації %s. Для "
+"подробиць зверніться до її власника."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Організації"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "Команда організації"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "Додати до організації"
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "Змінити команду організації"
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "Ця команда не належить до жодної з організацій"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "Вилучити команду з організації"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "Бета"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"Відмальовування WebGL може покращити швидкодію, проте функція в беті, тому є "
+"менш стабільною. Можуть зʼявлятись візуальні відмінності між полотном, "
+"експортами (SVG/PDF) та режимом перегляду."
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Вимкнено"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Увімкнено"
+
+#: src/app/main/ui/settings/options.cljs:116
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Зворотній звʼязок"
+
+#: src/app/main/ui/settings/options.cljs:112
+msgid "dashboard.webgl-switch.status"
+msgstr "Стан"
+
+#: src/app/main/ui/settings/options.cljs:108
+msgid "dashboard.webgl-switch.title"
+msgstr "Відмальовування WebGL"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"API буферу обміну недоступне. Надайте доступ до Penpot через HTTPS, щоб "
+"увімкнути доступ"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Відмовлено у доступі до буферу обміну. Надайте дозвіл на використання буферу "
+"обміну у Вашому бровзері аби вставити вміст"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Імʼя сімейства шрифтів може мати лише літери, числа, пробіли, дефіси, нижні "
+"підкреслювання та крапки."
+
+#: src/app/main/ui/static.cljs:89
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Це запрошення для іншої поштової адреси. Вийдіть та зайдіть через запрошений "
+"обліковий запис, або попросіть у власника команди нове."
+
+#: src/app/main/ui/static.cljs:93
+msgid "errors.invite-expired"
+msgstr "Запрошення протерміноване. Запитайте власника команди про нове."
+
+#: src/app/main/ui/settings/integrations.cljs:581
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Це URL серверу, для якого потрібно налаштувати MCP клієнт для того щоб "
+"зʼєднати його з сервером MCP Penpot'у."
+
+#: src/app/main/ui/settings/integrations.cljs:561
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "Регенерувати ключ MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "Ключ MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:562
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "MCP ключ потрібен для налаштування клієнту MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:517
+msgid "integrations.mcp-server.status"
+msgstr "Стан"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Вимкнено"
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Увімкнено"

@@ -508,6 +508,7 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not read-only?)
                   (not mode-inspect?))
          [:> msr/selection-size-badge*
           {:shapes selected-shapes

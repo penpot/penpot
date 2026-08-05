@@ -55,7 +55,7 @@ Serena, Playwright) and supports a launcher that wires them into your AI client.
    for Penpot development (see below for details).
 
 6. **Shut down workspaces** with `./manage.sh stop-devenv`, either one by one or all at once.
-   You cannot shut down `ws0` if any other workspace is still running, since it's the worker-bearer.
+   Each workspace is independent and can be stopped in any order.
    Shared infrastructure will be cleaned up when the last workspace is stopped.
 
 Optional: watch Serena's activity in its dashboard
@@ -153,8 +153,8 @@ automatically, so regular users never run this.
 
 Brings one agentic instance up. Errors out if the target is already running.
 
-`--ws N` (N ≥ 1) auto-starts ws0 first if it is not already up - ws0 is the
-worker-bearer and must be running whenever any wsN is. Per-instance ports
+`--ws N` (N ≥ 1) brings that workspace up independently — workspaces can be
+started and stopped in any order. Per-instance ports
 are offset by `10000 × N` (ws1's MCP at `http://localhost:14401/mcp`, Serena
 MCP at `http://localhost:24181`, Serena dashboard at
 `http://localhost:24182`, etc.). `manage.sh` prints the full URL set on

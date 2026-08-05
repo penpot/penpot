@@ -15,7 +15,6 @@
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
    [app.render-wasm.svg-filters :as svg-filters]
-   [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
    [cuerdas.core :as str]))
@@ -129,7 +128,7 @@
 ;; The `set-wasm-attr!` can return a list of callbacks to be executed in a second pass.
 (defn- set-wasm-attr!
   [shape k]
-  (when wasm/context-initialized?
+  (when (api/initialized?)
     (let [shape (case k
                   :svg-attrs (svg-filters/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
                   (:fills :blur :shadow) (svg-filters/apply-svg-derived shape)
@@ -334,14 +333,15 @@
 
 (defn process-shape-changes!
   [objects shape-changes]
-  (let [shape-changes
-        (->> shape-changes
-             ;; We don't need to update the model for shapes not in the current page
-             (filter (fn [[shape-id _]] (shape-in-current-page? shape-id))))]
-    (when (d/not-empty? shape-changes)
-      (->> (rx/from shape-changes)
-           (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
-           (rx/subs! #(api/request-render "set-wasm-attrs"))))))
+  (when (api/initialized?)
+    (let [shape-changes
+          (->> shape-changes
+               ;; We don't need to update the model for shapes not in the current page
+               (filter (fn [[shape-id _]] (shape-in-current-page? shape-id))))]
+      (when (d/not-empty? shape-changes)
+        (->> (rx/from shape-changes)
+             (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
+             (rx/subs! #(api/request-render "set-wasm-attrs")))))))
 
 ;; `conj` empty set initialization
 (def conj* (fnil conj (d/ordered-set)))

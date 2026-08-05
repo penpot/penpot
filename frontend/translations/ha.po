@@ -2277,10 +2277,6 @@ msgstr "barka da zuwa fenfot!"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "bayan ka yi wa tawagarka suna, za ka iya gaiyato mutane ku hadu."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "sanya sunan tawaga"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "gayyato mambobi"
@@ -2436,11 +2432,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Tace"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "gamayya"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "gamayya"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -2902,14 +2894,6 @@ msgstr "yanke zuwa ga akwatin  pixel"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "fara gyarawa"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "fara aunawa"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "dena aunawa"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

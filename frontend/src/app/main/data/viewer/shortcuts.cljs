@@ -7,6 +7,8 @@
 (ns app.main.data.viewer.shortcuts
   (:require
    [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
+   [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]))
@@ -15,61 +17,80 @@
   {:increase-zoom      {:tooltip "+"
                         :command "+"
                         :subsections [:zoom-viewer]
+                        :section [:viewer]
                         :fn #(st/emit! dv/increase-zoom)}
+
+   :toggle-theme    {:tooltip (ds/alt "M")
+                     :command (ds/a-mod "m")
+                     :section [:viewer]
+                     :subsections [:generic]
+                     :fn #(st/emit! (with-meta (du/toggle-theme)
+                                      {::ev/origin "viewer:shortcuts"}))}
 
    :decrease-zoom      {:tooltip "-"
                         :command "-"
+                        :section [:viewer]
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/decrease-zoom)}
 
    :select-all         {:tooltip (ds/meta "A")
                         :command (ds/c-mod "a")
-                        :subsections [:general-viewer]
+                        :section [:viewer]
+                        :subsections [:generic]
                         :fn #(st/emit! (dv/select-all))}
 
    :reset-zoom         {:tooltip (ds/shift "0")
                         :command "shift+0"
+                        :section [:viewer]
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/reset-zoom)}
 
    :toggle-zoom-style  {:tooltip "F"
                         :command "f"
+                        :section [:viewer]
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/toggle-zoom-style)}
 
    :toggle-fullscreen  {:tooltip (ds/shift "F")
                         :command ["shift+f" "alt+enter"]
+                        :section [:viewer]
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/toggle-fullscreen)}
 
    :prev-frame         {:tooltip ds/left-arrow
                         :command ["left" "up" "shift+enter" "pageup" "shift+space"]
-                        :subsections [:general-viewer]
+                        :subsections [:generic]
+                        :section [:viewer]
                         :fn #(st/emit! dv/select-prev-frame)}
 
    :next-frame         {:tooltip ds/right-arrow
                         :command ["right" "down" "enter" "pagedown" "space"]
-                        :subsections [:general-viewer]
+                        :subsections [:generic]
+                        :section [:viewer]
                         :fn #(st/emit! dv/select-next-frame)}
 
    :open-inspect       {:tooltip "G I"
                         :command "g i"
                         :subsections [:navigation-viewer]
+                        :section [:viewer]
                         :fn #(st/emit! (dv/go-to-section :inspect))}
 
    :open-comments      {:tooltip "G C"
                         :command "g c"
                         :subsections [:navigation-viewer]
+                        :section [:viewer]
                         :fn #(st/emit! (dv/go-to-section :comments))}
 
    :open-interactions  {:tooltip "G V"
                         :command "g v"
                         :subsections [:navigation-viewer]
+                        :section [:viewer]
                         :fn #(st/emit! (dv/go-to-section :interactions))}
 
    :open-workspace     {:tooltip "G W"
                         :command "g w"
                         :subsections [:navigation-viewer]
+                        :section [:viewer]
                         :fn #(st/emit! (dcm/go-to-workspace))}})
 
 (defn get-tooltip [shortcut]

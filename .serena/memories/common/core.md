@@ -5,7 +5,7 @@
 ## Stable namespace map
 
 - `app.common.data` and `app.common.data.macros`: generic data helpers and performance macros that do not depend on Penpot domain entities.
-- `app.common.types.*`: shared shape/file/page/component/token data types, schemas, predicates, and entity-local operations. `app.common.types.nitrate-permissions` contains shared fail-closed Nitrate organization/team permission rules.
+- `app.common.types.*`: shared shape/file/page/component/token data types, schemas, predicates, and entity-local operations. `app.common.types.organization` contains organization schemas, `apply-organization`, and fail-closed organization/team permission rules (`allowed?`, `can-send-invitations?`).
 - `app.common.files.*`: file-level operations, shape tree helpers, change application, migrations, validation, and undo/redo-related logic.
 - `app.common.logic.*`: higher-level workflows/algorithms over files, shapes, components, variants, libraries, tokens, etc.
 - `app.common.geom.*`: geometry helpers and transformations.
@@ -49,7 +49,7 @@ Components, variants, and debugging:
 Text and tests:
 - Shared text data conversion, DraftJS compatibility, modern text content, and derived position data: `mem:common/text-subtleties`.
 - Common test commands, helper conventions, production-path test mutations, and runtime coverage choices: `mem:common/testing`.
-- Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:common/testing-principles`.
+- Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
 
 ## Areas without focused memories
 

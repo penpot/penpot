@@ -117,14 +117,15 @@
         on-paste
         (mf/use-fn
          (fn [event]
-           (let [paste-data (-> event .-clipboardData (.getData "text"))]
-             (when (and (string? paste-data)
-                        (re-find #"[,\s]" paste-data))
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
+           (when-let [clipboard-data (.-clipboardData event)]
+             (let [paste-data (.getData clipboard-data "text")]
+               (when (and (string? paste-data)
+                          (re-find #"[,\s]" paste-data))
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
 
-               ;; Mark as touched
-               (swap! form assoc-in [:touched name] true)
+                 ;; Mark as touched
+                 (swap! form assoc-in [:touched name] true))
 
                ;; Split pasted text by commas and/or whitespace, add each valid part
                (let [parts (->> (str/split paste-data #",|\s+")

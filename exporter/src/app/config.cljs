@@ -22,7 +22,7 @@
 
 (def ^:private defaults
   {:public-uri "http://localhost:3449"
-   :internal-uri nil
+   ;; :internal-uri nil ;; internal-uri cannot be nil
    :tenant "default"
    :host "localhost"
    :http-server-port 6061

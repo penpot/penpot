@@ -2788,10 +2788,6 @@ msgstr "您可以以後邀請"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "命名您的團隊後，您就可以邀請人們加入。"
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "輸入團隊名稱"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "建立團隊"
@@ -3081,11 +3077,7 @@ msgid "shortcut-subsection.edit"
 msgstr "編輯"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "一般"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "一般"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -3559,14 +3551,6 @@ msgstr "對齊到像素網格"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
 msgid "shortcuts.start-editing"
 msgstr "開始編輯"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "開始測量"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "停止測量"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

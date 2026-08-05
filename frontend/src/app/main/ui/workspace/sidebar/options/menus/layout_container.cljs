@@ -1186,13 +1186,14 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val 0) 0)]
              (cond
                ^boolean multiple?
                (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
 
                (some? type)
                (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
+
 
         ;; Padding
         on-padding-type-change
@@ -1205,7 +1206,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [type prop val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val 0) 0)]
              (cond
                (and (= type :simple) (or (= prop :p1) (= prop #{:p1 :p3})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
@@ -1431,7 +1432,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val 0) 0)]
              (if multiple?
                (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
                (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
@@ -1445,7 +1446,7 @@
 
         on-padding-change
         (fn [type prop val]
-          (let [val (mth/finite val 0)]
+          (let [val (mth/finite (d/parse-double val 0) 0)]
             (cond
               (and (= type :simple) (= prop :p1))
               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))

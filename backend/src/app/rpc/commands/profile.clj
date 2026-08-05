@@ -45,8 +45,17 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def schema:nudge
+  [:map {:title "Nudge"}
+   [:big {:optional true} ::sm/number]
+   [:small {:optional true} ::sm/number]])
+
+(def system-managed-props
+  "Props keys managed by the system (not user-writable via RPC)."
+  #{:subscription})
+
 (def schema:props
-  [:map {:title "ProfileProps"}
+  [:map {:title "ProfileProps" :closed true}
    [:plugins {:optional true} schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
@@ -54,12 +63,18 @@
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]
    [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:onboarding-questions {:optional true} [:map-of :keyword :string]]
+   [:onboarding-questions-answered {:optional true} ::sm/boolean]
+   [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
    [:notifications {:optional true} schema:props-notifications]
-   [:workspace-visited {:optional true} ::sm/boolean]])
+   [:workspace-visited {:optional true} ::sm/boolean]
+   [:custom-shortcuts {:optional true}
+    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
+   [:nudge {:optional true} schema:nudge]])
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -93,7 +108,7 @@
 
 (defn- with-nitrate-licence
   [profile cfg]
-  (if (contains? cf/flags :nitrate)
+  (if (contains? cf/flags :admin-console)
     (nitrate/add-nitrate-licence-to-profile cfg profile)
     profile))
 
@@ -451,7 +466,7 @@
                                  (assoc props k v))
                                props))
                            (:props profile)
-                           props)]
+                           (apply dissoc props system-managed-props))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
@@ -493,14 +508,14 @@
                 {:id profile-id})
 
     ;; Delete owned organizations on the fly (no grace period).
-    ;; Nitrate iterates the user's owned orgs and, per org, calls
+    ;; Nitrate iterates the user's owned organizations and, per organization, calls
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
-    ;; (during delete-owned-orgs) and ::notify-organization-deletion.
-    ;; Both preserve org teams unchanged and only prefix or delete
+    ;; (during delete-owned-organizations) and ::notify-organization-deletion.
+    ;; Both preserve organization teams unchanged and only prefix or delete
     ;; imported "Your Penpot" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
-    (when (contains? cf/flags :nitrate)
+    (when (contains? cf/flags :admin-console)
       (nitrate/call cfg :cleanup-deleted-penpot-user
                     {:profile-id profile-id}))
 
@@ -559,8 +574,8 @@
   {::doc/added "2.18"
    ::sm/result schema:get-owned-organizations-summary-result}
   [cfg {:keys [::rpc/profile-id]}]
-  (if (contains? cf/flags :nitrate)
-    (or (nitrate/call cfg :get-owned-orgs-summary {:profile-id profile-id}) [])
+  (if (contains? cf/flags :admin-console)
+    (or (nitrate/call cfg :get-owned-organizations-summary {:profile-id profile-id}) [])
     []))
 
 ;; --- HELPERS

@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Read-only planning and architecture analysis for Penpot — produce a structured implementation plan (Context, Affected modules, Approach, Risks, Testing). Always output to the user; additionally save to plans/YYYY-MM-DD-<title>.md only when the calling agent has write permission.
+description: Read-only planning and architecture analysis for Penpot — produce a structured implementation plan (Context, Affected modules, Approach, Risks, Testing). Always output to the user; additionally save to .opencode/plans/YYYY-MM-DD-<title>.md.
 ---
 
 # Planner
@@ -17,7 +17,7 @@ or modifies code.
   names, and test strategy.
 - The user asks "how would I implement X?" or "what's involved in fixing Y?".
 - The user is about to start non-trivial work and wants a bite-sized task
-  breakdown (DRY, YAGNI, TDD, frequent commits).
+  breakdown.
 
 Do **not** use this skill to actually implement anything — it is read-only.
 
@@ -29,13 +29,8 @@ modify code.
 
 You help users understand the codebase, design solutions, and create detailed
 implementation plans that other agents or developers can execute. Document
-everything they need to know: which files to touch for each task, code, tests,
-docs they might need to check, and how to verify it. Give them the whole plan
-as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
-
-Assume the implementer is a skilled developer, but knows almost nothing about
-our toolset or problem domain. Assume they don't know good test design very
-well.
+everything they need to know: which files to touch for each task, code patterns,
+tests, and how to verify correctness. Apply DRY and KISS principles.
 
 Do **not** suggest commit messages or commit names anywhere in your plans or
 responses — committing is the developer's responsibility.
@@ -44,92 +39,233 @@ responses — committing is the developer's responsibility.
 
 Before drafting any plan, work through the project's own guidance:
 
-1. Read `AGENTS.md` (root) for the project-level rules.
-2. Read `.serena/memories/critical-info.md` (or the equivalent entry point) to
-   identify which modules are affected.
+1. Read `critical-info` (`.serena/memories/critical-info.md`) — the entry point
+   that describes the monorepo structure and module dependency graph.
+2. From `critical-info`, identify which modules your task affects.
 3. Read each affected module's core memory, e.g. `mem:frontend/core`,
    `mem:backend/core`, `mem:common/core`, `mem:exporter/core`,
    `mem:render-wasm/core`. Follow `mem:` references deeper as needed.
-4. For frontend/backend work, check the relevant section's notes on lint,
-   format, and test commands so the plan can include them.
+4. For each affected module, note its lint, format, and test commands so the
+   plan can include concrete verification steps.
 
 Skipping this step is the #1 cause of incorrect or incomplete plans.
+
+## The Planning Process
+
+### Phase 1: Architecture Analysis
+
+1. Read the spec, requirements, or feature request.
+2. Analyze the codebase architecture and identify affected modules.
+3. Read project conventions (starting with `critical-info` and module core
+   memories) before drafting.
+4. Map dependencies between components (see the dependency graph in
+   `critical-info`).
+5. Identify risks, edge cases, performance implications, and breaking changes.
+
+### Phase 2: Task Breakdown
+
+Implementation order follows the monorepo's dependency graph:
+`frontend -> common`, `backend -> common`, `exporter -> common`,
+`frontend -> render-wasm`. Build shared foundations first, then layer
+consumers on top.
+
+#### Slice Vertically
+
+Instead of building all of common, then all of backend, then all of frontend —
+build one complete feature path at a time:
+
+```
+Task 1: common data types + schema             ← foundation
+Task 2: backend RPC handler + persistence
+Task 3: frontend UI component + API integration
+```
+
+Each vertical slice delivers working, testable functionality.
+
+#### Write Tasks
+
+Each task follows this structure:
+
+```markdown
+## Task [N]: [Short descriptive title]
+
+**Description:** One paragraph explaining what this task accomplishes.
+
+**Acceptance criteria:**
+- [ ] [Specific, testable condition]
+- [ ] [Specific, testable condition]
+
+**Verification:**
+- [ ] Tests pass (module-specific test command)
+- [ ] Lint/formatter passes (module-specific check command)
+
+**Dependencies:** [Task numbers this depends on, or "None"]
+
+**Files likely touched:**
+- `path/to/file.clj`
+- `path/to/file_test.clj`
+```
+
+Replace "module-specific test command" with the actual commands for the module
+(e.g. `clojure -M:dev:test` for backend/common, `npx shadow-cljs compile test && npx karma start` for frontend,
+or the commands noted in the module's core memory).
+
+#### Estimate Scope
+
+| Size | Files | Scope |
+|------|-------|-------|
+| **XS** | 1 | Single function, config change, or schema tweak |
+| **S** | 1-2 | One handler or component method |
+| **M** | 3-5 | One vertical feature slice |
+| **L** | 5-8 | Multi-component feature |
+| **XL** | 8+ | **Too large — break it down further** |
+
+If a task is L or larger, break it into smaller tasks. Agents perform best on
+S and M tasks.
+
+**When to break a task down further:**
+- It would take more than one focused session
+- You cannot describe the acceptance criteria in 3 or fewer bullet points
+- It touches two or more independent subsystems
+- You find yourself writing "and" in the task title (a sign it is two tasks)
+
+#### Order and Checkpoints
+
+Arrange tasks so that:
+
+1. Dependencies are satisfied (build foundation first)
+2. Each task leaves the system in a working state
+3. Verification checkpoints occur after every 2-3 tasks
+4. High-risk tasks are early (fail fast)
+
+Add explicit checkpoints with the relevant module commands:
+
+```markdown
+## Checkpoint: After Tasks 1-3
+- [ ] All tests pass (module-specific command)
+- [ ] Lint/format passes (module-specific command)
+- [ ] Core flow works end-to-end
+- [ ] Review with human before proceeding
+```
 
 ## Requirements
 
 - Analyze the codebase architecture and identify affected modules.
-- Read `AGENTS.md` and the memory system conventions before drafting.
+- Read project conventions before drafting (start with `critical-info` and
+  affected module core memories).
 - Break down complex features or bugs into atomic, actionable steps.
 - Propose solutions with clear rationale, trade-offs, and sequencing.
 - Identify risks, edge cases, performance implications, and breaking changes.
 - Apply DRY and KISS principles to the proposed implementation.
 - Define a testing strategy aligned with each affected module's tooling.
+- Every task must have acceptance criteria and verification steps.
+- Checkpoints must exist between major phases.
 
 ## Constraints
 
 - You are **analysis-only** — never create, edit, or delete source code.
-- The only file write you may attempt is the plan itself, and only when the
-  calling agent has write permission (see "Plan Output"). If the write is
-  denied, deliver the plan in the response and move on.
+- The only file write you may attempt is the plan itself, saved to
+  `.opencode/plans/`.
 - You do **not** run builds, tests, linters, or any commands that modify state.
 - You do **not** create git commits or interact with version control.
-- You do **not** execute shell commands beyond read-only searches (`rg`, `ls`,
-  `find`, `cat`, `bat`).
+- You do **not** execute shell commands beyond read-only searches.
 - Your output is a structured plan or analysis, ready for handoff to an
   engineer agent or developer.
 
-## Plan Output
+## Output Format
 
 The plan is always delivered in the response so the user sees it regardless
 of which agent is running the skill.
 
-Persistence is a **separate, best-effort step** that only runs when the
-calling agent has `edit` write permission:
+Additionally, save the plan to:
 
-- **Has write permission** (e.g. `build`, `general`, `engineer`): in addition
-  to the in-response plan, save the plan to:
+```
+.opencode/plans/YYYY-MM-DD-<plan-one-line-title>.md
+```
 
-  ```
-  plans/YYYY-MM-DD-<plan-one-line-title>.md
-  ```
+Use today's date in the user's local timezone. The `<plan-one-line-title>`
+slug is lowercase, hyphen-separated, and a short summary of the task
+(e.g. `add-batch-get-profiles-for-file-comments`). Create the
+`.opencode/plans/` directory if it does not exist.
 
-  Use today's date in the user's local timezone. The `<plan-one-line-title>`
-  slug is lowercase, hyphen-separated, and a short summary of the task
-  (e.g. `add-batch-get-profiles-for-file-comments`). Create the `plans/`
-  directory if it does not exist.
+Always attempt the write. If the user explicitly provides a target file path,
+use that path instead of the default.
 
-- **No write permission** (e.g. the built-in `plan` agent, which denies
-  `edit`): do not attempt to write the file — the write tool will be
-  rejected. Just deliver the plan in the response. The user can copy it into
-  `plans/...` manually if they want it persisted.
+### Plan Document Template
 
-If the user explicitly provides a target file path, use that path instead of
-the default `plans/YYYY-MM-DD-<slug>.md` (still subject to write permission).
+```markdown
+# Plan: [Feature/Project Name]
 
-How to detect write permission: try the write. If it is denied, treat the
-plan as response-only and proceed — do not retry, do not ask the user, and do
-not mention the failed write in the response.
+## Context
+[One paragraph: what is the problem or feature request? Why is it needed?]
 
-## Output Format
+## Affected Modules
+[Which modules of the monorepo are involved? Reference module paths and any
+`mem:` memories that were consulted.]
 
-Structure the plan as:
+## Architecture Decisions
+- [Key decision 1 and rationale]
+- [Key decision 2 and rationale]
 
-1. **Context** — What is the problem or feature request? Why is it needed?
-2. **Affected modules** — Which parts of the codebase are involved? Reference
-   module paths and any `mem:` memories that were consulted.
-3. **Approach** — Step-by-step implementation plan with file paths, function
-   names, and code shape where applicable. Group steps into atomic, ordered
-   tasks.
-4. **Risks & considerations** — Edge cases, performance implications,
-   breaking changes, migration concerns, security implications.
-5. **Testing strategy** — How to verify the implementation works correctly:
-   which test commands to run per module, what cases to cover, manual
-   verification steps, lint/format checks.
+## Risks & Considerations
+[Edge cases, performance implications, breaking changes, migration concerns,
+security implications.]
 
-Each step in **Approach** should be small enough to be reviewed and committed
-independently. Cite exact file paths (`path/to/file.ext:line` when useful) so
-the implementer can navigate directly.
+## Approach
+[Step-by-step implementation plan with file paths, function names, and code
+shape where applicable. Group steps into atomic, ordered tasks.]
+
+## Task List
+
+### Phase 1: Foundation
+- [ ] Task 1: ...
+- [ ] Task 2: ...
+
+### Checkpoint: Phase 1
+- [ ] Tests pass, lint/formatter clean (module-specific commands)
+
+### Phase 2: Core Features
+- [ ] Task 3: ...
+- [ ] Task 4: ...
+
+### Checkpoint: Phase 2
+- [ ] End-to-end flow works
+
+### Phase 3: Polish
+- [ ] Task 5: ...
+- [ ] Task 6: ...
+
+### Checkpoint: Complete
+- [ ] All acceptance criteria met
+- [ ] Ready for review
+
+## Testing Strategy
+[How to verify: which test commands to run per module, what cases to cover,
+manual verification steps, lint/format checks. Consult each module's core
+memory for the exact commands.]
+
+## Parallelization Opportunities
+- **Safe to parallelize:** Independent feature slices across separate
+  modules, tests for already-implemented features
+- **Must be sequential:** Shared common schema changes, database migrations
+- **Needs coordination:** Features that share a contract (define the contract
+  first, then parallelize)
+
+## Open Questions
+- [Question needing human input]
+```
 
 When the plan is purely analytical (e.g. a code review or feasibility study
-with no implementation), skip the **Approach** section and lead with
-**Findings** instead, keeping the rest of the structure.
+with no implementation), skip the **Approach** and **Task List** sections and
+lead with **Findings** instead, keeping the rest of the structure.
+
+## Verification Checklist
+
+Before starting implementation, confirm:
+
+- [ ] Every task has acceptance criteria
+- [ ] Every task has a verification step
+- [ ] Task dependencies are identified and ordered correctly
+- [ ] No task touches more than ~5 files
+- [ ] Checkpoints exist between major phases
+- [ ] The human has reviewed and approved the plan

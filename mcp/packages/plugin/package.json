@@ -12,13 +12,13 @@
     "clean": "rm -rf dist/"
   },
   "dependencies": {
-    "@penpot/plugin-styles": "1.4.2",
-    "@penpot/plugin-types": "1.4.2"
+    "@penpot/plugin-styles": "1.5.0",
+    "@penpot/plugin-types": "1.5.0"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
     "typescript": "^6.0.3",
-    "vite": "^8.1.1",
+    "vite": "^8.2.0",
     "vite-live-preview": "^0.4.0"
   }
 }

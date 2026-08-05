@@ -26,15 +26,19 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [frontend-tests.composable-tests.core :as tm]))
 
 ;; ---------------------------------------------------------------------------
@@ -126,6 +130,86 @@
 ;; Aliases for the historical `has-attr?` name (used by the earlier cases).
 (def ^{:doc "Alias of `has-property-of`."} has-attr? has-property-of)
 (def ^{:doc "Alias of `applied-property`."} applied-attr applied-property)
+
+;; ---------------------------------------------------------------------------
+;; Geometry operations
+;;
+;; Unlike `change-property` (a raw attribute write), geometric changes must go
+;; through the TRANSFORM pipeline: on the frontend, the interpreter dispatches
+;; the real sidebar events (`dwt/increase-rotation`, `dwt/update-dimensions`),
+;; whose apply-modifiers step also runs the placement-vs-override classification
+;; for component copies (calculate-ignore-tree / check-delta) — which is part of
+;; what these operations exist to exercise. The synchronous `apply-to` fallback
+;; below performs the geometrically equivalent transform through the production
+;; math, but cannot classify placement (that code is frontend-only), so cases
+;; using these operations are meant to run through the interpreter.
+
+(defrecord Rotate [target angle]
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          objects  (:objects page)
+          shape    (get objects shape-id)
+          ;; rotating a container rotates its whole subtree, as the real event does
+          ids      (into #{shape-id} (cfh/get-children-ids objects shape-id))
+          center   (gsh/shape->center shape)
+          rotate1  (fn [s] (gsh/transform-shape s (ctm/rotation-modifiers s center angle)))
+          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               ids
+                                               rotate1
+                                               objects
+                                               {})
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (tm/record-application this {:target target :angle angle})))))
+
+(defn rotate
+  "Constructor for the rotation operation: rotate the shape named by `target`
+   (a role, a label, or a `(situation -> id)` fn) — including its whole subtree —
+   by `angle` degrees around its center. On the frontend this dispatches the real
+   `dwt/increase-rotation` event."
+  [target angle]
+  (tm/assign-id (->Rotate target angle)))
+
+(defrecord ChangeHeight [target value]
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          objects  (:objects page)
+          shape    (get objects shape-id)
+          resize1  (fn [s] (gsh/transform-shape
+                            s
+                            (ctm/resize-modifiers (gpt/point 1 (/ value (:height s)))
+                                                  (gpt/point (:x s) (:y s)))))
+          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id shape)}
+                                               resize1
+                                               objects
+                                               {})
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (tm/record-application this {:target target :value value})))))
+
+(defn change-height
+  "Constructor for the height-change operation: resize the shape named by `target`
+   to height `value` (width unchanged). On the frontend this dispatches the real
+   `dwt/update-dimensions` event. Implements `IPropertyCheck`, so a `one-of` over
+   property and geometry edits can assert uniformly via `has-property-of`."
+  [target value]
+  (tm/assign-id (->ChangeHeight target value)))
+
+(extend-type ChangeHeight
+  IPropertyCheck
+  (applied-property [_node] :height)
+  (applied-value [node] (:value node))
+  (has-property-of [node shape]
+    (mth/close? (:value node) (:height shape))))
 
 ;; ===========================================================================
 ;; Synchronisation-scenario building blocks

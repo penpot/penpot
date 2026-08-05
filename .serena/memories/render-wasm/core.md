@@ -26,6 +26,7 @@ From `render-wasm/`:
 - Build/copy frontend artifacts: `./build`.
 - Watch rebuild: `./watch`.
 - Rust tests: `./test` or `cargo test <name>`.
+- Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Lint: `./lint`.
 - Format check: `cargo fmt --check`.
 

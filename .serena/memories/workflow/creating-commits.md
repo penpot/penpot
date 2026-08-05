@@ -14,9 +14,15 @@ automatically pull the identity from the local git config `user.name` and `user.
 :emoji: Subject line (imperative, capitalized, no period, <=70 chars)
 
 Body explaining what changed and why.
+Wrap lines at 72 characters — git log and tooling
+render long lines poorly. Keep each line concise.
 
 AI-assisted-by: model-name
 ```
+
+**AI-assisted-by trailer rules:**
+- Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`
+- Do NOT add prefixes like `opencode-go/` — use the bare model name
 
 ## Commit Type Emojis
 

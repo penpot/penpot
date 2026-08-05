@@ -67,8 +67,8 @@
         (t/is false "should have thrown")
         (catch Exception e
           (let [data (ex-data e)]
-            ;; Could be validation or imagemagick-error depending on what magick does
-            (t/is (contains? #{:validation :internal} (:type data)))))
+            (t/is (= :validation (:type data)))
+            (t/is (= :invalid-image (:code data)))))
         (finally
           (fs/delete path))))))
 

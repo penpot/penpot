@@ -7,6 +7,7 @@
 (ns app.main.ui.nitrate.nitrate-form
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
    [app.main.refs :as refs]
@@ -24,34 +25,58 @@
    ::mf/wrap-props true}
   [connectivity]
 
-  (let [online? (:licenses connectivity)
+  (let [show-contact-sales-option (:show-contact-sales-option connectivity)
+        subscription-start-origin (:subscription-start-origin connectivity)
+        online? (and (:licenses connectivity) (not show-contact-sales-option))
         profile  (mf/deref refs/profile)
         on-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-ac-url)))
+           (dnt/go-to-buy-nitrate-license
+            "monthly"
+            dnt/go-to-ac-url
+            dnt/go-to-subscription-url
+            "dashboard:plan-confirmation-modal"
+            (if (:subscription profile) "paid" "trial")
+            subscription-start-origin)))
 
         on-activate-click
         (mf/use-fn
          (fn []
-           (st/emit! (modal/show {:type :nitrate-code-activation}))))]
+           (st/emit! (modal/show {:type :nitrate-code-activation}))))
+
+        on-see-plan-click
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-current-subscription"
+                                ::ev/origin "dashboard:plan-confirmation-modal"}))))
+
+        on-close
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"
+                                ::ev/origin "nitrate:plan-confirmation-modal"
+                                :product "nitrate:enterprise"}))
+           (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
-      [:button {:class (stl/css :close-btn) :on-click modal/hide!}
+      [:button {:class (stl/css :close-btn) :on-click on-close}
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
-        ;; TODO this svg is a placeholder. Use the proper one when created
-        [:> raw-svg* {:id "nitrate-welcome"}]]
+        [:> raw-svg* {:id "nitrate-welcome-light"
+                      :class (stl/css :welcome-illustration-light)}]
+        [:> raw-svg* {:id "nitrate-welcome"
+                      :class (stl/css :welcome-illustration-dark)}]]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
          (tr "nitrate.form.title")]
 
         [:p {:class (stl/css :modal-text-large)}
-         (tr "nitrate.form.enterprise-intro")]
+         (tr "nitrate.form.enterprise-intro" ":")]
         [:ul
          [:li {:class (stl/css :modal-text-large)}
           "- " (tr "nitrate.form.enterprise-feature-1")]
@@ -71,18 +96,20 @@
                           :on-click on-click
                           :class (stl/css :modal-button)}
               (if (:subscription profile)
-                (tr "nitrate.form.upgrade")
+                (tr "nitrate.form.start-enterprise")
                 (tr "nitrate.form.try-free"))]
              [:div {:class (stl/css :modal-text-small :modal-info)}
               (tr "nitrate.form.cancel-anytime")]]]
 
            [:p {:class (stl/css :modal-text-medium)}
-            (tr "nitrate.form.have-code") " " [:a {:class (stl/css :link)
-                                                   :on-click on-activate-click}
-                                               (tr "nitrate.form.enter-code")]]
+            (tr "nitrate.form.subscribe-with-code") " " [:a {:class (stl/css :link)
+                                                             :on-click on-activate-click}
+                                                         (tr "nitrate.form.enter-code")]]
 
            [:p {:class (stl/css :modal-text-medium)}
-            [:a {:class (stl/css :link) :href dnt/go-to-subscription-url}
+            [:a {:class (stl/css :link)
+                 :href dnt/go-to-subscription-url
+                 :on-click on-see-plan-click}
              (tr "nitrate.form.see-plan")]]]
 
           [:div {:class (stl/css :contact)}
@@ -95,10 +122,8 @@
              "sales@penpot.app"]]
            [:div  {:class (stl/css :activation-code)}
             [:p {:class (stl/css :modal-text-large)}
-             (tr "nitrate.form.have-code")]
+             (tr "nitrate.form.subscribe-with-code")]
             [:p {:class (stl/css :modal-text-large)}
              [:a {:class (stl/css :link)
                   :on-click on-activate-click}
               (tr "nitrate.form.enter-code")]]]])]]]]))
-
-

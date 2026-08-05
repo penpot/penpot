@@ -79,59 +79,66 @@
    :enable-auto-file-snapshot
    :disable-file-validation])
 
-(defn state-init
+(defn init-config
+  ([next]
+   (init-config nil next))
+  ([extra-flags next]
+   (let [flags (into default-flags extra-flags)]
+     (with-redefs [app.config/flags (flags/parse flags/default flags)
+                   app.config/config config
+                   app.loggers.audit/submit (constantly nil)
+                   app.auth/derive-password identity
+                   app.auth/verify-password (fn [a b] {:valid (= a b)})
+                   app.common.features/get-enabled-features
+                   (fn [& _] app.common.features/supported-features)]
+       (cf/validate! :exit-on-error? false)
+       (fs/create-dir "/tmp/penpot")
+       (next)))))
+
+(defn init-system
   [next]
-  (with-redefs [app.config/flags (flags/parse flags/default default-flags)
-                app.config/config config
-                app.loggers.audit/submit (constantly nil)
-                app.auth/derive-password identity
-                app.auth/verify-password (fn [a b] {:valid (= a b)})
-                app.common.features/get-enabled-features (fn [& _] app.common.features/supported-features)]
+  (let [templates [{:id "test"
+                    :name "test"
+                    :file-uri "test"
+                    :thumbnail-uri "test"
+                    :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
+        system (-> (merge main/system-config main/worker-config)
+                   (assoc-in [:app.redis/client :app.redis/uri] (:redis-uri config))
+                   (assoc-in [::db/pool ::db/uri] (:database-uri config))
+                   (assoc-in [::db/pool ::db/username] (:database-username config))
+                   (assoc-in [::db/pool ::db/password] (:database-password config))
+                   (assoc-in [:app.rpc/methods :app.setup/templates] templates)
+                   (assoc-in [:app.rpc/methods :app.setup/templates] templates)
+                   (update :app.rpc/rlimit assoc
+                           :app.loggers.mattermost/reporter nil
+                           :app.loggers.database/reporter nil)
+                   (update :app.rpc/methods assoc
+                           :app.setup/templates templates
+                           :app.loggers.mattermost/reporter nil
+                           :app.loggers.database/reporter nil)
+                   (dissoc :app.srepl/server
+                           :app.http/server
+                           :app.http/route
+                           :app.setup/templates
+                           :app.http.oauth/handler
+                           :app.notifications/handler
+                           :app.loggers.mattermost/reporter
+                           :app.loggers.database/reporter
+                           :app.worker/cron
+                           :app.worker/dispatcher
+                           [:app.main/default :app.worker/runner]
+                           [:app.main/webhook :app.worker/runner]))
+        _      (ig/load-namespaces system)
+        system (-> (ig/expand system) (ig/init))]
+    (try
+      (binding [*system* system
+                *pool*   (:app.db/pool system)]
+        (next))
+      (finally
+        (ig/halt! system)))))
 
-    (cf/validate! :exit-on-error? false)
-
-    (fs/create-dir "/tmp/penpot")
-
-    (let [templates [{:id "test"
-                      :name "test"
-                      :file-uri "test"
-                      :thumbnail-uri "test"
-                      :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
-          system (-> (merge main/system-config main/worker-config)
-                     (assoc-in [:app.redis/client :app.redis/uri] (:redis-uri config))
-                     (assoc-in [::db/pool ::db/uri] (:database-uri config))
-                     (assoc-in [::db/pool ::db/username] (:database-username config))
-                     (assoc-in [::db/pool ::db/password] (:database-password config))
-                     (assoc-in [:app.rpc/methods :app.setup/templates] templates)
-                     (assoc-in [:app.rpc/methods :app.setup/templates] templates)
-                     (update :app.rpc/rlimit assoc
-                             :app.loggers.mattermost/reporter nil
-                             :app.loggers.database/reporter nil)
-                     (update :app.rpc/methods assoc
-                             :app.setup/templates templates
-                             :app.loggers.mattermost/reporter nil
-                             :app.loggers.database/reporter nil)
-                     (dissoc :app.srepl/server
-                             :app.http/server
-                             :app.http/route
-                             :app.setup/templates
-                             :app.http.oauth/handler
-                             :app.notifications/handler
-                             :app.loggers.mattermost/reporter
-                             :app.loggers.database/reporter
-                             :app.worker/cron
-                             :app.worker/dispatcher
-                             [:app.main/default :app.worker/runner]
-                             [:app.main/webhook :app.worker/runner]))
-          _      (ig/load-namespaces system)
-          system (-> (ig/expand system)
-                     (ig/init))]
-      (try
-        (binding [*system* system
-                  *pool*   (:app.db/pool system)]
-          (next))
-        (finally
-          (ig/halt! system))))))
+(def state-init
+  (t/compose-fixtures init-config init-system))
 
 (defn database-reset
   [next]
@@ -386,29 +393,15 @@
                             (assoc :app.rpc/request-at (ct/now)))))))
 
 (defn management-command!
-  ([data]
-   (management-command! data nil))
-  ([{:keys [::type] :as data} flags-to-add]
-   (let [flags (reduce conj cf/flags (or flags-to-add []))
-
-         resolve-management-methods
-         (requiring-resolve 'app.rpc/resolve-management-methods)
-
-         methods
-         (with-redefs [cf/flags flags]
-           (resolve-management-methods *system*))
-
-         [_ method-fn]
-         (get methods type)]
-
-     (when-not method-fn
-       (ex/raise :type :assertion
-                 :code :rpc-method-not-found
-                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
-
-     (try-on! (method-fn (-> data
-                             (dissoc ::type)
-                             (assoc :app.rpc/request-at (ct/now))))))))
+  [{:keys [::type] :as data}]
+  (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
+    (when-not method-fn
+      (ex/raise :type :assertion
+                :code :rpc-method-not-found
+                :hint (str/ffmt "management rpc method '%' not found" (name type))))
+    (try-on! (method-fn (-> data
+                            (dissoc ::type)
+                            (assoc :app.rpc/request-at (ct/now)))))))
 
 (defn run-task!
   ([name]

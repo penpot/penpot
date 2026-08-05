@@ -253,7 +253,7 @@
                      (swap! log-record (constantly lrecord))))]
     (if sync?
       (logfn)
-      (px/exec! *default-executor* logfn))))
+      (px/exec *default-executor* logfn))))
 
 (defmacro log!
   "Emit a new log record to the global log-record state (asynchronously). "

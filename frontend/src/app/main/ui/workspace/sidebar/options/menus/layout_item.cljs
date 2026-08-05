@@ -234,10 +234,10 @@
         (mf/use-fn (mf/deps on-focus) #(on-focus :m2))
 
         on-focus-m3
-        (mf/use-fn (mf/deps on-focus) #(on-focus :m1))
+        (mf/use-fn (mf/deps on-focus) #(on-focus :m3))
 
         on-focus-m4
-        (mf/use-fn (mf/deps on-focus) #(on-focus :m2))
+        (mf/use-fn (mf/deps on-focus) #(on-focus :m4))
 
         on-change'
         (mf/use-fn
@@ -329,7 +329,6 @@
          :class (stl/css :bottom-margin-wrapper)
          :attr :m3
          :default nil
-         :align :right
          :input-type :vertical-margin
          :property "Bottom margin"
          :nillable true
@@ -359,6 +358,7 @@
          :class (stl/css :left-margin-wrapper)
          :default nil
          :attr :m4
+         :align :right
          :property "Left margin"
          :input-type :horizontal-margin
          :nillable true

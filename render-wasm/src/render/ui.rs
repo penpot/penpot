@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, Color4f};
 
 use super::{RenderState, ShapesPoolRef, SurfaceId};
+use crate::get_resources;
 use crate::globals::get_ui_state;
 use crate::render::grid_layout;
 use crate::shapes::{Layout, Type};
@@ -67,7 +68,7 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     rulers::render(
         canvas,
         viewbox,
-        &render_state.fonts,
+        &get_resources().fonts,
         get_ui_state().ruler_state(),
     );
 

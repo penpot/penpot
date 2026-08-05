@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.logical-deletion :as ldel]
@@ -184,7 +185,8 @@
         timestamp (::rpc/request-at params)]
     (teams/create-project-role conn profile-id (:id project) :owner)
     (db/insert! conn :team-project-profile-rel
-                {:project-id (:id project)
+                {:id (uuid/next)
+                 :project-id (:id project)
                  :profile-id profile-id
                  :created-at timestamp
                  :modified-at timestamp

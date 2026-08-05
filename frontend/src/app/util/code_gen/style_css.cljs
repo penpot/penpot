@@ -76,6 +76,10 @@ body {
    :transform
    :background
    :border
+   :border-block-start-width
+   :border-inline-end-width
+   :border-block-end-width
+   :border-inline-start-width
    :border-start-start-radius
    :border-start-end-radius
    :border-end-start-radius

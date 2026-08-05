@@ -7,6 +7,8 @@
 - `set-shape-attr` treats `:position-data` as derived and never touched. Geometry/content-path changes use approximate equality; geometry differences under about 1px can be ignored for touched purposes.
 - Width/height are excluded from the `is-geometry?` branch in `set-shape-attr`; do not assume all geometry-group attrs follow identical ignore-geometry behavior.
 - `process-touched-change` marks the owning component modified when a touched shape belongs to a main instance; component-data changes can come from shape ops through this second pass.
+- Copy structure is guarded at change application: `:mov-objects` (`is-valid-move?`) and `:reorder-children` both refuse to alter children of shapes inside component copies unless the change carries `allow-altering-copies` (sync/swap flows set it). New structural change types must follow the same rule.
+- `cls/generate-delete-shapes` propagates deletions from INSIDE a component main to the copy shapes referencing them (transitively, all pages of the file) so no dangling `shape-ref`s remain; skipped when the main root itself is deleted (copies then resolve into the deleted component) and for `allow-altering-copies` flows (swap replaces the shape; sync reconciles).
 
 ## Shape tree edits
 
@@ -19,6 +21,7 @@
 - Full referential/semantic validation currently runs only when file features contain `"components/v2"`.
 - Validation starts at root plus orphan shapes, then validates component records. `validate-file!` raises `:validation :referential-integrity` with collected details.
 - `repair-file` does not mutate data directly; it reduces validation errors into redo changes using `changes-builder`. Callers must apply or persist those changes.
+- `:missing-slot` fires only for a REAL swap: a copy sub-head whose `shape-ref` is no longer a child of the near main parent. A pure positional mismatch (ref still a sibling elsewhere) is a reorder — valid, realigned by the async component sync; do not "repair" it by assigning swap slots (a slot freezes the child out of normal sync). `fix-missing-swap-slots` (migration 0019) follows the same membership rule.
 
 ## Migrations
 

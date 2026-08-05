@@ -7,6 +7,7 @@
 - Source: `library/src/`; tests: `library/test/`; experimentation/docs: `playground/`, `docs/`; config: `shadow-cljs.edn`, `deps.edn`, `package.json`.
 - From `library/`: build `pnpm run build`; bundle helper `pnpm run build:bundle` or `./scripts/build`; tests `pnpm run test`; watch `pnpm run watch` / `pnpm run watch:test`; lint `pnpm run lint`; format check/fix `pnpm run check-fmt` / `pnpm run fmt`.
 - When changing file-format construction or export behavior in `common/`, consider whether `@penpot/library` should be tested because it constructs Penpot files outside the app UI.
+- Cross-cutting testing principles and anti-patterns: `mem:testing`.
 
 ## JS API and builder state
 

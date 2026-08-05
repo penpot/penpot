@@ -5,3 +5,9 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "./common";
+@use "ds/_utils.scss" as *;
+
+.sso-icon {
+  max-inline-size: px2rem(26);
+  max-block-size: px2rem(26);
+}

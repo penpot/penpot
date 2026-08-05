@@ -25,7 +25,9 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 
 ## Worker policy
 
-Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. ws0 must be running whenever any ws1+ is running, and is the last instance to stop — `run-devenv --agentic --ws N` (N≥1) auto-starts ws0 first; `stop-devenv` refuses to stop ws0 while any ws1+ is up. Workers are pure fire-and-forget: `wrk/submit!` inserts a row into the shared Postgres `task` table and returns; RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
+Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `wrk/submit!` inserts a row into the shared Postgres `task` table and returns; RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
+
+Each workspace is independent and can be started/stopped in any order. Shared infra (postgres, minio, etc.) is shut down only when no instances remain running.
 
 ## Port layout
 
@@ -63,8 +65,8 @@ No `--delete` on the working-tree pass: gitignored caches in the workspace survi
 
 ## CLI surface
 
-- `run-devenv --agentic [--ws main|0|wsN|N] [--sync] [--serena-context CTX]`: bring one instance up. Agentic only — MCP and Serena windows are always created. Default target main. Errors out if the target is already running. `--sync` is rejected on main; on ws1+ it's optional (forced only when the workspace dir does not exist yet). Auto-starts ws0 first when the target is ws1+ and ws0 is not yet up.
-- `stop-devenv [--ws main|0|wsN|N] [--all]`: stop instances. Flags mutually exclusive. `--ws N` (N≥1) stops just that workspace. `--ws 0` or no flag stops ws0 + shared infra, refused while any ws1+ is running. `--all` stops every ws highest-first then ws0, then infra.
+- `run-devenv --agentic [--ws main|0|wsN|N] [--sync] [--serena-context CTX]`: bring one instance up. Agentic only — MCP and Serena windows are always created. Default target main. Errors out if the target is already running. `--sync` is rejected on main; on ws1+ it's optional (forced only when the workspace dir does not exist yet).
+- `stop-devenv [--ws main|0|wsN|N] [--all]`: stop instances. Flags mutually exclusive. `--ws N` stops just that workspace. `--ws 0` or no flag stops ws0; shared infra shuts down only if no other instances remain. `--all` stops every ws highest-first then ws0, then infra.
 - `run-devenv`: legacy alias, ws0 non-agentic attached.
 - `attach-devenv [--ws main|0|wsN|N]`: pure attach. Fails fast if instance/session missing.
 - `run-devenv-shell [--instance 0|wsN|N] [cmd...]`: bash in target instance. (`--instance` flag not yet renamed to `--ws`.)

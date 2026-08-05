@@ -32,6 +32,10 @@ From `plugins/`:
 - Dev server: `pnpm run start:plugin:api-test-suite` (serves on port 4202).
 - In Penpot: open the Plugin Manager (Ctrl+Alt+P) and install
   `http://localhost:4202/manifest.json`.
+- Alternatively, a one-shot `pnpm --filter plugin-api-test-suite run build` output
+  is served by the devenv alongside the other bundled plugins, at
+  `https://localhost:3449/plugins/plugin-api-test-suite/manifest.json` (no hot
+  reload of the UI there, but the **Reload** button still picks up rebuilt tests).
 - **Hot-reloading tests:** after editing a `*.test.ts`, click **Reload** in the
   plugin UI. It fetches the freshly built test bundle and swaps in your changes —
   no need to close/reopen the plugin. (The dev server rebuilds the bundle on save.)

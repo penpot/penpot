@@ -34,6 +34,7 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
@@ -378,9 +379,11 @@
 
             shapes          (mapv maybe-translate selected)
             svg-formatted   (svg/generate-formatted-markup objects shapes)]
-        (clipboard/to-clipboard-multi
-         {"image/svg+xml" svg-formatted
-          "text/plain"    svg-formatted})))))
+        (-> (clipboard/to-clipboard-multi
+             {"image/svg+xml" svg-formatted
+              "text/plain"    svg-formatted})
+            (p/catch (fn [cause]
+                       (js/console.error "clipboard error:" cause))))))))
 
 (defn copy-selected-css
   []
@@ -701,22 +704,38 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [features (get state :features)
-              selected (dsh/lookup-selected state)]
+              objects  (dsh/lookup-page-objects state)
+              selected (dsh/lookup-selected state)
+
+              ;; With WASM, pasted props change the text content but not the
+              ;; selrect, so auto-grow text shapes need an explicit relayout.
+              text-ids (into []
+                             (comp (filter #(cfh/text-shape? (get objects %)))
+                                   (filter #(not= :fixed (:grow-type (get objects %)))))
+                             selected)]
 
           (when (paste-data-valid? pdata)
             (cfeat/check-paste-features! features (:features pdata))
             (case (:type pdata)
               :copied-props
-
-              (rx/concat
-               (->> (rx/of pdata)
-                    (rx/mapcat (partial upload-images (:current-file-id state)))
-                    (rx/map
-                     #(dwsh/update-shapes
-                       selected
-                       (fn [shape objects] (cts/patch-props shape (:props pdata) objects))
-                       {:with-objects? true})))
-               (rx/of (ptk/data-event :layout/update {:ids selected})))
+              ;; Wrap in a single undo transaction so the async wasm text
+              ;; resize is bundled with the props change (one undo step).
+              (let [undo-id       (js/Symbol)
+                    resize-texts? (and (features/active-feature? state "render-wasm/v1")
+                                       (seq text-ids))]
+                (rx/concat
+                 (rx/of (dwu/start-undo-transaction undo-id))
+                 (->> (rx/of pdata)
+                      (rx/mapcat (partial upload-images (:current-file-id state)))
+                      (rx/map
+                       #(dwsh/update-shapes
+                         selected
+                         (fn [shape objects] (cts/patch-props shape (:props pdata) objects))
+                         {:with-objects? true})))
+                 (rx/of (ptk/data-event :layout/update {:ids selected}))
+                 (if resize-texts?
+                   (rx/of (dwwt/resize-wasm-text-all text-ids {:undo-id undo-id}))
+                   (rx/of (dwu/commit-undo-transaction undo-id)))))
               ;;
               (rx/empty))))))))
 
@@ -1138,6 +1157,15 @@
     (watch [_ _ _]
       (clipboard/to-clipboard (rt/get-current-href)))))
 
+(defn copy-id-to-clipboard
+  [id]
+  (ptk/reify ::copy-id-to-clipboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/from (clipboard/to-clipboard id))
+           (rx/map (fn [_]
+                     (ntf/info "The id has been copied to the clipboard")))))))
+
 (defn copy-as-image
   []
   (ptk/reify ::copy-as-image
@@ -1147,16 +1175,16 @@
             page-id  (:current-page-id state)
             selected (first (dsh/lookup-selected state))
 
-            export {:file-id file-id
-                    :page-id page-id
-                    :object-id selected
-                    ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
-                    :type :png
-                    ;; Always use 2 to ensure good enough quality for wireframes.
-                    :scale 2
-                    :suffix ""
-                    :enabled true
-                    :name ""}
+            export (de/normalize-export {:file-id file-id
+                                         :page-id page-id
+                                         :object-id selected
+                                         ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
+                                         :type :png
+                                         ;; Always use 2 to ensure good enough quality for wireframes.
+                                         :scale 2
+                                         :suffix ""
+                                         :enabled true
+                                         :name ""})
 
             ;; Create a deferred promise immediately, before any async operations.
             ;; Registering the clipboard write NOW preserves the user-gesture security

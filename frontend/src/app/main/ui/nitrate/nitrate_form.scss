@@ -101,6 +101,22 @@
   block-size: auto;
 }
 
+.welcome-illustration-light {
+  display: none;
+
+  :global(.light) & {
+    display: block;
+  }
+}
+
+.welcome-illustration-dark {
+  display: block;
+
+  :global(.light) & {
+    display: none;
+  }
+}
+
 .radio-btns {
   display: flex;
   flex-direction: column;

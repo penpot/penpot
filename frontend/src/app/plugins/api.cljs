@@ -28,6 +28,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.pages :as dwpg]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -237,15 +238,7 @@
     :getTheme
     (fn []
       (let [theme (get-in @st/state [:profile :theme])]
-        (cond
-          (or (not theme) (= theme "system"))
-          (theme/get-system-theme)
-
-          (= theme "default")
-          "dark"
-
-          :else
-          theme)))
+        (theme/resolve-theme theme (theme/get-system-theme))))
 
     :getCurrentUser
     (fn []
@@ -737,4 +730,14 @@
                             (se/add-event plugin-id)))
               (shape/shape-proxy plugin-id variant-id))
 
-            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))))
+            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))
+
+    :waitForLayoutUpdate
+    (fn [timeout]
+      ;; Always a promise, so a bad argument travels as a rejection.
+      (if (u/valid-timeout? timeout)
+        ;; Resolves once every shape with reflow work in flight has settled.
+        (wrf/wait-for-layout-update timeout)
+        (js/Promise.
+         (fn [_ reject]
+           (u/reject-not-valid reject :waitForLayoutUpdate timeout)))))))

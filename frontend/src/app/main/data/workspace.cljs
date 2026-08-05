@@ -60,6 +60,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -354,8 +355,7 @@
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
             render-wasm-ready?   #(and render-wasm-enabled?
-                                       wasm-state/context-initialized?
-                                       (not @wasm-state/context-lost?))]
+                                       (wasm-state/ready?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -402,6 +402,7 @@
                        (rx/of (dpj/initialize-project (:project-id file))
                               (dwn/initialize team-id file-id)
                               (dwsl/initialize-shape-layout)
+                              (dwtxt/initialize-text-reflow)
                               (fetch-libraries file-id features)
                               (-> (workspace-initialized file-id)
                                   (with-meta {:team-id team-id
@@ -553,6 +554,7 @@
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
+               (dwtxt/finalize-text-reflow)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)
                (modal/hide)
@@ -1207,9 +1209,20 @@
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (show-context-menu
-              (-> params (assoc :kind :page :selected (:id page))))))))
+    (watch [_ state _]
+      (let [id       (:id page)
+            selected (dm/get-in state [:workspace-local :selected-pages])
+            ;; When the right-clicked page is part of a multi-selection we
+            ;; keep it; otherwise the menu targets just that page.
+            multi?   (and (contains? selected id) (> (count selected) 1))]
+        (rx/concat
+         (if multi?
+           (rx/empty)
+           (rx/of (dwpg/select-page id)))
+         (rx/of (show-context-menu
+                 (-> params (assoc :kind :page
+                                   :selected id
+                                   :selected-pages (if multi? selected #{id}))))))))))
 
 (defn show-track-context-menu
   [{:keys [grid-id type index] :as params}]
@@ -1568,6 +1581,7 @@
 (dm/export dwcp/paste-shapes)
 (dm/export dwcp/paste-data-valid?)
 (dm/export dwcp/copy-link-to-clipboard)
+(dm/export dwcp/copy-id-to-clipboard)
 (dm/export dwcp/copy-as-image)
 
 ;; Drawing
@@ -1650,3 +1664,11 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
+(dm/export dwpg/delete-pages)
+(dm/export dwpg/select-page)
+(dm/export dwpg/toggle-page-selection)
+(dm/export dwpg/select-pages-range)
+(dm/export dwpg/clear-page-selection)
+
+;; Shapes
+(dm/export dwsh/delete-shapes)

@@ -20,9 +20,26 @@
    [app.util.dom :as dom]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def default-timeout 5000)
+
+(defn normalize-export
+  [{:keys [object-id name] :as export}]
+  (assoc export :name (if (str/blank? name)
+                        (str object-id)
+                        name)))
+
+(defn- normalize-exports
+  [exports]
+  (mapv normalize-export exports))
+
+(defn- normalize-export-shapes-params
+  [{:keys [exports] :as params}]
+  (cond-> params
+    (seq exports)
+    (assoc :exports (normalize-exports exports))))
 
 (defn toggle-detail-visibililty
   []
@@ -179,106 +196,113 @@
   (and (wasm-export-enabled? state)
        (contains? wasm-export-types (:type export))))
 
+(defn- request-simple-export-wasm
+  [export]
+  (ptk/reify ::request-simple-export-wasm
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (case (:type export)
+        :pdf (wasm.exports/export-pdf export)
+        (wasm.exports/export-image export)))))
+
 (defn request-simple-export
   [{:keys [export]}]
-  (ptk/reify ::request-simple-export
-    ptk/UpdateEvent
-    (update [_ state]
-      (cond-> state
-        (not (use-wasm-export? state export))
-        (update :export assoc :in-progress true :id uuid/zero)))
+  (let [export (normalize-export export)]
+    (ptk/reify ::request-simple-export
+      ptk/UpdateEvent
+      (update [_ state]
+        (cond-> state
+          (not (use-wasm-export? state export))
+          (update :export assoc :in-progress true :id uuid/zero)))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (if (use-wasm-export? state export)
-        (do
-          (case (:type export)
-            :pdf (wasm.exports/export-pdf export)
-            (wasm.exports/export-image export))
-          (rx/empty))
-        (let [profile-id (:profile-id state)
-              params     {:exports [export]
-                          :profile-id profile-id
-                          :cmd :export-shapes
-                          :wait true
-                          :is-wasm (wasm-export-enabled? state)}]
-          (rx/concat
-           (dwp/force-persist-and-wait 400)
+      ptk/WatchEvent
+      (watch [_ state _]
+        (if (use-wasm-export? state export)
+          (rx/of (request-simple-export-wasm export))
+          (let [profile-id (:profile-id state)
+                params     (normalize-export-shapes-params {:exports [export]
+                                                            :profile-id profile-id
+                                                            :cmd :export-shapes
+                                                            :wait true
+                                                            :is-wasm (wasm-export-enabled? state)})]
+            (rx/concat
+             (dwp/force-persist-and-wait 400)
 
-           (->> (rp/cmd! :export params)
-                (rx/map (fn [{:keys [filename mtype uri]}]
-                          (dom/trigger-download-uri filename mtype uri)
-                          (clear-export-state uuid/zero)))
-                (rx/catch (fn [cause]
-                            (rx/concat
-                             (rx/of (clear-export-state uuid/zero))
-                             (rx/throw cause)))))))))))
+             (->> (rp/cmd! :export params)
+                  (rx/map (fn [{:keys [filename mtype uri]}]
+                            (dom/trigger-download-uri filename mtype uri)
+                            (clear-export-state uuid/zero)))
+                  (rx/catch (fn [cause]
+                              (rx/concat
+                               (rx/of (clear-export-state uuid/zero))
+                               (rx/throw cause))))))))))))
 
 (defn request-multiple-export
   [{:keys [exports cmd name]
     :or {cmd :export-shapes}
     :as params}]
-  (ptk/reify ::request-multiple-export
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [resource-id (volatile! nil)
-            profile-id  (:profile-id state)
-            ws-conn     (:ws-conn state)
-            params      (cond->
-                         {:exports exports
-                          :cmd cmd
-                          :profile-id profile-id
-                          :force-multiple true
-                          :is-wasm (wasm-export-enabled? state)}
-                          (some? name)
-                          (assoc :name name))
+  (let [exports (normalize-exports exports)]
+    (ptk/reify ::request-multiple-export
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [resource-id (volatile! nil)
+              profile-id  (:profile-id state)
+              ws-conn     (:ws-conn state)
+              params      (cond->
+                           {:exports exports
+                            :cmd cmd
+                            :profile-id profile-id
+                            :force-multiple true
+                            :is-wasm (wasm-export-enabled? state)}
+                            (some? name)
+                            (assoc :name name))
 
-            progress-stream
-            (->> (ws/get-rcv-stream ws-conn)
-                 (rx/filter ws/message-event?)
-                 (rx/map :payload)
-                 (rx/filter #(= :export-update (:type %)))
-                 (rx/filter #(= @resource-id (:resource-id %)))
-                 (rx/share))
+              progress-stream
+              (->> (ws/get-rcv-stream ws-conn)
+                   (rx/filter ws/message-event?)
+                   (rx/map :payload)
+                   (rx/filter #(= :export-update (:type %)))
+                   (rx/filter #(= @resource-id (:resource-id %)))
+                   (rx/share))
 
-            stopper
-            (rx/filter #(or (= "ended" (:status %))
-                            (= "error" (:status %)))
-                       progress-stream)]
+              stopper
+              (rx/filter #(or (= "ended" (:status %))
+                              (= "error" (:status %)))
+                         progress-stream)]
 
-        (swap! st/ongoing-tasks conj :export)
+          (swap! st/ongoing-tasks conj :export)
 
-        (rx/merge
-         ;; Force that all data is persisted; best effort.
-         (rx/of ::dwp/force-persist)
+          (rx/merge
+           ;; Force that all data is persisted; best effort.
+           (rx/of ::dwp/force-persist)
 
-         ;; Launch the exportation process and stores the resource id
-         ;; locally.
-         (->> (rp/cmd! :export params)
-              (rx/map (fn [{:keys [id] :as resource}]
-                        (vreset! resource-id id)
-                        (initialize-export-status exports cmd resource))))
+           ;; Launch the exportation process and stores the resource id
+           ;; locally.
+           (->> (rp/cmd! :export params)
+                (rx/map (fn [{:keys [id] :as resource}]
+                          (vreset! resource-id id)
+                          (initialize-export-status exports cmd resource))))
 
-         ;; We proceed to update the export state with incoming
-         ;; progress updates. We delay the stopper for give some time
-         ;; to update the status with ended or errored status before
-         ;; close the stream.
-         (->> progress-stream
-              (rx/map update-export-status)
-              (rx/take-until (rx/delay 500 stopper))
-              (rx/finalize (fn []
-                             (swap! st/ongoing-tasks disj :export))))
+           ;; We proceed to update the export state with incoming
+           ;; progress updates. We delay the stopper for give some time
+           ;; to update the status with ended or errored status before
+           ;; close the stream.
+           (->> progress-stream
+                (rx/map update-export-status)
+                (rx/take-until (rx/delay 500 stopper))
+                (rx/finalize (fn []
+                               (swap! st/ongoing-tasks disj :export))))
 
-         ;; We hide need to hide the ui elements of the export after
-         ;; some interval. We also delay a little bit more the stopper
-         ;; for ensure that after some security time, the stream is
-         ;; completely closed.
-         (->> progress-stream
-              (rx/filter #(= "ended" (:status %)))
-              (rx/take 1)
-              (rx/delay default-timeout)
-              (rx/map #(clear-export-state @resource-id))
-              (rx/take-until (rx/delay 6000 stopper))))))))
+           ;; We hide need to hide the ui elements of the export after
+           ;; some interval. We also delay a little bit more the stopper
+           ;; for ensure that after some security time, the stream is
+           ;; completely closed.
+           (->> progress-stream
+                (rx/filter #(= "ended" (:status %)))
+                (rx/take 1)
+                (rx/delay default-timeout)
+                (rx/map #(clear-export-state @resource-id))
+                (rx/take-until (rx/delay 6000 stopper)))))))))
 
 (defn request-export
   [{:keys [exports] :as params}]

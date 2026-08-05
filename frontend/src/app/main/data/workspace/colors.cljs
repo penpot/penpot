@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
@@ -332,6 +333,11 @@
   [:stroke-style
    :stroke-alignment
    :stroke-width
+   :stroke-per-side
+   :stroke-width-top
+   :stroke-width-right
+   :stroke-width-bottom
+   :stroke-width-left
    :stroke-cap-start
    :stroke-cap-end])
 
@@ -950,7 +956,8 @@
                       (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
 
                   (if can-add-stop?
-                    (let [new-stop (-> (clr/interpolate-gradient stops offset)
+                    (let [offset (mth/clamp offset 0 1)
+                          new-stop (-> (clr/interpolate-gradient stops offset)
                                        (split-color-components))
                           stops (conj stops new-stop)
                           stops (into [] (sort-by :offset stops))
@@ -973,7 +980,8 @@
                       stops (mapv split-color-components
                                   (if cap-stops?
                                     (take types.fills/MAX-GRADIENT-STOPS stops)
-                                    stops))]
+                                    stops))
+                      stops (mapv #(update % :offset (fn [o] (mth/clamp o 0 1))) stops)]
                   (-> state
                       (assoc :current-color (get stops stop))
                       (assoc :stops stops))))))))

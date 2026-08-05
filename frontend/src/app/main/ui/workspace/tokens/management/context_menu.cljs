@@ -32,7 +32,8 @@
 
 ;; Helpers ---------------------------------------------------------------------
 
-(defn- key-in-map? [ks m]
+(defn- key-in-map?
+  [ks m]
   (some #(contains? m %) ks))
 
 (defn clean-separators
@@ -48,14 +49,16 @@
 
 ;; Actions ---------------------------------------------------------------------
 
-(defn attribute-actions [token selected-shapes attributes]
+(defn attribute-actions
+  [token selected-shapes attributes]
   (let [ids-by-attributes (cfo/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids (into #{} (map :id selected-shapes))]
     {:all-selected? (cfo/shapes-applied-all? ids-by-attributes shape-ids attributes)
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint allowed-shape-attributes]}]
+(defn generic-attribute-actions
+  [attributes title {:keys [token selected-shapes on-update-shape hint allowed-shape-attributes]}]
   (let [allowed-attributes (set/intersection attributes allowed-shape-attributes)
         on-update-shape-fn (or on-update-shape (dwta/get-update-shape-fn token))
 
@@ -80,8 +83,9 @@
                           (st/emit! (dwta/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
          allowed-attributes)))
 
-(defn all-or-separate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape hint]}
-                               {:keys [token selected-shapes allowed-shape-attributes]}]
+(defn all-or-separate-actions
+  [{:keys [attribute-labels on-update-shape-all on-update-shape hint]}
+   {:keys [token selected-shapes allowed-shape-attributes]}]
   (when-let [attribute-labels (seq (select-keys attribute-labels allowed-shape-attributes))]
     (let [attributes (-> (keys attribute-labels) (set))
           {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
@@ -117,7 +121,8 @@
                               attribute-labels)]
       (concat (when all-action [all-action]) single-actions))))
 
-(defn layout-spacing-items [{:keys [token selected-shapes all-attr-labels horizontal-attr-labels vertical-attr-labels on-update-shape hint]}]
+(defn layout-spacing-items
+  [{:keys [token selected-shapes all-attr-labels horizontal-attr-labels vertical-attr-labels on-update-shape hint]}]
   (let [horizontal-attrs (into #{} (keys horizontal-attr-labels))
         vertical-attrs (into #{} (keys vertical-attr-labels))
         attrs (set/union horizontal-attrs vertical-attrs)
@@ -192,13 +197,15 @@
                           all-attr-labels)]
     (concat multi-items single-items)))
 
-(defn update-shape-layout-padding [value shape-ids attributes]
+(defn update-shape-layout-padding
+  [value shape-ids attributes]
   (st/emit!
    (when (= (count attributes) 1)
      (dwsl/update-layout shape-ids {:layout-padding-type :multiple}))
    (dwta/update-layout-padding value shape-ids attributes)))
 
-(defn update-shape-layout-margin [value shape-ids attributes]
+(defn update-shape-layout-margin
+  [value shape-ids attributes]
   (st/emit!
    (when (= (count attributes) 1)
      (dwsl/update-layout shape-ids {:layout-item-margin-type :multiple}))
@@ -206,7 +213,8 @@
 
 
 
-(defn spacing-attribute-actions [{:keys [token selected-shapes allowed-shape-attributes is-selected-inside-layout] :as context-data}]
+(defn spacing-attribute-actions
+  [{:keys [token selected-shapes allowed-shape-attributes is-selected-inside-layout] :as context-data}]
   (let [padding-attr-labels {:p1 "Padding top"
                              :p2 "Padding right"
                              :p3 "Padding bottom"
@@ -250,7 +258,8 @@
           margin-items)
          (clean-separators))))
 
-(defn sizing-attribute-actions [context-data]
+(defn sizing-attribute-actions
+  [context-data]
   (->>
    (concat
     (all-or-separate-actions {:attribute-labels {:width "Width"
@@ -272,7 +281,8 @@
                              context-data))
    (clean-separators)))
 
-(defn update-shape-radius-for-corners [value shape-ids attributes]
+(defn update-shape-radius-for-corners
+  [value shape-ids attributes]
   (st/emit!
    (ptk/data-event :expand-border-radius)
    (dwta/update-shape-radius-for-corners value shape-ids attributes)))
@@ -333,7 +343,8 @@
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
                        (clean-separators)))}))
 
-(defn default-actions [{:keys [token selected-token-set-id on-delete-token errors]}]
+(defn default-actions
+  [{:keys [token selected-token-set-id on-delete-token errors]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)
         on-copy-name #(clipboard/to-clipboard (:name token))
         on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
@@ -361,7 +372,8 @@
       :no-selectable true
       :action #(on-delete-token token)}]))
 
-(defn- allowed-shape-attributes [shapes]
+(defn- allowed-shape-attributes
+  [shapes]
   (reduce into #{} (map #(ctt/shape-type->attributes (:type %) (:layout %)) shapes)))
 
 (defn menu-actions [{:keys [type token selected-shapes] :as context-data}]
@@ -370,14 +382,16 @@
         attribute-actions (if with-actions (with-actions context-data) [])]
     attribute-actions))
 
-(defn selection-actions [context-data]
+(defn selection-actions
+  [context-data]
   (let [attribute-actions (menu-actions context-data)]
     (concat
      attribute-actions
      (when (seq attribute-actions) [:separator])
      (default-actions context-data))))
 
-(defn submenu-actions-selection-actions [context-data]
+(defn submenu-actions-selection-actions
+  [context-data]
   (menu-actions context-data))
 
 ;; Components ------------------------------------------------------------------
@@ -426,29 +440,27 @@
            (when (some? parent-menu-dom-element)
              (reset! parent-menu-dom-element-pos* (dm/str (.-offsetTop parent-menu-dom-element) "px")))))]
 
-    [:li {:class (stl/css-case
-                  :context-menu-item true
-                  :context-menu-item-selected (and (not no-selectable) selected?)
-                  :context-menu-item-unselected (and (not no-selectable) (not selected?))
-                  :context-menu-item-hint-wrapper hint?)
+    [:li {:class (stl/css-case :menu-item true
+                               :selected (and (not no-selectable) selected?)
+                               :unselected (and (not no-selectable) (not selected?))
+                               :hint hint?)
           :ref get-parent-menu-entry-position
           :data-value value
           :on-click on-click
           :on-pointer-enter on-pointer-enter
           :on-pointer-leave on-pointer-leave}
      (when hint
-       [:span {:class (stl/css :context-menu-item-hint)} hint])
+       [:span {:class (stl/css :menu-item-hint)} hint])
      (when (not no-selectable)
-       [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon-wrapper)}])
-     [:span {:class (stl/css :item-text)}
+       [:> icon* {:icon-id i/tick :size "s" :class (stl/css :menu-item-icon)}])
+     [:span {:class (stl/css :menu-item-text)}
       title]
      (when children
        [:*
         [:> icon* {:icon-id i/arrow :size "s"}]
         [:ul {:ref submenu-ref
-              :class (stl/css-case
-                      :token-context-submenu true
-                      :token-context-submenu-top is-submenu-outside?)
+              :class (stl/css-case :submenu true
+                                   :submenu-top is-submenu-outside?)
               :style {:left (dm/str submenu-offset "px")
                       :top (if is-submenu-outside? "unset" parent-menu-dom-element-pos)}
               :on-context-menu prevent-default}
@@ -503,7 +515,7 @@
           (when (contains? #{:spacing :dimensions} token-type)
             (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes)))]
 
-    [:ul {:class (stl/css :context-list)}
+    [:ul {:class (stl/css :menu)}
      [:& menu-tree {:submenu-offset width
                     :token token
                     :errors errors
@@ -550,7 +562,7 @@
        (mf/html
         [:& dropdown {:show is-open?
                       :on-close #(st/emit! (dwtl/assign-token-context-menu nil))}
-         [:div {:class (stl/css :token-context-menu)
+         [:div {:class (stl/css :menu-wrapper)
                 :data-testid "tokens-context-menu-for-token"
                 :ref dropdown-ref
                 :data-direction dropdown-direction

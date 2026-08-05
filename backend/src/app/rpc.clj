@@ -41,6 +41,7 @@
    [app.util.cache :as cache]
    [app.util.inet :as inet]
    [app.util.services :as sv]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -102,8 +103,10 @@
             session-id   (yreq/get-header request "x-session-id")
 
             key-id       (get request ::http/auth-key-id)
-            profile-id   (or (::session/profile-id request)
-                             (::actoken/profile-id request)
+            session-pid  (::session/profile-id request)
+            token-pid    (::actoken/profile-id request)
+            profile-id   (or session-pid
+                             token-pid
                              (if key-id uuid/zero nil))
 
             ip-addr      (inet/parse-request request)
@@ -116,7 +119,15 @@
                              (assoc ::session-id (some-> session-id uuid/parse*))
                              (assoc ::cond/key etag)
                              (cond-> (uuid? profile-id)
-                               (assoc ::profile-id profile-id)))
+                               (assoc ::profile-id profile-id))
+                             (cond-> (uuid? session-pid)
+                               (assoc ::auth-type :session))
+                             (cond-> (and (not (uuid? session-pid))
+                                          (uuid? token-pid))
+                               (-> (assoc ::auth-type :token)
+                                   (assoc ::token-perms (set (::actoken/perms request #{})))))
+                             (cond-> key-id
+                               (assoc ::auth-key-id key-id)))
 
             data         (with-meta data
                            {::http/request request})
@@ -151,13 +162,40 @@
 
 (defn- wrap-authentication
   [_ f mdata]
-  (fn [cfg params]
-    (let [profile-id (::profile-id params)]
-      (if (and (::auth mdata true) (not (uuid? profile-id)))
-        (ex/raise :type :authentication
-                  :code :authentication-required
-                  :hint "authentication required for this endpoint")
-        (f cfg params)))))
+  (let [required-auth?      (::auth mdata true)
+        required-auth-type  (::auth-type mdata)
+        required-perms      (into #{} (::perms mdata))]
+    (fn [cfg params]
+      (let [profile-id  (::profile-id params)
+            auth-type   (::auth-type params)
+            token-perms (set (::token-perms params #{}))]
+        (cond
+          (and required-auth? (not (uuid? profile-id)))
+          (ex/raise :type :authentication
+                    :code :authentication-required
+                    :hint "authentication required for this endpoint")
+
+          (and (= required-auth-type :token)
+               (not= auth-type :token))
+          (ex/raise :type :authorization
+                    :code :token-auth-required
+                    :hint "access token authentication required for this endpoint")
+
+          (and (seq required-perms)
+               (not= auth-type :token))
+          (ex/raise :type :authorization
+                    :code :token-auth-required
+                    :hint "access token authentication required for this endpoint")
+
+          (and (seq required-perms)
+               (not (set/subset? required-perms token-perms)))
+          (ex/raise :type :authorization
+                    :code :missing-perms
+                    :hint "missing required permissions"
+                    :required required-perms)
+
+          :else
+          (f cfg params))))))
 
 (defn- wrap-db-transaction
   [_ f mdata]
@@ -212,13 +250,13 @@
     f))
 
 
-(defonce ^:private org-sso-auth-cache
+(defonce ^:private organization-sso-auth-cache
   (cache/create :expire "15m" :max-size 1024))
 
-(defn invalidate-org-sso-cache-by-org!
-  "Invalidates all org-SSO authorization cache entries for the given organization-id."
+(defn invalidate-organization-sso-cache-by-organization!
+  "Invalidates all organization-SSO authorization cache entries for the given organization-id."
   [organization-id]
-  (cache/invalidate-if org-sso-auth-cache #(= (:organization-id %) organization-id)))
+  (cache/invalidate-if organization-sso-auth-cache #(= (:organization-id %) organization-id)))
 
 (defn- wrap-nitrate-sso
   "Enforce Nitrate organization SSO authentication for RPC handlers.
@@ -230,18 +268,18 @@
    4. Explicit :file-id param -> lookup file's team via join
    5. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
 
-   Once the context is resolved, checks if the user is authorized within that org's
+   Once the context is resolved, checks if the user is authorized within that organization's
    SSO session using nitrate/sso-session-authorized?. Authorized results are cached
    by [profile-id cache-ref] for 15 minutes to avoid repeated lookups.
 
    Only activates when:
    - Nitrate flag is enabled
    - Endpoint requires authentication (::auth true by default)
-   - Endpoint is not marked with ::nitrate/org-sso false
+   - Endpoint is not marked with ::nitrate/organization-sso false
 
-   Raises :nitrate-sso-required error if user is not authorized in the org."
+   Raises :nitrate-sso-required error if user is not authorized in the organization."
   [_ f mdata]
-  (if (and (contains? cf/flags :nitrate)
+  (if (and (contains? cf/flags :admin-console)
            (::auth mdata true) ;; only for endpoints that needs auth
            (::nitrate/sso mdata true))
     (fn [cfg params]
@@ -261,7 +299,7 @@
           (let [cache-ref  (or organization-id team-id project-id file-id)
 
                 cache-key  [profile-id cache-ref]
-                cached     (cache/get org-sso-auth-cache cache-key)
+                cached     (cache/get organization-sso-auth-cache cache-key)
                 result     (if (some? cached)
                              cached
                              (let [team-id                  (when-not organization-id
@@ -276,7 +314,7 @@
                                    entry                    {:authorized      authorized
                                                              :organization-id (:organization-id sso)}]
                                (when authorized
-                                 (cache/get org-sso-auth-cache cache-key (constantly entry)))
+                                 (cache/get organization-sso-auth-cache cache-key (constantly entry)))
                                entry))]
             (if (:authorized result)
               (f cfg params)
@@ -339,6 +377,7 @@
           'app.rpc.commands.binfile
           'app.rpc.commands.comments
           'app.rpc.commands.demo
+          'app.rpc.commands.error-reports
           'app.rpc.commands.files
           'app.rpc.commands.files-create
           'app.rpc.commands.files-share
@@ -391,7 +430,7 @@
   [cfg]
   (let [cfg  (assoc cfg ::module "management" ::type "command" ::metrics-id :rpc-management-timing)
         mods (cond->> (list 'app.rpc.management.exporter)
-               (contains? cf/flags :nitrate)
+               (contains? cf/flags :admin-console)
                (cons 'app.rpc.management.nitrate))]
 
     (->> (apply sv/scan-ns mods)
