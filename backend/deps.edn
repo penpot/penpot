@@ -67,7 +67,7 @@
   software.amazon.awssdk/s3 {:mvn/version "2.50.1"}
   software.amazon.awssdk/sts {:mvn/version "2.50.1"}
 
-  com.ladybugdb/lbug {:mvn/version "0.18.0"}}
+  com.ladybugdb/lbug {:mvn/version "0.19.1"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
