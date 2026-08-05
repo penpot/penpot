@@ -19,21 +19,19 @@
    ["node:fs" :as fs]
    ["undici" :as http]
    [app.common.data :as d]
+   [app.common.fonts :as cfnt]
    ;; Required for side effects: these register the transit read handlers and
    ;; deftype impls the `get-page` response is decoded into.
    [app.common.geom.matrix]
    [app.common.geom.point]
    [app.common.geom.rect]
    [app.common.logging :as l]
-   [app.common.render-wasm.builtin-fonts :as bfonts]
-   [app.common.render-wasm.fallback-fonts :as fbf]
-   [app.common.render-wasm.gfonts :as gf]
-   [app.common.render-wasm.resources :as resources]
    [app.common.transit :as t]
    [app.common.types.fills.impl]
    [app.common.types.objects-map]
    [app.common.types.path.impl]
    [app.common.types.shape]
+   [app.common.types.shape.images :as images]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -168,8 +166,8 @@
 ;;
 ;; The text serializer keeps each font's real uuid, so `wasm/fonts-for-shape`
 ;; reports it. Custom (team) fonts resolve through the file's font variants,
-;; google fonts through the shared `app.common.render-wasm.gfonts` catalog; builtin fonts
-;; through `app.common.render-wasm.builtin-fonts` + the frontend's static `/fonts/`.
+;; google fonts through the shared `app.common.fonts` catalog; builtin
+;; fonts through its bundled family + the frontend's static `/fonts/`.
 
 (defn- fetch-font-variants
   "Team (custom) font variants for the file, or nil — a failure here degrades
@@ -225,7 +223,7 @@
 
 (defn- fetch-gfont-bytes
   [ttf-url]
-  (fetch-ttf-bytes (gf/gstatic->proxy-url ttf-url (internal-uri "internal/gfonts/font"))))
+  (fetch-ttf-bytes (cfnt/gstatic->proxy-url ttf-url (internal-uri "internal/gfonts/font"))))
 
 (defn- fetch-builtin-font-bytes
   [ttf-file]
@@ -253,10 +251,10 @@
         (fetch-asset-bytes (:ttf-file-id variant) params)
 
         (= uuid/zero font-uuid)
-        (fetch-builtin-font-bytes (bfonts/resolve-ttf-file weight style))
+        (fetch-builtin-font-bytes (cfnt/resolve-ttf-file weight style))
 
         :else
-        (if-let [gurl (gf/resolve-ttf-url font-uuid weight style)]
+        (if-let [gurl (cfnt/resolve-ttf-url font-uuid weight style)]
           (fetch-gfont-bytes gurl)
           (p/resolved nil))))))
 
@@ -278,18 +276,18 @@
                      :let  [text (:text node)]
                      :when (string? text)]
                  text)
-        emoji? (boolean (some fbf/contains-emoji? texts))
-        langs  (reduce fbf/collect-used-languages #{} texts)]
+        emoji? (boolean (some cfnt/contains-emoji? texts))
+        langs  (reduce cfnt/collect-used-languages #{} texts)]
     (distinct
-     (cond-> (fbf/add-noto-fonts [] langs)
-       emoji? (fbf/add-emoji-font)))))
+     (cond-> (cfnt/add-noto-fonts [] langs)
+       emoji? (cfnt/add-emoji-font)))))
 
 (defn- fetch-fallback-font-bytes
   "Downloads one fallback font's TTF. Cached by the whole variant, not just
   `font-id`: `resolve-ttf-url` picks a different TTF per weight/style, so a
   font-id-only key would serve the first downloaded variant for every other one."
   [{:keys [font-id weight style]}]
-  (if-let [ttf-url (some-> (gf/gfont-id->uuid font-id) (gf/resolve-ttf-url weight style))]
+  (if-let [ttf-url (some-> (cfnt/gfont-id->uuid font-id) (cfnt/resolve-ttf-url weight style))]
     (cached-ttf-bytes [font-id weight style] #(fetch-gfont-bytes ttf-url))
     (p/resolved nil)))
 
@@ -297,7 +295,7 @@
   [scene]
   (->> (scene-fallback-fonts scene)
        (map (fn [{:keys [font-id weight style is-emoji is-fallback] :as font}]
-              (if-let [font-uuid (gf/gfont-id->uuid font-id)]
+              (if-let [font-uuid (cfnt/gfont-id->uuid font-id)]
                 (->> (fetch-fallback-font-bytes font)
                      (p/fmap (fn [buf]
                                (if buf
@@ -341,11 +339,11 @@
 
 (defn- provision-images!
   "Fetches and stores every image the scene references (shape, stroke and
-  text-span fills, enumerated by `app.common.render-wasm.resources`). Unlike fonts,
+  text-span fills, enumerated by `app.common.types.shape.images`). Unlike fonts,
   the image store is not reset per request, so already-held images are skipped
   and repeated exports of a file reuse them."
   [scene params]
-  (let [all-ids (resources/scene-image-ids scene)
+  (let [all-ids (images/scene-image-ids scene)
         new-ids (remove wasm/image-cached? all-ids)]
     (l/dbg :hint "wasm render: provisioning images"
            :total (count all-ids)

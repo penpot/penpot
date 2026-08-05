@@ -9,9 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
-   [app.common.render-wasm.builtin-fonts :as bfonts]
-   [app.common.render-wasm.gfonts :as gf]
    [app.common.types.text :as txt]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -25,10 +24,6 @@
    [promesa.core :as p]))
 
 (log/set-level! :warn)
-
-(def google-fonts gf/catalog)
-
-(def local-fonts bfonts/local-fonts)
 
 (defonce fontsdb (l/atom {}))
 (defonce fonts (l/atom []))
@@ -49,10 +44,10 @@
                  fonts (map #(assoc % :backend backend) fonts)]
              (merge db (d/index-by :id fonts))))))
 
-(register! :builtin local-fonts)
+(register! :builtin cfnt/local-fonts)
 
 (when (contains? cf/flags :google-fonts-provider)
-  (register! :google google-fonts))
+  (register! :google cfnt/catalog))
 
 (defn get-font-data [id]
   (get @fontsdb id))
@@ -250,7 +245,7 @@
 
 (defn- process-gfont-css
   [css]
-  (gf/gstatic->proxy-url css (u/join cf/public-uri "internal/gfonts/font")))
+  (cfnt/gstatic->proxy-url css (u/join cf/public-uri "internal/gfonts/font")))
 
 (defn- fetch-gfont-css
   [url]
@@ -382,10 +377,10 @@
   "Find the closest font weight variant in `font` for `target-weight` with optional `target-style` match.
   When exactly between two weights, choose the higher one.
 
-  The algorithm lives in `app.common.render-wasm.gfonts` so the headless exporter resolves the
+  The algorithm lives in `app.common.fonts` so the headless exporter resolves the
   same variant for the same text."
   [font target-weight target-style]
-  (gf/closest-variant (:variants font []) target-weight target-style))
+  (cfnt/closest-variant (:variants font []) target-weight target-style))
 
 ;; Font embedding functions
 (defn get-node-fonts

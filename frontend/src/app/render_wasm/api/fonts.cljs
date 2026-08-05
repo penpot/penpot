@@ -8,9 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
-   [app.common.render-wasm.fallback-fonts :as fbf]
-   [app.common.render-wasm.gfonts :as gf]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.text :as txt]
@@ -40,16 +39,6 @@
 (def ^:private default-line-height 1.2)
 (def ^:private default-letter-spacing 0.0)
 
-(defn- font-backend
-  [font-id]
-  (cond
-    (str/starts-with? font-id "gfont-")
-    :google
-    (str/starts-with? font-id "custom-")
-    :custom
-    :else
-    :builtin))
-
 (defn- font-db-data
   [font-id font-variant-id font-weight-fallback font-style-fallback]
   (let [font (fonts/get-font-data font-id)
@@ -75,11 +64,11 @@
         "regular")))
 
 (defn ^:private font-id->asset-id [font-id font-variant-id font-weight font-style]
-  (case (font-backend font-id)
+  (case (cfnt/font-id->backend font-id)
     :google
     font-id
     :custom
-    (let [font-uuid (gf/font-id->uuid font-id)
+    (let [font-uuid (cfnt/font-id->uuid font-id)
           matching-font (some (fn [[_ font]]
                                 (and (= (:font-id font) font-uuid)
                                      (= (str (:font-weight font)) (str font-weight))
@@ -170,11 +159,11 @@
   [font-id font-variant-id font-weight font-style]
   (let [variant (font-db-data font-id font-variant-id font-weight font-style)]
     (when-let [ttf-url (:ttf-url variant)]
-      (gf/gstatic->proxy-url ttf-url (u/join cf/public-uri "internal/gfonts/font")))))
+      (cfnt/gstatic->proxy-url ttf-url (u/join cf/public-uri "internal/gfonts/font")))))
 
 (defn- font-id->ttf-url
   [font-id asset-id font-variant-id font-weight font-style]
-  (case (font-backend font-id)
+  (case (cfnt/font-id->backend font-id)
     :google
     (google-font-ttf-url font-id font-variant-id font-weight font-style)
     :custom
@@ -320,7 +309,7 @@
         emoji? (get font :is-emoji false)
         fallback? (get font :is-fallback false)
         font-data (font-db-data font-id normalized-variant-id font-weight-fallback font-style-fallback)
-        wasm-id (gf/font-id->uuid font-id)
+        wasm-id (cfnt/font-id->uuid font-id)
         raw-weight (or (:weight font-data) font-weight-fallback)
         weight (serialize-font-weight raw-weight)
         style (cond
@@ -377,7 +366,3 @@
 (defn store-fonts
   [fonts]
   (keep (fn [font] (store-font font)) fonts))
-
-(def add-emoji-font fbf/add-emoji-font)
-(def noto-fonts fbf/noto-fonts)
-(def add-noto-fonts fbf/add-noto-fonts)

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.common.render-wasm.gfonts
+(ns app.common.fonts
   "A fonts loading macros."
 
   (:require

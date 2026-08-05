@@ -8,14 +8,14 @@
   "Single source of truth for writing a text shape's content into the WASM design
   state. The binary layout ([num-spans][paragraph attrs][span attrs][text]) is
   identical for the workspace and the headless exporter, and so is the font-id
-  -> uuid mapping (`gf/font-id->uuid`). Only *variant* resolution differs —
+  -> uuid mapping (`cfnt/font-id->uuid`). Only *variant* resolution differs —
   the workspace has a loaded fonts DB, the exporter does not — so that part is
   injected via the `opts` map passed to `write-shape-text!`.
 
   Fully portable (no store/DOM/React), so it runs under Node too."
   (:require
    [app.common.data :as d]
-   [app.common.render-wasm.gfonts :as gf]
+   [app.common.fonts :as cfnt]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.mem :as mem]
    [app.common.render-wasm.serializers :as sr]
@@ -172,13 +172,13 @@
 
   `opts` injects host-specific font handling:
    - `:normalize-font-id` (string font-id -> wasm uuid) defaults to the shared
-     `gf/font-id->uuid`, which is what both hosts want — a host only
+     `cfnt/font-id->uuid`, which is what both hosts want — a host only
      overrides it if it keys its font store some other way,
    - `:normalize-paragraph`/`:normalize-span` — font-variant normalization from a
      fonts DB (workspace); default to identity (the exporter resolves variants
      differently / not at all)."
   [spans paragraph text {:keys [normalize-font-id normalize-paragraph normalize-span]
-                         :or   {normalize-font-id   gf/font-id->uuid
+                         :or   {normalize-font-id   cfnt/font-id->uuid
                                 normalize-paragraph identity
                                 normalize-span      (fn [span _paragraph] span)}}]
   (let [paragraph     (normalize-paragraph paragraph)

@@ -13,6 +13,7 @@
    [app.common.exceptions :as ex]
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
@@ -1297,8 +1298,8 @@
                    langs)
 
             (let [text   (apply str (map :text spans))
-                  emoji? (if emoji? emoji? (t/contains-emoji? text))
-                  langs  (t/collect-used-languages langs text)]
+                  emoji? (if emoji? emoji? (cfnt/contains-emoji? text))
+                  langs  (cfnt/collect-used-languages langs text)]
 
               ;; FIXME: this should probably be somewhere else
               (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
@@ -1309,8 +1310,8 @@
 
         (let [updated-fonts
               (-> #{}
-                  (cond-> ^boolean emoji? (f/add-emoji-font))
-                  (f/add-noto-fonts langs))
+                  (cond-> ^boolean emoji? (cfnt/add-emoji-font))
+                  (cfnt/add-noto-fonts langs))
               fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))

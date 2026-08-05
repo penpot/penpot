@@ -6,7 +6,6 @@
 
 (ns app.render-wasm.api.texts
   (:require
-   [app.common.render-wasm.fallback-fonts :as fbf]
    [app.common.render-wasm.text-content :as tc]
    [app.render-wasm.api.fonts :as f]))
 
@@ -17,9 +16,3 @@
   (tc/write-shape-text! spans paragraph text
                         {:normalize-paragraph f/normalize-paragraph-font
                          :normalize-span      f/normalize-span-font}))
-
-;; Emoji/script detection lives in the host-agnostic
-;; `app.common.render-wasm.fallback-fonts`; kept re-exported here for existing
-;; workspace callers.
-(def contains-emoji? fbf/contains-emoji?)
-(def collect-used-languages fbf/collect-used-languages)
