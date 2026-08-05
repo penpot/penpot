@@ -23,7 +23,7 @@ ALL_MODULES=("frontend" "backend" "common" "render-wasm" "exporter" "mcp" "plugi
 # Module commands
 declare -A LINT_CMD=(
   [frontend]="pnpm run lint:clj && pnpm run lint:js && pnpm run lint:scss"
-  [backend]="pnpm run lint"
+  [backend]="pnpm run lint:clj"
   [common]="pnpm run lint:clj"
   [render-wasm]="./lint"
   [exporter]="pnpm run lint"
