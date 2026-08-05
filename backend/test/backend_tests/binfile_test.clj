@@ -8,6 +8,7 @@
   "Internal binfile test, no RPC involved"
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.features :as cfeat]
    [app.common.files.validate :as cfv]
@@ -25,7 +26,10 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]))
+   [datoteka.io :as io])
+  (:import
+   java.io.ByteArrayInputStream
+   java.io.DataInputStream))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -202,3 +206,26 @@
                      (v3/import-files!))]
       (t/is (= (count result) 1))
       (t/is (every? uuid? result)))))
+
+(t/deftest read-obj-rejects-oversized-buffer
+  ;; N1-07: read-obj! must reject objects exceeding max-object-size
+  ;; before attempting to allocate the buffer
+  (let [size (+ bfc/max-object-size 1)
+        baos (java.io.ByteArrayOutputStream. 17)
+        dos  (java.io.DataOutputStream. baos)]
+    (.writeByte dos 5)
+    (.writeLong dos (long size))
+    (.flush dos)
+    (let [input (java.io.DataInputStream.
+                 (ByteArrayInputStream. (.toByteArray baos)))]
+      (binding [v1/*position* (atom 0)]
+        (let [out (try
+                    (v1/read-obj! input)
+                    nil
+                    (catch clojure.lang.ExceptionInfo e
+                      (ex-data e)))]
+          ;; Without the guard, read-obj! will either OOM or proceed
+          ;; to read-bytes! on a truncated stream (no :max-file-size-reached).
+          ;; With the guard, it raises :validation :max-file-size-reached.
+          (t/is (= :validation (:type out)))
+          (t/is (= :max-file-size-reached (:code out))))))))
