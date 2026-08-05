@@ -35,7 +35,8 @@
 
 (defn- valid-sns-url?
   "Validates that a URL originates from an SNS endpoint.
-   Only accepts sns.<region>.amazonaws.com hosts."
+   Only accepts sns.<region>.amazonaws.com hosts.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [url]
   (when (string? url)
     (try
@@ -49,21 +50,52 @@
       (catch Exception _
         false))))
 
-(def ^:private notification-fields
-  ["Message" "MessageId" "Subject" "Timestamp"
-   "TopicArn" "Type" "SigningCertURL" "SignatureVersion" "Signature"])
+;; AWS SNS Signature Verification Field Sets
+;; See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html
+;;
+;; Signature Version 1 signs only specific fields (excludes SigningCertURL, SignatureVersion, Signature)
+;; Signature Version 2 signs all fields except Signature
+;;
+;; IMPORTANT: The "Signature" field is NEVER part of the string-to-sign (it's the output, not input)
 
-(def ^:private subscription-fields
-  ["Message" "MessageId" "SubscribeURL" "Timestamp"
-   "TopicArn" "Type" "SigningCertURL" "SignatureVersion" "Signature"])
+;; V1 Notification: Message, MessageId, Subject (if present), Timestamp, TopicArn, Type
+(def ^:private v1-notification-fields
+  ["Message" "MessageId" "Subject" "Timestamp" "TopicArn" "Type"])
+
+;; V1 SubscriptionConfirmation: Message, MessageId, SubscribeURL, Timestamp, Token, TopicArn, Type
+(def ^:private v1-subscription-fields
+  ["Message" "MessageId" "SubscribeURL" "Timestamp" "Token" "TopicArn" "Type"])
+
+;; V2 Notification: All fields except Signature
+(def ^:private v2-notification-fields
+  ["Message" "MessageId" "Subject" "Timestamp" "TopicArn" "Type"
+   "SigningCertURL" "SignatureVersion"])
+
+;; V2 SubscriptionConfirmation: All fields except Signature (includes Token)
+(def ^:private v2-subscription-fields
+  ["Message" "MessageId" "SubscribeURL" "Timestamp" "Token" "TopicArn" "Type"
+   "SigningCertURL" "SignatureVersion"])
 
 (defn- build-string-to-sign
   "Builds the string-to-sign for AWS SNS signature verification.
    See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [body]
-  (let [fields (if (= "SubscriptionConfirmation" (get body "Type"))
-                 subscription-fields
-                 notification-fields)]
+  (let [sig-version (get body "SignatureVersion")
+        msg-type    (get body "Type")
+        fields      (cond
+                      (= "1" sig-version)
+                      (if (= "SubscriptionConfirmation" msg-type)
+                        v1-subscription-fields
+                        v1-notification-fields)
+
+                      (= "2" sig-version)
+                      (if (= "SubscriptionConfirmation" msg-type)
+                        v2-subscription-fields
+                        v2-notification-fields)
+
+                      :else
+                      (throw (ex-info "Unsupported SNS signature version"
+                                      {:version sig-version})))]
     (->> fields
          (filter #(contains? body %))
          (map #(str % "\n" (get body %) "\n"))
@@ -71,36 +103,52 @@
 
 (defn- fetch-certificate
   "Fetches the X.509 certificate from the given URL.
-   Returns an InputStream that must be closed by the caller."
+   Returns an InputStream that must be closed by the caller.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [cfg cert-url]
   (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000}
                            {:sync? true :response-type :input-stream})]
-    (when (= 200 (:status response))
-      (:body response))))
+    (when-not (= 200 (:status response))
+      (l/wrn :hint "failed to fetch SNS signing certificate"
+             :action "sns-cert-fetch-failed"
+             :status (:status response)
+             :cert-url cert-url)
+      (ex/raise :type :internal :code :cert-fetch-failed))
+    (:body response)))
 
 (defn- verify-signature
-  "Verifies the RSA signature of the message."
+  "Verifies the RSA signature of the message.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [cfg body]
   (let [cert-url      (get body "SigningCertURL")
         signature     (get body "Signature")
         sig-version   (get body "SignatureVersion")
-        string-sign   (build-string-to-sign body)
         algorithm     (case sig-version
                         "1" "SHA1withRSA"
                         "2" "SHA256withRSA"
                         nil)]
     (when-not algorithm
       (throw (ex-info "Unsupported SNS signature version"
-                      {:version sig-version})))
+                      {:type :validation :version sig-version})))
     (when (and cert-url signature)
       (try
-        (with-open [cert-stream (fetch-certificate cfg cert-url)]
-          (let [cf   (CertificateFactory/getInstance "X.509")
-                cert (.generateCertificate cf cert-stream)
-                sig  (Signature/getInstance algorithm)]
-            (.initVerify sig (.getPublicKey cert))
-            (.update sig (.getBytes string-sign java.nio.charset.StandardCharsets/UTF_8))
-            (.verify sig (.decode (Base64/getDecoder) signature))))
+        (let [string-sign (build-string-to-sign body)]
+          (with-open [cert-stream (fetch-certificate cfg cert-url)]
+            (let [cf   (CertificateFactory/getInstance "X.509")
+                  cert (.generateCertificate cf cert-stream)
+                  sig  (Signature/getInstance algorithm)]
+              (.initVerify sig (.getPublicKey cert))
+              (.update sig (.getBytes string-sign java.nio.charset.StandardCharsets/UTF_8))
+              (.verify sig (.decode (Base64/getDecoder) signature)))))
+        (catch clojure.lang.ExceptionInfo e
+          (let [data (ex-data e)]
+            (if (= :validation (:type data))
+              (throw e)
+              (do
+                (l/wrn :hint "SNS signature verification exception"
+                       :action "sns-signature-verification-exception"
+                       :cause e)
+                false))))
         (catch Exception e
           (l/wrn :hint "SNS signature verification exception"
                  :action "sns-signature-verification-exception"
@@ -109,7 +157,8 @@
 
 (defn- verify-sns-message!
   "Verifies the AWS SNS message signature and URL validity.
-   Throws if verification fails."
+   Throws if verification fails.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [cfg body]
   (let [cert-url    (get body "SigningCertURL")
         subscribe-url (get body "SubscribeURL")
