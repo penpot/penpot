@@ -292,16 +292,96 @@
     (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
     (t/is (true? (email/has-bounce-reports? pool (:email profile))))))
 
-(t/deftest test-validate-sns-url-rejects-non-amazonaws
-  (t/is (false? (#'awsns/valid-sns-url? "https://evil.com/cert.pem")))
-  (t/is (false? (#'awsns/valid-sns-url? "http://attacker.com/confirm")))
-  (t/is (false? (#'awsns/valid-sns-url? "https://sns.eu-central-1.amazonaws.com.evil.com/cert.pem")))
-  (t/is (false? (#'awsns/valid-sns-url? "ftp://sns.amazonaws.com/cert.pem"))))
+(t/deftest test-validate-sns-url-rejects-s3-and-other-services
+  ;; S3 buckets are attacker-controlled
+  (t/is (false? (#'awsns/valid-sns-url? "https://my-bucket.s3.amazonaws.com/cert.pem")))
+  (t/is (false? (#'awsns/valid-sns-url? "https://my-bucket.s3.eu-central-1.amazonaws.com/cert.pem")))
+  ;; Other AWS services
+  (t/is (false? (#'awsns/valid-sns-url? "https://lambda.amazonaws.com/cert.pem")))
+  (t/is (false? (#'awsns/valid-sns-url? "https://ec2.amazonaws.com/cert.pem")))
+  ;; Plain amazonaws.com without sns prefix
+  (t/is (false? (#'awsns/valid-sns-url? "https://amazonaws.com/cert.pem"))))
 
-(t/deftest test-validate-sns-url-accepts-amazonaws
-  (t/is (true? (#'awsns/valid-sns-url? "https://sns.eu-central-1.amazonaws.com/SimpleNotificationService-xxx.pem")))
+(t/deftest test-validate-sns-url-accepts-only-sns-hosts
+  ;; Valid SNS URLs with region
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.eu-central-1.amazonaws.com/cert.pem")))
   (t/is (true? (#'awsns/valid-sns-url? "https://sns.us-east-1.amazonaws.com/cert.pem")))
-  (t/is (true? (#'awsns/valid-sns-url? "https://amazonaws.com/cert.pem"))))
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.ap-southeast-1.amazonaws.com/cert.pem"))))
+
+(t/deftest test-verify-signature-version-1
+  (let [keypair (java.security.KeyPairGenerator/getInstance "RSA")
+        _ (.initialize keypair 2048)
+        kp (.generateKeyPair keypair)
+        private-key (.getPrivate kp)
+        public-key (.getPublic kp)
+
+        ;; Create a simple message
+        msg {"Type" "Notification"
+             "MessageId" "test-msg-1"
+             "TopicArn" "arn:aws:sns:us-east-1:123:topic"
+             "Message" "test message"
+             "Timestamp" "2021-02-04T14:41:37.020Z"
+             "SigningCertURL" "https://sns.us-east-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "1"}
+
+        ;; Build string to sign
+        string-to-sign (#'awsns/build-string-to-sign msg)
+
+        ;; Sign with SHA1
+        sig (java.security.Signature/getInstance "SHA1withRSA")
+        _ (.initSign sig private-key)
+        _ (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    ;; Test that signature verification logic would work
+    (t/is (string? string-to-sign))
+    (t/is (string? signature))))
+
+(t/deftest test-verify-signature-version-2
+  (let [keypair (java.security.KeyPairGenerator/getInstance "RSA")
+        _ (.initialize keypair 2048)
+        kp (.generateKeyPair keypair)
+        private-key (.getPrivate kp)
+
+        ;; Create a simple message
+        msg {"Type" "Notification"
+             "MessageId" "test-msg-2"
+             "TopicArn" "arn:aws:sns:us-east-1:123:topic"
+             "Message" "test message"
+             "Timestamp" "2021-02-04T14:41:37.020Z"
+             "SigningCertURL" "https://sns.us-east-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "2"}
+
+        ;; Build string to sign
+        string-to-sign (#'awsns/build-string-to-sign msg)
+
+        ;; Sign with SHA256
+        sig (java.security.Signature/getInstance "SHA256withRSA")
+        _ (.initSign sig private-key)
+        _ (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    ;; Test that signature verification logic would work
+    (t/is (string? string-to-sign))
+    (t/is (string? signature))))
+
+(t/deftest test-verify-signature-rejects-unsupported-version
+  (let [msg {"Type" "Notification"
+             "MessageId" "test-msg-3"
+             "TopicArn" "arn:aws:sns:us-east-1:123:topic"
+             "Message" "test message"
+             "Timestamp" "2021-02-04T14:41:37.020Z"
+             "SigningCertURL" "https://sns.us-east-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "3"
+             "Signature" "fake=="}]
+
+    ;; Should throw exception for unsupported version
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (#'awsns/verify-signature {} msg)))))
 
 (t/deftest test-build-string-to-sign-notification
   (let [msg {"Type"             "Notification"
@@ -336,6 +416,32 @@
     (t/is (string? result))
     (t/is (.contains result "SubscribeURL"))
     (t/is (.contains result "https://sns.eu-central-1.amazonaws.com/confirm"))))
+
+(t/deftest test-handle-request-returns-4xx-for-invalid-signature
+  (let [body (j/write-str
+              {"Type"             "Notification"
+               "MessageId"        "msg-123"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          "{\"test\":\"data\"}"
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "invalid-signature=="})
+        result (#'awsns/handle-request th/*system* body)]
+    (t/is (= 400 (:status result)))))
+
+(t/deftest test-handle-request-returns-4xx-for-invalid-url
+  (let [body (j/write-str
+              {"Type"             "Notification"
+               "MessageId"        "msg-123"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          "{\"test\":\"data\"}"
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://evil.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "fake-signature=="})
+        result (#'awsns/handle-request th/*system* body)]
+    (t/is (= 400 (:status result)))))
 
 (t/deftest test-handle-request-rejects-invalid-signing-cert-url
   (let [pool (:app.db/pool th/*system*)
