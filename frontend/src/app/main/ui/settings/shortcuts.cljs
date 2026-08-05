@@ -393,6 +393,7 @@
                  customized? (and (contains? group-map shortcut-key)
                                   (not (str/blank? (get group-map shortcut-key))))]
              (and customized?
+                  (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
                       (matches-search (:translation shortcut) search-term))))))
 
@@ -406,6 +407,7 @@
                  in-group? (contains? group-map shortcut-key)
                  blank? (str/blank? (get group-map shortcut-key))]
              (and in-group? blank?
+                  (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
                       (matches-search (:translation shortcut) search-term))))))
 

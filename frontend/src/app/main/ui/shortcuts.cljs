@@ -612,8 +612,9 @@
                                       (get custom-shortcuts section-key))
              group-map              (if (map? group-map) group-map {})
              customized?            (contains? group-map command)
-             has-conflict?          (contains? conflicts command)]
-         (if editable?
+             has-conflict?          (contains? conflicts command)
+             customizable?          (not (false? (:customizable command-info)))]
+         (if (and editable? customizable?)
            [:> shortcut-row-editable* {:elements elements
                                        :custom-shortcuts custom-shortcuts
                                        :section-key section-key
@@ -626,9 +627,13 @@
                  :data-conflict (str has-conflict?)
                  :aria-label command-translate
                  :key command-translate}
-            [:span {:class (stl/css :command-name)
-                    :id (dm/str command-translate "-label")}
-             command-translate]
+            [:span
+             [:span {:class (stl/css-case :command-name true
+                                          :not-customizable-label (not customizable?))
+                     :id (dm/str command-translate "-label")}
+              command-translate]
+             (when (not customizable?)
+               [:span {:class (stl/css :not-customizable-label)} "(not customizable)"])]
             [:div {:class (stl/css :shortcut-actions)
                    :aria-labelledby (dm/str command-translate "-label")}
              (if (and customized? (str/blank? content))
