@@ -21,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -45,6 +46,11 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def schema:nudge
+  [:map {:title "Nudge"}
+   [:big {:optional true} ::sm/number]
+   [:small {:optional true} ::sm/number]])
+
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
   #{:subscription})
@@ -58,6 +64,8 @@
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]
    [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:onboarding-questions {:optional true} [:map-of :keyword :string]]
+   [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
@@ -66,7 +74,8 @@
    [:notifications {:optional true} schema:props-notifications]
    [:workspace-visited {:optional true} ::sm/boolean]
    [:custom-shortcuts {:optional true}
-    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]])
+    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
+   [:nudge {:optional true} schema:nudge]])
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -272,7 +281,7 @@
 (def ^:private
   schema:update-profile-photo
   [:map {:title "update-profile-photo"}
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -280,8 +289,8 @@
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo

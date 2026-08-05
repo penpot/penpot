@@ -8,6 +8,7 @@
   "A generic blob storage encoding. Mainly used for page data, page
   options and txlog payload storage."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.fressian :as fres]
    [app.common.transit :as t]
    [app.config :as cf])
@@ -58,12 +59,18 @@
    (.encodeToString (.withoutPadding (Base64/getUrlEncoder)) ^bytes (encode data opts))))
 
 (defn decode
-  "A function used for decode persisted blobs in the database."
-  [^bytes data]
+  "A function used for decode persisted blobs in the database.
+   Accepts optional keyword arguments:
+     :max-size  — maximum allowed uncompressed size in bytes"
+  [^bytes data & {:keys [max-size]}]
   (with-open [bais (ByteArrayInputStream. data)
               dis  (DataInputStream. bais)]
     (let [version (.readShort dis)
           ulen    (.readInt dis)]
+      (when (and max-size (> ulen max-size))
+        (ex/raise :type :validation
+                  :code :blob-too-large
+                  :hint "blob uncompressed size exceeds limit"))
       (case version
         1 (decode-v1 data ulen)
         3 (decode-v3 data ulen)
@@ -72,9 +79,10 @@
         (throw (ex-info "unsupported version" {:version version}))))))
 
 (defn decode-str
-  "Decode a URL-safe base64 string produced by `encode-str` back to data."
-  [^String s]
-  (decode (.decode (Base64/getUrlDecoder) s)))
+  "Decode a URL-safe base64 string produced by `encode-str` back to data.
+   Accepts the same optional keyword arguments as `decode`."
+  [^String s & {:as opts}]
+  (decode (.decode (Base64/getUrlDecoder) s) opts))
 
 ;; --- IMPL
 
