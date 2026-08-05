@@ -272,8 +272,13 @@
   (clone-file-media-object cfg params))
 
 (defn clone-file-media-object
-  [{:keys [::db/conn]} {:keys [id file-id is-local]}]
+  [{:keys [::db/conn] :as cfg} {:keys [id file-id is-local] :as params}]
   (let [mobj (db/get-by-id conn :file-media-object id)]
+    (when-not mobj
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "source media object not found"))
+    (files/check-read-permissions! conn (::rpc/profile-id params) (:file-id mobj))
     (db/insert! conn :file-media-object
                 {:id (uuid/next)
                  :file-id file-id
