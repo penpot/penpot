@@ -8,8 +8,7 @@
   "author": "Andrey Antukh",
   "license": "MPL-2.0",
   "dependencies": {
-    "draft-js": "penpot/draft-js.git#c58ebd9429a6359d72a88cff87e078aaf6fe285d",
-    "immutable": "^5.1.9"
+    "draft-js": "penpot/draft-js.git#c58ebd9429a6359d72a88cff87e078aaf6fe285d"
   },
   "peerDependencies": {
     "react": ">=0.17.0",

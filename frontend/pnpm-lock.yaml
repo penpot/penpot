@@ -18,7 +18,6 @@ overrides:
   postcss@<8.5.10: ^8.5.10
   yaml@>=2.0.0 <2.8.3: ^2.8.3
   playwright@>=1.61.1 <2.0.0-0: 1.62.1
-  immutable@<4.3.9: ^4.3.9
 
 patchedDependencies:
   '@zip.js/zip.js@2.8.34': 7b556bbd426f152eb086f0126a53900e369a95cf64357c380b7c8d8e940c3d95
@@ -271,9 +270,6 @@ importers:
       draft-js:
         specifier: penpot/draft-js.git#c58ebd9429a6359d72a88cff87e078aaf6fe285d
         version: https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      immutable:
-        specifier: ^5.1.9
-        version: 5.1.9
       react:
         specifier: '>=0.17.0'
         version: 19.2.8
@@ -2193,6 +2189,11 @@ packages:
 
   '@volar/typescript@2.4.28':
     resolution: {integrity: sha512-Ja6yvWrbis2QtN4ClAKreeUZPVYMARDYZl9LMEv1iQ1QdepB6wn0jTRxA9MftYmYa4DQ4k/DaSZpFPUfxl8giw==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@webcontainer/env@1.1.1':
     resolution: {integrity: sha512-6aN99yL695Hi9SuIk1oC88l9o0gmxL1nGWWQ/kNy81HigJ0FoaoTXpytCj6ItzgyCEwA9kF1wixsTuv5cjsgng==}
@@ -3510,8 +3511,9 @@ packages:
     resolution: {integrity: sha512-BAg6QkE8W+TuQLrrw0Ugr7HegXduRuuj8/ti2kSOc+jz1dmx8/WNcjr6XGnq5YpDWxFwwaavqD0+jIUOKelTsw==}
     engines: {node: '>= 4'}
 
-  immutable@4.3.9:
-    resolution: {integrity: sha512-ObHy4YN7ycwZOUCLI1/6svfyAFu7vL8RhAvVu/bh/RZW9EPlOyDaQ9jDQWCtdqzaXUjgXZCW1migtHE7YI7UGQ==}
+  immutable@3.8.3:
+    resolution: {integrity: sha512-AUY/VyX0E5XlibOmWt10uabJzam1zlYjwiEgQSDc5+UIkFNaF9WM0JxXKaNMGf+F/ffUF+7kRKXM9A7C0xXqMg==}
+    engines: {node: '>=0.10.0'}
 
   immutable@5.1.9:
     resolution: {integrity: sha512-m8nVez3rwrgmWxtLMt1ZYXB2Lv7OKYn/disyxAlSDYAlKSlFoPPfIAmAM/M5xqL4m4C/wAPw7S2/CNaUii1Hxg==}
@@ -7559,11 +7561,13 @@ snapshots:
 
   '@volar/source-map@2.4.28': {}
 
-  '@volar/typescript@2.4.28':
+  '@volar/typescript@2.4.28(typescript@6.0.3)':
     dependencies:
       '@volar/language-core': 2.4.28
       path-browserify: 1.0.1
       vscode-uri: 3.1.0
+    optionalDependencies:
+      typescript: 6.0.3
 
   '@webcontainer/env@1.1.1': {}
 
@@ -8332,7 +8336,7 @@ snapshots:
   draft-js@https://codeload.github.com/penpot/draft-js/tar.gz/c58ebd9429a6359d72a88cff87e078aaf6fe285d(encoding@0.1.13)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       fbjs: 3.0.5(encoding@0.1.13)
-      immutable: 4.3.9
+      immutable: 3.8.3
       object-assign: 4.1.1
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -9081,7 +9085,7 @@ snapshots:
 
   ignore@7.0.6: {}
 
-  immutable@4.3.9: {}
+  immutable@3.8.3: {}
 
   immutable@5.1.9: {}
 
@@ -11197,7 +11201,7 @@ snapshots:
   unplugin-dts@1.0.3(@microsoft/api-extractor@7.56.2(@types/node@26.1.2))(esbuild@0.28.1)(rolldown@1.2.1)(rollup@4.61.1)(supports-color@10.2.2)(typescript@6.0.3)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(sass-embedded@1.100.0)(sass@1.102.0)):
     dependencies:
       '@rollup/pluginutils': 5.4.0(rollup@4.61.1)
-      '@volar/typescript': 2.4.28
+      '@volar/typescript': 2.4.28(typescript@6.0.3)
       compare-versions: 6.1.1
       debug: 4.4.3(supports-color@10.2.2)
       kolorist: 1.8.0
