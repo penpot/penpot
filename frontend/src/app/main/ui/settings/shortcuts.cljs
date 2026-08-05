@@ -93,10 +93,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private known-shortcut-keys
-  "Known shortcut keys per context, derived from the default shortcuts maps."
-  {:workspace (set (keys wsc/shortcuts))
-   :dashboard (set (keys dsc/shortcuts))
-   :viewer    (set (keys vsc/shortcuts))})
+  "Known shortcut keys per context, derived from the default shortcuts maps.
+   Shortcuts marked :customizable false are excluded."
+  (letfn [(collect-keys [shortcuts]
+            (reduce-kv (fn [s k v]
+                         (if (false? (:customizable v))
+                           s
+                           (conj s k)))
+                       #{}
+                       shortcuts))]
+    {:workspace (into (collect-keys psc/shortcuts) (collect-keys wsc/shortcuts))
+     :dashboard (collect-keys dsc/shortcuts)
+     :viewer    (collect-keys vsc/shortcuts)}))
 
 (def ^:private schema:imported-shortcuts
   "Malli schema for an imported custom-shortcuts payload.

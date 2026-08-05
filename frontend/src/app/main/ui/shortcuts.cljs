@@ -10,9 +10,13 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.dashboard.shortcuts :as dsc]
    [app.main.data.dashboard.shortcuts.customize :as customize]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
+   [app.main.data.viewer.shortcuts :as vsc]
+   [app.main.data.workspace.path.shortcuts :as psc]
+   [app.main.data.workspace.shortcuts :as wsc]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -107,14 +111,24 @@
 (def ^:private import-contexts
   [:workspace :dashboard :viewer])
 
+(def ^:private context->known-keys
+  {:workspace (into #{} (concat (keys psc/shortcuts) (keys wsc/shortcuts)))
+   :dashboard (into #{} (keys dsc/shortcuts))
+   :viewer    (into #{} (keys vsc/shortcuts))})
+
+(defn- build-context-shortcuts
+  [all-shortcuts ctx]
+  (let [known-keys (get context->known-keys ctx)]
+    (into {} (filter (fn [[k _]] (contains? known-keys k))) all-shortcuts)))
+
 (defn- import-context-group
   "Imports a single context group from the payload, disabling any default
    shortcut whose command collides with a newly imported one, and any
    previously-imported entry in the same batch with a duplicate command."
-  [group all-shortcuts]
+  [group context-shortcuts]
   (reduce
    (fn [acc [command recorded-command]]
-     (let [default-conflict (find-conflict recorded-command all-shortcuts command)
+     (let [default-conflict (find-conflict recorded-command context-shortcuts command)
            acc-conflict     (some (fn [[k v]]
                                     (when (and (not= k command) (= v recorded-command))
                                       k))
@@ -136,7 +150,8 @@
         new-customs (reduce
                      (fn [acc ctx]
                        (if (contains? shortcuts ctx)
-                         (assoc acc ctx (import-context-group (get shortcuts ctx) all-shortcuts))
+                         (let [ctx-sc (build-context-shortcuts all-shortcuts ctx)]
+                           (assoc acc ctx (import-context-group (get shortcuts ctx) ctx-sc)))
                          acc))
                      current-customs
                      import-contexts)]
