@@ -23,6 +23,18 @@
 
 (def caret-blink-interval-ms 250)
 
+;; Elements carrying this attr keep the edit alive when focus moves onto them (see `keep-editing-on-blur?`).
+(def ^:private keep-editing-selector "[data-keep-editing-on-blur]")
+
+(defn- keep-editing-on-blur?
+  "True when a surface `blur` must NOT exit the editor:
+   - Firefox triggering a blur when MacOS Character Viewer is open
+   - Focus switched to a `data-keep-editing-on-blur` element (e.g. typography options)"
+  [^js event ^js surface]
+  (or (= (.-activeElement js/document) surface)
+      (when-let [related (dom/get-related-target event)]
+        (some? (.closest related keep-editing-selector)))))
+
 (defn- sync-wasm-text-editor-content!
   "Sync WASM text editor content back to the shape via the standard
   commit pipeline. Called after every text-modifying input."
@@ -431,12 +443,9 @@
         on-blur
         (mf/use-fn
          (fn [^js event]
-           ;; MacOS Character Viewer on Firefox fires a `blur` when it opens.
-           ;; To avoid losing the selected character, we need guard against
-           ;; `activeElement` being the surface itself.
+           ;; A blur exits the editor unless keep-editing-on-blur? is true
            (when-not (and (some? event)
-                          (= (.-activeElement js/document)
-                             (mf/ref-val contenteditable-ref)))
+                          (keep-editing-on-blur? event (mf/ref-val contenteditable-ref)))
              (sync-wasm-text-editor-content! {:finalize? true})
              (wasm.api/text-editor-blur))))
 

@@ -114,6 +114,35 @@ test.describe("BUG 10530 - Empty text box left behind when leaving the editor", 
   });
 });
 
+test("BUG 11083 - Changing typography must not quit the editor", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const layerRows = workspace.layers.getByTestId("layer-row");
+
+  // Draw an empty text box and, without typing anything, change the font size.
+  await workspace.createTextShape(200, 150, 320, 210);
+  await expect(layerRows).toHaveCount(1);
+
+  await workspace.textEditor.changeFontSize(24);
+
+  // The shape is not deleted and the editor is still mounted.
+  await expect(layerRows).toHaveCount(1);
+  await expect(page.getByTestId("text-editor")).toBeVisible();
+
+  // The edition survives, so we can click back into the box and keep typing.
+  await workspace.clickAt(210, 160);
+  await page.keyboard.type("hello");
+  await workspace.textEditor.stopEditing();
+
+  await layerRows.first().click();
+  await workspace.waitForSelectedShapeName("hello");
+});
+
 test("BUG 10467 - Auto-width text captures every typed character", async ({
   page,
 }) => {
