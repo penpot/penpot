@@ -34,17 +34,18 @@
 (declare process-report)
 
 (defn- valid-sns-url?
-  "Validates that a URL originates from amazonaws.com domain.
-   Used for SigningCertURL and SubscribeURL validation."
+  "Validates that a URL originates from an SNS endpoint.
+   Only accepts sns.<region>.amazonaws.com hosts."
   [url]
   (when (string? url)
     (try
-      (let [uri (URI. url)]
+      (let [uri  (URI. url)
+            host (.getHost uri)]
         (and (= "https" (.getScheme uri))
-             (let [host (.getHost uri)]
-               (and host
-                    (or (= host "amazonaws.com")
-                        (.endsWith host ".amazonaws.com"))))))
+             (boolean
+              (re-matches
+               #"(?i)sns\.[a-z0-9-]+\.amazonaws\.com"
+               host))))
       (catch Exception _
         false))))
 
@@ -69,26 +70,37 @@
          (apply str))))
 
 (defn- fetch-certificate
-  "Fetches the X.509 certificate from the given URL."
+  "Fetches the X.509 certificate from the given URL.
+   Returns an InputStream that must be closed by the caller."
   [cfg cert-url]
-  (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000} {:sync? true :response-type :input-stream})]
+  (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000}
+                           {:sync? true :response-type :input-stream})]
     (when (= 200 (:status response))
-      (let [cf (CertificateFactory/getInstance "X.509")]
-        (.generateCertificate cf (:body response))))))
+      (:body response))))
 
 (defn- verify-signature
-  "Verifies the RSA-SHA1 signature of the message."
+  "Verifies the RSA signature of the message."
   [cfg body]
-  (let [cert-url    (get body "SigningCertURL")
-        signature   (get body "Signature")
-        string-sign (build-string-to-sign body)]
+  (let [cert-url      (get body "SigningCertURL")
+        signature     (get body "Signature")
+        sig-version   (get body "SignatureVersion")
+        string-sign   (build-string-to-sign body)
+        algorithm     (case sig-version
+                        "1" "SHA1withRSA"
+                        "2" "SHA256withRSA"
+                        nil)]
+    (when-not algorithm
+      (throw (ex-info "Unsupported SNS signature version"
+                      {:version sig-version})))
     (when (and cert-url signature)
       (try
-        (let [cert (fetch-certificate cfg cert-url)
-              sig  (Signature/getInstance "SHA1withRSA")]
-          (.initVerify sig (.getPublicKey cert))
-          (.update sig (.getBytes string-sign))
-          (.verify sig (.decode (Base64/getDecoder) signature)))
+        (with-open [cert-stream (fetch-certificate cfg cert-url)]
+          (let [cf   (CertificateFactory/getInstance "X.509")
+                cert (.generateCertificate cf cert-stream)
+                sig  (Signature/getInstance algorithm)]
+            (.initVerify sig (.getPublicKey cert))
+            (.update sig (.getBytes string-sign java.nio.charset.StandardCharsets/UTF_8))
+            (.verify sig (.decode (Base64/getDecoder) signature))))
         (catch Exception e
           (l/wrn :hint "SNS signature verification exception"
                  :action "sns-signature-verification-exception"
@@ -141,9 +153,9 @@
 (defmethod ig/init-key ::routes
   [_ cfg]
   (letfn [(handler [request]
-            (let [data (-> request yreq/body slurp)]
-              (handle-request cfg data)
-              {::yres/status 200}))]
+            (let [data (-> request yreq/body slurp)
+                  result (handle-request cfg data)]
+              {::yres/status (or (:status result) 200)}))]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
 
@@ -161,20 +173,38 @@
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
           (l/info :action "subscription received" :topic stopic :url surl)
-          (http/req cfg {:uri surl :method :post :timeout 10000} {:sync? true}))
+          (http/req cfg {:uri surl :method :post :timeout 10000} {:sync? true})
+          {:status 200})
 
         (= mtype "Notification")
         (when-let [message (parse-json (get body "Message"))]
           (let [notification (parse-notification cfg message)]
-            (process-report cfg notification)))
+            (process-report cfg notification))
+          {:status 200})
 
         :else
-        (l/warn :hint "unexpected data received"
-                :report (pr-str body))))
+        (do
+          (l/warn :hint "unexpected data received"
+                  :report (pr-str body))
+          {:status 400})))
+
+    (catch clojure.lang.ExceptionInfo e
+      (let [data (ex-data e)]
+        (if (#{:validation :authentication} (:type data))
+          (do
+            (l/wrn :hint "SNS message validation failed"
+                   :action "sns-validation-failed"
+                   :code (:code data))
+            {:status 400})
+          (do
+            (l/error :hint "unexpected exception on awsns"
+                     :cause e)
+            {:status 500}))))
 
     (catch Throwable cause
       (l/error :hint "unexpected exception on awsns"
-               :cause cause))))
+               :cause cause)
+      {:status 500})))
 
 (defn- parse-bounce
   [data]
