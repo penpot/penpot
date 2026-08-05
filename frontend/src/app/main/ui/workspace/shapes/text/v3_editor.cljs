@@ -421,9 +421,15 @@
 
         on-blur
         (mf/use-fn
-         (fn [^js _event]
-           (sync-wasm-text-editor-content! {:finalize? true})
-           (wasm.api/text-editor-blur)))
+         (fn [^js event]
+           ;; MacOS Character Viewer on Firefox fires a `blur` when it opens.
+           ;; To avoid losing the selected character, we need guard against
+           ;; `activeElement` being the surface itself.
+           (when-not (and (some? event)
+                          (= (.-activeElement js/document)
+                             (mf/ref-val contenteditable-ref)))
+             (sync-wasm-text-editor-content! {:finalize? true})
+             (wasm.api/text-editor-blur))))
 
         style #js {:pointerEvents "all"
                    "--editor-container-width" (dm/str width "px")
