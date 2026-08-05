@@ -51,51 +51,29 @@
         false))))
 
 ;; AWS SNS Signature Verification Field Sets
-;; See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html
+;; See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message-verify-message-signature.html
 ;;
-;; Signature Version 1 signs only specific fields (excludes SigningCertURL, SignatureVersion, Signature)
-;; Signature Version 2 signs all fields except Signature
-;;
-;; IMPORTANT: The "Signature" field is NEVER part of the string-to-sign (it's the output, not input)
+;; V1 and V2 use the SAME field sets (only the hash algorithm differs: SHA1 vs SHA256)
+;; The "Signature" field is NEVER part of the string-to-sign (it's the output, not input)
+;; "SigningCertURL" and "SignatureVersion" are metadata, not signed
 
-;; V1 Notification: Message, MessageId, Subject (if present), Timestamp, TopicArn, Type
-(def ^:private v1-notification-fields
+;; Notification: Message, MessageId, Subject (if present), Timestamp, TopicArn, Type
+(def ^:private notification-fields
   ["Message" "MessageId" "Subject" "Timestamp" "TopicArn" "Type"])
 
-;; V1 SubscriptionConfirmation: Message, MessageId, SubscribeURL, Timestamp, Token, TopicArn, Type
-(def ^:private v1-subscription-fields
+;; SubscriptionConfirmation: Message, MessageId, SubscribeURL, Timestamp, Token, TopicArn, Type
+(def ^:private subscription-fields
   ["Message" "MessageId" "SubscribeURL" "Timestamp" "Token" "TopicArn" "Type"])
-
-;; V2 Notification: All fields except Signature
-(def ^:private v2-notification-fields
-  ["Message" "MessageId" "Subject" "Timestamp" "TopicArn" "Type"
-   "SigningCertURL" "SignatureVersion"])
-
-;; V2 SubscriptionConfirmation: All fields except Signature (includes Token)
-(def ^:private v2-subscription-fields
-  ["Message" "MessageId" "SubscribeURL" "Timestamp" "Token" "TopicArn" "Type"
-   "SigningCertURL" "SignatureVersion"])
 
 (defn- build-string-to-sign
   "Builds the string-to-sign for AWS SNS signature verification.
-   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+   V1 and V2 use the same field sets (only hash algorithm differs: SHA1 vs SHA256).
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message-verify-message-signature.html"
   [body]
-  (let [sig-version (get body "SignatureVersion")
-        msg-type    (get body "Type")
-        fields      (cond
-                      (= "1" sig-version)
-                      (if (= "SubscriptionConfirmation" msg-type)
-                        v1-subscription-fields
-                        v1-notification-fields)
-
-                      (= "2" sig-version)
-                      (if (= "SubscriptionConfirmation" msg-type)
-                        v2-subscription-fields
-                        v2-notification-fields)
-
-                      :else
-                      (throw (ex-info "Unsupported SNS signature version"
-                                      {:version sig-version})))]
+  (let [msg-type (get body "Type")
+        fields   (if (= "SubscriptionConfirmation" msg-type)
+                   subscription-fields
+                   notification-fields)]
     (->> fields
          (filter #(contains? body %))
          (map #(str % "\n" (get body %) "\n"))
@@ -109,6 +87,8 @@
   (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000}
                            {:sync? true :response-type :input-stream})]
     (when-not (= 200 (:status response))
+      (when-let [body (:body response)]
+        (.close ^java.io.Closeable body))
       (l/wrn :hint "failed to fetch SNS signing certificate"
              :action "sns-cert-fetch-failed"
              :status (:status response)
@@ -226,10 +206,15 @@
           {:status 200})
 
         (= mtype "Notification")
-        (when-let [message (parse-json (get body "Message"))]
-          (let [notification (parse-notification cfg message)]
-            (process-report cfg notification))
-          {:status 200})
+        (if-let [message (parse-json (get body "Message"))]
+          (do
+            (let [notification (parse-notification cfg message)]
+              (process-report cfg notification))
+            {:status 200})
+          (do
+            (l/wrn :hint "notification with missing or unparseable Message field"
+                   :action "sns-missing-message")
+            {:status 400}))
 
         :else
         (do
