@@ -24,7 +24,7 @@
    [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
    [app.rpc.commands.auth :as auth]
@@ -119,7 +119,7 @@
 
 (def ^:private schema:upload-organization-logo
   [:map
-   [:content media/schema:upload]
+   [:content media.v/schema:upload]
    [:organization-id ::sm/uuid]
    [:previous-id {:optional true} ::sm/uuid]])
 

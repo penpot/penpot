@@ -47,11 +47,13 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
    [frontend-tests.composable-tests.comp.nodes :as n]
    [frontend-tests.composable-tests.core :as tm]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 ;; --------------------------------------------------------------------------
@@ -351,17 +353,11 @@
       situation)))
 
 (defn- op-grace-ms
-  "Extra wait AFTER an event-op has settled, before proceeding. Zero for all ops
-   except `SyncFromLibrary`: the production `sync-file` event additionally
-   schedules `rx/timer 3000` + an `:update-file-library-sync-status` RPC. There is
-   no backend in the headless runner, so that delayed call fails (benignly) — but
-   3s after the sync it would land INSIDE whatever test is then running, leaking
-   an error trace across test boundaries (and historically destabilising
-   whole-suite runs). Waiting it out here absorbs the failure within the test that
-   caused it."
-  [op]
-  (let [op (if (tm/recorded-choice? op) (tm/choice-of op) op)]
-    (if (instance? n/SyncFromLibrary op) 3200 0)))
+  "Extra wait AFTER an event-op has settled, before proceeding. Always zero:
+   the `rx/timer` and `rp/cmd!` calls that `SyncFromLibrary` schedules are
+   mocked (see `check`) so they fire instantly and succeed."
+  [_op]
+  0)
 
 (defn- run-ops
   "Async fold over `ops` (concrete operation units, in order — plain ops and/or
@@ -464,22 +460,31 @@
    references the test holds (e.g. `has-property-of` on a change node). In-file
    propagation is AUTOMATIC (the watcher) — no propagate op is added.
 
+   Mocks are installed for the duration of the check: `rp/cmd!` returns
+   success (recording calls) and `rx/timer` fires instantly, so the
+   `SyncFromLibrary` op's delayed RPC does not produce network errors.
+
    Arities: `(check done case-map)` or `(check done case-map asserter)`."
   ([done case-map] (check done case-map nil))
   ([done {:keys [setup operation]} asserter]
-   (let [variants (tm/enumerate operation)]
-     (letfn [(run-next [vs]
-               (if (empty? vs)
-                 (done)
-                 (run-variant
-                  setup
-                  ;; a variant is a composed operation; flatten to its ordered leaf
-                  ;; ops. `enumerate` already removed all one-of choices, so the
-                  ;; variant is a Sequence (or a single op).
-                  (tm/sequence-ops (first vs))
-                  (fn [situation]
-                    (when asserter
-                      (t/testing (str "operations:\n  " (tm/describe-applied situation))
-                        (asserter situation)))
-                    (run-next (rest vs))))))]
-       (run-next variants)))))
+   (mock/with-mocks
+     {rp/cmd!  mock/rpc-cmd-mock
+      rx/timer mock/timer-mock}
+     (fn [inner-done]
+       (let [variants (tm/enumerate operation)]
+         (letfn [(run-next [vs]
+                   (if (empty? vs)
+                     (inner-done)
+                     (run-variant
+                      setup
+                      ;; a variant is a composed operation; flatten to its ordered leaf
+                      ;; ops. `enumerate` already removed all one-of choices, so the
+                      ;; variant is a Sequence (or a single op).
+                      (tm/sequence-ops (first vs))
+                      (fn [situation]
+                        (when asserter
+                          (t/testing (str "operations:\n  " (tm/describe-applied situation))
+                            (asserter situation)))
+                        (run-next (rest vs))))))]
+           (run-next variants))))
+     done)))
