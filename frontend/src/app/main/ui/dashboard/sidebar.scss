@@ -734,8 +734,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: $sz-32;
-  height: $sz-32;
+  width: $sz-48;
+  height: $sz-48;
 
   &:hover {
     --icon-stroke: var(--color-accent-primary);
