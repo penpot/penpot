@@ -983,6 +983,38 @@
     (t/is (some? sync))
     (t/is (some? (:synced-at sync)))))
 
+(t/deftest link-file-to-library-rejects-cross-team
+  ;; N1-08: A file in team2 must not be linked to a library in team1,
+  ;; even when the user has edit permissions on both (BOLA / CWE-639).
+  (let [prof1  (th/create-profile* 1)
+        prof2  (th/create-profile* 2)
+        team1  (th/create-team* 1 {:profile-id (:id prof1)})
+        team2  (th/create-team* 2 {:profile-id (:id prof2)})
+        proj1  (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:id team1)})
+        proj2  (th/create-project* 2 {:profile-id (:id prof2)
+                                      :team-id (:id team2)})
+        lib    (th/create-file* 1 {:project-id (:id proj1)
+                                   :profile-id (:id prof1)
+                                   :is-shared true})
+        file2  (th/create-file* 2 {:project-id (:id proj2)
+                                   :profile-id (:id prof2)})]
+
+    ;; Add prof2 as editor to team1 so they have edit access to the library
+    (th/db-insert! :team-profile-rel {:team-id (:id team1)
+                                      :profile-id (:id prof2)
+                                      :is-owner false
+                                      :is-admin false
+                                      :can-edit true})
+
+    ;; prof2 tries to link file2 (team2) to lib (team1) — must fail
+    (let [data {::th/type :link-file-to-library
+                ::rpc/profile-id (:id prof2)
+                :file-id (:id file2)
+                :library-id (:id lib)}
+          out  (th/command! data)]
+      (t/is (some? (:error out))))))
+
 (t/deftest update-file-library-sync-status-updates-sync-row
   (let [profile  (th/create-profile* 1)
         file1    (th/create-file* 1 {:project-id (:default-project-id profile)
