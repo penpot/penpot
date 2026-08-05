@@ -480,11 +480,11 @@
     (t/is (string? result))
     (t/is (.contains result "MessageId"))
     (t/is (.contains result "TopicArn"))
-    ;; V2 includes SigningCertURL and SignatureVersion but NOT Signature
-    (t/is (.contains result "SigningCertURL"))
-    (t/is (.contains result "SignatureVersion"))
-    ;; Check that "Signature\n" (the field name) is NOT in the result
-    ;; Note: "SignatureVersion" contains "Signature" as substring, so we check for the exact field pattern
+    ;; V2 uses the same fields as V1 (only hash algorithm differs: SHA1 vs SHA256)
+    ;; SigningCertURL and SignatureVersion are metadata, not part of the signed content
+    (t/is (not (.contains result "SigningCertURL")))
+    (t/is (not (.contains result "SignatureVersion")))
+    ;; Signature is never part of the string-to-sign
     (t/is (not (.contains result "Signature\n")))))
 
 (t/deftest test-build-string-to-sign-subscription-confirmation
@@ -507,7 +507,8 @@
     (t/is (.contains result "test-token-123"))))
 
 (t/deftest test-handle-request-returns-4xx-for-invalid-signature
-  (let [body (j/write-str
+  (let [{:keys [cert-bytes]} (load-test-cert-and-key)
+        body (j/write-str
               {"Type"             "Notification"
                "MessageId"        "msg-123"
                "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
@@ -516,7 +517,9 @@
                "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
                "SignatureVersion" "1"
                "Signature"        "invalid-signature=="})
-        result (#'awsns/handle-request th/*system* body)]
+        result (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                                       (java.io.ByteArrayInputStream. cert-bytes))]
+                 (#'awsns/handle-request th/*system* body))]
     (t/is (= 400 (:status result)))))
 
 (t/deftest test-handle-request-returns-4xx-for-invalid-url
