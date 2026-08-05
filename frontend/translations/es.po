@@ -1717,6 +1717,34 @@ msgstr "La contraseña de confirmación debe coincidir"
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
 
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password"
+msgstr "La contraseña no cumple los requisitos"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.too-short"
+msgstr "Al menos 8 caracteres"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "Al menos 1 letra minúscula"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "Al menos 1 letra mayúscula"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-digits"
+msgstr "Al menos 1 dígito"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-special"
+msgstr "Al menos 1 carácter especial"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.in-dictionary"
+msgstr "La contraseña es demasiado común"
+
 #: src/app/main/errors.cljs:267
 msgid "errors.paste-data-validation"
 msgstr "Datos inválidos en el portapapeles"

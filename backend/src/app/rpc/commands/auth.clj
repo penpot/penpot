@@ -183,6 +183,7 @@
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
               nil))]
 
+    (passwords/validate-password password)
     (->> (validate-token token)
          (update-password conn))
 

@@ -13,6 +13,14 @@
    [org.passay CharacterCharacteristicsRule CharacterRule DictionaryRule EnglishCharacterData PasswordData]
    [org.passay.dictionary ArrayWordList WordListDictionary]))
 
+(defonce ^:private passay-code->translation-key
+  {"TOO_SHORT"                    "errors.weak-password.too-short"
+   "IN_DICTIONARY"                "errors.weak-password.in-dictionary"
+   "INSUFFICIENT_LOWERCASE"       "errors.weak-password.insufficient-lowercase"
+   "INSUFFICIENT_UPPERCASE"       "errors.weak-password.insufficient-uppercase"
+   "INSUFFICIENT_DIGIT"           "errors.weak-password.insufficient-digits"
+   "INSUFFICIENT_SPECIAL"         "errors.weak-password.insufficient-special"})
+
 (defonce ^:private dictionary
   (let [lines (line-seq (io/reader (io/resource "app/common-passwords.txt")))
         words (into-array String (sort lines))
@@ -44,7 +52,8 @@
   (when (< (count password) 8)
     (ex/raise :type :validation
               :code :weak-password
-              :hint "password must be at least 8 characters"))
+              :hint "password must be at least 8 characters"
+              :details ["errors.weak-password.too-short"]))
 
   (let [password-data (PasswordData. password)]
     (let [char-result (.validate character-characteristics-rule password-data)]
@@ -52,11 +61,17 @@
         (ex/raise :type :validation
                   :code :weak-password
                   :hint "password must contain at least 1 lowercase letter, 1 uppercase letter, 1 digit, and 1 special character"
-                  :details (mapv #(.getErrorCode %) (.getDetails char-result)))))
+                  :details (->> (.getDetails char-result)
+                                (mapv #(.getErrorCode %))
+                                (mapv passay-code->translation-key)
+                                (filterv some?)))))
 
     (let [dict-result (.validate dictionary-rule password-data)]
       (when-not (.isValid dict-result)
         (ex/raise :type :validation
                   :code :weak-password
                   :hint "password is too common"
-                  :details (mapv #(.getErrorCode %) (.getDetails dict-result)))))))
+                  :details (->> (.getDetails dict-result)
+                                (mapv #(.getErrorCode %))
+                                (mapv passay-code->translation-key)
+                                (filterv some?)))))))

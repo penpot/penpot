@@ -1748,6 +1748,34 @@ msgstr "Confirmation password must match"
 msgid "errors.password-too-short"
 msgstr "Password should at least be 8 characters"
 
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password"
+msgstr "Password does not meet the requirements"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.too-short"
+msgstr "At least 8 characters"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "At least 1 lowercase letter"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "At least 1 uppercase letter"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-digits"
+msgstr "At least 1 digit"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-special"
+msgstr "At least 1 special character"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.in-dictionary"
+msgstr "Password is too common"
+
 #: src/app/main/errors.cljs:267
 msgid "errors.paste-data-validation"
 msgstr "Invalid data in clipboard"
