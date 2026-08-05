@@ -21,12 +21,116 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [yetti.request :as yreq]
-   [yetti.response :as-alias yres]))
+   [yetti.response :as-alias yres])
+  (:import
+   java.net.URI
+   java.security.cert.CertificateFactory
+   java.security.Signature
+   java.util.Base64))
 
 (declare parse-json)
 (declare handle-request)
 (declare parse-notification)
 (declare process-report)
+
+(defn- valid-sns-url?
+  "Validates that a URL originates from amazonaws.com domain.
+   Used for SigningCertURL and SubscribeURL validation."
+  [url]
+  (when (string? url)
+    (try
+      (let [uri (URI. url)]
+        (and (= "https" (.getScheme uri))
+             (let [host (.getHost uri)]
+               (and host
+                    (or (= host "amazonaws.com")
+                        (.endsWith host ".amazonaws.com"))))))
+      (catch Exception _
+        false))))
+
+(def ^:private notification-fields
+  ["Message" "MessageId" "Subject" "Timestamp"
+   "TopicArn" "Type" "SigningCertURL" "SignatureVersion" "Signature"])
+
+(def ^:private subscription-fields
+  ["Message" "MessageId" "SubscribeURL" "Timestamp"
+   "TopicArn" "Type" "SigningCertURL" "SignatureVersion" "Signature"])
+
+(defn- build-string-to-sign
+  "Builds the string-to-sign for AWS SNS signature verification.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+  [body]
+  (let [fields (if (= "SubscriptionConfirmation" (get body "Type"))
+                 subscription-fields
+                 notification-fields)]
+    (->> fields
+         (filter #(contains? body %))
+         (map #(str % "\n" (get body %) "\n"))
+         (apply str))))
+
+(defn- fetch-certificate
+  "Fetches the X.509 certificate from the given URL."
+  [cfg cert-url]
+  (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000} {:sync? true :response-type :input-stream})]
+    (when (= 200 (:status response))
+      (let [cf (CertificateFactory/getInstance "X.509")]
+        (.generateCertificate cf (:body response))))))
+
+(defn- verify-signature
+  "Verifies the RSA-SHA1 signature of the message."
+  [cfg body]
+  (let [cert-url    (get body "SigningCertURL")
+        signature   (get body "Signature")
+        string-sign (build-string-to-sign body)]
+    (when (and cert-url signature)
+      (try
+        (let [cert (fetch-certificate cfg cert-url)
+              sig  (Signature/getInstance "SHA1withRSA")]
+          (.initVerify sig (.getPublicKey cert))
+          (.update sig (.getBytes string-sign))
+          (.verify sig (.decode (Base64/getDecoder) signature)))
+        (catch Exception e
+          (l/wrn :hint "SNS signature verification exception"
+                 :action "sns-signature-verification-exception"
+                 :cause e)
+          false)))))
+
+(defn- verify-sns-message!
+  "Verifies the AWS SNS message signature and URL validity.
+   Throws if verification fails."
+  [cfg body]
+  (let [cert-url    (get body "SigningCertURL")
+        subscribe-url (get body "SubscribeURL")
+        mtype       (get body "Type")]
+
+    (when-not (valid-sns-url? cert-url)
+      (l/wrn :hint "SNS certificate URL not from amazonaws.com"
+             :action "sns-invalid-cert-url"
+             :message-type mtype
+             :signing-cert-url cert-url)
+      (ex/raise :type :validation
+                :code :invalid-signing-cert-url
+                :hint "SigningCertURL must be from amazonaws.com"))
+
+    (when (and (= mtype "SubscriptionConfirmation")
+               (not (valid-sns-url? subscribe-url)))
+      (l/wrn :hint "SNS subscribe URL not from amazonaws.com"
+             :action "sns-invalid-subscribe-url"
+             :message-type mtype
+             :subscribe-url subscribe-url)
+      (ex/raise :type :validation
+                :code :invalid-subscribe-url
+                :hint "SubscribeURL must be from amazonaws.com"))
+
+    (when-not (verify-signature cfg body)
+      (l/wrn :hint "SNS signature verification failed"
+             :action "sns-signature-verification-failed"
+             :message-type mtype
+             :topic-arn (get body "TopicArn")
+             :signing-cert-url cert-url)
+      (ex/raise :type :authentication
+                :code :invalid-signature
+                :hint "SNS signature verification failed"))))
 
 (defmethod ig/assert-key ::routes
   [_ params]
@@ -48,6 +152,10 @@
   (try
     (let [body  (parse-json data)
           mtype (get body "Type")]
+
+      (when body
+        (verify-sns-message! cfg body))
+
       (cond
         (= mtype "SubscriptionConfirmation")
         (let [surl   (get body "SubscribeURL")
