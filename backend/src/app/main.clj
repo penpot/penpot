@@ -335,6 +335,7 @@
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
     ::setup/props        (ig/ref ::setup/props)
+    ::setup/shared-keys  (ig/ref ::setup/shared-keys)
 
     ::email/blacklist    (ig/ref ::email/blacklist)
     ::email/whitelist    (ig/ref ::email/whitelist)
@@ -467,10 +468,11 @@
     ::migrations (ig/ref :app.migrations/migrations)}
 
    ::setup/shared-keys
-   {::setup/props (ig/ref ::setup/props)
-    :nexus        (cf/get :nexus-shared-key)
-    :admin-console (cf/get :admin-console-shared-key)
-    :exporter     (cf/get :exporter-shared-key)}
+   {::setup/props    (ig/ref ::setup/props)
+    :nexus           (cf/get :nexus-shared-key)
+    :admin-console   (cf/get :admin-console-shared-key)
+    :exporter        (cf/get :exporter-shared-key)
+    :media-processor (cf/get :media-processor-shared-key)}
 
    ::setup/clock
    {}

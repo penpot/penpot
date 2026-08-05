@@ -116,7 +116,8 @@
             {}
             [:exporter
              :admin-console
-             :nexus])))
+             :nexus
+             :media-processor])))
 
 (sm/register! ::props [:map-of :keyword ::sm/any])
 (sm/register! ::shared-keys [:map-of :keyword ::sm/text])

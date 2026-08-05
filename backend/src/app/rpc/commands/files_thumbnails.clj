@@ -21,7 +21,7 @@
    [app.db.sql :as-alias sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
@@ -275,7 +275,7 @@
   [:map {:title "create-file-object-thumbnail"}
    [:file-id ::sm/uuid]
    [:object-id [:string {:max 250}]]
-   [:media media/schema:upload]
+   [:media media.v/schema:upload]
    [:tag {:optional true} [:string {:max 50}]]])
 
 (sv/defmethod ::create-file-object-thumbnail
@@ -289,8 +289,8 @@
    ::sm/params schema:create-file-object-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id object-id media tag]}]
-  (media/validate-media-type! media)
-  (media/validate-media-size! media)
+  (media.v/validate-media-type! media)
+  (media.v/validate-media-size! media)
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
   (when-let [file (files/get-minimal-file cfg file-id {::db/check-deleted false})]
@@ -379,7 +379,7 @@
   [:map {:title "create-file-thumbnail"}
    [:file-id ::sm/uuid]
    [:revn ::sm/int]
-   [:media media/schema:upload]])
+   [:media media.v/schema:upload]])
 
 (sv/defmethod ::create-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
@@ -394,8 +394,8 @@
    ::sm/params schema:create-file-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (media/validate-media-type! (:media params))
-  (media/validate-media-size! (:media params))
+  (media.v/validate-media-type! (:media params))
+  (media.v/validate-media-size! (:media params))
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
 
