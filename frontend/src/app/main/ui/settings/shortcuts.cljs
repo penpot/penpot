@@ -424,11 +424,16 @@
 
         on-export
         (mf/use-fn
-         (mf/deps shortcuts-json has-custom-shortcuts)
+         (mf/deps shortcuts-json has-custom-shortcuts (:fullname profile))
          (fn []
            (when has-custom-shortcuts
-             (->> (wapi/create-blob shortcuts-json "application/json")
-                  (dom/trigger-download "penpot-shortcuts.json")))))
+             (let [fullname (-> (or (:fullname profile) "user")
+                                (str/replace #"[^a-zA-Z0-9\-_ ]" "")
+                                (str/replace #"\s+" "_"))
+                   date     (.slice (.toISOString (js/Date.)) 0 10)
+                   filename (str "penpot-shortcuts-" fullname "-" date ".json")]
+               (->> (wapi/create-blob shortcuts-json "application/json")
+                    (dom/trigger-download filename))))))
 
         on-file-selected
         (mf/use-fn
