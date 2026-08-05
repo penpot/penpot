@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-08-03 06:04+0000\n"
+"PO-Revision-Date: 2026-08-05 20:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 2026.8.dev0\n"
+"X-Generator: Weblate 2026.8.1.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -8953,3 +8953,121 @@ msgstr "כבוי"
 #: src/app/main/ui/settings/integrations.cljs:536
 msgid "integrations.mcp-server.status.enabled"
 msgstr "פעיל"
+
+#: src/app/main/ui/settings/sidebar.cljs:122
+msgid "labels.integrations"
+msgstr "שילובים"
+
+#: src/app/main/ui/static.cljs:337
+msgid "labels.nitrate-unavailable.main-message"
+msgstr "Penpot לא זמין באופן זמני עקב תקלת מערכת. נא לנסות שוב בהקדם."
+
+#: src/app/main/ui/components/select.cljs:256
+msgid "labels.no-matches"
+msgstr "אין תוצאות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:705
+msgid "labels.open"
+msgstr "פתוח"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "labels.uploading-file"
+msgstr "קובץ נשלח…"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+#, unused
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "אזהרה"
+msgstr[1] "שתי אזהרות"
+msgstr[2] "%s אזהרות"
+msgstr[3] "%s אזהרות"
+
+#: src/app/main/data/nitrate.cljs:199
+msgid "modals.before-leave-organization.message"
+msgstr ""
+"בחלק מהצוותים אין עוד חברים מלבדך. הצוותים האלה יימחקו על המיזמים והקבצים "
+"שלהם."
+
+#: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
+msgid "modals.before-leave-organization.title"
+msgstr "לפני עזיבת הארגון"
+
+#: src/app/main/data/nitrate.cljs:202
+msgid "modals.before-leave-organization.warning"
+msgstr "כל צוות שבו אין עוד חברים מלבדך יימחק."
+
+#: src/app/main/ui/settings/delete_account.cljs
+#, unused
+msgid "modals.delete-account.info.with-organizations"
+msgstr ""
+"זאת פעולה בלתי הפיכה. החשבון, המינויים והארגונים שלך יימחקו מיידית. גם הגישה "
+"למיזמים ולקבצים הנוכחיים שלך תאבד."
+
+#: src/app/main/ui/settings/delete_account.cljs:83
+msgid "modals.delete-account.owned-organizations.list-title"
+msgstr "ארגונים שיימחקו"
+
+#: src/app/main/ui/settings/delete_account.cljs:98
+msgid "modals.delete-account.owned-organizations.members-count"
+msgstr "%s חברים"
+
+#: src/app/main/ui/settings/delete_account.cljs:96
+msgid "modals.delete-account.owned-organizations.teams-count"
+msgstr "%s צוותים"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
+msgid "modals.delete-asset-group.title"
+msgstr "מחיקת קבוצה"
+
+#: src/app/main/data/team.cljs:129
+msgid "modals.delete-organization-team-confirm.message"
+msgstr "למחוק את הצוות הזה שהוא חלק מהארגון %s?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "למחוק את העמודים הנבחרים?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "מחיקת עמודים"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
+msgid "modals.import-library-tokens.description"
+msgstr "לספרייה יש אסימונים וערכות עיצוב שהרכיבים שלה כנראה משתמשים בהם."
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:92
+msgid "modals.import-library-tokens.import"
+msgstr "ייבוא אסימונים"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:72
+msgid "modals.import-library-tokens.title"
+msgstr "לייבא אסימונים מהספרייה?"
+
+#: src/app/main/data/team.cljs:582
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "לא נשלחו הזמנות"
+
+#: src/app/main/ui/dashboard/team.cljs:308
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "כתובות שלא יקבלו הזמנה"
+
+#: src/app/main/ui/dashboard/team.cljs:325
+msgid "modals.invite-restricted-members.cancel"
+msgstr "ביטול"
+
+#: src/app/main/ui/dashboard/team.cljs:298
+msgid "modals.invite-restricted-members.description"
+msgstr "אפשר להזמין רק חברים קיימים מהארגון הזה."
+
+#: src/app/main/ui/dashboard/team.cljs:333
+msgid "modals.invite-restricted-members.send"
+msgstr "שליחת הזמנות"
+
+#: src/app/main/ui/dashboard/team.cljs:293
+msgid "modals.invite-restricted-members.title"
+msgstr "חלק מההזמנות לא נשלחו"
+
+#: src/app/main/ui/dashboard/team.cljs:299
+msgid "modals.invite-restricted-members.warning"
+msgstr "חלק מהאנשים ברשימה שלך לא יקבלו את ההזמנות."
