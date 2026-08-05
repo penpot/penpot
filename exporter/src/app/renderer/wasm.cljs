@@ -132,20 +132,22 @@
 ;; --- shape bundle fetch (backend RPC)
 
 (defn- fetch-objects
-  "Fetches the page's `objects` map from the backend via the `get-page` RPC,
-  using the same auth the exporter uses elsewhere (management key + bearer)."
-  [{:keys [file-id page-id share-id token]}]
+  "Fetches the exported roots and their children from the backend via the
+  `get-page` RPC (`:object-id`, as the browser render path does), using the
+  same auth the exporter uses elsewhere (management key + bearer)."
+  [{:keys [file-id page-id share-id token objects]}]
   (let [headers (rpc-headers token)
-        ;; share-id is an OPTIONAL uuid on the backend; it must be omitted when
-        ;; absent, not sent as nil (nil fails the uuid schema).
+        root-ids (into #{} (map :id) objects)
         body    (t/encode-str (cond-> {:file-id file-id
                                        :page-id page-id}
-                                share-id (assoc :share-id share-id)))
+                                (seq root-ids) (assoc :object-id root-ids)
+                                share-id       (assoc :share-id share-id)))
         uri     (internal-uri "api/rpc/command/get-page")]
     (l/dbg :hint "wasm render: get-page"
            :uri uri
            :file-id (str file-id)
-           :page-id (str page-id))
+           :page-id (str page-id)
+           :roots (count root-ids))
     (->> (fetch! uri #js {:method "POST" :headers headers :body body})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
