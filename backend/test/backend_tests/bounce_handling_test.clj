@@ -12,6 +12,7 @@
    [app.http.awsns :as awsns]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
+   [clojure.data.json :as j]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -290,3 +291,91 @@
 
     (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
     (t/is (true? (email/has-bounce-reports? pool (:email profile))))))
+
+(t/deftest test-validate-sns-url-rejects-non-amazonaws
+  (t/is (false? (#'awsns/valid-sns-url? "https://evil.com/cert.pem")))
+  (t/is (false? (#'awsns/valid-sns-url? "http://attacker.com/confirm")))
+  (t/is (false? (#'awsns/valid-sns-url? "https://sns.eu-central-1.amazonaws.com.evil.com/cert.pem")))
+  (t/is (false? (#'awsns/valid-sns-url? "ftp://sns.amazonaws.com/cert.pem"))))
+
+(t/deftest test-validate-sns-url-accepts-amazonaws
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.eu-central-1.amazonaws.com/SimpleNotificationService-xxx.pem")))
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.us-east-1.amazonaws.com/cert.pem")))
+  (t/is (true? (#'awsns/valid-sns-url? "https://amazonaws.com/cert.pem"))))
+
+(t/deftest test-build-string-to-sign-notification
+  (let [msg {"Type"             "Notification"
+             "MessageId"        "msg-123"
+             "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+             "Message"          "{\"notificationType\":\"Bounce\"}"
+             "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "1"
+             "Signature"        "abc123=="}
+        result (#'awsns/build-string-to-sign msg)]
+    (t/is (string? result))
+    (t/is (.contains result "MessageId"))
+    (t/is (.contains result "msg-123"))
+    (t/is (.contains result "TopicArn"))
+    (t/is (.contains result "Message"))
+    (t/is (.contains result "Timestamp"))
+    (t/is (.contains result "SigningCertURL"))
+    (t/is (.contains result "SignatureVersion"))))
+
+(t/deftest test-build-string-to-sign-subscription-confirmation
+  (let [msg {"Type"             "SubscriptionConfirmation"
+             "MessageId"        "msg-456"
+             "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+             "Message"          "You have chosen to subscribe"
+             "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "1"
+             "Signature"        "xyz789=="
+             "SubscribeURL"     "https://sns.eu-central-1.amazonaws.com/confirm"}
+        result (#'awsns/build-string-to-sign msg)]
+    (t/is (string? result))
+    (t/is (.contains result "SubscribeURL"))
+    (t/is (.contains result "https://sns.eu-central-1.amazonaws.com/confirm"))))
+
+(t/deftest test-handle-request-rejects-invalid-signing-cert-url
+  (let [pool (:app.db/pool th/*system*)
+        profile (th/create-profile* 1)
+        token (tokens/generate th/*system*
+                               {:iss :profile-identity
+                                :profile-id (:id profile)})
+        body (j/write-str
+              {"Type"             "Notification"
+               "MessageId"        "msg-123"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          (j/write-str {"notificationType" "Bounce"
+                                                "bounce" {"bounceType" "Permanent"
+                                                          "bounceSubType" "General"
+                                                          "bouncedRecipients" [{"emailAddress" "victim@example.com"}]
+                                                          "timestamp" "2021-02-04T14:41:38.000Z"}
+                                                "mail" {"source" "no-reply@penpot.app"
+                                                        "destination" ["victim@example.com"]
+                                                        "timestamp" "2021-02-04T14:41:37.020Z"
+                                                        "headers" [{"name" "X-Penpot-Data" "value" token}]}})
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://evil.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "fake-signature=="})]
+    (#'awsns/handle-request th/*system* body)
+    (let [reports (db/query pool :global-complaint-report :all)]
+      (t/is (empty? reports)))))
+
+(t/deftest test-handle-request-rejects-invalid-subscribe-url
+  (let [pool (:app.db/pool th/*system*)
+        body (j/write-str
+              {"Type"             "SubscriptionConfirmation"
+               "MessageId"        "msg-456"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          "You have chosen to subscribe"
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "fake-signature=="
+               "SubscribeURL"     "http://attacker.com/confirm"})]
+    (#'awsns/handle-request th/*system* body)
+    (let [reports (db/query pool :global-complaint-report :all)]
+      (t/is (empty? reports)))))
