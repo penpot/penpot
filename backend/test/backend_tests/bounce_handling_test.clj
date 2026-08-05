@@ -308,66 +308,130 @@
   (t/is (true? (#'awsns/valid-sns-url? "https://sns.us-east-1.amazonaws.com/cert.pem")))
   (t/is (true? (#'awsns/valid-sns-url? "https://sns.ap-southeast-1.amazonaws.com/cert.pem"))))
 
-(t/deftest test-verify-signature-version-1
-  (let [keypair (java.security.KeyPairGenerator/getInstance "RSA")
-        _ (.initialize keypair 2048)
-        kp (.generateKeyPair keypair)
-        private-key (.getPrivate kp)
-        public-key (.getPublic kp)
+;; Helper to load test certificate and private key from resources
+;; See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html
+(defn- load-test-cert-and-key
+  "Loads the test certificate and private key from test resources."
+  []
+  (let [cert-pem (slurp (clojure.java.io/resource "sns-test-cert.pem"))
+        key-pem  (slurp (clojure.java.io/resource "sns-test-key.pem"))
+        ;; Parse certificate
+        cert-bytes (.getBytes (-> cert-pem
+                                  (clojure.string/replace "-----BEGIN CERTIFICATE-----" "")
+                                  (clojure.string/replace "-----END CERTIFICATE-----" "")
+                                  (clojure.string/replace #"\s+" ""))
+                              java.nio.charset.StandardCharsets/UTF_8)
+        cert-input (java.io.ByteArrayInputStream. (.decode (java.util.Base64/getDecoder) cert-bytes))
+        cf (java.security.cert.CertificateFactory/getInstance "X.509")
+        cert (.generateCertificate cf cert-input)
+        ;; Parse private key
+        key-bytes (.getBytes (-> key-pem
+                                 (clojure.string/replace "-----BEGIN PRIVATE KEY-----" "")
+                                 (clojure.string/replace "-----END PRIVATE KEY-----" "")
+                                 (clojure.string/replace #"\s+" ""))
+                             java.nio.charset.StandardCharsets/UTF_8)
+        key-spec (java.security.spec.PKCS8EncodedKeySpec. (.decode (java.util.Base64/getDecoder) key-bytes))
+        kf (java.security.KeyFactory/getInstance "RSA")
+        private-key (.generatePrivate kf key-spec)]
+    {:cert cert
+     :cert-bytes (.getEncoded cert)
+     :private-key private-key
+     :public-key (.getPublicKey cert)}))
 
-        ;; Create a simple message
-        msg {"Type" "Notification"
-             "MessageId" "test-msg-1"
-             "TopicArn" "arn:aws:sns:us-east-1:123:topic"
-             "Message" "test message"
-             "Timestamp" "2021-02-04T14:41:37.020Z"
-             "SigningCertURL" "https://sns.us-east-1.amazonaws.com/cert.pem"
-             "SignatureVersion" "1"}
+(t/deftest test-verify-signature-end-to-end-v1
+  (let [{:keys [cert-bytes private-key]} (load-test-cert-and-key)
 
-        ;; Build string to sign
+        msg         {"Type"             "Notification"
+                     "MessageId"        "test-msg-1"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "test message"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "1"}
+
         string-to-sign (#'awsns/build-string-to-sign msg)
-
-        ;; Sign with SHA1
-        sig (java.security.Signature/getInstance "SHA1withRSA")
-        _ (.initSign sig private-key)
-        _ (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
-        signature (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
-
+        sig          (java.security.Signature/getInstance "SHA1withRSA")
+        _            (.initSign sig private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
         msg-with-sig (assoc msg "Signature" signature)]
 
-    ;; Test that signature verification logic would work
-    (t/is (string? string-to-sign))
-    (t/is (string? signature))))
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (true? (#'awsns/verify-signature {} msg-with-sig))))))
 
-(t/deftest test-verify-signature-version-2
-  (let [keypair (java.security.KeyPairGenerator/getInstance "RSA")
-        _ (.initialize keypair 2048)
-        kp (.generateKeyPair keypair)
-        private-key (.getPrivate kp)
+(t/deftest test-verify-signature-end-to-end-v2
+  (let [{:keys [cert-bytes private-key]} (load-test-cert-and-key)
 
-        ;; Create a simple message
-        msg {"Type" "Notification"
-             "MessageId" "test-msg-2"
-             "TopicArn" "arn:aws:sns:us-east-1:123:topic"
-             "Message" "test message"
-             "Timestamp" "2021-02-04T14:41:37.020Z"
-             "SigningCertURL" "https://sns.us-east-1.amazonaws.com/cert.pem"
-             "SignatureVersion" "2"}
+        msg         {"Type"             "Notification"
+                     "MessageId"        "test-msg-2"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "test message"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "2"}
 
-        ;; Build string to sign
         string-to-sign (#'awsns/build-string-to-sign msg)
-
-        ;; Sign with SHA256
-        sig (java.security.Signature/getInstance "SHA256withRSA")
-        _ (.initSign sig private-key)
-        _ (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
-        signature (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
-
+        sig          (java.security.Signature/getInstance "SHA256withRSA")
+        _            (.initSign sig private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
         msg-with-sig (assoc msg "Signature" signature)]
 
-    ;; Test that signature verification logic would work
-    (t/is (string? string-to-sign))
-    (t/is (string? signature))))
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (true? (#'awsns/verify-signature {} msg-with-sig))))))
+
+(t/deftest test-verify-signature-end-to-end-subscription-confirmation
+  (let [{:keys [cert-bytes private-key]} (load-test-cert-and-key)
+
+        msg         {"Type"             "SubscriptionConfirmation"
+                     "MessageId"        "test-msg-3"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "You have chosen to subscribe"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "Token"            "test-token-123"
+                     "SubscribeURL"     "https://sns.us-east-1.amazonaws.com/confirm"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "1"}
+
+        string-to-sign (#'awsns/build-string-to-sign msg)
+        sig          (java.security.Signature/getInstance "SHA1withRSA")
+        _            (.initSign sig private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (true? (#'awsns/verify-signature {} msg-with-sig))))))
+
+(t/deftest test-verify-signature-rejects-wrong-key
+  (let [{:keys [cert-bytes]} (load-test-cert-and-key)
+        ;; Generate a different keypair for signing
+        keypair-gen (java.security.KeyPairGenerator/getInstance "RSA")
+        _           (.initialize keypair-gen 2048)
+        kp          (.generateKeyPair keypair-gen)
+        wrong-private-key (.getPrivate kp)
+
+        msg         {"Type"             "Notification"
+                     "MessageId"        "test-msg-4"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "test message"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "1"}
+
+        string-to-sign (#'awsns/build-string-to-sign msg)
+        sig          (java.security.Signature/getInstance "SHA1withRSA")
+        _            (.initSign sig wrong-private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (false? (#'awsns/verify-signature {} msg-with-sig))))))
 
 (t/deftest test-verify-signature-rejects-unsupported-version
   (let [msg {"Type" "Notification"
@@ -379,11 +443,10 @@
              "SignatureVersion" "3"
              "Signature" "fake=="}]
 
-    ;; Should throw exception for unsupported version
     (t/is (thrown? clojure.lang.ExceptionInfo
                    (#'awsns/verify-signature {} msg)))))
 
-(t/deftest test-build-string-to-sign-notification
+(t/deftest test-build-string-to-sign-v1-notification
   (let [msg {"Type"             "Notification"
              "MessageId"        "msg-123"
              "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
@@ -399,8 +462,30 @@
     (t/is (.contains result "TopicArn"))
     (t/is (.contains result "Message"))
     (t/is (.contains result "Timestamp"))
+    ;; V1 does NOT include SigningCertURL, SignatureVersion, or Signature
+    (t/is (not (.contains result "SigningCertURL")))
+    (t/is (not (.contains result "SignatureVersion")))
+    (t/is (not (.contains result "Signature")))))
+
+(t/deftest test-build-string-to-sign-v2-notification
+  (let [msg {"Type"             "Notification"
+             "MessageId"        "msg-123"
+             "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+             "Message"          "{\"notificationType\":\"Bounce\"}"
+             "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "2"
+             "Signature"        "abc123=="}
+        result (#'awsns/build-string-to-sign msg)]
+    (t/is (string? result))
+    (t/is (.contains result "MessageId"))
+    (t/is (.contains result "TopicArn"))
+    ;; V2 includes SigningCertURL and SignatureVersion but NOT Signature
     (t/is (.contains result "SigningCertURL"))
-    (t/is (.contains result "SignatureVersion"))))
+    (t/is (.contains result "SignatureVersion"))
+    ;; Check that "Signature\n" (the field name) is NOT in the result
+    ;; Note: "SignatureVersion" contains "Signature" as substring, so we check for the exact field pattern
+    (t/is (not (.contains result "Signature\n")))))
 
 (t/deftest test-build-string-to-sign-subscription-confirmation
   (let [msg {"Type"             "SubscriptionConfirmation"
@@ -408,6 +493,7 @@
              "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
              "Message"          "You have chosen to subscribe"
              "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "Token"            "test-token-123"
              "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
              "SignatureVersion" "1"
              "Signature"        "xyz789=="
@@ -415,7 +501,10 @@
         result (#'awsns/build-string-to-sign msg)]
     (t/is (string? result))
     (t/is (.contains result "SubscribeURL"))
-    (t/is (.contains result "https://sns.eu-central-1.amazonaws.com/confirm"))))
+    (t/is (.contains result "https://sns.eu-central-1.amazonaws.com/confirm"))
+    ;; Token must be included for SubscriptionConfirmation
+    (t/is (.contains result "Token"))
+    (t/is (.contains result "test-token-123"))))
 
 (t/deftest test-handle-request-returns-4xx-for-invalid-signature
   (let [body (j/write-str
