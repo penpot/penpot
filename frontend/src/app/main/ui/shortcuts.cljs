@@ -162,6 +162,20 @@
   [type item]
   (map (fn [[k v]] [k (assoc v :translation (translation-keyname type k))]) item))
 
+(defn shortcut->command-string
+  "Extract a lowercase searchable string from a shortcut entry's key combo(s).
+  Prefers `:show-command` (display override) over `:command` (Mousetrap format),
+  matching what the keycap UI renders. Joins vector commands (key sequences)
+  with a space so every token is searchable. Returns \"\" when there is no
+  command (e.g. a section/subsection node)."
+  [shortcut]
+  (let [cmd (or (:show-command shortcut) (:command shortcut))]
+    (-> (cond
+          (nil? cmd)    ""
+          (vector? cmd) (str/join " " cmd)
+          :else         (str cmd))
+        (str/lower))))
+
 (defn shortcuts->subsections
   [shortcuts]
   (let [subsections (into #{} (mapcat :subsections) (vals shortcuts))
@@ -591,11 +605,19 @@
   [{:keys [elements filter-term is-match-section is-match-subsection
            editable? custom-shortcuts section-key conflicts hidden subsection-name]}]
   (let [shortcut-translations (->> elements vals (map :translation) sort)
-        match-shortcut?       (some #(matches-search % filter-term) shortcut-translations)
+        match-shortcut?       (some (fn [info]
+                                      (or (matches-search (:translation info) filter-term)
+                                          (matches-search (shortcut->command-string info) filter-term)))
+                                    (vals elements))
         filtered              (if (and (or is-match-section is-match-subsection) (not match-shortcut?))
                                 shortcut-translations
-                                (filter #(matches-search % filter-term) shortcut-translations))
-        sorted-filtered       (sort filtered)
+                                (->> (vals elements)
+                                     (filter (fn [info]
+                                               (or (matches-search (:translation info) filter-term)
+                                                   (matches-search (shortcut->command-string info) filter-term))))
+                                     (map :translation)
+                                     sort))
+        sorted-filtered       filtered
         trigger-ref            (mf/use-ref nil)]
 
     [:ul {:class (stl/css :sub-menu)

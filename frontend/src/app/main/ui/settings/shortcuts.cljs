@@ -381,7 +381,8 @@
         (mf/with-memo []
           (fn [_ shortcut search-term]
             (or (str/blank? search-term)
-                (matches-search (:translation shortcut) search-term))))
+                (matches-search (:translation shortcut) search-term)
+                (matches-search (ss/shortcut->command-string shortcut) search-term))))
 
         filter-personalized
         (mf/use-fn
@@ -395,7 +396,8 @@
              (and customized?
                   (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
-                      (matches-search (:translation shortcut) search-term))))))
+                      (matches-search (:translation shortcut) search-term)
+                      (matches-search (ss/shortcut->command-string shortcut) search-term))))))
 
         filter-disabled
         (mf/use-fn
@@ -409,7 +411,8 @@
              (and in-group? blank?
                   (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
-                      (matches-search (:translation shortcut) search-term))))))
+                      (matches-search (:translation shortcut) search-term)
+                      (matches-search (ss/shortcut->command-string shortcut) search-term))))))
 
         on-import-file
         (mf/use-fn

@@ -66,7 +66,12 @@
         (ss/build-all-shortcuts workspace-shortcuts dashboard-shortcuts viewer-shortcuts)
 
         all-item-names              (concat all-sc-names all-sub-names all-section-names)
-        match-any?                  (some #(matches-search % filter-term) all-item-names)
+        all-command-strings         (->> (concat (vals workspace-shortcuts)
+                                                 (vals dashboard-shortcuts)
+                                                 (vals viewer-shortcuts))
+                                         (map ss/shortcut->command-string))
+        all-searchable-names        (concat all-item-names all-command-strings)
+        match-any?                  (some #(matches-search % filter-term) all-searchable-names)
 
         manage-sections
         (fn [item]
@@ -89,7 +94,8 @@
         (fn [section term]
           (let [node-seq (tree-seq :children #(vals (:children %)) (get all-shortcuts section))]
             (reduce (fn [acc node]
-                      (if (matches-search (:translation node) term)
+                      (if (or (matches-search (:translation node) term)
+                              (matches-search (ss/shortcut->command-string node) term))
                         (add-ids acc node)
                         acc))
                     []
