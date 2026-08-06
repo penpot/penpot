@@ -683,6 +683,24 @@
       (t/is (= :max-quote-reached (-> out :error ex-data :code)))
       (t/is (= "upload-chunks-per-session" (-> out :error ex-data :target))))))
 
+(t/deftest chunked-upload-invalid-total-chunks
+  ;; total-chunks must be at least 1; zero and negative values are rejected
+  ;; with a :validation error.
+  (let [prof (th/create-profile* 1)]
+    ;; zero total-chunks
+    (let [out (th/command! {::th/type        :create-upload-session
+                            ::rpc/profile-id (:id prof)
+                            :total-chunks    0})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type))))
+
+    ;; negative total-chunks
+    (let [out (th/command! {::th/type        :create-upload-session
+                            ::rpc/profile-id (:id prof)
+                            :total-chunks    -1})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type))))))
+
 (t/deftest chunked-upload-invalid-chunk-index
   ;; Both a negative index and an index >= total-chunks must be
   ;; rejected with a :validation / :invalid-chunk-index error.
