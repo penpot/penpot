@@ -9,11 +9,9 @@
 
   Rows are built as Arrow `VectorSchemaRoot`s in the JVM's off-heap memory,
   handed to Ladybug as a virtual table, and `COPY`d into the real one. No file
-  is written and no text is parsed, which is the whole point: the CSV path had
-  to serialize every value into a literal Ladybug re-parsed, and its inner
-  parser has no escaping at all, so a third of the old loader existed to detect
-  and route around that (`app.graph.bulk`, since deleted). Arrow carries MAP,
-  STRUCT, fixed-size arrays and multi-line strings natively.
+  is written and no value is rendered as text for the engine to re-parse, so
+  nothing in this path needs escaping. Arrow carries MAP, STRUCT, fixed-size
+  arrays and multi-line strings natively.
 
   The type language is Ladybug's, read recursively by `app.graph.schema.values`;
   this namespace adds the matching Arrow `Field` and a writer for each shape.
@@ -21,19 +19,20 @@
   into a packed integer — exactly as it does for the Cypher path, so the two
   writers cannot disagree.
 
-  Engine facts this file depends on, each verified against lbug 0.18.2:
+  Engine facts this file depends on, each verified against lbug 0.19.1:
 
   - An Arrow table is **not** a `COPY` source identifier, but it *is* a
     MATCH-able node label: `COPY T FROM (MATCH (n:stg) RETURN n.a AS a, …)`.
   - A MAP vector's `entries` child struct must be non-nullable, and
     `MapVector/getWriter` silently promotes it to a sparse union — so map
     vectors are built from an explicit `Field` and filled child-first.
-  - Ladybug names a staged struct's fields from the Arrow child names and
-    quotes none of them, so a reserved field name (`column`) must arrive
-    already backticked.
-  - `createArrowRelTable` cannot resolve endpoints against a UUID-keyed node
-    table under any endpoint encoding, so edges are staged as a node table and
-    joined by the `COPY` subquery instead."
+  - Ladybug quotes the column and table names it interpolates into the staged
+    table's DDL, and does not quote a STRUCT member name. So a top-level field
+    arrives plain and a struct member whose name is a reserved word (`column`)
+    arrives backticked.
+  - `createArrowRelTable` resolves a UUID-keyed endpoint only from a
+    `FixedSizeBinary(16)` column carrying the `arrow.uuid` extension, so edges
+    are staged as a node table and joined by the `COPY` subquery instead."
   (:require
    [app.common.json :as json]
    [app.graph.ladybug :as ladybug]
@@ -240,20 +239,19 @@
 (defn- node-batch
   "One `VectorSchemaRoot` holding every projected row of `table`.
 
-  Fields are named with their **backticks** (`cypher-property-key`, not
-  `column-name`): Ladybug derives the staged table's DDL from the Arrow field
-  names and quotes none of them, so a column whose name is a reserved word —
-  `Page.index`, `Document.options` — fails `createArrowTable` outright unless it
-  arrives already quoted. Same rule as for struct field names, and the `COPY`
-  projection below spells them the same way."
+  Fields carry the plain column name. Ladybug quotes every identifier it
+  interpolates into the staged table's DDL, so a name that is a reserved word
+  (`Page.index`, `Document.options`) arrives unquoted and a name arriving
+  pre-quoted comes out doubly backticked and fails to parse. The `COPY`
+  projection below is Cypher, not DDL, so it quotes the same names itself."
   ^VectorSchemaRoot [^BufferAllocator allocator table rows]
   (let [columns (nodes/column-keys table)
-        fields  (mapv (fn [k] (column-field (nodes/cypher-property-key table k)
+        fields  (mapv (fn [k] (column-field (nodes/column-name table k)
                                             (nodes/column-ladybug-type table k)))
                       columns)
         root    (VectorSchemaRoot/create (Schema. ^List fields) allocator)]
     (doseq [k columns]
-      (fill-vector! root (nodes/cypher-property-key table k)
+      (fill-vector! root (nodes/column-name table k)
                     (nodes/column-ladybug-type table k)
                     rows #(get % k) (nodes/column-map-key-fn table k)))
     (.setRowCount root (count rows))

@@ -103,7 +103,7 @@
     :else        (format-string (str v))))
 
 (defn map-type?
-  "Is `ladybug-type` a MAP column? Those cannot be bulk-loaded from CSV."
+  "Is `ladybug-type` a MAP column?"
   [ladybug-type]
   (and (string? ladybug-type)
        (str/starts-with? ladybug-type "MAP(")
@@ -362,11 +362,11 @@
 (defn- ->param-value
   "Clojure scalar → `Value` for prepared-statement binding.
 
-  Every parameter goes through here, unconditionally: an unwrapped value does
-  not raise, it SIGSEGVs the JVM in `lbug_value_clone`. Lists and maps are not
-  supported by the JNI `Value` constructor at all, so `MAP`, `STRUCT` and
-  `T[]` columns stay literal-rendered (`format-typed-value`) — the `:else`
-  raise below means a caller tried to bind one."
+  This is the only `Value` constructor on the write path, so every parameter
+  is wrapped here. Parameters are scalars: the `Value` constructor takes no
+  list or map, so `MAP`, `STRUCT` and `T[]` columns stay literal-rendered
+  (`format-typed-value`) and the `:else` raise below means a caller tried to
+  bind one."
   ^Value [v]
   (cond
     (nil? v)     (Value/createNull)                ; no explicit type needed

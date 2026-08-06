@@ -9,7 +9,7 @@
 
   Each registry entry declares Penpot Malli sources plus projection
   options (`:drop`, optional `:extra`). Derived artifacts — Ladybug
-  DDL, CSV columns, validation, type dispatch — all flow from that.
+  DDL, Arrow fields, validation, type dispatch — all flow from that.
 
   Column *names* and *types* are not ours to choose: they are the
   contract downstream consumers read, and beadpot owns it. Every
@@ -170,8 +170,8 @@
 (defn column-keys
   "Projected column keys for `table`, in registry order.
 
-  Keys the beadpot contract drops on this table are omitted, so column
-  order, the CSV header and the DDL cannot disagree about what exists."
+  Keys the beadpot contract drops on this table are omitted, so the column
+  order, the Arrow batch and the DDL cannot disagree about what exists."
   [table]
   (into []
         (comp (map first)
