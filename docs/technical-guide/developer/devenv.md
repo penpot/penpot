@@ -419,16 +419,28 @@ After creating or modifying this file, **reload the browser** (no need to restar
 ### Backend flags via PENPOT_FLAGS
 
 Backend feature flags are controlled through the `PENPOT_FLAGS` environment
-variable using the same `enable-<flag>` / `disable-<flag>` format. You can set
-this in the `docker/devenv/docker-compose.yaml` file under the `main` service
-`environment` section:
+variable using the same `enable-<flag>` / `disable-<flag>` format. The devenv
+sets its own list in `backend/scripts/_env`.
 
-```yaml
-environment:
-  - PENPOT_FLAGS=enable-access-tokens enable-mcp
+To change that list for your checkout, create `backend/scripts/_env.local`.
+`backend/scripts/start-dev` sources it immediately after `_env`, and the file
+is gitignored, so your override never appears in `git status`:
+
+```bash
+export PENPOT_FLAGS="$PENPOT_FLAGS enable-access-tokens enable-mcp"
 ```
 
-This requires **restarting the backend** to take effect.
+Flags are applied left to right and the last entry wins, so appending to
+`$PENPOT_FLAGS` both adds flags and switches off ones that `_env` enables:
+`disable-demo-users` at the end turns off the demo users that `_env` enables
+earlier.
+
+Setting `PENPOT_FLAGS` in the container environment does not work for this,
+because `_env` expands the inherited value *before* its own list. Any flag it
+sets afterwards wins over yours.
+
+This requires **restarting the backend** to take effect: stop the process in
+the `backend` tmux window and run `./scripts/start-dev` again.
 
 > **Note**: Some features (e.g., access tokens, webhooks) need both frontend and
 > backend flags enabled to work end-to-end. The frontend flag enables the UI, while
