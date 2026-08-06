@@ -164,6 +164,9 @@
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
   (let [profile (get-profile conn profile-id ::db/for-update true)
+        fullname (d/normalize-string fullname)
+        lang     (d/normalize-string lang)
+        theme    (d/normalize-string theme)
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)

@@ -13,7 +13,7 @@
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.http.client :as http]
-   [app.media.local :as local]
+   [app.media.svg :as svg]
    [app.media.validation :as validation]
    [app.setup :as-alias setup]
    [app.storage.tmp :as tmp]
@@ -182,7 +182,7 @@
   (let [{:keys [path mtype]} (validation/check-input input)]
     (if (= mtype "image/svg+xml")
       ;; SVG: parse locally (Sharp doesn't support SVG)
-      (let [info (some-> path slurp local/parse-svg local/get-basic-info-from-svg)]
+      (let [info (some-> path slurp svg/parse-svg svg/get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
                     :code :invalid-svg-file
