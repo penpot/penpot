@@ -203,7 +203,7 @@
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-get-selection)
+             (when (text-editor/text-editor-has-selection?)
                (let [text (text-editor/text-editor-export-selection)]
                  (.setData (.-clipboardData event) "text/plain" text))))))
 
@@ -212,7 +212,7 @@
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-get-selection)
+             (when (text-editor/text-editor-has-selection?)
                (let [text (text-editor/text-editor-export-selection)]
                  (.setData (.-clipboardData event) "text/plain" (or text ""))
                  (when (and text (seq text))
@@ -267,6 +267,15 @@
                    (text-editor/text-editor-delete-forward ctrl?)
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render-preserving-target "text-delete-forward"))
+
+                 ;; Shift+Tab falls through to the browser, so the keyboard can
+                 ;; still leave the editor.
+                 (and (= key "Tab") (not shift?))
+                 (do
+                   (dom/prevent-default event)
+                   (text-editor/text-editor-insert-text "\t")
+                   (sync-wasm-text-editor-content!)
+                   (wasm.api/request-render-preserving-target "text-tab"))
 
                  ;; Insert
                  (= key "Insert")

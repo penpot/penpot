@@ -711,6 +711,14 @@
     (request-render "apply-styles-to-selection")
     result))
 
+(defn apply-paragraph-attrs-to-selection
+  "Apply paragraph attrs to the paragraphs the editor selection touches.
+   Returns {:shape-id :content} for saving."
+  [attrs]
+  (let [result (text-editor/apply-paragraph-attrs-to-selection attrs use-shape set-shape-text-content)]
+    (request-render "apply-paragraph-attrs-to-selection")
+    result))
+
 (defn set-parent-id
   [id]
   (let [buffer (uuid/get-u32 id)]

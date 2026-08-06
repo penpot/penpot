@@ -975,7 +975,14 @@
     (watch [_ state stream]
       (let [text-editor-instance (:workspace-editor state)
             objects              (dsh/lookup-page-objects state)
-            text-ids             (resolve-text-ids objects id)]
+            text-ids             (resolve-text-ids objects id)
+
+            wasm-editing?
+            (and (features/active-feature? state "text-editor-wasm/v1")
+                 (= id (wasm.api/text-editor-get-active-shape-id)))
+
+            wasm-editing-selection?
+            (and wasm-editing? (wasm.api/text-editor-has-selection?))]
         (if (and (features/active-feature? state "text-editor/v2")
                  (some? text-editor-instance))
           (rx/empty)
@@ -985,15 +992,30 @@
                (rx/of (update-root-attrs {:id id :attrs attrs}))
                (rx/empty)))
 
-           (let [attrs (select-keys attrs txt/paragraph-attrs)]
-             (if-not (empty? attrs)
-               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))
-               (rx/empty)))
+           ;; `:line-height` is stored on both the paragraph and its spans, and
+           ;; the renderer takes the larger of the two.
+           (let [pattrs (if wasm-editing-selection?
+                          (conj txt/paragraph-attrs :line-height)
+                          txt/paragraph-attrs)
+                 attrs  (select-keys attrs pattrs)
+                 result (when (and (seq attrs) wasm-editing?)
+                          (wasm.api/apply-paragraph-attrs-to-selection attrs))]
+             (cond
+               (empty? attrs)
+               (rx/empty)
+
+               (some? result)
+               (rx/of (v2-update-text-shape-content
+                       (:shape-id result) (:content result)
+                       :update-name? true))
+
+               :else
+               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))))
 
            (let [attrs (select-keys attrs txt/text-node-attrs)]
-             (if-not (empty? attrs)
-               (rx/of (update-text-attrs {:id id :attrs attrs}))
-               (rx/empty)))
+             (if (or (empty? attrs) wasm-editing-selection?)
+               (rx/empty)
+               (rx/of (update-text-attrs {:id id :attrs attrs}))))
 
            (when (and (features/active-feature? state "text-editor/v2")
                       (not (features/active-feature? state "text-editor-wasm/v1")))

@@ -1090,7 +1090,7 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
     with_state!(state, {
-        if !get_text_editor_state().selection.is_selection() {
+        if get_text_editor_state().active_shape_id.is_none() {
             return false;
         }
 

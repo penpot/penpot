@@ -14,7 +14,10 @@ use skia_safe::{
     textlayout::Affinity,
     textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
+    textlayout::PlaceholderAlignment,
+    textlayout::PlaceholderStyle,
     textlayout::PositionWithAffinity,
+    textlayout::TextBaseline,
     Contains,
 };
 
@@ -725,7 +728,7 @@ impl TextContent {
                     has_text = true;
                 }
                 builder.push_style(&text_style);
-                builder.add_text(&text);
+                add_text_with_tabs(&mut builder, &text, span.font_size);
             }
             if !has_text {
                 builder.add_text(" ");
@@ -759,7 +762,7 @@ impl TextContent {
                     has_text = true;
                 }
                 builder.push_style(&text_style);
-                builder.add_text(&text);
+                add_text_with_tabs(&mut builder, &text, span.font_size);
             }
             if !has_text {
                 builder.add_text(" ");
@@ -1213,7 +1216,7 @@ impl Paragraph {
         style.set_height(self.line_height);
         style.set_text_align(self.text_align);
         style.set_text_direction(self.text_direction);
-        style.set_replace_tab_characters(true);
+        style.set_replace_tab_characters(false);
         style.set_apply_rounding_hack(true);
         style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
@@ -1249,12 +1252,30 @@ fn capitalize_words(text: &str) -> String {
     result
 }
 
-/// Filter control characters below U+0020, preserving line breaks.
+/// Add `text`, pushing every '\t' as a one em wide placeholder.
+pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size: f32) {
+    let tab = PlaceholderStyle::new(
+        font_size,
+        0.0,
+        PlaceholderAlignment::Baseline,
+        TextBaseline::Alphabetic,
+        0.0,
+    );
+
+    for (index, segment) in text.split('\t').enumerate() {
+        if index > 0 {
+            builder.add_placeholder(&tab);
+        }
+        builder.add_text(segment);
+    }
+}
+
+/// Filter control characters below U+0020, preserving tabs and line breaks.
 /// Browser-dependent: Firefox drops them, others replace with space.
 fn process_ignored_chars(text: &str, browser: u8) -> String {
     text.chars()
         .filter_map(|c| {
-            if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
+            if c == '\t' || c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
                 return Some(c);
             }
             if c < '\u{0020}' {
@@ -1740,6 +1761,15 @@ mod tests {
     fn process_ignored_chars_preserves_line_breaks() {
         assert_eq!(process_ignored_chars("hello\nworld", 0), "hello\nworld");
         assert_eq!(process_ignored_chars("hello\rworld", 0), "hello\rworld");
+    }
+
+    #[test]
+    fn process_ignored_chars_preserves_tabs() {
+        assert_eq!(process_ignored_chars("hello\tworld", 0), "hello\tworld");
+        assert_eq!(
+            process_ignored_chars("hello\tworld", Browser::Firefox as u8),
+            "hello\tworld"
+        );
     }
 
     #[test]
