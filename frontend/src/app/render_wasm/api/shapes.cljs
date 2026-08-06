@@ -110,13 +110,9 @@
 
           blend-mode   (sr/translate-blend-mode (get shape :blend-mode))
           constraint-h (let [c (get shape :constraints-h)]
-                         (if (some? c)
-                           (sr/translate-constraint-h c)
-                           CONSTRAINT-NONE))
+                         (sr/translate-constraint-h c))
           constraint-v (let [c (get shape :constraints-v)]
-                         (if (some? c)
-                           (sr/translate-constraint-v c)
-                           CONSTRAINT-NONE))
+                         (sr/translate-constraint-v c))
 
           opacity      (d/nilv (get shape :opacity) 1.0)
           rotation     (d/nilv (get shape :rotation) 0.0)

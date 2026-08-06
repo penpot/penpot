@@ -116,13 +116,13 @@
 (defn translate-constraint-h
   [type]
   (let [values (unchecked-get wasm/serializers "constraint-h")
-        default 5] ;; TODO: fix code in rust so we have a proper None variant
+        default (unchecked-get values "none")]
     (d/nilv (unchecked-get values (d/name type)) default)))
 
 (defn translate-constraint-v
   [type]
   (let [values (unchecked-get wasm/serializers "constraint-v")
-        default 5] ;; TODO: fix code in rust so we have a proper None variant
+        default (unchecked-get values "none")]
     (d/nilv (unchecked-get values (d/name type)) default)))
 
 (defn translate-bool-type
