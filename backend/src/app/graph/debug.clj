@@ -315,8 +315,9 @@
   primitive, so the transfer goes through Ladybug's `EXPORT DATABASE` (Parquet
   per table) into a fresh on-disk database via `IMPORT DATABASE`.
 
-  Note the round-trip drops table comments; beadpot resolves such tables by
-  name (`beadpot.graph.context/_adopt_node_table`), so this is not load-bearing.
+  Note the round trip drops table comments. Nothing in the graph is addressed
+  by a table comment: every table is resolved by name, so the loss costs
+  nothing.
 
   Returns the path of the written database, or nil when no session is loaded.
   The caller owns the file and must delete it once streamed."

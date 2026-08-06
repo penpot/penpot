@@ -10,16 +10,13 @@
   Projects Document, Page, Component, the full shape tree (skipping the root
   frame), and `IsChildOf` edges from shapes/pages/components to their parent.
 
-  Two of beadpot's denormalizing transforms happen here rather than in a later
-  pass, because the walk already has the answer in hand:
+  Two denormalizations happen here rather than in a later pass, because the
+  walk already has both answers in hand and a post-ingest statement would have
+  to rediscover them:
 
-  - `page-id` on every shape (beadpot `DenormalizePageId`), from the page the
-    walk is currently in;
-  - `component-id` propagated from an instance head down to its descendants
-    (beadpot `DenormalizeComponentId`), from the head context the walk carries.
-
-  Both ids are declared in `app.graph.meta/projection-transforms`, so beadpot
-  reads the graph's own provenance and does not redo them."
+  - `page-id` on every shape, from the page the walk is currently in;
+  - `component-id` propagated from an instance head down to its descendants,
+    from the head context the walk carries."
   (:require
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
@@ -73,9 +70,8 @@
 (defn descend-component-ctx
   "The component context to pass to `shape`'s children.
 
-  Mirrors beadpot `DenormalizeComponentId`, whose recursive match stops at the
-  nearest ancestor Frame carrying a `component-id` and treats any intermediate
-  node that carries one as a barrier:
+  Inheritance stops at the nearest ancestor Frame carrying a `component-id`,
+  and any intermediate shape that carries one is a barrier:
 
   - a Frame with its own `component-id` becomes the new context (it is an
     instance head, and its descendants belong to *it*, not to an outer head);

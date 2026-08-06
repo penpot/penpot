@@ -71,7 +71,7 @@
   (str "json('" (escape-cypher-string (json/encode v)) "')"))
 
 (defn format-timestamp
-  "Ladybug TIMESTAMP literal (beadpot: `timestamp('…')`)."
+  "Ladybug TIMESTAMP literal of the form `timestamp('<ISO-8601 instant>')`."
   [v]
   (let [s (cond
             (instance? java.time.Instant v)

@@ -5,60 +5,53 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.graph.schema.contract
-  "The graph-schema contract shared with beadpot.
+  "Deliberate choices in Penpot's graph schema, recorded as data.
 
-  Penpot is authoritative on the *design model*: what a shape is, what a
-  component means, which attributes exist. beadpot is authoritative on the
-  *graph schema*: the table and column names, and the Ladybug types, that
-  downstream consumers (ML graph mappings, featurization) read. A graph this
-  backend writes must therefore be indistinguishable, to those consumers, from
-  one beadpot's Python pipeline writes.
+  Penpot must pick a spelling and a type for every graph column. A Ladybug
+  column gets both once, at table creation, and neither widens afterwards. The
+  choices are therefore worth making deliberately and worth recording.
 
-  Everything that could drift between the two lives here, as data:
+  Three of them live here:
 
-  - `column-name` maps a Penpot key to its beadpot column. The rule is
-    snake_case of the key; `renames` records every exception.
-  - `dropped-keys` names Penpot keys that deliberately have no column.
+  - `column-name` maps a Penpot key to its column. The rule is snake_case of
+    the key, and `renames` records every exception.
+  - `dropped-keys` and `per-table-dropped` name Penpot keys that deliberately
+    get no column.
   - `type-overrides` pins the Ladybug type where the Malli-derived one
-    (`app.graph.schema.types`) differs from beadpot's and the difference is
-    load-bearing for a consumer.
+    (`app.graph.schema.types`) is coarser than the column deserves.
 
-  Each entry carries its reason. A new divergence must be added here, which is
-  the point: `backend_tests.graph_contract_test` walks the checked-in beadpot
-  manifest (`resources/app/graph/beadpot-schema.json`, produced by
-  `bp graph schema export`) and fails on anything this namespace does not
-  account for. Schema drift becomes a failing test with a precise message
-  instead of a silently renamed column in a training set."
+  Each entry carries its reason. A divergence from the default rule is then a
+  diff to review rather than a silent rename."
   (:require
    [app.common.json :as json]
    [clojure.string :as str]))
 
 (def ^:private renames
-  "Penpot key → beadpot column name, where the two differ.
+  "Penpot key to column name, where the column is not snake_case of the key.
 
   Keyed by the Penpot key alone: no shape type gives one of these a second
   meaning, so a per-table map would only add ceremony."
-  {;; beadpot names the discriminant after the table (`BooleanNode`), not
-   ;; after Penpot's `:bool` shape type.
+  {;; `bool` collides with the Ladybug type name, so the column is named after
+   ;; the table (`Boolean`) rather than after Penpot's `:bool` shape type.
    :bool-type      "boolean_type"
 
-   ;; beadpot keeps the wire name `component-root` out of the graph because
-   ;; the column records what the *file* saved, which can lag what the shape
-   ;; tree implies — `saved_` marks it as the stored value, not a derivation.
+   ;; The column records what the file saved, which can lag what the shape
+   ;; tree implies. The `saved_` prefix marks it as the stored value rather
+   ;; than a derivation.
    :component-root "saved_component_root"
 
-   ;; Penpot stores a list under a singular key; beadpot pluralizes it.
+   ;; The value is a list, so the plural is accurate.
    :shadow         "shadows"
 
-   ;; beadpot spells out the revision number.
+   ;; The column spells the revision number out.
    :revn           "revision"})
 
 (def dropped-keys
-  "Penpot keys projected by the Malli registry that get no beadpot column.
+  "Penpot keys projected by the Malli registry that get no column.
 
-  Dropping is the right call only when the column would be dead weight
-  downstream; anything a consumer might learn from belongs in beadpot instead
-  (see `pending-beadpot-columns`)."
+  Dropping is right only when the column would be dead weight for every reader
+  of the graph. A key a reader might learn from belongs in `unprojected-keys`
+  instead."
   {:deleted-at
    "Only non-nil for a soft-deleted file, and a deleted file is never ingested."
 
@@ -68,37 +61,35 @@
    :pixel-grid-opacity
    "Viewer chrome, as above."})
 
-(def pending-beadpot-columns
-  "Penpot keys that *should* become beadpot columns but do not exist there yet.
+(def unprojected-keys
+  "Penpot keys that should become graph columns and do not have one yet.
 
-  Distinct from `dropped-keys` on purpose: these are a debt beadpot owes,
-  not a decision to discard data. The contract test reports them separately so
-  a new upstream attribute cannot be quietly buried in the drop list."
+  Distinct from `dropped-keys` on purpose: these are a debt the projection
+  owes, not a decision to discard data. Keeping the two apart means a new
+  upstream attribute cannot be quietly buried in the drop list."
   {:background-blur
-   "Landed upstream behind a default-on flag; beadpot has no field for it yet."})
+   "Landed upstream behind a default-on flag. No column for it yet."})
 
 (def ^:private per-table-dropped
   "Keys dropped only on certain tables.
 
   `:grids` is the standing case: Penpot's shape schema admits it on every
-  shape, but only a Frame ever carries one, and beadpot models it on Frame
-  alone. Emitting an always-null column on ten other tables would widen every
-  multi-table scan for nothing."
+  shape, but only a Frame ever carries one. Emitting an always-null column on
+  ten other tables would widen every multi-table scan for nothing."
   {:grids #{"Boolean" "Circle" "Group" "Image" "Path" "Rectangle" "SVGRaw" "Text"}})
 
 (def type-overrides
-  "Ladybug column type per beadpot column name, where beadpot's differs.
+  "Ladybug column type per column name, where the derived type is too coarse.
 
   `app.graph.schema.types` derives a type from the Malli schema, which is the
-  right default but coarser than beadpot in places: a Malli `:map` becomes
-  `JSON`, where beadpot may use a native Ladybug MAP or a fixed-size array
-  that a consumer can read as a tensor without parsing.
+  right default but coarser than the column deserves in places: a Malli `:map`
+  becomes `JSON`, where a native Ladybug MAP or a fixed-size array lets a
+  consumer read a tensor row without parsing.
 
   Only load-bearing divergences are pinned here, in the order they became
-  load-bearing; the rest are reported by the contract test and closed by
-  moving the whole DDL onto the beadpot manifest."
-  {;; `LinkAppliedTokens` (beadpot) reads this with `map_keys` /
-   ;; `map_extract`; as JSON the transform cannot run at all.
+  load-bearing."
+  {;; Must be a native MAP: a JSON blob cannot be indexed by key in Cypher, so
+   ;; `map_keys` and `map_extract` cannot reach a single token at all.
    "applied_tokens" "MAP(STRING, STRING)"
 
    ;; `grc/schema:rect` is an inline `:and` over a map, not the registered
@@ -109,38 +100,38 @@
    "selrect"     "DOUBLE[4]"
 
    ;; The SVG provenance attributes are typed `:map` in the shape schema on
-   ;; purpose — legacy files hold them as plain maps rather than as `::grc/rect`
-   ;; and `::gmt/matrix` records, and a tighter *schema* would reject those files
-   ;; (`app.common.types.shape/schema:shape-generic-attrs`). A tighter *column*
-   ;; is free: `app.graph.schema.values/coerce` reads either form.
+   ;; purpose. Legacy files hold them as plain maps rather than as
+   ;; `::grc/rect` and `::gmt/matrix` records, and a tighter *schema* would
+   ;; reject those files
+   ;; (`app.common.types.shape/schema:shape-generic-attrs`). A tighter
+   ;; *column* is free: `app.graph.schema.values/coerce` reads either form.
    "svg_viewbox"   "DOUBLE[4]"
    "svg_transform" "DOUBLE[6]"
 
-   ;; `:fills` is an `:or` — the packed `app.common.types.fills` value or a
-   ;; plain vector of fill maps — so the schema alone cannot say it is a
+   ;; `:fills` is an `:or` over the packed `app.common.types.fills` value and
+   ;; a plain vector of fill maps, so the schema alone cannot say it is a
    ;; collection. It always is one, and a fill has enough optional shape
-   ;; (solid, gradient, image) that JSON per element is the honest element type.
+   ;; (solid, gradient, image) that JSON per element is the honest element
+   ;; type.
    "fills" "JSON[]"})
 
 (def ^:private map-key-fns
   "How to render the *keys* of a MAP column, per column.
 
-  Column names are snake_case because they are graph schema; the keys inside a
-  MAP are not — they are values, and beadpot models them as whatever it parsed
-  from the wire. `applied_tokens` is keyed by shape attribute in the camelCase
-  form Penpot's own JSON encoder produces (`app.common.json/write-camel-key`),
-  which is what beadpot's `AppliedTokenKey` holds and what
-  `UsesToken.for_property` therefore carries: `strokeWidth`, not
+  A column name is schema, so it is snake_case. The keys inside a MAP are
+  values, so they keep the spelling their producer used. `applied_tokens` is
+  keyed by shape attribute in the camelCase form
+  `app.common.json/write-camel-key` produces: `strokeWidth`, not
   `stroke-width`."
   {"applied_tokens" json/write-camel-key})
 
 (defn map-key-fn
-  "Key renderer for a MAP column; `name` unless the column says otherwise."
+  "Key renderer for a MAP column. `name` unless the column says otherwise."
   [column]
   (get map-key-fns column name))
 
 (defn column-name
-  "The beadpot column name for Penpot key `k`.
+  "The graph column name for Penpot key `k`.
 
   Default: snake_case of the key. `renames` overrides."
   [k]
@@ -154,6 +145,6 @@
       (contains? (get per-table-dropped k #{}) table)))
 
 (defn ladybug-type
-  "beadpot's Ladybug type for `column`, or `fallback` when it agrees."
+  "The pinned Ladybug type for `column`, or `fallback` when nothing is pinned."
   [column fallback]
   (get type-overrides column fallback))

@@ -11,10 +11,10 @@
   options (`:drop`, optional `:extra`). Derived artifacts — Ladybug
   DDL, Arrow fields, validation, type dispatch — all flow from that.
 
-  Column *names* and *types* are not ours to choose: they are the
-  contract downstream consumers read, and beadpot owns it. Every
-  divergence between a Penpot key and its column lives in
-  `app.graph.schema.contract`."
+  This registry is the single source of the graph schema. A Ladybug column
+  gets its name and its type once, at table creation, and there is no
+  widening afterwards. Every divergence between a Penpot key and its column
+  is recorded in `app.graph.schema.contract`."
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -31,7 +31,6 @@
 (def schema-version
   "penpot-graph-slice-4")
 
-;; beadpot/graph/schemas.py drop_fields
 (def ^:private document-projection
   {:source ctf/schema:file
    :drop   [:data]
@@ -154,7 +153,7 @@
     (nth entry 1)))
 
 (defn column-name
-  "beadpot column name for projected key `k` on `table`."
+  "Graph column name for projected key `k` on `table`."
   [_table k]
   (contract/column-name k))
 
@@ -170,8 +169,8 @@
 (defn column-keys
   "Projected column keys for `table`, in registry order.
 
-  Keys the beadpot contract drops on this table are omitted, so the column
-  order, the Arrow batch and the DDL cannot disagree about what exists."
+  Keys the contract drops on this table are omitted, so the column order, the
+  Arrow batch, and the DDL cannot disagree about what exists."
   [table]
   (into []
         (comp (map first)
@@ -256,7 +255,7 @@
     table))
 
 (defn cypher-property-key
-  "Backtick-wrapped beadpot column name for inline Cypher literals."
+  "Backtick-wrapped column name for inline Cypher literals."
   [table k]
   (str "`" (column-name table k) "`"))
 
@@ -306,7 +305,7 @@
        ", `position` INT64);"))
 
 (defn is-instance-of-ddl
-  "Frame instance heads → Component (beadpot `IsInstanceOf`)."
+  "Frame instance heads → Component."
   []
   "CREATE REL TABLE `IsInstanceOf` (FROM `Frame` TO `Component`);")
 
@@ -315,8 +314,7 @@
 
   Created up-front rather than on demand: the bulk loader must never race on
   lazy table creation, and a consumer can then tell \"this producer cannot
-  emit that pair\" from \"this document happens to have none\" (beadpot
-  `graph.manifest/REL_FAMILIES`)."
+  emit that pair\" from \"this document happens to have none\"."
   [rel props]
   (str "CREATE REL TABLE `" rel "` ("
        (str/join ", " (for [from shape-tables
@@ -326,13 +324,13 @@
        ");"))
 
 (defn refers-to-ddl
-  "Instance shape → its homologue in the component main instance
-  (beadpot `RefersTo`, from `shape-ref`)."
+  "Instance shape → its homologue in the component main instance, resolved
+  from `shape-ref`."
   []
   (shape-to-shape-rel-ddl "RefersTo" nil))
 
 (defn fills-swap-slot-ddl
-  "Swapped-in shape → the slot shape it replaces (beadpot `FillsSwapSlot`)."
+  "Swapped-in shape → the slot shape it replaces."
   []
   (shape-to-shape-rel-ddl "FillsSwapSlot" ["`slot_id` UUID"]))
 
