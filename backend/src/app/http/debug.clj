@@ -22,6 +22,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
+   [app.http.access-token :as actoken]
    [app.http.session :as session]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
@@ -741,6 +742,27 @@
 ;; INIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def normalize-identity
+  "Let a personal access token stand in for a browser session on `/dbg`.
+
+  The identity may arrive either way, and both are the same profile acting for
+  itself. The gate below, devenv or an address in `:admins`, does not change
+  with the carrier. What a token adds is scripted access, so a tool already
+  holding a profile's credentials can also pull the graph a build produced.
+
+  Normalizing here rather than in each handler keeps `::session/profile-id`
+  the one key every debug handler reads, so a console session keyed by profile
+  (`app.graph.debug`) is found whichever way the caller authenticated."
+  {:name ::normalize-identity
+   :compile
+   (fn [& _]
+     (fn [handler]
+       (fn [request]
+         (handler (cond-> request
+                    (and (nil? (::session/profile-id request))
+                         (some? (::actoken/profile-id request)))
+                    (assoc ::session/profile-id (::actoken/profile-id request)))))))})
+
 (defn authorized?
   [pool {:keys [::session/profile-id]}]
   (or (and (= "devenv" (cf/get :host)) profile-id)
@@ -816,6 +838,8 @@
                          ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]
                   graph? (into (graph-action-routes cfg)))
         dbg     (cond-> ["/dbg" {:middleware [[session/authz cfg]
+                                              [actoken/authz cfg]
+                                              [normalize-identity]
                                               [with-authorization pool]]}
                          ["" {:handler (partial index-handler cfg)}]
                          ["/health" {:handler (partial health-handler cfg)}]
