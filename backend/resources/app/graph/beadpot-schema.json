@@ -1,0 +1,7943 @@
+{
+  "version": 1,
+  "producer": "beadpot",
+  "node_tables": [
+    {
+      "table": "Boolean",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "boolean_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shapes",
+          "type": "UUID[]",
+          "default": []
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMzBhZmE3YzU5M2Q3YjdhYTcyNmYxYzNlNzlmM2I4MzRjNmM0NGYzOWM3MDliYzU3NjFjMGJjMDg1OTJhZmNhZSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQm9vbGVhbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS5zaGFwZXMiLCJCb29sZWFuIl0sInYiOjJ9"
+    },
+    {
+      "table": "BooleanToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "boolean"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMDAwOWI2NDU1ZTJjYzA2YmMwMDJhOGJiMDE0N2Q0YTU0NWRmMzVmMDk5MjNlNGZmODZhOTRkZWRjMzg5NzNiMyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQm9vbGVhblRva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIkJvb2xlYW5Ub2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "BorderRadiusToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "borderRadius"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNmNkNzgxODQ0MWRlNzAyMTAyYTk5Mjc0NDY5ODRhMjljNDM0ZTEyM2M3ZmQzNDg5ZGE2YzAwNjk0NmI4ODAwZSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQm9yZGVyUmFkaXVzVG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiQm9yZGVyUmFkaXVzVG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "BorderToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "border"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMDE1NDJlNmU4MjYzM2ZmNGVlZTU1OTAwZTcyYzMyYzFmOTQzOWM2MjAzMDEzYTRlZDFkN2FkNTNhZGU4NzUyNiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQm9yZGVyVG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiQm9yZGVyVG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "Circle",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "rx",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "ry",
+          "type": "DOUBLE",
+          "default": 0.0
+        }
+      ],
+      "comment": "eyJoYXNoIjoiOGVjMmU0M2M5NjdhMWFlNmY3MDA4OGRkNzNjMzBiYWFmNzEyOTI1YWNjZjJiY2Y5M2M0NzRmYzAzYjk3NTJiMyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQ2lyY2xlTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnNoYXBlcyIsIkNpcmNsZSJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "Color",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "color",
+          "type": "UINT32",
+          "default": null
+        },
+        {
+          "name": "gradient",
+          "type": "STRUCT(stops JSON[], width DOUBLE, type STRING, start_x DOUBLE, start_y DOUBLE, end_x DOUBLE, end_y DOUBLE)",
+          "default": null
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "image",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        }
+      ],
+      "comment": "eyJoYXNoIjoiZTY5OTA4ZjllZWU2NzNmMGU4NWQ4NzU1NzdlOGNlNGM1YWM3MDJjZDU5OTVmYjNhMzM3YzQzMDcyNmY0Y2RjZiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQ29sb3JOb2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEuc3R5bGVzIiwiQ29sb3IiXSwidiI6Mn0="
+    },
+    {
+      "table": "ColorToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "color"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNDE0NDFmYzIwNTRhNTBhOWUwOTBjYzg2MWE2NmI0MGQ3NTMwMTcxMTc0MjFjOTEwZjA3NGUyNDliYTFjYjRkYiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQ29sb3JUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJDb2xvclRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "Component",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "deleted",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "objects",
+          "type": "MAP(UUID, JSON)",
+          "default": {}
+        },
+        {
+          "name": "main_instance_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "main_instance_page",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "annotation",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "variant_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "variant_properties",
+          "type": "STRUCT(name STRING, value STRING)[]",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiODI3MzY1YmY5ZGEwMmE2ZDM4ZTQ5NDgxZmI0MWFjNmViYWE2MzIyYzJkYzY0ZDU2YWY5ZGRjYjMzZTQ1NDYyMyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQ29tcG9uZW50Tm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLmRvY3VtZW50IiwiQ29tcG9uZW50Il0sInYiOjJ9"
+    },
+    {
+      "table": "CubicBezierToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "cubicBezier"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYTZlOGI4NTgyMmFiOGRlNmFkNmYxNTBjN2ViNGQzMzU0NjhhZjEwY2EyOTY1OTJiYjk1YmZkNzFiM2IwZThjMyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiQ3ViaWNCZXppZXJUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJDdWJpY0JlemllclRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "DimensionToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "dimension"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNDFiODUzZDliM2ZlNTI5NjVmYTUzYjZmZmUxMTc3Yzk2YmU3ZjZlNjgyNGIwMmIwNjI4ZGJmZmVmZjRhODEzNSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRGltZW5zaW9uVG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiRGltZW5zaW9uVG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "Document",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "features",
+          "type": "STRING[]",
+          "default": []
+        },
+        {
+          "name": "has_media_trimmed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "comment_thread_seqn",
+          "type": "INT64",
+          "default": 0
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "revision",
+          "type": "INT64",
+          "default": 0
+        },
+        {
+          "name": "version",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "vern",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "ignore_sync_until",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "is_shared",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "library_refs",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "migrations",
+          "type": "STRING[]",
+          "default": []
+        },
+        {
+          "name": "team_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "project_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "options",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "backend",
+          "type": "STRING",
+          "default": "legacy-db"
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYThhYzg1N2ZkNDMyZjAyZmVhYTkxMTJmYWI2ZjQ4OWZjYmUzMmJkZjU4Mzg3NjMxOTQ0NzI0YjYwOGJjNTU4MyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRG9jdW1lbnROb2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEuZG9jdW1lbnQiLCJEb2N1bWVudCJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "DurationToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "duration"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiOGQwYmZiZjhkNjQ3YmNjODA4MGFkNGUxYzI1NjMwNThjZWIxYzlkZmNiZmQ0NjI2NzQ5ODZkYzA2ZDU2NzBhMiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRHVyYXRpb25Ub2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJEdXJhdGlvblRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "FontFamilyToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "fontFamilies"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYjFjNDVlMDBkNzI1MjljYjNjMDg0ZjNhZTJkMDdkNjI3MDRlYWExZjM3NDYwN2ZiZmY3ZWFjMGMzMTgyMTIwYSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRm9udEZhbWlseVRva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIkZvbnRGYW1pbHlUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "FontSizeToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "fontSizes"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiOGNhMDE5ZDE1Mjk5MDlmOWE2MDI1MjRhZDJhYzkyYWRlNWNjYzg0OGNmODc1OWY5NmZiMWFlZTE0ODYwYWQ3MCIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRm9udFNpemVUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJGb250U2l6ZVRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "FontWeightToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "fontWeights"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiZmE0NmEzZTI1Zjc4Njk5ZGNhZWI5N2E5NTcxOGQ5NzIyYjgzMWI0MGM5MTVjOGI1ZjUzMjY1ZDVkNGIwNmZmNCIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRm9udFdlaWdodFRva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIkZvbnRXZWlnaHRUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "Frame",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "use_for_thumbnail",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hide_fill_on_export",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "show_content",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shapes",
+          "type": "UUID[]",
+          "default": []
+        },
+        {
+          "name": "rx",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "ry",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "grids",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "layout",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_align_content",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_align_items",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_flex_dir",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_gap",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_gap_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_grid_columns",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "layout_grid_dir",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_grid_rows",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "layout_grid_cells",
+          "type": "MAP(UUID, JSON)",
+          "default": null
+        },
+        {
+          "name": "layout_justify_content",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_justify_items",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_padding",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_padding_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_wrap_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "variant_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "variant_name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "variant_error",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "is_variant_container",
+          "type": "BOOL",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYWM1NTQ3MDZhMTU3MTdiZjA1MDdiMjMzYzZmZGI5ODYyN2I3NTNkMTI2NTNiNTQzYTk5MWFkYmJlNmJiZjczMyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiRnJhbWVOb2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEuc2hhcGVzIiwiRnJhbWUiXSwidiI6Mn0="
+    },
+    {
+      "table": "GradientToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "gradient"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMTNjZjQzNzcyNzg1NTI2ZGMxNWI5YTczYjdiNzYzOWQ1OGM2YzE5NTI1YzMzZWEwNWIzYjViZTdmY2MzNmQ2ZCIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiR3JhZGllbnRUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJHcmFkaWVudFRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "Group",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "shapes",
+          "type": "UUID[]",
+          "default": []
+        }
+      ],
+      "comment": "eyJoYXNoIjoiN2IzYTkwMDVlNDI4ZGU2MzQyMTVhZmEzNjk1MmE1MTMyY2U3ZmU5OWUyODQ5NmMyN2E1NzI3MTg2ZmYzYmZlMiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiR3JvdXBOb2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEuc2hhcGVzIiwiR3JvdXAiXSwidiI6Mn0="
+    },
+    {
+      "table": "Image",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "mime_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        }
+      ],
+      "comment": "eyJoYXNoIjoiOWRjNzA4NmVkNjc2MWYyOWRhOWZkMWNhYzliNTQwMmYxNGIxMTE4ZjFlZDI2MmQ4MTRkMzNmYmFmN2I3OTY2MiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiSW1hZ2VOb2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEuc2hhcGVzIiwiSW1hZ2UiXSwidiI6Mn0="
+    },
+    {
+      "table": "LetterSpacingToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "letterSpacing"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMWY2MWI1NmY5ZjU2ZjA4OWNhMjNiMDBjYzY5ZTU0ZjZiNGZjYTA3YTcxZTgyMDc2ZTg1MDA5ZDZhNWY5ZWM0ZSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiTGV0dGVyU3BhY2luZ1Rva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIkxldHRlclNwYWNpbmdUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "NumberToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "number"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMmMyYTViZWU0ZTY3YmEyYTcwYzExNzNkNjNjM2I1MDg4MTA3YWQzNjBlZWJhOTczYzY4NDE1ZDVmOWJlMDk2YyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiTnVtYmVyVG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiTnVtYmVyVG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "OpacityToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "opacity"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiODhmMDk1ZWEyY2UzMjg1MmI5YWRhMjc4OGMxMmJmZTJhNGUwYzE3NjhhODY2ODA0OWQyN2ZhM2IxNTRkY2M1OSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiT3BhY2l0eVRva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIk9wYWNpdHlUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "OtherToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "other"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "STRING",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiZTFiNmM1NDgyNTlkY2E3MjI0MGRhMDNiN2FjNDY5NWE5ZDUwODMwYjA4NGZkOTRkM2E1ODQ3YzU3MzJlMDI1OSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiT3RoZXJUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJPdGhlclRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "Page",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "background",
+          "type": "UINT32",
+          "default": null
+        },
+        {
+          "name": "flows",
+          "type": "MAP(UUID, STRUCT(id UUID, name STRING, starting_frame_id UUID))",
+          "default": {}
+        },
+        {
+          "name": "guides",
+          "type": "MAP(UUID, STRUCT(id UUID, axis STRING, position DOUBLE, frame_id UUID))",
+          "default": {}
+        },
+        {
+          "name": "comment_thread_positions",
+          "type": "MAP(UUID, STRUCT(frame_id UUID, position DOUBLE[2]))",
+          "default": {}
+        },
+        {
+          "name": "default_grids",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "options",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        }
+      ],
+      "comment": "eyJoYXNoIjoiM2E5ZDJlNjljN2ZmYzkzYzc2YjIwZGY0YjkyZmY5MjljZWI3M2M3ZWQ4YmU1OWQ3N2QyNjRiNDhhZGY0YmNkZCIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiUGFnZU5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS5wYWdlcyIsIlBhZ2UiXSwidiI6Mn0="
+    },
+    {
+      "table": "Path",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "content",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "stroke_linecap",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "position_data",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMjFlZTdiOTNiY2RjYTlhMTNlOTNkMTM3M2ZjYjMxMjhmZDIzMGFjOGNkYjhlNzk2YTI3MDY5NmRlYmNjMDgwMyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiUGF0aE5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS5zaGFwZXMiLCJQYXRoIl0sInYiOjJ9"
+    },
+    {
+      "table": "Project",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "team_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "team_name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "is_default_team",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "is_default",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "is_pinned",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "deleted_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "count",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "total_count",
+          "type": "INT64",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMjZkZGEwNWJmZTBiOTc4NDcxNmUyODViYzk0NDMyZDFjNzlmNGMxMGQxMDA0OGJlMGExNWNhYjVlYTE5YmJmYiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiUHJvamVjdE5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LmlvLnNjaGVtYXMiLCJQcm9qZWN0Il0sInYiOjJ9"
+    },
+    {
+      "table": "Rectangle",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "rx",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "ry",
+          "type": "DOUBLE",
+          "default": 0.0
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNjUzMjE0ZjlhMDFiNGI3MGRmNTUyOTFlZTE5NjVjZWZjMDM4ZGQ1ZWQ2MDRkZDZlYjZiNTEzY2FlYjI0NzA0OCIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiUmVjdGFuZ2xlTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnNoYXBlcyIsIlJlY3RhbmdsZSJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "RotationToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "rotation"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiODAzNjhlOGIzOTNlMjBjNzJkN2VmYmUwNWVmMmY2ZWQ4NTczY2IyYmI1MTU2NzQyZGZlMDIxY2ZmMGNkY2VjNyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiUm90YXRpb25Ub2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJSb3RhdGlvblRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "SVGRaw",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "content",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "shapes",
+          "type": "UUID[]",
+          "default": []
+        }
+      ],
+      "comment": "eyJoYXNoIjoiZGNkZGNlOTk1NTljYjU4ZTc2NjRkYzI2NzM0ZWNmZDg0NzJjMWVkMzNjOTZiYWY3NzI0Nzg2N2Y1M2U3MjdjYiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU1ZHUmF3Tm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnNoYXBlcyIsIlNWR1JhdyJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "ShadowToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "shadow"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiZTU3ZmYyNGEzODE3MTU0OTk0NWYwNjQ5ODExMGNkNmQwY2ZmNTRmNmYwNmEwZWY1MzgzYzRlZDQzODA4NWQ0NSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU2hhZG93VG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiU2hhZG93VG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "SizingToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "sizing"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMTQ0NzI4Mjc3M2JiOTJmZjY0MTJiODU2ZDU0MGJkMWQ2OGIzMjU5NjQ1MTcwMDEyZThiNjYwNGIyNDNkNmZjMSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU2l6aW5nVG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiU2l6aW5nVG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "SpacingToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "spacing"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNDgzNGJkYWM5M2ViOWYxM2FjYjA0ODZlYTc2YjNlNjM0YjllNTg5NmE5NGVlNTk3OWM3NjZlZmE2MjUzYzNhOSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU3BhY2luZ1Rva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIlNwYWNpbmdUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "StringToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "string"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNDc5ZTRlMjg3NjMxOGU3YzczNDhkOWI1MTk1YzNmMTE2Yzg3ZjVkZTM2YzNlYjdlM2UxZjA1OTI5YzExOTgyMSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU3RyaW5nVG9rZW5Ob2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiU3RyaW5nVG9rZW4iXSwidiI6Mn0="
+    },
+    {
+      "table": "StrokeStyleToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "strokeStyle"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiN2QwZDRmNWU4MzNhN2MxN2Q2ZGFlMzc2ODMwYzU5NDczY2E5ODllY2ExNGU3MTUzMmM4NWU3ZGJlZjdlNWI4MSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU3Ryb2tlU3R5bGVUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJTdHJva2VTdHlsZVRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "StrokeWidthToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "strokeWidth"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYmRiMjY0ZWM2ZTI2MDI3ODI1ZTVkMjJiOTI0NTQ1NjRhZWVhY2JiZTAyMWZkODFjNTdiNTBmMzY4MmE2MjJlNiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiU3Ryb2tlV2lkdGhUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJTdHJva2VXaWR0aFRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "Team",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "is_default",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "features",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "subscription",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNjQ2MjBiYTkwYTQ4NDIzYjk2ZGYzZThkNzE0OTAyOWZjMTNlZDY4NzAwZmU3ODc1ODA2ZmQyMzE1NjIyYjhmZiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVGVhbU5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LmlvLnNjaGVtYXMiLCJUZWFtIl0sInYiOjJ9"
+    },
+    {
+      "table": "Text",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "layout_item_margin_type",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_margin",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_h",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_max_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_min_w",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "layout_item_h_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_v_sizing",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_align_self",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "layout_item_absolute",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "layout_item_z_index",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "x",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "y",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "width",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "height",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "rotation",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "selrect",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "points",
+          "type": "DOUBLE[2][]",
+          "default": []
+        },
+        {
+          "name": "center",
+          "type": "DOUBLE[2]",
+          "default": null
+        },
+        {
+          "name": "r1",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r2",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r3",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "r4",
+          "type": "DOUBLE",
+          "default": 0.0
+        },
+        {
+          "name": "transform",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transform_inverse",
+          "type": "DOUBLE[6]",
+          "default": null
+        },
+        {
+          "name": "transforming",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "svg_viewbox",
+          "type": "DOUBLE[4]",
+          "default": null
+        },
+        {
+          "name": "svg_attrs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_defs",
+          "type": "JSON",
+          "default": {}
+        },
+        {
+          "name": "svg_transform",
+          "type": "DOUBLE[6]",
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "name": "index",
+          "type": "INT64",
+          "default": null
+        },
+        {
+          "name": "fixed_scroll",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion_lock",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "proportion",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "flip_x",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "flip_y",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "grow_type",
+          "type": "STRING",
+          "default": "fixed"
+        },
+        {
+          "name": "hide_in_viewer",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "constraints_h",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "constraints_v",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "blur",
+          "type": "STRUCT(id UUID, type STRING, value DOUBLE, hidden BOOL)",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        },
+        {
+          "name": "blend_mode",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "shadows",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "strokes",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "fills",
+          "type": "JSON[]",
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "metadata",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "page_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "frame_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "parent_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "component_file",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "saved_component_root",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "main_instance",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "remote_synced",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "shape_ref",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "touched",
+          "type": "STRING[]",
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "collapsed",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "hidden",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "masked_group",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "applied_tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        },
+        {
+          "name": "interactions",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "exports",
+          "type": "STRUCT(type STRING, scale DOUBLE, suffix STRING)[]",
+          "default": []
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        },
+        {
+          "name": "content",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "position_data",
+          "type": "JSON[]",
+          "default": []
+        },
+        {
+          "name": "last_resize_direction",
+          "type": "STRING",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiNjlmNzg0ZGU4NDMwNWNiZWQ3ZjE1Y2VhZGE5MDRiNTEzYTczZGQ3NTFmMmUzNTZmNTFhNDQ3ZDBjZTZiZWZiNiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVGV4dE5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS5zaGFwZXMiLCJUZXh0Il0sInYiOjJ9"
+    },
+    {
+      "table": "TextCaseToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "textCase"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYmY0OTY5MTBhZDY4MmY0YmUzNWE3YzM1YWVjZmUwNDlkNTNlNGZiMTVkMjk1M2I4NzBhNTQwYWJkMGViNTc5NyIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVGV4dENhc2VUb2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJUZXh0Q2FzZVRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "TextDecorationToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "textDecoration"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMDk2MTRlY2Y5NDcwZjZjMmY0NThhMjA4YWQ0Zjg3N2ZkM2I5ZmExZGI1NjcyOWM3YmEyYzg2ZTE2NzRiMTY5ZSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVGV4dERlY29yYXRpb25Ub2tlbk5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50b2tlbnMiLCJUZXh0RGVjb3JhdGlvblRva2VuIl0sInYiOjJ9"
+    },
+    {
+      "table": "TokenSet",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "tokens",
+          "type": "MAP(STRING, STRING)",
+          "default": {}
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMGY0MDc0YjJjYzY0MDcwYTI0OTk0YmExMTIxMTk0MmJhMGVhYmZmNGVhNmQ3NmJjNmQwZTY1OTc1Y2Q1NjY1NiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVG9rZW5TZXROb2RlIl0sInBheWxvYWQiOlsiYmVhZHBvdC5zY2hlbWEudG9rZW5zIiwiVG9rZW5TZXQiXSwidiI6Mn0="
+    },
+    {
+      "table": "TransitionToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "transition"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiMTFlMDg4ZDYzZjVlYzI3ODI4YjlmZGRjMTUxODFjNTUxZjVhMmUzYmU5MGFjNTE4YjhiMGIzNTcwZDI5MjU5ZSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVHJhbnNpdGlvblRva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIlRyYW5zaXRpb25Ub2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "Typography",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "font_id",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "font_size",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "font_weight",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "font_style",
+          "type": "STRING",
+          "default": "normal"
+        },
+        {
+          "name": "font_family",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "font_variant_id",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "letter_spacing",
+          "type": "JSON",
+          "default": null
+        },
+        {
+          "name": "text_transform",
+          "type": "STRING",
+          "default": "none"
+        },
+        {
+          "name": "line_height",
+          "type": "JSON",
+          "default": 1.0
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "path",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "plugin_data",
+          "type": "MAP(STRING, MAP(STRING, STRING))",
+          "default": {}
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYTgxN2YzMDc5ZmM0N2JkNDU4ZDljNDRjMDc2MGJlMmEyMzVkZjRmNmQ4NjNhY2E5ZDg0NmM4OWM1ZWQ5M2EzZCIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVHlwb2dyYXBoeU5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LnNjaGVtYS50ZXh0IiwiVHlwb2dyYXBoeSJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "TypographyToken",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "type",
+          "type": "STRING",
+          "default": "typography"
+        },
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "default": ""
+        },
+        {
+          "name": "extensions",
+          "type": "MAP(STRING, STRING)",
+          "default": null
+        },
+        {
+          "name": "deprecated",
+          "type": "BOOL",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "JSON",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiYWQwODE3MzQ4ZjhhMDZiZDg3Njc2OTVjMTFjM2JmYzI3NTJkZjhjOGVlOTVmOTE3MGVhMjFiODM1ZGM0MWYxYiIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVHlwb2dyYXBoeVRva2VuTm9kZSJdLCJwYXlsb2FkIjpbImJlYWRwb3Quc2NoZW1hLnRva2VucyIsIlR5cG9ncmFwaHlUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "User",
+      "primary_key": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "email",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "fullname",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "theme",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "lang",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "modified_at",
+          "type": "TIMESTAMP",
+          "default": null
+        },
+        {
+          "name": "is_admin",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "is_demo",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "is_active",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "is_blocked",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "is_muted",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "auth_backend",
+          "type": "STRING",
+          "default": null
+        },
+        {
+          "name": "default_project_id",
+          "type": "UUID",
+          "default": null
+        },
+        {
+          "name": "default_team_id",
+          "type": "UUID",
+          "default": null
+        }
+      ],
+      "comment": "eyJoYXNoIjoiOTJlNWVmM2MxOTY1ZGM1YTViMjkwYTU0M2Y2ODMzMzkwZjY4MDUzY2FjOTI0YzU1NzhiZGMyOWFiZDkzNWIzYSIsIm5vZGUiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVXNlck5vZGUiXSwicGF5bG9hZCI6WyJiZWFkcG90LmlvLnNjaGVtYXMiLCJQcm9maWxlIl0sInYiOjJ9"
+    }
+  ],
+  "rel_tables": [
+    {
+      "table": "BoundingBoxCoverage",
+      "columns": [
+        {
+          "name": "coverage",
+          "type": "DOUBLE",
+          "default": null
+        }
+      ],
+      "pairs": [
+        [
+          "Boolean",
+          "Boolean"
+        ],
+        [
+          "Boolean",
+          "Circle"
+        ],
+        [
+          "Boolean",
+          "Frame"
+        ],
+        [
+          "Boolean",
+          "Group"
+        ],
+        [
+          "Boolean",
+          "Image"
+        ],
+        [
+          "Boolean",
+          "Path"
+        ],
+        [
+          "Boolean",
+          "Rectangle"
+        ],
+        [
+          "Boolean",
+          "SVGRaw"
+        ],
+        [
+          "Boolean",
+          "Text"
+        ],
+        [
+          "Circle",
+          "Boolean"
+        ],
+        [
+          "Circle",
+          "Circle"
+        ],
+        [
+          "Circle",
+          "Frame"
+        ],
+        [
+          "Circle",
+          "Group"
+        ],
+        [
+          "Circle",
+          "Image"
+        ],
+        [
+          "Circle",
+          "Path"
+        ],
+        [
+          "Circle",
+          "Rectangle"
+        ],
+        [
+          "Circle",
+          "SVGRaw"
+        ],
+        [
+          "Circle",
+          "Text"
+        ],
+        [
+          "Frame",
+          "Boolean"
+        ],
+        [
+          "Frame",
+          "Circle"
+        ],
+        [
+          "Frame",
+          "Frame"
+        ],
+        [
+          "Frame",
+          "Group"
+        ],
+        [
+          "Frame",
+          "Image"
+        ],
+        [
+          "Frame",
+          "Path"
+        ],
+        [
+          "Frame",
+          "Rectangle"
+        ],
+        [
+          "Frame",
+          "SVGRaw"
+        ],
+        [
+          "Frame",
+          "Text"
+        ],
+        [
+          "Group",
+          "Boolean"
+        ],
+        [
+          "Group",
+          "Circle"
+        ],
+        [
+          "Group",
+          "Frame"
+        ],
+        [
+          "Group",
+          "Group"
+        ],
+        [
+          "Group",
+          "Image"
+        ],
+        [
+          "Group",
+          "Path"
+        ],
+        [
+          "Group",
+          "Rectangle"
+        ],
+        [
+          "Group",
+          "SVGRaw"
+        ],
+        [
+          "Group",
+          "Text"
+        ],
+        [
+          "Image",
+          "Boolean"
+        ],
+        [
+          "Image",
+          "Circle"
+        ],
+        [
+          "Image",
+          "Frame"
+        ],
+        [
+          "Image",
+          "Group"
+        ],
+        [
+          "Image",
+          "Image"
+        ],
+        [
+          "Image",
+          "Path"
+        ],
+        [
+          "Image",
+          "Rectangle"
+        ],
+        [
+          "Image",
+          "SVGRaw"
+        ],
+        [
+          "Image",
+          "Text"
+        ],
+        [
+          "Path",
+          "Boolean"
+        ],
+        [
+          "Path",
+          "Circle"
+        ],
+        [
+          "Path",
+          "Frame"
+        ],
+        [
+          "Path",
+          "Group"
+        ],
+        [
+          "Path",
+          "Image"
+        ],
+        [
+          "Path",
+          "Path"
+        ],
+        [
+          "Path",
+          "Rectangle"
+        ],
+        [
+          "Path",
+          "SVGRaw"
+        ],
+        [
+          "Path",
+          "Text"
+        ],
+        [
+          "Rectangle",
+          "Boolean"
+        ],
+        [
+          "Rectangle",
+          "Circle"
+        ],
+        [
+          "Rectangle",
+          "Frame"
+        ],
+        [
+          "Rectangle",
+          "Group"
+        ],
+        [
+          "Rectangle",
+          "Image"
+        ],
+        [
+          "Rectangle",
+          "Path"
+        ],
+        [
+          "Rectangle",
+          "Rectangle"
+        ],
+        [
+          "Rectangle",
+          "SVGRaw"
+        ],
+        [
+          "Rectangle",
+          "Text"
+        ],
+        [
+          "SVGRaw",
+          "Boolean"
+        ],
+        [
+          "SVGRaw",
+          "Circle"
+        ],
+        [
+          "SVGRaw",
+          "Frame"
+        ],
+        [
+          "SVGRaw",
+          "Group"
+        ],
+        [
+          "SVGRaw",
+          "Image"
+        ],
+        [
+          "SVGRaw",
+          "Path"
+        ],
+        [
+          "SVGRaw",
+          "Rectangle"
+        ],
+        [
+          "SVGRaw",
+          "SVGRaw"
+        ],
+        [
+          "SVGRaw",
+          "Text"
+        ],
+        [
+          "Text",
+          "Boolean"
+        ],
+        [
+          "Text",
+          "Circle"
+        ],
+        [
+          "Text",
+          "Frame"
+        ],
+        [
+          "Text",
+          "Group"
+        ],
+        [
+          "Text",
+          "Image"
+        ],
+        [
+          "Text",
+          "Path"
+        ],
+        [
+          "Text",
+          "Rectangle"
+        ],
+        [
+          "Text",
+          "SVGRaw"
+        ],
+        [
+          "Text",
+          "Text"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIkJvdW5kaW5nQm94Q292ZXJhZ2VFZGdlIl0sImhhc2giOiI4YmY3ZTFlMTlmYTNhNzA4ZDRiZGRkZDEwZmYyODNhOGIxMTM5NGRlNDJhOGI4ZGIxMjFiYjBmMWRiZjM3ZGQ4IiwicGF5bG9hZCI6WyJiZWFkcG90LmdyYXBoLnNjaGVtYXMiLCJCb3VuZGluZ0JveENvdmVyYWdlIl0sInYiOjJ9"
+    },
+    {
+      "table": "FillsSwapSlot",
+      "columns": [
+        {
+          "name": "slot_id",
+          "type": "UUID",
+          "default": null
+        }
+      ],
+      "pairs": [
+        [
+          "Boolean",
+          "Boolean"
+        ],
+        [
+          "Boolean",
+          "Circle"
+        ],
+        [
+          "Boolean",
+          "Frame"
+        ],
+        [
+          "Boolean",
+          "Group"
+        ],
+        [
+          "Boolean",
+          "Image"
+        ],
+        [
+          "Boolean",
+          "Path"
+        ],
+        [
+          "Boolean",
+          "Rectangle"
+        ],
+        [
+          "Boolean",
+          "SVGRaw"
+        ],
+        [
+          "Boolean",
+          "Text"
+        ],
+        [
+          "Circle",
+          "Boolean"
+        ],
+        [
+          "Circle",
+          "Circle"
+        ],
+        [
+          "Circle",
+          "Frame"
+        ],
+        [
+          "Circle",
+          "Group"
+        ],
+        [
+          "Circle",
+          "Image"
+        ],
+        [
+          "Circle",
+          "Path"
+        ],
+        [
+          "Circle",
+          "Rectangle"
+        ],
+        [
+          "Circle",
+          "SVGRaw"
+        ],
+        [
+          "Circle",
+          "Text"
+        ],
+        [
+          "Frame",
+          "Boolean"
+        ],
+        [
+          "Frame",
+          "Circle"
+        ],
+        [
+          "Frame",
+          "Frame"
+        ],
+        [
+          "Frame",
+          "Group"
+        ],
+        [
+          "Frame",
+          "Image"
+        ],
+        [
+          "Frame",
+          "Path"
+        ],
+        [
+          "Frame",
+          "Rectangle"
+        ],
+        [
+          "Frame",
+          "SVGRaw"
+        ],
+        [
+          "Frame",
+          "Text"
+        ],
+        [
+          "Group",
+          "Boolean"
+        ],
+        [
+          "Group",
+          "Circle"
+        ],
+        [
+          "Group",
+          "Frame"
+        ],
+        [
+          "Group",
+          "Group"
+        ],
+        [
+          "Group",
+          "Image"
+        ],
+        [
+          "Group",
+          "Path"
+        ],
+        [
+          "Group",
+          "Rectangle"
+        ],
+        [
+          "Group",
+          "SVGRaw"
+        ],
+        [
+          "Group",
+          "Text"
+        ],
+        [
+          "Image",
+          "Boolean"
+        ],
+        [
+          "Image",
+          "Circle"
+        ],
+        [
+          "Image",
+          "Frame"
+        ],
+        [
+          "Image",
+          "Group"
+        ],
+        [
+          "Image",
+          "Image"
+        ],
+        [
+          "Image",
+          "Path"
+        ],
+        [
+          "Image",
+          "Rectangle"
+        ],
+        [
+          "Image",
+          "SVGRaw"
+        ],
+        [
+          "Image",
+          "Text"
+        ],
+        [
+          "Path",
+          "Boolean"
+        ],
+        [
+          "Path",
+          "Circle"
+        ],
+        [
+          "Path",
+          "Frame"
+        ],
+        [
+          "Path",
+          "Group"
+        ],
+        [
+          "Path",
+          "Image"
+        ],
+        [
+          "Path",
+          "Path"
+        ],
+        [
+          "Path",
+          "Rectangle"
+        ],
+        [
+          "Path",
+          "SVGRaw"
+        ],
+        [
+          "Path",
+          "Text"
+        ],
+        [
+          "Rectangle",
+          "Boolean"
+        ],
+        [
+          "Rectangle",
+          "Circle"
+        ],
+        [
+          "Rectangle",
+          "Frame"
+        ],
+        [
+          "Rectangle",
+          "Group"
+        ],
+        [
+          "Rectangle",
+          "Image"
+        ],
+        [
+          "Rectangle",
+          "Path"
+        ],
+        [
+          "Rectangle",
+          "Rectangle"
+        ],
+        [
+          "Rectangle",
+          "SVGRaw"
+        ],
+        [
+          "Rectangle",
+          "Text"
+        ],
+        [
+          "SVGRaw",
+          "Boolean"
+        ],
+        [
+          "SVGRaw",
+          "Circle"
+        ],
+        [
+          "SVGRaw",
+          "Frame"
+        ],
+        [
+          "SVGRaw",
+          "Group"
+        ],
+        [
+          "SVGRaw",
+          "Image"
+        ],
+        [
+          "SVGRaw",
+          "Path"
+        ],
+        [
+          "SVGRaw",
+          "Rectangle"
+        ],
+        [
+          "SVGRaw",
+          "SVGRaw"
+        ],
+        [
+          "SVGRaw",
+          "Text"
+        ],
+        [
+          "Text",
+          "Boolean"
+        ],
+        [
+          "Text",
+          "Circle"
+        ],
+        [
+          "Text",
+          "Frame"
+        ],
+        [
+          "Text",
+          "Group"
+        ],
+        [
+          "Text",
+          "Image"
+        ],
+        [
+          "Text",
+          "Path"
+        ],
+        [
+          "Text",
+          "Rectangle"
+        ],
+        [
+          "Text",
+          "SVGRaw"
+        ],
+        [
+          "Text",
+          "Text"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIkZpbGxzU3dhcFNsb3RFZGdlIl0sImhhc2giOiIyYzMzMjU4NjVmNmQwNDk4MmIzN2FjNTljMmU3MGIwMjgwNDY0YWJmNjRiYmY1MmYxZjE3YWVkNzFjYjc2ZTRmIiwicGF5bG9hZCI6WyJiZWFkcG90LmdyYXBoLnNjaGVtYXMiLCJGaWxsc1N3YXBTbG90Il0sInYiOjJ9"
+    },
+    {
+      "table": "IsChildOf",
+      "columns": [
+        {
+          "name": "position",
+          "type": "INT64",
+          "default": null
+        }
+      ],
+      "pairs": [
+        [
+          "Boolean",
+          "Boolean"
+        ],
+        [
+          "Boolean",
+          "Frame"
+        ],
+        [
+          "Boolean",
+          "Group"
+        ],
+        [
+          "Boolean",
+          "Page"
+        ],
+        [
+          "BooleanToken",
+          "TokenSet"
+        ],
+        [
+          "BorderRadiusToken",
+          "TokenSet"
+        ],
+        [
+          "BorderToken",
+          "TokenSet"
+        ],
+        [
+          "Circle",
+          "Boolean"
+        ],
+        [
+          "Circle",
+          "Frame"
+        ],
+        [
+          "Circle",
+          "Group"
+        ],
+        [
+          "Circle",
+          "Page"
+        ],
+        [
+          "Color",
+          "Document"
+        ],
+        [
+          "ColorToken",
+          "TokenSet"
+        ],
+        [
+          "Component",
+          "Document"
+        ],
+        [
+          "CubicBezierToken",
+          "TokenSet"
+        ],
+        [
+          "DimensionToken",
+          "TokenSet"
+        ],
+        [
+          "Document",
+          "Project"
+        ],
+        [
+          "DurationToken",
+          "TokenSet"
+        ],
+        [
+          "FontFamilyToken",
+          "TokenSet"
+        ],
+        [
+          "FontSizeToken",
+          "TokenSet"
+        ],
+        [
+          "FontWeightToken",
+          "TokenSet"
+        ],
+        [
+          "Frame",
+          "Boolean"
+        ],
+        [
+          "Frame",
+          "Frame"
+        ],
+        [
+          "Frame",
+          "Group"
+        ],
+        [
+          "Frame",
+          "Page"
+        ],
+        [
+          "GradientToken",
+          "TokenSet"
+        ],
+        [
+          "Group",
+          "Boolean"
+        ],
+        [
+          "Group",
+          "Frame"
+        ],
+        [
+          "Group",
+          "Group"
+        ],
+        [
+          "Group",
+          "Page"
+        ],
+        [
+          "Image",
+          "Boolean"
+        ],
+        [
+          "Image",
+          "Frame"
+        ],
+        [
+          "Image",
+          "Group"
+        ],
+        [
+          "Image",
+          "Page"
+        ],
+        [
+          "LetterSpacingToken",
+          "TokenSet"
+        ],
+        [
+          "NumberToken",
+          "TokenSet"
+        ],
+        [
+          "OpacityToken",
+          "TokenSet"
+        ],
+        [
+          "OtherToken",
+          "TokenSet"
+        ],
+        [
+          "Page",
+          "Document"
+        ],
+        [
+          "Path",
+          "Boolean"
+        ],
+        [
+          "Path",
+          "Frame"
+        ],
+        [
+          "Path",
+          "Group"
+        ],
+        [
+          "Path",
+          "Page"
+        ],
+        [
+          "Project",
+          "Team"
+        ],
+        [
+          "Rectangle",
+          "Boolean"
+        ],
+        [
+          "Rectangle",
+          "Frame"
+        ],
+        [
+          "Rectangle",
+          "Group"
+        ],
+        [
+          "Rectangle",
+          "Page"
+        ],
+        [
+          "RotationToken",
+          "TokenSet"
+        ],
+        [
+          "SVGRaw",
+          "Boolean"
+        ],
+        [
+          "SVGRaw",
+          "Frame"
+        ],
+        [
+          "SVGRaw",
+          "Group"
+        ],
+        [
+          "SVGRaw",
+          "Page"
+        ],
+        [
+          "ShadowToken",
+          "TokenSet"
+        ],
+        [
+          "SizingToken",
+          "TokenSet"
+        ],
+        [
+          "SpacingToken",
+          "TokenSet"
+        ],
+        [
+          "StringToken",
+          "TokenSet"
+        ],
+        [
+          "StrokeStyleToken",
+          "TokenSet"
+        ],
+        [
+          "StrokeWidthToken",
+          "TokenSet"
+        ],
+        [
+          "Text",
+          "Boolean"
+        ],
+        [
+          "Text",
+          "Frame"
+        ],
+        [
+          "Text",
+          "Group"
+        ],
+        [
+          "Text",
+          "Page"
+        ],
+        [
+          "TextCaseToken",
+          "TokenSet"
+        ],
+        [
+          "TextDecorationToken",
+          "TokenSet"
+        ],
+        [
+          "TokenSet",
+          "Document"
+        ],
+        [
+          "TransitionToken",
+          "TokenSet"
+        ],
+        [
+          "Typography",
+          "Document"
+        ],
+        [
+          "TypographyToken",
+          "TokenSet"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIklzQ2hpbGRFZGdlIl0sImhhc2giOiIwN2EzMmM5NGJkYjg3MmQ5MjIwZTI2MGQ2MmM4YjY0MzI0NjEyOTY4MWY1ZDE2YWE4OGU0NGZiZTkxYTYzNzhmIiwicGF5bG9hZCI6WyJiZWFkcG90LmdyYXBoLnNjaGVtYXMiLCJJc0NoaWxkT2YiXSwidiI6Mn0="
+    },
+    {
+      "table": "IsInstanceOf",
+      "columns": [],
+      "pairs": [
+        [
+          "Frame",
+          "Component"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIklzSW5zdGFuY2VFZGdlIl0sImhhc2giOiJlZmRkYzdiZDhiYmNlZjczYTE0ZWIxYWNlMWZmZGFlYzgxZTUxOGVmMWUxM2MxZTkyNzFkMGI4YWNiNjk0YTQ5IiwicGF5bG9hZCI6WyJiZWFkcG90LmdyYXBoLnNjaGVtYXMiLCJJc0luc3RhbmNlT2YiXSwidiI6Mn0="
+    },
+    {
+      "table": "MemberOf",
+      "columns": [
+        {
+          "name": "is_owner",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "is_admin",
+          "type": "BOOL",
+          "default": null
+        },
+        {
+          "name": "can_edit",
+          "type": "BOOL",
+          "default": null
+        }
+      ],
+      "pairs": [
+        [
+          "User",
+          "Team"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIk1lbWJlck9mRWRnZSJdLCJoYXNoIjoiOGMyMzlmNzdhZDYwMjQ5NzFhMGVlNzI1N2U3MzlhMDgyYTkxZWQxMWQwNWU0NTVhOTZlYWEyYzQ2ZDFlMmZkMSIsInBheWxvYWQiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiTWVtYmVyT2YiXSwidiI6Mn0="
+    },
+    {
+      "table": "PartiallyCovers",
+      "columns": [
+        {
+          "name": "coverage",
+          "type": "DOUBLE",
+          "default": null
+        },
+        {
+          "name": "opacity",
+          "type": "DOUBLE",
+          "default": 1.0
+        }
+      ],
+      "pairs": [
+        [
+          "Boolean",
+          "Boolean"
+        ],
+        [
+          "Boolean",
+          "Circle"
+        ],
+        [
+          "Boolean",
+          "Frame"
+        ],
+        [
+          "Boolean",
+          "Group"
+        ],
+        [
+          "Boolean",
+          "Image"
+        ],
+        [
+          "Boolean",
+          "Path"
+        ],
+        [
+          "Boolean",
+          "Rectangle"
+        ],
+        [
+          "Boolean",
+          "SVGRaw"
+        ],
+        [
+          "Boolean",
+          "Text"
+        ],
+        [
+          "Circle",
+          "Boolean"
+        ],
+        [
+          "Circle",
+          "Circle"
+        ],
+        [
+          "Circle",
+          "Frame"
+        ],
+        [
+          "Circle",
+          "Group"
+        ],
+        [
+          "Circle",
+          "Image"
+        ],
+        [
+          "Circle",
+          "Path"
+        ],
+        [
+          "Circle",
+          "Rectangle"
+        ],
+        [
+          "Circle",
+          "SVGRaw"
+        ],
+        [
+          "Circle",
+          "Text"
+        ],
+        [
+          "Frame",
+          "Boolean"
+        ],
+        [
+          "Frame",
+          "Circle"
+        ],
+        [
+          "Frame",
+          "Frame"
+        ],
+        [
+          "Frame",
+          "Group"
+        ],
+        [
+          "Frame",
+          "Image"
+        ],
+        [
+          "Frame",
+          "Path"
+        ],
+        [
+          "Frame",
+          "Rectangle"
+        ],
+        [
+          "Frame",
+          "SVGRaw"
+        ],
+        [
+          "Frame",
+          "Text"
+        ],
+        [
+          "Group",
+          "Boolean"
+        ],
+        [
+          "Group",
+          "Circle"
+        ],
+        [
+          "Group",
+          "Frame"
+        ],
+        [
+          "Group",
+          "Group"
+        ],
+        [
+          "Group",
+          "Image"
+        ],
+        [
+          "Group",
+          "Path"
+        ],
+        [
+          "Group",
+          "Rectangle"
+        ],
+        [
+          "Group",
+          "SVGRaw"
+        ],
+        [
+          "Group",
+          "Text"
+        ],
+        [
+          "Image",
+          "Boolean"
+        ],
+        [
+          "Image",
+          "Circle"
+        ],
+        [
+          "Image",
+          "Frame"
+        ],
+        [
+          "Image",
+          "Group"
+        ],
+        [
+          "Image",
+          "Image"
+        ],
+        [
+          "Image",
+          "Path"
+        ],
+        [
+          "Image",
+          "Rectangle"
+        ],
+        [
+          "Image",
+          "SVGRaw"
+        ],
+        [
+          "Image",
+          "Text"
+        ],
+        [
+          "Path",
+          "Boolean"
+        ],
+        [
+          "Path",
+          "Circle"
+        ],
+        [
+          "Path",
+          "Frame"
+        ],
+        [
+          "Path",
+          "Group"
+        ],
+        [
+          "Path",
+          "Image"
+        ],
+        [
+          "Path",
+          "Path"
+        ],
+        [
+          "Path",
+          "Rectangle"
+        ],
+        [
+          "Path",
+          "SVGRaw"
+        ],
+        [
+          "Path",
+          "Text"
+        ],
+        [
+          "Rectangle",
+          "Boolean"
+        ],
+        [
+          "Rectangle",
+          "Circle"
+        ],
+        [
+          "Rectangle",
+          "Frame"
+        ],
+        [
+          "Rectangle",
+          "Group"
+        ],
+        [
+          "Rectangle",
+          "Image"
+        ],
+        [
+          "Rectangle",
+          "Path"
+        ],
+        [
+          "Rectangle",
+          "Rectangle"
+        ],
+        [
+          "Rectangle",
+          "SVGRaw"
+        ],
+        [
+          "Rectangle",
+          "Text"
+        ],
+        [
+          "SVGRaw",
+          "Boolean"
+        ],
+        [
+          "SVGRaw",
+          "Circle"
+        ],
+        [
+          "SVGRaw",
+          "Frame"
+        ],
+        [
+          "SVGRaw",
+          "Group"
+        ],
+        [
+          "SVGRaw",
+          "Image"
+        ],
+        [
+          "SVGRaw",
+          "Path"
+        ],
+        [
+          "SVGRaw",
+          "Rectangle"
+        ],
+        [
+          "SVGRaw",
+          "SVGRaw"
+        ],
+        [
+          "SVGRaw",
+          "Text"
+        ],
+        [
+          "Text",
+          "Boolean"
+        ],
+        [
+          "Text",
+          "Circle"
+        ],
+        [
+          "Text",
+          "Frame"
+        ],
+        [
+          "Text",
+          "Group"
+        ],
+        [
+          "Text",
+          "Image"
+        ],
+        [
+          "Text",
+          "Path"
+        ],
+        [
+          "Text",
+          "Rectangle"
+        ],
+        [
+          "Text",
+          "SVGRaw"
+        ],
+        [
+          "Text",
+          "Text"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlBhcnRpYWxseUNvdmVyc0VkZ2UiXSwiaGFzaCI6ImM4MTVkZDA2NzQ5YzJkMDg2ZGFmNjFhN2NmMzkzYWE0YzU2MmNkM2RiZGE2NWMwYjExZDY2ZGNmMDY3NTNhODkiLCJwYXlsb2FkIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlBhcnRpYWxseUNvdmVycyJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "RefersTo",
+      "columns": [],
+      "pairs": [
+        [
+          "Boolean",
+          "Boolean"
+        ],
+        [
+          "Boolean",
+          "Circle"
+        ],
+        [
+          "Boolean",
+          "Frame"
+        ],
+        [
+          "Boolean",
+          "Group"
+        ],
+        [
+          "Boolean",
+          "Image"
+        ],
+        [
+          "Boolean",
+          "Path"
+        ],
+        [
+          "Boolean",
+          "Rectangle"
+        ],
+        [
+          "Boolean",
+          "SVGRaw"
+        ],
+        [
+          "Boolean",
+          "Text"
+        ],
+        [
+          "Circle",
+          "Boolean"
+        ],
+        [
+          "Circle",
+          "Circle"
+        ],
+        [
+          "Circle",
+          "Frame"
+        ],
+        [
+          "Circle",
+          "Group"
+        ],
+        [
+          "Circle",
+          "Image"
+        ],
+        [
+          "Circle",
+          "Path"
+        ],
+        [
+          "Circle",
+          "Rectangle"
+        ],
+        [
+          "Circle",
+          "SVGRaw"
+        ],
+        [
+          "Circle",
+          "Text"
+        ],
+        [
+          "Frame",
+          "Boolean"
+        ],
+        [
+          "Frame",
+          "Circle"
+        ],
+        [
+          "Frame",
+          "Frame"
+        ],
+        [
+          "Frame",
+          "Group"
+        ],
+        [
+          "Frame",
+          "Image"
+        ],
+        [
+          "Frame",
+          "Path"
+        ],
+        [
+          "Frame",
+          "Rectangle"
+        ],
+        [
+          "Frame",
+          "SVGRaw"
+        ],
+        [
+          "Frame",
+          "Text"
+        ],
+        [
+          "Group",
+          "Boolean"
+        ],
+        [
+          "Group",
+          "Circle"
+        ],
+        [
+          "Group",
+          "Frame"
+        ],
+        [
+          "Group",
+          "Group"
+        ],
+        [
+          "Group",
+          "Image"
+        ],
+        [
+          "Group",
+          "Path"
+        ],
+        [
+          "Group",
+          "Rectangle"
+        ],
+        [
+          "Group",
+          "SVGRaw"
+        ],
+        [
+          "Group",
+          "Text"
+        ],
+        [
+          "Image",
+          "Boolean"
+        ],
+        [
+          "Image",
+          "Circle"
+        ],
+        [
+          "Image",
+          "Frame"
+        ],
+        [
+          "Image",
+          "Group"
+        ],
+        [
+          "Image",
+          "Image"
+        ],
+        [
+          "Image",
+          "Path"
+        ],
+        [
+          "Image",
+          "Rectangle"
+        ],
+        [
+          "Image",
+          "SVGRaw"
+        ],
+        [
+          "Image",
+          "Text"
+        ],
+        [
+          "Path",
+          "Boolean"
+        ],
+        [
+          "Path",
+          "Circle"
+        ],
+        [
+          "Path",
+          "Frame"
+        ],
+        [
+          "Path",
+          "Group"
+        ],
+        [
+          "Path",
+          "Image"
+        ],
+        [
+          "Path",
+          "Path"
+        ],
+        [
+          "Path",
+          "Rectangle"
+        ],
+        [
+          "Path",
+          "SVGRaw"
+        ],
+        [
+          "Path",
+          "Text"
+        ],
+        [
+          "Rectangle",
+          "Boolean"
+        ],
+        [
+          "Rectangle",
+          "Circle"
+        ],
+        [
+          "Rectangle",
+          "Frame"
+        ],
+        [
+          "Rectangle",
+          "Group"
+        ],
+        [
+          "Rectangle",
+          "Image"
+        ],
+        [
+          "Rectangle",
+          "Path"
+        ],
+        [
+          "Rectangle",
+          "Rectangle"
+        ],
+        [
+          "Rectangle",
+          "SVGRaw"
+        ],
+        [
+          "Rectangle",
+          "Text"
+        ],
+        [
+          "SVGRaw",
+          "Boolean"
+        ],
+        [
+          "SVGRaw",
+          "Circle"
+        ],
+        [
+          "SVGRaw",
+          "Frame"
+        ],
+        [
+          "SVGRaw",
+          "Group"
+        ],
+        [
+          "SVGRaw",
+          "Image"
+        ],
+        [
+          "SVGRaw",
+          "Path"
+        ],
+        [
+          "SVGRaw",
+          "Rectangle"
+        ],
+        [
+          "SVGRaw",
+          "SVGRaw"
+        ],
+        [
+          "SVGRaw",
+          "Text"
+        ],
+        [
+          "Text",
+          "Boolean"
+        ],
+        [
+          "Text",
+          "Circle"
+        ],
+        [
+          "Text",
+          "Frame"
+        ],
+        [
+          "Text",
+          "Group"
+        ],
+        [
+          "Text",
+          "Image"
+        ],
+        [
+          "Text",
+          "Path"
+        ],
+        [
+          "Text",
+          "Rectangle"
+        ],
+        [
+          "Text",
+          "SVGRaw"
+        ],
+        [
+          "Text",
+          "Text"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlJlZmVyc1RvRWRnZSJdLCJoYXNoIjoiZWZkZGM3YmQ4YmJjZWY3M2ExNGViMWFjZTFmZmRhZWM4MWU1MThlZjFlMTNjMWU5MjcxZDBiOGFjYjY5NGE0OSIsInBheWxvYWQiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiUmVmZXJzVG8iXSwidiI6Mn0="
+    },
+    {
+      "table": "UsesColor",
+      "columns": [],
+      "pairs": [
+        [
+          "Boolean",
+          "Color"
+        ],
+        [
+          "Circle",
+          "Color"
+        ],
+        [
+          "Frame",
+          "Color"
+        ],
+        [
+          "Group",
+          "Color"
+        ],
+        [
+          "Image",
+          "Color"
+        ],
+        [
+          "Path",
+          "Color"
+        ],
+        [
+          "Rectangle",
+          "Color"
+        ],
+        [
+          "SVGRaw",
+          "Color"
+        ],
+        [
+          "Text",
+          "Color"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlVzZXNDb2xvckVkZ2UiXSwiaGFzaCI6ImVmZGRjN2JkOGJiY2VmNzNhMTRlYjFhY2UxZmZkYWVjODFlNTE4ZWYxZTEzYzFlOTI3MWQwYjhhY2I2OTRhNDkiLCJwYXlsb2FkIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlVzZXNDb2xvciJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "UsesLibrary",
+      "columns": [
+        {
+          "name": "synced_at",
+          "type": "TIMESTAMP",
+          "default": null
+        }
+      ],
+      "pairs": [
+        [
+          "Document",
+          "Document"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlVzZXNMaWJyYXJ5RWRnZSJdLCJoYXNoIjoiNzZiZWQwZjQzNzhhMjYyOGExNzQwMjlkNGUxY2QyYTZiMDMzOTEzYTgxNzJhYTZhOTJjMTQyZmM1ZTNmNTBlMiIsInBheWxvYWQiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVXNlc0xpYnJhcnkiXSwidiI6Mn0="
+    },
+    {
+      "table": "UsesToken",
+      "columns": [
+        {
+          "name": "for_property",
+          "type": "STRING",
+          "default": null
+        }
+      ],
+      "pairs": [
+        [
+          "Boolean",
+          "BooleanToken"
+        ],
+        [
+          "Boolean",
+          "BorderRadiusToken"
+        ],
+        [
+          "Boolean",
+          "BorderToken"
+        ],
+        [
+          "Boolean",
+          "ColorToken"
+        ],
+        [
+          "Boolean",
+          "CubicBezierToken"
+        ],
+        [
+          "Boolean",
+          "DimensionToken"
+        ],
+        [
+          "Boolean",
+          "DurationToken"
+        ],
+        [
+          "Boolean",
+          "FontFamilyToken"
+        ],
+        [
+          "Boolean",
+          "FontSizeToken"
+        ],
+        [
+          "Boolean",
+          "FontWeightToken"
+        ],
+        [
+          "Boolean",
+          "GradientToken"
+        ],
+        [
+          "Boolean",
+          "LetterSpacingToken"
+        ],
+        [
+          "Boolean",
+          "NumberToken"
+        ],
+        [
+          "Boolean",
+          "OpacityToken"
+        ],
+        [
+          "Boolean",
+          "OtherToken"
+        ],
+        [
+          "Boolean",
+          "RotationToken"
+        ],
+        [
+          "Boolean",
+          "ShadowToken"
+        ],
+        [
+          "Boolean",
+          "SizingToken"
+        ],
+        [
+          "Boolean",
+          "SpacingToken"
+        ],
+        [
+          "Boolean",
+          "StringToken"
+        ],
+        [
+          "Boolean",
+          "StrokeStyleToken"
+        ],
+        [
+          "Boolean",
+          "StrokeWidthToken"
+        ],
+        [
+          "Boolean",
+          "TextCaseToken"
+        ],
+        [
+          "Boolean",
+          "TextDecorationToken"
+        ],
+        [
+          "Boolean",
+          "TransitionToken"
+        ],
+        [
+          "Boolean",
+          "TypographyToken"
+        ],
+        [
+          "Circle",
+          "BooleanToken"
+        ],
+        [
+          "Circle",
+          "BorderRadiusToken"
+        ],
+        [
+          "Circle",
+          "BorderToken"
+        ],
+        [
+          "Circle",
+          "ColorToken"
+        ],
+        [
+          "Circle",
+          "CubicBezierToken"
+        ],
+        [
+          "Circle",
+          "DimensionToken"
+        ],
+        [
+          "Circle",
+          "DurationToken"
+        ],
+        [
+          "Circle",
+          "FontFamilyToken"
+        ],
+        [
+          "Circle",
+          "FontSizeToken"
+        ],
+        [
+          "Circle",
+          "FontWeightToken"
+        ],
+        [
+          "Circle",
+          "GradientToken"
+        ],
+        [
+          "Circle",
+          "LetterSpacingToken"
+        ],
+        [
+          "Circle",
+          "NumberToken"
+        ],
+        [
+          "Circle",
+          "OpacityToken"
+        ],
+        [
+          "Circle",
+          "OtherToken"
+        ],
+        [
+          "Circle",
+          "RotationToken"
+        ],
+        [
+          "Circle",
+          "ShadowToken"
+        ],
+        [
+          "Circle",
+          "SizingToken"
+        ],
+        [
+          "Circle",
+          "SpacingToken"
+        ],
+        [
+          "Circle",
+          "StringToken"
+        ],
+        [
+          "Circle",
+          "StrokeStyleToken"
+        ],
+        [
+          "Circle",
+          "StrokeWidthToken"
+        ],
+        [
+          "Circle",
+          "TextCaseToken"
+        ],
+        [
+          "Circle",
+          "TextDecorationToken"
+        ],
+        [
+          "Circle",
+          "TransitionToken"
+        ],
+        [
+          "Circle",
+          "TypographyToken"
+        ],
+        [
+          "Frame",
+          "BooleanToken"
+        ],
+        [
+          "Frame",
+          "BorderRadiusToken"
+        ],
+        [
+          "Frame",
+          "BorderToken"
+        ],
+        [
+          "Frame",
+          "ColorToken"
+        ],
+        [
+          "Frame",
+          "CubicBezierToken"
+        ],
+        [
+          "Frame",
+          "DimensionToken"
+        ],
+        [
+          "Frame",
+          "DurationToken"
+        ],
+        [
+          "Frame",
+          "FontFamilyToken"
+        ],
+        [
+          "Frame",
+          "FontSizeToken"
+        ],
+        [
+          "Frame",
+          "FontWeightToken"
+        ],
+        [
+          "Frame",
+          "GradientToken"
+        ],
+        [
+          "Frame",
+          "LetterSpacingToken"
+        ],
+        [
+          "Frame",
+          "NumberToken"
+        ],
+        [
+          "Frame",
+          "OpacityToken"
+        ],
+        [
+          "Frame",
+          "OtherToken"
+        ],
+        [
+          "Frame",
+          "RotationToken"
+        ],
+        [
+          "Frame",
+          "ShadowToken"
+        ],
+        [
+          "Frame",
+          "SizingToken"
+        ],
+        [
+          "Frame",
+          "SpacingToken"
+        ],
+        [
+          "Frame",
+          "StringToken"
+        ],
+        [
+          "Frame",
+          "StrokeStyleToken"
+        ],
+        [
+          "Frame",
+          "StrokeWidthToken"
+        ],
+        [
+          "Frame",
+          "TextCaseToken"
+        ],
+        [
+          "Frame",
+          "TextDecorationToken"
+        ],
+        [
+          "Frame",
+          "TransitionToken"
+        ],
+        [
+          "Frame",
+          "TypographyToken"
+        ],
+        [
+          "Group",
+          "BooleanToken"
+        ],
+        [
+          "Group",
+          "BorderRadiusToken"
+        ],
+        [
+          "Group",
+          "BorderToken"
+        ],
+        [
+          "Group",
+          "ColorToken"
+        ],
+        [
+          "Group",
+          "CubicBezierToken"
+        ],
+        [
+          "Group",
+          "DimensionToken"
+        ],
+        [
+          "Group",
+          "DurationToken"
+        ],
+        [
+          "Group",
+          "FontFamilyToken"
+        ],
+        [
+          "Group",
+          "FontSizeToken"
+        ],
+        [
+          "Group",
+          "FontWeightToken"
+        ],
+        [
+          "Group",
+          "GradientToken"
+        ],
+        [
+          "Group",
+          "LetterSpacingToken"
+        ],
+        [
+          "Group",
+          "NumberToken"
+        ],
+        [
+          "Group",
+          "OpacityToken"
+        ],
+        [
+          "Group",
+          "OtherToken"
+        ],
+        [
+          "Group",
+          "RotationToken"
+        ],
+        [
+          "Group",
+          "ShadowToken"
+        ],
+        [
+          "Group",
+          "SizingToken"
+        ],
+        [
+          "Group",
+          "SpacingToken"
+        ],
+        [
+          "Group",
+          "StringToken"
+        ],
+        [
+          "Group",
+          "StrokeStyleToken"
+        ],
+        [
+          "Group",
+          "StrokeWidthToken"
+        ],
+        [
+          "Group",
+          "TextCaseToken"
+        ],
+        [
+          "Group",
+          "TextDecorationToken"
+        ],
+        [
+          "Group",
+          "TransitionToken"
+        ],
+        [
+          "Group",
+          "TypographyToken"
+        ],
+        [
+          "Image",
+          "BooleanToken"
+        ],
+        [
+          "Image",
+          "BorderRadiusToken"
+        ],
+        [
+          "Image",
+          "BorderToken"
+        ],
+        [
+          "Image",
+          "ColorToken"
+        ],
+        [
+          "Image",
+          "CubicBezierToken"
+        ],
+        [
+          "Image",
+          "DimensionToken"
+        ],
+        [
+          "Image",
+          "DurationToken"
+        ],
+        [
+          "Image",
+          "FontFamilyToken"
+        ],
+        [
+          "Image",
+          "FontSizeToken"
+        ],
+        [
+          "Image",
+          "FontWeightToken"
+        ],
+        [
+          "Image",
+          "GradientToken"
+        ],
+        [
+          "Image",
+          "LetterSpacingToken"
+        ],
+        [
+          "Image",
+          "NumberToken"
+        ],
+        [
+          "Image",
+          "OpacityToken"
+        ],
+        [
+          "Image",
+          "OtherToken"
+        ],
+        [
+          "Image",
+          "RotationToken"
+        ],
+        [
+          "Image",
+          "ShadowToken"
+        ],
+        [
+          "Image",
+          "SizingToken"
+        ],
+        [
+          "Image",
+          "SpacingToken"
+        ],
+        [
+          "Image",
+          "StringToken"
+        ],
+        [
+          "Image",
+          "StrokeStyleToken"
+        ],
+        [
+          "Image",
+          "StrokeWidthToken"
+        ],
+        [
+          "Image",
+          "TextCaseToken"
+        ],
+        [
+          "Image",
+          "TextDecorationToken"
+        ],
+        [
+          "Image",
+          "TransitionToken"
+        ],
+        [
+          "Image",
+          "TypographyToken"
+        ],
+        [
+          "Path",
+          "BooleanToken"
+        ],
+        [
+          "Path",
+          "BorderRadiusToken"
+        ],
+        [
+          "Path",
+          "BorderToken"
+        ],
+        [
+          "Path",
+          "ColorToken"
+        ],
+        [
+          "Path",
+          "CubicBezierToken"
+        ],
+        [
+          "Path",
+          "DimensionToken"
+        ],
+        [
+          "Path",
+          "DurationToken"
+        ],
+        [
+          "Path",
+          "FontFamilyToken"
+        ],
+        [
+          "Path",
+          "FontSizeToken"
+        ],
+        [
+          "Path",
+          "FontWeightToken"
+        ],
+        [
+          "Path",
+          "GradientToken"
+        ],
+        [
+          "Path",
+          "LetterSpacingToken"
+        ],
+        [
+          "Path",
+          "NumberToken"
+        ],
+        [
+          "Path",
+          "OpacityToken"
+        ],
+        [
+          "Path",
+          "OtherToken"
+        ],
+        [
+          "Path",
+          "RotationToken"
+        ],
+        [
+          "Path",
+          "ShadowToken"
+        ],
+        [
+          "Path",
+          "SizingToken"
+        ],
+        [
+          "Path",
+          "SpacingToken"
+        ],
+        [
+          "Path",
+          "StringToken"
+        ],
+        [
+          "Path",
+          "StrokeStyleToken"
+        ],
+        [
+          "Path",
+          "StrokeWidthToken"
+        ],
+        [
+          "Path",
+          "TextCaseToken"
+        ],
+        [
+          "Path",
+          "TextDecorationToken"
+        ],
+        [
+          "Path",
+          "TransitionToken"
+        ],
+        [
+          "Path",
+          "TypographyToken"
+        ],
+        [
+          "Rectangle",
+          "BooleanToken"
+        ],
+        [
+          "Rectangle",
+          "BorderRadiusToken"
+        ],
+        [
+          "Rectangle",
+          "BorderToken"
+        ],
+        [
+          "Rectangle",
+          "ColorToken"
+        ],
+        [
+          "Rectangle",
+          "CubicBezierToken"
+        ],
+        [
+          "Rectangle",
+          "DimensionToken"
+        ],
+        [
+          "Rectangle",
+          "DurationToken"
+        ],
+        [
+          "Rectangle",
+          "FontFamilyToken"
+        ],
+        [
+          "Rectangle",
+          "FontSizeToken"
+        ],
+        [
+          "Rectangle",
+          "FontWeightToken"
+        ],
+        [
+          "Rectangle",
+          "GradientToken"
+        ],
+        [
+          "Rectangle",
+          "LetterSpacingToken"
+        ],
+        [
+          "Rectangle",
+          "NumberToken"
+        ],
+        [
+          "Rectangle",
+          "OpacityToken"
+        ],
+        [
+          "Rectangle",
+          "OtherToken"
+        ],
+        [
+          "Rectangle",
+          "RotationToken"
+        ],
+        [
+          "Rectangle",
+          "ShadowToken"
+        ],
+        [
+          "Rectangle",
+          "SizingToken"
+        ],
+        [
+          "Rectangle",
+          "SpacingToken"
+        ],
+        [
+          "Rectangle",
+          "StringToken"
+        ],
+        [
+          "Rectangle",
+          "StrokeStyleToken"
+        ],
+        [
+          "Rectangle",
+          "StrokeWidthToken"
+        ],
+        [
+          "Rectangle",
+          "TextCaseToken"
+        ],
+        [
+          "Rectangle",
+          "TextDecorationToken"
+        ],
+        [
+          "Rectangle",
+          "TransitionToken"
+        ],
+        [
+          "Rectangle",
+          "TypographyToken"
+        ],
+        [
+          "SVGRaw",
+          "BooleanToken"
+        ],
+        [
+          "SVGRaw",
+          "BorderRadiusToken"
+        ],
+        [
+          "SVGRaw",
+          "BorderToken"
+        ],
+        [
+          "SVGRaw",
+          "ColorToken"
+        ],
+        [
+          "SVGRaw",
+          "CubicBezierToken"
+        ],
+        [
+          "SVGRaw",
+          "DimensionToken"
+        ],
+        [
+          "SVGRaw",
+          "DurationToken"
+        ],
+        [
+          "SVGRaw",
+          "FontFamilyToken"
+        ],
+        [
+          "SVGRaw",
+          "FontSizeToken"
+        ],
+        [
+          "SVGRaw",
+          "FontWeightToken"
+        ],
+        [
+          "SVGRaw",
+          "GradientToken"
+        ],
+        [
+          "SVGRaw",
+          "LetterSpacingToken"
+        ],
+        [
+          "SVGRaw",
+          "NumberToken"
+        ],
+        [
+          "SVGRaw",
+          "OpacityToken"
+        ],
+        [
+          "SVGRaw",
+          "OtherToken"
+        ],
+        [
+          "SVGRaw",
+          "RotationToken"
+        ],
+        [
+          "SVGRaw",
+          "ShadowToken"
+        ],
+        [
+          "SVGRaw",
+          "SizingToken"
+        ],
+        [
+          "SVGRaw",
+          "SpacingToken"
+        ],
+        [
+          "SVGRaw",
+          "StringToken"
+        ],
+        [
+          "SVGRaw",
+          "StrokeStyleToken"
+        ],
+        [
+          "SVGRaw",
+          "StrokeWidthToken"
+        ],
+        [
+          "SVGRaw",
+          "TextCaseToken"
+        ],
+        [
+          "SVGRaw",
+          "TextDecorationToken"
+        ],
+        [
+          "SVGRaw",
+          "TransitionToken"
+        ],
+        [
+          "SVGRaw",
+          "TypographyToken"
+        ],
+        [
+          "Text",
+          "BooleanToken"
+        ],
+        [
+          "Text",
+          "BorderRadiusToken"
+        ],
+        [
+          "Text",
+          "BorderToken"
+        ],
+        [
+          "Text",
+          "ColorToken"
+        ],
+        [
+          "Text",
+          "CubicBezierToken"
+        ],
+        [
+          "Text",
+          "DimensionToken"
+        ],
+        [
+          "Text",
+          "DurationToken"
+        ],
+        [
+          "Text",
+          "FontFamilyToken"
+        ],
+        [
+          "Text",
+          "FontSizeToken"
+        ],
+        [
+          "Text",
+          "FontWeightToken"
+        ],
+        [
+          "Text",
+          "GradientToken"
+        ],
+        [
+          "Text",
+          "LetterSpacingToken"
+        ],
+        [
+          "Text",
+          "NumberToken"
+        ],
+        [
+          "Text",
+          "OpacityToken"
+        ],
+        [
+          "Text",
+          "OtherToken"
+        ],
+        [
+          "Text",
+          "RotationToken"
+        ],
+        [
+          "Text",
+          "ShadowToken"
+        ],
+        [
+          "Text",
+          "SizingToken"
+        ],
+        [
+          "Text",
+          "SpacingToken"
+        ],
+        [
+          "Text",
+          "StringToken"
+        ],
+        [
+          "Text",
+          "StrokeStyleToken"
+        ],
+        [
+          "Text",
+          "StrokeWidthToken"
+        ],
+        [
+          "Text",
+          "TextCaseToken"
+        ],
+        [
+          "Text",
+          "TextDecorationToken"
+        ],
+        [
+          "Text",
+          "TransitionToken"
+        ],
+        [
+          "Text",
+          "TypographyToken"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlVzZXNUb2tlbkVkZ2UiXSwiaGFzaCI6IjFkZDA4Njc0N2QwZGMyMzg1ZDEwNzMzZjU0NTYzM2NmNmI2OGMyZTcxMjI4ZWUxMTQzNzgxNDBkMDMxYjU0ZWEiLCJwYXlsb2FkIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlVzZXNUb2tlbiJdLCJ2IjoyfQ=="
+    },
+    {
+      "table": "UsesTypography",
+      "columns": [],
+      "pairs": [
+        [
+          "Text",
+          "Typography"
+        ]
+      ],
+      "comment": "eyJlZGdlIjpbImJlYWRwb3QuZ3JhcGguc2NoZW1hcyIsIlVzZXNUeXBvZ3JhcGh5RWRnZSJdLCJoYXNoIjoiZWZkZGM3YmQ4YmJjZWY3M2ExNGViMWFjZTFmZmRhZWM4MWU1MThlZjFlMTNjMWU5MjcxZDBiOGFjYjY5NGE0OSIsInBheWxvYWQiOlsiYmVhZHBvdC5ncmFwaC5zY2hlbWFzIiwiVXNlc1R5cG9ncmFwaHkiXSwidiI6Mn0="
+    }
+  ]
+}

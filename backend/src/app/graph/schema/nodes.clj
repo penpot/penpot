@@ -23,6 +23,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.graph.ladybug :as ladybug]
+   [app.graph.schema.beadpot :as beadpot]
    [app.graph.schema.contract :as contract]
    [app.graph.schema.projection :as projection]
    [app.graph.schema.types :as types]
@@ -232,6 +233,30 @@
                        "; columns=" (count (column-keys table))
                        " shape-keys=" (vec (keys attrs)))))
 
+(defn- apply-defaults
+  "Fill columns the document does not set with the consumer's field defaults.
+
+  A file omits an attribute equal to its default and the consumer's models
+  restore it, so a shape with no `blocked` key holds `false` in the graph the
+  consumer builds. Writing NULL instead hands a reader a *missing* feature
+  where the consumer hands it a false one, so the defaults are read from the
+  exported manifest (`app.graph.schema.beadpot`) rather than restated here,
+  where they would drift.
+
+  Applied after validation: a default belongs to the graph column, not to the
+  Penpot schema the attrs were checked against."
+  [table attrs]
+  (reduce (fn [attrs k]
+            (if (contains? attrs k)
+              attrs
+              (let [column (column-name table k)]
+                (if-some [default (beadpot/typed-column-default
+                                   table column (column-ladybug-type table k))]
+                  (assoc attrs k default)
+                  attrs))))
+          attrs
+          (column-keys table)))
+
 (defn project-attrs
   "Select and validate the projected columns for `table` from `attrs`."
   [table attrs]
@@ -245,7 +270,7 @@
                               (column-keys table)))]
     (when (empty? projected)
       (raise-empty-projection! table attrs))
-    (validate-node table projected)))
+    (apply-defaults table (validate-node table projected))))
 
 (defn match-label
   "Cypher node label for MATCH; backtick-wrapped when required by Ladybug."
