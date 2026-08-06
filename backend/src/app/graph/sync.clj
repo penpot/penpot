@@ -247,9 +247,13 @@
 
 
 (defn- set-document-revision-statement
+  "The column is `revision`, not `revn` — beadpot spells the revision number out
+  (`schema.contract`). Named through `cypher-property-key` so the two cannot
+  disagree again."
   [doc-id revn]
   (str "MATCH (d:Document {id: " (ladybug/format-uuid doc-id) "}) "
-       "SET d.revn = " (ladybug/format-int revn) ";"))
+       "SET d." (nodes/cypher-property-key "Document" :revn) " = "
+       (ladybug/format-int revn) ";"))
 
 (defn- resolve-parent-for-add
   [index {:keys [parent-id frame-id page-id]}]
