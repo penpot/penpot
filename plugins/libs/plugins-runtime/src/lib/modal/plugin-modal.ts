@@ -49,9 +49,12 @@ export class PluginModalElement extends HTMLElement {
     // boundaries, so the value is available even though the modal uses a Shadow
     // root. Falls back to MIN_Z_INDEX when the variable is unset or unparseable
     // (e.g. when the runtime is used outside the Penpot app shell).
-    const declared = getComputedStyle(this).getPropertyValue(Z_INDEX_VAR).trim();
+    const declared = getComputedStyle(this)
+      .getPropertyValue(Z_INDEX_VAR)
+      .trim();
     const parsed = Number(declared);
-    const baseZIndex = Number.isFinite(parsed) && parsed > 0 ? parsed : MIN_Z_INDEX;
+    const baseZIndex =
+      Number.isFinite(parsed) && parsed > 0 ? parsed : MIN_Z_INDEX;
 
     const maxZIndex = Math.max(...zIndexModals, baseZIndex);
 
