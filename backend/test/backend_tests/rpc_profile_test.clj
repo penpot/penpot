@@ -42,7 +42,7 @@
   (let [profile (th/create-profile* 1)
         data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
         out     (th/command! data)]
 
     #_(th/print-result! out)
@@ -56,7 +56,7 @@
   (let [profile (th/create-profile* 1)
         data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "123123"}
+                 :password "Test123!"}
         out     (th/command! data)]
     ;; (th/print-result! out)
     (let [error (:error out)]
@@ -69,7 +69,7 @@
   (let [profile (th/create-profile* 1 {:is-active true})
         data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "123123"}
+                 :password "Test123!"}
         out     (th/command! data)]
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -403,7 +403,7 @@
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :fullname "foobar"
-               :password "foobar"
+               :password "Foobar12!"
                :utm_campaign "utma"
                :mtm_campaign "mtma"}
         out   (th/command! data)
@@ -444,7 +444,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -463,7 +463,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -498,7 +498,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -521,7 +521,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -547,7 +547,7 @@
         (let [data  {::th/type :prepare-register-profile
                      :email "hello@example.com"
                      :fullname "foobar"
-                     :password "foobar"}
+                     :password "Foobar12!"}
               out   (th/command! data)
               token (get-in out [:result :token])]
           (t/is (th/success? out))
@@ -576,7 +576,7 @@
         (let [data  {::th/type :prepare-register-profile
                      :email "hello@example.com"
                      :fullname "foobar"
-                     :password "foobar"}
+                     :password "Foobar12!"}
               out   (th/command! data)
               token (get-in out [:result :token])]
           (t/is (th/success? out))
@@ -614,7 +614,7 @@
                      :invitation-token itoken
                      :fullname "foobar"
                      :email "user@example.com"
-                     :password "foobar"}
+                     :password "Foobar12!"}
 
           {prep-result :result prep-error :error} (th/command! prep-data)]
       (t/is (nil? prep-error))
@@ -659,7 +659,7 @@
                      :invitation-token itoken
                      :fullname "foobar"
                      :email "user@example.com"
-                     :password "foobar"}
+                     :password "Foobar12!"}
 
           {prep-result :result prep-error :error} (th/command! prep-data)]
       (t/is (nil? prep-error))
@@ -692,7 +692,7 @@
                :invitation-token itoken
                :email "user@example.com"
                :fullname "foobar"
-               :password "foobar"}
+               :password "Foobar12!"}
         out   (th/command! data)]
 
     (t/is (not (th/success? out)))
@@ -712,7 +712,7 @@
                  :invitation-token itoken
                  :fullname "foobar"
                  :email "user@example.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -733,7 +733,7 @@
                  :invitation-token itoken
                  :email "user@example.com"
                  :fullname "foobar"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out   (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -754,7 +754,7 @@
                  :invitation-token itoken
                  :fullname "foobar"
                  :email "user@example.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out   (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -767,7 +767,7 @@
     (let [data  {::th/type :prepare-register-profile
                  :fullname "foobar"
                  :email "user@example.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out  (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -780,7 +780,7 @@
         data    {::th/type :prepare-register-profile
                  :fullname "foobar"
                  :email (:email profile)
-                 :password "foobar"}
+                 :password "Foobar12!"}
         out     (th/command! data)]
     ;; (th/print-result! out)
     (t/is (th/success? out))
@@ -793,7 +793,7 @@
         data  {::th/type :prepare-register-profile
                :fullname "foobar"
                :email "user@example.com"
-               :password "foobar"}]
+               :password "Foobar12!"}]
 
     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
 
@@ -808,7 +808,7 @@
         data  {::th/type :prepare-register-profile
                :fullname "foobar"
                :email "user@example.com"
-               :password "foobar"}]
+               :password "Foobar12!"}]
 
     (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
 
@@ -1131,8 +1131,8 @@
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
                ::rpc/profile-id (:id profile)
-               :old-password "123123"
-               :password "foobarfoobar"}
+               :old-password "Test123!"
+               :password "Foobar12!"}
         out   (th/command! data)]
     (t/is (nil? (:error out)))
     (t/is (nil? (:result out)))))
@@ -1143,7 +1143,7 @@
         data  {::th/type :update-profile-password
                ::rpc/profile-id (:id profile)
                :old-password "badpassword"
-               :password "foobarfoobar"}
+               :password "Foobar12!"}
         {:keys [result error] :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
@@ -1154,7 +1154,7 @@
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
                ::rpc/profile-id (:id profile)
-               :old-password "123123"
+               :old-password "Test123!"
                :password "profile1.test@nodomain.com"}
         {:keys [result error] :as out} (th/command! data)]
     (t/is (th/ex-info? error))
@@ -1271,3 +1271,49 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+
+(t/deftest prepare-register-profile-password-too-short
+  (let [data {::th/type :prepare-register-profile
+              :email "user@example.com"
+              :fullname "foobar"
+              :password "123"}
+        out  (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest prepare-register-profile-weak-password
+  (let [data {::th/type :prepare-register-profile
+              :email "user@example.com"
+              :fullname "foobar"
+              :password "password123"}
+        out  (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest update-profile-password-too-short
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "Test123!"
+                 :password "123"}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest update-profile-password-weak-password
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "Test123!"
+                 :password "qwerty"}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))

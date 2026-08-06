@@ -7,6 +7,7 @@
 (ns app.rpc.commands.profile
   (:require
    [app.auth :as auth]
+   [app.auth.passwords :as passwords]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -211,6 +212,9 @@
       (ex/raise :type :validation
                 :code :email-as-password
                 :hint "you can't use your email as password"))
+
+    ;; Validate password strength against common password dictionary
+    (passwords/validate-password (:password params))
 
     (update-profile-password! cfg (assoc profile :password password))
 
