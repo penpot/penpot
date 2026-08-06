@@ -1217,7 +1217,7 @@
               (rx/mapcat (fn [blob]
                            ;; Resolve the deferred with the fetched blob; the browser
                            ;; will now complete the clipboard write it started earlier.
-                           (p/resolve! deferred blob)
+                           (p/resolve deferred blob)
                            (rx/from write-promise)))
               (rx/map (fn [_]
                         (ntf/success (tr "workspace.clipboard.image-copied"))))
@@ -1225,5 +1225,5 @@
                           (js/console.error "clipboard error:" e)
                           ;; Reject the deferred in case the error occurred before the
                           ;; blob was fetched, so the pending clipboard write is cancelled.
-                          (p/reject! deferred e)
+                          (p/reject deferred e)
                           (rx/of (ntf/error (tr "workspace.clipboard.image-copy-failed")))))))))))
