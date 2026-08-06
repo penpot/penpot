@@ -413,6 +413,10 @@ pub(crate) struct RenderState {
     /// a tile before its text glyph uploads complete (blank first/center tile).
     /// One explicit flush warms the submit path for the rest of the pass.
     pub tile_atlas_flushed: bool,
+    /// DropShadows→Current touch once per tile when no shape composites a real
+    /// shadow. A full skip made flush_and_submit very slow (Skia ops-task
+    /// ordering); doing it per shape was wasted GPU work.
+    pub drop_shadows_ops_warmed: bool,
 }
 
 pub struct InteractiveDragCrop {
@@ -596,6 +600,7 @@ impl RenderState {
             preserve_target_during_render: false,
             backbuffer_crop_cache: HashMap::default(),
             tile_atlas_flushed: false,
+            drop_shadows_ops_warmed: false,
         })
     }
 
@@ -3148,6 +3153,7 @@ impl RenderState {
 
     /// Renders element drop shadows to DropShadows surface and composites to Current.
     /// Used for both normal shadow rendering and pre-layer rendering (frame_clip_layer_blur).
+    /// Returns `true` when at least one visible drop shadow was composited.
     #[allow(clippy::too_many_arguments)]
     fn render_element_drop_shadows_and_composite(
         &mut self,
@@ -3158,7 +3164,14 @@ impl RenderState {
         scale: f32,
         node_render_state: &NodeRenderState,
         target_surface: SurfaceId,
-    ) -> Result<()> {
+    ) -> Result<bool> {
+        // Avoid a blank DropShadows→Current blit + clear on every shape without
+        // shadows. Callers must still touch DropShadows once per tile when this
+        // returns false (see `drop_shadows_ops_warmed`).
+        if element.drop_shadows_visible().next().is_none() {
+            return Ok(false);
+        }
+
         let element_extrect = extrect.get_or_insert_with(|| element.extrect(tree, scale));
         let inherited_layer_blur = match element.shape_type {
             Type::Frame(_) | Type::Group(_) => element.blur,
@@ -3273,7 +3286,7 @@ impl RenderState {
         self.surfaces
             .canvas(SurfaceId::DropShadows)
             .clear(skia::Color::TRANSPARENT);
-        Ok(())
+        Ok(true)
     }
 
     pub fn render_shape_tree_partial_uncached(
@@ -3513,8 +3526,8 @@ impl RenderState {
                     && Self::frame_clip_layer_blur(element).is_some()
                     && element.drop_shadows_visible().next().is_some();
 
-                if shadow_before_layer {
-                    self.render_element_drop_shadows_and_composite(
+                if shadow_before_layer
+                    && self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
                         &mut extrect,
@@ -3522,7 +3535,9 @@ impl RenderState {
                         scale,
                         &node_render_state,
                         target_surface,
-                    )?;
+                    )?
+                {
+                    self.drop_shadows_ops_warmed = true;
                 }
 
                 // Render background blur BEFORE save_layer so it modifies
@@ -3545,8 +3560,7 @@ impl RenderState {
                 if !skip_shadows
                     && !shadows_already_rendered
                     && !matches!(element.shape_type, Type::Text(_))
-                {
-                    self.render_element_drop_shadows_and_composite(
+                    && self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
                         &mut extrect,
@@ -3554,11 +3568,26 @@ impl RenderState {
                         scale,
                         &node_render_state,
                         target_surface,
-                    )?;
-                } else {
-                    // This is necessary or the later flush_and_submit will be very slow
+                    )?
+                {
+                    // Real shadow composite already clears DropShadows.
+                    self.drop_shadows_ops_warmed = true;
+                }
+
+                if !self.drop_shadows_ops_warmed {
+                    // Touch DropShadows→Current once per tile when no shape has
+                    // composited real shadows yet. Omitting this entirely made
+                    // flush_and_submit very slow (ops-task ordering); repeating
+                    // it per shape was waste.
+                    self.surfaces.draw_into(
+                        SurfaceId::DropShadows,
+                        target_surface,
+                        Some(&skia::Paint::default()),
+                    );
                     self.surfaces
-                        .draw_into(SurfaceId::DropShadows, target_surface, None);
+                        .canvas(SurfaceId::DropShadows)
+                        .clear(skia::Color::TRANSPARENT);
+                    self.drop_shadows_ops_warmed = true;
                 }
 
                 // For frames without clip_content, inner strokes must render after children in
@@ -3760,6 +3789,7 @@ impl RenderState {
                 // empty tile.
                 self.current_tile_had_shapes = false;
                 self.tile_atlas_flushed = false;
+                self.drop_shadows_ops_warmed = false;
 
                 let viewer_masked_pass = self.viewer_masked_pass();
 
