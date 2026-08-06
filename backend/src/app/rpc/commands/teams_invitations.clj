@@ -108,14 +108,7 @@
 (def ^:private schema:create-organization-invitation
   [:map {:title "params:create-organization-invitation"}
    [::rpc/profile-id ::sm/uuid]
-   [:organization
-    [:map
-     [:id ::sm/uuid]
-     [:name :string]
-     [:initials [:maybe :string]]
-     [:logo ::sm/uri]
-     [:avatar-bg-url [:maybe ::sm/uri]]
-     [:sso-active [:maybe ::sm/boolean]]]]
+   [:organization cto/schema:organization-with-avatar]
    [:profile
     [:map
      [:id ::sm/uuid]
