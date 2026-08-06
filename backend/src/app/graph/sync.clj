@@ -118,9 +118,9 @@
                ;; `:add-obj` children inherit — it is the shape's effective
                ;; component-id, which loses the barrier case of a *non-Frame*
                ;; carrying its own `component-id` (indistinguishable once
-               ;; denormalized). Cold projection, which beadpot diffs against,
-               ;; keeps the distinction; only a graph synced across such a
-               ;; shape can drift, and a Reload rebuilds it.
+               ;; denormalized). Cold projection keeps the distinction. Only a
+               ;; graph synced across such a shape can drift, and a Reload
+               ;; rebuilds it.
                :component-ctx (:component-id attrs)
                :page-id       (or (:page-id attrs)
                                   (resolve-page-id shape-id parents pages))}]))
@@ -178,7 +178,7 @@
        "CREATE (s)-[:IsChildOf {position: " (ladybug/format-int position) "}]->(p);"))
 
 (defn- create-instance-of-statement
-  "Link a Frame instance head to its Component (beadpot `IsInstanceOf`).
+  "Link a Frame instance head to its Component.
 
   No-op when the Component is absent (e.g. library component not ingested)."
   [frame-id component-id]
@@ -247,9 +247,11 @@
 
 
 (defn- set-document-revision-statement
-  "The column is `revision`, not `revn` — beadpot spells the revision number out
-  (`schema.contract`). Named through `cypher-property-key` so the two cannot
-  disagree again."
+  "Set the Document's revision number.
+
+  `app.graph.schema.contract` names the column `revision`, not `revn`. The name
+  is produced by `nodes/cypher-property-key`, so this statement and the DDL
+  cannot disagree."
   [doc-id revn]
   (str "MATCH (d:Document {id: " (ladybug/format-uuid doc-id) "}) "
        "SET d." (nodes/cypher-property-key "Document" :revn) " = "

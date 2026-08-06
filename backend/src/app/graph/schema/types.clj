@@ -28,9 +28,9 @@
      more than one shape (a `:multi`, an `:or`, an optional-keyed map) becomes
      `JSON`, because a Ladybug column cannot be two types.
 
-  Every encoding here has a matching value formatter in `app.graph.ladybug`;
-  the two must move together, and `bp graph schema diff` is what catches it
-  when they do not."
+  Every encoding here has a matching value formatter in `app.graph.ladybug`.
+  The two must move together: a column type with no case there falls back to
+  guessing the literal from the runtime value."
   (:require
    [app.common.logging :as l]
    [app.common.schema :as sm]

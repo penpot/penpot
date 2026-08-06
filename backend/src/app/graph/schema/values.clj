@@ -120,7 +120,7 @@
     :else nil))
 
 (defn- packed-color
-  "`#RRGGBB` as `0xRRGGBBAA`, the form beadpot's `ColorValue` packs.
+  "`#RRGGBB` as the packed integer `0xRRGGBBAA`.
 
   Alpha defaults to opaque: the column holds a colour, and any opacity Penpot
   keeps alongside it is a separate attribute."

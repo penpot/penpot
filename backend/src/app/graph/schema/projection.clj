@@ -7,8 +7,8 @@
 (ns app.graph.schema.projection
   "Derive Ladybug node column schemas from Penpot Malli sources.
 
-  Same model as beadpot's `drop_fields`: start from the canonical schema
-  and remove keys that must not become graph columns."
+  Start from the canonical schema and remove the keys that must not become
+  graph columns."
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -71,7 +71,7 @@
   "Build a graph node schema from canonical Malli `source`.
 
   Options:
-  - `:drop`  - keys removed from the source (beadpot `drop_fields`)
+  - `:drop`  - keys removed from the source
   - `:extra` - optional extra `[:map ...]` merged on top"
   [source {:keys [drop extra]}]
   (let [projected (select-projected-keys source drop)]
