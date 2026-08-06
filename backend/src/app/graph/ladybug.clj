@@ -18,6 +18,7 @@
    com.ladybugdb.Connection
    com.ladybugdb.Database
    com.ladybugdb.FlatTuple
+   com.ladybugdb.PreparedStatement
    com.ladybugdb.QueryResult
    com.ladybugdb.Value))
 
@@ -355,6 +356,116 @@
   [^Connection conn statements]
   (assert (sequential? statements) "statements should be a sequential collection")
   (run-statements! conn statements))
+
+;; --- prepared statements
+
+(defn- ->param-value
+  "Clojure scalar → `Value` for prepared-statement binding.
+
+  Every parameter goes through here, unconditionally: an unwrapped value does
+  not raise, it SIGSEGVs the JVM in `lbug_value_clone`. Lists and maps are not
+  supported by the JNI `Value` constructor at all, so `MAP`, `STRUCT` and
+  `T[]` columns stay literal-rendered (`format-typed-value`) — the `:else`
+  raise below means a caller tried to bind one."
+  ^Value [v]
+  (cond
+    (nil? v)     (Value/createNull)                ; no explicit type needed
+    (uuid? v)    (Value. ^Object v)                ; native UUID
+    (string? v)  (Value. ^Object v)
+    (boolean? v) (Value. ^Object v)
+    (integer? v) (Value. ^Object (long v))
+    (number? v)  (Value. ^Object (double v))
+    (keyword? v) (Value. ^Object (name v))
+
+    (instance? java.time.Instant v)                ; native TIMESTAMP
+    (Value. ^Object v)
+
+    (instance? java.util.Date v)
+    (Value. ^Object (.toInstant ^java.util.Date v))
+
+    :else
+    (ex/raise :type :internal
+              :code :ladybug-unsupported-param
+              :hint (str "cannot bind a " (type v) " as a Ladybug parameter; "
+                         "compound columns must be literal-rendered")
+              :value v)))
+
+(defn- as-statement
+  "Normalize a statement to `{:cypher … :params …}`.
+
+  A bare string binds nothing, so the sync builders can convert to bound
+  parameters one family at a time."
+  [stmt]
+  (if (map? stmt)
+    (update stmt :params #(or % {}))
+    {:cypher stmt :params {}}))
+
+(defn prepare-on-connection!
+  "Parse and bind `statement` on `conn` without executing it.
+
+  The returned `PreparedStatement` is a JNI resource: the caller closes it."
+  ^PreparedStatement [^Connection conn statement]
+  (let [cypher (ensure-semicolon statement)
+        ps     (.prepare conn cypher)]
+    (when-not (.isSuccess ps)
+      (let [err (.getErrorMessage ps)]
+        (.close ps)
+        (ex/raise :type :internal
+                  :code :ladybug-prepare-failed
+                  :hint (str "Ladybug prepare failed: " err)
+                  :statement cypher
+                  :err err)))
+    ps))
+
+(defn execute-prepared!
+  "Bind `params` into `ps` and execute it on `conn`.
+
+  `params` keys are parameter names without the `$` (keyword or string);
+  values are scalars. Every bound `Value` is closed, including the ones built
+  before a later parameter is rejected."
+  [^Connection conn ^PreparedStatement ps params]
+  (let [vmap (java.util.HashMap.)]
+    (try
+      (doseq [[k v] params]
+        (.put vmap (name k) (->param-value v)))
+      (with-open [^QueryResult result (.execute conn ps vmap)]
+        (check-success! result "<prepared>"))
+      (finally
+        (run! #(.close ^Value %) (.values vmap))))))
+
+(defn exec-prepared-on-connection!
+  "Prepare all statements, then execute all of them.
+
+  A parse or bind failure in *any* statement aborts the batch before the first
+  mutation runs — the bind-level batch gate. Statements are
+  `{:cypher … :params {…}}` maps or bare strings."
+  [^Connection conn stmts]
+  (assert (sequential? stmts) "statements should be a sequential collection")
+  (let [prepared (volatile! [])]
+    (try
+      (doseq [stmt stmts]
+        (let [{:keys [cypher params]} (as-statement stmt)]
+          (vswap! prepared conj {:ps     (prepare-on-connection! conn cypher)
+                                 :params params})))
+      (doseq [{:keys [ps params]} @prepared]
+        (execute-prepared! conn ps params))
+      (finally
+        (run! #(.close ^PreparedStatement (:ps %)) @prepared)))))
+
+(defn validate-on-connection!
+  "Binder gate: parse and semantic-check `statement` against the live schema,
+  without executing it.
+
+  Returns `{:ok? …  :error …  :read-only? …}`. Unlike `prepare-on-connection!`
+  a failure is a return value rather than a raise: the callers are gates (the
+  CI binder gate, the console read-only gate) that report it. `:read-only?` is
+  the engine's own read/write analysis."
+  [^Connection conn statement]
+  (with-open [^PreparedStatement ps (.prepare conn (ensure-semicolon statement))]
+    (let [ok? (.isSuccess ps)]
+      {:ok?        ok?
+       :error      (when-not ok? (.getErrorMessage ps))
+       :read-only? (when ok? (.isReadOnly ps))})))
 
 (defn query-scalar-on-connection!
   "Execute a query expected to return a single scalar value on `conn`."
