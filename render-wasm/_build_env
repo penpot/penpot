@@ -10,7 +10,7 @@ fi
 
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.97.0/skia-binaries-fdd89c91b34b4e26dd64-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
 
 # 256 MB of initial heap to perform less
 # initial calls to memory grow.
@@ -29,6 +29,10 @@ export EM_MEMORY_GROWTH_GEOMETRIC_STEP="0.8"
 # Default: dlmalloc
 export EM_MALLOC="dlmalloc"
 
+RENDER_WASM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Link Skia's std::__hash_memory at final emcc link (must use em++, not host g++ via build.rs).
+export EMCC_HASH_MEMORY_SHIM="${RENDER_WASM_ROOT}/src/shim/hash_memory.cpp"
+
 export EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
     -sMALLOC=$EM_MALLOC \
@@ -45,7 +49,8 @@ export EMCC_CFLAGS="--no-entry \
     -sMODULARIZE=1 \
     -sDISABLE_EXCEPTION_CATCHING=1 \
     -sFILESYSTEM=0 \
-    -sEXPORT_ES6=1";
+    -sEXPORT_ES6=1 \
+    ${EMCC_HASH_MEMORY_SHIM}";
 
 export EM_CACHE="/tmp/emsdk_cache";
 
