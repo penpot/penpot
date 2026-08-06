@@ -935,10 +935,6 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn flush(&mut self) {
-        self.surfaces.flush(SurfaceId::Backbuffer);
-    }
-
     pub fn flush_and_submit(&mut self) {
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
@@ -1229,11 +1225,16 @@ impl RenderState {
     }
 
     fn get_inherited_drop_shadows(&self) -> Option<Vec<skia_safe::Paint>> {
+        let scale = self.get_scale();
         let drop_shadows: Vec<&Shadow> = self
             .nested_shadows
             .iter()
             .flat_map(|shadows| shadows.iter())
-            .filter(|shadow| !shadow.hidden() && shadow.style() == crate::shapes::ShadowStyle::Drop)
+            .filter(|shadow| {
+                !shadow.hidden()
+                    && shadow.style() == crate::shapes::ShadowStyle::Drop
+                    && shadow.is_perceptible_at_scale(scale)
+            })
             .collect();
 
         if drop_shadows.is_empty() {
@@ -1337,6 +1338,7 @@ impl RenderState {
             | text_drop_shadows_surface_id as u32;
 
         let fast_mode = self.options.is_fast_mode();
+        let skip_drop_shadows = self.should_skip_drop_shadows();
         // Skip anti-aliasing entirely during fast_mode (interactive
         // gestures + pan/zoom). AA edge sampling is per-pixel and adds
         // up across many shapes; reverts to full quality on commit.
@@ -1367,11 +1369,25 @@ impl RenderState {
             return Ok(());
         }
 
+        // Only perceptible shadows need the layered Fills/Strokes path. Use the
+        // same footprint LOD as when painting drop and inner shadows.
+        let scale = self.get_scale();
+        let shadows_need_layered = !skip_drop_shadows
+            && (shape
+                .drop_shadows_visible()
+                .any(|s| s.is_perceptible_at_scale_for(scale, shape.is_recursive()))
+                || shape
+                    .inner_shadows_visible()
+                    .any(|s| s.is_perceptible_at_scale_for(scale, shape.is_recursive())));
+
         // Clip is allowed: we apply the same stack on Current after scale+translate.
         // Opacity < 1 with SrcOver is OK: render_shape_enter already opened a
         // save_layer on Current; painting fills/strokes into that layer matches
         // the layered path without Fills/Strokes blits.
         // Non-SrcOver blend, frame clip blur, and masked groups stay layered.
+        // Stroke-only (fills_none) can go direct: empty fills are a no-op and
+        // strokes paint into Current. Requires Partial GPU drain (dc1ab) so
+        // large SVG-icon files do not backlog commands until Full present.
         let can_render_directly = apply_to_current_surface
             && offset.is_none()
             && parent_shadows.is_none()
@@ -1381,20 +1397,15 @@ impl RenderState {
             && shape.blur.is_none()
             && shape.background_blur.is_none()
             && !has_inherited_blur
-            && shape.shadows.is_empty()
+            && !shadows_need_layered
             && matches!(
                 shape.shape_type,
                 Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
             )
             && !(shape.fills.is_empty() && has_nested_fills)
-            && !shape
-                .svg_attrs
-                .as_ref()
-                .is_some_and(|attrs| attrs.fill_none)
             && target_surface != SurfaceId::Export;
 
         if can_render_directly {
-            let scale = self.get_scale();
             let translation = self
                 .surfaces
                 .get_render_context_translation(self.render_area, scale);
@@ -1661,10 +1672,25 @@ impl RenderState {
                         );
                     }
                 } else {
-                    let mut drop_shadows = shape.drop_shadow_paints();
+                    let shape_scale = self.get_scale();
+                    let mut drop_shadows = if skip_drop_shadows {
+                        Vec::new()
+                    } else {
+                        shape
+                            .drop_shadows_visible()
+                            .filter(|s| s.is_perceptible_at_scale(shape_scale))
+                            .map(|shadow| {
+                                let mut paint = skia_safe::Paint::default();
+                                paint.set_image_filter(shadow.get_drop_shadow_filter());
+                                paint
+                            })
+                            .collect()
+                    };
 
-                    if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
-                        drop_shadows.extend(inherited_shadows);
+                    if !skip_drop_shadows {
+                        if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
+                            drop_shadows.extend(inherited_shadows);
+                        }
                     }
 
                     let inner_shadows = shape.inner_shadow_paints();
@@ -1688,32 +1714,34 @@ impl RenderState {
                         .unzip();
 
                     if let Some(parent_shadows) = parent_shadows {
-                        if !shape.has_visible_strokes() {
-                            for shadow in parent_shadows {
-                                text::render(
-                                    Some(self),
-                                    None,
+                        if !skip_drop_shadows {
+                            if !shape.has_visible_strokes() {
+                                for shadow in parent_shadows {
+                                    text::render(
+                                        Some(self),
+                                        None,
+                                        &shape,
+                                        &mut paragraphs_with_shadows,
+                                        text_drop_shadows_surface_id.into(),
+                                        Some(&shadow),
+                                        blur_filter.as_ref(),
+                                        None,
+                                        None,
+                                    )?;
+                                }
+                            } else {
+                                shadows::render_text_shadows(
+                                    self,
                                     &shape,
                                     &mut paragraphs_with_shadows,
+                                    &mut stroke_paragraphs_with_shadows_list,
                                     text_drop_shadows_surface_id.into(),
-                                    Some(&shadow),
-                                    blur_filter.as_ref(),
-                                    None,
-                                    None,
+                                    &parent_shadows,
+                                    &blur_filter,
+                                    &stroke_kinds,
+                                    text_content,
                                 )?;
                             }
-                        } else {
-                            shadows::render_text_shadows(
-                                self,
-                                &shape,
-                                &mut paragraphs_with_shadows,
-                                &mut stroke_paragraphs_with_shadows_list,
-                                text_drop_shadows_surface_id.into(),
-                                &parent_shadows,
-                                &blur_filter,
-                                &stroke_kinds,
-                                text_content,
-                            )?;
                         }
                     } else {
                         // 1. Text drop shadows
@@ -2433,9 +2461,12 @@ impl RenderState {
                 panic!("FrameType::None");
             }
             FrameType::Partial => {
-                // Partial frame: just flush GPU work. The display shows the last
-                // fully submitted frame; no need to copy or draw UI overlays here.
-                self.flush();
+                // Drain tile GPU work (Current / tile atlas / cache) without
+                // presenting Target and without re-snapshotting the tile atlas —
+                // composition stays deferred to Full. A Backbuffer flush alone
+                // left commands queued until present_frame's flush_and_submit,
+                // which stalled the browser on large files.
+                crate::get_gpu_state().context.flush_and_submit();
             }
             FrameType::Full => {
                 // A full-quality frame is now complete. Rebuild the per-shape crop
@@ -2636,6 +2667,19 @@ impl RenderState {
         }
 
         true
+    }
+
+    /// Skip all drop/inner shadows in fast mode, or when even a large design-space
+    /// shadow would be subpixel. Otherwise filter per shadow via
+    /// [`Shadow::is_perceptible_at_scale_for`] (stricter for recursive shapes).
+    #[inline]
+    pub(crate) fn should_skip_drop_shadows(&self) -> bool {
+        if self.options.is_fast_mode() {
+            return true;
+        }
+        let scale = self.get_scale();
+        scale * crate::shapes::DROP_SHADOW_LARGE_DESIGN_PX
+            < crate::shapes::DROP_SHADOW_MIN_DEVICE_PX
     }
 
     #[inline]
@@ -3185,10 +3229,15 @@ impl RenderState {
         node_render_state: &NodeRenderState,
         target_surface: SurfaceId,
     ) -> Result<bool> {
-        // Avoid a blank DropShadows→Current blit + clear on every shape without
-        // shadows. Callers must still touch DropShadows once per tile when this
-        // returns false (see `drop_shadows_ops_warmed`).
-        if element.drop_shadows_visible().next().is_none() {
+        // Avoid a blank DropShadows→Current blit + clear when nothing will paint
+        // (no shadows, fast/overview skip, or all footprints subpixel). Callers
+        // must still touch DropShadows once per tile when this returns false
+        // (see `drop_shadows_ops_warmed`).
+        if self.should_skip_drop_shadows()
+            || !element
+                .drop_shadows_visible()
+                .any(|s| s.is_perceptible_at_scale_for(scale, element.is_recursive()))
+        {
             return Ok(false);
         }
 
@@ -3198,7 +3247,13 @@ impl RenderState {
             _ => None,
         };
 
+        let recursive = element.is_recursive();
+        let mut rendered_any = false;
         for shadow in element.drop_shadows_visible() {
+            if !shadow.is_perceptible_at_scale_for(scale, recursive) {
+                continue;
+            }
+            rendered_any = true;
             let paint = skia::Paint::default();
             let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
             self.surfaces
@@ -3288,6 +3343,10 @@ impl RenderState {
                 .draw_paint(&paint);
 
             self.surfaces.canvas(SurfaceId::DropShadows).restore();
+        }
+
+        if !rendered_any {
+            return Ok(false);
         }
 
         if let Some(clips) = clip_bounds.as_ref() {
@@ -3541,10 +3600,12 @@ impl RenderState {
                 // the layer blur (which would make it more diffused than without clipping)
                 let shadow_before_layer = !node_render_state.is_root()
                     && self.focus_mode.is_active()
-                    && !self.options.is_fast_mode()
+                    && !self.should_skip_drop_shadows()
                     && !matches!(element.shape_type, Type::Text(_))
                     && Self::frame_clip_layer_blur(element).is_some()
-                    && element.drop_shadows_visible().next().is_some();
+                    && element
+                        .drop_shadows_visible()
+                        .any(|s| s.is_perceptible_at_scale_for(scale, element.is_recursive()));
 
                 if shadow_before_layer
                     && self.render_element_drop_shadows_and_composite(
@@ -3570,8 +3631,8 @@ impl RenderState {
             }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                // Skip expensive drop shadow rendering in fast mode (during pan/zoom).
-                let skip_shadows = self.options.is_fast_mode();
+                // Skip expensive drop shadows in fast mode and at overview zooms.
+                let skip_shadows = self.should_skip_drop_shadows();
 
                 // Skip shadow block when already rendered before the layer (frame_clip_layer_blur)
                 let shadows_already_rendered = Self::frame_clip_layer_blur(element).is_some();

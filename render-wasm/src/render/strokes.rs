@@ -561,6 +561,13 @@ fn draw_image_stroke_in_container(
     surface_id: SurfaceId,
 ) -> Result<()> {
     let scale = render_state.get_scale();
+    let lod_stroke;
+    let stroke = if matches!(shape.shape_type, Type::Path(_) | Type::Bool(_)) {
+        lod_stroke = stroke.path_lod_at_scale(shape.is_open(), scale);
+        &lod_stroke
+    } else {
+        stroke
+    };
     let Some(image) = get_resources().images.get(&image_fill.id()) else {
         return Ok(());
     };
@@ -938,12 +945,13 @@ fn render_merged(
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(path) = shape_type.path() {
                 let is_open = path.is_open();
+                let lod_stroke = representative.path_lod_at_scale(is_open, scale);
                 let mut paint =
-                    representative.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
+                    lod_stroke.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
                 paint.set_shader(merged.shader());
                 draw_stroke_on_path(
                     canvas,
-                    representative,
+                    &lod_stroke,
                     path,
                     &paint,
                     path_transform.as_ref(),
@@ -1097,6 +1105,8 @@ fn render_single_internal(
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {
                 if let Some(path) = shape_type.path() {
                     let is_open = path.is_open();
+                    let lod_stroke = stroke.path_lod_at_scale(is_open, scale);
+                    let stroke = &lod_stroke;
                     let mut paint =
                         stroke.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
                     // Apply outset by increasing stroke width

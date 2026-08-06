@@ -13,10 +13,16 @@ pub fn render_fill_inner_shadows(
     antialias: bool,
     surface_id: SurfaceId,
 ) {
-    if shape.has_fills() {
-        for shadow in shape.inner_shadows_visible() {
-            render_fill_inner_shadow(render_state, shape, shadow, antialias, surface_id);
+    if !shape.has_fills() || render_state.should_skip_drop_shadows() {
+        return;
+    }
+    let scale = render_state.get_scale();
+    let recursive = shape.is_recursive();
+    for shadow in shape.inner_shadows_visible() {
+        if !shadow.is_perceptible_at_scale_for(scale, recursive) {
+            continue;
         }
+        render_fill_inner_shadow(render_state, shape, shadow, antialias, surface_id);
     }
 }
 
@@ -38,19 +44,25 @@ pub fn render_stroke_inner_shadows(
     antialias: bool,
     surface_id: SurfaceId,
 ) -> Result<()> {
-    if !shape.has_fills() {
-        for shadow in shape.inner_shadows_visible() {
-            let filter = shadow.get_inner_shadow_filter();
-            strokes::render_single(
-                render_state,
-                shape,
-                stroke,
-                Some(surface_id),
-                filter.as_ref(),
-                antialias,
-                None, // Inner shadows don't use spread
-            )?;
+    if shape.has_fills() || render_state.should_skip_drop_shadows() {
+        return Ok(());
+    }
+    let scale = render_state.get_scale();
+    let recursive = shape.is_recursive();
+    for shadow in shape.inner_shadows_visible() {
+        if !shadow.is_perceptible_at_scale_for(scale, recursive) {
+            continue;
         }
+        let filter = shadow.get_inner_shadow_filter();
+        strokes::render_single(
+            render_state,
+            shape,
+            stroke,
+            Some(surface_id),
+            filter.as_ref(),
+            antialias,
+            None, // Inner shadows don't use spread
+        )?;
     }
     Ok(())
 }
