@@ -99,7 +99,7 @@
 
 (t/deftest info-service-uri-not-configured
   (t/testing "info throws when service URI is not configured"
-    (with-redefs [cf/get (th/config-get-mock {})]
+    (with-redefs [cf/get (constantly nil)]
       (let [path (th/tempfile "backend_tests/test_files/sample.jpg")
             err  (ex/try! (media.remote/process (mk-system)
                                                 {:cmd :info :input {:path path :mtype "image/jpeg"}}))]
