@@ -2357,6 +2357,7 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<FrameType> {
         performance::begin_measure!("continue_render_loop");
+        let timestamp = self.render_budget_start(timestamp);
         let frame_type =
             self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
@@ -2404,6 +2405,7 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
     ) -> Result<FrameType> {
+        let timestamp = self.render_budget_start(timestamp);
         self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
 
         // Same composition as `continue_render_loop` for full frames: snapshot only the
@@ -2536,6 +2538,24 @@ impl RenderState {
         }
 
         Ok((data.as_bytes().to_vec(), width, height))
+    }
+
+    /// Anchor the progressive render budget to wall-clock now when the
+    /// caller-provided timestamp is unusable:
+    /// - Frontend sometimes passes `0` (finalize-view / debounced zoom-end).
+    /// - rAF may hand a timestamp that is already older than the budget when
+    ///   the handler runs late. Using that stamp made `should_stop_rendering`
+    ///   yield after a few nodes with ~0ms of real work.
+    #[inline]
+    fn render_budget_start(&self, timestamp: i32) -> i32 {
+        let now = performance::get_time();
+        if timestamp <= 0 {
+            return now;
+        }
+        if now - timestamp > self.options.max_blocking_time_ms {
+            return now;
+        }
+        timestamp
     }
 
     #[inline]
