@@ -846,28 +846,24 @@ impl Surfaces {
     pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
         let translation = self.get_render_context_translation(render_area, scale);
 
-        // When context changes (zoom/pan/tile), clear all render surfaces first
-        // to remove any residual content from previous tiles, then mark as dirty
-        // so they get redrawn with new transformations
+        // When context changes (zoom/pan/tile), clear intermediate surfaces so
+        // residual content from the previous tile cannot leak into the next.
         let surface_ids = SurfaceId::Fills as u32
             | SurfaceId::Strokes as u32
             | SurfaceId::InnerShadows as u32
             | SurfaceId::TextDropShadows as u32
             | SurfaceId::DropShadows as u32;
 
-        // Clear surfaces before updating transformations to remove residual content
         self.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
         });
 
-        // Mark all render surfaces as dirty so they get redrawn
-        self.mark_dirty(SurfaceId::Fills);
-        self.mark_dirty(SurfaceId::Strokes);
-        self.mark_dirty(SurfaceId::InnerShadows);
-        self.mark_dirty(SurfaceId::TextDropShadows);
-        self.mark_dirty(SurfaceId::DropShadows);
+        // Dirty means "has content to composite", not "transform was updated".
+        // After a clear the surfaces are empty; leaving them dirty made the
+        // first `draw_shape_surface_stack_into` on each tile blit empty
+        // Fills/Strokes/shadows into Current (useless GPU ops / ops-task noise).
+        self.clear_dirty(surface_ids);
 
-        // Update transformations
         self.apply_mut(surface_ids, |s| {
             let canvas = s.canvas();
             canvas.reset_matrix();
