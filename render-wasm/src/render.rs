@@ -1331,16 +1331,6 @@ impl RenderState {
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
 
-        // Only save canvas state if we have clipping or transforms
-        // For simple shapes without clipping, skip expensive save/restore
-        let needs_save =
-            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
-
-        if needs_save {
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas().save();
-            });
-        }
         let fast_mode = self.options.is_fast_mode();
         // Skip anti-aliasing entirely during fast_mode (interactive
         // gestures + pan/zoom). AA edge sampling is per-pixel and adds
@@ -1357,19 +1347,39 @@ impl RenderState {
             && self.nested_blurs.iter().flatten().any(|blur| {
                 !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
             });
+
+        // Empty non-masked groups paint nothing here (children are separate walker
+        // nodes). Skip the layered Fills/Strokes path entirely.
+        if matches!(shape.shape_type, Type::Group(g) if !g.masked)
+            && shape.fills.is_empty()
+            && !shape.has_visible_strokes()
+            && shape.shadows.is_empty()
+            && shape.blur.is_none()
+            && shape.background_blur.is_none()
+            && !has_inherited_blur
+            && parent_shadows.is_none()
+        {
+            return Ok(());
+        }
+
+        // Clip is allowed: we apply the same stack on Current after scale+translate.
+        // Opacity < 1 with SrcOver is OK: render_shape_enter already opened a
+        // save_layer on Current; painting fills/strokes into that layer matches
+        // the layered path without Fills/Strokes blits.
+        // Non-SrcOver blend, frame clip blur, and masked groups stay layered.
         let can_render_directly = apply_to_current_surface
-            && clip_bounds.is_none()
             && offset.is_none()
             && parent_shadows.is_none()
-            && !shape.needs_layer()
+            && shape.blend_mode().0 == skia::BlendMode::SrcOver
+            && !shape.has_frame_clip_layer_blur()
+            && !matches!(shape.shape_type, Type::Group(g) if g.masked)
             && shape.blur.is_none()
             && shape.background_blur.is_none()
             && !has_inherited_blur
             && shape.shadows.is_empty()
-            && shape.transform.is_identity()
             && matches!(
                 shape.shape_type,
-                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
+                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
             )
             && !(shape.fills.is_empty() && has_nested_fills)
             && !shape
@@ -1391,17 +1401,36 @@ impl RenderState {
                 canvas.translate(translation);
             });
 
+            if let Some(clips) = clip_bounds.as_ref() {
+                self.apply_clip_stack_to_surfaces(clips, target_surface as u32, scale, None);
+            }
+
+            if !shape.transform.is_identity() {
+                let center = shape.center();
+                let mut matrix = shape.transform;
+                matrix.post_translate(center);
+                matrix.pre_translate(-center);
+                self.surfaces.apply_mut(target_surface as u32, |s| {
+                    s.canvas().concat(&matrix);
+                });
+            }
+
             fills::render(self, shape, &shape.fills, antialias, target_surface, None)?;
-            // Pass strokes in natural order; stroke merging handles top-most ordering internally.
-            let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
-            strokes::render(
-                self,
-                shape,
-                &visible_strokes,
-                Some(target_surface),
-                antialias,
-                outset,
-            )?;
+
+            // Clipped frames draw strokes in render_shape_exit over children.
+            let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
+            if !skip_strokes {
+                // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+                let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+                strokes::render(
+                    self,
+                    shape,
+                    &visible_strokes,
+                    Some(target_surface),
+                    antialias,
+                    outset,
+                )?;
+            }
 
             self.surfaces.apply_mut(target_surface as u32, |s| {
                 s.canvas().restore();
@@ -1412,12 +1441,18 @@ impl RenderState {
                 debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
             }
 
-            if needs_save {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().restore();
-                });
-            }
             return Ok(());
+        }
+
+        // Only save canvas state if we have clipping or transforms
+        // For simple shapes without clipping, skip expensive save/restore
+        let needs_save =
+            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
+
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().save();
+            });
         }
 
         // set clipping
