@@ -93,6 +93,18 @@
 
 (declare create-font-variant)
 
+(defn- check-font-team-ownership!
+  "When font-id already has variants belonging to a different team,
+  raises :not-found to prevent cross-team font injection."
+  [conn team-id font-id]
+  (let [row (db/get* conn :team-font-variant
+                     {:font-id font-id}
+                     {::db/columns [:team-id]})]
+    (when (and row (not= (:team-id row) team-id))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "font does not belong to this team"))))
+
 (def ^:private schema:create-font-variant
   [:map {:title "create-font-variant"}
    [:team-id    ::sm/uuid]
@@ -132,8 +144,9 @@
                 [:process-font/global]]
    ::webhooks/event? true
    ::sm/params schema:create-font-variant}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id font-id uploads] :as params}]
   (teams/check-edition-permissions! pool profile-id team-id)
+  (check-font-team-ownership! pool team-id font-id)
   (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
                       ::quotes/profile-id profile-id
                       ::quotes/team-id team-id})
