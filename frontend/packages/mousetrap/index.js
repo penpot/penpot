@@ -213,10 +213,6 @@ function _characterFromEvent(e) {
     return character;
   }
 
-  if (typeof e.key === "string") {
-    return e.key.toLowerCase();
-  }
-
   // for non keypress events the special maps are needed
   if (_MAP[e.which]) {
     return _MAP[e.which];
@@ -227,6 +223,9 @@ function _characterFromEvent(e) {
   }
 
   // if it is not in the special map
+  if (typeof e.key === "string") {
+    return e.key.toLowerCase();
+  }
 
   // with keydown and keyup events the character seems to always
   // come in as an uppercase character whether you are pressing shift
