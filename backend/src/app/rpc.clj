@@ -92,12 +92,12 @@
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
 
-(defn- make-rpc-handler
+(defn make-rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
   [methods]
   (let [methods (update-vals methods peek)]
-    (fn [{:keys [params path-params method] :as request}]
+    (fn [{:keys [path-params method] :as request}]
       (let [handler-name (:method-name path-params)
             etag         (yreq/get-header request "if-none-match")
             session-id   (yreq/get-header request "x-session-id")
@@ -111,7 +111,7 @@
 
             ip-addr      (inet/parse-request request)
 
-            data         (-> params
+            data         (-> {}
                              (assoc ::handler-name handler-name)
                              (assoc ::ip-addr ip-addr)
                              (assoc ::request-at (ct/now))
@@ -218,17 +218,6 @@
       f)
     f))
 
-(defn- wrap-spec-conform
-  [_ f mdata]
-  ;; NOTE: skip spec conform operation on rpc methods that already
-  ;; uses malli validation mechanism.
-  (if (contains? mdata ::sm/params)
-    f
-    (if-let [spec (ex/ignoring (s/spec (::sv/spec mdata)))]
-      (fn [cfg params]
-        (f cfg (us/conform spec params)))
-      f)))
-
 (defn- wrap-params-validation
   [_ f mdata]
   (if-let [schema (::sm/params mdata)]
@@ -237,16 +226,15 @@
           decode   (sm/decoder schema sm/json-transformer)
           encode   (sm/encoder schema sm/json-transformer)]
       (fn [cfg params]
-        (let [params (decode params)]
-          (if (validate params)
-            (let [result (f cfg params)]
+        (let [request-params (-> params meta ::http/request :params decode)]
+          (if (validate request-params)
+            (let [result (f cfg (merge params request-params))]
               (if (instance? clojure.lang.IObj result)
                 (vary-meta result assoc :encode/json encode)
                 result))
-            (let [params (d/without-qualified params)]
-              (ex/raise :type :validation
-                        :code :params-validation
-                        ::sm/explain (explain params)))))))
+            (ex/raise :type :validation
+                      :code :params-validation
+                      ::sm/explain (explain request-params))))))
     f))
 
 
@@ -346,10 +334,9 @@
     (wrap-metrics cfg $ mdata)
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
-    (wrap-spec-conform cfg $ mdata)
+    (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)
-    (wrap-nitrate-sso cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)))
 
 (defn- wrap-management
   [cfg f mdata]
@@ -359,12 +346,9 @@
     (climit/wrap cfg $ mdata)
     (wrap-metrics cfg $ mdata)
     (wrap-audit cfg $ mdata)
-    (wrap-spec-conform cfg $ mdata)
+    (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)
-    (wrap-nitrate-sso cfg $ mdata)))
-
-
+    (wrap-authentication cfg $ mdata)))
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]

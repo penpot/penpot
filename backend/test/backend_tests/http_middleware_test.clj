@@ -28,78 +28,17 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(defrecord DummyRequest [headers cookies method body-stream
-                         remote-addr server-name server-port
-                         scheme protocol path query ssl-client-cert]
-  yreq/IRequestCookies
-  (get-cookie [_ name]
-    {:value (get cookies name)})
-
-  yreq/IRequest
-  (get-header [_ name]
-    (get headers name))
-  (method [_] method)
-  (body [_] body-stream)
-  (path [_] path)
-  (query [_] query)
-  (server-port [_] server-port)
-  (server-name [_] server-name)
-  (remote-addr [_] remote-addr)
-  (ssl-client-cert [_] ssl-client-cert)
-  (scheme [_] scheme)
-  (protocol [_] protocol))
-
-(defn- make-dummy-request
-  "Constructs a DummyRequest from an options map. Every key is
-  optional; missing values fall back to sensible defaults. New
-  fields added to DummyRequest won't break existing call sites
-  as long as this constructor keeps its `:or` defaults in sync.
-
-  Recognized keys:
-    :headers         — map of header name → value
-    :cookies         — map of cookie name → value
-    :method          — HTTP method keyword (default :get)
-    :body-stream     — InputStream for the body (used directly)
-    :body-bytes      — bytes or string for the body; wrapped in a
-                       ByteArrayInputStream if :body-stream is not
-                       given
-    :remote-addr     — string (default \"127.0.0.1\")
-    :server-name     — string (default \"test\")
-    :server-port     — long   (default 0)
-    :scheme          — keyword (default :http)
-    :protocol        — string (default \"HTTP/1.1\")
-    :path            — string (default \"/test\")
-    :query           — string or nil (default nil)
-    :ssl-client-cert — X509Certificate or nil (default nil)"
-  [{:keys [headers cookies method body-stream body-bytes
-           remote-addr server-name server-port scheme protocol
-           path query ssl-client-cert]
-    :or   {headers {} cookies {} method :get
-           body-stream nil
-           remote-addr "127.0.0.1" server-name "test" server-port 0
-           scheme :http protocol "HTTP/1.1" path "/test" query nil
-           ssl-client-cert nil}}]
-  (let [body-stream (or body-stream
-                        (when body-bytes
-                          (java.io.ByteArrayInputStream.
-                           (if (string? body-bytes)
-                             (.getBytes ^String body-bytes "UTF-8")
-                             body-bytes))))]
-    (->DummyRequest headers cookies method body-stream
-                    remote-addr server-name server-port
-                    scheme protocol path query ssl-client-cert)))
-
 (t/deftest auth-middleware-1
   (let [request (volatile! nil)
         handler (#'app.http.middleware/wrap-auth
                  (fn [req] (vreset! request req))
                  {})]
 
-    (handler (make-dummy-request {}))
+    (handler (th/make-dummy-request {}))
 
     (t/is (nil? (::http/auth-data @request)))
 
-    (handler (make-dummy-request {:headers {"authorization" "Token aaaa"}}))
+    (handler (th/make-dummy-request {:headers {"authorization" "Token aaaa"}}))
 
     (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
       (t/is (= :token token-type))
@@ -112,10 +51,10 @@
                  (fn [req] (vreset! request req))
                  {})]
 
-    (handler (make-dummy-request {}))
+    (handler (th/make-dummy-request {}))
     (t/is (nil? (::http/auth-data @request)))
 
-    (handler (make-dummy-request {:headers {"authorization" "Bearer aaaa"}}))
+    (handler (th/make-dummy-request {:headers {"authorization" "Bearer aaaa"}}))
 
     (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
       (t/is (= :bearer token-type))
@@ -128,10 +67,10 @@
                  (fn [req] (vreset! request req))
                  {})]
 
-    (handler (make-dummy-request {}))
+    (handler (th/make-dummy-request {}))
     (t/is (nil? (::http/auth-data @request)))
 
-    (handler (make-dummy-request {:cookies {"auth-token" "foobar"}}))
+    (handler (th/make-dummy-request {:cookies {"auth-token" "foobar"}}))
 
     (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
       (t/is (= :cookie token-type))
@@ -143,16 +82,16 @@
                  (fn [req] {::yres/status 200})
                  {:test1 "secret-key"})]
 
-    (let [response (handler (make-dummy-request {}))]
+    (let [response (handler (th/make-dummy-request {}))]
       (t/is (= 403 (::yres/status response))))
 
-    (let [response (handler (make-dummy-request {:headers {"x-shared-key" "secret-key2"}}))]
+    (let [response (handler (th/make-dummy-request {:headers {"x-shared-key" "secret-key2"}}))]
       (t/is (= 403 (::yres/status response))))
 
-    (let [response (handler (make-dummy-request {:headers {"x-shared-key" "secret-key"}}))]
+    (let [response (handler (th/make-dummy-request {:headers {"x-shared-key" "secret-key"}}))]
       (t/is (= 403 (::yres/status response))))
 
-    (let [response (handler (make-dummy-request {:headers {"x-shared-key" "test1 secret-key"}}))]
+    (let [response (handler (th/make-dummy-request {:headers {"x-shared-key" "test1 secret-key"}}))]
       (t/is (= 200 (::yres/status response))))))
 
 (t/deftest access-token-authz
@@ -263,7 +202,7 @@
                                                        :user-agent "user agent"})
                       (#'session/assign-token cfg))
 
-        response (handler (make-dummy-request {:cookies {"auth-token" (:token session)}}))
+        response (handler (th/make-dummy-request {:cookies {"auth-token" (:token session)}}))
 
         {:keys [token claims] token-type :type}
         (get response ::http/auth-data)]
@@ -290,7 +229,7 @@
         ;; value with a backslash followed by '}', which
         ;; clojure.data.json v0.5.x cannot handle.
         body    (.getBytes "{\"x\": \"\\}\"}" "UTF-8")
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes body})
@@ -309,7 +248,7 @@
   ;; error.
   (let [handler (#'app.http.middleware/wrap-parse-request
                  (fn [_] (throw (RequestTooBigException. "too large"))))
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes (.getBytes "{}" "UTF-8")})
@@ -327,7 +266,7 @@
   ;; should convert it to a 400 :malformed-json validation error.
   (let [handler (#'app.http.middleware/wrap-parse-request
                  (fn [_] (throw (java.io.EOFException. "stream closed"))))
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes (.getBytes "{}" "UTF-8")})
@@ -350,7 +289,7 @@
                   (.initCause iae))
         handler (#'app.http.middleware/wrap-parse-request
                  (fn [_] (throw wrapped)))
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes (.getBytes "{}" "UTF-8")})
@@ -368,7 +307,7 @@
   ;; :unexpected. This is the "true internal error" path.
   (let [handler  (#'app.http.middleware/wrap-parse-request
                   (fn [_] (throw (RuntimeException. "boom"))))
-        request  (make-dummy-request
+        request  (th/make-dummy-request
                   {:method  :post
                    :headers {"content-type" "application/json"}
                    :body-bytes (.getBytes "{}" "UTF-8")})
@@ -388,7 +327,7 @@
   ;; with :code :io-exception.
   (let [handler  (#'app.http.middleware/wrap-parse-request
                   (fn [_] (throw (java.io.IOException. "network gone"))))
-        request  (make-dummy-request
+        request  (th/make-dummy-request
                   {:method  :post
                    :headers {"content-type" "application/json"}
                    :body-bytes (.getBytes "{}" "UTF-8")})

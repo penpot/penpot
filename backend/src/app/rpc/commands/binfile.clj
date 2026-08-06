@@ -124,7 +124,7 @@
 
 (def ^:private schema:import-binfile
   [:and
-   [:map {:title "import-binfile"}
+   [:map {:title "import-binfile" :closed true}
     [:name [:or [:string {:max 250}]
             [:map-of ::sm/uuid [:string {:max 250}]]]]
     [:project-id ::sm/uuid]

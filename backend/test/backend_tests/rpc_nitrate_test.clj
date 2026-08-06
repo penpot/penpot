@@ -1262,8 +1262,11 @@
                  body))
 
         (let [[_ method-fn] (get-in th/*system* [:app.rpc/methods :get-nitrate-activation-code-request])
-              result        (method-fn {::rpc/profile-id (:id profile)
-                                        ::rpc/request-at now})
+              request       (assoc (th/make-dummy-request) :params {})
+              params        (-> {::rpc/profile-id (:id profile)
+                                 ::rpc/request-at now}
+                                (with-meta {:app.http/request request}))
+              result        (method-fn params)
               headers       (::http/headers (meta result))]
           (t/is (rph/wrapped? result))
           (t/is (= "text/plain" (get headers "content-type")))
