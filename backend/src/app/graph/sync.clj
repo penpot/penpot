@@ -662,7 +662,7 @@
   [index {:keys [id name page]}]
   (let [page-id  (or id (:id page))
         page     (or page {:id page-id :name name})
-        page     (nodes/validate-node "Page" {:id page-id
+        page     (nodes/project-attrs "Page" {:id page-id
                                               :name (or (:name page) "Page")
                                               :index (count (:pages index))})
         doc-id   (:doc-id index)
