@@ -200,7 +200,14 @@
         (throw cause)))))
 
 (defn query-session!
-  "Run `statement` against the in-memory graph for `profile-id`."
+  "Run a read-only `statement` against the in-memory graph for `profile-id`.
+
+  The statement is bound against the live schema before it runs, so a query
+  naming a table or a property that does not exist reports the binder's own
+  message and executes nothing. The engine's read/write analysis then decides
+  whether it may run at all: the console is an inspection surface, and a
+  session graph is rebuilt from the file by Reload, so a mutation from here
+  would produce a graph no rebuild reproduces."
   [profile-id statement]
   (when (str/blank? statement)
     (ex/raise :type :validation
@@ -208,8 +215,17 @@
               :hint "cypher query is required"))
   (if-let [{:keys [conn lock]} (get @sessions (session-key profile-id))]
     (locking lock
-      (-> (ladybug/query-on-connection! conn statement)
-          format-query-result))
+      (let [{:keys [ok? error read-only?]} (ladybug/validate-on-connection! conn statement)]
+        (when-not ok?
+          (ex/raise :type :validation
+                    :code :graph-query-invalid
+                    :hint error))
+        (when-not read-only?
+          (ex/raise :type :validation
+                    :code :graph-query-not-read-only
+                    :hint "the graph console runs read-only queries"))
+        (-> (ladybug/query-on-connection! conn statement)
+            format-query-result)))
     (ex/raise :type :not-found
               :code :graph-session-not-loaded
               :hint "load a file graph before running queries")))
