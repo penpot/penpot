@@ -52,7 +52,7 @@
 
    :redis-uri "redis://redis/0"
 
-   :file-data-backend "legacy-db"
+   :file-data-backend "db"
 
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"

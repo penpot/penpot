@@ -88,6 +88,12 @@
    [:plugin-data {:optional true} schema:plugin-data]
    [:tokens-lib {:optional true} schema:tokens-lib]])
 
+(def schema:file-metadata
+  [:map {:title "Metadata"}
+   [:storage-ref-id {:optional true} ::sm/uuid]
+   [:generated-by {:optional true} :string]
+   [:referer {:optional true} :string]])
+
 (def schema:file
   "A schema for validate a file data structure; data is optional
   because sometimes we want to validate file without the data."
@@ -106,6 +112,7 @@
    [:data {:optional true} schema:data]
    [:version :int]
    [:features ::cfeat/features]
+   [:metadata {:optional true} schema:file-metadata]
    [:migrations {:optional true}
     [::sm/set {:ordered true} :string]]])
 
@@ -122,6 +129,9 @@
 
 (def check-file-media
   (sm/check-fn schema:media))
+
+(def decode-file-metadata
+  (sm/decoder schema:file-metadata sm/json-transformer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION

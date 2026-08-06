@@ -723,6 +723,7 @@
   (-> (select-keys file file-attrs)
       (assoc :data nil)
       (dissoc :team-id)
+      (dissoc :metadata)
       (dissoc :migrations)))
 
 (defn- file->file-data-params
