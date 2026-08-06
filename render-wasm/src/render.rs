@@ -1248,6 +1248,66 @@ impl RenderState {
         )
     }
 
+    /// Apply frame clip stack in document space on the given surface bitmask.
+    /// Caller must already have those surfaces in doc transform (Fills-style
+    /// scale + tile translation, or Current after the same). Hard (non-AA)
+    /// clips avoid alpha seams on semi-transparent overflow.
+    fn apply_clip_stack_to_surfaces(
+        &mut self,
+        clips: &ClipStack,
+        surface_ids: u32,
+        scale: f32,
+        debug_fill_surface: Option<SurfaceId>,
+    ) {
+        for (mut bounds, corners, transform) in clips.iter() {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().concat(transform);
+            });
+
+            // Outset clip by ~0.5 to include edge pixels that
+            // aliased clip misclassifies as outside (causing artifacts).
+            let outset = 0.5 / scale;
+            bounds.outset((outset, outset));
+
+            // Hard clip edge (antialias = false) to avoid alpha seam when clipping
+            // semi-transparent content larger than the frame.
+            if let Some(corners) = corners {
+                let rrect = RRect::new_rect_radii(bounds, corners);
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
+                });
+            } else {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, false);
+                });
+            }
+
+            // This renders a red line around clipped
+            // shapes (frames).
+            if self.options.is_debug_visible() {
+                if let Some(fills_surface_id) = debug_fill_surface {
+                    let mut paint = skia::Paint::default();
+                    paint.set_style(skia::PaintStyle::Stroke);
+                    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                    paint.set_stroke_width(4.);
+                    self.surfaces
+                        .canvas(fills_surface_id)
+                        .draw_rect(bounds, &paint);
+                }
+            }
+
+            // Uncomment to debug the render_position_data
+            // if let Type::Text(text_content) = &shape.shape_type {
+            //     text::render_position_data(self, fills_surface_id, &shape, text_content);
+            // }
+
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas()
+                    .concat(&transform.invert().unwrap_or(Matrix::default()));
+            });
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
@@ -1363,51 +1423,7 @@ impl RenderState {
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
             let scale = self.get_scale();
-            for (mut bounds, corners, transform) in clips.iter() {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas().concat(transform);
-                });
-
-                // Outset clip by ~0.5 to include edge pixels that
-                // aliased clip misclassifies as outside (causing artifacts).
-                let outset = 0.5 / scale;
-                bounds.outset((outset, outset));
-
-                // Hard clip edge (antialias = false) to avoid alpha seam when clipping
-                // semi-transparent content larger than the frame.
-                if let Some(corners) = corners {
-                    let rrect = RRect::new_rect_radii(bounds, corners);
-                    self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas().clip_rrect(rrect, skia::ClipOp::Intersect, false);
-                    });
-                } else {
-                    self.surfaces.apply_mut(surface_ids, |s| {
-                        s.canvas().clip_rect(bounds, skia::ClipOp::Intersect, false);
-                    });
-                }
-
-                // This renders a red line around clipped
-                // shapes (frames).
-                if self.options.is_debug_visible() {
-                    let mut paint = skia::Paint::default();
-                    paint.set_style(skia::PaintStyle::Stroke);
-                    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-                    paint.set_stroke_width(4.);
-                    self.surfaces
-                        .canvas(fills_surface_id)
-                        .draw_rect(bounds, &paint);
-                }
-
-                // Uncomment to debug the render_position_data
-                // if let Type::Text(text_content) = &shape.shape_type {
-                //     text::render_position_data(self, fills_surface_id, &shape, text_content);
-                // }
-
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .concat(&transform.invert().unwrap_or(Matrix::default()));
-                });
-            }
+            self.apply_clip_stack_to_surfaces(clips, surface_ids, scale, Some(fills_surface_id));
         }
 
         // We don't want to change the value in the global state
