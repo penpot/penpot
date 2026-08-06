@@ -4,23 +4,24 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.text-content
+(ns app.common.render-wasm.text-content
   "Single source of truth for writing a text shape's content into the WASM design
   state. The binary layout ([num-spans][paragraph attrs][span attrs][text]) is
-  identical for the workspace and the headless exporter — only *font resolution*
-  differs (the workspace uses the loaded fonts DB; the exporter uses its gfonts
-  catalog + custom variants). So the byte-writing lives here and font resolution
-  is injected via the `opts` map passed to `write-shape-text!`.
+  identical for the workspace and the headless exporter, and so is the font-id
+  -> uuid mapping (`cfnt/font-id->uuid`). Only *variant* resolution differs —
+  the workspace has a loaded fonts DB, the exporter does not — so that part is
+  injected via the `opts` map passed to `write-shape-text!`.
 
   Fully portable (no store/DOM/React), so it runs under Node too."
   (:require
    [app.common.data :as d]
+   [app.common.fonts :as cfnt]
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.mem :as mem]
+   [app.common.render-wasm.serializers :as sr]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.uuid :as uuid]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]
    [cuerdas.core :as str]))
 
 (def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
@@ -169,13 +170,15 @@
   "Writes one paragraph's spans + text into WASM and appends it to the current
   shape via `_set_shape_text_content`.
 
-  `opts` injects host-specific font resolution:
-   - `:normalize-font-id`  (string font-id -> wasm uuid) — required in practice,
+  `opts` injects host-specific font handling:
+   - `:normalize-font-id` (string font-id -> wasm uuid) defaults to the shared
+     `cfnt/font-id->uuid`, which is what both hosts want — a host only
+     overrides it if it keys its font store some other way,
    - `:normalize-paragraph`/`:normalize-span` — font-variant normalization from a
      fonts DB (workspace); default to identity (the exporter resolves variants
      differently / not at all)."
   [spans paragraph text {:keys [normalize-font-id normalize-paragraph normalize-span]
-                         :or   {normalize-font-id   identity
+                         :or   {normalize-font-id   cfnt/font-id->uuid
                                 normalize-paragraph identity
                                 normalize-span      (fn [span _paragraph] span)}}]
   (let [paragraph     (normalize-paragraph paragraph)

@@ -13,6 +13,10 @@ export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
 # PENPOT_DATABASE_*, PENPOT_REDIS_URI, PENPOT_OBJECTS_STORAGE_*, AWS_*) is owned by
 # docker/devenv/defaults.env and injected via the main service's env block.
 
+if [ -f /home/selfsigned.crt ]; then
+    export NODE_EXTRA_CA_CERTS=/home/selfsigned.crt;
+fi
+
 # Background worker flag is per-instance. Defaults to enabled (ws0); ws1+
 # overlays set PENPOT_BACKEND_WORKER=false so scheduled and async tasks only
 # run on ws0, keeping notification Pub/Sub bound to a single Valkey. See
@@ -101,5 +105,3 @@ function setup_minio() {
     mc alias set penpot-s3/ "${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}" minioadmin minioadmin -q
     mc mb "penpot-s3/${PENPOT_OBJECTS_STORAGE_S3_BUCKET}" -p -q
 }
-
-

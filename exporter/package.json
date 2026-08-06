@@ -33,6 +33,7 @@
     "watch:app": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch main",
     "watch": "pnpm run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",
+    "build:wasm": "../render-wasm/build export",
     "build": "pnpm run clear:shadow-cache && pnpm run build:app",
     "fmt": "cljfmt fix --parallel=true src/",
     "check-fmt": "cljfmt check --parallel=true src/",

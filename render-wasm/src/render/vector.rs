@@ -79,11 +79,14 @@ impl ShapeRenderer for VectorRenderer<'_> {
     }
 
     fn draw_drop_shadows(&mut self, shape: &Shape) -> Result<()> {
+        let layer_bounds = shape.layer_bounds();
         for shadow in shape.drop_shadows_visible() {
             if let Some(filter) = shadow.get_drop_shadow_filter() {
                 let mut paint = Paint::default();
                 paint.set_image_filter(filter);
-                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                let layer_rec = skia::canvas::SaveLayerRec::default()
+                    .bounds(&layer_bounds)
+                    .paint(&paint);
                 self.canvas.save_layer(&layer_rec);
                 let mut fill_paint = Paint::default();
                 fill_paint.set_anti_alias(true);
@@ -99,10 +102,14 @@ impl ShapeRenderer for VectorRenderer<'_> {
         if !shape.has_fills() {
             return Ok(());
         }
+        let layer_bounds = shape.layer_bounds();
         for shadow in shape.inner_shadows_visible() {
             let paint = shadow.get_inner_shadow_paint(true, shape.image_filter(1.).as_ref());
-            self.canvas
-                .save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+            self.canvas.save_layer(
+                &skia::canvas::SaveLayerRec::default()
+                    .bounds(&layer_bounds)
+                    .paint(&paint),
+            );
             let mut fill_paint = Paint::default();
             fill_paint.set_anti_alias(true);
             fill_paint.set_color(skia::Color::BLACK);
@@ -161,9 +168,13 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 })
                 .collect();
 
+            let layer_bounds = shape.layer_bounds();
             for shadow_paint in &drop_shadows {
-                self.canvas
-                    .save_layer(&skia::canvas::SaveLayerRec::default().paint(shadow_paint));
+                self.canvas.save_layer(
+                    &skia::canvas::SaveLayerRec::default()
+                        .bounds(&layer_bounds)
+                        .paint(shadow_paint),
+                );
 
                 text::render_overlay_emoji(
                     self.canvas,
@@ -331,7 +342,10 @@ impl ShapeRenderer for VectorRenderer<'_> {
         if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
             let mut paint = Paint::default();
             paint.set_image_filter(filter);
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            let layer_bounds = shape.layer_bounds();
+            let layer_rec = skia::canvas::SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&paint);
             self.canvas.save_layer(&layer_rec);
             true
         } else {
@@ -715,7 +729,10 @@ fn render_group(
             }
         }
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        let layer_bounds = element.extrect(tree, scale);
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&paint);
         canvas.save_layer(&layer_rec);
     }
 
@@ -726,7 +743,12 @@ fn render_group(
         // as content, then re-draw the mask silhouette (the group's first child)
         // with DstIn to clip everything to it.
         let paint = Paint::default();
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+        let subtree_bounds = element.extrect(tree, scale);
+        canvas.save_layer(
+            &skia::canvas::SaveLayerRec::default()
+                .bounds(&subtree_bounds)
+                .paint(&paint),
+        );
 
         for child_id in &children {
             render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
@@ -735,7 +757,11 @@ fn render_group(
         if let Some(mask_id) = element.mask_id() {
             let mut mask_paint = Paint::default();
             mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-            canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&mask_paint));
+            canvas.save_layer(
+                &skia::canvas::SaveLayerRec::default()
+                    .bounds(&subtree_bounds)
+                    .paint(&mask_paint),
+            );
             render_tree_inner(shared, canvas, mask_id, tree, scale, opts)?;
             canvas.restore(); // mask layer
         }
@@ -797,7 +823,10 @@ fn render_frame(
             }
         }
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        let layer_bounds = element.extrect(tree, scale);
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&paint);
         canvas.save_layer(&layer_rec);
     }
 
@@ -857,13 +886,18 @@ fn render_container_drop_shadows(
     draw_fills: bool,
     opts: &TreeOpts,
 ) -> Result<()> {
+    let subtree_bounds = element.extrect(tree, scale);
     for shadow in element.drop_shadows_visible() {
         let Some(filter) = shadow.get_drop_shadow_filter() else {
             continue;
         };
         let mut paint = Paint::default();
         paint.set_image_filter(filter);
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+        canvas.save_layer(
+            &skia::canvas::SaveLayerRec::default()
+                .bounds(&subtree_bounds)
+                .paint(&paint),
+        );
 
         if draw_fills && !element.fills.is_empty() {
             let mut renderer = VectorRenderer::new(canvas, shared, scale);
@@ -902,7 +936,10 @@ fn render_leaf(
         let mut paint = Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        let layer_bounds = element.layer_bounds();
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&paint);
         canvas.save_layer(&layer_rec);
     }
 
@@ -1101,7 +1138,8 @@ fn draw_stroke_kind_aware(canvas: &Canvas, shape: &Shape, stroke: &Stroke, paint
         }
         StrokeKind::Outer => {
             canvas.save();
-            canvas.save_layer(&skia::canvas::SaveLayerRec::default());
+            let layer_bounds = shape.layer_bounds();
+            canvas.save_layer(&skia::canvas::SaveLayerRec::default().bounds(&layer_bounds));
             draw_shape_geometry(canvas, shape, paint);
             let mut clear_paint = Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
@@ -1134,7 +1172,8 @@ fn draw_image_stroke(
     let container = shape.selrect;
 
     canvas.save();
-    canvas.save_layer(&skia::canvas::SaveLayerRec::default());
+    let layer_bounds = shape.layer_bounds();
+    canvas.save_layer(&skia::canvas::SaveLayerRec::default().bounds(&layer_bounds));
 
     // Opaque stroke silhouette; the SrcIn image draw below fills it.
     draw_stroke_geometry(canvas, scale, shape, stroke, true);

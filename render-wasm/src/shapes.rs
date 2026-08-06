@@ -1070,7 +1070,7 @@ impl Shape {
         extrect
     }
 
-    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+    fn own_extrect_bounds(&self) -> Bounds {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
@@ -1096,6 +1096,19 @@ impl Shape {
         bounds = self.apply_stroke_bounds(bounds, max_stroke);
         bounds = self.apply_shadow_bounds(bounds);
         bounds = self.apply_blur_bounds(bounds);
+        bounds
+    }
+
+    /// Bound for a `SaveLayerRec` wrapping this shape's own drawing, in
+    /// untransformed space (callers concatenate [`Self::centered_transform`]
+    /// first). Includes shadow/blur margins, so it is also a valid input bound
+    /// for a layer whose paint carries an image filter.
+    pub fn layer_bounds(&self) -> math::Rect {
+        self.own_extrect_bounds().to_rect()
+    }
+
+    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        let mut bounds = self.own_extrect_bounds();
         bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
         bounds = self.apply_children_blur(bounds, shapes_pool);
 

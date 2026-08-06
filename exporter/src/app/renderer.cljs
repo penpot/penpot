@@ -7,10 +7,13 @@
 (ns app.renderer
   "Common renderer interface."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.config :as cf]
    [app.renderer.bitmap :as rb]
    [app.renderer.pdf :as rp]
    [app.renderer.svg :as rs]
+   [app.renderer.wasm :as rw]
    [cljs.spec.alpha :as s]))
 
 (s/def ::name ::us/string)
@@ -36,13 +39,22 @@
           :opt-un [::is-wasm]))
 
 (defn render
-  [{:keys [type] :as params} on-object]
+  [{:keys [type is-wasm] :as params} on-object]
   (us/verify ::render-params params)
   (us/verify fn? on-object)
-  (case type
-    :png  (rb/render params on-object)
-    :jpeg (rb/render params on-object)
-    :webp (rb/render params on-object)
-    :pdf  (rp/render params on-object)
-    :svg  (rs/render params on-object)))
+  (let [wasm-export? (contains? cf/flags :wasm-export)
+        headless?    (and is-wasm wasm-export? (not= :svg type))]
+    (when is-wasm
+      (l/info :hint "render"
+              :type type
+              :wasm-export wasm-export?
+              :backend (if headless? "wasm" "browser")))
+    (if headless?
+      (rw/render params on-object)
+      (case type
+        :png  (rb/render params on-object)
+        :jpeg (rb/render params on-object)
+        :webp (rb/render params on-object)
+        :pdf  (rp/render params on-object)
+        :svg  (rs/render params on-object)))))
 

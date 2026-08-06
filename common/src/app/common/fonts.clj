@@ -4,8 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.main.fonts
+(ns app.common.fonts
   "A fonts loading macros."
+
   (:require
    [app.common.uuid :as uuid]
    [clojure.data.json :as json]
@@ -47,6 +48,3 @@
   (let [data (slurp (io/resource path))
         data (json/read-str data)]
     `~(mapv parse-gfont (get data "items"))))
-
-
-

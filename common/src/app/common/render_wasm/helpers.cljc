@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.helpers
-  #?(:cljs (:require-macros [app.render-wasm.helpers]))
+(ns app.common.render-wasm.helpers
+  #?(:cljs (:require-macros [app.common.render-wasm.helpers]))
   (:require [app.common.data :as d]))
 
 (def error-code

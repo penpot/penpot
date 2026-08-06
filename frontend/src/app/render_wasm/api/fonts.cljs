@@ -8,15 +8,15 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
-   [app.render-wasm.fallback-fonts :as fbf]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
@@ -39,33 +39,6 @@
 (def ^:private default-line-height 1.2)
 (def ^:private default-letter-spacing 0.0)
 
-(defn- google-font-id->uuid
-  "Returns the UUID for a Google Font ID. Uses uuid/zero as fallback when the
-  font is not found in fontsdb. uuid/zero maps to the default font (Source
-  Sans Pro) in WASM.
-  A font id may not exist for different reasons:
-  - the gfonts.json catalog was updated and fonts were renamed or removed,
-  - the file was imported from another Penpot instance with different fonts,
-  ..."
-  [font-id]
-  (let [font (fonts/get-font-data font-id)
-        result (:uuid font)]
-    (or result uuid/zero)))
-
-(defn- custom-font-id->uuid
-  [font-id]
-  (uuid/uuid (subs font-id (inc (str/index-of font-id "-")))))
-
-(defn- font-backend
-  [font-id]
-  (cond
-    (str/starts-with? font-id "gfont-")
-    :google
-    (str/starts-with? font-id "custom-")
-    :custom
-    :else
-    :builtin))
-
 (defn- font-db-data
   [font-id font-variant-id font-weight-fallback font-style-fallback]
   (let [font (fonts/get-font-data font-id)
@@ -74,15 +47,6 @@
     (if (or (nil? closest-variant) (= closest-variant variant))
       variant
       closest-variant)))
-
-(defn- font-id->uuid [font-id]
-  (case (font-backend font-id)
-    :google
-    (google-font-id->uuid font-id)
-    :custom
-    (custom-font-id->uuid font-id)
-    :builtin
-    uuid/zero))
 
 (defn uuid->font-id
   [font-uuid]
@@ -100,11 +64,11 @@
         "regular")))
 
 (defn ^:private font-id->asset-id [font-id font-variant-id font-weight font-style]
-  (case (font-backend font-id)
+  (case (cfnt/font-id->backend font-id)
     :google
     font-id
     :custom
-    (let [font-uuid (custom-font-id->uuid font-id)
+    (let [font-uuid (cfnt/font-id->uuid font-id)
           matching-font (some (fn [[_ font]]
                                 (and (= (:font-id font) font-uuid)
                                      (= (str (:font-weight font)) (str font-weight))
@@ -194,13 +158,12 @@
 (defn- google-font-ttf-url
   [font-id font-variant-id font-weight font-style]
   (let [variant (font-db-data font-id font-variant-id font-weight font-style)]
-    (if-let [ttf-url (:ttf-url variant)]
-      (str/replace ttf-url "https://fonts.gstatic.com/s/" (u/join cf/public-uri "internal/gfonts/font/"))
-      nil)))
+    (when-let [ttf-url (:ttf-url variant)]
+      (cfnt/gstatic->proxy-url ttf-url (u/join cf/public-uri "internal/gfonts/font")))))
 
 (defn- font-id->ttf-url
   [font-id asset-id font-variant-id font-weight font-style]
-  (case (font-backend font-id)
+  (case (cfnt/font-id->backend font-id)
     :google
     (google-font-ttf-url font-id font-variant-id font-weight font-style)
     :custom
@@ -244,18 +207,6 @@
     "regular" 0
     "italic" 1
     0))
-
-(defn normalize-font-id
-  [font-id]
-  (try
-    (if ^boolean (str/starts-with? font-id "gfont-")
-      (google-font-id->uuid font-id)
-      (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
-        (if (or (nil? no-prefix) (not (string? no-prefix)) (str/blank? no-prefix))
-          uuid/zero
-          (uuid/parse no-prefix))))
-    (catch :default _e
-      uuid/zero)))
 
 (defn normalize-span-font
   [span paragraph]
@@ -358,7 +309,7 @@
         emoji? (get font :is-emoji false)
         fallback? (get font :is-fallback false)
         font-data (font-db-data font-id normalized-variant-id font-weight-fallback font-style-fallback)
-        wasm-id (font-id->uuid font-id)
+        wasm-id (cfnt/font-id->uuid font-id)
         raw-weight (or (:weight font-data) font-weight-fallback)
         weight (serialize-font-weight raw-weight)
         style (cond
@@ -415,7 +366,3 @@
 (defn store-fonts
   [fonts]
   (keep (fn [font] (store-font font)) fonts))
-
-(def add-emoji-font fbf/add-emoji-font)
-(def noto-fonts fbf/noto-fonts)
-(def add-noto-fonts fbf/add-noto-fonts)

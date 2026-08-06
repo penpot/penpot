@@ -4,13 +4,159 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.render-wasm.fallback-fonts
-  "Host-agnostic fallback-font knowledge: which scripts/emoji a text uses and
-  which (google) fallback fonts cover them. Pure data + pure fns — no browser
-  or Node dependencies — so the workspace (`api.texts`/`api.fonts`) and the
-  headless exporter (`app.renderer.wasm`) compute the SAME fallback set from
-  the same source. Anything a host must fetch/upload for text to render
-  belongs here, not in host code.")
+(ns app.common.fonts
+  "Host-agnostic font knowledge shared by every renderer: the google catalog
+  baked at compile time from `common/resources/fonts/gfonts.*.json`, the
+  font-id/uuid mapping, weight/style variant resolution, and the noto fallback
+  fonts a text's scripts and emoji need. Also the one family bundled with the
+  frontend, which is not a google font but resolves by the same rules.
+
+  Pure data + pure fns — no browser or Node dependencies — so the workspace and
+  the headless exporter resolve the SAME fonts from the same source. Anything a
+  host must fetch or upload for text to render belongs here, not in host code."
+  (:require-macros [app.common.fonts :refer [preload-gfonts]])
+  (:require
+   [app.common.data :as d]
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
+
+;; --- GOOGLE FONTS CATALOG
+
+(def catalog
+  (preload-gfonts "fonts/gfonts.2025.11.28.json"))
+
+(def ^:private by-id
+  (reduce (fn [m font] (assoc m (:id font) font)) {} catalog))
+
+(def ^:private by-uuid
+  (reduce (fn [m font] (assoc m (:uuid font) font)) {} catalog))
+
+(defn gfont-id->uuid
+  "Maps a `gfont-<slug>` id to its (compilation-stable) catalog uuid, or nil."
+  [gfont-id]
+  (:uuid (get by-id gfont-id)))
+
+;; --- font-id -> wasm uuid
+
+(def ^:private custom-prefix "custom-")
+(def ^:private gfont-prefix "gfont-")
+
+(defn font-id->backend
+  "Which source a content font-id comes from: `:google` for `gfont-<slug>`,
+  `:custom` for `custom-<uuid>`, `:builtin` for everything else (bundled
+  families, but also unknown or malformed ids — the same bucket
+  `font-id->uuid` maps to `uuid/zero`)."
+  [font-id]
+  (cond
+    (not (string? font-id))                  :builtin
+    (str/starts-with? font-id gfont-prefix)  :google
+    (str/starts-with? font-id custom-prefix) :custom
+    :else                                    :builtin))
+
+(defn font-id->uuid
+  "Maps a content font-id to the uuid WASM keys fonts by:
+
+   - `gfont-<slug>`   -> the catalog uuid,
+   - `custom-<uuid>`  -> that uuid,
+   - anything else (builtin, unknown, malformed) -> `uuid/zero`, which WASM
+     resolves to the default font."
+
+  [font-id]
+  (case (font-id->backend font-id)
+    :google (or (gfont-id->uuid font-id) uuid/zero)
+    :custom (or (uuid/parse* (subs font-id (count custom-prefix))) uuid/zero)
+    uuid/zero))
+
+;; --- proxy urls
+
+(def ^:private gstatic-prefix
+  "https://fonts.gstatic.com/s")
+
+(defn gstatic->proxy-url
+  [s base]
+  (let [base (str/rtrim (str base) "/")]
+    (str/replace (str s) gstatic-prefix base)))
+
+;; --- variant resolution
+
+(defn closest-variant
+  [variants target-weight target-style]
+  (when-let [target-weight (d/parse-integer target-weight)]
+    (let [result
+          (reduce
+           (fn [closest-match variant]
+             (let [weight (d/parse-integer (:weight variant))
+                   distance (abs (- target-weight weight))
+                   matches-style? (= target-style (:style variant))
+                   current {:variant variant
+                            :weight weight
+                            :distance distance}]
+               (cond
+                 ;; Exact match found
+                 (and (zero? distance)
+                      (if target-style matches-style? true))
+                 (reduced current)
+
+                 (nil? closest-match) current
+
+                 ;; Update best match if this variant is closer or equal distance but higher weight
+                 (or (< distance (:distance closest-match))
+                     (and (= distance (:distance closest-match))
+                          (> weight (:weight closest-match))))
+                 current
+
+                 ;; Same weight as the `closest-match` but the style matches `target-style`
+                 (and (= weight (:weight closest-match)) matches-style?)
+                 current
+
+                 :else
+                 closest-match)))
+           nil
+           variants)]
+      (:variant result))))
+
+(defn resolve-ttf-url
+  [font-uuid weight style]
+  (when-let [font (get by-uuid font-uuid)]
+    (let [style    (if (zero? style) "normal" "italic")
+          variants (:variants font)]
+      (:ttf-url (or (closest-variant variants weight style)
+                    (first variants))))))
+
+;; --- BUILTIN FONTS
+;;
+;; Bundled with the frontend, served from `<public-uri>/fonts/`. Shared so the
+;; workspace and the exporter upload the same TTF for a given weight/style.
+
+(def local-fonts
+  [{:id "sourcesanspro"
+    :name "Source Sans Pro"
+    :family "sourcesanspro"
+    :variants
+    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight" :ttf-url "sourcesanspro-extralight.ttf"}
+     {:id "200italic" :name "200 Italic" :weight "200" :style "italic" :suffix "extralightitalic" :ttf-url "sourcesanspro-extralightitalic.ttf"}
+     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light" :ttf-url "sourcesanspro-light.ttf"}
+     {:id "300italic" :name "300 Italic"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
+     {:id "regular" :name "400" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
+     {:id "italic" :name "400 Italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
+     {:id "600" :name "600" :weight "600" :style "normal" :suffix "semibold" :ttf-url "sourcesanspro-semibold.ttf"}
+     {:id "600italic" :name "600 Italic" :weight "600" :style "italic" :suffix "semibolditalic" :ttf-url "sourcesanspro-semibolditalic.ttf"}
+     {:id "bold" :name "700" :weight "700" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
+     {:id "bolditalic" :name "700 Italic" :weight "700" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
+     {:id "black" :name "900" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
+     {:id "blackitalic" :name "900 Italic" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
+
+(defn resolve-ttf-file
+  "Builtin TTF file name for `weight` and `style` (0 normal, 1 italic), by the
+  same nearest-weight rule as the google catalog."
+  [weight style]
+  (let [variants (:variants (first local-fonts))]
+    (:ttf-url (or (closest-variant variants weight (if (zero? style) "normal" "italic"))
+                  (first variants)))))
+
+;; --- FALLBACK FONTS
+;;
+;; Which scripts/emoji a text uses and which (google) fallback fonts cover them.
 
 (def ^:private emoji-pattern
   #"(?:\uD83C[\uDDE6-\uDDFF]\uD83C[\uDDE6-\uDDFF])|(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDEFF])|(?:\uD83E[\uDD00-\uDDFF])|(?:\uD83D[\uDE80-\uDEFF]|\uD83E[\uDC00-\uDCFF])|(?:\uD83E[\uDE70-\uDFFF])|[\u2600-\u26FF\u2700-\u27BF\u2300-\u23FF\u2B00-\u2BFF]")
