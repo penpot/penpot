@@ -24,7 +24,8 @@
   (:import
    io.undertow.server.RequestTooBigException
    java.io.InputStream
-   java.io.OutputStream))
+   java.io.OutputStream
+   java.security.MessageDigest))
 
 (set! *warn-on-reflection* true)
 
@@ -329,6 +330,11 @@
   {:name ::auth
    :compile (constantly wrap-auth)})
 
+(defn- constant-time-eq?
+  "Compare strings in constant time to prevent timing attacks."
+  [^String a ^String b]
+  (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
+
 (defn- wrap-shared-key-auth
   [handler keys]
   (if (seq keys)
@@ -338,7 +344,7 @@
         (let [key-id (-> key-id str/lower keyword)]
           (if (and (string? key)
                    (contains? keys key-id)
-                   (= key (get keys key-id)))
+                   (constant-time-eq? key (get keys key-id)))
             (-> request
                 (assoc ::http/auth-key-id key-id)
                 (handler))
