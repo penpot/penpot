@@ -188,7 +188,11 @@
   [data file]
   (let [doc-id   (or (:id data) (:id file))
         doc-node (nodes/project-attrs "Document" (document-attrs file data))
-        pages    (seq (reverse (:pages data)))
+        ;; `:pages` is the tab order the user sees, and `Page.index` and the
+        ;; page's `IsChildOf.position` are that order. Child shapes are
+        ;; reversed on the way in (`child-shape-ids`) because their stored
+        ;; list runs bottom to top; pages have no such second ordering.
+        pages    (seq (:pages data))
         comps    (seq (:components data))
         acc0     (-> (initial-acc)
                      (update-in [:nodes "Document"] (fnil conj []) doc-node)
