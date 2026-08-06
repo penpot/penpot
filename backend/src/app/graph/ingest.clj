@@ -59,9 +59,11 @@
       (graph.arrow/load-projection! conn {:nodes nodes :edges edges} allocator)
       (ladybug/exec-on-connection! conn ["CHECKPOINT;"])
       (let [transforms (projection.transforms/apply-transforms! system conn data file)]
-        ;; Written last: its presence doubles as the build-complete marker.
-        (graph.meta/write! conn {:file-id file-id
-                                 :revn    (:revn file)})
+        ;; Written last: its presence doubles as the build-complete marker,
+        ;; and it is what the parity consumer reads to know what is left.
+        (graph.meta/write! conn {:file-id       file-id
+                                 :revn          (:revn file)
+                                 :transform-ids (:ids transforms)})
         {:file-id        file-id
          :revn           (:revn file)
          :name           (or (:name data) (:name file))
