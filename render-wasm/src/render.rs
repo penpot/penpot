@@ -1369,11 +1369,25 @@ impl RenderState {
             return Ok(());
         }
 
+        // Only perceptible shadows need the layered Fills/Strokes path. Use the
+        // same footprint LOD as when painting drop and inner shadows.
+        let scale = self.get_scale();
+        let shadows_need_layered = !skip_drop_shadows
+            && (shape
+                .drop_shadows_visible()
+                .any(|s| s.is_perceptible_at_scale_for(scale, shape.is_recursive()))
+                || shape
+                    .inner_shadows_visible()
+                    .any(|s| s.is_perceptible_at_scale_for(scale, shape.is_recursive())));
+
         // Clip is allowed: we apply the same stack on Current after scale+translate.
         // Opacity < 1 with SrcOver is OK: render_shape_enter already opened a
         // save_layer on Current; painting fills/strokes into that layer matches
         // the layered path without Fills/Strokes blits.
         // Non-SrcOver blend, frame clip blur, and masked groups stay layered.
+        // Stroke-only (fills_none) can go direct: empty fills are a no-op and
+        // strokes paint into Current. Requires Partial GPU drain (dc1ab) so
+        // large SVG-icon files do not backlog commands until Full present.
         let can_render_directly = apply_to_current_surface
             && offset.is_none()
             && parent_shadows.is_none()
@@ -1383,20 +1397,15 @@ impl RenderState {
             && shape.blur.is_none()
             && shape.background_blur.is_none()
             && !has_inherited_blur
-            && shape.shadows.is_empty()
+            && !shadows_need_layered
             && matches!(
                 shape.shape_type,
                 Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
             )
             && !(shape.fills.is_empty() && has_nested_fills)
-            && !shape
-                .svg_attrs
-                .as_ref()
-                .is_some_and(|attrs| attrs.fill_none)
             && target_surface != SurfaceId::Export;
 
         if can_render_directly {
-            let scale = self.get_scale();
             let translation = self
                 .surfaces
                 .get_render_context_translation(self.render_area, scale);
@@ -2660,11 +2669,11 @@ impl RenderState {
         true
     }
 
-    /// Skip all drop shadows in fast mode, or when even a large design-space
+    /// Skip all drop/inner shadows in fast mode, or when even a large design-space
     /// shadow would be subpixel. Otherwise filter per shadow via
     /// [`Shadow::is_perceptible_at_scale_for`] (stricter for recursive shapes).
     #[inline]
-    fn should_skip_drop_shadows(&self) -> bool {
+    pub(crate) fn should_skip_drop_shadows(&self) -> bool {
         if self.options.is_fast_mode() {
             return true;
         }
