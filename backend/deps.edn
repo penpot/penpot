@@ -48,6 +48,7 @@
 
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.6.1-359"}
+  org.passay/passay {:mvn/version "1.6.6"}
 
   com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.4"}
 

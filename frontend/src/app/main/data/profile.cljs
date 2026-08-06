@@ -462,11 +462,14 @@
       ptk/WatchEvent
       (watch [_ _ _]
         (let [{:keys [on-error on-success]
-               :or {on-error rx/throw
+               :or {on-error identity
                     on-success identity}} (meta data)]
           (->> (rp/cmd! :recover-profile data)
                (rx/tap on-success)
-               (rx/catch on-error)))))))
+               (rx/catch (fn [err]
+                           (on-error err)
+                           (rx/empty)))
+               (rx/ignore)))))))
 
 ;; --- EVENT: fetch-team-webhooks
 
