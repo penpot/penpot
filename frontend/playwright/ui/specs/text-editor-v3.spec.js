@@ -143,6 +143,48 @@ test("BUG 11083 - Changing typography must not quit the editor", async ({
   await workspace.waitForSelectedShapeName("hello");
 });
 
+test("BUG 11083 - Typography at a collapsed caret only styles newly typed text", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const fontSize = workspace.textEditor.fontSize;
+  const editorInput = page.locator("#text-editor-wasm-input");
+
+  // Draw a text box, focus it, and type some text; the caret ends up collapsed
+  // after it.
+  await workspace.createTextShape(200, 150, 460, 260);
+  await workspace.clickAt(210, 160);
+  await expect(editorInput).toBeFocused();
+  await page.keyboard.type("ab");
+
+  const originalSize = await fontSize.inputValue();
+  const newSize = String(Number(originalSize) + 20);
+
+  // Change the font size with a collapsed caret. This must not restyle the
+  // existing text; it is stashed as a pending style for the next input. Focus
+  // returns to the editor once the sidebar input blurs.
+  await workspace.textEditor.changeFontSize(newSize);
+  await expect(editorInput).toBeFocused();
+
+  // Typing now adopts the pending size as its own span.
+  await page.keyboard.type("X");
+
+  // The just-typed "X" carries the new size...
+  await page.keyboard.press("Shift+ArrowLeft");
+  await expect(fontSize).toHaveValue(newSize);
+
+  // ...while the pre-existing "ab" keeps the original size (the bug applied the
+  // change to the whole shape instead).
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(fontSize).toHaveValue(originalSize);
+});
+
 test("BUG 10467 - Auto-width text captures every typed character", async ({
   page,
 }) => {

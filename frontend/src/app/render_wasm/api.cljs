@@ -735,6 +735,17 @@
     (request-render "apply-paragraph-attrs-to-selection")
     result))
 
+(defn apply-pending-caret-styles!
+  "Apply the shape's pending caret style over `range` (the just-typed text) and
+   clear it; returns {:shape-id :content} or nil when there is none."
+  [shape-id range]
+  (when-let [styles (text-editor/get-pending-caret-styles shape-id)]
+    (let [result (text-editor/apply-styles-to-range
+                  shape-id range styles use-shape set-shape-text-content)]
+      (text-editor/clear-pending-caret-styles!)
+      (request-render "apply-pending-caret-styles")
+      result)))
+
 (defn set-parent-id
   [id]
   (let [buffer (uuid/get-u32 id)]

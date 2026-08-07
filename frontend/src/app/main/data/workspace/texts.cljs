@@ -1014,8 +1014,18 @@
                (rx/of (update-paragraph-attrs {:id id :attrs attrs}))))
 
            (let [attrs (select-keys attrs txt/text-node-attrs)]
-             (if (or (empty? attrs) wasm-editing-selection?)
+             (cond
+               (or (empty? attrs) wasm-editing-selection?)
                (rx/empty)
+
+               ;; Collapsed caret: stash a pending caret style for the next typed
+               ;; character instead of restyling the whole shape.
+               wasm-editing?
+               (do
+                 (wasm.text-editor/merge-pending-caret-styles! id attrs)
+                 (rx/of (dwt-v3/v3-update-text-editor-styles id attrs)))
+
+               :else
                (rx/of (update-text-attrs {:id id :attrs attrs}))))
 
            (when (and (features/active-feature? state "text-editor/v2")
