@@ -190,6 +190,7 @@
              :allowed allowed?
              :remaining remaining)
     (-> limit
+        (assoc ::lresult/now now)
         (assoc ::lresult/allowed allowed?)
         (assoc ::lresult/reset (ct/plus now reset))
         (assoc ::lresult/remaining remaining))))
@@ -212,6 +213,7 @@
              :allowed allowed?
              :remaining remaining)
     (-> limit
+        (assoc ::lresult/now now)
         (assoc ::lresult/allowed allowed?)
         (assoc ::lresult/timestamp ts)
         (assoc ::lresult/remaining remaining)
