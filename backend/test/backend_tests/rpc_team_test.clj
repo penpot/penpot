@@ -719,6 +719,67 @@
       (t/is (not= (:default-team-id profile1) (:id item1))))))
 
 
+(t/deftest get-teams-fetches-organizations-in-one-batch
+  (let [profile           (th/create-profile* 1 {:is-active true})
+        organization-team (th/create-team* 1 {:profile-id (:id profile)})
+        plain-team        (th/create-team* 2 {:profile-id (:id profile)})
+        expired-team      (th/create-team* 3 {:profile-id (:id profile)})
+        organization-id   (uuid/random)
+        calls             (atom [])
+        organization      {:id organization-id
+                           :name "Acme"
+                           :slug "acme"
+                           :owner-id (:id profile)
+                           :avatar-bg-url "https://example.com/avatar.svg"}
+        nitrate-call      (fn [_cfg method params]
+                            (swap! calls conj [method params])
+                            [{:id (:id organization-team)
+                              :is-your-penpot false
+                              :organization organization}
+                             {:id (:id expired-team)
+                              :is-your-penpot false
+                              :organization (assoc organization :expired-license true)}])
+        params            {::th/type :get-teams
+                           ::rpc/profile-id (:id profile)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call nitrate-call]
+      (let [out    (th/command! params)
+            teams (:result out)]
+        (t/is (th/success? out))
+        (t/is (= 1 (count @calls)))
+        (t/is (= :get-teams-organizations (ffirst @calls)))
+        (t/is (= #{(:default-team-id profile)
+                   (:id organization-team)
+                   (:id plain-team)
+                   (:id expired-team)}
+                 (-> @calls first second :team-ids set)))
+        (t/is (= #{(:default-team-id profile)
+                   (:id organization-team)
+                   (:id plain-team)}
+                 (into #{} (map :id) teams)))
+        (t/is (= organization
+                 (->> teams
+                      (filter #(= (:id organization-team) (:id %)))
+                      first
+                      :organization)))))))
+
+
+(t/deftest get-teams-rejects-invalid-organization-batch-response
+  (let [profile (th/create-profile* 1 {:is-active true})
+        calls   (atom [])
+        params  {::th/type :get-teams
+                 ::rpc/profile-id (:id profile)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call (fn [_cfg method call-params]
+                                 (swap! calls conj [method call-params])
+                                 nil)]
+      (let [out (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (= :nitrate-unavailable (th/ex-type (:error out))))
+        (t/is (= 1 (count @calls)))
+        (t/is (= :get-teams-organizations (ffirst @calls)))))))
+
+
 (t/deftest team-deletion-1
   (let [profile1 (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile1)})

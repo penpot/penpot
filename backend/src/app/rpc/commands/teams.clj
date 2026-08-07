@@ -196,11 +196,11 @@
    ::sm/params schema:get-teams}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (cond->> (get-teams conn profile-id)
-      (contains? cf/flags :admin-console)
-      (map #(nitrate/add-organization-info-to-team cfg % params))
-      (contains? cf/flags :admin-console)
-      (remove #(get-in % [:organization :expired-license])))))
+    (let [teams (get-teams conn profile-id)]
+      (if (contains? cf/flags :admin-console)
+        (->> (nitrate/add-organization-info-to-teams cfg teams params)
+             (remove #(get-in % [:organization :expired-license])))
+        teams))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
