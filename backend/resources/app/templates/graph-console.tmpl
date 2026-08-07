@@ -627,6 +627,13 @@ Graph Console
   let lastGraphSig = null;
   let renderForced = false;
   let graphFilterIds = null;
+  // The query that produced the filter, kept so the filter can follow the
+  // graph. A filter is a set of node ids, and live sync creates ids the set
+  // has never seen, so a frozen set hides every node created after the query
+  // ran. Re-running the query on each repaint is what keeps a filtered view
+  // honest; the cadence is the repaint's, and a repaint is skipped when the
+  // projection is unchanged.
+  let graphFilterQuery = null;
   // Node tables hidden via legend clicks (session-local, not persisted).
   const hiddenTables = new Set();
 
@@ -1051,16 +1058,57 @@ Graph Console
              revn: lastGraphData.revn, truncated: lastGraphData.truncated };
   }
 
-  function applyQueryFilter(ids) {
-    if (!lastGraphData) return;
+  const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+  function idsInResult(result) {
+    const ids = new Set();
+    (result.rows || []).forEach(function (row) {
+      row.forEach(function (cell) {
+        const found = String(cell).match(UUID_RE);
+        if (found) found.forEach(function (m) { ids.add(m.toLowerCase()); });
+      });
+    });
+    return ids;
+  }
+
+  function presentIds(ids) {
     const present = new Set();
     lastGraphData.nodes.forEach(function (n) { if (ids.has(n.id)) present.add(n.id); });
+    return present;
+  }
+
+  function applyQueryFilter(ids, query) {
+    if (!lastGraphData) return;
+    const present = presentIds(ids);
     if (!present.size) {
       graphViewStatus.textContent = "query result matches no nodes in the loaded graph";
       return;
     }
     graphFilterIds = present;
+    graphFilterQuery = query || null;
     renderCurrent();
+  }
+
+  function renderCurrentRefiltered() {
+    if (!graphFilterQuery) {
+      renderCurrent();
+      return;
+    }
+    // A stale filter is worse than a slow one: it hides the very node the
+    // change created. Re-run, and on failure keep the ids in hand and say so
+    // rather than pass a filtered-out graph off as current.
+    runConsoleQuery(graphFilterQuery)
+      .then(function (data) {
+        if (data && data.error) throw new Error(data.error);
+        const result = data && data["query-result"];
+        if (result) graphFilterIds = presentIds(idsInResult(result));
+        renderCurrent();
+      })
+      .catch(function (err) {
+        renderCurrent();
+        graphViewStatus.textContent +=
+          " — filter query failed, ids are from its last run: " + err;
+      });
   }
 
   function renderCurrent() {
@@ -1142,7 +1190,7 @@ Graph Console
         markDiff(lastGraphData, data);
         lastGraphData = data;
         lastGraphSig = sig;
-        renderCurrent();
+        renderCurrentRefiltered();
         schedulePulses();
       })
       .catch(function (err) {
@@ -1485,20 +1533,16 @@ Graph Console
     output.innerHTML = html;
 
     // Offer to view the result as an induced subgraph: any UUID appearing
-    // in any result cell selects that node in the loaded graph.
-    const uuidRe = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
-    const ids = new Set();
-    (result.rows || []).forEach(function (row) {
-      row.forEach(function (cell) {
-        const found = String(cell).match(uuidRe);
-        if (found) found.forEach(function (m) { ids.add(m.toLowerCase()); });
-      });
-    });
+    // in any result cell selects that node in the loaded graph. The query
+    // goes with the ids, so the view can re-run it and follow the graph.
+    const ids = idsInResult(result);
     if (ids.size) {
+      const queryEl = document.querySelector("#graph-query-form textarea[name=query]");
+      const query = queryEl ? queryEl.value : null;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.textContent = "Show result in graph view (" + ids.size + " ids)";
-      btn.addEventListener("click", function () { applyQueryFilter(ids); });
+      btn.addEventListener("click", function () { applyQueryFilter(ids, query); });
       document.getElementById("graph-result-actions").appendChild(btn);
     }
   }
@@ -1681,6 +1725,7 @@ Graph Console
   if (filterResetBtn) {
     filterResetBtn.addEventListener("click", function () {
       graphFilterIds = null;
+      graphFilterQuery = null;
       renderCurrent();
     });
   }
