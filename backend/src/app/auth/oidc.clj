@@ -776,7 +776,7 @@
 
 (defn prepare-organization-sso-provider
   "Build an OIDC provider map dynamically from the Nitrate organization SSO config.
-  Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
+   Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
   [cfg {:keys [client-id client-secret issuer]}]
   (prepare-oidc-provider cfg
                          {:type             "oidc"
@@ -785,8 +785,7 @@
                           :base-uri         (some-> (non-blank-uri issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           default-oidc-scopes
-                          :skip-ssrf-check? true}))
+                          :scopes           default-oidc-scopes}))
 
 (defn build-organization-sso-auth-redirect-uri
   "Build the OIDC authorization redirect URI for an organization SSO config.

@@ -20,8 +20,8 @@
   "devDependencies": {
     "@babel/core": "^8.0.1",
     "@babel/preset-react": "^8.0.1",
-    "@storybook/react": "10.5.5",
-    "@storybook/react-vite": "10.5.5",
+    "@storybook/react": "10.5.6",
+    "@storybook/react-vite": "10.5.6",
     "@testing-library/dom": "10.4.1",
     "@testing-library/react": "16.3.2",
     "@types/react": "^19.2.18",
@@ -33,11 +33,11 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "react-compiler-runtime": "^1.0.0",
-    "storybook": "10.5.5",
+    "storybook": "10.5.6",
     "vite-plugin-dts": "^5.0.3"
   },
   "dependencies": {
-    "react-aria-components": "^1.19.0"
+    "react-aria-components": "^1.20.0"
   },
   "peerDependencies": {
     "react": ">=19.2",

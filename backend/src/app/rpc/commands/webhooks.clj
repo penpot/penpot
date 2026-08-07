@@ -23,11 +23,9 @@
    [cuerdas.core :as str]))
 
 (defn get-webhooks-permissions
-  [conn profile-id team-id creator-id]
+  [conn profile-id team-id]
   (let [permissions (t/get-permissions conn profile-id team-id)
-
-        can-edit (boolean (or (:can-edit permissions)
-                              (= profile-id creator-id)))]
+        can-edit (boolean (:can-edit permissions))]
     (assoc permissions :can-edit can-edit)))
 
 (def has-webhook-edit-permissions?
@@ -120,7 +118,7 @@
   {::doc/added "1.17"
    ::sm/params schema:create-webhook}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
-  (check-webhook-edition-permissions! pool profile-id team-id profile-id)
+  (t/check-edition-permissions! pool profile-id team-id)
   (validate-quotes! cfg params)
   (validate-webhook! cfg nil params)
   (insert-webhook! cfg params))
@@ -137,7 +135,7 @@
    ::sm/params schema:update-webhook}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
-    (check-webhook-edition-permissions! pool profile-id (:team-id whook) (:profile-id whook))
+    (check-webhook-edition-permissions! pool profile-id (:team-id whook))
     (validate-webhook! cfg whook params)
     (update-webhook! cfg whook params)))
 
@@ -151,7 +149,7 @@
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
   (let [whook (-> (db/get conn :webhook {:id id}) decode-row)]
-    (check-webhook-edition-permissions! conn profile-id (:team-id whook) (:profile-id whook))
+    (check-webhook-edition-permissions! conn profile-id (:team-id whook))
     (db/delete! conn :webhook {:id id})
     nil))
 

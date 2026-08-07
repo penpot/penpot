@@ -22,7 +22,7 @@
    [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -652,6 +652,7 @@
   (let [id         (or id (uuid/next))
         is-default (if (boolean? is-default) is-default false)
         features   (db/create-array conn "text" features)
+        name       (d/normalize-string name)
         team       (db/insert! conn :team
                                {:id id
                                 :name name
@@ -688,6 +689,7 @@
   [conn {:keys [id team-id name is-default created-at modified-at]}]
   (let [id         (or id (uuid/next))
         is-default (if (boolean? is-default) is-default false)
+        name       (d/normalize-string name)
         params     {:id id
                     :name name
                     :team-id team-id
@@ -718,9 +720,10 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
   (check-edition-permissions! conn profile-id id)
-  (db/update! conn :team
-              {:name name}
-              {:id id})
+  (let [name (d/normalize-string name)]
+    (db/update! conn :team
+                {:name name}
+                {:id id}))
   nil)
 
 
@@ -979,7 +982,7 @@
 (def ^:private schema:update-team-photo
   [:map {:title "update-team-photo"}
    [:team-id ::sm/uuid]
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"
@@ -987,8 +990,8 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

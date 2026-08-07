@@ -178,7 +178,8 @@
     :stroke-path
     :stroke-per-side
 
-    :custom-shortcuts})
+    :custom-shortcuts
+    :remote-media-processing})
 
 (def all-flags
   (set/union email login varia))

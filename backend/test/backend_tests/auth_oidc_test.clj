@@ -518,3 +518,16 @@
               loc    (redirect-location result)]
           (t/is (= 302 (::yres/status result)))
           (t/is (.contains loc "error=unable-to-auth")))))))
+
+(t/deftest prepare-organization-sso-provider-does-not-skip-ssrf-check
+  (t/testing "organization SSO provider must use SSRF protection"
+    (let [captured-params (atom nil)]
+      (with-redefs [oidc/prepare-oidc-provider (fn [_cfg params]
+                                                 (reset! captured-params params)
+                                                 {:type "oidc" :id "test"})]
+        (#'oidc/prepare-organization-sso-provider {}
+                                                  {:client-id "test-client"
+                                                   :client-secret "test-secret"
+                                                   :issuer "https://idp.example.com"})
+        (t/is (not (true? (:skip-ssrf-check? @captured-params)))
+              "SSRF protection must be disabled for organization SSO")))))

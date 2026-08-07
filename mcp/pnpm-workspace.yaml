@@ -12,8 +12,16 @@ linkWorkspacePackages: true
 minimumReleaseAgeExclude:
   - qs@6.14.2 || 6.15.2
   - path-to-regexp@8.4.0
+  - body-parser@2.3.0
+  - '@hono/node-server@2.0.5'
+  - fast-uri@3.1.3 || 3.1.4 || 3.1.5
+  - ip-address@10.2.1 || 10.2.2 || 10.3.1
+  - hono@4.12.34
 
 packages:
   - "./packages/common"
   - "./packages/server"
   - "./packages/plugin"
+
+overrides:
+  '@hono/node-server@<2.0.5': ^2.0.5

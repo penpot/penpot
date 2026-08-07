@@ -168,6 +168,16 @@
   font-size: deprecated.$fs-14;
 }
 
+.error-options {
+  margin-block: var(--sp-xxs);
+  padding-inline-start: var(--sp-l);
+  list-style-type: disc;
+}
+
+.error-option {
+  margin-block: var(--sp-xxs);
+}
+
 .hint {
   @include t.use-typography("body-small");
 

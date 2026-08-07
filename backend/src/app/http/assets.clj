@@ -7,6 +7,7 @@
 (ns app.http.assets
   "Assets related handlers."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
@@ -42,7 +43,7 @@
 
 (defn- get-file-media-object
   [pool id]
-  (db/get pool :file-media-object {:id id} {::db/remove-deleted false}))
+  (db/get* pool :file-media-object {:id id} {::db/remove-deleted false}))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]
@@ -109,13 +110,21 @@
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
   [{:keys [::sto/storage] :as cfg} request kf]
-  (let [pool (::db/pool storage)
-        id   (get-id request)
-        mobj (get-file-media-object pool id)
-        sobj (sto/get-object storage (kf mobj))]
-    (if sobj
-      (serve-object cfg sobj)
-      {::yres/status 404})))
+  (let [pool       (::db/pool storage)
+        id         (get-id request)
+        mobj       (get-file-media-object pool id)]
+    (if (nil? mobj)
+      {::yres/status 404}
+      (let [file-id    (:file-id mobj)
+            profile-id (or (::session/profile-id request)
+                           (::actoken/profile-id request))
+            perms      (bfc/get-file-permissions pool profile-id file-id)]
+        (if-not (:can-read perms)
+          {::yres/status 404}
+          (let [sobj (sto/get-object storage (kf mobj))]
+            (if sobj
+              (serve-object cfg sobj)
+              {::yres/status 404})))))))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."

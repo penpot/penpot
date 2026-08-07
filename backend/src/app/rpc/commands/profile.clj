@@ -7,6 +7,7 @@
 (ns app.rpc.commands.profile
   (:require
    [app.auth :as auth]
+   [app.auth.passwords :as passwords]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -21,6 +22,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -45,6 +47,11 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def schema:nudge
+  [:map {:title "Nudge"}
+   [:big {:optional true} ::sm/number]
+   [:small {:optional true} ::sm/number]])
+
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
   #{:subscription})
@@ -58,6 +65,8 @@
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]
    [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:onboarding-questions {:optional true} [:map-of :keyword :string]]
+   [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
@@ -66,7 +75,8 @@
    [:notifications {:optional true} schema:props-notifications]
    [:workspace-visited {:optional true} ::sm/boolean]
    [:custom-shortcuts {:optional true}
-    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]])
+    [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
+   [:nudge {:optional true} schema:nudge]])
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -155,6 +165,9 @@
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
   (let [profile (get-profile conn profile-id ::db/for-update true)
+        fullname (d/normalize-string fullname)
+        lang     (d/normalize-string lang)
+        theme    (d/normalize-string theme)
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)
@@ -199,6 +212,9 @@
       (ex/raise :type :validation
                 :code :email-as-password
                 :hint "you can't use your email as password"))
+
+    ;; Validate password strength against common password dictionary
+    (passwords/validate-password (:password params))
 
     (update-profile-password! cfg (assoc profile :password password))
 
@@ -272,7 +288,7 @@
 (def ^:private
   schema:update-profile-photo
   [:map {:title "update-profile-photo"}
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -280,8 +296,8 @@
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
@@ -517,6 +533,10 @@
                   ::wrk/params {:object :profile
                                 :deleted-at deleted-at
                                 :id profile-id}})
+
+    ;; Invalidate all sessions for this profile to ensure immediate
+    ;; access revocation across all devices
+    (session/invalidate-all cfg profile-id)
 
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))

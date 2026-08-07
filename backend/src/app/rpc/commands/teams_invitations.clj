@@ -46,10 +46,29 @@
 
 (def sql:upsert-organization-invitation
   "insert into team_invitation(id, team_id, org_id, email_to, created_by, role, valid_until)
-   values (?, null, ?, ?, ?, ?, ?)
-       on conflict(org_id, email_to) where team_id is null do
-          update set role = ?, valid_until = ?, updated_at = now()
-   returning *")
+    values (?, null, ?, ?, ?, ?, ?)
+        on conflict(org_id, email_to) where team_id is null do
+           update set role = ?, valid_until = ?, updated_at = now()
+    returning *")
+
+(def ^:private sql:check-recent-invitation
+  "SELECT 1 FROM team_invitation
+   WHERE team_id = ? AND email_to = ?
+     AND updated_at > now() - interval '5 minutes'
+   LIMIT 1")
+
+(def ^:private sql:check-recent-org-invitation
+  "SELECT 1 FROM team_invitation
+   WHERE org_id = ? AND email_to = ?
+     AND updated_at > now() - interval '5 minutes'
+   LIMIT 1")
+
+(defn- recently-invited?
+  [{:keys [::db/conn]} team-id org-id email]
+  (let [query (if org-id
+                [sql:check-recent-org-invitation org-id email]
+                [sql:check-recent-invitation team-id email])]
+    (some? (db/exec-one! conn query))))
 
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until organization-id organization-name team-id member-id member-email role]}]
@@ -89,14 +108,7 @@
 (def ^:private schema:create-organization-invitation
   [:map {:title "params:create-organization-invitation"}
    [::rpc/profile-id ::sm/uuid]
-   [:organization
-    [:map
-     [:id ::sm/uuid]
-     [:name :string]
-     [:initials [:maybe :string]]
-     [:logo ::sm/uri]
-     [:avatar-bg-url [:maybe ::sm/uri]]
-     [:sso-active [:maybe ::sm/boolean]]]]
+   [:organization cto/schema:organization-with-avatar]
    [:profile
     [:map
      [:id ::sm/uuid]
@@ -185,35 +197,36 @@
         (teams/check-email-bounce conn email true)
         (teams/check-email-spam conn email true)
 
-        (let [id         (uuid/next)
-              expire     (if organization
-                           (ct/in-future "876000h")  ;; Organization invitations doesn't expire
-                           (ct/in-future "168h")) ;; 7 days
-              invitation (db/exec-one! conn (if organization
-                                              [sql:upsert-organization-invitation id
-                                               (:id organization)
-                                               (str/lower email)
-                                               (:id profile)
-                                               (name role) expire
-                                               (name role) expire]
-                                              [sql:upsert-team-invitation id
-                                               (:id team)
-                                               (str/lower email)
-                                               (:id profile)
-                                               (name role) expire
-                                               (name role) expire]))
-              updated?   (not= id (:id invitation))
-              profile-id (:id profile)
+        (let [id              (uuid/next)
+              expire          (if organization
+                                (ct/in-future "876000h")  ;; Organization invitations doesn't expire
+                                (ct/in-future "168h")) ;; 7 days
+              recent?         (recently-invited? cfg (:id team) (:id organization) email)
+              invitation      (db/exec-one! conn (if organization
+                                                   [sql:upsert-organization-invitation id
+                                                    (:id organization)
+                                                    (str/lower email)
+                                                    (:id profile)
+                                                    (name role) expire
+                                                    (name role) expire]
+                                                   [sql:upsert-team-invitation id
+                                                    (:id team)
+                                                    (str/lower email)
+                                                    (:id profile)
+                                                    (name role) expire
+                                                    (name role) expire]))
+              updated?        (not= id (:id invitation))
+              profile-id      (:id profile)
               team-organization-id (get-in team [:organization :id])
-              tprops     {:profile-id profile-id
-                          :invitation-id (:id invitation)
-                          :valid-until expire
-                          :team-id (:id team)
-                          :organization-id (:id organization)
-                          :organization-name (:name organization)
-                          :member-email (:email-to invitation)
-                          :member-id (:id member)
-                          :role role}
+              tprops          {:profile-id profile-id
+                               :invitation-id (:id invitation)
+                               :valid-until expire
+                               :team-id (:id team)
+                               :organization-id (:id organization)
+                               :organization-name (:name organization)
+                               :member-email (:email-to invitation)
+                               :member-id (:id member)
+                               :role role}
               audit-props
               (cond-> {:invitation-id (:id invitation)
                        :valid-until expire
@@ -234,8 +247,8 @@
                         (and team-organization-id
                              member
                              (contains? all-organization-member-ids (:id member))))))
-              itoken     (create-invitation-token cfg tprops)
-              ptoken     (create-profile-identity-token cfg profile-id)]
+              itoken          (create-invitation-token cfg tprops)
+              ptoken          (create-profile-identity-token cfg profile-id)]
 
           (when (contains? cf/flags :log-invitation-tokens)
             (l/info :hint "invitation token" :token itoken))
@@ -251,7 +264,8 @@
                           (assoc :props props))]
             (audit/submit cfg event))
 
-          (when (allow-invitation-emails? member)
+          (when (and (allow-invitation-emails? member)
+                     (not recent?))
             (if organization
               (when (contains? cf/flags :admin-console)
                 (eml/send! {::eml/conn conn

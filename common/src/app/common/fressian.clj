@@ -31,6 +31,11 @@
   ([^String s, ^String encoding]
    (.getBytes s encoding)))
 
+;; --- DEPTH TRACKING
+
+(def ^:dynamic *read-depth* 0)
+(def ^:const max-read-depth 128)
+
 ;; --- LOW LEVEL FRESSIAN API
 
 (defn write-object!
@@ -41,7 +46,13 @@
 
 (defn read-object!
   [^Reader r]
-  (.readObject r))
+  (when (>= *read-depth* max-read-depth)
+    (throw (ex-info "maximum Fressian read depth exceeded"
+                    {:type :validation
+                     :code :max-read-depth-reached
+                     :hint "maximum Fressian read depth exceeded"})))
+  (binding [*read-depth* (inc *read-depth*)]
+    (.readObject r)))
 
 (defn write-tag!
   ([^Writer w ^String n]
