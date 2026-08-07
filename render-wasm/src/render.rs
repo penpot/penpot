@@ -1386,8 +1386,8 @@ impl RenderState {
         // the layered path without Fills/Strokes blits.
         // Non-SrcOver blend, frame clip blur, and masked groups stay layered.
         // Stroke-only (fills_none) can go direct: empty fills are a no-op and
-        // strokes paint into Current. Requires Partial GPU drain (dc1ab) so
-        // large SVG-icon files do not backlog commands until Full present.
+        // strokes paint into Current. Large files need mid-walk GPU drains so
+        // release builds do not backlog a huge ops buffer in one Partial.
         let can_render_directly = apply_to_current_surface
             && offset.is_none()
             && parent_shadows.is_none()
@@ -2461,12 +2461,9 @@ impl RenderState {
                 panic!("FrameType::None");
             }
             FrameType::Partial => {
-                // Drain tile GPU work (Current / tile atlas / cache) without
-                // presenting Target and without re-snapshotting the tile atlas —
-                // composition stays deferred to Full. A Backbuffer flush alone
-                // left commands queued until present_frame's flush_and_submit,
-                // which stalled the browser on large files.
-                crate::get_gpu_state().context.flush_and_submit();
+                // Final soft drain for this yield (mid-walk also drains; see
+                // `drain_partial_gpu_soft`). Full still submits via present_frame.
+                Self::drain_partial_gpu_soft();
             }
             FrameType::Full => {
                 // A full-quality frame is now complete. Rebuild the per-shape crop
@@ -2667,6 +2664,15 @@ impl RenderState {
         }
 
         true
+    }
+
+    /// Soft-drain GPU command buffers during progressive tile walks.
+    /// Release packs far more cheap Current draws (e.g. fills_none paths) into
+    /// one Partial than debug; flushing only at Partial end then stalls. Call
+    /// periodically so each flush stays small. Full present still submits.
+    #[inline]
+    fn drain_partial_gpu_soft() {
+        crate::get_gpu_state().context.flush(None);
     }
 
     /// Skip all drop/inner shadows in fast mode, or when even a large design-space
@@ -3774,6 +3780,12 @@ impl RenderState {
             // We try to avoid doing too many calls to get_time
             if allow_stop && self.should_stop_rendering(iteration, timestamp) {
                 return Ok((is_empty, true));
+            }
+            // Keep GPU ops buffers bounded when many shapes paint cheaply to
+            // Current (release packs far more per Partial than debug).
+            let drain_every = self.options.partial_gpu_drain_every_n;
+            if allow_stop && drain_every > 0 && iteration > 0 && iteration % drain_every == 0 {
+                Self::drain_partial_gpu_soft();
             }
             iteration += 1;
         }
