@@ -623,27 +623,29 @@
                       (io/read*))]
 
       ;; prof1 creates a font variant in team1 with font-id
-      (let [params {::th/type :create-font-variant
+      (let [session-id (upload-font-chunked! prof1 data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof1)
                     :team-id     team1
                     :font-id     font-id
                     :font-family "SharedFont"
                     :font-weight 400
                     :font-style  "normal"
-                    :data        {"font/ttf" data}}
+                    :uploads     {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (nil? (:error out))))
 
       ;; prof2 tries to create a variant using the same font-id but
-      ;; in team2 — must be rejected because font-id belongs to team1
-      (let [params {::th/type :create-font-variant
+      ;; in team2, which must be rejected because font-id belongs to team1
+      (let [session-id (upload-font-chunked! prof2 data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof2)
                     :team-id     team2
                     :font-id     font-id
                     :font-family "SharedFont"
                     :font-weight 700
                     :font-style  "normal"
-                    :data        {"font/ttf" data}}
+                    :uploads     {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (some? (:error out)))
         (t/is (= :not-found (-> out :error ex-data :type)))
