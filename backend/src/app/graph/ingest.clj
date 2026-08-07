@@ -15,8 +15,8 @@
    [app.graph.arrow :as graph.arrow]
    [app.graph.ladybug :as ladybug]
    [app.graph.meta :as graph.meta]
-   [app.graph.project.document :as project.document]
-   [app.graph.project.transforms :as project.transforms]
+   [app.graph.projection.document :as projection.document]
+   [app.graph.projection.transforms :as projection.transforms]
    [app.graph.schema :as schema]
    [app.graph.stats :as stats]
    [app.srepl.helpers :as h])
@@ -54,11 +54,11 @@
            :schema schema/schema-version)
     (let [ddl (schema/ddl-statements)
           {:keys [nodes edges stats]}
-          (project.document/projection-data data file)]
+          (projection.document/projection-data data file)]
       (ladybug/exec-on-connection! conn ddl)
       (graph.arrow/load-projection! conn {:nodes nodes :edges edges} allocator)
       (ladybug/exec-on-connection! conn ["CHECKPOINT;"])
-      (let [transforms (project.transforms/apply-transforms! system conn data file)]
+      (let [transforms (projection.transforms/apply-transforms! system conn data file)]
         ;; Written last: its presence doubles as the build-complete marker.
         (graph.meta/write! conn {:file-id file-id
                                  :revn    (:revn file)})
