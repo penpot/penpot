@@ -151,7 +151,7 @@
   "The generator must produce the keys the schema declares required, even when
   nilable. This is a targeted check for the attributes added to
   `schema:shape-generic-attrs` and `schema:nilable-geom-attrs`."
-  (let [shapes (sg/sample (sg/generator schema:shape) {:num 200})
+  (let [shapes (sg/sample (sg/generator schema:shape) {:size 200})
         by-type (group-by :type shapes)]
     ;; All shapes: rotation, flip-x, flip-y are base record fields, always
     ;; present (possibly nil).
