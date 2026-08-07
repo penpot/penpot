@@ -384,7 +384,10 @@
   (->> (sg/generator schema:shape-base-attrs)
        (sg/mcat (fn [{:keys [type] :as shape}]
                   (sg/let [attrs1 (sg/generator schema:shape-generic-attrs)
-                           attrs2 (sg/generator schema:shape-geom-attrs)
+                           attrs2 (if (or (= type :path)
+                                          (= type :bool))
+                                    (sg/generator schema:nilable-geom-attrs)
+                                    (sg/generator schema:shape-geom-attrs))
                            attrs3 (case type
                                     :text    (sg/generator schema:text-attrs)
                                     :path    (sg/generator schema:path-attrs)
@@ -395,10 +398,7 @@
                                     :bool    (sg/generator schema:bool-attrs)
                                     :group   (sg/generator schema:group-attrs)
                                     :frame   (sg/generator schema:frame-attrs))]
-                    (if (or (= type :path)
-                            (= type :bool))
-                      (merge attrs1 shape attrs3)
-                      (merge attrs1 shape attrs2 attrs3)))))
+                    (merge attrs1 shape attrs2 attrs3))))
        (sg/fmap create-shape)))
 
 (def schema:shape-attrs
