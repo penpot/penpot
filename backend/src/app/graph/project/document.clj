@@ -29,9 +29,14 @@
   uuid/zero)
 
 (defn- document-attrs
+  "The Document node's attrs: the file row, minus its data blob.
+
+  `:options` is lifted out of the blob before it goes: it is file-level
+  configuration a consumer wants without opening `:data`."
   [file data]
   (-> file
       (assoc :id (or (:id data) (:id file)))
+      (cond-> (:options data) (assoc :options (:options data)))
       (dissoc :data)))
 
 (defn- page-attrs

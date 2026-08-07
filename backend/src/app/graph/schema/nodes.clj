@@ -18,6 +18,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -33,7 +34,24 @@
 ;; beadpot/graph/schemas.py drop_fields
 (def ^:private document-projection
   {:source ctf/schema:file
-   :drop   [:data]})
+   :drop   [:data]
+   ;; Attributes a file map carries that `ctf/schema:file` does not declare.
+   ;;
+   ;; They belong here rather than in that schema, even though the graph wants
+   ;; them, because `schema:file` is on the *write* path too:
+   ;; `app.binfile.common/update-file!` derives its UPDATE columns from a file
+   ;; map's keys, so declaring `:backend` there made it try to write a `backend`
+   ;; column, which the `file` table does not have — it is synthesized on read.
+   ;; A projection `:extra` is local to the graph and cannot reach a write.
+   ;;
+   ;; `:options` is lifted out of `:data` before the blob is dropped
+   ;; (`app.graph.project.document/document-attrs`); the rest come off the file
+   ;; map as `get-file` returns it.
+   :extra  [:map
+            [:options {:optional true} [:maybe :map]]
+            [:backend {:optional true} [:maybe :string]]
+            [:comment-thread-seqn {:optional true} [:maybe :int]]
+            [:ignore-sync-until {:optional true} [:maybe ::ct/inst]]]})
 
 (def ^:private page-projection
   {:source ctp/schema:page

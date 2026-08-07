@@ -107,7 +107,14 @@
    ;; derivable from `x`/`y`/`width`/`height`, and a fixed-size array is a
    ;; tensor row a consumer reads without parsing.
    "selrect"     "DOUBLE[4]"
-   "svg_viewbox" "DOUBLE[4]"
+
+   ;; The SVG provenance attributes are typed `:map` in the shape schema on
+   ;; purpose — legacy files hold them as plain maps rather than as `::grc/rect`
+   ;; and `::gmt/matrix` records, and a tighter *schema* would reject those files
+   ;; (`app.common.types.shape/schema:shape-generic-attrs`). A tighter *column*
+   ;; is free: `app.graph.schema.values/coerce` reads either form.
+   "svg_viewbox"   "DOUBLE[4]"
+   "svg_transform" "DOUBLE[6]"
 
    ;; `:fills` is an `:or` — the packed `app.common.types.fills` value or a
    ;; plain vector of fill maps — so the schema alone cannot say it is a
