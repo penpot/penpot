@@ -733,7 +733,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows))))
         (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
-                 (-> rows first :object-id))))
+                 (->> rows (remove (comp some? :deleted-at)) first :object-id))))
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
