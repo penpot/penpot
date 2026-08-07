@@ -10,7 +10,7 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.graph.ladybug :as ladybug]
-   [app.graph.project.document :as project.document]
+   [app.graph.projection.document :as projection.document]
    [app.graph.schema.nodes :as nodes]
    [clojure.string :as str])
   (:import
@@ -355,7 +355,7 @@
   "A container's stored `shapes` list, rebuilt from the index.
 
   `IsChildOf.position` counts from the last entry of that list
-  (`app.graph.project.document/child-shape-ids` reverses it), so reversing the
+  (`app.graph.projection.document/child-shape-ids` reverses it), so reversing the
   children ordered by position gives the list back."
   [index parent-id]
   (->> (get-in index [:children parent-id] #{})
@@ -568,7 +568,7 @@
                     (when (= parent-table "Page") parent-id)
                     (get-in index [:shapes parent-id :page-id]))
                 parent-ctx (get-in index [:shapes parent-id :component-ctx])
-                shape    (project.document/denormalized-shape
+                shape    (projection.document/denormalized-shape
                           (assoc obj :id id) resolved-page-id parent-ctx)
                 attrs    (nodes/project-attrs table shape)
                 edge     {:from-table table
@@ -588,7 +588,7 @@
                                             :parent-table  parent-table
                                             :position      position
                                             :frame-id      (:frame-id attrs)
-                                            :component-ctx (project.document/descend-component-ctx
+                                            :component-ctx (projection.document/descend-component-ctx
                                                             table shape parent-ctx)
                                             :page-id       resolved-page-id})]
             {:index      index'

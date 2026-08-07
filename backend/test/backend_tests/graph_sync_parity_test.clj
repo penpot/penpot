@@ -8,7 +8,7 @@
   "Cold projection and incremental sync are two implementations of one mapping,
   and this namespace holds them to it.
 
-  `app.graph.project.document/projection-data` reads a whole file and produces
+  `app.graph.projection.document/projection-data` reads a whole file and produces
   the whole graph. `app.graph.sync/apply-changes!` takes the change vocabulary
   the editor emits and mutates an already open graph. A graph the second one
   maintained must equal a graph the first one would build from the same file,
@@ -26,8 +26,8 @@
    [app.common.uuid :as uuid]
    [app.graph.arrow :as arrow]
    [app.graph.ladybug :as ladybug]
-   [app.graph.project.document :as project.document]
-   [app.graph.project.transforms :as project.transforms]
+   [app.graph.projection.document :as projection.document]
+   [app.graph.projection.transforms :as projection.transforms]
    [app.graph.schema.nodes :as nodes]
    [app.graph.sync :as sync]
    [clojure.test :as t]))
@@ -133,11 +133,11 @@
 
   Returns the projection, which is also what the sync index is built from."
   [conn data file]
-  (let [projection (project.document/projection-data data file)]
+  (let [projection (projection.document/projection-data data file)]
     (ladybug/exec-on-connection! conn (nodes/ddl-statements))
     (arrow/with-allocator!
       (fn [allocator] (arrow/load-projection! conn projection allocator)))
-    (project.transforms/apply-transforms! nil conn data file)
+    (projection.transforms/apply-transforms! nil conn data file)
     projection))
 
 (defn- rel-tables

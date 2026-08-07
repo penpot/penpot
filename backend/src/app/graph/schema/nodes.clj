@@ -44,7 +44,7 @@
    ;; A projection `:extra` is local to the graph and cannot reach a write.
    ;;
    ;; `:options` is lifted out of `:data` before the blob is dropped
-   ;; (`app.graph.project.document/document-attrs`); the rest come off the file
+   ;; (`app.graph.projection.document/document-attrs`); the rest come off the file
    ;; map as `get-file` returns it.
    :extra  [:map
             [:options {:optional true} [:maybe :map]]

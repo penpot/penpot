@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.graph.project.document
+(ns app.graph.projection.document
   "Project a Penpot file-data map into Ladybug nodes and structural edges.
 
   Projects Document, Page, Component, the full shape tree (skipping the root

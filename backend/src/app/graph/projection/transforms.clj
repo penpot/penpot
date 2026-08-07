@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.graph.project.transforms
+(ns app.graph.projection.transforms
   "Derived graph links: edges a reader could compute from the projected
   columns, materialized once at build time so a query does not have to.
 
@@ -32,7 +32,7 @@
   `component-file` is what makes a head a head here, not `component-id` alone.
   `app.common.types.component/instance-of?` requires both, and the projection
   denormalizes `component-id` down the shape tree
-  (`app.graph.project.document`), so on its own it no longer distinguishes a
+  (`app.graph.projection.document`), so on its own it no longer distinguishes a
   head from a shape that merely lives inside one. `component-file` is not
   denormalized and remains the head marker Penpot itself uses."
   [^Connection conn]
