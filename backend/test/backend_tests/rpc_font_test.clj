@@ -650,3 +650,24 @@
         (t/is (some? (:error out)))
         (t/is (= :not-found (-> out :error ex-data :type)))
         (t/is (= :object-not-found (-> out :error ex-data :code)))))))
+
+(t/deftest get-font-variants-nonexistent-file
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-font-variants
+                           ::rpc/profile-id (:id prof)
+                           :file-id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-font-variants-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)})
+        out   (th/command! {::th/type :get-font-variants
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
