@@ -226,6 +226,14 @@
     (-> (db/exec-one! cfg [sql (:profile-id session) (:id session)])
         (db/get-update-count))))
 
+(defn invalidate-all
+  "Delete all sessions for a given profile. Used when a profile is deleted
+  to ensure immediate access revocation across all devices."
+  [cfg profile-id]
+  (let [sql "delete from http_session_v2 where profile_id = ?"]
+    (-> (db/exec-one! cfg [sql profile-id])
+        (db/get-update-count))))
+
 (def ^:private sql:clear-organization-sso-sessions
   (str "UPDATE http_session_v2 "
        "SET props = props #- ARRAY['~:sso', ?]::text[] "
