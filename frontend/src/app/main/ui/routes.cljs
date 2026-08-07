@@ -123,6 +123,27 @@
               (errors/on-error cause))))
       (st/emit! (rt/navigated match send-event-info?)))))
 
+(defn- handle-sso-error-and-navigate
+  "Check if the current route has an SSO error marker. If so, assign an
+  exception with type :sso-error and organization-id from query params,
+  then proceed with normal navigation."
+  [match send-event-info? url]
+  (let [route-name      (name (get-in match [:data :name]))
+        sso-error?      (some? (get-in match [:query-params :sso-error]))
+        organization-id (some-> (get-in match [:query-params :organization-id]) uuid/parse*)
+        team-id-str     (or (get-in match [:query-params :team-id])
+                            (get-in match [:params :path :team-id])) ;; Fallback: team-id may be in path params for workspace routes
+        team-id         (some-> team-id-str uuid/parse*)
+        is-workspace?   (str/starts-with? route-name "workspace")
+        is-dashboard?   (str/starts-with? route-name "dashboard")]
+    (if sso-error?
+      (st/emit! (rt/assign-exception {:type :sso-error
+                                      :organization-id organization-id
+                                      :team-id team-id
+                                      :is-workspace is-workspace?
+                                      :is-dashboard is-dashboard?}))
+      (check-sso-and-navigate match send-event-info? url))))
+
 (defn on-navigate
   [router path send-event-info?]
   (let [location        (.-location js/document)
@@ -138,7 +159,7 @@
       (st/emit! (rt/assign-exception {:type :not-found}))
 
       (some? match)
-      (check-sso-and-navigate match send-event-info? (rt/get-current-href))
+      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-href))
 
       :else
       ;; We just recheck with an additional profile request; this

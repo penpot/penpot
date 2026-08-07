@@ -351,6 +351,21 @@
                      (rx/empty)))))))))))
 
 
+(defn retry-organization-sso
+  "Retries the organization SSO login flow after a failed attempt, reusing
+  the same check-nitrate-sso RPC used elsewhere to move the user through
+  the organization's identity provider. Falls back to navigating straight
+  to `dest-url` when no fresh SSO redirect is needed or available."
+  [{:keys [organization-id dest-url]}]
+  (ptk/reify ::retry-organization-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :check-nitrate-sso {:organization-id organization-id :url dest-url})
+           (rx/map (fn [{:keys [redirect-uri]}]
+                     (rt/nav-raw :uri (or redirect-uri dest-url))))
+           (rx/catch (fn [_]
+                       (rx/of (rt/nav-raw :uri dest-url))))))))
+
 (defn- fetch-organizations-allowed
   "Returns an rx observable of an `organizations-allowed` map (organization-id -> boolean).
    Organizations where :add-anybody-to-team is permitted are pre-approved;
