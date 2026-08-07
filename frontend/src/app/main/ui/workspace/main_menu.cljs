@@ -51,11 +51,15 @@
 (mf/defc shortcuts*
   {::mf/private true}
   [{:keys [id]}]
-  [:span {:class (stl/css :shortcut)}
-   (for [sc (scd/split-sc (sc/get-tooltip id))]
-     [:span {:class (stl/css :shortcut-key)
-             :key sc}
-      sc])])
+  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)
+        customized?      (let [c (get-in custom-shortcuts [:workspace id])]
+                           (and c (not= c "")))]
+    [:span {:class (stl/css :shortcut)}
+     (for [sc (scd/split-sc (sc/get-effective-tooltip id custom-shortcuts))]
+       [:span {:class (stl/css-case :shortcut-key true
+                                    :customized-key customized?)
+               :key sc}
+        sc])]))
 
 (mf/defc help-info-menu*
   {::mf/private true
@@ -982,6 +986,19 @@
                        ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
+        show-shortcuts
+        (mf/use-fn
+         (mf/deps layout)
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)
+           (reset! selected-sub-menu* nil)
+           (when (contains? layout :collapse-left-sidebar)
+             (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+           (st/emit!
+            (-> (dw/toggle-layout-flag :shortcuts)
+                (vary-meta assoc ::ev/origin "workspace-menu")))))
+
         subscription           (:subscription (:props profile))
         subscription-type      (get-subscription-type subscription)]
 
@@ -1148,6 +1165,7 @@
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
+                              :show-shortcuts show-shortcuts
                               :on-close close-sub-menu}]
 
        :plugins

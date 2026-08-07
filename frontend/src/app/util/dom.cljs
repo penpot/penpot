@@ -707,6 +707,13 @@
   (when (some? node)
     (.setAttribute node attr value)))
 
+(defn focus-and-untabbable!
+  [^js node]
+  (when (some? node)
+    (set-attribute! node "tabindex" "0")
+    (focus! node)
+    (set-attribute! node "tabindex" "-1")))
+
 (defn set-style!
   [^js node ^string style value]
   (when (some? node)
@@ -795,10 +802,8 @@
 (defn trigger-download
   [filename blob]
   (let [uri (wapi/create-uri blob)]
-    (try
-      (trigger-download-uri filename (.-type ^js blob) uri)
-      (finally
-        (wapi/revoke-uri uri)))))
+    (trigger-download-uri filename (.-type ^js blob) uri)
+    (js/setTimeout #(wapi/revoke-uri uri) 1000)))
 
 (defn event
   "Create an instance of DOM Event"

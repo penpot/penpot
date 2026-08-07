@@ -489,7 +489,7 @@
                              (pcb/del-page page))))
                      (-> (pcb/empty-changes it)
                          (pcb/with-library-data fdata))
-                     del-ids)]
+                     (reverse del-ids))]
 
         (if (empty? del-ids)
           (rx/empty)

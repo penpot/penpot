@@ -1,8 +1,18 @@
 (ns app.main.ui.flex-controls.common
   (:require
    [app.main.constants :as mconst]
+   [app.main.streams :as ms]
    [app.main.ui.formats :as fmt]
    [rumext.v2 :as mf]))
+
+;; ------------------------------------------------
+;; INTERACTIVE TRANSFORM CLEANUP
+;; ------------------------------------------------
+
+;; Flex spacing controls (padding/margin/gap) call this from their
+;; unmount cleanup, guarded on the resizing flag. See
+;; `ms/clear-transform-preview!` for the rationale.
+(def clear-transform-preview! ms/clear-transform-preview!)
 
 ;; ------------------------------------------------
 ;; CONSTANTS

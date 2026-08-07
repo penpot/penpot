@@ -141,6 +141,31 @@
         (let [result (:result out)]
           (t/is (= 0 (count result))))))))
 
+(t/deftest create-file-with-duplicate-id
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)]
+
+    (t/testing "create file with specific id"
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "first-file"}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "create file with duplicate id returns normalized error"
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "duplicate-file"}
+            out  (th/command! data)
+            err  (:error out)]
+        (t/is (th/ex-info? err))
+        (t/is (th/ex-of-type? err :not-found))))))
+
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
@@ -982,6 +1007,38 @@
     (t/is (some? rel))
     (t/is (some? sync))
     (t/is (some? (:synced-at sync)))))
+
+(t/deftest link-file-to-library-rejects-cross-team
+  ;; N1-08: A file in team2 must not be linked to a library in team1,
+  ;; even when the user has edit permissions on both (BOLA / CWE-639).
+  (let [prof1  (th/create-profile* 1)
+        prof2  (th/create-profile* 2)
+        team1  (th/create-team* 1 {:profile-id (:id prof1)})
+        team2  (th/create-team* 2 {:profile-id (:id prof2)})
+        proj1  (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:id team1)})
+        proj2  (th/create-project* 2 {:profile-id (:id prof2)
+                                      :team-id (:id team2)})
+        lib    (th/create-file* 1 {:project-id (:id proj1)
+                                   :profile-id (:id prof1)
+                                   :is-shared true})
+        file2  (th/create-file* 2 {:project-id (:id proj2)
+                                   :profile-id (:id prof2)})]
+
+    ;; Add prof2 as editor to team1 so they have edit access to the library
+    (th/db-insert! :team-profile-rel {:team-id (:id team1)
+                                      :profile-id (:id prof2)
+                                      :is-owner false
+                                      :is-admin false
+                                      :can-edit true})
+
+    ;; prof2 tries to link file2 (team2) to lib (team1) — must fail
+    (let [data {::th/type :link-file-to-library
+                ::rpc/profile-id (:id prof2)
+                :file-id (:id file2)
+                :library-id (:id lib)}
+          out  (th/command! data)]
+      (t/is (some? (:error out))))))
 
 (t/deftest update-file-library-sync-status-updates-sync-row
   (let [profile  (th/create-profile* 1)
@@ -2319,3 +2376,75 @@
     (t/is (not (nil? (:error out))))
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
+
+;; --- Security Fix Tests ---
+
+(t/deftest link-file-to-library-circular-reference
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        file3   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+    (th/link-file-to-library* {:file-id (:id file3) :library-id (:id file2)})
+    (th/link-file-to-library* {:file-id (:id file2) :library-id (:id file1)})
+    (let [data {::th/type :link-file-to-library
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file1)
+                :library-id (:id file3)}
+          out  (th/command! data)]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :circular-library-reference (:code edata)))))))
+
+(t/deftest get-file-etag-includes-deleted-at
+  (let [profile-id (uuid/random)
+        file1      {:modified-at (ct/now)
+                    :revn 1
+                    :vern 0
+                    :deleted-at nil
+                    :permissions {:can-edit true}}
+        file2      (assoc file1 :deleted-at (ct/now))]
+    (t/is (not= (files/get-file-etag {::rpc/profile-id profile-id} file1)
+                (files/get-file-etag {::rpc/profile-id profile-id} file2)))))
+
+(t/deftest search-files-with-permission
+  (let [profile (th/create-profile* 1)
+        _       (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        data    {::th/type :search-files
+                 ::rpc/profile-id (:id profile)
+                 :team-id (:default-team-id profile)
+                 :search-term "test"}
+        out     (th/command! data)]
+    (t/is (nil? (:error out)))
+    (t/is (vector? (:result out)))))
+
+(t/deftest search-files-forbidden
+  (let [profile (th/create-profile* 1)
+        other   (th/create-profile* 2)
+        data    {::th/type :search-files
+                 ::rpc/profile-id (:id other)
+                 :team-id (:default-team-id profile)
+                 :search-term "test"}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))
+
+(t/deftest search-files-term-too-long
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :search-files
+                 ::rpc/profile-id (:id profile)
+                 :team-id (:default-team-id profile)
+                 :search-term (apply str (repeat 300 "x"))}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :validation (:type edata))))))

@@ -155,6 +155,15 @@ pub extern "C" fn add_shape_outer_stroke(
 }
 
 #[no_mangle]
+pub extern "C" fn set_shape_stroke_sides(top: f32, right: f32, bottom: f32, left: f32) {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape
+            .set_last_stroke_widths([top, right, bottom, left])
+            .expect("could not set stroke side widths");
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn add_shape_stroke_fill() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();

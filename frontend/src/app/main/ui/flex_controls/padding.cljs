@@ -105,6 +105,11 @@
                  (when on-change
                    (on-change modifiers)))))))]
 
+    (mf/with-effect []
+      (fn []
+        (when @resizing?
+          (fcc/clear-transform-preview!))))
+
     [:g.padding-rect
      [:rect.info-area
       {:x (:x rect-data)

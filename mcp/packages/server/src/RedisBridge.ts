@@ -91,12 +91,16 @@ export class RedisBridge {
      * @param userToken - The user token identifying the target plugin's request channel
      * @param request - The serialized plugin task request, passed through verbatim
      * @param onResponse - Handler invoked with the response when it arrives
+     * @returns The number of instances that received the request. A count of 0 means no
+     *   instance is subscribed to the token's request channel (i.e. the plugin is not
+     *   connected anywhere); the request was dropped, no response will ever arrive, and
+     *   the response subscription has already been released.
      */
     async sendTaskRequest(
         userToken: string,
         request: PluginTaskRequest,
         onResponse: TaskResponseHandler
-    ): Promise<void> {
+    ): Promise<number> {
         const responseChannel = this.responseChannel(request.id);
         const requestChannel = this.requestChannel(userToken);
 
@@ -113,7 +117,19 @@ export class RedisBridge {
 
         await this.subscriber.subscribe(responseChannel);
         // publish only once the response subscription is confirmed
-        await this.publisher.publish(requestChannel, JSON.stringify(request));
+        let receiverCount: number;
+        try {
+            receiverCount = await this.publisher.publish(requestChannel, JSON.stringify(request));
+        } catch (error) {
+            // the request was never delivered, so no response can arrive
+            await this.unsubscribeFromResponse(request.id);
+            throw error;
+        }
+        if (receiverCount === 0) {
+            // no subscriber received the request, so no response can arrive
+            await this.unsubscribeFromResponse(request.id);
+        }
+        return receiverCount;
     }
 
     /**

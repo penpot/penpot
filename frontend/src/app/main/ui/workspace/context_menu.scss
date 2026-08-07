@@ -4,139 +4,134 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils" as *;
+@use "ds/_sizes" as *;
+@use "ds/_borders" as *;
+@use "ds/spacing" as *;
+@use "ds/typography" as *;
+@use "ds/z-index" as *;
 
-.workspace-context-menu {
+.menu-wrapper {
   position: absolute;
-  top: deprecated.$s-40;
-  left: deprecated.$s-736;
-  z-index: deprecated.$z-index-4;
+  inset-block-start: $sz-40;
+  inset-inline-start: px2rem(736);
+  z-index: var(--z-index-dropdown);
 }
 
-.context-list,
-.workspace-context-submenu {
-  @include deprecated.menu-shadow;
-
+.menu,
+.submenu {
+  box-shadow: 0 0 0.75rem 0 var(--color-shadow-dark);
   display: grid;
-  width: deprecated.$s-240;
-  padding: deprecated.$s-4;
-  border-radius: deprecated.$br-8;
-  border: deprecated.$s-2 solid var(--panel-border-color);
-  background-color: var(--menu-background-color);
-  max-height: 100vh;
+  inline-size: px2rem(240);
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  max-block-size: 100vh;
   overflow-y: auto;
 }
 
-.workspace-context-submenu {
+.submenu {
   position: absolute;
 }
 
-.separator {
-  height: deprecated.$s-12;
-}
+.menu-item {
+  --menu-item-bg-color: var(--color-background-tertiary);
+  --menu-item-title-color: var(--color-foreground-primary);
+  --menu-item-shortcut-color: var(--color-foreground-secondary);
+  --menu-item-shortcut-border-color: transparent;
 
-.context-menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: deprecated.$s-28;
-  width: 100%;
-  padding: deprecated.$s-6;
-  border-radius: deprecated.$br-8;
-  cursor: pointer;
-
-  .title {
-    @include deprecated.body-small-typography;
-
-    color: var(--menu-foreground-color);
-  }
-
-  .shortcut {
-    @include deprecated.flex-center;
-
-    gap: deprecated.$s-2;
-    color: var(--menu-shortcut-foreground-color);
-
-    .shortcut-key {
-      @include deprecated.body-small-typography;
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-20;
-      padding: deprecated.$s-2 deprecated.$s-6;
-      border-radius: deprecated.$br-6;
-      background-color: var(--menu-shortcut-background-color);
-    }
-  }
-
-  .submenu-icon svg {
-    @extend %button-icon-small;
-
-    stroke: var(--menu-foreground-color);
-  }
+  block-size: $sz-28;
+  inline-size: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  background-color: var(--menu-item-bg-color);
+  border: $b-1 solid var(--menu-item-shortcut-border-color);
 
   &:hover {
-    background-color: var(--menu-background-color-hover);
-
-    .title {
-      color: var(--menu-foreground-color-hover);
-    }
-
-    .shortcut {
-      color: var(--menu-shortcut-foreground-color-hover);
-    }
+    --menu-item-title-color: var(--color-foreground-primary);
+    --menu-item-bg-color: var(--color-background-quaternary);
+    --menu-item-shortcut-color: var(--color-foreground-primary);
   }
 
   &:focus {
-    border: 1px solid var(--menu-border-color-focus);
-    background-color: var(--menu-background-color-focus);
+    --menu-item-bg-color: var(--color-background-tertiary);
+    --menu-item-shortcut-border-color: var(--color-accent-primary);
   }
 }
 
-.icon-menu-item {
+.menu-item-icon {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  height: deprecated.$s-28;
-  padding: deprecated.$s-6;
-  border-radius: deprecated.$br-8;
+  gap: px2rem(6);
+  block-size: $sz-28;
+  padding: px2rem(6);
+  border-radius: $br-8;
 
   &:hover {
-    background-color: var(--menu-background-color-hover);
-  }
-
-  span.title {
-    margin-left: deprecated.$s-6;
-  }
-
-  .selected-icon {
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--menu-foreground-color);
-    }
-  }
-
-  .shape-icon {
-    margin-left: deprecated.$s-2;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--menu-foreground-color);
-    }
-  }
-
-  .icon-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    margin: 0;
+    background-color: var(--color-background-quaternary);
   }
 }
 
-.icon-menu-item[disabled],
-.context-menu-item[disabled] {
+.menu-item-icon[disabled],
+.menu-item[disabled] {
   pointer-events: none;
   opacity: 0.6;
+}
+
+.menu-item-icon-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.menu-item-title {
+  @include use-typography("body-small");
+
+  color: var(--menu-item-title-color);
+}
+
+.shortcut {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+  color: var(--menu-item-shortcut-color);
+}
+
+.shortcut-key {
+  @include use-typography("body-small");
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: px2rem(20);
+  padding: var(--sp-xxs) px2rem(6);
+  border-radius: $br-6;
+  background-color: var(--color-background-primary);
+
+  &.customized-key {
+    background-color: var(--color-background-info);
+    color: var(--color-foreground-primary);
+  }
+}
+
+.icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-16;
+  color: var(--color-foreground-primary);
+  stroke-width: 1.33px;
+}
+
+.separator {
+  block-size: $sz-12;
 }
 
 .guide-color-label {
@@ -147,21 +142,21 @@
 .guide-color-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: deprecated.$s-6;
-  padding: deprecated.$s-4 deprecated.$s-6 deprecated.$s-8;
+  gap: px2rem(6);
+  padding: var(--sp-xs) px2rem(6) var(--sp-s);
   list-style: none;
 }
 
 .guide-color-swatch {
-  width: deprecated.$s-20;
-  height: deprecated.$s-20;
+  inline-size: px2rem(20);
+  block-size: px2rem(20);
   border-radius: 50%;
   cursor: pointer;
   flex-shrink: 0;
   box-sizing: border-box;
-  border: deprecated.$s-2 solid var(--panel-border-color);
+  border: $b-2 solid var(--color-background-quaternary);
 
   &.selected {
-    border: deprecated.$s-2 solid var(--menu-foreground-color);
+    border: $b-2 solid var(--color-foreground-primary);
   }
 }

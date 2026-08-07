@@ -35,7 +35,7 @@
   "Signals that plugins runtime has been initialized. Called by app.plugins/init-plugins-runtime."
   []
   (when (p/pending? runtime-ready-promise)
-    (p/resolve! runtime-ready-promise true)))
+    (p/resolve runtime-ready-promise true)))
 
 ;; Stores the installed plugins information
 (defonce ^:private registry (atom {}))

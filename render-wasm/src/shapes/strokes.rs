@@ -7,6 +7,14 @@ use super::StrokeLineCap;
 use super::StrokeLineJoin;
 use super::SvgAttrs;
 
+/// Soft floor in device pixels for dropping dash/dotted PathEffects when the
+/// pattern period is effectively invisible.
+pub const STROKE_MIN_DEVICE_PX: f32 = 0.75;
+
+/// When Inner/Outer doubled-width footprint is below this (device px), paint
+/// as Center to avoid save_layer / Clear paths.
+pub const STROKE_INNER_OUTER_SIMPLIFY_DEVICE_PX: f32 = 2.0;
+
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum StrokeStyle {
     Solid,
@@ -45,6 +53,9 @@ pub struct Stroke {
     // default `width + 10` pattern to keep existing designs visually identical.
     pub dash: Option<f32>,
     pub gap: Option<f32>,
+    // Per-side widths [top, right, bottom, left] for rects and frames.
+    // `None` means the uniform `width` applies to all sides.
+    pub widths: Option<[f32; 4]>,
 }
 
 impl Stroke {
@@ -57,11 +68,90 @@ impl Stroke {
         }
     }
 
+    /// The widest side of the stroke: the uniform `width` unless per-side
+    /// widths are set, in which case the maximum of the four sides.
+    pub fn max_width(&self) -> f32 {
+        match self.widths {
+            Some(widths) => widths.into_iter().reduce(f32::max).unwrap_or(self.width),
+            None => self.width,
+        }
+    }
+
+    /// Inner/Outer use a doubled-width Center stroke plus clip/clear. When that
+    /// footprint is thin on screen, fall back to a plain Center stroke.
+    #[inline]
+    pub fn simplified_kind_at_scale(&self, is_open: bool, scale: f32) -> StrokeKind {
+        let kind = self.render_kind(is_open);
+        match kind {
+            StrokeKind::Inner | StrokeKind::Outer
+                if 2.0 * self.max_width() * scale < STROKE_INNER_OUTER_SIMPLIFY_DEVICE_PX =>
+            {
+                StrokeKind::Center
+            }
+            other => other,
+        }
+    }
+
+    /// Drop dash/dotted PathEffects when the pattern period is subpixel.
+    #[inline]
+    pub fn style_at_scale(&self, scale: f32) -> StrokeStyle {
+        if self.style == StrokeStyle::Solid {
+            return StrokeStyle::Solid;
+        }
+        let period = match self.style {
+            StrokeStyle::Dotted => self.width + 5.0,
+            StrokeStyle::Dashed => {
+                let dash = self.dash.unwrap_or(self.width + 10.);
+                let gap = self.gap.unwrap_or(self.width + 10.);
+                dash.min(gap)
+            }
+            StrokeStyle::Mixed => self.width + 1.0,
+            StrokeStyle::Solid => return StrokeStyle::Solid,
+        };
+        if period * scale < STROKE_MIN_DEVICE_PX {
+            StrokeStyle::Solid
+        } else {
+            self.style
+        }
+    }
+
+    /// Path/Bool overview LOD: simplify Inner/Outer and dash/dotted at low
+    /// scale. Never skips painting; stroke-only icons would otherwise go blank.
+    pub fn path_lod_at_scale(&self, is_open: bool, scale: f32) -> Stroke {
+        let kind = self.simplified_kind_at_scale(is_open, scale);
+        let style = self.style_at_scale(scale);
+        let kind_unchanged = kind == self.render_kind(is_open);
+        let style_unchanged = style == self.style;
+        if kind_unchanged && style_unchanged {
+            return self.clone();
+        }
+        let mut stroke = self.clone();
+        if !is_open {
+            stroke.kind = kind;
+        }
+        stroke.style = style;
+        stroke
+    }
+
+    /// Per-side widths [top, right, bottom, left] when they actually differ.
+    /// Returns `None` when unset or when all sides are equal, so the uniform
+    /// render path (which supports dashed/dotted styles) keeps handling that
+    /// case.
+    pub fn per_side_widths(&self) -> Option<[f32; 4]> {
+        let widths = self.widths?;
+        let [top, right, bottom, left] = widths;
+        if top == right && right == bottom && bottom == left {
+            None
+        } else {
+            Some(widths)
+        }
+    }
+
     pub fn bounds_width(&self, is_open: bool) -> f32 {
         match self.render_kind(is_open) {
             StrokeKind::Inner => 0.,
-            StrokeKind::Center => self.width / 2.,
-            StrokeKind::Outer => self.width,
+            StrokeKind::Center => self.max_width() / 2.,
+            StrokeKind::Outer => self.max_width(),
         }
     }
 
@@ -88,6 +178,7 @@ impl Stroke {
             kind: StrokeKind::Center,
             dash,
             gap,
+            widths: None,
         }
     }
 
@@ -108,6 +199,7 @@ impl Stroke {
             kind: StrokeKind::Inner,
             dash,
             gap,
+            widths: None,
         }
     }
 
@@ -128,11 +220,17 @@ impl Stroke {
             kind: StrokeKind::Outer,
             dash,
             gap,
+            widths: None,
         }
     }
 
     pub fn scale_content(&mut self, value: f32) {
         self.width *= value;
+        if let Some(widths) = &mut self.widths {
+            for width in widths.iter_mut() {
+                *width *= value;
+            }
+        }
         if let Some(dash) = self.dash {
             self.dash = Some(dash * value);
         }
@@ -415,5 +513,92 @@ fn cap_margin_for_cap(cap: Option<StrokeCap>, width: f32) -> f32 {
         Some(StrokeCap::Square) => width,
         Some(StrokeCap::Round) => width * 0.5,
         _ => 0.0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn stroke_with_widths(widths: Option<[f32; 4]>) -> Stroke {
+        let mut stroke = Stroke::new_inner_stroke(2.0, StrokeStyle::Solid, None, None, None, None);
+        stroke.widths = widths;
+        stroke
+    }
+
+    #[test]
+    fn max_width_falls_back_to_uniform_width() {
+        let stroke = stroke_with_widths(None);
+        assert_eq!(stroke.max_width(), 2.0);
+    }
+
+    #[test]
+    fn max_width_uses_widest_side() {
+        let stroke = stroke_with_widths(Some([1.0, 8.0, 3.0, 0.0]));
+        assert_eq!(stroke.max_width(), 8.0);
+    }
+
+    #[test]
+    fn per_side_widths_none_when_all_sides_equal() {
+        let stroke = stroke_with_widths(Some([4.0, 4.0, 4.0, 4.0]));
+        assert_eq!(stroke.per_side_widths(), None);
+    }
+
+    #[test]
+    fn per_side_widths_returns_differing_sides() {
+        let stroke = stroke_with_widths(Some([1.0, 2.0, 3.0, 4.0]));
+        assert_eq!(stroke.per_side_widths(), Some([1.0, 2.0, 3.0, 4.0]));
+    }
+
+    #[test]
+    fn scale_content_scales_per_side_widths() {
+        let mut stroke = stroke_with_widths(Some([1.0, 2.0, 3.0, 4.0]));
+        stroke.scale_content(2.0);
+        assert_eq!(stroke.widths, Some([2.0, 4.0, 6.0, 8.0]));
+        assert_eq!(stroke.width, 4.0);
+    }
+
+    fn solid_center(width: f32) -> Stroke {
+        Stroke::new_center_stroke(width, StrokeStyle::Solid, None, None, None, None)
+    }
+
+    #[test]
+    fn inner_outer_simplify_to_center_when_thin() {
+        let inner = Stroke::new_inner_stroke(8.0, StrokeStyle::Solid, None, None, None, None);
+        // 2 * 8 * 0.1 = 1.6 < 2.0, simplify to Center
+        assert_eq!(
+            inner.simplified_kind_at_scale(false, 0.1),
+            StrokeKind::Center
+        );
+        // 2 * 8 * 0.2 = 3.2 >= 2.0, keep Inner
+        assert_eq!(
+            inner.simplified_kind_at_scale(false, 0.2),
+            StrokeKind::Inner
+        );
+    }
+
+    #[test]
+    fn dash_becomes_solid_when_period_subpixel() {
+        let dashed =
+            Stroke::new_center_stroke(2.0, StrokeStyle::Dashed, None, None, Some(20.0), Some(20.0));
+        // period 20 * 0.03 = 0.6 < 0.75, solid
+        assert_eq!(dashed.style_at_scale(0.03), StrokeStyle::Solid);
+        // period 20 * 0.05 = 1.0 >= 0.75, keep dashed
+        assert_eq!(dashed.style_at_scale(0.05), StrokeStyle::Dashed);
+    }
+
+    #[test]
+    fn path_lod_never_drops_thin_stroke() {
+        // Hairline strokes must still paint (stroke-only icons).
+        let thin = solid_center(1.0).path_lod_at_scale(false, 0.5);
+        assert_eq!(thin.width, 1.0);
+        assert_eq!(thin.kind, StrokeKind::Center);
+    }
+
+    #[test]
+    fn path_lod_simplifies_inner_at_overview() {
+        let inner = Stroke::new_inner_stroke(8.0, StrokeStyle::Solid, None, None, None, None);
+        let lod = inner.path_lod_at_scale(false, 0.1);
+        assert_eq!(lod.kind, StrokeKind::Center);
     }
 }

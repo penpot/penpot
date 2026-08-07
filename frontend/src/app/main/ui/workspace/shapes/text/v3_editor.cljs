@@ -99,6 +99,18 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- input-surface-class
+  "Class list for the contenteditable capture surface.
+
+  Mousetrap's `stopCallback` drops every keystroke whose target is
+  contentEditable, so without the `mousetrap` class (as in V1/V2) the text
+  shortcuts (Ctrl+B, Ctrl+I, …) never reach the dispatcher."
+  [rotation]
+  (dm/str "mousetrap "
+          (cur/get-dynamic "text" rotation)
+          " "
+          (stl/css :text-editor-container)))
+
 (mf/defc text-editor*
   "Contenteditable element positioned over the text shape to capture input events."
   [{:keys [shape]}]
@@ -112,6 +124,11 @@
         ;; (macOS press-and-hold accent menu). Set on `beforeinput`, consumed on
         ;; `input`. See on-before-input / on-input.
         pending-replace-ref (mf/use-ref 0)
+
+        ;; Tracks an in-flight pointer drag-selection so `on-pointer-move` only
+        ;; repaints the selection overlay while a drag is active (mirrors the
+        ;; WASM `is_pointer_selection_active` guard), not on every hover move.
+        dragging-ref (mf/use-ref false)
 
         fallback-fonts    (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
@@ -157,7 +174,7 @@
              (when (some? data)
                (text-editor/text-editor-composition-update data)
                (sync-wasm-text-editor-content!)
-               (wasm.api/request-render "text-composition"))
+               (wasm.api/request-render-preserving-target "text-composition"))
              (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-composition-end
@@ -166,7 +183,7 @@
            (let [data (or (.-data event) "")]
              (text-editor/text-editor-composition-end data)
              (sync-wasm-text-editor-content!)
-             (wasm.api/request-render "text-composition"))
+             (wasm.api/request-render-preserving-target "text-composition"))
            (reset-input-node (mf/ref-val contenteditable-ref))))
 
         on-paste
@@ -178,7 +195,7 @@
              (when (and text (seq text))
                (text-editor/text-editor-insert-text text)
                (sync-wasm-text-editor-content!)
-               (wasm.api/request-render "text-paste"))
+               (wasm.api/request-render-preserving-target "text-paste"))
              (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-copy
@@ -186,7 +203,7 @@
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-get-selection)
+             (when (text-editor/text-editor-has-selection?)
                (let [text (text-editor/text-editor-export-selection)]
                  (.setData (.-clipboardData event) "text/plain" text))))))
 
@@ -195,13 +212,13 @@
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-get-selection)
+             (when (text-editor/text-editor-has-selection?)
                (let [text (text-editor/text-editor-export-selection)]
                  (.setData (.-clipboardData event) "text/plain" (or text ""))
                  (when (and text (seq text))
                    (text-editor/text-editor-delete-backward)
                    (sync-wasm-text-editor-content!)
-                   (wasm.api/request-render "text-cut"))))
+                   (wasm.api/request-render-preserving-target "text-cut"))))
              (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-key-down
@@ -225,7 +242,7 @@
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-select-all)
-                   (wasm.api/request-render "text-select-all"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  ;; Enter
                  (= key "Enter")
@@ -233,7 +250,7 @@
                    (dom/prevent-default event)
                    (text-editor/text-editor-insert-paragraph)
                    (sync-wasm-text-editor-content!)
-                   (wasm.api/request-render "text-paragraph"))
+                   (wasm.api/request-render-preserving-target "text-paragraph"))
 
                  ;; Backspace
                  (= key "Backspace")
@@ -241,7 +258,7 @@
                    (dom/prevent-default event)
                    (text-editor/text-editor-delete-backward ctrl?)
                    (sync-wasm-text-editor-content!)
-                   (wasm.api/request-render "text-delete-backward"))
+                   (wasm.api/request-render-preserving-target "text-delete-backward"))
 
                  ;; Delete
                  (= key "Delete")
@@ -249,51 +266,60 @@
                    (dom/prevent-default event)
                    (text-editor/text-editor-delete-forward ctrl?)
                    (sync-wasm-text-editor-content!)
-                   (wasm.api/request-render "text-delete-forward"))
+                   (wasm.api/request-render-preserving-target "text-delete-forward"))
+
+                 ;; Shift+Tab falls through to the browser, so the keyboard can
+                 ;; still leave the editor.
+                 (and (= key "Tab") (not shift?))
+                 (do
+                   (dom/prevent-default event)
+                   (text-editor/text-editor-insert-text "\t")
+                   (sync-wasm-text-editor-content!)
+                   (wasm.api/request-render-preserving-target "text-tab"))
 
                  ;; Insert
                  (= key "Insert")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-toggle-overtype-mode)
-                   (wasm.api/request-render "text-overtype-mode"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  ;; Arrow keys
                  (= key "ArrowLeft")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-move-cursor 0 ctrl? shift?)
-                   (wasm.api/request-render "text-cursor-move"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  (= key "ArrowRight")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-move-cursor 1 ctrl? shift?)
-                   (wasm.api/request-render "text-cursor-move"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  (= key "ArrowUp")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-move-cursor 2 ctrl? shift?)
-                   (wasm.api/request-render "text-cursor-move"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  (= key "ArrowDown")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-move-cursor 3 ctrl? shift?)
-                   (wasm.api/request-render "text-cursor-move"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  (= key "Home")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-move-cursor 4 ctrl? shift?)
-                   (wasm.api/request-render "text-cursor-move"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  (= key "End")
                  (do
                    (dom/prevent-default event)
                    (text-editor/text-editor-move-cursor 5 ctrl? shift?)
-                   (wasm.api/request-render "text-cursor-move"))
+                   (wasm.api/render-text-editor-overlay!))
 
                  ;; Let contenteditable handle text input via on-input
                  :else nil)))))
@@ -341,7 +367,7 @@
                      (text-editor/text-editor-delete-backward)))
                  (text-editor/text-editor-insert-text data)
                  (sync-wasm-text-editor-content!)
-                 (wasm.api/request-render "text-input"))
+                 (wasm.api/request-render-preserving-target "text-input"))
                (mf/set-ref-val! pending-replace-ref 0)
                ;; IMPORTANT: do NOT clear the surface here (see keep-input-alive):
                ;; the browser must retain the just-typed character so the macOS
@@ -353,35 +379,49 @@
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-pointer-down off-pt))))
+             (mf/set-ref-val! dragging-ref true)
+             (if (.-shiftKey event)
+               (wasm.api/text-editor-pointer-down-extend off-pt)
+               (wasm.api/text-editor-pointer-down off-pt))
+             ;; Repaint the caret over the cached tiles instead of a full render,
+             ;; which flashes at high zoom (see `render-text-editor-overlay!`).
+             (wasm.api/render-text-editor-overlay!))))
 
         on-pointer-move
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-pointer-move off-pt))))
+             (wasm.api/text-editor-pointer-move off-pt)
+             ;; Only while dragging: `text-editor-pointer-move` is a no-op
+             ;; otherwise, so avoid repainting on plain hover.
+             (when (mf/ref-val dragging-ref)
+               (wasm.api/render-text-editor-overlay!)))))
 
         on-pointer-up
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-pointer-up off-pt))))
+             (mf/set-ref-val! dragging-ref false)
+             (wasm.api/text-editor-pointer-up off-pt)
+             (wasm.api/render-text-editor-overlay!))))
 
         on-click
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-set-cursor-from-offset off-pt))))
+             (wasm.api/text-editor-set-cursor-from-offset off-pt)
+             (wasm.api/render-text-editor-overlay!))))
 
         on-double-click
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-select-word-boundary off-pt))))
+             (wasm.api/text-editor-select-word-boundary off-pt)
+             (wasm.api/render-text-editor-overlay!))))
 
         on-focus
         (mf/use-fn
@@ -390,9 +430,15 @@
 
         on-blur
         (mf/use-fn
-         (fn [^js _event]
-           (sync-wasm-text-editor-content! {:finalize? true})
-           (wasm.api/text-editor-blur)))
+         (fn [^js event]
+           ;; MacOS Character Viewer on Firefox fires a `blur` when it opens.
+           ;; To avoid losing the selected character, we need guard against
+           ;; `activeElement` being the surface itself.
+           (when-not (and (some? event)
+                          (= (.-activeElement js/document)
+                             (mf/ref-val contenteditable-ref)))
+             (sync-wasm-text-editor-content! {:finalize? true})
+             (wasm.api/text-editor-blur))))
 
         style #js {:pointerEvents "all"
                    "--editor-container-width" (dm/str width "px")
@@ -420,21 +466,30 @@
          ;; Focus and select all text on mount (this will trigger on-focus)
          (.focus node)
          (text-editor/text-editor-select-all)
-         (wasm.api/request-render "text-editor-select-all-on-mount"))
+         (wasm.api/request-render-preserving-target "text-editor-select-all-on-mount"))
        ;; On unmount, finalize the editor content and then dispose the WASM editor.
        ;; We finalize on unmount instead of relying on the browser blur event, because
        ;; it was not being reliable (timing issues, Firefox issues…)
        (fn []
          (on-blur)
          (text-editor/text-editor-dispose)
-         (wasm.api/request-render "text-editor-dispose"))))
+         (wasm.api/request-render-preserving-target "text-editor-dispose"))))
 
     (mf/use-effect
+     (mf/deps)
      (fn []
        (let [timeout-id (atom nil)
              schedule-blink (fn schedule-blink []
-                              (when (text-editor/text-editor-has-focus?)
-                                (wasm.api/request-render "cursor-blink"))
+                              ;; The caret only blinks for a collapsed cursor. With an active
+                              ;; selection there is nothing to animate, so skip the repaint:
+                              ;; re-compositing every interval would otherwise redraw the
+                              ;; selection over and over (a visible flicker at high zoom).
+                              (when (and (text-editor/text-editor-has-focus?)
+                                         (not (text-editor/text-editor-has-selection?)))
+                                ;; Redraw only the caret (cached frame + overlay) instead of a
+                                ;; full `request-render`, which flashes on zoomed-in views by
+                                ;; kicking off a progressive tile-by-tile shape re-render.
+                                (wasm.api/render-text-editor-overlay!))
                               (reset! timeout-id (js/setTimeout schedule-blink caret-blink-interval-ms)))]
          (schedule-blink)
          (fn []
@@ -479,7 +534,5 @@
          :on-focus on-focus
          :on-blur on-blur
          :id "text-editor-wasm-input"
-         :class (dm/str (cur/get-dynamic "text" (:rotation shape))
-                        " "
-                        (stl/css :text-editor-container))
+         :class (input-surface-class (:rotation shape))
          :data-testid "text-editor-container"}]]]]))

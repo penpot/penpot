@@ -8,13 +8,13 @@
   "WebGL utilities for pixel capture and rendering"
   (:require
    [app.common.logging :as log]
-   [app.render-wasm.wasm :as wasm]
+   [app.common.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
 
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"
   []
-  (when wasm/context-initialized?
+  (when (wasm/live?)
     (let [gl-obj (unchecked-get wasm/internal-module "GL")]
       (when gl-obj
         ;; Get the current WebGL context from Emscripten

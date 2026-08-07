@@ -29,7 +29,7 @@ bb scripts/paren-repair --help
 
 ## Native Tool Available (opencode)
 
-A native opencode tool `paren-repair` is available at `.opencode/tools/paren-repair.ts`.
+A native opencode tool `paren-repair` is available at `.opencode/scripts/paren-repair.ts`.
 The LLM can call it directly with:
 - `files`: Array of file paths to fix
 - `code`: Code string to fix via stdin

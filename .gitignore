@@ -59,6 +59,8 @@ opencode.json
 /docker/images/bundle*
 /exporter/target
 /exporter/.shadow-cljs
+/exporter/resources/wasm/
+/exporter/src/app/wasm/shared.js
 /frontend/.storybook/preview-body.html
 /frontend/.storybook/preview-head.html
 /frontend/playwright-report/
@@ -89,6 +91,7 @@ opencode.json
 /blob-report/
 /playwright/.cache/
 /render-wasm/target/
+/media-processor/dist/
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
@@ -102,6 +105,7 @@ opencode.json
 /.opencode/plans
 /.opencode/reports
 /.opencode/prompts
+/.ci-logs
 /.codex/
 /tools/__pycache__
 /performance/results/

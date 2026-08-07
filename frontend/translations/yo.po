@@ -2168,10 +2168,6 @@ msgstr ""
 "Lẹ́yìn tí o bá ti fún ẹgbẹ́ rẹ lórúkọ, Ó le pe àwọn ènìyàn láti darapọ̀ mọ́ "
 "ẹgbẹ́."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Tẹ orúkọ ẹgbẹ́"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Fìwépè ọmọ àwọn ẹgbẹ́"
@@ -2317,10 +2313,6 @@ msgstr "Titete"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
 msgid "shortcut-subsection.edit"
 msgstr "Sàtunkọ"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
-msgstr "àbùdá"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"
@@ -2745,14 +2737,6 @@ msgstr "Yaa si awon apa"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:180
 msgid "shortcuts.snap-pixel-grid"
 msgstr "Yaa si pikseli ilana"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Bẹ̀rẹ̀ wíwọ̀n"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "da wíwọ̀n duro"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"

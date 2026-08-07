@@ -7,16 +7,18 @@
 (ns app.render-wasm.text-editor
   "Text editor WASM bindings"
   (:require
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.mem :as mem]
+   [app.common.render-wasm.serializers :as sr]
+   [app.common.render-wasm.serializers.color :as sr-clr]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.fonts :as main-fonts]
+   ;; Required for side effects: binds the generated enums.
+   [app.render-wasm.api.enums]
    [app.render-wasm.api.fonts :as fonts]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.serializers.color :as sr-clr]
-   [app.render-wasm.wasm :as wasm]
    [app.util.color :as uc]
    [app.util.dom :as dom]))
 
@@ -128,7 +130,6 @@
       nil)))
 
 (def ^:private selection-color-css-var "--text-editor-selection-background-color")
-(def ^:private caret-color-css-var "--text-editor-caret-color")
 
 (defn- resolve-theme-color
   "Resolve a themed CSS color variable (read from the document body) into a
@@ -140,21 +141,58 @@
               (dom/get-css-variable css-var js/document.body))]
     (sr-clr/hex->u32argb color opacity)))
 
+;; ARGB u32 for opaque white, painted with a Difference blend mode so the caret
+;; always shows the inverted color of the background.
+(def ^:private caret-invert-color 0xffffffff)
+
 (defn text-editor-apply-theme
-  "Push the current theme's selection and caret colors (read from the CSS
-   custom properties on the document body) into the WASM text editor. The
-   editor theme is a persistent singleton, so call once after init and again
-   on every color-scheme change."
+  "Push the current theme's selection color (read from the CSS custom properties
+   on the document body) into the WASM text editor, together with the default
+   caret: white with invert, so it shows the inverted color of the background.
+   The caret only switches to a solid text color (invert off) via
+   `text-editor-apply-caret-color`. The editor theme is a persistent singleton,
+   so call once after init and again on every color-scheme change."
   []
   (when wasm/context-initialized?
+    (let [selection (resolve-theme-color selection-color-css-var)]
+      (when selection
+        (h/call wasm/internal-module "_text_editor_apply_theme" selection caret-invert-color true)))))
+
+(defn- solid-fill?
+  [fill]
+  (some? (:fill-color fill)))
+
+(defn resolve-caret-color
+  "Compute the caret color from the text `fills` at the caret (as returned by
+   `text-editor-get-current-styles`), as `{:color <argb-u32> :invert? bool}`:
+
+   - when there is at least one solid fill, match the topmost (visible) one,
+     painted normally (`:invert? false`);
+   - otherwise (no fill, gradient, image fills, mixed selection, …) use white
+     with `:invert? true`, which the renderer paints with a Difference blend so
+     the caret is the inverted color of whatever is behind it."
+  [fills]
+  (if-let [solid (and (sequential? fills)
+                      (some #(when (solid-fill? %) %) fills))]
+    {:color (sr-clr/hex->u32argb (:fill-color solid) (:fill-opacity solid))
+     :invert? false}
+    {:color caret-invert-color
+     :invert? true}))
+
+(defn text-editor-apply-caret-color
+  "Update the WASM text-editor caret color so it matches the text at the caret
+   (see `resolve-caret-color`). Re-applies the current theme selection color
+   unchanged, since the WASM theme is a singleton holding both."
+  [fills]
+  (when wasm/context-initialized?
     (let [selection (resolve-theme-color selection-color-css-var)
-          caret     (resolve-theme-color caret-color-css-var)]
-      (when (and selection caret)
-        (h/call wasm/internal-module "_text_editor_apply_theme" selection caret)))))
+          {:keys [color invert?]} (resolve-caret-color fills)]
+      (when selection
+        (h/call wasm/internal-module "_text_editor_apply_theme" selection color invert?)))))
 
 (defn text-editor-focus
   [id]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [buffer (uuid/get-u32 id)]
       (when-not (h/call wasm/internal-module "_text_editor_focus"
                         (aget buffer 0)
@@ -166,49 +204,63 @@
 (defn text-editor-set-cursor-from-offset
   "Sets caret position from shape relative coordinates"
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_set_cursor_from_offset" x y)))
 
 (defn text-editor-set-cursor-from-point
   "Sets caret position from screen (canvas) coordinates"
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
 
 (defn text-editor-toggle-overtype-mode
   "Toggles overtype mode"
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_toggle_overtype_mode")))
 
 (defn text-editor-pointer-down
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
+
+(defn text-editor-pointer-down-extend
+  "Extends the selection up to the pointer instead of collapsing the caret."
+  [{:keys [x y]}]
+  (when (wasm/ready?)
+    (h/call wasm/internal-module "_text_editor_pointer_down_extend" x y)))
 
 (defn text-editor-pointer-move
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_move" x y)))
 
 (defn text-editor-pointer-up
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_up" x y)))
 
 (defn text-editor-update-blink
   [timestamp-ms]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_update_blink" timestamp-ms)))
 
 (defn text-editor-render-overlay
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_render_overlay")))
+
+(defn text-editor-render-caret
+  "Re-compose the frame from the Backbuffer (the last full render) and draw the
+   caret/selection overlay on top, submitting one atomic frame. Pixel identical
+   to the last full render at any zoom, so the blink does not flash."
+  []
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_render_caret")))
 
 (defn text-editor-poll-event
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [res (h/call wasm/internal-module "_text_editor_poll_event")]
       res)))
 
@@ -222,53 +274,6 @@
      2 :multiple
      0)))
 
-(defn- text-editor-translate-vertical-align
-  [vertical-align]
-  (case vertical-align
-    0 "top"
-    1 "center"
-    2 "bottom"))
-
-(defn- text-editor-translate-text-align
-  [text-align]
-  (case text-align
-    0 "left"
-    1 "center"
-    2 "right"
-    text-align))
-
-(defn- text-editor-translate-text-direction
-  [text-direction]
-  (case text-direction
-    0 "ltr"
-    1 "rtl"
-    text-direction))
-
-(defn- text-editor-translate-text-transform
-  [text-transform]
-  (case text-transform
-    0 "none"
-    1 "lowercase"
-    2 "uppercase"
-    3 "capitalize"
-    text-transform))
-
-(defn- text-editor-translate-text-decoration
-  [text-decoration]
-  (case text-decoration
-    0 "none"
-    1 "underline"
-    2 "linethrough"
-    3 "overline"
-    text-decoration))
-
-(defn- text-editor-translate-font-style
-  [font-style]
-  (case font-style
-    0 "normal"
-    1 "italic"
-    font-style))
-
 (defn- text-editor-compute-font-variant-id
   [font-id font-weight font-style]
   (let [font-data (main-fonts/get-font-data font-id)
@@ -279,7 +284,7 @@
 
 (defn text-editor-get-current-styles
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_get_current_styles")]
       (when (and ptr (not (zero? ptr)))
         (let [heap-u8 (mem/get-heap-u8)
@@ -318,7 +323,7 @@
               line-height-value (aget heap-f32 (+ u32-offset 29))
               letter-spacing-value (aget heap-f32 (+ u32-offset 30))
               font-id (fonts/uuid->font-id font-family-id-value)
-              font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
+              font-style-value (sr/untranslate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
               ;; A font variant is defined by its family + weight + style, so it
               ;; is "mixed" when any of those is mixed. When the family itself is
@@ -343,11 +348,11 @@
               selected-colors (if (= multiple-fills 1) fills nil)
               fills (if (= multiple-fills 1) :multiple fills)
 
-              result {:vertical-align (text-editor-translate-vertical-align vertical-align)
-                      :text-align (text-editor-translate-text-align (text-editor-get-style-property text-align-state text-align-value))
-                      :text-direction (text-editor-translate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
-                      :text-decoration (text-editor-translate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
-                      :text-transform (text-editor-translate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
+              result {:vertical-align (sr/untranslate-vertical-align vertical-align)
+                      :text-align (sr/untranslate-text-align (text-editor-get-style-property text-align-state text-align-value))
+                      :text-direction (sr/untranslate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
+                      :text-decoration (sr/untranslate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
+                      :text-transform (sr/untranslate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
                       :line-height (text-editor-get-style-property line-height-state line-height-value)
                       :letter-spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)
                       :font-size (text-editor-get-style-property font-size-state font-size-value)
@@ -367,7 +372,7 @@
 (defn text-editor-encode-text-pre
   [text]
   (when (and (not (empty? text))
-             wasm/context-initialized?)
+             (wasm/ready?))
     (let [encoder (js/TextEncoder.)
           buf (.encode encoder text)
           heapu8 (mem/get-heap-u8)
@@ -378,31 +383,31 @@
 (defn text-editor-encode-text-post
   [text]
   (when (and (not (empty? text))
-             wasm/context-initialized?)
+             (wasm/ready?))
     (mem/free)))
 
 (defn text-editor-composition-start
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_composition_start")))
 
 (defn text-editor-composition-update
   [text]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_composition_update")
     (text-editor-encode-text-post text)))
 
 (defn text-editor-composition-end
   [text]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_composition_end")
     (text-editor-encode-text-post text)))
 
 (defn text-editor-insert-text
   [text]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_insert_text")
     (text-editor-encode-text-post text)))
@@ -411,62 +416,62 @@
   ([]
    (text-editor-delete-backward false))
   ([word-boundary]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (h/call wasm/internal-module "_text_editor_delete_backward" word-boundary))))
 
 (defn text-editor-delete-forward
   ([]
    (text-editor-delete-forward false))
   ([word-boundary]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (h/call wasm/internal-module "_text_editor_delete_forward" word-boundary))))
 
 (defn text-editor-insert-paragraph []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_insert_paragraph")))
 
 (defn text-editor-move-cursor
   [direction word-boundary extend-selection]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_move_cursor" direction word-boundary (if extend-selection 1 0))))
 
 (defn text-editor-select-all
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_select_all")))
 
 (defn text-editor-select-word-boundary
   [{:keys [x y]}]
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
 
 (defn text-editor-blur
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (when-not (h/call wasm/internal-module "_text_editor_blur")
       (throw (js/Error. "TextEditor blur failed")))))
 
 (defn text-editor-dispose
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_dispose")))
 
 (defn text-editor-has-focus?
   ([id]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (not (zero? (h/call wasm/internal-module "_text_editor_has_focus_with_id" id)))))
   ([]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (not (zero? (h/call wasm/internal-module "_text_editor_has_focus"))))))
 
 (defn text-editor-has-selection?
   ([]
-   (when wasm/context-initialized?
+   (when (wasm/ready?)
      (not (zero? (h/call wasm/internal-module "_text_editor_has_selection"))))))
 
 (defn text-editor-export-content
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_export_content")]
       (when (and ptr (not (zero? ptr)))
         (let [json-str (mem/read-string ptr)]
@@ -476,7 +481,7 @@
 (defn text-editor-export-selection
   "Export only the currently selected text as plain text from the WASM editor. Requires WASM support (_text_editor_export_selection)."
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_export_selection")]
       (when (and ptr (not (zero? ptr)))
         (let [text (mem/read-string ptr)]
@@ -485,7 +490,7 @@
 
 (defn text-editor-get-active-shape-id
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (try
       (let [byte-offset (mem/alloc 16)
             u32-offset (mem/->offset-32 byte-offset)
@@ -505,7 +510,7 @@
 
 (defn text-editor-get-selection
   []
-  (when wasm/context-initialized?
+  (when (wasm/ready?)
     (let [byte-offset     (mem/alloc 16)
           u32-offset      (mem/->offset-32 byte-offset)
           heap            (mem/get-heap-u32)
@@ -599,7 +604,7 @@
   shape-id and the fully merged content map ready for
   v2-update-text-shape-content."
   []
-  (when (and wasm/context-initialized? (text-editor-has-focus?))
+  (when (and (wasm/ready?) (text-editor-has-focus?))
     (let [shape-id  (text-editor-get-active-shape-id)
           new-texts (text-editor-export-content)]
       (when (and shape-id new-texts)
@@ -626,10 +631,9 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
-(defn- apply-attrs-to-paragraph
-  "Apply attrs to spans within [sel-start, sel-end) char range of a single paragraph.
-   Splits spans at boundaries as needed."
-  [para sel-start sel-end attrs]
+(defn apply-attrs-to-paragraph
+  "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
+  [para sel-start sel-end styles]
   (let [spans  (:children para)
 
         result (loop [spans spans
@@ -648,8 +652,10 @@
                        (recur (rest spans) span-end (conj acc span))
                        (let [before   (when (> ol-start pos)
                                         (assoc span :text (subs text 0 (- ol-start pos))))
-                             selected (merge span attrs
-                                             {:text (subs text (- ol-start pos) (- ol-end pos))})
+                             selected (-> (if (fn? styles)
+                                            (styles span)
+                                            (merge span styles))
+                                          (assoc :text (subs text (- ol-start pos) (- ol-end pos))))
                              after    (when (< ol-end span-end)
                                         (assoc span :text (subs text (- ol-end pos))))]
                          (recur (rest spans) span-end
@@ -661,10 +667,51 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
+(defn- paragraph-selected-spans
+  "Return the spans of `para` that overlap the [sel-start, sel-end) char range."
+  [para sel-start sel-end]
+  (loop [spans (:children para)
+         pos   0
+         acc   []]
+    (if (empty? spans)
+      acc
+      (let [span     (first spans)
+            span-end (+ pos (count (:text span)))
+            overlap? (< (max pos sel-start) (min span-end sel-end))]
+        (recur (rest spans) span-end (cond-> acc overlap? (conj span)))))))
+
+(defn selection-fills
+  "The selection's fills: shared vector if all spans match, `:multiple` if not, nil if empty."
+  [content {:keys [start-para start-offset end-para end-offset]}]
+  (let [paragraphs (:children (first (:children content)))
+        selected   (mapcat (fn [idx para]
+                             (cond
+                               (or (< idx start-para) (> idx end-para)) nil
+                               (= start-para end-para) (paragraph-selected-spans para start-offset end-offset)
+                               (= idx start-para)      (paragraph-selected-spans para start-offset (para-char-count para))
+                               (= idx end-para)        (paragraph-selected-spans para 0 end-offset)
+                               :else                   (paragraph-selected-spans para 0 (para-char-count para))))
+                           (range (count paragraphs))
+                           paragraphs)
+        fills-set  (into #{} (map :fills) selected)]
+    (cond
+      (empty? selected)       nil
+      (= 1 (count fills-set)) (first fills-set)
+      :else                   :multiple)))
+
 (defn apply-styles-to-selection
-  [attrs use-shape-fn set-shape-text-content-fn]
-  (when wasm/context-initialized?
-    (let [shape-id  (text-editor-get-active-shape-id)
+  "Apply `styles` (attrs map, or a fn per span) to the selected spans; `:with-fills?` also returns `:fills`."
+  [styles use-shape-fn set-shape-text-content-fn & [{:keys [with-fills?]}]]
+  (when (wasm/ready?)
+    (let [;; Drop nil-valued attrs so they are never merged onto text spans.
+          ;; The DOM editor path strips these in `attrs->styles`; the WASM merge
+          ;; here (`apply-attrs-to-paragraph`) does not, so an unresolved attr
+          ;; (e.g. nil :font-family/:font-weight/:font-style from an unloaded
+          ;; font) would corrupt the span and fail the backend schema.
+          styles    (if (fn? styles)
+                      styles
+                      (into {} (remove (comp nil? val)) styles))
+          shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
 
       (when (and shape-id selection)
@@ -688,19 +735,19 @@
 
                               ;; same paragraph.
                               (= start-para end-para)
-                              (apply-attrs-to-paragraph para start-offset end-offset attrs)
+                              (apply-attrs-to-paragraph para start-offset end-offset styles)
 
                               ;; first paragraph
                               (= idx start-para)
-                              (apply-attrs-to-paragraph para start-offset (para-char-count para) attrs)
+                              (apply-attrs-to-paragraph para start-offset (para-char-count para) styles)
 
                               ;; final paragraph
                               (= idx end-para)
-                              (apply-attrs-to-paragraph para 0 end-offset attrs)
+                              (apply-attrs-to-paragraph para 0 end-offset styles)
 
                               ;; any other paragraph
                               :else
-                              (apply-attrs-to-paragraph para 0 (para-char-count para) attrs)))
+                              (apply-attrs-to-paragraph para 0 (para-char-count para) styles)))
 
                           (range (count paragraphs))
                           paragraphs))
@@ -713,5 +760,33 @@
                 (update-cached-content! shape-id new-content)
                 (use-shape-fn shape-id)
                 (set-shape-text-content-fn shape-id new-content)
-                {:shape-id shape-id
-                 :content  new-content}))))))))
+                (cond-> {:shape-id shape-id
+                         :content  new-content}
+                  with-fills?
+                  (assoc :fills (selection-fills new-content normalized-selection)))))))))))
+
+(defn apply-paragraph-attrs-to-selection
+  "Apply paragraph level attrs (text-align, text-direction) to the whole
+   paragraphs the editor selection touches; a collapsed caret means just the one
+   it sits in."
+  [attrs use-shape-fn set-shape-text-content-fn]
+  (when (wasm/ready?)
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+      (when (and shape-id selection)
+        (when-let [content (get-cached-content shape-id)]
+          (let [{:keys [start-para end-para]} (normalize-selection selection)
+                paragraph-set  (first (:children content))
+                new-paragraphs (into []
+                                     (map-indexed (fn [idx para]
+                                                    (if (<= start-para idx end-para)
+                                                      (merge para attrs)
+                                                      para)))
+                                     (:children paragraph-set))
+                new-content    (assoc content :children
+                                      [(assoc paragraph-set :children new-paragraphs)])]
+            (update-cached-content! shape-id new-content)
+            (use-shape-fn shape-id)
+            (set-shape-text-content-fn shape-id new-content)
+            {:shape-id shape-id
+             :content  new-content}))))))

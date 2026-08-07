@@ -371,7 +371,7 @@
             :id      "token-delete"
             :handler handle-open-confirm-modal}])]
 
-    [:div {:class (stl/css :item)}
+    [:div {:class (stl/css :item) :data-id (str id)}
      [:> text* {:as "div"
                 :typography t/body-medium
                 :title name
@@ -640,10 +640,12 @@
       (dom/set-html-title (tr "title.settings.integrations"))
       (st/emit! (du/fetch-access-tokens)))
 
-    [:div {:class (stl/css :integrations)}
-     [:> heading* {:level 1
+    [:section {:class (stl/css :integrations)
+               :aria-labelledby "integrations-section-title"}
+     [:> heading* {:level 2
                    :typography t/title-large
-                   :class (stl/css :color-primary)}
+                   :class (stl/css :color-primary)
+                   :id "integrations-section-title"}
       (tr "integrations.title")]
 
      (when ^boolean mcp-enabled?

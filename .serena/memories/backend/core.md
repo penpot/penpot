@@ -92,8 +92,8 @@ Fixtures can populate local data for manual testing/perf work. From the backend 
 
 IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
 
-* **Linting:** `clj-kondo --lint ../common/src/ src/`.
-* **Formatting:** `cljfmt check src/ test/` to check, `cljfmt fix src/ test/` to fix. Avoid unrelated whitespace diffs.
+* **Linting:** `pnpm run lint:clj`.
+* **Formatting:** `pnpm run check-fmt:clj` to check, `pnpm run fmt:clj` to fix. After running `fmt:clj`, `check-fmt:clj` is redundant. Avoid unrelated whitespace diffs.
 
 **Before linting:** if delimiter errors are suspected (after LLM edits), run
 `scripts/paren-repair` on the affected files first. Delimiter errors produce

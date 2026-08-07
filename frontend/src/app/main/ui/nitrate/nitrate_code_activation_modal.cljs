@@ -17,6 +17,7 @@
    [app.main.ui.nitrate.nitrate-activation-success-modal]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -63,7 +64,16 @@
          (mf/deps on-accept)
          (fn [event]
            (when (and (= "Enter" (.-key event)) (.-ctrlKey event))
-             (on-accept event))))]
+             (on-accept event))))
+
+        on-download-request-click
+        (mf/use-fn
+         (fn []
+           (->> (rp/cmd! :get-nitrate-activation-code-request {})
+                (rx/subs!
+                 (fn [body]
+                   (->> (wapi/create-blob body "text/plain")
+                        (dom/trigger-download "penpot-activation-code-request.txt")))))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -101,7 +111,11 @@
           :value (tr "nitrate.code-activation.submit")
           :on-click on-accept}]]
        [:div {:class (stl/css :footer-text)}
-        (tr "nitrate.code-activation.footer") " "
+        (tr "nitrate.code-activation.footer-before")
+        [:a {:class (stl/css :link)
+             :on-click on-download-request-click}
+         (tr "nitrate.code-activation.footer-link")]
+        (tr "nitrate.code-activation.footer-after") " "
         [:a {:class (stl/css :link)
              :href "mailto:sales@nitrate.com"}
          "sales@nitrate.com"]]]]]))

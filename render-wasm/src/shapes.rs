@@ -679,18 +679,25 @@ impl Shape {
     pub fn visible_strokes(&self) -> impl DoubleEndedIterator<Item = &Stroke> {
         self.strokes
             .iter()
-            .filter(|stroke| stroke.width > MIN_STROKE_WIDTH)
+            .filter(|stroke| stroke.max_width() > MIN_STROKE_WIDTH)
     }
 
     pub fn has_visible_strokes(&self) -> bool {
         self.strokes
             .iter()
-            .any(|stroke| stroke.width > MIN_STROKE_WIDTH)
+            .any(|stroke| stroke.max_width() > MIN_STROKE_WIDTH)
     }
 
     pub fn add_stroke(&mut self, s: Stroke) {
         self.invalidate_extrect();
         self.strokes.push(s)
+    }
+
+    pub fn set_last_stroke_widths(&mut self, widths: [f32; 4]) -> Result<(), String> {
+        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
+        stroke.widths = Some(widths);
+        self.invalidate_extrect();
+        Ok(())
     }
 
     pub fn set_stroke_fill(&mut self, f: Fill) -> Result<(), String> {
@@ -705,16 +712,21 @@ impl Shape {
     }
 
     pub fn set_path_segments(&mut self, segments: Vec<Segment>) {
-        let path = Path::new(segments);
         match &mut self.shape_type {
             Type::Bool(Bool { bool_type, .. }) => {
+                let path = match bool_type {
+                    // Exclusion booleans are computed with even-odd semantics but
+                    // PathData uploads do not carry the fill rule.
+                    BoolType::Exclusion => Path::new(segments).with_even_odd(true),
+                    _ => Path::new(segments),
+                };
                 self.shape_type = Type::Bool(Bool {
                     bool_type: *bool_type,
                     path,
                 });
             }
             Type::Path(_) => {
-                self.shape_type = Type::Path(path);
+                self.shape_type = Type::Path(Path::new(segments));
             }
             _ => {}
         };
@@ -1058,7 +1070,7 @@ impl Shape {
         extrect
     }
 
-    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+    fn own_extrect_bounds(&self) -> Bounds {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
@@ -1084,6 +1096,19 @@ impl Shape {
         bounds = self.apply_stroke_bounds(bounds, max_stroke);
         bounds = self.apply_shadow_bounds(bounds);
         bounds = self.apply_blur_bounds(bounds);
+        bounds
+    }
+
+    /// Bound for a `SaveLayerRec` wrapping this shape's own drawing, in
+    /// untransformed space (callers concatenate [`Self::centered_transform`]
+    /// first). Includes shadow/blur margins, so it is also a valid input bound
+    /// for a layer whose paint carries an image filter.
+    pub fn layer_bounds(&self) -> math::Rect {
+        self.own_extrect_bounds().to_rect()
+    }
+
+    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        let mut bounds = self.own_extrect_bounds();
         bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
         bounds = self.apply_children_blur(bounds, shapes_pool);
 

@@ -6,10 +6,10 @@ Report: {{hint|abbreviate:150}} - {{id}} - Penpot Rate Limit Report
 
 {% block content %}
 <nav>
-  <div>[<a href="/dbg/error?version={{version}}">⮜</a>]</div>
+  <div>[<a href="/dbg/error?source={{source}}">⮜</a>]</div>
   <div>[<a href="#head">head</a>]</div>
   <div>[<a href="#context">context</a>]</div>
-  <div>[<a href="#result">result</a>]</div>
+  <div>[<a href="#value">value</a>]</div>
 </nav>
 <main>
   <div class="table">
@@ -30,9 +30,9 @@ Report: {{hint|abbreviate:150}} - {{id}} - Penpot Rate Limit Report
     </div>
 
     <div class="table-row multiline">
-      <div id="result" class="table-key">RESULT: </div>
+      <div id="value" class="table-key">VALUE: </div>
       <div class="table-val">
-        <pre>{{result}}</pre>
+        <pre>{{value}}</pre>
       </div>
     </div>
   </div>

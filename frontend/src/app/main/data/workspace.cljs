@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
+   [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
@@ -60,6 +61,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -76,7 +78,6 @@
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -354,8 +355,7 @@
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
             render-wasm-ready?   #(and render-wasm-enabled?
-                                       wasm-state/context-initialized?
-                                       (not @wasm-state/context-lost?))]
+                                       (wasm-state/ready?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -402,6 +402,7 @@
                        (rx/of (dpj/initialize-project (:project-id file))
                               (dwn/initialize team-id file-id)
                               (dwsl/initialize-shape-layout)
+                              (dwtxt/initialize-text-reflow)
                               (fetch-libraries file-id features)
                               (-> (workspace-initialized file-id)
                                   (with-meta {:team-id team-id
@@ -553,6 +554,7 @@
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
+               (dwtxt/finalize-text-reflow)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)
                (modal/hide)

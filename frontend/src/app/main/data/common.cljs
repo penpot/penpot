@@ -11,7 +11,9 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
+   [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -231,6 +233,63 @@
            (->> (rx/of (ntf/info message))
                 ;; Delay so the navigation can finish
                 (rx/delay 250))))))))
+
+(defn- check-team-sso
+  [team-id]
+  (let [url (rt/get-current-href)]
+    (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+         (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
+                      (if authorized
+                        (rx/empty)
+                        (if redirect-uri
+                          (rx/of (rt/nav-raw :uri (str redirect-uri)))
+                          (rx/empty))))))))
+
+(defn handle-change-team-organization
+  "Handle :team-organization-change websocket messages on dashboard and workspace.
+  Updates local team organization data and redirects to SSO when required."
+  [{:keys [team notification]}]
+  (ptk/reify ::handle-change-team-organization
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)
+            organization    (:organization team)
+            current-team?   (= (:id team) current-team-id)]
+        (when (and (contains? cf/flags :admin-console)
+                   current-team?)
+          (rx/concat
+           (when notification
+             (rx/of (ntf/show {:content (tr notification (:name organization))
+                               :type :toast
+                               :level :info
+                               :timeout nil})))
+           (when (:id organization)
+             (check-team-sso current-team-id))))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (contains? cf/flags :admin-console)
+        (let [team-id      (:id team)
+              team-name    (:name team)
+              organization (:organization team)]
+          (d/update-in-when state [:teams team-id]
+                            (fn [team]
+                              (cond-> (cto/apply-organization team organization)
+                                team-name (assoc :name team-name)))))
+        state))))
+
+(defn handle-organization-change-sso
+  "Handle :organization-change-sso websocket messages on dashboard and workspace.
+  Redirects to the organization SSO login when the current team belongs to that organization."
+  [{:keys [organization-id]}]
+  (ptk/reify ::handle-organization-change-sso
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (contains? cf/flags :admin-console)
+        (let [team-id (:current-team-id state)
+              team    (dm/get-in state [:teams team-id])
+              team-organization-id (dm/get-in team [:organization :id])]
+          (when (= organization-id team-organization-id)
+            (check-team-sso team-id)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

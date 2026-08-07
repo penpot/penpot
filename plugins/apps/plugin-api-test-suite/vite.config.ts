@@ -3,6 +3,10 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: __dirname,
+  // Emit relative asset URLs in index.html so the built plugin works when served
+  // from a subdirectory (Penpot serves the bundled plugins under `/plugins/...`).
+  // Vite resolves `./` to `/` for the dev server, so `pnpm run dev` is unaffected.
+  base: './',
   server: {
     port: 4202,
     host: '0.0.0.0',

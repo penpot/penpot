@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-export PENPOT_NITRATE_SHARED_KEY=super-secret-nitrate-api-key
+export PENPOT_ADMIN_CONSOLE_SHARED_KEY=super-secret-nitrate-api-key
 export PENPOT_EXPORTER_SHARED_KEY=super-secret-exporter-api-key
 export PENPOT_NEXUS_SHARED_KEY=super-secret-nexus-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
+export PENPOT_MEDIA_PROCESSOR_SHARED_KEY=super-secret-media-processor-key
 
 # DEPRECATED: only used for subscriptions
 export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
@@ -11,6 +12,10 @@ export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
 # Runtime config that varies per devenv instance (PENPOT_HOST, PENPOT_PUBLIC_URI,
 # PENPOT_DATABASE_*, PENPOT_REDIS_URI, PENPOT_OBJECTS_STORAGE_*, AWS_*) is owned by
 # docker/devenv/defaults.env and injected via the main service's env block.
+
+if [ -f /home/selfsigned.crt ]; then
+    export NODE_EXTRA_CA_CERTS=/home/selfsigned.crt;
+fi
 
 # Background worker flag is per-instance. Defaults to enabled (ws0); ws1+
 # overlays set PENPOT_BACKEND_WORKER=false so scheduled and async tasks only
@@ -20,6 +25,8 @@ __worker_flag=""
 if [[ "${PENPOT_BACKEND_WORKER:-true}" == "true" ]]; then
     __worker_flag="enable-backend-worker"
 fi
+
+export PENPOT_MEDIA_PROCESSING_SERVICE_URI=http://localhost:6065
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
@@ -36,12 +43,14 @@ export PENPOT_FLAGS="\
        enable-feature-fdata-objects-map \
        enable-audit-log \
        enable-transit-readable-response \
+       disable-remote-media-processing \
        enable-demo-users \
        enable-user-feedback \
        disable-secure-session-cookies \
        enable-smtp \
        enable-prepl-server \
        enable-urepl-server \
+       enable-nrepl-server \
        enable-rpc-climit \
        enable-rpc-rlimit \
        enable-quotes \
@@ -70,7 +79,7 @@ export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
 
 export PENPOT_USER_FEEDBACK_DESTINATION="support@example.com"
 
-export PENPOT_NITRATE_BACKEND_URI=http://localhost:3000/admin-console
+export PENPOT_ADMIN_CONSOLE_URI=http://localhost:3000/admin-console
 
 export JAVA_OPTS="\
        -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
@@ -96,5 +105,3 @@ function setup_minio() {
     mc alias set penpot-s3/ "${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}" minioadmin minioadmin -q
     mc mb "penpot-s3/${PENPOT_OBJECTS_STORAGE_S3_BUCKET}" -p -q
 }
-
-

@@ -33,7 +33,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
+   [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
    [app.main.data.plugins :as dp]
@@ -42,12 +42,14 @@
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.exports :as exports]
@@ -1053,6 +1055,18 @@
                :else
                (st/emit! (dwsh/delete-shapes #{id}))))
 
+           :waitForLayoutUpdate
+           (fn [timeout]
+             ;; Always a promise, so a bad argument travels as a rejection.
+             (if (u/valid-timeout? timeout)
+               ;; Resolves once the reflow work of this shape's subtree has
+               ;; settled: it can be marked on the shape or on its descendants.
+               (let [objects (u/locate-objects file-id page-id)]
+                 (wrf/wait-for-layout-update (cfh/get-children-ids-with-self objects id) timeout))
+               (js/Promise.
+                (fn [_ reject]
+                  (u/reject-not-valid reject :waitForLayoutUpdate timeout)))))
+
            ;; Plugin data
            :getPluginData
            (fn [key]
@@ -1518,7 +1532,7 @@
                  (u/not-valid plugin-id :export value)
 
                  :else
-                 (if (and (contains? cf/flags :wasm-export)
+                 (if (and (features/active-feature? @st/state "wasm-export/v1")
                           (contains? #{:jpeg :webp :png} (:type value :png)))
                    ;; New export with wasm
                    (let [uri (wasm.exports/export-image-uri
@@ -1547,13 +1561,13 @@
                           :profile-id (:profile-id @st/state)
                           :wait true
                           :is-wasm false
-                          :exports [{:file-id   file-id
-                                     :page-id   page-id
-                                     :object-id id
-                                     :name      (:name shape)
-                                     :type      (:type value :png)
-                                     :suffix    (:suffix value "")
-                                     :scale     (:scale value 1)}]}]
+                          :exports [(de/normalize-export {:file-id   file-id
+                                                          :page-id   page-id
+                                                          :object-id id
+                                                          :name      (:name shape)
+                                                          :type      (:type value :png)
+                                                          :suffix    (:suffix value "")
+                                                          :scale     (:scale value 1)})]}]
                      (js/Promise.
                       (fn [resolve reject]
                         ;; The exporter renders the file from its persisted

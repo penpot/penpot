@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -363,7 +363,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(kopie)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Nieuwe org aanmaken"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -589,7 +589,7 @@ msgstr "%s standaardbestanden downloaden (.svg + .json)"
 msgid "files-download-modal.description-1"
 msgstr ""
 "Een of meer bestanden die je wilt downloaden maken gebruik van gedeelde "
-"bibliotheken. Wat wil je doen met hun assets*?"
+"bibliotheken. Wat wil je doen met hun activa*?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:267
 msgid "dashboard.file-menu.delete-files-permanently-option"
@@ -1323,8 +1323,8 @@ msgstr "Er is een fout opgetreden bij de opmerking"
 #: src/app/main/errors.cljs:414
 msgid "errors.deprecated"
 msgstr ""
-"Sorry! Dit is een oud bestand dat gebruikmaakt van een verouderd type "
-"Penpot-component en je niet kunt openen."
+"Sorry! Dit is een oud bestand dat gebruikmaakt van een verouderd type Penpot-"
+"activa en je niet kunt openen."
 
 #: src/app/main/errors.cljs:417
 msgid "errors.deprecated.contact.after"
@@ -1332,7 +1332,7 @@ msgstr "zodat wij je kunnen helpen."
 
 #: src/app/main/errors.cljs:415
 msgid "errors.deprecated.contact.before"
-msgstr "Hoewel Penpot dit soort componenten niet meer ondersteunt, kun je wel"
+msgstr "Hoewel Penpot dit soort activa niet meer ondersteunt, kun je wel"
 
 #: src/app/main/errors.cljs:416
 msgid "errors.deprecated.contact.text"
@@ -1848,21 +1848,21 @@ msgstr "Gedeelde bibliotheken exporteren"
 msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Gedeelde bibliotheken worden niet opgenomen in de export en er worden geen "
-"assets aan de bibliotheek toegevoegd. "
+"activa aan de bibliotheek toegevoegd. "
 
 #: src/app/main/ui/exports/files.cljs:143
 msgid "files-download-modal.options.detach.title"
-msgstr "Gedeelde bibliotheek-assets als basisobjecten behandelen"
+msgstr "Gedeelde bibliotheek-activa als basisobjecten behandelen"
 
 #: src/app/main/ui/exports/files.cljs:144
 msgid "files-download-modal.options.merge.message"
 msgstr ""
-"Je bestand wordt geëxporteerd met alle externe assets samengevoegd in de "
+"Je bestand wordt geëxporteerd met alle externe activa samengevoegd in de "
 "bestandsbibliotheek."
 
 #: src/app/main/ui/exports/files.cljs:145
 msgid "files-download-modal.options.merge.title"
-msgstr "Inclusief gedeelde bibliotheek-assets in bestandsbibliotheken"
+msgstr "Inclusief gedeelde bibliotheek-activa in bestandsbibliotheken"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
@@ -2173,7 +2173,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Actieve thema's"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS-code kopiëren naar klembord"
 
@@ -3021,7 +3020,7 @@ msgstr "Versie %s opmerkingen"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:298
 msgid "labels.view-only"
-msgstr "ALLEEN BEKIJKEN"
+msgstr "Alleen weergeven"
 
 #: src/app/main/ui/dashboard/team.cljs:146, src/app/main/ui/dashboard/team.cljs:396, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:683, src/app/main/ui/onboarding/team_choice.cljs:69
 msgid "labels.viewer"
@@ -3088,7 +3087,7 @@ msgstr "Exporteren naar code"
 
 #: src/app/main/ui/ds/product/loader.cljs:29
 msgid "loader.tips.05.message"
-msgstr "Deel assets en stijlen om consistentie te behouden."
+msgstr "Activa en stijlen delen om consistentie te behouden."
 
 #: src/app/main/ui/ds/product/loader.cljs:28
 msgid "loader.tips.05.title"
@@ -3179,9 +3178,9 @@ msgstr "Solide"
 #: src/app/main/data/common.cljs:118
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
-"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn "
-"de assets die je aanmaakt beschikbaar voor gebruik in de rest van je "
-"bestanden. Weet je zeker dat je dit wilt publiceren??"
+"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn de "
+"activa die je aanmaakt beschikbaar voor gebruik in de rest van je bestanden. "
+"Weet je zeker dat je dit wilt publiceren??"
 
 #: src/app/main/data/common.cljs:120
 msgid "modals.add-shared-confirm.accept"
@@ -3190,9 +3189,8 @@ msgstr "Toevoegen als gedeelde bibliotheek"
 #: src/app/main/data/common.cljs:118
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Eenmaal toegevoegd als gedeelde bibliotheek, zijn de assets van deze "
-"bestandsbibliotheek beschikbaar voor gebruik tussen de rest van je "
-"bestanden."
+"Eenmaal toegevoegd als gedeelde bibliotheek, zijn de activa van deze "
+"bestandsbibliotheek beschikbaar voor gebruik tussen de rest van je bestanden."
 
 #: src/app/main/data/common.cljs:117
 msgid "modals.add-shared-confirm.message"
@@ -3405,10 +3403,10 @@ msgstr "Teamlid verwijderen"
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
 msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
-"Assets die al in dit bestand zijn gebruikt, blijven daar staan (er wordt "
+"Activa die al in dit bestand zijn gebruikt, blijven daar staan (er wordt "
 "geen ontwerp verbroken)."
 msgstr[1] ""
-"Assets die al in die bestanden zijn gebruikt, blijven daar staan (er wordt "
+"Activa die al in die bestanden zijn gebruikt, blijven daar staan (er wordt "
 "geen ontwerp verbroken)."
 
 #: src/app/main/ui/dashboard/team.cljs:1417
@@ -3880,10 +3878,6 @@ msgstr ""
 "Nadat je je team een naam hebt gegeven, kun je mensen uitnodigen om lid te "
 "worden."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Voer de naam van het team in"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Team aanmaken"
@@ -4036,7 +4030,7 @@ msgstr "Hoe groot is je bedrijf?"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "Vertel ons over je baan"
+msgstr "Wat is je bedrijfsgrootte?"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
@@ -4136,6 +4130,7 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "Dit token bestaat niet of is verwijderd."
 
@@ -4186,11 +4181,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Bewerken"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Algemeen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Algemeen"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -4295,7 +4286,7 @@ msgstr "Aftrekken (Booleaans verschil)"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:87
 msgid "shortcuts.bool-exclude"
-msgstr "Uitsluiten"
+msgstr "Uitsluiting"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:88
 msgid "shortcuts.bool-intersection"
@@ -4684,14 +4675,6 @@ msgstr "Uitlijnen op pixelraster"
 msgid "shortcuts.start-editing"
 msgstr "Start met bewerken"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Meting starten"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Meting beëindigen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Miniaturen instellen"
@@ -4706,7 +4689,7 @@ msgstr "Dynamisch uitlijnen in/uitschakelen"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
 msgid "shortcuts.toggle-assets"
-msgstr "Assets in/uitschakelen"
+msgstr "Activa wisselen"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.toggle-colorpalette"
@@ -4818,7 +4801,7 @@ msgstr "Enterprise-abonnement (proef)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:88
 msgid "subscription.dashboard.power-up.professional.bottom-button"
-msgstr "Gas geven!"
+msgstr "Tandje erbij!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:87
 msgid "subscription.dashboard.power-up.professional.bottom-description"
@@ -4842,7 +4825,7 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/subscription.cljs:97
 msgid "subscription.dashboard.power-up.trial.top-title"
-msgstr "Unlimited-abonnement (proefversie)"
+msgstr "Unlimited-abonnement (proef)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:104, src/app/main/ui/dashboard/subscription.cljs:298
 msgid "subscription.dashboard.power-up.unlimited-plan"
@@ -4875,7 +4858,7 @@ msgstr "Jouw abonnement:"
 #: src/app/main/ui/dashboard/subscription.cljs:333
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
-"Je hebt %s-editors voor de teams in jouw beheer, terwijl jouw professionele "
+"Je hebt %s-editors voor de teams in jouw beheer, terwijl jouw Professional-"
 "abonnement maximaal 8 toestaat."
 
 #: src/app/main/ui/dashboard/subscription.cljs:341
@@ -5038,17 +5021,13 @@ msgstr "Meer informatie"
 msgid "subscription.settings.other-plans"
 msgstr "Overige Penpot-abonnementen"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per maand"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organisatie per maand"
 
 #: src/app/main/ui/dashboard/subscription.cljs:277, src/app/main/ui/settings/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:591, src/app/main/ui/settings/subscription.cljs:667
 msgid "subscription.settings.professional"
-msgstr "Professioneel"
+msgstr "Professional"
 
 #: src/app/main/ui/settings/subscription.cljs:596, src/app/main/ui/settings/subscription.cljs:674
 msgid "subscription.settings.professional.autosave-benefit"
@@ -5068,7 +5047,7 @@ msgstr "Aanbevolen"
 
 #: src/app/main/ui/settings/subscription.cljs:569
 msgid "subscription.settings.section-plan"
-msgstr "Uw abonnement"
+msgstr "Jouw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:343
 msgid "subscription.settings.start-trial"
@@ -5095,11 +5074,6 @@ msgstr "Bedankt voor het kiezen van het Penpot %s-abonnement!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Je bent %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Je hebt ons gesteund met dit abonnement sinds: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -5338,11 +5312,11 @@ msgstr "Bibliotheek toevoegen"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 #, unused
 msgid "workspace.assets.assets"
-msgstr "Assets"
+msgstr "Activa"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs:158
 msgid "workspace.assets.box-filter-all"
-msgstr "Alle assets"
+msgstr "Alle activa"
 
 #: src/app/main/ui/dashboard/grid.cljs:160, src/app/main/ui/dashboard/grid.cljs:192, src/app/main/ui/workspace/colorpicker/libraries.cljs:362, src/app/main/ui/workspace/colorpicker/libraries.cljs:379, src/app/main/ui/workspace/colorpicker/libraries.cljs:393, src/app/main/ui/workspace/sidebar/assets/colors.cljs:512, src/app/main/ui/workspace/sidebar/assets.cljs:164
 msgid "workspace.assets.colors"
@@ -5427,7 +5401,7 @@ msgstr "Bibliotheek beheren"
 
 #: src/app/main/ui/workspace/color_palette.cljs:204, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:305
 msgid "workspace.assets.not-found"
-msgstr "Geen assets gevonden"
+msgstr "Geen activa gevonden"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:111
 msgid "workspace.assets.open-library"
@@ -5443,7 +5417,7 @@ msgstr "Groep hernoemen"
 
 #: src/app/main/ui/workspace/color_palette.cljs:182, src/app/main/ui/workspace/color_palette.cljs:187, src/app/main/ui/workspace/sidebar/assets.cljs:192
 msgid "workspace.assets.search"
-msgstr "Assets zoeken"
+msgstr "Activa zoeken"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 #, unused
@@ -5699,7 +5673,7 @@ msgstr "Hulp & informatie"
 #: src/app/main/ui/workspace/main_menu.cljs:916
 #, unused
 msgid "workspace.header.menu.option.power-up"
-msgstr "Geef je abonnement een tandje erbij"
+msgstr "Tandje erbij voor je abonnement"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1061
 msgid "workspace.header.menu.option.preferences"
@@ -6088,7 +6062,7 @@ msgstr "Component uitwisselen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:818
 msgid "workspace.options.component.swap.empty"
-msgstr "Er zijn nog geen assets in deze bibliotheek"
+msgstr "Er zijn nog geen activa in deze bibliotheek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062
 msgid "workspace.options.component.unlinked"
@@ -7399,11 +7373,11 @@ msgstr ""
 
 #: src/app/main/ui/workspace/plugins.cljs:277
 msgid "workspace.plugins.permissions.library-read"
-msgstr "Jouw bibliotheken en middelen bekijken."
+msgstr "Jouw bibliotheken en activa bekijken."
 
 #: src/app/main/ui/workspace/plugins.cljs:271
 msgid "workspace.plugins.permissions.library-write"
-msgstr "Jouw bibliotheken en middelen lezen en aanpassen."
+msgstr "Jouw bibliotheken en activa lezen en aanpassen."
 
 #: src/app/main/ui/workspace/plugins.cljs:359
 msgid "workspace.plugins.permissions.title"
@@ -7615,7 +7589,7 @@ msgstr "Gebruikersinterface tonen/verbergen"
 
 #: src/app/main/ui/workspace/context_menu.cljs:466, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:95
 msgid "workspace.shape.menu.intersection"
-msgstr "Kruispunt"
+msgstr "Doorsnede"
 
 #: src/app/main/ui/workspace/context_menu.cljs:500, src/app/main/ui/workspace/sidebar/layer_item.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:324
 msgid "workspace.shape.menu.lock"
@@ -7683,7 +7657,7 @@ msgstr "Tonen"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:559, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1213
 msgid "workspace.shape.menu.show-in-assets"
-msgstr "In paneel Assets tonen"
+msgstr "In paneel Activa tonen"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:580, src/app/main/ui/workspace/sidebar/assets/components.cljs:659
 msgid "workspace.shape.menu.show-main"
@@ -7769,7 +7743,7 @@ msgstr "Maskers"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:566
 msgid "workspace.sidebar.layers.search"
-msgstr "Lagen doorzoeken"
+msgstr "Zoeken…"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:639, src/app/main/ui/workspace/sidebar/layers.cljs:733
 msgid "workspace.sidebar.layers.shapes"
@@ -8108,7 +8082,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s actieve verzamelingen"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Oorspronkelijke waarde: %s"
 
@@ -8151,7 +8124,6 @@ msgid "workspace.tokens.remapping-in-progress"
 msgstr "Token-referenties opnieuw toewijzen…"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Opgeloste waarde: %s"
 
@@ -8282,7 +8254,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Lijst met thema's"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beschrijving"
 
@@ -8364,7 +8335,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
-msgstr "Assets"
+msgstr "Activa"
 
 #: src/app/main/ui/workspace/palette.cljs:182, src/app/main/ui/workspace/palette.cljs:183
 msgid "workspace.toolbar.color-palette"
@@ -8463,7 +8434,7 @@ msgstr "cirkels"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:113
 msgid "workspace.undo.entry.multiple.color"
-msgstr "kleur assets"
+msgstr "kleurenactiva"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:114
 msgid "workspace.undo.entry.multiple.component"
@@ -8483,7 +8454,7 @@ msgstr "groepen"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:118
 msgid "workspace.undo.entry.multiple.media"
-msgstr "grafische assets"
+msgstr "grafische activa"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:119
 msgid "workspace.undo.entry.multiple.multiple"
@@ -8511,7 +8482,7 @@ msgstr "teksten"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:125
 msgid "workspace.undo.entry.multiple.typography"
-msgstr "typografie-assets"
+msgstr "typografische activa"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:146
 msgid "workspace.undo.entry.new"
@@ -8696,3 +8667,1251 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Controleer je e-mail!"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "We hebben een verificatie-e-mail gestuurd naar:"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Ga naar het Beheerderspaneel"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:59
+msgid "nitrate.form.enterprise-feature-2"
+msgstr ""
+"Gecentraliseerde controle over wie wat doet en waar, vanuit een speciaal "
+"beheerderspaneel"
+
+#: src/app/main/ui/dashboard/import.cljs:505
+msgid "dashboard.import.import-error.check-error"
+msgstr "We konden dit bestand niet verifiëren."
+
+#: src/app/main/ui/dashboard/import.cljs:509
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Dit bestand lijkt beschadigd te zijn."
+
+#: src/app/main/ui/dashboard/import.cljs:512
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Er ging iets mis bij de verwerking van dit bestand."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Je hebt geen toestemming om mensen uit te nodigen om zich bij dit team aan "
+"te sluiten of om uitnodigingen te bewerken of te verwijderen."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+#, fuzzy
+msgid "dashboard.my-teams"
+msgstr "Mijn teams"
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Je mag geen teams aanmaken binnen organisatie %s. Neem voor meer informatie "
+"contact op met de eigenaar van de organisatie."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Je mag geen teams verwijderen die deel uitmaken van organisatie %s. Neem "
+"voor meer informatie contact op met de eigenaar van de organisatie."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Je mag geen teams verplaatsen die deel uitmaken van organisatie %s. Neem "
+"voor meer informatie contact op met de eigenaar van de organisatie."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Organizaties"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "Teamorganisatie"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "Toevoegen aan een organisatie"
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "Teamorganisatie wijzigen"
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "Dit team maakt geen deel uit van een organisatie"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "Team uit organisatie verwijderen"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"WebGL-weergave kan de prestaties verbeteren, maar bevindt zich in bèta en is "
+"mogelijk minder stabiel. Er kunnen enkele visuele verschillen optreden "
+"tussen het doek, de export (SVG/PDF) en de weergavemodus."
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Uitgeschakeld"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Ingeschakeld"
+
+#: src/app/main/ui/settings/options.cljs:116
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Geef feedback"
+
+#: src/app/main/ui/settings/options.cljs:112
+msgid "dashboard.webgl-switch.status"
+msgstr "Status"
+
+#: src/app/main/ui/settings/options.cljs:108
+msgid "dashboard.webgl-switch.title"
+msgstr "WebGL-weergave"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"Klembord-API is niet beschikbaar. Serveer Penpot via HTTPS om toegang tot "
+"het klembord mogelijk te maken"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Toegang klembord geweigerd. Verleen klembordrechten aan uw browser om inhoud "
+"te plakken"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"De familienaam van het lettertype kan alleen letters, cijfers, spaties, "
+"koppeltekens, onderstrepingstekens en punten bevatten."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "errors.tokens.circular-reference"
+msgstr "Token heeft een cirkelreferentie"
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
+msgid "errors.tokens.empty-field"
+msgstr "Dit veld mag niet leeg zijn"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:67, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
+msgid "errors.tokens.name-collision"
+msgstr ""
+"Groepsnaam van %s is in conflict met een token met dezelfde naam in een "
+"andere actieve set."
+
+#: src/app/main/ui/settings/integrations.cljs:629
+msgid "integrations.access-tokens.create"
+msgstr "Nieuw toegangstoken aanmaken"
+
+#: src/app/main/ui/settings/integrations.cljs:645
+msgid "integrations.access-tokens.empty.add-one"
+msgstr ""
+"Druk op de knop \"Nieuw toegangstoken aanmaken\" om er een te genereren."
+
+#: src/app/main/ui/settings/integrations.cljs:644
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "Je hebt tot nu toe geen tokens."
+
+#: src/app/main/ui/static.cljs:89
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Deze uitnodiging is voor een ander e-mailadres. Meld je opnieuw aan met het "
+"uitgenodigde account, of vraag de teameigenaar om een nieuwe uitnodiging."
+
+#: src/app/main/ui/static.cljs:93
+msgid "errors.invite-expired"
+msgstr ""
+"Deze uitnodiging is verlopen. Vraag de teameigenaar om een nieuwe te sturen."
+
+#: common/src/app/common/types/team.cljc:26
+#, unused
+msgid "errors.team-name-invalid-chars"
+msgstr "De teamnaam kan geen van de volgende tekens bevatten: '.', ':' of '/'"
+
+#: src/app/main/data/media.cljs:74
+#, unused
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Het thema verwijst naar enkele niet bestaande sets: %s"
+
+#: src/app/main/ui/settings/integrations.cljs:619
+msgid "integrations.access-tokens.personal"
+msgstr "Persoonlijke toegangstokens"
+
+#: src/app/main/ui/settings/integrations.cljs:624
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"Persoonlijke toegangstokens functioneren als een alternatief voor ons inlog-/"
+"wachtwoordauthenticatiesysteem en kunnen worden gebruikt om een applicatie "
+"toegang te geven tot de interne Penpot API"
+
+#: src/app/main/ui/settings/integrations.cljs:68
+msgid "integrations.copy-to-clipboard"
+msgstr "Kopiëren naar klembord"
+
+#: src/app/main/ui/settings/integrations.cljs:266
+msgid "integrations.create-access-token.title"
+msgstr "Toegangstoken aanmaken"
+
+#: src/app/main/ui/settings/integrations.cljs:265
+msgid "integrations.create-access-token.title.created"
+msgstr "Toegangstoken aangemaakt"
+
+#: src/app/main/ui/settings/integrations.cljs:384
+msgid "integrations.delete-token.accept"
+msgstr "Token verwijderen"
+
+#: src/app/main/ui/settings/integrations.cljs:383
+msgid "integrations.delete-token.message"
+msgstr "Weet je zeker dat je dit token wilt verwijderen?"
+
+#: src/app/main/ui/settings/integrations.cljs:382
+msgid "integrations.delete-token.title"
+msgstr "Token verwijderen"
+
+#: src/app/main/ui/settings/integrations.cljs:226
+msgid "integrations.expiration-180-days"
+msgstr "180 dagen"
+
+#: src/app/main/ui/settings/integrations.cljs:223
+msgid "integrations.expiration-30-days"
+msgstr "30 dagen"
+
+#: src/app/main/ui/settings/integrations.cljs:224
+msgid "integrations.expiration-60-days"
+msgstr "60 dagen"
+
+#: src/app/main/ui/settings/integrations.cljs:225
+msgid "integrations.expiration-90-days"
+msgstr "90 dagen"
+
+#: src/app/main/ui/settings/integrations.cljs:221
+msgid "integrations.expiration-date.label"
+msgstr "Vervaldatum"
+
+#: src/app/main/ui/settings/integrations.cljs:222
+msgid "integrations.expiration-never"
+msgstr "Nooit"
+
+#: src/app/main/ui/settings/integrations.cljs:406
+msgid "integrations.expired-on"
+msgstr "Vervallen op %s"
+
+#: src/app/main/ui/settings/integrations.cljs:407
+msgid "integrations.expires-on"
+msgstr "Vervalt op %s"
+
+#: src/app/main/ui/settings/integrations.cljs:307
+msgid "integrations.generate-mcp-key.title"
+msgstr "MCP-sleutel genereren"
+
+#: src/app/main/ui/settings/integrations.cljs:305
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "MCP-sleutel gegenereerd"
+
+#: src/app/main/ui/settings/integrations.cljs:124
+msgid "integrations.info.mcp-client-config"
+msgstr "Voeg deze configuratie toe aan je MCP-client (bijv. ~/ .mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:206
+msgid "integrations.info.mcp-server"
+msgstr ""
+"Met de Penpot MCP-server kunnen MCP-clients rechtstreeks communiceren met "
+"Penpot-ontwerpbestanden."
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.mcp-key.will-expire"
+msgstr "De MCP-sleutel vervalt op %s"
+
+#: src/app/main/ui/settings/integrations.cljs:116
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "De MCP-sleutel heeft geen vervaldatum"
+
+#: src/app/main/ui/settings/integrations.cljs:511
+msgid "integrations.mcp-server.description"
+msgstr ""
+"Met de Penpot MCP-server kunnen MCP-clients rechtstreeks communiceren met "
+"Penpot-ontwerpbestanden."
+
+#: src/app/main/ui/settings/integrations.cljs:415
+#, unused
+msgid "integrations.mcp-server.mcp-keys.copy"
+msgstr "Link kopiëren"
+
+#: src/app/main/ui/settings/integrations.cljs:594
+msgid "integrations.mcp-server.mcp-keys.help"
+msgstr "De configuratie van MCP-clients"
+
+#: src/app/main/ui/settings/integrations.cljs:581
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Dit is de server-URL die je nodig hebt om je MCP-client te configureren voor "
+"de verbinding met de Penpot MCP-server."
+
+#: src/app/main/ui/settings/integrations.cljs:561
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "MCP-sleutel opnieuw genereren"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "MCP-sleutel"
+
+#: src/app/main/ui/settings/integrations.cljs:562
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "De MCP-sleutel is nodig voor het instellen van de MCP-client"
+
+#: src/app/main/ui/settings/integrations.cljs:517
+msgid "integrations.mcp-server.status"
+msgstr "Status"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Uitgeschakeld"
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Ingeschakeld"
+
+#: src/app/main/ui/settings/integrations.cljs:527
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"De MCP-sleutel voor de verbinding met de MCP-server is verlopen. Hierdoor "
+"kan de verbinding niet tot stand worden gebracht."
+
+#: src/app/main/ui/settings/integrations.cljs:532
+msgid "integrations.mcp-server.status.expired.1"
+msgstr ""
+"Genereer de MCP-sleutel opnieuw en pas je clientconfiguratie aan met de "
+"nieuwe sleutel."
+
+#: src/app/main/ui/settings/integrations.cljs:502
+msgid "integrations.mcp-server.title"
+msgstr "MCP-server"
+
+#: src/app/main/ui/settings/integrations.cljs:506
+msgid "integrations.mcp-server.title.beta"
+msgstr "Bèta"
+
+#: src/app/main/ui/settings/integrations.cljs:213
+msgid "integrations.name.label"
+msgstr "Naam"
+
+#: src/app/main/ui/settings/integrations.cljs:214
+msgid "integrations.name.placeholder"
+msgstr "De naam kan helpen om te weten waar het token voor is"
+
+#: src/app/main/ui/settings/integrations.cljs:405
+msgid "integrations.no-expiration"
+msgstr "Geen vervaldatum"
+
+#: src/app/main/ui/settings/integrations.cljs:491
+msgid "integrations.notification.success.copied-link"
+msgstr "Link gekopieerd naar klembord"
+
+#: src/app/main/ui/settings/integrations.cljs:254, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:332
+msgid "integrations.notification.success.created"
+msgstr "Token met succes aangemaakt"
+
+#: src/app/main/ui/settings/integrations.cljs:86
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "MCP-sleutel gekopieerd"
+
+#: src/app/main/ui/settings/integrations.cljs:457
+msgid "integrations.notification.success.mcp-server-disabled"
+msgstr "MCP-server uitgeschakeld"
+
+#: src/app/main/ui/settings/integrations.cljs:456
+msgid "integrations.notification.success.mcp-server-enabled"
+msgstr "MCP-server ingeschakeld"
+
+#: src/app/main/ui/settings/integrations.cljs:87
+msgid "integrations.notification.success.token-copied"
+msgstr "Token gekopieerd"
+
+#: src/app/main/ui/settings/integrations.cljs:350
+msgid "integrations.regenerate-mcp-key.info"
+msgstr ""
+"Het opnieuw genereren van de MCP-sleutel zal de huidige onmiddellijk "
+"intrekken. Elke toepassing die het gebruikt, zal stoppen met werken."
+
+#: src/app/main/ui/settings/integrations.cljs:349
+msgid "integrations.regenerate-mcp-key.title"
+msgstr "MCP-sleutel opnieuw genereren"
+
+#: src/app/main/ui/settings/integrations.cljs:347
+msgid "integrations.regenerate-mcp-key.title.created"
+msgstr "MCP-sleutel opnieuw gegenereerd"
+
+#: src/app/main/ui/settings/integrations.cljs:666
+msgid "integrations.title"
+msgstr "Integraties"
+
+#: src/app/main/ui/settings/integrations.cljs:102
+msgid "integrations.token.info.non-recuperable"
+msgstr ""
+"Dit unieke token is niet recupereerbaar. Als je het verliest, moet je een "
+"nieuwe maken."
+
+#: src/app/main/ui/settings/integrations.cljs:114
+msgid "integrations.token.will-expire"
+msgstr "Het token vervalt op %s"
+
+#: src/app/main/ui/settings/integrations.cljs:117
+msgid "integrations.token.will-not-expire"
+msgstr "Het token heeft geen vervaldatum"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs:30, src/app/main/ui/inspect/styles/style_box.cljs:32, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:262, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:274
+msgid "labels.blur-effects"
+msgstr "Vervagingseffecten"
+
+#: src/app/main/ui/settings/profile.cljs:116
+msgid "labels.delete-profile-photo.message"
+msgstr "Weet je zeker dat je je profielfoto wilt verwijderen?"
+
+#: src/app/main/ui/settings/profile.cljs:115
+msgid "labels.delete-profile-photo.title"
+msgstr "Profielfoto verwijderen"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+msgid "nitrate.code-activation.title"
+msgstr "Nitrate inschakelen"
+
+#, unused
+msgid "nitrate.contact-sales.button"
+msgstr "Neem contact op met Verkoop"
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-contact-info"
+msgstr ""
+"Neem contact op met ons verkoopteam om over te schakelen naar dit "
+"abonnement. Wij helpen je jouw abonnement bij te werken en ervoor te zorgen "
+"dat alles correct wordt ingesteld."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr ""
+"Je totale opslag, automatische versiegeschiedenis en bestandsherstelperiode "
+"zijn beperkt."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr ""
+"De teams, projecten en bestanden zullen geen deel meer uitmaken van een "
+"organisatie maar blijven wel beschikbaar."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "Wanneer je overgaat naar een mindere abonnementsvorm:"
+
+#, unused
+msgid "nitrate.contact-sales.title"
+msgstr "Overschakelen naar abonnement %s?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77
+msgid "nitrate.form.cancel-anytime"
+msgstr ""
+"De betaling wordt aan het einde van de proeftijd verwerkt. Je kunt op elk "
+"gewenst moment annuleren."
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:92
+msgid "nitrate.form.contact-trial"
+msgstr "Neem contact met ons op om Enterprise 14 dagen uit te proberen:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:91
+msgid "nitrate.form.contact-upgrade"
+msgstr "Neem contact met ons op om te upgraden naar Enterprise:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:82, src/app/main/ui/nitrate/nitrate_form.cljs:102
+msgid "nitrate.form.enter-code"
+msgstr "Activatiecode invoeren"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:57
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Algemene tot fijnmazige machtigingen voor teams en projecten"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:61
+msgid "nitrate.form.enterprise-feature-3"
+msgstr ""
+"Volledige open-sourcevrijheid, met het bestuur dat past bij jouw organisatie"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:54
+#, fuzzy
+msgid "nitrate.form.enterprise-intro"
+msgstr "Alles wat jouw teams nodig hebben om veilig op schaal te werken:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
+msgid "nitrate.form.enterprise.price"
+msgstr "per deelnemer per maand"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:86
+msgid "nitrate.form.see-plan"
+msgstr "Mijn huidige abonnement weergeven"
+
+#, unused
+msgid "nitrate.form.start-enterprise"
+msgstr "Aan de slag met Enterprise"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:51
+msgid "nitrate.form.title"
+msgstr "Enterprise-functies vrijgeven"
+
+#: src/app/main/ui/dashboard/subscription.cljs:209, src/app/main/ui/nitrate/nitrate_form.cljs:75
+msgid "nitrate.form.try-free"
+msgstr "Probeer het 14 dagen gratis"
+
+#: src/app/main/ui/dashboard/subscription.cljs:251
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Enterprise Proefperiode"
+
+#: src/app/main/ui/dashboard/subscription.cljs:246
+msgid "subscription.current-plan.professional"
+msgstr "Professional"
+
+#: src/app/main/ui/settings/subscription.cljs:600, src/app/main/ui/settings/subscription.cljs:678
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr ""
+"Alle ontwerp- en prototypingfuncties met ondersteuning door de gemeenschap."
+
+#: src/app/main/ui/settings/subscription.cljs:594, src/app/main/ui/settings/subscription.cljs:672
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Volledige controle over data en infrastructuur."
+
+#: src/app/main/ui/settings/subscription.cljs:597, src/app/main/ui/settings/subscription.cljs:675
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Onbeperkte gebruikers, teams en bestanden."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
+msgid "nitrate.activation-success.active-until"
+msgstr "Jouw abonnement is actief tot %s."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
+msgid "nitrate.activation-success.enjoy"
+msgstr "Veel plezier met je abonnement!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:253
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:252
+msgid "subscription.current-plan.nitrate"
+msgstr "Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:241
+msgid "subscription.current-plan.title"
+msgstr "Jouw abonnement"
+
+#: src/app/main/ui/dashboard/subscription.cljs:249
+msgid "subscription.current-plan.unlimited"
+msgstr "Unlimited"
+
+#: src/app/main/ui/dashboard/subscription.cljs:248
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Unlimited Proefperiode"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:466
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Alleen de eigenaar kan een team verwijderen."
+
+#: src/app/main/ui/dashboard/fonts.cljs:283
+msgid "labels.download-simple"
+msgstr "Downloaden"
+
+#: src/app/main/ui/exports/files.cljs:186
+msgid "labels.downloading-file"
+msgstr "Bestand downloaden…"
+
+#: src/app/main/data/workspace/versions.cljs:305
+msgid "labels.exit"
+msgstr "Sluiten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1277
+msgid "labels.flex-layout"
+msgstr "Flex layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1281
+msgid "labels.grid-layout"
+msgstr "Rasterlayout"
+
+#: src/app/main/ui/settings/sidebar.cljs:122
+msgid "labels.integrations"
+msgstr "Integraties"
+
+#: src/app/main/ui/static.cljs:337
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot is tijdelijk niet beschikbaar vanwege een systeemprobleem. Probeer "
+"het even later nog eens."
+
+#: src/app/main/ui/components/select.cljs:256
+msgid "labels.no-matches"
+msgstr "Geen overeenkomst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:705
+msgid "labels.open"
+msgstr "Openen"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "labels.uploading-file"
+msgstr "Bestand uploaden…"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+#, unused
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s waarschuwing"
+msgstr[1] "%s waarschuwingen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Gemengde lettertypen Families"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
+msgid "modals.delete-asset-group.message"
+msgid_plural "modals.delete-asset-group.message"
+msgstr[0] "Weet je zeker dat je deze %s activa wilt verwijderen?"
+msgstr[1] "Weet je zeker dat je deze %s activa wilt verwijderen?"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
+msgid "modals.delete-asset-group.title"
+msgstr "Groep verwijderen"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"De bibliotheek heeft tokens en thema's die waarschijnlijk door de "
+"componenten worden gebruikt."
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:92
+msgid "modals.import-library-tokens.import"
+msgstr "Tokens importeren"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:72
+msgid "modals.import-library-tokens.title"
+msgstr "Tokens importeren uit bibliotheek?"
+
+#: src/app/main/data/team.cljs:583
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr ""
+"Alleen bestaande leden van de organisatie kunnen worden uitgenodigd. Omdat "
+"geen van de mensen op de lijst lid is, zijn er geen uitnodigingen verzonden."
+
+#: src/app/main/data/team.cljs:582
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "Er zijn geen uitnodigingen verzonden"
+
+#: src/app/main/ui/dashboard/team.cljs:308
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Adressen die geen uitnodiging ontvangen"
+
+#: src/app/main/ui/dashboard/team.cljs:325
+msgid "modals.invite-restricted-members.cancel"
+msgstr "Annuleren"
+
+#: src/app/main/ui/dashboard/team.cljs:298
+msgid "modals.invite-restricted-members.description"
+msgstr "Alleen bestaande leden van de organisatie kunnen worden uitgenodigd."
+
+#: src/app/main/ui/dashboard/team.cljs:333
+msgid "modals.invite-restricted-members.send"
+msgstr "Uitnodigingen versturen"
+
+#: src/app/main/ui/dashboard/team.cljs:293
+msgid "modals.invite-restricted-members.title"
+msgstr "Enkele uitnodigingen kunnen niet worden verzonden"
+
+#: src/app/main/ui/dashboard/team.cljs:299
+msgid "modals.invite-restricted-members.warning"
+msgstr "Sommige mensen op de lijst ontvangen de uitnodiging niet."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
+msgid "nitrate.activation-code.expired-error"
+msgstr "Deze code is verlopen."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Ongeldige code."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+#, fuzzy
+msgid "nitrate.activation-success.manage-info"
+msgstr ""
+"Je kunt je abonnement op elk gewenst moment beheren vanaf de "
+"Abonnementspagina in je accountinstellingen."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
+msgid "nitrate.code-activation.input-label"
+msgstr "Vul je activeringscode in"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:90
+msgid "nitrate.code-activation.placeholder"
+msgstr "Plak hier je activeringscode"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+msgid "nitrate.code-activation.renew-title"
+msgstr "NITRATE VERLENGEN"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:101
+msgid "nitrate.code-activation.submit"
+msgstr "Activeren"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Volg onze "
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:70
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "WebGL-gids voor probleemoplossing"
+
+#, unused
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "WebGL-weergave uitgeschakeld"
+
+#, unused
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "WebGL-weergave ingeschakeld"
+
+#: src/app/render_wasm/api.cljs:2052
+msgid "webgl.webgl-context-lost.toast"
+msgstr "WebGL-context ging verloren"
+
+#: src/app/render_wasm/api.cljs:2068
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "WebGL-context is hersteld"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
+msgid "workspace.assets.delete-group"
+msgstr "Groep verwijderen"
+
+#: src/app/main/data/workspace/clipboard.cljs:1172
+msgid "workspace.clipboard.copying"
+msgstr "Afbeelding kopiëren…"
+
+#: src/app/main/data/workspace/clipboard.cljs:1195
+msgid "workspace.clipboard.image-copied"
+msgstr "Afbeelding gekopieerd naar het klembord"
+
+#: src/app/main/data/workspace/clipboard.cljs:1201
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Fout bij kopiëren van afbeelding"
+
+#: src/app/main/ui/workspace/context_menu.cljs:873
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Kolommen kopiëren"
+
+#: src/app/main/ui/workspace/context_menu.cljs:869
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Rijen kopiëren"
+
+#: src/app/main/ui/workspace/context_menu.cljs:877
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Plakken"
+
+#: src/app/main/ui/workspace/context_menu.cljs:911
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Hulplijnkleur"
+
+#: src/app/main/ui/workspace/context_menu.cljs:923
+msgid "workspace.context-menu.guides.remove"
+msgstr "Hulplijn verwijderen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.disable-webgl"
+msgstr "WebGL-weergave (bèta) uitschakelen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:337
+msgid "workspace.header.menu.enable-webgl"
+msgstr "WebGL-weergave (bèta) inschakelen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:530
+msgid "workspace.header.menu.find"
+msgstr "Zoeken"
+
+#: src/app/main/ui/workspace/main_menu.cljs:537
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Zoeken en Vervangen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:421
+msgid "workspace.header.menu.hide-comments"
+msgstr "Commentaar verbergen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:410
+msgid "workspace.header.menu.lock-guides"
+msgstr "Hulplijnen vergrendelen"
+
+#: src/app/main/ui/settings/subscription.cljs:584
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Abonnement annuleren"
+
+#: src/app/main/ui/settings/subscription.cljs:103
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Verlengen met activeringscode"
+
+#: src/app/main/data/workspace/mcp.cljs:185
+#, unused
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP is actief op een ander tabblad. Hier wisselen?"
+
+#, unused
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP is nu actief op dit tabblad."
+
+#: src/app/main/ui/onboarding/questions.cljs:226
+msgid "onboarding.questions.team-size.1001-5000"
+msgstr "1.001 - 5.000"
+
+#: src/app/main/ui/onboarding/questions.cljs:222
+msgid "onboarding.questions.team-size.101-500"
+msgstr "101 - 500"
+
+#: src/app/main/ui/onboarding/questions.cljs:220
+msgid "onboarding.questions.team-size.2-100"
+msgstr "2 - 100"
+
+#: src/app/main/ui/onboarding/questions.cljs:224
+msgid "onboarding.questions.team-size.501-1000"
+msgstr "501 - 1.000"
+
+#: src/app/main/ui/onboarding/questions.cljs:218
+msgid "onboarding.questions.team-size.just-me"
+msgstr "Alleen ik"
+
+#: src/app/main/ui/onboarding/questions.cljs:228
+msgid "onboarding.questions.team-size.more-than-5001"
+msgstr "5.001+"
+
+#: src/app/plugins/utils.cljs:318
+msgid "plugins.validation.message"
+msgstr "Veld %s is ongeldig: %s"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
+msgid "shortcuts.find"
+msgstr "Zoeken"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
+msgid "shortcuts.find-and-replace"
+msgstr "Zoeken en Vervangen"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.paste-replace"
+msgstr "Plakken en vervangen"
+
+#: src/app/main/ui/dashboard/subscription.cljs:189
+msgid "subscription.banner.see-enterprise"
+msgstr "Enterprise in actie bekijken"
+
+#: src/app/main/ui/dashboard/subscription.cljs:229
+msgid "subscription.dashboard.banner.renew"
+msgstr "Verlengen"
+
+#: src/app/main/ui/dashboard/subscription.cljs:216
+msgid "subscription.dashboard.banner.renew-subscription"
+msgstr "Verleng je abonnement"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+msgid "nitrate.subscription.renew-success"
+msgstr "Je Nitrate abonnement is verlengd."
+
+#: src/app/main/ui/settings/subscription.cljs:575
+msgid "nitrate.subscription.active-until"
+msgstr "Actief tot %s"
+
+#: src/app/main/ui/dashboard/subscription.cljs:222
+msgid "subscription.dashboard.banner.subscription-expire-days"
+msgstr "Jouw Enterprise-abonnement vervalt over %s dagen (%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:220
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Jouw Enterprise-abonnement is verlopen. (%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:201
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Enterprise-functies ontgrendelen"
+
+#: src/app/main/ui/dashboard/subscription.cljs:208
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Aan de slag met Enterprise"
+
+#: src/app/main/ui/settings/subscription.cljs:408
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr ""
+"Betaling is niet voltooid. Probeer het opnieuw wanneer je er klaar voor bent."
+
+#: src/app/main/ui/settings/subscription.cljs:427
+#, fuzzy
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr ""
+"We konden niet beginnen met de kassa. Probeer het alsjeblieft nog eens. Als "
+"het probleem aanhoudt, neem dan contact met ons op: support@penpot.app."
+
+#: src/app/main/ui/settings/subscription.cljs:407
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr ""
+"We konden je abonnement niet bevestigen. Controleer je abonnementsstatus op "
+"de Abonnementspagina. Indien nodig kun je het opnieuw proberen."
+
+#: src/app/main/ui/settings/subscription.cljs:97
+msgid "subscription.settings.activate-by-code"
+msgstr "Activatiecode invoeren"
+
+#: src/app/main/ui/settings/subscription.cljs:724
+#, fuzzy
+msgid "subscription.settings.organization-member-month"
+msgstr "org deelnemer per maand"
+
+#: src/app/main/ui/settings/integrations.cljs:659
+msgid "title.settings.integrations"
+msgstr "Integraties - Penpot"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Ga naar het dashboard"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:78
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Gids voor probleemoplossing"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:62
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr ""
+"WebGL is niet beschikbaar in je browser, wat vereist is om Penpot te laten "
+"werken. Controleer je browserinstellingen en/of sluit tabbladen met veel "
+"afbeeldingen."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Oeps! WebGL is niet beschikbaar"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr ""
+" om browserinstellingen, GPU-versnelling, stuurprogramma's en "
+"veelvoorkomende systeemproblemen te controleren."
+
+#: src/app/main/ui/workspace/main_menu.cljs:869
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Verbinding maken"
+
+#: src/app/main/ui/workspace/main_menu.cljs:868
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Verbinding verbreken"
+
+#: src/app/main/ui/workspace/main_menu.cljs:878
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Beheren (status: uitgeschakeld)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:877
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Beheren (status: ingeschakeld)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:1101
+msgid "workspace.header.menu.option.mcp"
+msgstr "MCP-server"
+
+#: src/app/main/ui/workspace/main_menu.cljs:422
+msgid "workspace.header.menu.show-comments"
+msgstr "Commentaar weergeven"
+
+#: src/app/main/ui/workspace/main_menu.cljs:409
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Hulplijnen ontgrendelen"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:354
+msgid "workspace.libraries.colors.add-library-color"
+msgstr "Kleur toevoegen aan bilbliotheek"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:371, src/app/main/ui/workspace/colorpicker/libraries.cljs:387
+msgid "workspace.libraries.colors.empty-recent-colors"
+msgstr "Er zijn nog geen recente kleuren"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:336
+msgid "workspace.libraries.colors.toggle-color-palette"
+msgstr "Kleurenpalet wisselen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:541
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Gemengde tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:536
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Gemengde activa en tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:556
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Gemengde activa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:558
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Alle activa ontkoppelen"
+
+#: src/app/main/data/workspace/mcp.cljs:186
+#, unused
+msgid "labels.dismiss"
+msgstr "Afwijzen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:543
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Alle tokens loskoppelen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#, unused
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Vervagingseffecten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:273
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Groepsvervagingseffecten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:272
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Selectievervagingseffecten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:99, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:109
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Achtergrondvervaging"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:144
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Vervagingstype selecteren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:153
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr ""
+"Achtergrondvervaging wordt alleen ondersteund in de nieuwe render. Schakel "
+"over naar de nieuwe render in het menu Voorkeuren om dit effect te gebruiken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:98, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Laagvervaging"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Meer opties tonen/verbergen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:517
+msgid "workspace.options.convert-to-typography"
+msgstr "Typografiestijl maken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:198
+msgid "workspace.options.fill.section"
+msgstr "Sectie vullen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:285
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Menusectie laag"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:488
+msgid "workspace.options.no-size-preset-results"
+msgstr "Geen overeenkomende maatvoorinstelling"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+#, unused
+msgid "workspace.options.pixel grid-color"
+msgstr "Kleur van het pixelraster"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:626
+msgid "workspace.sidebar.layers.replace-all"
+msgstr "Alles vervangen"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:587
+msgid "workspace.sidebar.layers.replace-placeholder"
+msgstr "Vervangen door…"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:575
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Zoeken en vervangen"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:606
+msgid "workspace.sidebar.layers.search-scope-canvas"
+msgstr "Tekstinhoud"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:610
+msgid "workspace.sidebar.layers.search-scope-layers"
+msgstr "Laagnamen"
+
+#, unused
+msgid "workspace.toast.comments-hidden"
+msgstr "Commentaar verborgen"
+
+#, unused
+msgid "workspace.toast.comments-visible"
+msgstr "Commentaar zichtbaar"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:357
+msgid "workspace.tokens.copy-name"
+msgstr "Tokenpad kopiëren"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:60
+msgid "workspace.tokens.duplicate-group"
+msgstr "Tokensgroep dupliceren"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+#, unused
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Importeerfout: dubbele tokennaam in JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+#, unused
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr ""
+"Er bestaat al een token bij het pad '%s' of bij een voorvoegsel daarvan, in "
+"een andere set."
+
+#: src/app/main/data/workspace/tokens/application.cljs:730, src/app/main/ui/workspace/tokens/management/group.cljs:161
+msgid "workspace.tokens.error-text-edition"
+msgstr ""
+"Tokens kunnen niet worden toegepast tijdens het bewerken van tekst. "
+"Selecteer in plaats daarvan de tekstlaag."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:102
+msgid "workspace.tokens.remap-node-references-title"
+msgstr ""
+"'%s' hernoemen naar '%s' en alle tokens in deze groep opnieuw in kaart "
+"brengen?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
+msgid "workspace.tokens.remap-node-warning-effects"
+msgstr ""
+"Hiermee worden alle tokens en referenties die de oude tokensnaam gebruiken "
+"bijgewerkt ."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
+msgid "workspace.tokens.remap-token-warning-effects"
+msgstr ""
+"Hierdoor worden alle lagen en verwijzingen die de oude tokennaam gebruiken, "
+"gewijzigd."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:59
+msgid "workspace.tokens.rename-group"
+msgstr "Tokensgroep hernoemen"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:68
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Je tokens worden automatisch hernoemd naar % s.(suffix).(tokenName)"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:527
+msgid "workspace.tokens.search-by-token"
+msgstr "Zoeken op tokennaam"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:273
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "Er bestaat al een token op het pad: %s of op een voorvoegsel daarvan."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
+msgid "workspace.toolbar.mcp"
+msgstr "MCP"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:87
+msgid "workspace.toolbar.mcp-connect-here"
+msgstr "Hier verbinden"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:84
+msgid "workspace.toolbar.mcp-connected"
+msgstr "MCP verbonden"
+
+#: src/app/main/ui/workspace/palette.cljs:166
+msgid "workspace.toolbar.palette-bar"
+msgstr "Paletbalk"
+
+#, unused
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Weergave niet beschikbaar. Vernieuwen om de bewerking te herstellen."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:43
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Vernieuwen"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:358
+msgid "workspace.undo.entry.by"
+msgstr "door %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:234, src/app/main/ui/workspace/sidebar/versions.cljs:314
+msgid "workspace.versions.button.preview"
+msgstr "Voorvertoning van versie"
+
+#: src/app/main/data/workspace/versions.cljs:303
+msgid "workspace.versions.preview-banner-title"
+msgstr "Voorvertoning van versie: % s"
+
+#: src/app/main/data/workspace/versions.cljs:297
+msgid "workspace.versions.preview.unnamed"
+msgstr "Versie zonder naam"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+#, unused
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Alle tokens losmaken & alle typografieën loskoppelen"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
+msgid "workspace.options.stroke-gap"
+msgstr "Ruimte"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:248
+msgid "workspace.options.stroke.toggle-stroke"
+msgstr "Streek wisselen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:501
+msgid "workspace.options.text-options.text-section"
+msgstr "Tekstsectie"
+
+#: src/app/main/ui/workspace/plugins.cljs:317
+msgid "workspace.plugins.permissions.clipboard-read"
+msgstr "Lees de inhoud van je klembord."
+
+#: src/app/main/ui/workspace/plugins.cljs:311
+msgid "workspace.plugins.permissions.clipboard-write"
+msgstr "Lees en schrijf naar je klembord."
+
+#: src/app/main/ui/workspace/context_menu.cljs:651
+msgid "workspace.shape.menu.clear-guides"
+msgstr "Bordhulplijnen wissen"
+
+#: src/app/main/ui/workspace/context_menu.cljs:229
+msgid "workspace.shape.menu.copy-as-image"
+msgstr "Als afbeelding kopiëren"
+
+#: src/app/main/ui/workspace/context_menu.cljs:453
+msgid "workspace.shape.menu.stroke-to-path"
+msgstr "Streek naar pad"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+#, unused
+msgid "workspace.sidebar.layers.match-count"
+msgstr "%s van %s"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:601
+msgid "workspace.sidebar.layers.no-matches"
+msgstr "Geen overeenkomst"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:620
+msgid "workspace.sidebar.layers.replace"
+msgstr "Vervangen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:287
+msgid "workspace.options.radius.radius-section"
+msgstr "Randradius van sectie"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:482
+msgid "workspace.options.search-size-preset"
+msgstr "Groottevoorinstelling zoeken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:200
+msgid "workspace.options.selection-color.section"
+msgstr "Kleurselectie van sectie"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:327
+msgid "workspace.options.stroke-dash"
+msgstr "Streepjes"

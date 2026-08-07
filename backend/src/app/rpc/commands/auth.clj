@@ -8,6 +8,7 @@
   (:require
    [app.auth :as auth]
    [app.auth.oidc :as oidc]
+   [app.auth.passwords :as passwords]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -182,6 +183,7 @@
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
               nil))]
 
+    (passwords/validate-password password)
     (->> (validate-token token)
          (update-password conn))
 
@@ -240,6 +242,9 @@
               :code :email-as-password
               :hint "you can't use your email as password"))
 
+  ;; Validate password strength against common password dictionary
+  (passwords/validate-password (:password params))
+
   (when (eml/has-bounce-reports? cfg (:email params))
     (ex/raise :type :restriction
               :code :email-has-permanent-bounces
@@ -258,7 +263,8 @@
   (validate-register-attempt! cfg params)
 
   (let [email   (profile/clean-email email)
-        profile (profile/get-profile-by-email pool email)]
+        profile (profile/get-profile-by-email pool email)
+        fullname (d/normalize-string fullname)]
 
     ;; SECURITY: refuse to issue a prepared-register token when an active
     ;; profile already exists for this email.
@@ -359,6 +365,9 @@
         is-active (:is-active params false)
         theme     (:theme params nil)
         email     (str/lower email)
+        fullname  (d/normalize-string (:fullname params))
+        locale    (d/normalize-string locale)
+        theme     (d/normalize-string theme)
 
         photo-id  (some->> (or (:oidc/picture props)
                                (:google/picture props)
@@ -367,7 +376,7 @@
                            (import-profile-picture cfg))
 
         params    {:id id
-                   :fullname (:fullname params)
+                   :fullname fullname
                    :email email
                    :auth-backend backend
                    :lang locale

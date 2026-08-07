@@ -42,7 +42,7 @@
   (let [profile (th/create-profile* 1)
         data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
         out     (th/command! data)]
 
     #_(th/print-result! out)
@@ -56,7 +56,7 @@
   (let [profile (th/create-profile* 1)
         data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "123123"}
+                 :password "Test123!"}
         out     (th/command! data)]
     ;; (th/print-result! out)
     (let [error (:error out)]
@@ -69,7 +69,7 @@
   (let [profile (th/create-profile* 1 {:is-active true})
         data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "123123"}
+                 :password "Test123!"}
         out     (th/command! data)]
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -91,7 +91,7 @@
           (t/is (not (contains? result :password))))))
 
     (t/testing "update profile"
-      (with-redefs [app.config/flags #{:nitrate}]
+      (with-redefs [app.config/flags #{:admin-console}]
         (with-redefs [nitrate/add-nitrate-licence-to-profile
                       (fn [_ profile]
                         (assoc profile :subscription {:plan :pro}))]
@@ -403,7 +403,7 @@
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :fullname "foobar"
-               :password "foobar"
+               :password "Foobar12!"
                :utm_campaign "utma"
                :mtm_campaign "mtma"}
         out   (th/command! data)
@@ -444,7 +444,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -463,7 +463,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -498,7 +498,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -521,7 +521,7 @@
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
                    :fullname "foobar"
-                   :password "foobar"}
+                   :password "Foobar12!"}
             out   (th/command! data)
             token (get-in out [:result :token])]
         (t/is (th/success? out))
@@ -547,7 +547,7 @@
         (let [data  {::th/type :prepare-register-profile
                      :email "hello@example.com"
                      :fullname "foobar"
-                     :password "foobar"}
+                     :password "Foobar12!"}
               out   (th/command! data)
               token (get-in out [:result :token])]
           (t/is (th/success? out))
@@ -576,7 +576,7 @@
         (let [data  {::th/type :prepare-register-profile
                      :email "hello@example.com"
                      :fullname "foobar"
-                     :password "foobar"}
+                     :password "Foobar12!"}
               out   (th/command! data)
               token (get-in out [:result :token])]
           (t/is (th/success? out))
@@ -614,7 +614,7 @@
                      :invitation-token itoken
                      :fullname "foobar"
                      :email "user@example.com"
-                     :password "foobar"}
+                     :password "Foobar12!"}
 
           {prep-result :result prep-error :error} (th/command! prep-data)]
       (t/is (nil? prep-error))
@@ -659,7 +659,7 @@
                      :invitation-token itoken
                      :fullname "foobar"
                      :email "user@example.com"
-                     :password "foobar"}
+                     :password "Foobar12!"}
 
           {prep-result :result prep-error :error} (th/command! prep-data)]
       (t/is (nil? prep-error))
@@ -692,7 +692,7 @@
                :invitation-token itoken
                :email "user@example.com"
                :fullname "foobar"
-               :password "foobar"}
+               :password "Foobar12!"}
         out   (th/command! data)]
 
     (t/is (not (th/success? out)))
@@ -712,7 +712,7 @@
                  :invitation-token itoken
                  :fullname "foobar"
                  :email "user@example.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -733,7 +733,7 @@
                  :invitation-token itoken
                  :email "user@example.com"
                  :fullname "foobar"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out   (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -754,7 +754,7 @@
                  :invitation-token itoken
                  :fullname "foobar"
                  :email "user@example.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out   (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -767,7 +767,7 @@
     (let [data  {::th/type :prepare-register-profile
                  :fullname "foobar"
                  :email "user@example.com"
-                 :password "foobar"}
+                 :password "Foobar12!"}
           out  (th/command! data)]
 
       (t/is (not (th/success? out)))
@@ -780,7 +780,7 @@
         data    {::th/type :prepare-register-profile
                  :fullname "foobar"
                  :email (:email profile)
-                 :password "foobar"}
+                 :password "Foobar12!"}
         out     (th/command! data)]
     ;; (th/print-result! out)
     (t/is (th/success? out))
@@ -793,7 +793,7 @@
         data  {::th/type :prepare-register-profile
                :fullname "foobar"
                :email "user@example.com"
-               :password "foobar"}]
+               :password "Foobar12!"}]
 
     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
 
@@ -808,7 +808,7 @@
         data  {::th/type :prepare-register-profile
                :fullname "foobar"
                :email "user@example.com"
-               :password "foobar"}]
+               :password "Foobar12!"}]
 
     (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
 
@@ -1131,8 +1131,8 @@
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
                ::rpc/profile-id (:id profile)
-               :old-password "123123"
-               :password "foobarfoobar"}
+               :old-password "Test123!"
+               :password "Foobar12!"}
         out   (th/command! data)]
     (t/is (nil? (:error out)))
     (t/is (nil? (:result out)))))
@@ -1143,7 +1143,7 @@
         data  {::th/type :update-profile-password
                ::rpc/profile-id (:id profile)
                :old-password "badpassword"
-               :password "foobarfoobar"}
+               :password "Foobar12!"}
         {:keys [result error] :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
@@ -1154,9 +1154,166 @@
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
                ::rpc/profile-id (:id profile)
-               :old-password "123123"
+               :old-password "Test123!"
                :password "profile1.test@nodomain.com"}
         {:keys [result error] :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :email-as-password))))
+
+
+(t/deftest update-profile-props-rejects-subscription
+  ;; N1-16: Mass Assignment — :subscription must not be writable via RPC
+  ;; The closed schema rejects :subscription at validation time
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:subscription {:type "unlimited" :status "active"}}}
+        out     (th/command! data)]
+
+    ;; The call must fail with validation error
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))
+
+    ;; And :subscription must NOT be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (nil? (get-in props [:props :subscription]))
+            ":subscription must not be writable via update-profile-props"))))
+
+
+(t/deftest update-profile-props-accepts-valid-keys
+  ;; Verify that valid props keys still work after closing the schema
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:onboarding-viewed true
+                         :newsletter-updates false
+                         :renderer :wasm}}
+        out     (th/command! data)]
+
+    ;; The call should succeed
+    (t/is (nil? (:error out)))
+
+    ;; And all valid keys should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (true? (get-in props [:props :onboarding-viewed])))
+      (t/is (false? (get-in props [:props :newsletter-updates])))
+      (t/is (= :wasm (get-in props [:props :renderer]))))))
+
+
+(t/deftest update-profile-props-accepts-onboarding-questions
+  ;; The onboarding questions flow sends these props on the final "START" step
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:onboarding-questions-answered true
+                         :onboarding-questions
+                         {:expected-use "work"
+                          :role "ux"
+                          :start-with "prototyping"}}}
+        out     (th/command! data)]
+
+    ;; The call should succeed
+    (t/is (nil? (:error out)))
+
+    ;; And all keys should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (true? (get-in props [:props :onboarding-questions-answered])))
+      (t/is (= {:expected-use "work"
+                :role "ux"
+                :start-with "prototyping"}
+               (get-in props [:props :onboarding-questions]))))))
+
+
+(t/deftest update-profile-props-rejects-invalid-onboarding-questions
+  ;; The schema is closed and :onboarding-questions only accepts string values
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:onboarding-questions {:expected-use 42}}}
+        out     (th/command! data)]
+
+    ;; The call must fail with validation error
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+
+(t/deftest update-profile-props-accepts-nudge
+  ;; Nudge settings are persisted per-profile via update-profile-props
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:nudge {:big 20 :small 0.5}}}
+        out     (th/command! data)]
+
+    ;; The call should succeed
+    (t/is (nil? (:error out)))
+
+    ;; And the nudge values should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (= {:big 20 :small 0.5} (get-in props [:props :nudge]))))))
+
+(t/deftest update-profile-props-rejects-invalid-nudge
+  ;; The nudge map only accepts :big/:small numbers
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:nudge {:big "ten"}}}
+        out     (th/command! data)]
+
+    ;; The call must fail with validation error
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+
+(t/deftest prepare-register-profile-password-too-short
+  (let [data {::th/type :prepare-register-profile
+              :email "user@example.com"
+              :fullname "foobar"
+              :password "123"}
+        out  (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest prepare-register-profile-weak-password
+  (let [data {::th/type :prepare-register-profile
+              :email "user@example.com"
+              :fullname "foobar"
+              :password "password123"}
+        out  (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest update-profile-password-too-short
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "Test123!"
+                 :password "123"}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest update-profile-password-weak-password
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "Test123!"
+                 :password "qwerty"}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :weak-password))))

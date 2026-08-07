@@ -429,6 +429,17 @@
                               (with-meta (meta parent-ref-shape))))]
     near-match))
 
+(defn swapped-subhead?
+  "Whether `shape` references outside its near main parent and needs a swap slot.
+  Same-parent positional differences are synchronized as reorders."
+  [shape container find-parent-ref-shape]
+  (let [parent-shape     (ctst/get-shape container (:parent-id shape))
+        parent-ref-shape (when parent-shape
+                           (find-parent-ref-shape parent-shape))]
+    (and (some? parent-ref-shape)
+         (not-any? #(= % (:shape-ref shape))
+                   (:shapes parent-ref-shape)))))
+
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times
    as the given levels."
@@ -901,8 +912,10 @@
   (let [shape (get objects shape-id)]
     (println (str/pad (str (str/repeat "  " level)
                            (when (:main-instance shape) "{")
+                           (when (:is-variant-container shape) "{{")
                            (:name shape)
                            (when (:main-instance shape) "}")
+                           (when (:is-variant-container shape) "}}")
                            (when (seq (:touched shape)) "*")
                            (when show-ids (str/format " %s" (:id shape))))
                       {:length 20

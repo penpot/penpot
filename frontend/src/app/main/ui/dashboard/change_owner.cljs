@@ -97,20 +97,20 @@
                       :form form
                       :default default-member-id}])]))
 
-(defn- make-leave-org-modal-form-schema [teams]
+(defn- make-leave-organization-modal-form-schema [teams]
   (into
    [:map {:title "LeaveOrgModalForm"}]
    (for [team teams]
      [(keyword (str "member-id-" (:id team))) ::sm/text])))
 
 
-(mf/defc leave-and-reassign-org-modal
+(mf/defc leave-and-reassign-organization-modal
   {::mf/register modal/components
-   ::mf/register-as :leave-and-reassign-org
+   ::mf/register-as :leave-and-reassign-organization
    ::mf/wrap [mf/memo]}
   [{:keys [profile teams-to-transfer num-teams-to-delete accept] :as props}]
   (let [schema (mf/with-memo [teams-to-transfer]
-                 (make-leave-org-modal-form-schema teams-to-transfer))
+                 (make-leave-organization-modal-form-schema teams-to-transfer))
         ;; Compute initial values for each team select
         team-fields (mf/with-memo [teams-to-transfer]
                       (for [team teams-to-transfer]
@@ -146,21 +146,21 @@
                                                   team-fields)]
                       (accept {:teams-to-transfer teams-to-transfer})))]
     [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-org-container)}
+     [:div {:class (stl/css :modal-organization-container)}
       [:div {:class (stl/css :modal-header)}
-       [:h2 {:class (stl/css :modal-org-title)} (tr "modals.before-leave-org.title")]
+       [:h2 {:class (stl/css :modal-organization-title)} (tr "modals.before-leave-organization.title")]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click modal/hide!} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
        (if (zero? num-teams-to-delete)
-         [:p {:class (stl/css :modal-org-msg)}
-          (tr "modals.leave-org-and-reassign.hint")]
+         [:p {:class (stl/css :modal-organization-msg)}
+          (tr "modals.leave-organization-and-reassign.hint")]
          [:*
-          [:p {:class (stl/css :modal-org-msg)}
-           (tr "modals.leave-org-and-reassign.hint-delete")]
-          [:p {:class (stl/css :modal-org-msg)}
-           (tr "modals.leave-org-and-reassign.hint-promote")]])
+          [:p {:class (stl/css :modal-organization-msg)}
+           (tr "modals.leave-organization-and-reassign.hint-delete")]
+          [:p {:class (stl/css :modal-organization-msg)}
+           (tr "modals.leave-organization-and-reassign.hint-promote")]])
        [:& fm/form {:form form}
         [:div {:class (stl/css :teams-container)}
          (for [{:keys [team field-name default-member-id]} team-fields]

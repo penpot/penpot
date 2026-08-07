@@ -1,0 +1,40 @@
+{
+  "name": "media-processor",
+  "version": "1.0.0",
+  "description": "Stateless HTTP service for Penpot image and font processing",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "start": "node dist/index.js",
+    "start:dev": "tsx --env-file=../backend/scripts/_env src/index.ts",
+    "types:check": "tsc --noEmit",
+    "test": "vitest run",
+    "fmt": "prettier --write src/ test/",
+    "fmt:check": "prettier --check src/ test/",
+    "clean": "rm -rf dist/"
+  },
+  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "p-queue": "^9.3.3",
+    "pino": "^10.3.1",
+    "pino-loki": "^3.0.0",
+    "pino-pretty": "^13.1.3",
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^26.1.2",
+    "@types/supertest": "^7.2.1",
+    "esbuild": "^0.28.1",
+    "prettier": "^3.6.2",
+    "supertest": "^7.2.2",
+    "tsx": "^4.22.4",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

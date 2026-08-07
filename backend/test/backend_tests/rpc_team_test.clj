@@ -13,7 +13,9 @@
    [app.db :as db]
    [app.email.blacklist :as email.blacklist]
    [app.http :as http]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.teams :as teams]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -102,6 +104,63 @@
         (let [edata (-> out :error ex-data)]
           (t/is (= :validation (:type edata)))
           (t/is (= :member-is-muted (:code edata))))))))
+
+(t/deftest create-and-update-team-invitations-include-organization-props
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner      (th/create-profile* 101 {:is-active true})
+          invitee    (th/create-profile* 102 {:is-active true})
+          organization-team   (th/create-team* 101 {:profile-id (:id owner)})
+          plain-team (th/create-team* 102 {:profile-id (:id owner)})
+          organization-id     (uuid/random)
+          organization         {:id organization-id
+                                :name "Acme"
+                                :slug "acme"
+                                :owner-id (:id owner)
+                                :avatar-bg-url "https://example.com/avatar.svg"
+                                :permissions {:new-team-members "anyone"}}
+          nitrate-call
+          (fn [_cfg method params]
+            (case method
+              :get-team-organization
+              (if (= (:team-id params) (:id organization-team))
+                {:organization organization :is-your-penpot false}
+                {:organization nil :is-your-penpot false})
+
+              :get-organization-members
+              [(:id invitee)]
+
+              nil))
+          invite!     (fn [team email]
+                        (th/command! {::th/type :create-team-invitations
+                                      ::rpc/profile-id (:id owner)
+                                      :team-id (:id team)
+                                      :role :editor
+                                      :emails [email]}))]
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call nitrate-call]
+        (t/is (th/success? (invite! organization-team (:email invitee))))
+        (t/is (th/success? (invite! organization-team (:email invitee))))
+        (t/is (th/success? (invite! plain-team "external@example.com"))))
+
+      (let [events       (mapv second (:call-args-list @audit-mock))
+            create-organization   (first (filter #(and (= "create-team-invitation" (:name %))
+                                                       (= (:email invitee)
+                                                          (get-in % [:props :member-email])))
+                                                 events))
+            update-organization   (first (filter #(= "update-team-invitation" (:name %)) events))
+            create-plain (first (filter #(and (= "create-team-invitation" (:name %))
+                                              (= "external@example.com"
+                                                 (get-in % [:props :member-email])))
+                                        events))]
+        (doseq [event [create-organization update-organization]]
+          (t/is (true? (get-in event [:props :team-belongs-to-organization])))
+          (t/is (true? (get-in event [:props :adds-invitee-to-organization])))
+          (t/is (true? (get-in event [:props :invitee-already-organization-member]))))
+
+        (t/is (false? (get-in create-plain [:props :team-belongs-to-organization])))
+        (t/is (false? (get-in create-plain [:props :adds-invitee-to-organization])))
+        (t/is (false? (get-in create-plain [:props :invitee-already-organization-member])))))))
 
 (t/deftest create-team-invitations-blacklisted-domain
   (with-mocks [mock {:target 'app.email/send! :return nil}]
@@ -377,6 +436,158 @@
           (let [edata (-> out :error ex-data)]
             (t/is (= :validation (:type edata)))
             (t/is (= :invalid-token (:code edata)))))))))
+
+(t/deftest accept-organization-invitation-audit-event
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [inviter          (th/create-profile* 201 {:is-active true})
+          invitee          (th/create-profile* 202 {:is-active true})
+          team             (th/create-team* 201 {:profile-id (:id inviter)})
+          organization-id  (uuid/random)
+          default-team-id  (uuid/random)
+          direct-token     (tokens/generate
+                            th/*system*
+                            {:iss :team-invitation
+                             :exp (ct/in-future "1h")
+                             :profile-id (:id inviter)
+                             :role :editor
+                             :organization-id organization-id
+                             :member-email (:email invitee)
+                             :member-id (:id invitee)})
+          team-token       (tokens/generate
+                            th/*system*
+                            {:iss :team-invitation
+                             :exp (ct/in-future "1h")
+                             :profile-id (:id inviter)
+                             :role :editor
+                             :team-id (:id team)
+                             :member-email (:email invitee)
+                             :member-id (:id invitee)})
+          verify!          (fn [token]
+                             (th/command! {::th/type :verify-token
+                                           ::rpc/profile-id (:id invitee)
+                                           :token token}))
+          organization-event
+          (fn []
+            (->> (:call-args-list @audit-mock)
+                 (map second)
+                 (filter #(= "accept-organization-invitation" (:name %)))
+                 first))
+          frontend-event     (atom nil)]
+
+      (db/insert! (:app.db/pool th/*system*)
+                  :team-invitation
+                  {:org-id organization-id
+                   :email-to (:email invitee)
+                   :created-by (:id inviter)
+                   :role "editor"
+                   :valid-until (ct/in-future "48h")})
+
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:organization-id organization-id
+                                                      :is-member false}
+                        :get-organization-members [(:id inviter) (uuid/random) (uuid/random)]
+                        nil))
+                    teams/initialize-user-in-organization
+                    (fn [& _] default-team-id)]
+        (let [out (verify! direct-token)]
+          (t/is (th/success? out))
+          (reset! frontend-event
+                  (get-in out [:result :organization-invitation-audit]))))
+
+      (let [event (organization-event)]
+        (t/is (= organization-id (get-in event [:props :organization-id])))
+        (t/is (not (contains? (:props event) :organization-member-add-source)))
+        (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
+        (t/is (not (contains? (:props event) :organization-member-count-before)))
+        (t/is (= :editor (get-in event [:props :role])))
+        (t/is (uuid? (get-in event [:props :invitation-id])))
+        (t/is (= "organization-invitation-acceptance"
+                 (:origin @frontend-event)))
+        (t/is (= organization-id
+                 (get-in @frontend-event [:props :organization-id])))
+        (t/is (= "direct-organization-invitation"
+                 (get-in @frontend-event [:props :organization-member-add-source])))
+        (t/is (false? (get-in @frontend-event [:props :belongs-to-team-on-add])))
+        (t/is (= 3
+                 (get-in @frontend-event [:props :organization-member-count-before])))
+        (t/is (not-any? #(contains? #{"accept-team-invitation"
+                                      "accept-team-invitation-from"}
+                                    (:name (second %)))
+                        (:call-args-list @audit-mock))))
+
+      (th/reset-mock! audit-mock)
+      (db/insert! (:app.db/pool th/*system*)
+                  :team-invitation
+                  {:team-id (:id team)
+                   :email-to (:email invitee)
+                   :created-by (:id inviter)
+                   :role "editor"
+                   :valid-until (ct/in-future "48h")})
+
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership-by-team {:organization-id organization-id
+                                                              :is-member false}
+                        :get-organization-members (into [(:id inviter)]
+                                                        (repeatedly 4 uuid/random))
+                        nil))
+                    teams/add-profile-to-team! (fn [& _] nil)]
+        (let [out (verify! team-token)]
+          (t/is (th/success? out))
+          (reset! frontend-event
+                  (get-in out [:result :organization-invitation-audit]))))
+
+      (let [events (mapv second (:call-args-list @audit-mock))
+            event  (organization-event)]
+        (t/is (some #(= "accept-team-invitation" (:name %)) events))
+        (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
+        (t/is (= (:id team) (get-in event [:props :team-id])))
+        (t/is (= organization-id (get-in event [:props :organization-id])))
+        (t/is (not (contains? (:props event) :organization-member-add-source)))
+        (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
+        (t/is (not (contains? (:props event) :organization-member-count-before)))
+        (t/is (= "team-invitation-acceptance"
+                 (:origin @frontend-event)))
+        (t/is (= (:id team) (get-in @frontend-event [:props :team-id])))
+        (t/is (= organization-id
+                 (get-in @frontend-event [:props :organization-id])))
+        (t/is (= "team-invitation"
+                 (get-in @frontend-event [:props :organization-member-add-source])))
+        (t/is (true? (get-in @frontend-event [:props :belongs-to-team-on-add])))
+        (t/is (= 5
+                 (get-in @frontend-event [:props :organization-member-count-before]))))
+
+      (th/reset-mock! audit-mock)
+      (db/insert! (:app.db/pool th/*system*)
+                  :team-invitation
+                  {:team-id (:id team)
+                   :email-to (:email invitee)
+                   :role "editor"
+                   :valid-until (ct/in-future "48h")})
+
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership-by-team {:organization-id organization-id
+                                                              :is-member true}
+                        :get-organization-members (throw (ex-info "unexpected member count" {}))
+                        nil))
+                    teams/add-profile-to-team! (fn [& _] nil)]
+        (let [out (verify! team-token)]
+          (t/is (th/success? out))
+          (reset! frontend-event
+                  (get-in out [:result :organization-invitation-audit]))))
+
+      (let [events (mapv second (:call-args-list @audit-mock))]
+        (t/is (some #(= "accept-team-invitation" (:name %)) events))
+        (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))
+        (t/is (nil? @frontend-event))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]
@@ -804,6 +1015,46 @@
           out  (th/command! data)]
       (t/is (th/success? out)))))
 
+(t/deftest create-team-invitations-email-cooldown
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile1 (th/create-profile* 1 {:is-active true})
+          team     (th/create-team* 1 {:profile-id (:id profile1)})
+
+          data     {::th/type :create-team-invitations
+                    ::rpc/profile-id (:id profile1)
+                    :team-id (:id team)
+                    :role :editor
+                    :emails ["cooldown-test@example.com"]}]
+
+      ;; First invitation sends email
+      (let [out (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock))))
+
+      ;; Resending immediately should NOT send email (cooldown active)
+      (th/reset-mock! mock)
+      (let [out (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 0 (:call-count @mock))))
+
+      ;; Resending to a different email should send email
+      (th/reset-mock! mock)
+      (let [data (assoc data :emails ["different@example.com"])
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock))))
+
+      ;; After cooldown expires, resending should send email
+      (th/reset-mock! mock)
+      (th/db-update! :team-invitation
+                     {:updated-at (ct/in-past "10m")}
+                     {:team-id (:id team)
+                      :email-to "cooldown-test@example.com"})
+      (let [data (assoc data :emails ["cooldown-test@example.com"])
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock)))))))
+
 (t/deftest update-team-with-invalid-name
   (let [profile (th/create-profile* 1 {:is-active true})
         team    (th/create-team* 1 {:profile-id (:id profile)})]
@@ -845,4 +1096,3 @@
                 :name "My Valid Team"}
           out  (th/command! data)]
       (t/is (th/success? out)))))
-

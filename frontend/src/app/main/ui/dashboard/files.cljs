@@ -195,7 +195,7 @@
       (st/emit! (dpj/fetch-files project-id)
                 (dd/clear-selected-files)))
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries :dashboard)
 
     [:*
      [:> header* {:team team

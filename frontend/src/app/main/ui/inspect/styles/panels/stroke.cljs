@@ -15,10 +15,27 @@
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
+   [app.util.code-gen.style-css-values :as cssv]
    [app.util.color :as uc]
    [rumext.v2 :as mf]))
 
 (def ^:private properties [:border-color :border-style :border-width])
+
+(def ^:private per-side-properties
+  [:border-color
+   :border-style
+   :border-block-start-width
+   :border-inline-end-width
+   :border-block-end-width
+   :border-inline-start-width])
+
+(defn- stroke-properties
+  "Logical per-side width properties when the stroke uses differing
+  per-side widths; the regular property set otherwise."
+  [stroke]
+  (if (some? (cssv/stroke-per-side-widths stroke))
+    per-side-properties
+    properties))
 
 (def ^:private shape-prop->stroke-prop
   {:border-style :stroke-style
@@ -71,7 +88,14 @@
                        color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " formatted-color-value ";")
                        color-gradient (dm/str "border-image: " (uc/gradient->css gradient-data) " 100 / " stroke-width "px;")
                        color-image (dm/str "border-image: url(" (cfg/resolve-file-media color-image) ") 100 / " stroke-width "px;")
-                       :else "")]
+                       :else "")
+               value (if-let [[top right bottom left] (cssv/stroke-per-side-widths stroke)]
+                       (dm/str value
+                               " border-block-start-width: " top "px;"
+                               " border-inline-end-width: " right "px;"
+                               " border-block-end-width: " bottom "px;"
+                               " border-inline-start-width: " left "px;")
+                       value)]
            (if (empty? acc)
              value
              (str acc " " value))))
@@ -92,7 +116,7 @@
      (for [shape shapes]
        [:div {:key (:id shape) :class (stl/css :stroke-shape)}
         (for [[idx stroke] (map-indexed vector (:strokes shape))]
-          (for [property properties]
+          (for [property (stroke-properties stroke)]
             (let [value (css/get-css-value objects stroke property)
                   stroke-type (ctc/stroke->color stroke)
                   property-name (cmm/get-css-rule-humanized property)

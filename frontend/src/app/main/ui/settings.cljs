@@ -21,6 +21,7 @@
    [app.main.ui.settings.options :refer [options-page*]]
    [app.main.ui.settings.password :refer [password-page*]]
    [app.main.ui.settings.profile :refer [profile-page*]]
+   [app.main.ui.settings.shortcuts :refer [shortcuts-page*]]
    [app.main.ui.settings.sidebar :refer [sidebar*]]
    [app.main.ui.settings.subscription :refer [subscription-page*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -29,7 +30,8 @@
 (mf/defc header*
   {::mf/wrap [mf/memo]}
   []
-  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+  [:header {:class (stl/css :dashboard-header)
+            :data-testid "dashboard-header"}
    [:div {:class (stl/css :dashboard-title)}
     [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 
@@ -38,7 +40,7 @@
   (let [section (get-in route [:data :name])
         profile (mf/deref refs/profile)]
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts :dashboard)
 
     (mf/with-effect [profile]
       (when (nil? profile)
@@ -46,7 +48,7 @@
 
     [:*
      [:> modal-container*]
-     [:section {:class (stl/css :dashboard-layout-refactor :dashboard)}
+     [:section {:class (stl/css :dashboard)}
 
 
       [:> sidebar* {:profile profile
@@ -54,7 +56,7 @@
 
       [:div {:class (stl/css :dashboard-content)}
        [:> header*]
-       [:section {:class (stl/css :dashboard-container)}
+       [:div {:class (stl/css :dashboard-container)}
         (case section
           :settings-profile
           [:> profile-page*]
@@ -77,7 +79,10 @@
           [:> integrations-page*]
 
           :settings-notifications
-          [:> notifications-page* {:profile profile}])]]]]))
+          [:> notifications-page* {:profile profile}]
+
+          :settings-shortcuts
+          [:> shortcuts-page* {:profile profile}])]]]]))
 
 (mf/defc settings-page*
   {::mf/lazy-load true}

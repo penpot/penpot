@@ -431,23 +431,36 @@
         text-match-count  (count text-match-ids)
         safe-match-idx    (if (pos? text-match-count) (mod current-match-idx text-match-count) 0)
 
+        text-match-ids-ref (mf/use-ref text-match-ids)
+        match-idx-ref      (mf/use-ref 0)
+
+        _                  (mf/set-ref-val! text-match-ids-ref text-match-ids)
+
         navigate-next
         (mf/use-fn
          (mf/deps text-match-count)
          (fn [_]
            (when (pos? text-match-count)
-             (swap! state* update :current-match-idx
-                    (fn [idx]
-                      (mod (inc idx) text-match-count))))))
+             (let [ids      (mf/ref-val text-match-ids-ref)
+                   next-idx (mod (inc (mf/ref-val match-idx-ref)) text-match-count)
+                   id       (nth ids next-idx)]
+               (mf/set-ref-val! match-idx-ref next-idx)
+               (swap! state* assoc :current-match-idx next-idx)
+               (st/emit! (dw/select-shape id)
+                         dw/zoom-to-selected-shape)))))
 
         navigate-prev
         (mf/use-fn
          (mf/deps text-match-count)
          (fn [_]
            (when (pos? text-match-count)
-             (swap! state* update :current-match-idx
-                    (fn [idx]
-                      (mod (+ (dec idx) text-match-count) text-match-count))))))
+             (let [ids      (mf/ref-val text-match-ids-ref)
+                   prev-idx (mod (+ (dec (mf/ref-val match-idx-ref)) text-match-count) text-match-count)
+                   id       (nth ids prev-idx)]
+               (mf/set-ref-val! match-idx-ref prev-idx)
+               (swap! state* assoc :current-match-idx prev-idx)
+               (st/emit! (dw/select-shape id)
+                         dw/zoom-to-selected-shape)))))
 
         handle-replace
         (mf/use-fn
