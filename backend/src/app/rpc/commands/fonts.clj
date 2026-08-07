@@ -144,7 +144,7 @@
                 [:process-font/global]]
    ::webhooks/event? true
    ::sm/params schema:create-font-variant}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id font-id uploads] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id font-id] :as params}]
   (teams/check-edition-permissions! pool profile-id team-id)
   (check-font-team-ownership! pool team-id font-id)
   (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
