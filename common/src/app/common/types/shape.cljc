@@ -233,7 +233,50 @@
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
    [:applied-tokens {:optional true} cto/schema:applied-tokens]
-   [:plugin-data {:optional true} ctpg/schema:plugin-data]])
+   [:plugin-data {:optional true} ctpg/schema:plugin-data]
+
+   ;; `rotation`, `flip-x` and `flip-y` are fields of the `Shape` record (see
+   ;; `cr/defrecord Shape` above) and this schema did not declare them.
+   ;; `rotation` was already named in `allowed-shape-attrs` here and in
+   ;; `app.common.types.shape.attrs/editable-attrs`, so the omission was in this
+   ;; schema and not in the model. Anything reading the model from the schema
+   ;; rather than from a live shape missed all three: the graph projection
+   ;; derives one column per entry (`app.graph.schema.projection`), so shape
+   ;; nodes carried no rotation at all, and a consumer cannot place a shape
+   ;; without it.
+   ;;
+   ;; Nilable, because `app.common.record/defrecord` cannot remove a base
+   ;; field: its `without` assocs nil and its `containsKey` answers true
+   ;; whatever the field holds, so nil is how a record field says "unset".
+   ;; `flip-x` and `flip-y` are nil on every shape `setup-shape` builds, since
+   ;; `make-minimal-shape` gives them no default.
+   ;;
+   ;; Optional as well, unlike the geometry group below, because this schema
+   ;; has a second job: `check-shape-generic-attrs` validates partial update
+   ;; payloads with it, such as the `{:blocked true}` that
+   ;; `app.main.data.workspace/update-shape` passes. A required key here would
+   ;; reject every such payload.
+   [:rotation {:optional true} [:maybe ::sm/safe-number]]
+   [:flip-x {:optional true} [:maybe :boolean]]
+   [:flip-y {:optional true} [:maybe :boolean]]
+
+   ;; Carried on circles, rects and texts too, not only on frames, so it
+   ;; belongs here rather than in `schema:frame-attrs`. Not nilable: the key
+   ;; lives outside the record, `app.common.logic.shapes` dissocs it to unset
+   ;; it, and `setup-shape` drops it when a caller passes nil.
+   [:hide-in-viewer {:optional true} :boolean]
+
+   ;; The SVG provenance an import leaves on a shape. Typed `:map` rather than
+   ;; more precisely on purpose: legacy files hold `svg-transform` as a plain
+   ;; `{:a … :f}` map rather than a `::gmt/matrix` record, and `svg-viewbox` as
+   ;; either a `::grc/rect` record or a plain map, so a tighter schema here
+   ;; would reject files that are otherwise valid. The graph *column* types are
+   ;; tightened separately, where a wrong guess costs a column rather than a
+   ;; rejected file (`app.graph.schema.contract/type-overrides`).
+   [:svg-attrs {:optional true} :map]
+   [:svg-defs {:optional true} :map]
+   [:svg-transform {:optional true} :map]
+   [:svg-viewbox {:optional true} :map]])
 
 (def schema:group-attrs
   [:map {:title "GroupAttrs"}
@@ -244,7 +287,30 @@
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:hide-fill-on-export {:optional true} :boolean]
    [:show-content {:optional true} :boolean]
-   [:hide-in-viewer {:optional true} :boolean]])
+   ;; `hide-in-viewer` moved to `schema:shape-generic-attrs`: stored files carry
+   ;; it on circles, rects and texts too, not only on frames.
+   ;; `use-for-thumbnail` is a frame attribute the model has long had, since
+   ;; `app.common.files.migrations` renames `:use-for-thumbnail?` to it and
+   ;; `app.common.logic.libraries` reads it, and this schema had not declared.
+   [:use-for-thumbnail {:optional true} :boolean]])
+
+(def ^:private schema:nilable-geom-attrs
+  "`schema:shape-geom-attrs`, but nilable.
+
+  Bools and paths are the only two shape types whose geometry can be nil:
+  `make-minimal-shape` gives `x`, `y`, `width` and `height` a default for every
+  other type and skips those two, whose extent their content and `selrect`
+  imply instead. The four keys stay required, because they are `Shape` record
+  fields and `app.common.record/defrecord` keeps a base field present whatever
+  it holds. So these two branches cannot merge `schema:shape-geom-attrs`, which
+  rejects the nil, and declare the same four keys nilable instead. A
+  schema-derived reader previously saw a bool or a path as having no position or
+  size at all."
+  [:map {:title "NilableGeometryAttrs"}
+   [:x [:maybe ::sm/safe-number]]
+   [:y [:maybe ::sm/safe-number]]
+   [:width [:maybe ::sm/safe-number]]
+   [:height [:maybe ::sm/safe-number]]])
 
 (def ^:private schema:bool-attrs
   [:map {:title "BoolAttrs"}
@@ -253,10 +319,19 @@
    [:content path/schema:content]])
 
 (def ^:private schema:rect-attrs
-  [:map {:title "RectAttrs"}])
+  [:map {:title "RectAttrs"}
+   ;; Legacy radii, set by SVG import (`app.common.files.shapes-builder` parses
+   ;; `rx`/`ry` off the element) and by migration 0003, which assocs `0`.
+   ;; Superseded by `r1` to `r4`, but stored files still carry them. Not
+   ;; nilable: both keys live outside the `Shape` record, so a dissoc removes
+   ;; them, and `setup-shape` drops a nil before the merge.
+   [:rx {:optional true} ::sm/safe-number]
+   [:ry {:optional true} ::sm/safe-number]])
 
 (def ^:private schema:circle-attrs
-  [:map {:title "CircleAttrs"}])
+  [:map {:title "CircleAttrs"}
+   [:rx {:optional true} ::sm/safe-number]
+   [:ry {:optional true} ::sm/safe-number]])
 
 (def ^:private schema:svg-raw-attrs
   [:map {:title "SvgRawAttrs"}
@@ -266,7 +341,15 @@
    ;; keeps the child ids typed as uuid, so a JSON round trip (binfile
    ;; export/import) decodes them back to uuids instead of leaving
    ;; strings that no longer resolve against the objects map.
-   [:shapes {:optional true} [:vector {:gen/max 10} ::sm/uuid]]])
+   [:shapes {:optional true} [:vector {:gen/max 10} ::sm/uuid]]
+   ;; The raw SVG node an import kept.
+   ;; `app.common.files.shapes-builder/create-raw-svg` sets it and
+   ;; `allowed-svg-attrs` names it. Usually the parsed element,
+   ;; `{:tag … :attrs … :content …}`, but a bare text node arrives as the
+   ;; string itself: `<text>hi</text>` becomes one svg-raw for the element
+   ;; and another for `"hi"`. `app.common.files.shapes-builder/parse-svg-element`
+   ;; carries a FIXME about exactly that. Both forms are legal and stored.
+   [:content {:optional true} [:or :map :string]]])
 
 (def schema:image-attrs
   [:map {:title "ImageAttrs"}
@@ -301,7 +384,10 @@
   (->> (sg/generator schema:shape-base-attrs)
        (sg/mcat (fn [{:keys [type] :as shape}]
                   (sg/let [attrs1 (sg/generator schema:shape-generic-attrs)
-                           attrs2 (sg/generator schema:shape-geom-attrs)
+                           attrs2 (if (or (= type :path)
+                                          (= type :bool))
+                                    (sg/generator schema:nilable-geom-attrs)
+                                    (sg/generator schema:shape-geom-attrs))
                            attrs3 (case type
                                     :text    (sg/generator schema:text-attrs)
                                     :path    (sg/generator schema:path-attrs)
@@ -312,10 +398,7 @@
                                     :bool    (sg/generator schema:bool-attrs)
                                     :group   (sg/generator schema:group-attrs)
                                     :frame   (sg/generator schema:frame-attrs))]
-                    (if (or (= type :path)
-                            (= type :bool))
-                      (merge attrs1 shape attrs3)
-                      (merge attrs1 shape attrs2 attrs3)))))
+                    (merge attrs1 shape attrs2 attrs3))))
        (sg/fmap create-shape)))
 
 (def schema:shape-attrs
@@ -347,6 +430,7 @@
      ctsl/schema:layout-child-attrs
      schema:bool-attrs
      schema:shape-generic-attrs
+     schema:nilable-geom-attrs
      schema:shape-base-attrs]]
 
    [:rect
@@ -386,6 +470,7 @@
      ctsl/schema:layout-child-attrs
      schema:path-attrs
      schema:shape-generic-attrs
+     schema:nilable-geom-attrs
      schema:shape-base-attrs]]
 
    [:text
