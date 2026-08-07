@@ -174,39 +174,39 @@
   ([ladybug-type v] (format-typed-value ladybug-type v nil))
   ([ladybug-type v map-key-fn]
    (let [v (values/coerce ladybug-type v)]
-    (cond
-      (nil? v)
-      "NULL"
+     (cond
+       (nil? v)
+       "NULL"
 
-      (list-type? ladybug-type)
-      (format-typed-list ladybug-type v)
+       (list-type? ladybug-type)
+       (format-typed-list ladybug-type v)
 
-      (map-type? ladybug-type)
-      (let [[key-type value-type] (values/map-types ladybug-type)
-            entries (seq v)
-            format-key (if (and map-key-fn (= "STRING" key-type))
-                         #(format-string (map-key-fn (key %)))
-                         #(format-typed-value key-type (key %)))]
-        (str "map([" (str/join ", " (map format-key entries))
-             "], ["
-             (str/join ", " (map #(format-typed-value value-type (val %)) entries))
-             "])"))
+       (map-type? ladybug-type)
+       (let [[key-type value-type] (values/map-types ladybug-type)
+             entries (seq v)
+             format-key (if (and map-key-fn (= "STRING" key-type))
+                          #(format-string (map-key-fn (key %)))
+                          #(format-typed-value key-type (key %)))]
+         (str "map([" (str/join ", " (map format-key entries))
+              "], ["
+              (str/join ", " (map #(format-typed-value value-type (val %)) entries))
+              "])"))
 
-      (struct-type? ladybug-type)
-      (format-struct ladybug-type v)
+       (struct-type? ladybug-type)
+       (format-struct ladybug-type v)
 
-      (= ladybug-type "JSON")
-      (format-json v)
+       (= ladybug-type "JSON")
+       (format-json v)
 
-      ;; Coerce string ids from transit edge-cases into UUID literals.
-      (= ladybug-type "UUID")
-      (format-uuid v)
+       ;; Coerce string ids from transit edge-cases into UUID literals.
+       (= ladybug-type "UUID")
+       (format-uuid v)
 
-      (= ladybug-type "TIMESTAMP")
-      (format-timestamp v)
+       (= ladybug-type "TIMESTAMP")
+       (format-timestamp v)
 
-      :else
-      (format-value v)))))
+       :else
+       (format-value v)))))
 
 (defn- ensure-semicolon
   [statement]

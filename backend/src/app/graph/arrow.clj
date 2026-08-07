@@ -49,17 +49,13 @@
    org.apache.arrow.memory.RootAllocator
    org.apache.arrow.vector.BigIntVector
    org.apache.arrow.vector.BitVector
-   org.apache.arrow.vector.FieldVector
-   org.apache.arrow.vector.Float8Vector
-   org.apache.arrow.vector.TimeStampMicroVector
-   org.apache.arrow.vector.UInt4Vector
-   org.apache.arrow.vector.VarCharVector
-   org.apache.arrow.vector.VectorSchemaRoot
    org.apache.arrow.vector.complex.ListVector
    org.apache.arrow.vector.complex.MapVector
    org.apache.arrow.vector.complex.StructVector
+   org.apache.arrow.vector.FieldVector
+   org.apache.arrow.vector.Float8Vector
+   org.apache.arrow.vector.TimeStampMicroVector
    org.apache.arrow.vector.types.FloatingPointPrecision
-   org.apache.arrow.vector.types.TimeUnit
    org.apache.arrow.vector.types.pojo.ArrowType$Bool
    org.apache.arrow.vector.types.pojo.ArrowType$FloatingPoint
    org.apache.arrow.vector.types.pojo.ArrowType$Int
@@ -70,7 +66,11 @@
    org.apache.arrow.vector.types.pojo.ArrowType$Utf8
    org.apache.arrow.vector.types.pojo.Field
    org.apache.arrow.vector.types.pojo.FieldType
-   org.apache.arrow.vector.types.pojo.Schema))
+   org.apache.arrow.vector.types.pojo.Schema
+   org.apache.arrow.vector.types.TimeUnit
+   org.apache.arrow.vector.UInt4Vector
+   org.apache.arrow.vector.VarCharVector
+   org.apache.arrow.vector.VectorSchemaRoot))
 
 (set! *warn-on-reflection* true)
 
