@@ -42,6 +42,7 @@
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -313,7 +314,19 @@
 
         active-tokens-by-type
         (mf/with-memo [active-tokens]
-          (delay (ctob/group-by-type active-tokens)))]
+          (delay (ctob/group-by-type active-tokens)))
+
+        ;; Bound to the sidebar content instead of the document so that
+        ;; Escape only dismisses the history panel when the focus is
+        ;; already inside it.
+        on-history-key-down
+        (mf/use-fn
+         (mf/deps is-history?)
+         (fn [event]
+           (when (and ^boolean is-history? (kbd/esc? event))
+             (dom/stop-propagation event)
+             (some-> (dom/get-target event) (dom/blur!))
+             (on-close-document-history))))]
 
     [:> (mf/provider muc/sidebar) {:value :right}
      [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
@@ -341,7 +354,8 @@
                           :layout layout
                           :page-id page-id}]
 
-       [:div {:class (stl/css :right-sidebar-content)}
+       [:div {:class (stl/css :right-sidebar-content)
+              :on-key-down on-history-key-down}
         (cond
           is-comments?
           [:> comments-sidebar* {}]
