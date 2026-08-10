@@ -2345,7 +2345,12 @@
               updated-sync-groups (into #{}
                                         (keep #(ctk/resolve-sync-group (:type previous-shape) %))
                                         updated-attrs)
-              new-touched (set/union (or (:touched current-shape) #{}) updated-sync-groups)
+              text-sub-touched #{:text-content-text :text-content-attribute :text-content-structure}
+              new-touched (set/union (or (:touched current-shape) #{})
+                                     updated-sync-groups
+                                     (when (contains? updated-sync-groups :content-group)
+                                       (set/intersection (or (:touched previous-shape) #{})
+                                                         text-sub-touched)))
               roperations (into [{:type :set-touched :touched new-touched}] roperations)
               uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
           (cond-> changes
