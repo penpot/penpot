@@ -267,8 +267,15 @@
   {::doc/added "1.17"
    ::sm/params schema:clone-file-media-object
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
   (files/check-edition-permissions! conn profile-id file-id)
+  ;; Verify the caller can read the source media object's file before
+  ;; allowing the clone.  Return :not-found on missing/inaccessible objects
+  ;; to avoid leaking information about files the caller cannot access.
+  (let [mobj (db/get-by-id conn :file-media-object id)]
+    (when-not mobj
+      (ex/raise :type :not-found :code :object-not-found))
+    (files/check-read-permissions! conn profile-id (:file-id mobj)))
   (clone-file-media-object cfg params))
 
 (defn clone-file-media-object
