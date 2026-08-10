@@ -12,4 +12,12 @@
 
 .modal-wrapper {
   @extend %new-scrollbar;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-notifications);
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
 }
