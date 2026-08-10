@@ -126,7 +126,9 @@
 (defn- handle-sso-error-and-navigate
   "Check if the current route has an SSO error marker. If so, assign an
   exception with type :sso-error and organization-id from query params,
-  then proceed with normal navigation."
+  and deliberately do NOT proceed with normal navigation: emitting
+  `rt/navigated` would clear the exception that was just assigned.
+  Otherwise, delegate to `check-sso-and-navigate`."
   [match send-event-info? url]
   (let [route-name      (name (get-in match [:data :name]))
         sso-error?      (some? (get-in match [:query-params :sso-error]))

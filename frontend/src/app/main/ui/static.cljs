@@ -483,6 +483,7 @@
   "Shown in place of the dashboard/workspace (same static skeleton and
   `request-dialog*` used by the no-permission dialogs) when the organization
   SSO exchange with the identity provider fails."
+  {::mf/private true}
   [{:keys [organization-id team-id profile is-workspace is-dashboard]}]
   (let [clean-url
         (mf/with-memo []
@@ -500,15 +501,18 @@
          (mf/deps profile)
          (fn []
            ;; Land on the user's own default team
-           (st/emit! (dcm/go-to-dashboard-recent :team-id (:default-team-id profile)))))
+           (st/emit! (rt/assign-exception nil)
+                     (dcm/go-to-dashboard-recent :team-id (:default-team-id profile)))))
 
         on-retry
         (mf/use-fn
          (mf/deps organization-id team-id clean-url)
          (fn []
-           (if team-id
-             ;; Retry with team-id to trigger SSO check for that specific team
-             (st/emit! (dnt/retry-organization-sso {:organization-id organization-id
+           (st/emit! (rt/assign-exception nil))
+           (if (or team-id organization-id)
+             ;; Retry with team-id and/or organization-id to trigger SSO check
+             (st/emit! (dnt/retry-organization-sso {:team-id team-id
+                                                    :organization-id organization-id
                                                     :dest-url clean-url}))
              ;; Fallback: just navigate to clean URL
              (st/emit! (rt/nav-raw :uri clean-url)))))]
