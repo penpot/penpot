@@ -39,6 +39,9 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(defonce ^:private scroll-positions
+  (atom {}))
+
 (def ^:private ref:highlighted-shapes
   (l/derived (fn [local]
                (-> local
@@ -756,6 +759,11 @@
                           :btn-icon     "search"
                           :btn-title    (tr "labels.search")}]]))]))
 
+(defn- on-scroll*
+  [page-id event]
+  (let [target (dom/get-target event)]
+    (swap! scroll-positions assoc page-id (.-scrollTop target))))
+
 (defn- on-scroll
   [event]
   (let [children (dom/get-elements-by-class "sticky-children")
@@ -809,6 +817,7 @@
 
         observer-var   (mf/use-var nil)
         lazy-load-ref  (mf/use-ref nil)
+        scroll-ref     (mf/use-ref nil)
 
         [filtered-objects show-more filter-component]
         (use-search page objects)
@@ -832,9 +841,21 @@
               (do (.disconnect ^js @observer-var)
                   (reset! observer-var nil)))))
 
+        on-scroll-with-save
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (on-scroll* page-id event)
+           (on-scroll event)))
+
         toogle-focus-mode
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
+
+    (mf/with-effect [page-id]
+      (when-let [node (mf/ref-val scroll-ref)]
+        (when-let [saved (get @scroll-positions page-id)]
+          (set! (.-scrollTop node) saved))))
 
     [:div {:id "layers"
            :class (stl/css :layers)
@@ -867,7 +888,8 @@
                             :parent-size size-parent}]
          [:div {:ref lazy-load-ref}]]
 
-        [:div {:on-scroll on-scroll
+        [:div {:on-scroll on-scroll-with-save
+               :ref scroll-ref
                :class (stl/css :tool-window-content)
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
@@ -876,7 +898,8 @@
                                    :is-filtered true
                                    :parent-size size-parent}]]]
 
-       [:div {:on-scroll on-scroll
+       [:div {:on-scroll on-scroll-with-save
+              :ref scroll-ref
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}
