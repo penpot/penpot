@@ -21,6 +21,8 @@ export function insertText(event, editor, selectionController) {
       return selectionController.insertText(event.data);
     } else if (selectionController.isLineBreakFocus) {
       return selectionController.replaceLineBreak(event.data);
+    } else {
+      return selectionController.insertIntoFocus(event.data);
     }
   } else {
     if (selectionController.isMultiParagraph) {

@@ -1419,8 +1419,23 @@ export class SelectionController extends EventTarget {
         this.focusNode.replaceWith(textNode);
       }
       this.collapse(textNode, newText.length);
+    } else if (this.isParagraphFocus) {
+      const newTextNode = new Text(newText);
+      const newTextSpan = createTextSpan(newTextNode, this.#currentStyle);
+      this.focusNode.replaceChildren(newTextSpan);
+      this.collapse(newTextNode, newText.length);
+    } else if (this.isRootFocus) {
+      const newTextNode = new Text(newText);
+      const newTextSpan = createTextSpan(newTextNode, this.#currentStyle);
+      const newParagraph = createParagraph([newTextSpan], this.#currentStyle);
+      this.focusNode.replaceChildren(newParagraph);
+      this.collapse(newTextNode, newText.length);
     } else {
-      throw new Error("Unknown node type");
+      const newTextNode = new Text(newText);
+      const newTextSpan = createTextSpan(newTextNode, this.#currentStyle);
+      const newParagraph = createParagraph([newTextSpan], this.#currentStyle);
+      this.#textEditor.root.replaceChildren(newParagraph);
+      this.collapse(newTextNode, newText.length);
     }
   }
 

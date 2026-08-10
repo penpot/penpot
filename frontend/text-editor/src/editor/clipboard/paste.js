@@ -83,6 +83,7 @@ export function paste(event, editor, selectionController) {
   let fragment = null;
   if (editor?.options?.allowHTMLPaste) {
     fragment = getFormattedOrPlainFragmentFromClipboardData(
+      selectionController,
       event.clipboardData,
     );
   } else {
