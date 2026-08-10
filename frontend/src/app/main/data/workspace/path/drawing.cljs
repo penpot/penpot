@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.path.drawing
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as gsl]
@@ -385,7 +384,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (if-let [id (dm/get-in state [:workspace-local :edition])]
-        (d/update-in-when state [:workspace-local :edit-path id] assoc :edit-mode mode)
+        (update-in state [:workspace-local :edit-path id] assoc :edit-mode mode)
         state))
 
     ptk/WatchEvent
