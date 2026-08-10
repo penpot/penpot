@@ -1248,7 +1248,7 @@
   Includes :name when update-name? so we can skip save-undo on the preceding
   update-shapes for finalize without losing name undo."
   [it state id {:keys [new-shape? content-has-text? content original-content
-                       update-name? name]}]
+                       update-name? name resize-geom]}]
   (let [page-id    (:current-page-id state)
         objects    (dsh/lookup-page-objects state page-id)
         shape*     (get objects id)
@@ -1260,7 +1260,8 @@
                        (cond-> new-shape?
                          (-> (pcb/set-undo-group id)
                              (pcb/set-stack-undo? true))))
-        final-geom (select-keys shape* [:selrect :points :width :height])
+        ;; `resize-geom` is the post-resize geometry; `shape*` still holds the pre-resize selrect.
+        final-geom (or resize-geom (select-keys shape* [:selrect :points :width :height]))
         geom-keys  (if new-shape? [:selrect :points] [:selrect :points :width :height])
         old-geom   (when (and content-has-text? (not= :fixed (:grow-type shape*)))
                      (or (get-in state [:workspace-text-session-geom id])
@@ -1312,6 +1313,13 @@
                 ;; modifier machinery, made auto-width typing very laggy.
                 new-size (when (and finalize? (not= :fixed (:grow-type shape)))
                            (dwwt/get-wasm-text-new-size shape content))
+                ;; Also compute the resized geometry for the finalize commit; the
+                ;; async `apply-wasm-modifiers` below never updates this `state`.
+                resize-modifiers (when (some? new-size)
+                                   (dwwt/resize-wasm-text-modifiers shape content))
+                resize-geom (when resize-modifiers
+                              (-> (gsh/transform-shape shape (get-in resize-modifiers [id :modifiers]))
+                                  (select-keys [:selrect :points :width :height])))
                 ;; New shapes: single undo on finalize only (no per-keystroke undo)
                 effective-save-undo? (if new-shape? finalize? save-undo?)
                 effective-stack-undo? (and new-shape? finalize?)
@@ -1351,12 +1359,9 @@
                 :stack-undo? effective-stack-undo?
                 :undo-group (when new-shape? id)})
 
-              ;; `new-size` is only computed on finalize (see above), so this commits
-              ;; the final auto-width/auto-height geometry via `apply-wasm-modifiers`
-              ;; like other transform flows (flex parents, sidebar width, etc.).
-              (when (some? new-size)
-                (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
-                  (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)}))))
+              ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
+              (when (some? resize-modifiers)
+                (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
 
              (when finalize?
                (rx/concat
@@ -1389,7 +1394,8 @@
                                                      ;; behavior (their create is bundled in the undo group).
                                                      :original-content (if new-shape? original-content prev-content)
                                                      :update-name? update-name?
-                                                     :name name})))
+                                                     :name name
+                                                     :resize-geom resize-geom})))
                    (rx/empty))
                  (rx/of (dwt/finish-transform)
                         (fn [state]
