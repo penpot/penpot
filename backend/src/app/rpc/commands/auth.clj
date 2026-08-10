@@ -367,7 +367,9 @@
         email     (str/lower email)
         fullname  (d/normalize-string (:fullname params))
         locale    (d/normalize-string locale)
-        theme     (d/normalize-string theme)
+        theme     (or (when (and (string? theme) (not (str/blank? theme)))
+                        (str/trim theme))
+                      "default")
 
         photo-id  (some->> (or (:oidc/picture props)
                                (:google/picture props)
