@@ -5,13 +5,19 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 
 .font-select-wrapper,
 .font-select-wrapper-composite {
   position: absolute;
   width: 100%;
-  height: px2rem(115);
+  min-width: px2rem(200);
+  height: px2rem(250);
   top: px2rem(54);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
 }
 
 .font-select-wrapper-composite {
