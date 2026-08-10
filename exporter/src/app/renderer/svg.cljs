@@ -176,8 +176,9 @@
                                         "stop-opacity" (get stop-data "opacity")}}))))
 
           (data->gradient-def [id [color data]]
-            (let [id (str "gradient-" id "-" (subs color 1))]
-              (if (= type "linear")
+            (let [id (str "gradient-" id "-" (subs color 1))
+                  gradient-type (get-in data ["gradient" "type"])]
+              (if (= gradient-type "linear")
                 {"type" "element"
                  "name" "linearGradient"
                  "attributes" {"id" id "x1" "0.5" "y1" "1" "x2" "0.5" "y2" "0"}
