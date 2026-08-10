@@ -152,7 +152,7 @@
 
         params
         (if (some? upload-id)
-          (let [file (db/tx-run! cfg media-cmd/assemble-chunks upload-id)]
+          (let [file (db/tx-run! cfg media-cmd/assemble-chunks upload-id profile-id)]
             (assoc params :file file))
           params)
 

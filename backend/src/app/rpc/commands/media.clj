@@ -402,9 +402,10 @@
 
   Raises a :validation/:missing-chunks error when the number of stored
   chunks does not match `:total-chunks` recorded in the session row.
+  Raises a :not-found error when the session does not belong to `profile-id`.
   Deletes the session row from `upload_session` on success."
-  [{:keys [::db/conn] :as cfg} session-id]
-  (let [session (db/get conn :upload-session {:id session-id})
+  [{:keys [::db/conn] :as cfg} session-id profile-id]
+  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id})
         chunks  (get-upload-chunks conn session-id)]
 
     (when (not= (count chunks) (:total-chunks session))
@@ -447,7 +448,7 @@
 
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
-                (let [content (assemble-chunks cfg session-id)
+                (let [content (assemble-chunks cfg session-id profile-id)
                       content (-> content
                                   (assoc :filename (str "upload:" name))
                                   (assoc :mtype mtype)
