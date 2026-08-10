@@ -451,16 +451,15 @@
     (watch [_ _ _]
       (let [fetched-comments #(assoc %2 :comment-threads (d/index-by :id %1))
             fetched-users #(assoc %2 :current-team-comments-users %1)]
-        (->> (rp/cmd! :get-unread-comment-threads {:team-id team-id})
-             (rx/merge-map
-              (fn [comments]
-                (rx/concat
-                 (rx/of (partial fetched-comments comments))
-
-                 (->> (rx/from (into #{} (map :file-id) comments))
-                      (rx/merge-map #(rp/cmd! :get-profiles-for-file-comments {:file-id %}))
-                      (rx/reduce #(merge %1 (d/index-by :id %2)) {})
-                      (rx/map #(partial fetched-users %))))))
+        (->> (rx/zip
+              (rp/cmd! :get-unread-comment-threads {:team-id team-id})
+              (rp/cmd! :get-profiles-for-team-comments {:team-id team-id}))
+             (rx/map
+              (fn [[comments profiles]]
+                (fn [state]
+                  (-> state
+                      (assoc :comment-threads (d/index-by :id comments))
+                      (assoc :current-team-comments-users (d/index-by :id profiles))))))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
 (defn mark-all-threads-as-read
