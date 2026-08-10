@@ -95,7 +95,7 @@
         has-photo? (some? (:photo-id profile))
 
         photo
-        (mf/with-memo [profile]
+        (mf/with-memo [(:fullname profile) (:photo-id profile)]
           (cf/resolve-profile-photo-url profile))
 
         on-image-click

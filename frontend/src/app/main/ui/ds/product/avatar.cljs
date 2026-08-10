@@ -38,7 +38,7 @@
         profile (if (object? profile)
                   (mfu/bean profile)
                   profile)
-        href    (mf/with-memo [profile]
+        href    (mf/with-memo [(:fullname profile) (:photo-id profile) (:photo-url profile)]
                   (get-url profile))
         class'  (stl/css-case :avatar true
                               :avatar-small (= variant "S")
