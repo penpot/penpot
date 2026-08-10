@@ -22,10 +22,17 @@
 
 (defonce enabled (atom true))
 
+(defn- escape-md
+  "Escapes Mattermost/Markdown special characters in user-controlled
+  strings so they cannot inject formatting into notification messages."
+  [s]
+  (when s
+    (clojure.string/replace (str s) #"[\\`*_\{\}\(\)\[\]#+\-.!|~]" #(str "\\" %))))
+
 (defn- send-mattermost-notification!
   [cfg {:keys [id] :as report}]
   (let [type (get report :type)
-        text (str "#" type " | " (get report :hint) "\n"
+        text (str "#" type " | " (escape-md (get report :hint)) "\n"
                   (when id
                     (str (u/join (cf/get :public-uri) "/dbg/error/" id) " "))
 
@@ -38,7 +45,7 @@
                   "- tenant: #" (:tenant report) "\n"
                   "- origin: #" (:origin report) "\n"
                   (when-let [href (get report :href)]
-                    (str "- href: `" href "`\n"))
+                    (str "- href: `" (escape-md href) "`\n"))
                   (when-let [version (get report :frontend-version)]
                     (str "- frontend-version: `" version "`\n"))
                   (when-let [version (get report :backend-version)]
