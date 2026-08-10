@@ -91,7 +91,13 @@
                         :command "g w"
                         :subsections [:navigation-viewer]
                         :section [:viewer]
-                        :fn #(st/emit! (dcm/go-to-workspace))}})
+                        :fn #(st/emit! (dcm/go-to-workspace))}
+
+   :toggle-hide-ui     {:tooltip "\\"
+                        :command "\\"
+                        :section [:viewer]
+                        :subsections [:generic]
+                        :fn #(st/emit! dv/toggle-hide-ui)}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))
