@@ -723,7 +723,7 @@
                                 :id id
                                 :class inner-class
                                 :placeholder (if is-multiple?
-                                               (tr "labels.mixed-values")
+                                               (tr "settings.multiple")
                                                placeholder)
                                 :default-value (fmt/format-number (or (mf/ref-val last-value*) value))
                                 :on-blur handle-blur
