@@ -91,9 +91,9 @@
       (when (not= size vport)
         (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))))))
 
-(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
+(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only? can-alt-duplicate?]
   (mf/use-effect
-   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?)
+   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only? can-alt-duplicate?)
    (fn []
      (let [show-pen? (or (= drawing-tool :path)
                          (and drawing-path?
@@ -120,7 +120,8 @@
              (and
               @alt?
               (not path-editing?)
-              (not workspace-read-only?))    (utils/get-cursor :duplicate)
+              (not workspace-read-only?)
+              can-alt-duplicate?)            (utils/get-cursor :duplicate)
              :else                           (utils/get-cursor :pointer-inner))]
 
        (when (not= @cursor new-cursor)
