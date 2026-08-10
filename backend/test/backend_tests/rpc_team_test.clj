@@ -1157,3 +1157,53 @@
                 :name "My Valid Team"}
           out  (th/command! data)]
       (t/is (th/success? out)))))
+
+(t/deftest create-team-in-organization-regression
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner           (th/create-profile* 401 {:is-active true})
+          non-member      (th/create-profile* 402 {:is-active true})
+          organization-id (uuid/random)
+          params          {::th/type :create-team
+                           ::rpc/profile-id (:id owner)
+                           :name "Test Team"
+                           :organization-id organization-id}
+
+          nitrate-call-fn
+          (fn [_cfg method p]
+            (case method
+              :get-organization-membership
+              (if (= (:profile-id p) (:id non-member))
+                {:organization-id organization-id :is-member false}
+                {:organization-id organization-id :is-member true})
+
+              :get-organization-permissions
+              {:owner-id (:id owner)
+               :permissions {:create-teams "any"}}
+
+              :set-team-organization
+              (let [team-id (:team-id p)]
+                {:id team-id
+                 :name "Test Team"
+                 :organization-id organization-id
+                 :default-project-id (uuid/random)})
+
+              nil))]
+
+      ;; Non-member should be denied with :user-doesnt-belong-organization
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call nitrate-call-fn]
+        (let [out (th/command! (assoc params ::rpc/profile-id (:id non-member)))]
+          (t/is (not (th/success? out)))
+          (let [edata (-> out :error ex-data)]
+            (t/is (= :validation (:type edata)))
+            (t/is (= :user-doesnt-belong-organization (:code edata))))))
+
+      ;; Authorized member should succeed
+      (th/reset-mock! audit-mock)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call nitrate-call-fn]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (let [team (:result out)]
+            (t/is (uuid? (:id team)))
+            (t/is (= "Test Team" (:name team)))))))))

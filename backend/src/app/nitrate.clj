@@ -669,3 +669,17 @@
                 :context {:team-id (:id team)
                           :organization-id (:organization-id params)}))
     team))
+
+(defn assert-membership
+  "Verifies that the user is a member of the organization.
+  Raises an exception if the organization doesn't exist or the user is not a member."
+  [cfg profile-id organization-id]
+  (let [membership (call cfg :get-organization-membership {:profile-id profile-id
+                                                           :organization-id organization-id})]
+    (when-not (:organization-id membership)
+      (ex/raise :type :validation
+                :code :organization-does-not-exist))
+
+    (when-not (:is-member membership)
+      (ex/raise :type :validation
+                :code :user-doesnt-belong-organization))))
