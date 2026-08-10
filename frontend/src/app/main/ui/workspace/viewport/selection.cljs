@@ -12,6 +12,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
@@ -338,6 +339,65 @@
              :style {:fill (if (dbg/enabled? :handlers) "yellow" "none")
                      :stroke-width 0}}]]))
 
+;; Size badge constants (in screen pixels, divided by zoom for canvas space)
+(def ^:private badge-font-size 11)
+(def ^:private badge-height 18)
+(def ^:private badge-padding-x 6)
+(def ^:private badge-border-radius 3)
+(def ^:private badge-offset-y 6)
+
+(mf/defc size-badge
+  "Renders a W × H label below the selection bounding box."
+  {::mf/wrap-props false}
+  [{:keys [rect transform zoom]}]
+  (let [x      (dm/get-prop rect :x)
+        y      (dm/get-prop rect :y)
+        width  (dm/get-prop rect :width)
+        height (dm/get-prop rect :height)
+
+        ;; Format W × H with up to 2 decimal places, drop trailing zeros
+        w-str  (dm/str (mth/precision width 2))
+        h-str  (dm/str (mth/precision height 2))
+        label  (dm/str w-str " × " h-str)
+
+        ;; Scale all screen-space sizes into canvas space
+        font-sz   (/ badge-font-size zoom)
+        badge-h   (/ badge-height zoom)
+        pad-x     (/ badge-padding-x zoom)
+        radius    (/ badge-border-radius zoom)
+        offset-y  (/ badge-offset-y zoom)
+
+        ;; Estimate text width: ~6.5px per char at 11px font (screen space)
+        char-w    (/ 6.5 zoom)
+        text-w    (* (count label) char-w)
+        badge-w   (+ text-w (* 2 pad-x))
+
+        ;; Position badge centered below the bottom edge of the selrect
+        badge-x   (+ x (/ width 2) (- (/ badge-w 2)))
+        badge-y   (+ y height offset-y)]
+
+    [:g.size-badge {:pointer-events "none"}
+     [:rect {:x badge-x
+             :y badge-y
+             :width badge-w
+             :height badge-h
+             :rx radius
+             :ry radius
+             :transform (str transform)
+             :style {:fill "var(--color-accent-tertiary)"
+                     :fill-opacity 0.85}}]
+     [:text {:x (+ badge-x (/ badge-w 2))
+             :y (+ badge-y (/ badge-h 2) (/ font-sz 3))
+             :transform (str transform)
+             :style {:font-size font-sz
+                     :font-family "WorkSans, sans-serif"
+                     :fill "var(--app-white)"
+                     :text-anchor "middle"
+                     :dominant-baseline "middle"
+                     :user-select "none"
+                     :pointer-events "none"}}
+      label]]))
+
 (mf/defc controls-selection*
   [{:keys [shape zoom color on-move-selected on-context-menu disabled]}]
   (let [selrect-transform (mf/deref refs/workspace-selrect)
@@ -354,7 +414,11 @@
                            :zoom zoom
                            :color color
                            :on-move-selected on-move-selected
-                           :on-context-menu on-context-menu}]])))
+                           :on-context-menu on-context-menu}]
+       ;; Size badge below the selection bounding box
+       [:& size-badge {:rect selrect
+                       :transform transform
+                       :zoom zoom}]])))
 
 (mf/defc controls-handlers*
   {::mf/private true}
