@@ -331,7 +331,14 @@
         handle-find-shortcut-keydown
         (mf/use-fn
          (fn [event]
-           (when (kbd/mod? event)
+           (cond
+             (kbd/esc? event)
+             (do
+               (dom/prevent-default event)
+               (dom/stop-propagation event)
+               (st/emit! dw/close-layers-search))
+
+             (kbd/mod? event)
              (cond
                (f-key? event)
                (do

@@ -26,6 +26,7 @@
    [app.main.ui.shortcuts :as ss]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.strings :refer [matches-search]]
    [clojure.set :as set]
    [rumext.v2 :as mf]))
@@ -117,6 +118,14 @@
            (reset! open-sections* [[:workspace]])
            (reset! filter-term* "")))
 
+        on-search-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/esc? event)
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (close-fn))))
+
         go-to-edit-shortcuts
         (mf/use-fn
          #(st/emit! (rt/nav :settings-shortcuts {} {::rt/new-window true})))]
@@ -129,6 +138,7 @@
      [:div {:class (stl/css :search-field)}
       [:> search-bar* {:on-change on-search-term-change-2
                        :on-clear on-search-clear-click
+                       :on-key-down on-search-key-down
                        :value filter-term
                        :placeholder (tr "shortcuts.title")
                        :icon-id i/search
