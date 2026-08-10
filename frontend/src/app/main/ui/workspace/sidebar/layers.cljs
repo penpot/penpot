@@ -433,21 +433,27 @@
 
         navigate-next
         (mf/use-fn
-         (mf/deps text-match-count)
+         (mf/deps text-match-ids text-match-count)
          (fn [_]
            (when (pos? text-match-count)
-             (swap! state* update :current-match-idx
-                    (fn [idx]
-                      (mod (inc idx) text-match-count))))))
+             (let [new-state (swap! state* update :current-match-idx
+                                    (fn [idx] (mod (inc idx) text-match-count)))
+                   new-idx   (mod (:current-match-idx new-state) text-match-count)
+                   id        (nth text-match-ids new-idx)]
+               (st/emit! (dw/select-shape id)
+                         (dw/center-on-shape id))))))
 
         navigate-prev
         (mf/use-fn
-         (mf/deps text-match-count)
+         (mf/deps text-match-ids text-match-count)
          (fn [_]
            (when (pos? text-match-count)
-             (swap! state* update :current-match-idx
-                    (fn [idx]
-                      (mod (+ (dec idx) text-match-count) text-match-count))))))
+             (let [new-state (swap! state* update :current-match-idx
+                                    (fn [idx] (mod (+ (dec idx) text-match-count) text-match-count)))
+                   new-idx   (mod (:current-match-idx new-state) text-match-count)
+                   id        (nth text-match-ids new-idx)]
+               (st/emit! (dw/select-shape id)
+                         (dw/center-on-shape id))))))
 
         handle-replace
         (mf/use-fn
