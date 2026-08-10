@@ -289,7 +289,7 @@
 
 (def ^:private schema:create-upload-session
   [:map {:title "create-upload-session"}
-   [:total-chunks ::sm/int]])
+   [:total-chunks [:int {:min 1}]]])
 
 (def ^:private schema:create-upload-session-result
   [:map {:title "create-upload-session-result"}

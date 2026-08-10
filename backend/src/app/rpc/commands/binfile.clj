@@ -122,7 +122,7 @@
     [:name [:or [:string {:max 250}]
             [:map-of ::sm/uuid [:string {:max 250}]]]]
     [:project-id ::sm/uuid]
-    [:version {:optional true} ::sm/int]
+    [:version {:optional true} [:enum 1 3]]
     [:file {:optional true} media.v/schema:upload]
     [:upload-id {:optional true} ::sm/uuid]]
    [:fn {:error/message "one of :file or :upload-id is required"}
