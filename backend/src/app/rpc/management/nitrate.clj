@@ -488,6 +488,21 @@ RETURNING id, deleted_at;")
 
 ;; API: invite-to-organization
 
+(defn- get-invitation-organization
+  [cfg profile-id organization-id]
+  (let [{:keys [id name owner-id logo-id avatar-bg-url sso-active]}
+        (nitrate/call cfg :get-organization-summary {:organization-id organization-id})]
+    (when-not (= profile-id owner-id)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "not found"))
+    {:id            id
+     :name          name
+     :initials      (if logo-id "" (d/get-initials name))
+     :logo          (when logo-id (files/resolve-public-uri logo-id))
+     :avatar-bg-url (when-not logo-id avatar-bg-url)
+     :sso-active    (true? sso-active)}))
+
 (sv/defmethod ::invite-to-organization
   "Invite to organization"
   {::doc/added "2.15"
@@ -495,8 +510,11 @@ RETURNING id, deleted_at;")
                 [:email ::sm/email]
                 [:organization cto/schema:organization-with-avatar]]
    ::nitrate/sso false}
-  [cfg params]
-  (db/tx-run! cfg ti/create-organization-invitation params)
+  [cfg {profile-id ::rpc/profile-id
+        :keys [organization]
+        :as params}]
+  (let [organization (get-invitation-organization cfg profile-id (:id organization))]
+    (db/tx-run! cfg ti/create-organization-invitation (assoc params :organization organization)))
   nil)
 
 
