@@ -309,7 +309,14 @@
         (mf/use-fn
          (fn [event]
            (when (kbd/esc? event)
-             (hide-menu))))
+             (let [{:keys [show-search show-menu]} @state*]
+               (when show-search
+                 (if show-menu
+                   (hide-menu)
+                   (do
+                     (dom/stop-propagation event)
+                     (dom/prevent-default event)
+                     (st/emit! dw/close-layers-search))))))))
 
         update-search-text
         (mf/use-fn
