@@ -363,11 +363,12 @@
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
         is-active (:is-active params false)
-        theme     (:theme params nil)
+        theme     (or (:theme params) "dark")
         email     (str/lower email)
         fullname  (d/normalize-string (:fullname params))
         locale    (d/normalize-string locale)
-        theme     (d/normalize-string theme)
+        theme     (let [t (d/normalize-string theme)]
+                    (if (str/blank? t) "dark" t))
 
         photo-id  (some->> (or (:oidc/picture props)
                                (:google/picture props)

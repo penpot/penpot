@@ -54,7 +54,8 @@
   (cond
     (= profile-theme "system") system-theme
     (= profile-theme "default") "dark"
-    :else (d/nilv profile-theme "dark")))
+    (or (nil? profile-theme) (= profile-theme "")) "dark"
+    :else profile-theme))
 
 (defn use-initialize
   [{profile-theme :theme}]

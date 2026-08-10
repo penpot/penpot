@@ -167,7 +167,8 @@
   (let [profile (get-profile conn profile-id ::db/for-update true)
         fullname (d/normalize-string fullname)
         lang     (d/normalize-string lang)
-        theme    (d/normalize-string theme)
+        theme    (let [t (d/normalize-string theme)]
+                   (if (str/blank? t) (:theme profile) t))
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)

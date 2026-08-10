@@ -47,9 +47,10 @@
         initial (mf/with-memo [profile]
                   (-> profile
                       (update :lang #(or % ""))
-                      (update :theme #(if (= % "default")
-                                        "dark"
-                                        (or % "dark")))))
+                      (update :theme #(cond
+                                        (= % "default") "dark"
+                                        (or (nil? %) (= % "")) "dark"
+                                        :else %))))
 
         form    (fm/use-form :schema schema:options-form
                              :initial initial)]
