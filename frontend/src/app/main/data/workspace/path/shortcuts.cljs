@@ -47,6 +47,7 @@
 
    :delete-node     {:tooltip (ds/supr)
                      :command ["del" "backspace"]
+                     :overwrite true
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/remove-node))}
