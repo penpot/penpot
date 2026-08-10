@@ -734,6 +734,7 @@
       {:value @content
        :placeholder (tr "labels.reply.thread")
        :autofocus true
+       :on-esc on-cancel
        :on-ctrl-enter on-submit*
        :on-change on-change}]
      (when (exceeds-length? @content)
@@ -764,6 +765,7 @@
      [:> comment-input*
       {:value @content
        :autofocus true
+       :on-esc on-cancel
        :on-ctrl-enter on-submit*
        :on-change on-change}]
      (when (exceeds-length? @content)
@@ -1109,7 +1111,7 @@
             [:> comment-floating-thread-item* {:comment item}]])]
 
         [:> comment-reply-form* {:on-submit on-submit
-                                 :on-cancel (when (= origin :viewer) on-cancel)}]
+                                 :on-cancel on-cancel}]
 
         [:> mentions-panel*]])]))
 
