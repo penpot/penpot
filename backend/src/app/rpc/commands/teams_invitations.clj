@@ -475,6 +475,15 @@
       (ex/raise :type :validation
                 :code :insufficient-permissions))
 
+    ;; Only owners may grant the :owner role (matches update-team-member-role behaviour).
+    (let [roles (if using-emails-format?
+                  #{role}
+                  (into #{} (map :role) (:invitations params)))]
+      (when (and (not (:is-owner perms)) (contains? roles :owner))
+        (ex/raise :type :validation
+                  :code :cant-promote-to-owner
+                  :hint "only owners can invite with the :owner role")))
+
     (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
                 :code :max-invitations-by-request
@@ -617,6 +626,11 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    (when (and (not (:is-owner perms)) (= role :owner))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner
+                :hint "only owners can update an invitation to the :owner role"))
 
     (db/update! conn :team-invitation
                 {:role (name role) :updated-at (ct/now)}
