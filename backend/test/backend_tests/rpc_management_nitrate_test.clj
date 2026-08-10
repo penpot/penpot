@@ -50,45 +50,138 @@
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
 (t/deftest create-and-update-organization-invitations-audit-props
+  (let [owner-id-ref (atom nil)]
+    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+                 audit-mock {:target 'app.loggers.audit/submit :return nil}
+                 nitrate-mock {:target 'app.nitrate/call
+                               :return (fn [_cfg method params]
+                                         (when (= method :get-organization-summary)
+                                           {:id (:organization-id params)
+                                            :name "Acme"
+                                            :owner-id @owner-id-ref
+                                            :teams []}))}]
+      (binding [cf/flags (conj cf/flags :email-verification)]
+        (let [owner        (th/create-profile* 101 {:is-active true})
+              invitee      (th/create-profile* 102 {:is-active true})
+              organization {:id (uuid/random)
+                            :name "Acme"
+                            :initials "AC"
+                            :logo nil
+                            :avatar-bg-url nil}
+              _            (reset! owner-id-ref (:id owner))
+              params       {::th/type :invite-to-organization
+                            ::rpc/profile-id (:id owner)
+                            :email (:email invitee)
+                            :organization organization}
+              create-out   (th/management-command! params)
+              update-out   (th/management-command! params)
+              external-out (th/management-command! (assoc params :email "external@example.com"))
+              events       (mapv second (:call-args-list @audit-mock))
+              create-event (first (filter #(= "create-organization-invitation" (:name %)) events))
+              update-event (first (filter #(= "update-organization-invitation" (:name %)) events))
+              external-event
+              (first (filter #(= "external@example.com" (get-in % [:props :member-email])) events))]
+          (t/is (th/success? create-out))
+          (t/is (th/success? update-out))
+          (t/is (th/success? external-out))
+
+          (doseq [event [create-event update-event]]
+            (t/is (not (contains? (:props event) :event-origin)))
+            (t/is (= (str (:id owner))
+                     (get-in event [:props :user-who-send-invitation])))
+            (t/is (= (:id organization)
+                     (get-in event [:props :organization-id])))
+            (t/is (= (:email invitee)
+                     (get-in event [:props :member-email])))
+            (t/is (= (:id invitee)
+                     (get-in event [:props :member-id]))))
+
+          (t/is (not (contains? (:props external-event) :member-id))))))))
+
+(t/deftest invite-to-organization-rejects-non-owner
+  (let [organization-summary-ref (atom nil)]
+    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+                 nitrate-mock {:target 'app.nitrate/call
+                               :return (fn [_cfg method _params]
+                                         (when (= method :get-organization-summary)
+                                           @organization-summary-ref))}]
+      (let [owner           (th/create-profile* 103 {:is-active true})
+            attacker        (th/create-profile* 104 {:is-active true})
+            organization-id (uuid/random)
+            organization    {:id organization-id
+                             :name "Trusted Organization"
+                             :initials "TO"
+                             :logo nil
+                             :avatar-bg-url nil}
+            _               (reset! organization-summary-ref
+                                    {:id organization-id
+                                     :name "Trusted Organization"
+                                     :owner-id (:id owner)
+                                     :teams []})
+            out             (th/management-command! {::th/type :invite-to-organization
+                                                     ::rpc/profile-id (:id attacker)
+                                                     :email "victim@example.com"
+                                                     :organization organization})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))
+        (t/is (= :object-not-found (th/ex-code (:error out))))
+        (t/is (not (:called? @email-mock)))))))
+
+(t/deftest invite-to-organization-rejects-unknown-organization
   (with-mocks [email-mock {:target 'app.email/send! :return nil}
-               audit-mock {:target 'app.loggers.audit/submit :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
-    (binding [cf/flags (conj cf/flags :email-verification)]
-      (let [owner        (th/create-profile* 101 {:is-active true})
-            invitee      (th/create-profile* 102 {:is-active true})
-            organization {:id (uuid/random)
-                          :name "Acme"
-                          :initials "AC"
-                          :logo nil
-                          :avatar-bg-url nil}
-            params       {::th/type :invite-to-organization
-                          ::rpc/profile-id (:id owner)
-                          :email (:email invitee)
-                          :organization organization}
-            create-out   (th/management-command! params)
-            update-out   (th/management-command! params)
-            external-out (th/management-command! (assoc params :email "external@example.com"))
-            events       (mapv second (:call-args-list @audit-mock))
-            create-event (first (filter #(= "create-organization-invitation" (:name %)) events))
-            update-event (first (filter #(= "update-organization-invitation" (:name %)) events))
-            external-event
-            (first (filter #(= "external@example.com" (get-in % [:props :member-email])) events))]
-        (t/is (th/success? create-out))
-        (t/is (th/success? update-out))
-        (t/is (th/success? external-out))
+    (let [profile         (th/create-profile* 105 {:is-active true})
+          organization-id (uuid/random)
+          out             (th/management-command! {::th/type :invite-to-organization
+                                                   ::rpc/profile-id (:id profile)
+                                                   :email "victim@example.com"
+                                                   :organization {:id organization-id
+                                                                  :name "Fabricated Organization"
+                                                                  :initials "FO"
+                                                                  :logo "https://evil.example/logo.png"
+                                                                  :avatar-bg-url nil}})]
+      (t/is (not (th/success? out)))
+      (t/is (= :not-found (th/ex-type (:error out))))
+      (t/is (= :object-not-found (th/ex-code (:error out))))
+      (t/is (not (:called? @email-mock))))))
 
-        (doseq [event [create-event update-event]]
-          (t/is (not (contains? (:props event) :event-origin)))
-          (t/is (= (str (:id owner))
-                   (get-in event [:props :user-who-send-invitation])))
-          (t/is (= (:id organization)
-                   (get-in event [:props :organization-id])))
-          (t/is (= (:email invitee)
-                   (get-in event [:props :member-email])))
-          (t/is (= (:id invitee)
-                   (get-in event [:props :member-id]))))
-
-        (t/is (not (contains? (:props external-event) :member-id)))))))
+(t/deftest invite-to-organization-uses-authoritative-branding
+  (let [organization-summary-ref (atom nil)]
+    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+                 nitrate-mock {:target 'app.nitrate/call
+                               :return (fn [_cfg method _params]
+                                         (when (= method :get-organization-summary)
+                                           @organization-summary-ref))}]
+      (binding [cf/flags (conj cf/flags :email-verification)]
+        (let [owner           (th/create-profile* 106 {:is-active true})
+              organization-id (uuid/random)
+              logo-id         (uuid/random)
+              _               (reset! organization-summary-ref
+                                      {:id organization-id
+                                       :name "Trusted Organization"
+                                       :owner-id (:id owner)
+                                       :logo-id logo-id
+                                       :avatar-bg-url "https://trusted.example/avatar.svg"
+                                       :sso-active true
+                                       :teams []})
+              out             (th/management-command! {::th/type :invite-to-organization
+                                                       ::rpc/profile-id (:id owner)
+                                                       :email "victim@example.com"
+                                                       :organization {:id organization-id
+                                                                      :name "Fabricated Bank"
+                                                                      :initials "FB"
+                                                                      :logo "https://evil.example/logo.png"
+                                                                      :avatar-bg-url "https://evil.example/avatar.svg"
+                                                                      :sso-active false}})
+              email-params    (first (:call-args @email-mock))
+              organization    (:organization email-params)]
+          (t/is (th/success? out))
+          (t/is (= "Trusted Organization" (:name organization)))
+          (t/is (= "" (:initials organization)))
+          (t/is (str/ends-with? (:logo organization)
+                                (str "/assets/by-id/" logo-id)))
+          (t/is (nil? (:avatar-bg-url organization)))
+          (t/is (true? (:sso-active organization))))))))
 
 (t/deftest get-penpot-version
   (let [out     (th/management-command! {::th/type :get-penpot-version})

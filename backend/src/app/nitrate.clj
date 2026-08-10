@@ -167,6 +167,9 @@
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:owner-id ::sm/uuid]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:sso-active {:optional true} [:maybe ::sm/boolean]]
    [:teams
     [:vector
      [:map
