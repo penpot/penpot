@@ -223,6 +223,12 @@
   label {
     align-items: flex-start;
 
+    // Override square checkbox shape: radio options are mutually exclusive
+    // so their indicator must be circular, not square.
+    span {
+      border-radius: deprecated.$br-circle;
+    }
+
     .modal-subtitle {
       @include deprecated.body-large-typography;
 
