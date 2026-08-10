@@ -147,7 +147,6 @@
     :render-switch
     :hide-release-modal
     :subscriptions
-    :subscriptions-old
     :inspect-styles
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
