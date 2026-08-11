@@ -80,8 +80,39 @@ jobs:
 
       - name: Run Tests
         working-directory: ./frontend
+        env:
+          PLAYWRIGHT_REPORTER: list,json
+          PLAYWRIGHT_JSON_OUTPUT_NAME: report.json
         run: |
           ./scripts/test-e2e
+
+      - name: Flaky summary
+        if: always()
+        working-directory: ./frontend
+        run: |
+          if [ ! -f report.json ]; then
+            echo "No report.json produced (the run failed early)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          jq -r '
+            [ .. | objects
+              | select(has("tests") and has("file"))
+              | select(any(.tests[]; .status == "flaky"))
+              | "- `\(.file):\(.line)` — \(.title)"
+            ] as $f
+            | "## Flaky tests: \($f | length)\n"
+              + (if ($f | length) == 0 then "_none_" else ($f | join("\n")) end)
+          ' report.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-json-report
+          path: frontend/report.json
+          overwrite: true
+          retention-days: 30
 
       - name: Upload test result
         uses: actions/upload-artifact@v7
