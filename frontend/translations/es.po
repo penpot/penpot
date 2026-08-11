@@ -9989,3 +9989,12 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "notifications.invitation-canceled"
 msgstr "Esta invitación ya no está disponible."
+
+msgid "labels.sso-error.title"
+msgstr "No pudimos iniciar sesión en tu organización"
+
+msgid "labels.sso-error.desc-message"
+msgstr "El inicio de sesión con el proveedor de identidad de tu organización no se completó. Es posible que el proveedor no esté disponible o que tu cuenta aún no esté en su directorio. Tu cuenta de Penpot no se ha visto afectada."
+
+msgid "labels.sso-error.retry"
+msgstr "Intentar de nuevo"

@@ -650,6 +650,13 @@
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
+(defn- redirect-with-organization-sso-error
+  [{:keys [dest-url organization-id]}]
+  (-> (str (or dest-url (cf/get :public-uri)))
+      (u/append-query-param :sso-error true)
+      (u/append-query-param :organization-id organization-id)
+      (redirect-response)))
+
 (defn- redirect-to-register
   [cfg info provider]
   (let [info   (assoc info
@@ -887,6 +894,39 @@
     {::yres/status 200
      ::yres/body {:redirect-uri uri}}))
 
+(defn- organization-sso-callback-handler
+  "Handle the organization-SSO branch of the OIDC callback: state carries
+  :dest-url — exchange the authorization code with the OIDC provider to
+  verify authentication actually occurred, then redirect back to dest-url."
+  [cfg request state code]
+  (let [dest-url (:dest-url state)]
+    (try
+      (let [organization-id (:organization-id state)
+            sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
+            provider        (prepare-organization-sso-provider cfg sso)
+            info            (get-info cfg provider state code)
+            session         (session/get-session request)
+            exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]
+        (when (and session organization-id)
+          (let [props (-> (or (:props session) {})
+                          (update :sso assoc organization-id exp))]
+            (session/update-session (::session/manager cfg) (assoc session :props props))))
+        (redirect-response dest-url))
+      (catch Throwable cause
+        (let [{:keys [code]} (ex-data cause)]
+          (binding [l/*context* (errors/request->context request)]
+            (if (some? code)
+              (l/warn :hint "organization sso callback failed"
+                      :code code
+                      :message (ex-message cause)
+                      :organization-id (:organization-id state))
+              (l/err :hint "unexpected error on organization sso callback"
+                     :organization-id (:organization-id state)
+                     :cause cause))))
+        (redirect-with-organization-sso-error
+         {:dest-url dest-url
+          :organization-id (:organization-id state)})))))
+
 (defn- callback-handler
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
@@ -898,18 +938,8 @@
 
         ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
-        (if-let [dest-url (:dest-url state)]
-          (let [organization-id (:organization-id state)
-                sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
-                provider        (prepare-organization-sso-provider cfg sso)
-                info            (get-info cfg provider state code)
-                session         (session/get-session request)
-                exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]
-            (when (and session organization-id)
-              (let [props (-> (or (:props session) {})
-                              (update :sso assoc organization-id exp))]
-                (session/update-session (::session/manager cfg) (assoc session :props props))))
-            (redirect-response dest-url))
+        (if (:dest-url state)
+          (organization-sso-callback-handler cfg request state code)
 
           (let [provider (resolve-provider cfg state)
                 info     (get-info cfg provider state code)

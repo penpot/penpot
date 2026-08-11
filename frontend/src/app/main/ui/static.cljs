@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
+   [app.main.data.nitrate :as dnt]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -433,43 +434,6 @@
                        (rx/of default)
                        (rx/throw cause)))))))
 
-(mf/defc exception-section*
-  {::mf/private true}
-  [{:keys [data] :as props}]
-  (let [type   (get data :type)
-        cause  (get data ::errors/instance)
-
-        report (mf/with-memo [cause]
-                 (when (ex/exception? cause)
-                   (errors/generate-report cause)))
-
-        props  (mf/spread-props props {:report report})]
-
-    (mf/with-effect [report type cause]
-      (when (and (ex/exception? cause)
-                 (not (contains? #{:not-found :authentication} type)))
-        (errors/submit-report :event-name "exception-page"
-                              :report report
-                              :hint (ex/get-hint cause))))
-
-    (case type
-      :not-found
-      [:> not-found* {}]
-
-      :authentication
-      [:> not-found* {}]
-
-      :bad-gateway
-      [:> bad-gateway* props]
-
-      :service-unavailable
-      [:> service-unavailable*]
-
-      :nitrate-unavailable
-      [:> nitrate-unavailable*]
-
-      [:> internal-error* props])))
-
 (mf/defc context-wrapper*
   [{:keys [is-workspace is-dashboard is-viewer profile children]}]
   [:*
@@ -514,6 +478,99 @@
          :search-term ""}]]])
 
    children])
+
+(mf/defc sso-error-section*
+  "Shown in place of the dashboard/workspace (same static skeleton and
+  `request-dialog*` used by the no-permission dialogs) when the organization
+  SSO exchange with the identity provider fails."
+  {::mf/private true}
+  [{:keys [organization-id team-id profile is-workspace is-dashboard]}]
+  (let [clean-url
+        (mf/with-memo []
+          (-> (rt/get-current-href)
+              (dom/remove-query-param :sso-error)
+              (dom/remove-query-param :organization-id)))
+
+        _ (mf/with-effect []
+            ;; Consume the marker once: scrub it from the URL bar so a
+            ;; browser refresh doesn't keep re-showing this dialog.
+            (dom/replace-history-state! clean-url))
+
+        on-close
+        (mf/use-fn
+         (mf/deps profile)
+         (fn []
+           ;; Land on the user's own default team
+           (st/emit! (rt/assign-exception nil)
+                     (dcm/go-to-dashboard-recent :team-id (:default-team-id profile)))))
+
+        on-retry
+        (mf/use-fn
+         (mf/deps organization-id team-id clean-url)
+         (fn []
+           (st/emit! (rt/assign-exception nil))
+           (if (or team-id organization-id)
+             ;; Retry with team-id and/or organization-id to trigger SSO check
+             (st/emit! (dnt/retry-organization-sso {:team-id team-id
+                                                    :organization-id organization-id
+                                                    :dest-url clean-url}))
+             ;; Fallback: just navigate to clean URL
+             (st/emit! (rt/nav-raw :uri clean-url)))))]
+
+    [:> context-wrapper* {:is-dashboard (or is-dashboard (not is-workspace))
+                          :is-workspace is-workspace
+                          :profile profile}
+     [:> request-dialog* {:title (tr "labels.sso-error.title")
+                          :content [(tr "labels.sso-error.desc-message")]
+                          :button-text (tr "labels.sso-error.retry")
+                          :on-button-click on-retry
+                          :cancel-text (tr "not-found.no-permission.go-dashboard")
+                          :on-close on-close}]]))
+
+(mf/defc exception-section*
+  {::mf/private true}
+  [{:keys [data] :as props}]
+  (let [type   (get data :type)
+        cause  (get data ::errors/instance)
+        organization-id (get data :organization-id)
+
+        report (mf/with-memo [cause]
+                 (when (ex/exception? cause)
+                   (errors/generate-report cause)))
+
+        props  (mf/spread-props props {:report report})]
+
+    (mf/with-effect [report type cause]
+      (when (and (ex/exception? cause)
+                 (not (contains? #{:not-found :authentication} type)))
+        (errors/submit-report :event-name "exception-page"
+                              :report report
+                              :hint (ex/get-hint cause))))
+
+    (case type
+      :not-found
+      [:> not-found* {}]
+
+      :authentication
+      [:> not-found* {}]
+
+      :bad-gateway
+      [:> bad-gateway* props]
+
+      :service-unavailable
+      [:> service-unavailable*]
+
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
+
+      :sso-error
+      [:> sso-error-section* {:organization-id organization-id
+                              :team-id (get data :team-id)
+                              :profile (mf/deref refs/profile)
+                              :is-workspace (get data :is-workspace false)
+                              :is-dashboard (get data :is-dashboard true)}]
+
+      [:> internal-error* props])))
 
 (mf/defc exception-page*
   [{:keys [data route] :as props}]
