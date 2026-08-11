@@ -7,6 +7,7 @@
 (ns app.main.ui.routes
   (:require
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -20,6 +21,12 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
+
+(def ^:private sso-authorization-max-age-ms
+  (* 5 60 1000))
+
+(defonce ^:private sso-authorization-cache
+  (atom {}))
 
 (def routes
   [["/auth"
@@ -102,26 +109,43 @@
   "Authorization filter for dashboard and workspace routes.
   Checks if the team being navigated to has an organization with SSO
   active. If so, calls :check-nitrate-sso and either proceeds with navigation
-  or redirects to the SSO provider URL."
+  or redirects to the SSO provider URL. Successful checks are cached for five
+  minutes per profile and team; redirect results are never cached."
   [match send-event-info? url]
-  (let [route-name     (name (get-in match [:data :name]))
-        relevant?      (and (contains? cf/flags :admin-console)
-                            (or (str/starts-with? route-name "dashboard")
-                                (str/starts-with? route-name "workspace")))
-        team-id-str    (when relevant?
-                         (or (get-in match [:query-params :team-id])
-                             (get-in match [:params :path :team-id])))
-        team-id        (some-> team-id-str uuid/parse*)]
-    (if (some? team-id)
+  (let [route-name      (name (get-in match [:data :name]))
+        relevant?       (and (contains? cf/flags :admin-console)
+                             (or (str/starts-with? route-name "dashboard")
+                                 (str/starts-with? route-name "workspace")))
+        team-id-str     (when relevant?
+                          (or (get-in match [:query-params :team-id])
+                              (get-in match [:params :path :team-id])))
+        team-id         (some-> team-id-str uuid/parse*)
+        profile-id      (get-in @st/state [:profile :id])
+        cache-key       [profile-id team-id]
+        authorized-at   (get @sso-authorization-cache cache-key)
+        cache-valid?    (and (some? authorized-at)
+                             (< (ct/diff-ms authorized-at (ct/now))
+                                sso-authorization-max-age-ms))
+        navigate        #(st/emit! (rt/navigated match send-event-info?))]
+    (cond
+      (nil? team-id)
+      (navigate)
+
+      cache-valid?
+      (navigate)
+
+      :else
       (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
            (rx/subs!
             (fn [{:keys [authorized redirect-uri]}]
               (if authorized
-                (st/emit! (rt/navigated match send-event-info?))
-                (when redirect-uri (st/emit! (rt/nav-raw :uri (str redirect-uri))))))
+                (do
+                  (swap! sso-authorization-cache assoc cache-key (ct/now))
+                  (navigate))
+                (when redirect-uri
+                  (st/emit! (rt/nav-raw :uri (str redirect-uri))))))
             (fn [cause]
-              (errors/on-error cause))))
-      (st/emit! (rt/navigated match send-event-info?)))))
+              (errors/on-error cause)))))))
 
 (defn on-navigate
   [router path send-event-info?]
