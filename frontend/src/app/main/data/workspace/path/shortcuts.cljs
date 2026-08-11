@@ -37,6 +37,7 @@
                      :command "p"
                      :subsections [:path-editor]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (drp/change-edit-mode :draw))}
 
    :add-node        {:tooltip (ds/shift "+")
@@ -49,7 +50,9 @@
                      :command ["del" "backspace"]
                      :subsections [:path-editor]
                      :section [:workspace]
-                     :fn #(st/emit! (drp/remove-node))}
+                     :overwrite true
+                     :fn #(st/emit!
+                           (drp/remove-node))}
 
    :merge-nodes     {:tooltip (ds/meta "J")
                      :command (ds/c-mod "j")
@@ -67,6 +70,7 @@
                      :command "k"
                      :subsections [:path-editor]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (drp/separate-nodes))}
 
    :make-corner     {:tooltip "X"
@@ -79,6 +83,7 @@
                      :command "c"
                      :subsections [:path-editor]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes      {:tooltip (ds/meta "'")
@@ -91,6 +96,7 @@
    :escape          {:tooltip (ds/esc)
                      :command ["escape" "enter" "v"]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (esc-pressed))}
 
    :undo            {:tooltip (ds/meta "Z")
