@@ -41,17 +41,6 @@
       (ex/raise :type :validation
                 :code :cant-move-default-team))))
 
-(defn assert-membership [cfg profile-id organization-id]
-  (let [membership (nitrate/call cfg :get-organization-membership {:profile-id profile-id
-                                                                   :organization-id organization-id})]
-    (when-not (:organization-id membership)
-      (ex/raise :type :validation
-                :code :organization-does-not-exist))
-
-    (when-not (:is-member membership)
-      (ex/raise :type :validation
-                :code :user-doesnt-belong-organization))))
-
 
 (def schema:connectivity
   [:map {:title "nitrate-connectivity"}
@@ -335,7 +324,7 @@
     (when-not skip-validation
       (assert-valid-teams cfg profile-id id default-team-id teams-to-delete teams-to-leave))
 
-    (assert-membership cfg profile-id id)
+    (nitrate/assert-membership cfg profile-id id)
 
     ;; delete only eligible teams (non-protected and without files)
     (doseq [id deletable-team-ids]
@@ -421,7 +410,7 @@
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
-  (assert-membership cfg profile-id organization-id)
+  (nitrate/assert-membership cfg profile-id organization-id)
   ;; Check moveTeams permission on the source organization
   (when (contains? cf/flags :admin-console)
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
@@ -491,7 +480,7 @@
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
-  (assert-membership cfg profile-id organization-id)
+  (nitrate/assert-membership cfg profile-id organization-id)
 
   (when (contains? cf/flags :admin-console)
     (let [organization-member-ids-before (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
@@ -575,7 +564,7 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id organization-id emails]}]
   (or (when (contains? cf/flags :admin-console)
-        (assert-membership cfg profile-id organization-id)
+        (nitrate/assert-membership cfg profile-id organization-id)
         (let [emails-array   (db/create-array conn "text" emails)
               profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
               email->id      (into {} (map (fn [p] [(:email p) (:id p)])) profiles)
@@ -603,7 +592,7 @@
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
-      (assert-membership cfg profile-id organization-id)
+      (nitrate/assert-membership cfg profile-id organization-id)
       (let [organization-members     (nitrate/call cfg :get-organization-members {:organization-id organization-id})
             organization-member-ids  (into #{} organization-members)
             team-members    (db/query cfg :team-profile-rel {:team-id team-id})
@@ -631,7 +620,7 @@
       (let [team-members    (db/query cfg :team-profile-rel {:team-id team-id})
             team-member-ids (into #{} (map :profile-id team-members))]
         ;; Validate requester membership in all organizations before fetching members.
-        (run! #(assert-membership cfg profile-id %) organization-ids)
+        (run! #(nitrate/assert-membership cfg profile-id %) organization-ids)
 
         (into {}
               (map (fn [organization-id]
@@ -664,7 +653,7 @@
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
-      (assert-membership cfg profile-id organization-id)
+      (nitrate/assert-membership cfg profile-id organization-id)
       (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
         {:has-external-invitations (boolean (seq external-emails))
          :allows-anybody allows-anybody}))

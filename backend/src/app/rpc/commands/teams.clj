@@ -538,6 +538,9 @@
   ;; When creating inside an organization, verify the user has permission to do so.
   ;; Fail closed: if organization permissions cannot be fetched, deny the operation.
   (when (and organization-id (contains? cf/flags :admin-console))
+    ;; Verify caller is a member of the organization
+    (nitrate/assert-membership cfg profile-id organization-id)
+
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
                                            {:organization-id organization-id})]
       (if (nil? organization-perms)
