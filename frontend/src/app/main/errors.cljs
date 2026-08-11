@@ -389,6 +389,9 @@
                   :level :error
                   :timeout 3000})))
 
+    (= code :invalid-sso-config)
+    (st/async-emit! (rt/assign-exception (assoc error :type :sso-error)))
+
     :else
     (st/async-emit! (rt/assign-exception error))))
 

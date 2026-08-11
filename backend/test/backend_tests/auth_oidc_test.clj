@@ -15,6 +15,7 @@
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [clojure.test :as t]
+   [cuerdas.core :as str]
    [mockery.core :refer [with-mocks]]
    [yetti.response :as-alias yres]))
 
@@ -587,3 +588,80 @@
                                                    :issuer "https://idp.example.com"})
         (t/is (not (true? (:skip-ssrf-check? @captured-params)))
               "SSRF protection must be disabled for organization SSO")))))
+
+(defn- ssl-handshake-failure
+  []
+  (javax.net.ssl.SSLHandshakeException. "Remote host terminated the handshake"))
+
+(t/deftest prepare-organization-sso-provider-raises-on-discovery-network-failure
+  (t/testing "SSL/network failures during OIDC discovery become controlled validation errors"
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :side-effect (fn [& _] (throw (ssl-handshake-failure)))}]
+      (let [e (try
+                (#'oidc/prepare-organization-sso-provider
+                 {}
+                 {:client-id "test-client"
+                  :client-secret "test-secret"
+                  :issuer "https://wrong-idp.example.com"})
+                (catch Throwable t t))]
+        (t/is (ex/error? e))
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :invalid-sso-config (:code (ex-data e))))))))
+
+(t/deftest prepare-organization-sso-provider-raises-on-ssrf-blocked-issuer
+  (t/testing "SSRF/DNS failures for the issuer URL become invalid-sso-config, not ssrf-blocked-target"
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :side-effect (fn [& _]
+                                           (ex/raise :type :validation
+                                                     :code :ssrf-blocked-target
+                                                     :hint "uri host could not be resolved"))}]
+      (let [e (try
+                (#'oidc/prepare-organization-sso-provider
+                 {}
+                 {:client-id "test-client"
+                  :client-secret "test-secret"
+                  :issuer "https://unresolvable.invalid"})
+                (catch Throwable t t))]
+        (t/is (ex/error? e))
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :invalid-sso-config (:code (ex-data e))))
+        (t/is (= :ssrf-blocked-target (:code (ex-data (ex-cause e)))))))))
+
+(t/deftest prepare-organization-sso-provider-raises-on-jwks-network-failure
+  (t/testing "SSL/network failures while fetching JWKs become controlled validation errors"
+    (let [discovery-body (str "{\"authorization_endpoint\":\"https://idp.example.com/auth\","
+                              "\"token_endpoint\":\"https://idp.example.com/token\","
+                              "\"userinfo_endpoint\":\"https://idp.example.com/userinfo\","
+                              "\"jwks_uri\":\"https://idp.example.com/jwks\"}")]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :side-effect (fn [_cfg request & _]
+                                             (if (str/includes? (str (:uri request)) "openid-configuration")
+                                               {:status 200 :body discovery-body}
+                                               (throw (ssl-handshake-failure))))}]
+        (let [e (try
+                  (#'oidc/prepare-organization-sso-provider
+                   {}
+                   {:client-id "test-client"
+                    :client-secret "test-secret"
+                    :issuer "https://idp.example.com"})
+                  (catch Throwable t t))]
+          (t/is (ex/error? e))
+          (t/is (= :validation (:type (ex-data e))))
+          (t/is (= :invalid-sso-config (:code (ex-data e)))))))))
+
+(t/deftest build-organization-sso-auth-redirect-uri-raises-on-unreachable-provider
+  (t/testing "check-nitrate-sso path surfaces a controlled error when the issuer is unreachable"
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :side-effect (fn [& _] (throw (ssl-handshake-failure)))}]
+      (let [e (try
+                (oidc/build-organization-sso-auth-redirect-uri
+                 {}
+                 {:client-id "test-client"
+                  :client-secret "test-secret"
+                  :issuer "https://wrong-idp.example.com"}
+                 :dest-url "https://localhost:3449/#/dashboard"
+                 :organization-id #uuid "00000000-0000-0000-0000-000000000001")
+                (catch Throwable t t))]
+        (t/is (ex/error? e))
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :invalid-sso-config (:code (ex-data e))))))))
