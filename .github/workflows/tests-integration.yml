@@ -5,11 +5,37 @@ defaults:
     shell: bash
 
 on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+
+      shards:
+        description: 'Shard layout (JSON array)'
+        type: choice
+        required: true
+        default: '[1, 2, 3, 4]'
+        options:
+          - '[1, 2, 3, 4]'
+          - '[1, 2, 3, 4, 5, 6]'
+          - '[1, 2]'
+          - '[1]'
+
+      workers:
+        description: 'Playwright workers per shard'
+        type: string
+        required: true
+        default: '2'
+
   pull_request:
     paths:
       - 'frontend/**'
       - 'common/**'
       - 'render-wasm/**'
+      - '.github/workflows/tests-integration.yml'
 
     types:
       - opened
@@ -25,9 +51,10 @@ on:
       - 'frontend/**'
       - 'common/**'
       - 'render-wasm/**'
+      - '.github/workflows/tests-integration.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.gh_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,15 +62,30 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     name: "Build Integration Bundle"
     runs-on: penpot-runner-02
+    timeout-minutes: 30
     container:
       image: penpotapp/devenv:latest
       volumes:
         - /var/cache/github-runner/m2:/root/.m2
         - /var/cache/github-runner/gitlib:/root/.gitlibs
 
+    outputs:
+      bundle_key: ${{ steps.vars.outputs.bundle_key }}
+
     steps:
+      # An empty `ref` makes checkout fall back to its default (the PR merge
+      # ref on pull_request, the pushed ref on push).
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.gh_ref }}
+
+      # The cache key must come from the SHA actually checked out: on a manual
+      # run `github.sha` points at the dispatching ref, not at `gh_ref`.
+      - name: Extract cache key
+        id: vars
+        run: |
+          echo "bundle_key=integration-bundle-$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Bundle
         working-directory: ./frontend
@@ -53,72 +95,151 @@ jobs:
       - name: Store Bundle Cache
         uses: actions/cache@v5
         with:
-          key: "integration-bundle-${{ github.sha }}"
+          key: ${{ steps.vars.outputs.bundle_key }}
           path: frontend/resources/public
 
   test-integration:
     if: ${{ !github.event.pull_request.draft }}
-    name: "Integration Tests"
+    name: "Integration Tests (${{ matrix.shard }})"
     runs-on: penpot-runner-02
+    timeout-minutes: ${{ github.base_ref == 'staging' && 60 || 25 }}
+
+    needs: build-integration
+
+    # TEMPORARY (release stabilization): PRs targeting `staging` run on a
+    # single serial shard, so new flakes cannot block the release work.
+    # Remove the `github.base_ref` branch below to restore full parallelism.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(inputs.shards || (github.base_ref == 'staging' && '[1]' || '[1, 2, 3, 4]')) }}
+
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+        - /var/cache/github-runner/ms-playwright:/ms-playwright
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v5
+        with:
+          key: ${{ needs.build-integration.outputs.bundle_key }}
+          path: frontend/resources/public
+
+      - name: Install deps
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install --frozen-lockfile;
+
+      # No-op once the shared volume is warm; keeps the first run working.
+      - name: Install Playwright Chromium
+        working-directory: ./frontend
+        run: pnpm exec playwright install chromium
+
+      # `strategy.job-total` is the matrix size, so the shard denominator
+      # follows the `shards` input without being hardcoded.
+      - name: Run Tests
+        working-directory: ./frontend
+        env:
+          WORKERS: ${{ inputs.workers }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # TEMPORARY (release stabilization): see the note on the matrix above.
+          if [ -z "$WORKERS" ]; then
+            if [ "$BASE_REF" = "staging" ]; then WORKERS=1; else WORKERS=2; fi
+          fi
+          echo "Running shard ${{ matrix.shard }}/${{ strategy.job-total }} with $WORKERS workers"
+          pnpm exec playwright test --project default \
+            --workers="$WORKERS" \
+            --shard=${{ matrix.shard }}/${{ strategy.job-total }} \
+            --reporter=blob
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-blob-report-${{ matrix.shard }}
+          path: frontend/blob-report/
+          overwrite: true
+          retention-days: 3
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-tests-result-${{ matrix.shard }}
+          path: frontend/test-results/
+          overwrite: true
+          if-no-files-found: ignore
+          retention-days: 3
+
+  merge-reports:
+    if: ${{ always() && !github.event.pull_request.draft && needs.test-integration.result != 'skipped' }}
+    name: "Merge Integration Reports"
+    runs-on: penpot-runner-02
+    timeout-minutes: 15
+
+    needs: test-integration
+
     container:
       image: penpotapp/devenv:latest
       volumes:
         - /var/cache/github-runner/m2:/root/.m2
         - /var/cache/github-runner/gitlib:/root/.gitlibs
 
-    needs: build-integration
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
-
-      - name: Restore Cache
-        uses: actions/cache/restore@v5
         with:
-          key: "integration-bundle-${{ github.sha }}"
-          path: frontend/resources/public
+          ref: ${{ inputs.gh_ref }}
 
-      - name: Run Tests
+      - name: Install deps
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install --frozen-lockfile;
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v7
+        with:
+          path: frontend/all-blob-reports
+          pattern: integration-blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML report
         working-directory: ./frontend
         env:
-          PLAYWRIGHT_REPORTER: list,json
           PLAYWRIGHT_JSON_OUTPUT_NAME: report.json
         run: |
-          ./scripts/test-e2e
+          pnpm exec playwright merge-reports \
+            --reporter=html,json,list ./all-blob-reports
 
-      - name: Flaky summary
+      - name: Test summary
         if: always()
         working-directory: ./frontend
         run: |
           if [ ! -f report.json ]; then
-            echo "No report.json produced (the run failed early)." >> "$GITHUB_STEP_SUMMARY"
+            echo "No report produced (all shards failed early)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          jq -r -f ../.github/scripts/playwright-summary.jq report.json >> "$GITHUB_STEP_SUMMARY"
 
-          jq -r '
-            [ .. | objects
-              | select(has("tests") and has("file"))
-              | select(any(.tests[]; .status == "flaky"))
-              | "- `\(.file):\(.line)` — \(.title)"
-            ] as $f
-            | "## Flaky tests: \($f | length)\n"
-              + (if ($f | length) == 0 then "_none_" else ($f | join("\n")) end)
-          ' report.json >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload JSON report
+      - name: Upload HTML report
         uses: actions/upload-artifact@v7
-        if: always()
         with:
-          name: integration-json-report
-          path: frontend/report.json
+          name: integration-html-report
+          path: frontend/playwright-report/
           overwrite: true
-          retention-days: 30
-
-      - name: Upload test result
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: integration-tests-result
-          path: frontend/test-results/
-          overwrite: true
-          retention-days: 3
+          retention-days: 7
