@@ -89,7 +89,18 @@
                      :fn #(st/emit! (drp/toggle-snap))}
 
    :escape          {:tooltip (ds/esc)
-                     :command ["escape" "enter" "v"]
+                     :command ["escape" "v"]
+                     :section [:workspace]
+                     :fn #(st/emit! (esc-pressed))}
+
+   ;; Reuses the `:start-editing` key (instead of adding "enter" to
+   ;; the `:escape` command above) so that merging this shortcut set
+   ;; on top of the base workspace shortcuts (see `dsc/push-shortcuts`)
+   ;; deterministically replaces the workspace's `enter` binding
+   ;; (which enters path edit mode) instead of both ending up bound
+   ;; to the same physical key at once.
+   :start-editing   {:tooltip (ds/enter)
+                     :command "enter"
                      :section [:workspace]
                      :fn #(st/emit! (esc-pressed))}
 
