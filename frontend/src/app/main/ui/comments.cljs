@@ -1063,6 +1063,14 @@
          (fn [content]
            (st/emit! (dcm/add-comment thread content))))
 
+        on-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/esc? event)
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (st/emit! (dcm/close-thread)))))
+
         on-cancel
         (mf/use-fn #(st/emit! (dcm/close-thread)))]
 
@@ -1086,6 +1094,7 @@
               :style {:left (str pos-x "px")
                       :top (str pos-y "px")
                       "--comment-height" (str max-height "px")}
+              :on-key-down on-key-down
               :on-click dom/stop-propagation}
 
         [:div {:class (stl/css :floating-thread-header)}

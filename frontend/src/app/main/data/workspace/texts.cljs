@@ -831,7 +831,8 @@
       (let [multiple? (->> data vals (d/seek #(= % :multiple)))]
         (cond-> state
           (not multiple?)
-          (assoc-in [:workspace-global :default-font] data))))))
+          (assoc-in [:workspace-global :default-font]
+                    (dissoc data :typography-ref-id :typography-ref-file)))))))
 
 (defn apply-text-modifier
   [shape text-modifier]

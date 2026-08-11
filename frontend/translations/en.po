@@ -10339,3 +10339,12 @@ msgstr "Click to close the path"
 
 msgid "notifications.invitation-canceled"
 msgstr "This invitation is no longer available."
+
+msgid "labels.sso-error.title"
+msgstr "We couldn't sign you in to your organization"
+
+msgid "labels.sso-error.desc-message"
+msgstr "Sign-in with your organization's identity provider didn't complete. The provider may be unavailable, or your account may not be in its directory yet. Your Penpot account isn't affected."
+
+msgid "labels.sso-error.retry"
+msgstr "Try again"
