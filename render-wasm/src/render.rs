@@ -49,6 +49,10 @@ pub enum FrameType {
     None = 0,
     Partial = 1,
     Full = 2,
+    /// Viewport tiles are presented; interest-ring work may still be pending.
+    /// Frontend should keep requesting frames (like Partial) but may treat the
+    /// Target as freshly composited (like Full) for overlays.
+    ViewportReady = 3,
 }
 
 #[allow(dead_code)]
@@ -419,6 +423,9 @@ pub(crate) struct RenderState {
     pub drop_shadows_ops_warmed: bool,
     /// Filter-surface snapshots for drop shadows, reused across tiles.
     drop_shadow_filter_cache: shadows::DropShadowFilterCache,
+    /// Visible tiles were already presented this pass; interest-ring fill may
+    /// still be running. Final Full should not re-present.
+    pub viewport_presented: bool,
 }
 
 pub struct InteractiveDragCrop {
@@ -607,6 +614,7 @@ impl RenderState {
             tile_atlas_flushed: false,
             drop_shadows_ops_warmed: false,
             drop_shadow_filter_cache: shadows::DropShadowFilterCache::new(),
+            viewport_presented: false,
         })
     }
 
@@ -2309,6 +2317,7 @@ impl RenderState {
         // reorder by distance to the center.
         self.current_tile = None;
         self.drop_shadow_filter_cache.clear();
+        self.viewport_presented = false;
     }
 
     pub fn start_render_loop(
@@ -2481,9 +2490,14 @@ impl RenderState {
             self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
         // `draw_atlas` needs a snapshot of the tile atlas. Partial frames are not
-        // presented (only flushed), so defer composition to the final frame and
-        // avoid re-snapshotting up to 4096² on every rAF during async tile work.
-        if !self.options.is_interactive_transform() && matches!(frame_type, FrameType::Full) {
+        // presented (only flushed), so defer composition until the viewport is
+        // ready and avoid re-snapshotting up to 4096² on every rAF during async
+        // tile work.
+        let should_compose = !self.options.is_interactive_transform()
+            && matches!(frame_type, FrameType::Full | FrameType::ViewportReady)
+            && !self.viewport_presented;
+
+        if should_compose {
             self.surfaces.draw_tile_atlas_to_backbuffer(
                 &self.viewbox,
                 &self.tile_viewbox,
@@ -2500,17 +2514,31 @@ impl RenderState {
                 // `drain_partial_gpu_soft`). Full still submits via present_frame.
                 Self::drain_partial_gpu_soft();
             }
+            FrameType::ViewportReady => {
+                // Visible tiles are done: present now so the user sees the
+                // viewport without waiting for interest-ring pre-render.
+                // Defer crop-cache rebuild to Full — it is expensive on large
+                // HiDPI viewports and is not needed until the next drag.
+                self.present_frame(tree);
+                self.viewport_presented = true;
+                wapi::notify_tiles_render_complete!();
+                Self::drain_partial_gpu_soft();
+            }
             FrameType::Full => {
-                // A full-quality frame is now complete. Rebuild the per-shape crop
-                // cache from the clean Backbuffer (no UI overlay yet) so that
-                // interactive drag backgrounds don't include the grid overlay.
-                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                if !self.viewport_presented {
+                    // A full-quality frame is now complete (no early viewport
+                    // present). Rebuild crop cache and present.
+                    if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                        self.rebuild_backbuffer_crop_cache(tree);
+                    }
+                    self.present_frame(tree);
+                    wapi::notify_tiles_render_complete!();
+                } else if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                    // Interest fill finished after ViewportReady. Backbuffer
+                    // still holds the viewport compose; rebuild crop cache
+                    // off the sharp-snap frame.
                     self.rebuild_backbuffer_crop_cache(tree);
                 }
-                // present_frame: copy clean Backbuffer → Target, draw UI/debug
-                // overlays on Target only, then flush. Backbuffer stays overlay-free.
-                self.present_frame(tree);
-                wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
             }
         }
@@ -4015,8 +4043,18 @@ impl RenderState {
                         flattened: false,
                     }));
             } else {
-                // If there are no more pending tiles, stop.
-                should_stop = true;
+                // Visible tiles finished. Promote deferred interest-ring work
+                // so pan/zoom pre-render still happens, but yield first when
+                // allowed so continue_render_loop can present the viewport.
+                if self.pending_tiles.promote_deferred_interest() {
+                    if allow_stop {
+                        should_stop = true;
+                    }
+                    // Sync path (allow_stop=false): keep looping on interest
+                    // tiles in the same call without an early present.
+                } else {
+                    should_stop = true;
+                }
             }
         }
 
@@ -4032,6 +4070,12 @@ impl RenderState {
         // full render would reuse the low-quality tiles.
         if !self.options.is_fast_mode() {
             self.cached_viewbox = self.viewbox;
+        }
+
+        // Visible done with interest still queued and we yielded: present
+        // viewport now, keep Partial-like rAFs for the ring.
+        if allow_stop && !self.pending_tiles.list.is_empty() {
+            return Ok(FrameType::ViewportReady);
         }
 
         Ok(FrameType::Full)

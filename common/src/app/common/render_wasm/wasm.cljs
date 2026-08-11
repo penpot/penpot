@@ -58,6 +58,7 @@
   WebGL is ready before re-init finishes."
   []
   (set! internal-frame-id nil)
+  (set! internal-frame-type 0)
   (set! canvas nil)
   (set! canvas-snapshot nil)
   (set! gl-context-handle nil)
