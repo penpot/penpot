@@ -651,10 +651,12 @@
      (redirect-response uri))))
 
 (defn- redirect-with-organization-sso-error
-  [{:keys [dest-url organization-id]}]
+  [{:keys [dest-url organization-id organization-name]}]
   (-> (str (or dest-url (cf/get :public-uri)))
       (u/append-query-param :sso-error true)
       (u/append-query-param :organization-id organization-id)
+      (cond-> organization-name
+        (u/append-query-param :organization-name organization-name))
       (redirect-response)))
 
 (defn- redirect-to-register
@@ -923,9 +925,12 @@
               (l/err :hint "unexpected error on organization sso callback"
                      :organization-id (:organization-id state)
                      :cause cause))))
-        (redirect-with-organization-sso-error
-         {:dest-url dest-url
-          :organization-id (:organization-id state)})))))
+        (let [organization-id   (:organization-id state)
+              organization-name (:name (nitrate/call cfg :get-organization-summary {:organization-id organization-id}))]
+          (redirect-with-organization-sso-error
+           {:dest-url dest-url
+            :organization-id organization-id
+            :organization-name organization-name}))))))
 
 (defn- callback-handler
   [cfg {:keys [params] :as request}]

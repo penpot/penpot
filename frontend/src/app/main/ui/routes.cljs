@@ -149,22 +149,24 @@
 
 (defn- handle-sso-error-and-navigate
   "Check if the current route has an SSO error marker. If so, assign an
-  exception with type :sso-error and organization-id from query params,
+  exception with type :sso-error and organization-id/name from query params,
   and deliberately do NOT proceed with normal navigation: emitting
   `rt/navigated` would clear the exception that was just assigned.
   Otherwise, delegate to `check-sso-and-navigate`."
   [match send-event-info? url]
-  (let [route-name      (name (get-in match [:data :name]))
-        sso-error?      (some? (get-in match [:query-params :sso-error]))
-        organization-id (some-> (get-in match [:query-params :organization-id]) uuid/parse*)
-        team-id-str     (or (get-in match [:query-params :team-id])
-                            (get-in match [:params :path :team-id])) ;; Fallback: team-id may be in path params for workspace routes
-        team-id         (some-> team-id-str uuid/parse*)
-        is-workspace?   (str/starts-with? route-name "workspace")
-        is-dashboard?   (str/starts-with? route-name "dashboard")]
+  (let [route-name        (name (get-in match [:data :name]))
+        sso-error?        (some? (get-in match [:query-params :sso-error]))
+        organization-id   (some-> (get-in match [:query-params :organization-id]) uuid/parse*)
+        organization-name (some-> (get-in match [:query-params :organization-name]) str/trim)
+        team-id-str       (or (get-in match [:query-params :team-id])
+                              (get-in match [:params :path :team-id])) ;; Fallback: team-id may be in path params for workspace routes
+        team-id           (some-> team-id-str uuid/parse*)
+        is-workspace?     (str/starts-with? route-name "workspace")
+        is-dashboard?     (str/starts-with? route-name "dashboard")]
     (if sso-error?
       (st/emit! (rt/assign-exception {:type :sso-error
                                       :organization-id organization-id
+                                      :organization-name organization-name
                                       :team-id team-id
                                       :is-workspace is-workspace?
                                       :is-dashboard is-dashboard?}))
