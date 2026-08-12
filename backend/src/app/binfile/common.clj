@@ -310,30 +310,41 @@
   pipeline (which always blob-decodes) is unaffected."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode?]
   (let [branch (db/get* conn :file-branch {:branch-file-id id})
+
         _ (when (nil? branch)
             (ex/raise :type :not-found
                       :code :branch-metadata-missing
                       :hint "branch metadata not found for branch file"
                       :file-id id))
+
         base (db/get-with-sql cfg
                               [sql:get-branch-base-snapshot
                                (:source-file-id branch)
                                (:base-snapshot-id branch)
                                (ct/now)]
                               {::db/remove-deleted false})
+
         _ (when (nil? base)
             (ex/raise :type :not-found
                       :code :base-snapshot-missing
                       :hint "the branch merge-base snapshot cannot be resolved"
                       :file-id id))
+
+        ;; same decode `fsnap/get-snapshot` applies: storage-backed
+        ;; snapshots carry the storage ref inside :metadata, so it must
+        ;; be decoded before `resolve-file-data` can fetch the object
         base (-> base
+                 (d/update-when :metadata fdata/decode-metadata)
                  (fdata/resolve-file-data cfg)
                  (fdata/decode-file-data cfg))
+
         rows (db/exec! conn [sql:get-branch-changes id])
+
         data (reduce (fn [data {:keys [changes]}]
                        (cpc/process-changes data (blob/decode changes)))
                      (:data base)
                      rows)
+
         data (if decode? data (blob/encode data))]
     (assoc file :data data)))
 
