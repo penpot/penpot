@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
@@ -190,6 +191,7 @@
           f.deleted_at,
           f.name,
           f.is_shared,
+          f.is_branch,
           f.has_media_trimmed,
           f.revn,
           f.data AS legacy_data,
@@ -250,6 +252,92 @@
           (update-file! cfg file)
           (fmigr/resolve-applied-migrations cfg file))))))
 
+;; --- Branch files: derived data --------------------------------------
+;;
+;; A branch file stores no data of its own: its `:data` is derived by
+;; replaying the branch's op log (`file_branch_change`) over the
+;; merge-base snapshot pinned in `file_branch`. The derive runs inside
+;; `get-file*`, so every read path (workspace bundle, viewer, diff,
+;; merge) sees the same state the editor produced.
+;;
+;; The snapshot query mirrors `fsnap/get-snapshot` (which cannot be
+;; reused here: `app.features.file-snapshots` requires THIS namespace).
+
+(def ^:private sql:get-branch-base-snapshot
+  "SELECT c.id,
+          c.label,
+          c.created_at,
+          c.updated_at AS modified_at,
+          c.deleted_at,
+          c.profile_id,
+          c.created_by,
+          c.locked_by,
+          c.revn,
+          c.features,
+          c.migrations,
+          c.version,
+          c.file_id,
+          c.data AS legacy_data,
+          fd.data AS data,
+          coalesce(fd.backend, 'legacy-db') AS backend,
+          fd.metadata AS metadata
+     FROM file_change AS c
+     LEFT JOIN file_data AS fd ON (fd.file_id = c.file_id
+                                   AND fd.id = c.id
+                                   AND fd.type = 'snapshot')
+    WHERE c.label IS NOT NULL
+      AND c.file_id = ?
+      AND c.id = ?
+      AND CASE WHEN c.created_by = 'user'
+               THEN (c.deleted_at IS NULL)
+               WHEN c.created_by = 'system'
+               THEN (c.deleted_at IS NULL OR c.deleted_at >= ?::timestamptz)
+           END")
+
+(def ^:private sql:get-branch-changes
+  "SELECT changes
+     FROM file_branch_change
+    WHERE file_id = ?
+      AND deleted_at IS NULL
+    ORDER BY revn ASC")
+
+(defn- branch-file-data
+  "Derive the `:data` of a branch file: the merge-base snapshot plus
+  every op appended to the branch's log, replayed in revn order.
+
+  Returns the file with `:data` decoded (plain maps); callers that asked
+  for `:decode? false` get it re-encoded as bytes so the update-file
+  pipeline (which always blob-decodes) is unaffected."
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode?]
+  (let [branch (db/get* conn :file-branch {:branch-file-id id})
+        _ (when (nil? branch)
+            (ex/raise :type :not-found
+                      :code :branch-metadata-missing
+                      :hint "branch metadata not found for branch file"
+                      :file-id id))
+        base (db/get-with-sql cfg
+                              [sql:get-branch-base-snapshot
+                               (:source-file-id branch)
+                               (:base-snapshot-id branch)
+                               (ct/now)]
+                              {::db/remove-deleted false})
+        _ (when (nil? base)
+            (ex/raise :type :not-found
+                      :code :base-snapshot-missing
+                      :hint "the branch merge-base snapshot cannot be resolved"
+                      :file-id id))
+        base (-> base
+                 (fdata/resolve-file-data cfg)
+                 (fdata/decode-file-data cfg))
+        rows (db/exec! conn [sql:get-branch-changes id])
+        data (reduce (fn [data {:keys [changes]}]
+                       (cpc/process-changes data (blob/decode changes)))
+                     (:data base)
+                     rows)
+        data (if decode? data (blob/encode data))]
+    (assoc file :data data)))
+
+
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
    {:keys [migrate?
@@ -309,11 +397,19 @@
 
     (if file
       (if load-data?
-        (let [file
-              (->> file
-                   (fmigr/resolve-applied-migrations cfg)
-                   (fdata/resolve-file-data cfg))
+        (let [branch? (:is-branch file)
 
+              file
+              (if branch?
+                (branch-file-data cfg file decode?)
+                (->> file
+                     (fmigr/resolve-applied-migrations cfg)
+                     (fdata/resolve-file-data cfg)))
+
+              ;; a branch file derives its data from the pinned base
+              ;; snapshot and the op log; data migrations apply in
+              ;; memory only (read-only) so the derived state stays
+              ;; current without persisting a data payload
               will-migrate?
               (and migrate? (fmg/need-migration? file))]
 
@@ -323,7 +419,8 @@
               (fdata/realize cfg)
 
               will-migrate?
-              (migrate-file cfg options))
+              (migrate-file cfg (cond-> options
+                                  branch? (assoc :read-only? true))))
 
             file))
         file)
@@ -798,6 +895,26 @@
 
     (fdata/upsert! cfg file-data-params)
     nil))
+
+(defn update-file-row!
+  "Update only the `file` row of an existing file, without touching
+  `file_data`. Used for branch file saves: a branch stores no data, so
+  the persist step must skip `encode-file` (its pointer-map transform
+  would write `file_data` rows for the branch) and the data upsert."
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} & {:as opts}]
+  (if (::reset-migrations? opts false)
+    (fmigr/reset-migrations! conn file)
+    (fmigr/upsert-migrations! conn file))
+
+  (let [file-params (-> file
+                        (d/update-when :features into-array)
+                        (file->params)
+                        (dissoc :id))]
+    (db/update! conn :file file-params
+                {:id id}
+                {::db/return-keys false})
+    nil))
+
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile

@@ -51,6 +51,7 @@
 (declare update-file!)
 (declare update-file-data!)
 (declare persist-file!)
+(declare ^:private persist-branch-file!)
 (declare get-file)
 
 ;; --- SCHEMA
@@ -273,7 +274,9 @@
                    :changes (blob/encode changes)}
                   {::db/return-keys false})
 
-      (persist-file! cfg file)
+      (if (:is-branch file)
+        (persist-branch-file! cfg file changes)
+        (persist-file! cfg file))
 
       (when (contains? cf/flags :redis-cache)
         (invalidate-caches! cfg file))
@@ -317,6 +320,50 @@
                 {::db/return-keys false})
 
     (bfc/update-file! cfg file)))
+
+(defn- persist-branch-file!
+  "Persist a branch file save. A branch stores no data payload: the
+  change vector is appended to the branch's op log (`file_branch_change`)
+  and the `file` row (revn, version, features, modified-at) plus the
+  project modified-at are updated as usual, without any `file_data`
+  write. The transient `file_change` xlog row (inserted by the caller)
+  keeps the lagged-changes machinery working unchanged."
+  [{:keys [::db/conn ::timestamp] :as cfg} file changes]
+  (let [modified-at (or timestamp (ct/now))
+
+        file
+        (-> file
+            (dissoc ::snapshot)
+            (assoc :modified-at modified-at)
+            (assoc :has-media-trimmed false))
+
+        branch
+        (db/get* conn :file-branch {:branch-file-id (:id file)})]
+
+    (when (nil? branch)
+      (ex/raise :type :not-found
+                :code :branch-metadata-missing
+                :hint "branch metadata not found for branch file"
+                :file-id (:id file)))
+
+    (db/update! conn :project
+                {:modified-at modified-at}
+                {:id (:project-id file)}
+                {::db/return-keys false})
+
+    (db/insert! conn :file-branch-change
+                {:id (uuid/next)
+                 :branch-id (:id branch)
+                 :file-id (:id file)
+                 :revn (:revn file)
+                 :changes (blob/encode changes)
+                 :created-at modified-at
+                 :updated-at modified-at}
+                {::db/return-keys false})
+
+    (bfc/update-file-row! cfg file)
+    nil))
+
 
 (defn- invalidate-caches!
   [cfg {:keys [id] :as file}]

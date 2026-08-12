@@ -523,7 +523,10 @@
     :fn (mg/resource "app/migrations/sql/0155-add-file-branch-table.sql")}
 
    {:name "0156-add-file-pull-request-tables"
-    :fn (mg/resource "app/migrations/sql/0156-add-file-pull-request-tables.sql")}])
+    :fn (mg/resource "app/migrations/sql/0156-add-file-pull-request-tables.sql")}
+
+   {:name "0157-add-file-branch-change-table"
+    :fn (mg/resource "app/migrations/sql/0157-add-file-branch-change-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

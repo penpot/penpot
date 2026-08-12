@@ -23,6 +23,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -35,7 +36,6 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-update :as fupd]
-   [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
@@ -43,6 +43,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.worker :as wrk]
+   [clojure.set :as set]
    [clojure.string :as str]))
 
 (defn- check-branching-enabled!
@@ -219,10 +220,11 @@
    [:description {:optional true} [:string {:max 4000}]]])
 
 (sv/defmethod ::create-file-branch
-  "Create a branch from a file. The branch is a full, isolated copy of
-  the source file (created through the same pipeline as duplicate-file,
-  which preserves the internal `:data` ids) plus a system snapshot of
-  main captured as the merge base."
+  "Create a branch from a file. The branch file stores NO data payload:
+  its `:data` is derived on every read by replaying the branch's op log
+  over the merge base — a system snapshot of main taken at creation.
+  The branch file row still exists (permissions, libraries, msgbus
+  topics and media ownership key on it), but nothing is duplicated."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-file-branch
@@ -253,18 +255,17 @@
                 (fn [{:keys [::db/conn] :as cfg}]
                   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
-                  ;; Serialize against concurrent update-file on main (same
-                  ;; advisory lock) so the base snapshot and the duplicated
-                  ;; copy are taken from the SAME state of the file — a
-                  ;; concurrent save between them would make the base differ
-                  ;; from the branch's initial content and manufacture
-                  ;; phantom diffs later.
+                  ;; Serialize against concurrent update-file on main
+                  ;; (same advisory lock) so the base snapshot and the
+                  ;; branch's initial state (the empty op log over that
+                  ;; base) are taken from the SAME state of main.
                   (db/xact-lock! conn file-id)
 
                   ;; 1. Materialize the merge base: a system snapshot of
                   ;; main, kept long-lived so it is not pruned by the
-                  ;; snapshot GC while the branch is open (it is released
-                  ;; when the branch is merged/deleted or its base moves).
+                  ;; snapshot GC while the branch is open (it is
+                  ;; released when the branch is deleted or its base
+                  ;; moves).
                   (let [file (bfc/get-file cfg file-id :realize? true)
                         base (fsnap/create! cfg file
                                             {:label (str "branch-base/" name)
@@ -272,39 +273,70 @@
                                              :created-by "system"
                                              :deleted-at (ct/in-future {:days 3650})})
 
-                        ;; 2. Duplicate main into a new branch file. The
-                        ;; duplicate pipeline remaps the file/media/library
-                        ;; ids but preserves the internal :data ids, which
-                        ;; is the precondition for an id-based merge.
-                        branch-id (uuid/next)
-                        branch    (binding [bfc/*state* (volatile! {:index {file-id branch-id}})]
-                                    (mgmt/duplicate-file
-                                     (assoc cfg ::bfc/timestamp (ct/now))
-                                     {:profile-id profile-id
-                                      :file-id file-id
-                                      :name name
-                                      :reset-shared-flag true}))
+                        ts         (ct/now)
+                        branch-id  (uuid/next)
 
-                        meta-id   (uuid/next)]
+                        ;; 2. Create the branch file: an empty file row
+                        ;; carrying main's project, features and data
+                        ;; version. No data, no media, no library copy:
+                        ;; the read path derives the state.
+                        branch-file
+                        (-> (ctf/make-file {:id branch-id
+                                            :name name
+                                            :project-id (:project-id file)}
+                                           {:create-page false})
+                            (assoc :features (set/difference (:features file)
+                                                             #{"fdata/objects-map" "fdata/pointer-map"}))
+                            (assoc :version (:version file)))
 
-                    ;; 3. Mark the new file row as a branch so it is hidden
-                    ;; from the project/team file listings.
+                        meta-id (uuid/next)]
+
+                    (bfc/insert-file! cfg branch-file {::db/return-keys false})
+
+                    ;; 3. Mark the new file row as a branch so it is
+                    ;; hidden from the project/team file listings.
                     (db/update! conn :file
                                 {:is-branch true}
-                                {:id (:id branch)}
+                                {:id branch-id}
                                 {::db/return-keys false})
 
-                    ;; 4. Persist the branch metadata. `base-revn` tracks
-                    ;; MAIN's revision counter and `base-branch-revn` the
-                    ;; BRANCH file's one (they coincide at creation but
-                    ;; drift apart: they are independent counters).
+                    ;; 4. Grant the creator ownership (same grant
+                    ;; duplicate-file used to make).
+                    (when (uuid? profile-id)
+                      (db/insert! conn :file-profile-rel
+                                  {:file-id branch-id
+                                   :profile-id profile-id
+                                   :is-owner true
+                                   :is-admin true
+                                   :can-edit true}
+                                  {::db/return-keys false}))
+
+                    ;; 5. The branch resolves libraries exactly like
+                    ;; main (component instances from shared libraries
+                    ;; must keep resolving on the derived state).
+                    (doseq [rel (bfc/get-files-rels cfg #{file-id})]
+                      (let [rel-params (-> rel
+                                           (assoc :file-id branch-id)
+                                           (assoc :created-at ts)
+                                           (dissoc :synced-at))]
+                        (db/insert! conn :file-library-rel rel-params ::db/return-keys false)
+                        (bfc/upsert-file-library-sync! conn
+                                                       {:file-id branch-id
+                                                        :library-file-id (:library-file-id rel)
+                                                        :synced-at (or (:synced-at rel) ts)})))
+
+                    ;; 6. Persist the branch metadata. `base-revn`
+                    ;; tracks MAIN's revision counter and
+                    ;; `base-branch-revn` the BRANCH file's one (they
+                    ;; coincide at creation but drift apart: they are
+                    ;; independent counters).
                     (db/insert! conn :file-branch
                                 {:id meta-id
-                                 :branch-file-id (:id branch)
+                                 :branch-file-id branch-id
                                  :source-file-id file-id
                                  :base-snapshot-id (:id base)
                                  :base-revn (:revn file)
-                                 :base-branch-revn (:revn file)
+                                 :base-branch-revn (:revn branch-file)
                                  :created-by profile-id
                                  :name name
                                  :description description
@@ -312,7 +344,7 @@
                                 {::db/return-keys false})
 
                     {:id meta-id
-                     :branch-file-id (:id branch)
+                     :branch-file-id branch-id
                      :source-file-id file-id
                      :base-revn (:revn file)
                      :name name
@@ -584,10 +616,15 @@
 
                  finish-branch!
                  (fn [ts]
-                   ;; mark merged, release the pinned base snapshot and —
-                   ;; unless the user chose to keep it — delete the branch
-                   ;; in this same transaction (no client-driven second
-                   ;; call, no window where a crash leaves a stale copy)
+                   ;; mark merged. The pinned base snapshot stays for a
+                   ;; KEPT branch (its state is derived from that
+                   ;; snapshot and the op log, so releasing the pin
+                   ;; would leave it unreadable once the snapshot GC
+                   ;; runs); delete-branch! releases it on the delete
+                   ;; path. Unless the user chose to keep it the branch
+                   ;; and its file are deleted in this same transaction
+                   ;; (no client-driven second call, no window where a
+                   ;; crash leaves a stale copy).
                    (db/update! conn :file-branch
                                {:status "merged"
                                 :merged-at ts
@@ -603,8 +640,7 @@
                                                   {:profile-id profile-id
                                                    :status "merged"
                                                    :deleted-at (ct/in-future delay)})
-                     (if keep-branch
-                       (release-base-snapshot! cfg branch (ct/in-future delay))
+                     (when-not keep-branch
                        (delete-branch! cfg branch {:profile-id profile-id
                                                    :session-id session-id}))))]
              (cond
@@ -693,6 +729,38 @@
    ;; resolutions in UI terms: id -> :main (take main) | :branch (keep
    ;; branch) | {attr -> side} (per-attr)
    [:resolutions {:optional true} [:map-of :any [:or :keyword [:map-of :keyword :keyword]]]]])
+
+(defn- persist-branch-update!
+  "Persist the result of an update-from-main integration on a branch
+  file: update the `file` row and the project modified-at without any
+  data payload, and REPLACE the branch's op log with the squashed
+  branch-only changes. The repositioned merge base already carries
+  everything main contributed, so replaying the squash over it
+  reproduces the updated branch exactly, and the log never accumulates
+  main-side ops (which would otherwise be double-applied on read)."
+  [{:keys [::db/conn] :as cfg} file ts branch-id changes]
+  (let [file (-> file
+                 (dissoc ::snapshot)
+                 (assoc :modified-at ts)
+                 (assoc :has-media-trimmed false))]
+    (db/update! conn :project
+                {:modified-at ts}
+                {:id (:project-id file)}
+                {::db/return-keys false})
+    (db/delete! conn :file-branch-change {:branch-id branch-id})
+    (when (seq changes)
+      (db/insert! conn :file-branch-change
+                  {:id (uuid/next)
+                   :branch-id branch-id
+                   :file-id (:id file)
+                   :revn (:revn file)
+                   :changes (blob/encode (vec changes))
+                   :created-at ts
+                   :updated-at ts}
+                  {::db/return-keys false}))
+    (bfc/update-file-row! cfg file)
+    nil))
+
 
 (sv/defmethod ::update-branch-from-main
   "Bring the changes main received since the merge base into the branch
@@ -816,6 +884,10 @@
 
                  (empty? changes)
                  (let [ts (ct/now)]
+                   ;; the branch is in sync with main: the repositioned
+                   ;; base already represents the branch, so the op log
+                   ;; is emptied (old ops were built against the old base)
+                   (db/delete! conn :file-branch-change {:branch-id branch-id})
                    (reposition-base! ts (:revn branch-file))
                    {:status :updated :revn (:revn branch-file)})
 
@@ -860,7 +932,23 @@
                                     :changes (blob/encode (vec changes))}
                                    {::db/return-keys false})
 
-                       (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) updated)
+                       ;; SQUASH: the new base (main's current state)
+                       ;; already carries everything main contributed,
+                       ;; so the op log is replaced with the net
+                       ;; branch-only changes computed against the new
+                       ;; base. Refuse if that net cannot be translated
+                       ;; into replayable ops; nothing has been
+                       ;; persisted yet, so the transaction rollback
+                       ;; undoes the snapshot and media copies above.
+                       (let [{:keys [squashed]
+                              unsupported :unsupported}
+                             (bm/compute-changes main-data main-data (:data updated) {})]
+                         (when (seq unsupported)
+                           (ex/raise :type :validation
+                                     :code :unsupported-update-squash
+                                     :hint "the update produces branch-only changes that cannot be replayed"
+                                     :kinds (vec unsupported)))
+                         (persist-branch-update! cfg updated ts branch-id squashed))
                        (reposition-base! ts (:revn updated))
 
                        (mbus/pub! msgbus
