@@ -353,10 +353,15 @@
                       :text-direction (sr/untranslate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
                       :text-decoration (sr/untranslate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
                       :text-transform (sr/untranslate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
-                      :line-height (text-editor-get-style-property line-height-state line-height-value)
-                      :letter-spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)
-                      :font-size (text-editor-get-style-property font-size-state font-size-value)
-                      :font-weight (text-editor-get-style-property font-weight-state font-weight-value)
+                      ;; WASM reports size/weight as numbers, but the rest of Penpot (and the backend schema) expects strings.
+                      :line-height (let [height (text-editor-get-style-property line-height-state line-height-value)]
+                                     (if (= height :multiple) height (str height)))
+                      :letter-spacing (let [spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)]
+                                        (if (= spacing :multiple) spacing (str spacing)))
+                      :font-size (let [size (text-editor-get-style-property font-size-state font-size-value)]
+                                   (if (= size :multiple) size (str size)))
+                      :font-weight (let [weight (text-editor-get-style-property font-weight-state font-weight-value)]
+                                     (if (= weight :multiple) weight (str weight)))
                       :font-style font-style-value
                       :font-family (text-editor-get-style-property font-family-id-state font-id)
                       :font-id (text-editor-get-style-property font-family-id-state font-id)
