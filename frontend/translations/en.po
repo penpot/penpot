@@ -1243,7 +1243,7 @@ msgstr "Your project has been moved successfully"
 
 #, unused
 msgid "dashboard.team-belong-organization"
-msgstr "This team now belongs to %s"
+msgstr "This team is now part of the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
 msgid "dashboard.team-info"
@@ -1255,7 +1255,7 @@ msgstr "Team members"
 
 #, unused
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "This team no longer belongs to the organization %s"
+msgstr "This team is no longer part of the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
