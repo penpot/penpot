@@ -460,6 +460,10 @@
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
+        team     (db/get-by-id cfg :team team-id)
+        team-with-org (when (contains? cf/flags :admin-console)
+                        (nitrate/add-organization-info-to-team cfg team {}))
+        organization (:organization team-with-org)
         ;; Determine which format is being used
         using-emails-format? (and emails role)
         ;; Handle both parameter formats
@@ -474,6 +478,17 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    (when (and (contains? cf/flags :admin-console)
+               organization
+               (not (cto/allowed? :send-invitations
+                                  {:organization-perms {:owner-id    (:owner-id organization)
+                                                        :permissions (:permissions organization)}
+                                   :profile-id profile-id
+                                   :team-perms perms})))
+      (ex/raise :type :validation
+                :code :insufficient-permissions
+                :hint "Organization policy does not allow you to send invitations"))
 
     (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
