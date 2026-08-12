@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-08-05 20:01+0000\n"
+"PO-Revision-Date: 2026-08-13 13:53+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 2026.8.1.dev0\n"
+"X-Generator: Weblate 2026.9.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -9071,3 +9071,29 @@ msgstr "חלק מההזמנות לא נשלחו"
 #: src/app/main/ui/dashboard/team.cljs:299
 msgid "modals.invite-restricted-members.warning"
 msgstr "חלק מהאנשים ברשימה שלך לא יקבלו את ההזמנות."
+
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
+msgstr "הארגון שלך יימחק."
+
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr "סך כל האחסון שלך, היסטוריית גרסאות אוטומטיות ותקופת שחזור קבצים יוגבלו."
+
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr "הצוותים, המיזמים והקבצים לא יהיו עוד חלק מאף ארגון אך יישארו זמינים."
+
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "מתי לשנמך:"
+
+msgid "nitrate.contact-sales.title"
+msgstr "לעבור לתוכנית %s?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77
+msgid "nitrate.form.cancel-anytime"
+msgstr "התשלום יעובד בסוף תקופת הניסיון. אפשר לבטל בכל עת."
+
+msgid "notifications.invitation-canceled"
+msgstr "ההזמנה הזאת לא זמינה יותר."
+
+#: src/app/main/data/workspace/versions.cljs:297
+msgid "workspace.versions.preview.unnamed"
+msgstr "גרסה ללא שם"
