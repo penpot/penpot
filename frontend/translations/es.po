@@ -9987,10 +9987,10 @@ msgid "notifications.invitation-canceled"
 msgstr "Esta invitación ya no está disponible."
 
 msgid "labels.sso-error.title"
-msgstr "No pudimos iniciar sesión en tu organización"
+msgstr "No pudimos iniciar sesión en %s"
 
 msgid "labels.sso-error.desc-message"
-msgstr "El inicio de sesión con el proveedor de identidad de tu organización no se completó. Es posible que el proveedor no esté disponible o que tu cuenta aún no esté en su directorio. Tu cuenta de Penpot no se ha visto afectada."
+msgstr "El inicio de sesión con el proveedor de identidad de tu organización no se completó. Es posible que el proveedor no esté disponible o que tu cuenta aún no esté en su directorio."
 
 msgid "labels.sso-error.retry"
 msgstr "Intentar de nuevo"
