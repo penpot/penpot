@@ -29,11 +29,13 @@
 (defn- keep-editing-on-blur?
   "True when a surface `blur` must NOT exit the editor:
    - Firefox triggering a blur when MacOS Character Viewer is open
-   - Focus switched to a `data-keep-editing-on-blur` element (e.g. typography options)"
+   - Focus switched to a data-keep-editing-on-blur region (e.g. typography options),
+     ancestors or descendants"
   [^js event ^js surface]
   (or (= (.-activeElement js/document) surface)
       (when-let [related (dom/get-related-target event)]
-        (some? (.closest related keep-editing-selector)))))
+        (or (some? (.closest related keep-editing-selector))
+            (some? (.querySelector related keep-editing-selector))))))
 
 (defn- sync-wasm-text-editor-content!
   "Sync WASM text editor content back to the shape via the standard
