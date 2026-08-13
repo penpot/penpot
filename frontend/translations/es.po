@@ -7181,9 +7181,21 @@ msgid_plural "workspace.libraries.components"
 msgstr[0] "1 componente"
 msgstr[1] "%s componentes"
 
+#: src/app/main/ui/workspace/libraries.cljs:541
+msgid "workspace.libraries.connected-libraries"
+msgstr "Biblioteca conectada"
+
+#: src/app/main/ui/workspace/libraries.cljs:550
+msgid "workspace.libraries.connected-through"
+msgstr "Conectada mediante"
+
 #: src/app/main/ui/workspace/libraries.cljs:367
 msgid "workspace.libraries.connected-to"
 msgstr "Conectada con"
+
+#: src/app/main/ui/workspace/libraries.cljs:600
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "Aun no hay bibliotecas conectadas."
 
 #: src/app/main/ui/workspace/libraries.cljs:432
 msgid "workspace.libraries.empty.add-some"
@@ -7256,6 +7268,10 @@ msgstr "Buscar bibliotecas compartidas"
 #: src/app/main/ui/workspace/libraries.cljs:390
 msgid "workspace.libraries.shared-libraries"
 msgstr "BIBLIOTECAS COMPARTIDAS"
+
+#: src/app/main/ui/workspace/libraries.cljs:311
+msgid "workspace.libraries.shared-library-added"
+msgstr "Añadido"
 
 #: src/app/main/ui/workspace/libraries.cljs:414
 msgid "workspace.libraries.shared-library-btn"

@@ -6,7 +6,9 @@
 
 @use "ds/typography.scss" as *;
 @use "ds/_sizes" as *;
+@use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .tokens-source-wrapper {
   display: flex;
@@ -14,17 +16,25 @@
 }
 
 .tokens-source-header {
-  column-gap: var(--sp-s);
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-s);
   flex-grow: 1;
   padding: var(--sp-s);
 }
 
 .tokens-source-title {
-  color: var(--title-foreground-color);
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-foreground-primary);
   overflow-wrap: break-word;
 }
 
-.replace-this-by-a-badge-component {
-  font-size: $sz-12;
+.tokens-source-description {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+  border: $b-1 solid var(--color-foreground-secondary);
+  padding: var(--sp-xxs) px2rem(6);
+  border-radius: $br-6;
 }
