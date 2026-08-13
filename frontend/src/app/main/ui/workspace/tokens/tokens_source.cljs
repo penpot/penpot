@@ -37,9 +37,13 @@
 
     [:div {:class (stl/css :tokens-source-wrapper)}
      [:div {:class (stl/css :tokens-source-header)}
-      [:> text* {:as "div" :typography "headline-small" :class (stl/css :tokens-source-title)}
+      [:> text* {:as "span"
+                 :typography "headline-small"
+                 :class (stl/css :tokens-source-title)}
        (:name tokens-source-file)]
-      [:span {:class (stl/css :replace-this-by-a-badge-component)}
+      [:> text* {:as "span"
+                 :typography "body-medium"
+                 :class (stl/css :tokens-source-description)}
        (tr "workspace.tokens.connected-library")]]
      [:> icon-button*
       {:variant "ghost"
