@@ -971,8 +971,9 @@
             (t/is (false? (:is-branch row))))
 
           ;; the payload lands where the ordinary write path puts it, which
-          ;; is a `file_data` row rather than the legacy `file.data` column
-          (t/is (some? (th/db-get :file-data {:file-id branch-file-id :type "data"})))
+          ;; is the `file_data` row of type "main" rather than the legacy
+          ;; `file.data` column
+          (t/is (some? (th/db-get :file-data {:file-id branch-file-id :type "main"})))
 
           (t/is (empty? (th/db-query :file-branch-change {:branch-id branch-id})))
 
