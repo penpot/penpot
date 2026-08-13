@@ -326,11 +326,12 @@
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
                  (assoc state :comment-threads)))
-          (on-error [{:keys [type] :as err}]
-            (if (or (= :authentication type)
-                    (= :not-found type))
-              (rx/empty)
-              (rx/throw err)))]
+          (on-error [err]
+            (let [type (:type (ex-data err))]
+              (if (or (= :authentication type)
+                      (= :not-found type))
+                (rx/empty)
+                (rx/throw err))))]
 
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
