@@ -7,9 +7,9 @@
 (ns backend-tests.rpc-file-branch-test
   (:require
    [app.common.features :as cfeat]
+   [app.common.files.branch-merge :as bm]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -126,6 +126,64 @@
           (t/is (= :merged (-> out :result :status))))
         (let [[row] (th/db-query :file-branch {:id @branch-meta-id})]
           (t/is (= "merged" (:status row))))))))
+
+(t/deftest listing-cache-makes-repeat-listing-free
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "cache-probe"}))
+          branch-file-id (:branch-file-id create)
+          main-page-id   (uuid/random)
+          branch-page-id (uuid/random)]
+
+      (t/testing "diverge both sides: one page on main, one on the branch"
+        (let [mf  (th/db-get :file {:id (:id file)})
+              out (th/command! {::th/type :update-file
+                                ::rpc/profile-id (:id profile)
+                                :id (:id file)
+                                :session-id (uuid/random)
+                                :revn (:revn mf)
+                                :vern (:vern mf)
+                                :features cfeat/supported-features
+                                :changes [{:type :add-page :id main-page-id :name "main-side"}]})]
+          (t/is (nil? (:error out)))
+          (let [bf  (th/db-get :file {:id branch-file-id})
+                out (th/command! {::th/type :update-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id branch-file-id
+                                  :session-id (uuid/random)
+                                  :revn (:revn bf)
+                                  :vern (:vern bf)
+                                  :features cfeat/supported-features
+                                  :changes [{:type :add-page :id branch-page-id :name "branch-side"}]})]
+            (t/is (nil? (:error out))))))
+
+      (t/testing "cold listing computes, warm listing performs no comparison work"
+        (let [orig-merge bm/compute-merge
+              calls      (atom 0)]
+          (with-redefs [bm/compute-merge (fn [& args] (swap! calls inc) (apply orig-merge args))]
+            (let [cold (th/command! {::th/type :get-file-branches
+                                     ::rpc/profile-id (:id profile)
+                                     :file-id (:id file)})]
+              (t/is (nil? (:error cold)))
+              ;; both sides diverged: one forward pass, one reverse pass
+              (t/is (= 2 @calls))
+              (reset! calls 0)
+              (let [warm (th/command! {::th/type :get-file-branches
+                                       ::rpc/profile-id (:id profile)
+                                       :file-id (:id file)})]
+                (t/is (nil? (:error warm)))
+                (t/is (= 0 @calls) "the warm listing performed comparison work")
+                (t/is (= (mapv #(select-keys % [:id :name :ahead :behind :conflicts])
+                               (:result cold))
+                         (mapv #(select-keys % [:id :name :ahead :behind :conflicts])
+                               (:result warm))))))))))))
 
 (t/deftest merge-applies-branch-changes
   (with-redefs [cf/flags (conj cf/flags :branching)]
