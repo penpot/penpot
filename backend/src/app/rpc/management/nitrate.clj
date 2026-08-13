@@ -17,6 +17,7 @@
    [app.common.types.organization :as cto]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -499,7 +500,7 @@ RETURNING id, deleted_at;")
     {:id            id
      :name          name
      :initials      (if logo-id "" (d/get-initials name))
-     :logo          (when logo-id (files/resolve-public-uri logo-id))
+     :logo          (when logo-id (u/uri (files/resolve-public-uri logo-id)))
      :avatar-bg-url (when-not logo-id avatar-bg-url)
      :sso-active    (true? sso-active)}))
 
