@@ -318,19 +318,20 @@ side is "theirs" and which is "ours": `:branch->main` (merge / compare) vs
 
 ### `remap-refs` — the local-reference fix-up
 
-A branch is a file copy with its own ids: `duplicate-file` re-points every
-**local** file reference (`:component-file`, `:fill-color-ref-file`,
-`:stroke-color-ref-file`, `:typography-ref-file`, shadow/grid `:file-id`) to
-the branch file id, and gives the branch's `file_media_object` rows FRESH ids
-(relinking shape `:metadata`/`:fill-image`/`:stroke-image`, the `:media` index
-and library-color `:image` refs to them). If diffed as-is, every affected
-entity would look modified, inflating the diff and conflicts; worse, after a
-merge the references could not be resolved in the target file — repair would
+The derived branch data starts as main's data, so base entities already
+reference main's file id and main's media ids. What carries **branch-local**
+ids is everything the branch created: components get `:component-file` set to
+the branch file id, and media added on the branch gets its own
+`file_media_object` rows with fresh ids. If diffed as-is, those entities
+would look modified, inflating the diff and conflicts; worse, after a merge
+the references could not be resolved in the target file — repair would
 silently *detach* components and images would break when the branch file is
 GC'd.
 
-`bm/remap-refs [data id-map]` rewrites exactly the same reference surface the
-duplication pipeline remapped, through an `{old-id -> new-id}` map; ids not in
+`bm/remap-refs [data id-map]` rewrites exactly that local-reference surface
+(`:component-file`, `:fill-color-ref-file`, `:stroke-color-ref-file`,
+`:typography-ref-file`, shadow/grid `:file-id`, and the media refs), through
+an `{old-id -> new-id}` map; ids not in
 the map (external libraries) are untouched. The backend builds that map per
 operation: the branch file id plus the **media pairs** (`media-pairs`, rows
 matched across the two files by storage object + name + dimensions + mtype).
