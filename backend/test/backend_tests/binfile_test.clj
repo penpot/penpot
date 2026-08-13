@@ -16,10 +16,12 @@
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.binfile :as binfile]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
@@ -206,6 +208,18 @@
                      (v3/import-files!))]
       (t/is (= (count result) 1))
       (t/is (every? uuid? result)))))
+
+(t/deftest export-binfile-preserves-public-uri-subpath
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        config  (assoc cf/config :public-uri "https://example.com/penpot")
+        params  {:file-id (:id file)
+                 :include-libraries false
+                 :embed-assets false}
+        uri     (binding [cf/config config]
+                  (#'binfile/export-binfile th/*system* params))]
+    (t/is (str/starts-with? (str uri)
+                            "https://example.com/penpot/assets/by-id/"))))
 
 (t/deftest read-obj-rejects-oversized-buffer
   ;; N1-07: read-obj! must reject objects exceeding max-object-size

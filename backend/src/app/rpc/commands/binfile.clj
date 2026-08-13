@@ -62,7 +62,8 @@
                                      :bucket "tempfile"})]
 
         (-> (cf/get :public-uri)
-            (u/join "/assets/by-id/")
+            (u/ensure-path-slash)
+            (u/join "assets/by-id/")
             (u/join (str (:id object)))))
 
       (finally
