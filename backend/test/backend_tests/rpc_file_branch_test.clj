@@ -10,7 +10,7 @@
    [app.common.files.branch-merge :as bm]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
-   [app.config :as cf]
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
