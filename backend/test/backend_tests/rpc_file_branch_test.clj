@@ -968,12 +968,17 @@
             (t/is (true? (-> out :result :changed))))
 
           (let [row (th/db-get :file {:id branch-file-id})]
-            (t/is (false? (:is-branch row)))
-            (t/is (some? (:data row))))
+            (t/is (false? (:is-branch row))))
+
+          ;; the payload lands where the ordinary write path puts it, which
+          ;; is a `file_data` row rather than the legacy `file.data` column
+          (t/is (some? (th/db-get :file-data {:file-id branch-file-id :type "data"})))
 
           (t/is (empty? (th/db-query :file-branch-change {:branch-id branch-id})))
 
-          (let [row (th/db-get :file-branch {:id branch-id})]
+          ;; the branch row is archived AND logically deleted, so it has to
+          ;; be read with the deleted-row filter off
+          (let [row (th/db-get :file-branch {:id branch-id} {:app.db/remove-deleted false})]
             (t/is (= "archived" (:status row)))
             (t/is (some? (:deleted-at row)))))
 
