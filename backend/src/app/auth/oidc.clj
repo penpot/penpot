@@ -620,9 +620,6 @@
       (some? (:external-session-id state))
       (assoc :external-session-id (:external-session-id state))
 
-      (some? (:token/expires-in tdata))
-      (assoc :sso-token-exp (ct/in-future {:seconds (:token/expires-in tdata)}))
-
       ;; If state token comes with props, merge them. The state token
       ;; props can contain pm_ and utm_ prefixed query params.
       (map? (:props state))
@@ -906,9 +903,9 @@
       (let [organization-id (:organization-id state)
             sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
             provider        (prepare-organization-sso-provider cfg sso)
-            info            (get-info cfg provider state code)
+            _info           (get-info cfg provider state code)
             session         (session/get-session request)
-            exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]
+            exp             (ct/in-future {:minutes 15})]
         (when (and session organization-id)
           (let [props (-> (or (:props session) {})
                           (update :sso assoc organization-id exp))]
