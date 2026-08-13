@@ -940,7 +940,7 @@
                        ;; into replayable ops; nothing has been
                        ;; persisted yet, so the transaction rollback
                        ;; undoes the snapshot and media copies above.
-                       (let [{:keys [squashed]
+                       (let [{net-changes :changes
                               unsupported :unsupported}
                              (bm/compute-changes main-data main-data (:data updated) {})]
                          (when (seq unsupported)
@@ -948,7 +948,7 @@
                                      :code :unsupported-update-squash
                                      :hint "the update produces branch-only changes that cannot be replayed"
                                      :kinds (vec unsupported)))
-                         (persist-branch-update! cfg updated ts branch-id squashed))
+                         (persist-branch-update! cfg updated ts branch-id net-changes))
                        (reposition-base! ts (:revn updated))
 
                        (mbus/pub! msgbus

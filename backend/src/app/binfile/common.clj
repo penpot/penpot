@@ -332,11 +332,18 @@
 
         ;; same decode `fsnap/get-snapshot` applies: storage-backed
         ;; snapshots carry the storage ref inside :metadata, so it must
-        ;; be decoded before `resolve-file-data` can fetch the object
+        ;; be decoded before `resolve-file-data` can fetch the object.
+        ;; NOTE the (cfg file) argument order of both fdata fns: the
+        ;; snapshot row is the FILE argument, never the cfg.
         base (-> base
-                 (d/update-when :metadata fdata/decode-metadata)
-                 (fdata/resolve-file-data cfg)
-                 (fdata/decode-file-data cfg))
+                 (d/update-when :metadata fdata/decode-metadata))
+
+        base (if (nil? (:migrations base))
+               (dissoc base :migrations)
+               (update base :migrations db/pgarray->set))
+
+        base (fdata/resolve-file-data cfg base)
+        base (fdata/decode-file-data cfg base)
 
         rows (db/exec! conn [sql:get-branch-changes id])
 
@@ -346,9 +353,16 @@
                      rows)
 
         data (if decode? data (blob/encode data))]
-    (assoc file :data data)))
-
-
+    (-> file
+        ;; the derived data is the BASE's data plus the op log, so the
+        ;; file carries the base's version and migration set; this keeps
+        ;; `need-migration?` quiet while base and main share a version
+        ;; and migrates in memory (read-only) only when the base is
+        ;; actually stale
+        (assoc :data data)
+        (assoc :version (or (:version base) (:version file)))
+        (cond-> (some? (:migrations base))
+          (assoc :migrations (:migrations base))))))
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
    {:keys [migrate?

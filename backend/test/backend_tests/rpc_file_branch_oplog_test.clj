@@ -46,8 +46,11 @@
 (defn- oplog-rows [branch-file-id]
   (th/db-query :file-branch-change {:file-id branch-file-id}))
 
+;; only "main" rows: the auto-file-snapshot machinery appends "snapshot"
+;; rows on every save, which are checkpoints, not a stored data payload
 (defn- stored-data-rows [file-id]
-  (th/db-query :file-data {:file-id file-id}))
+  (->> (th/db-query :file-data {:file-id file-id})
+       (filterv #(= "main" (:type %)))))
 
 (t/deftest branch-stores-no-data-and-derives-state
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -144,7 +147,7 @@
 
       (t/testing "the op log is replaced by the branch-only net"
         (let [rows (oplog-rows branch-file-id)
-              ops  (mapv (comp blob/decode :changes) rows)]
+              ops  (-> rows first :changes blob/decode)]
           (t/is (= 1 (count rows)))
           (t/is (some #(and (= :add-color (:type %))
                             (= branch-color (get-in % [:color :id])))
