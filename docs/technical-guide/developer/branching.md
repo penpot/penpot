@@ -495,6 +495,35 @@ snapshot. Two extra steps at the end keep the op log sound:
 UI resolutions arrive in main/branch terms and are inverted server-side
 (per-attr maps included) before translation.
 
+## Materializing a branch: the exit door
+
+`::materialize-file-branch` turns a branch into an ordinary file. It takes
+the branch FILE id, derives the state once (base snapshot + op log), and in
+one transaction under the file's advisory lock:
+
+ * persists that state as the file's own payload through the ordinary write
+   path (`files-update::persist-file!`, so the data lands in a `file_data`
+   row of type `main` exactly as any other save would),
+ * clears `is_branch`, which is the flag both the read path
+   (`binfile::get-file*`) and the write path (`files-update::update-file*`)
+   switch on, so from that point nothing derives anything,
+ * deletes the op log rows, closes any open pull request over the branch,
+   releases the pinned base snapshot, and archives the `file_branch` row
+   (archived rather than deleted, because the pull requests reference it
+   with `ON DELETE CASCADE`).
+
+It is **idempotent** because it keys on the file rather than on the branch
+metadata: a file with no live branch row is already materialised, and the
+command reports `{:status :materialized :changed false}` without touching
+anything.
+
+Two properties are worth stating for whoever removes this feature later.
+The materialised file keeps the branch file's feature set, which excludes
+`fdata/objects-map` and `fdata/pointer-map` (branch creation removed them),
+so it is stored as one payload rather than as an objects map. And the
+operation does not bump `revn`: the state a client already holds is the
+state that gets persisted.
+
 ## RPC API summary
 
 All commands live in `app.rpc.commands.files-branch`, are gated by
@@ -507,6 +536,7 @@ All commands live in `app.rpc.commands.files-branch`, are gated by
 | `::get-branch-diff`           | query    | Read-only three-way diff (either direction)         |
 | `::merge-file-branch`         | mutation | Integrate a branch into main (resolutions, `expected-main-revn`, `keep-branch`) |
 | `::update-branch-from-main`   | mutation | Pull main's changes into the branch                 |
+| `::materialize-file-branch`   | mutation | Turn a branch into an ordinary file (idempotent)    |
 | `::get-file-branch-info`      | query    | Branch metadata when opening a branch file          |
 | `::update-file-branch`        | mutation | Rename / edit description                            |
 | `::archive-file-branch`       | mutation | Archive / restore a branch                          |
