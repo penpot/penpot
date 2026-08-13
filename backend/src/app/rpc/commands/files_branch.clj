@@ -40,6 +40,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
    [app.util.blob :as blob]
+   [app.util.cache :as ucache]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.worker :as wrk]
@@ -402,7 +403,7 @@
   (-> (media-pairs cfg branch-file-id source-file-id)
       (assoc branch-file-id source-file-id)))
 
-(defn branch-diff-counts
+(defn branch-diff-counts!
   "Entity-level `[ahead behind conflicts]` change counts between a branch
   file and its source (main) — the same numbers the compare dialog lists
   (root-frame churn and structural noise filtered out). The revn deltas
@@ -410,40 +411,64 @@
   side hasn't moved. `main-data` may be pre-realized and shared across
   branches of the same source; otherwise it is loaded on demand.
 
-  When the base snapshot cannot be resolved the counts degrade to zeros
-  with a warning: this is a read-only listing, and merge/update DO refuse
-  loudly in that situation (`get-base-data`)."
+  Raises on failure instead of degrading: the caller decides whether the
+  result is worth caching, and a value computed from an error must never
+  enter the summary cache."
   [cfg main-data {:keys [source-file-id branch-file-id ahead-revn behind-revn] :as branch}]
   (if (and (zero? ahead-revn) (zero? behind-revn))
     [0 0 0]
-    (try
-      (let [main-data   (or main-data (:data (bfc/get-file cfg source-file-id :realize? true)))
-            branch-data (bm/remap-refs
-                         (:data (bfc/get-file cfg branch-file-id :realize? true))
-                         (branch-id-map cfg branch-file-id source-file-id))
-            base-data   (get-base-data cfg branch)
-            clean-count (fn [m] (let [s (:stats m)]
-                                  (+ (:added s) (:modified s) (:deleted s))))
-            fwd (when (pos? ahead-revn)
-                  (bm/compute-merge base-data main-data branch-data :branch->main))
-            bwd (when (pos? behind-revn)
-                  (bm/compute-merge base-data branch-data main-data :branch->main))]
-        [(if fwd (clean-count fwd) 0)
-         (if bwd (clean-count bwd) 0)
-         ;; conflicts are symmetric; only possible when both sides diverged
-         (if (and (pos? ahead-revn) (pos? behind-revn)) (count (:conflicts fwd)) 0)])
-      (catch Throwable cause
-        (l/wrn :hint "unable to compute branch diff counts"
-               :branch-file-id (str branch-file-id)
-               :source-file-id (str source-file-id)
-               :cause cause)
-        [0 0 0]))))
+    (let [main-data   (or main-data (:data (bfc/get-file cfg source-file-id :realize? true)))
+          branch-data (bm/remap-refs
+                       (:data (bfc/get-file cfg branch-file-id :realize? true))
+                       (branch-id-map cfg branch-file-id source-file-id))
+          base-data   (get-base-data cfg branch)
+          clean-count (fn [m] (let [s (:stats m)]
+                                (+ (:added s) (:modified s) (:deleted s))))
+          fwd (when (pos? ahead-revn)
+                (bm/compute-merge base-data main-data branch-data :branch->main))
+          bwd (when (pos? behind-revn)
+                (bm/compute-merge base-data branch-data main-data :branch->main))]
+      [(if fwd (clean-count fwd) 0)
+       (if bwd (clean-count bwd) 0)
+       ;; conflicts are symmetric; only possible when both sides diverged
+       (if (and (pos? ahead-revn) (pos? behind-revn)) (count (:conflicts fwd)) 0)])))
+
+(defn branch-diff-counts
+  "The counts of `branch-diff-counts!`, degrading to zeros with a warning
+  when the base snapshot cannot be resolved: this is a read-only listing,
+  and merge/update DO refuse loudly in that situation (`get-base-data`)."
+  [cfg main-data branch]
+  (try
+    (branch-diff-counts! cfg main-data branch)
+    (catch Throwable cause
+      (l/wrn :hint "unable to compute branch diff counts"
+             :branch-file-id (str (:branch-file-id branch))
+             :source-file-id (str (:source-file-id branch))
+             :cause cause)
+      [0 0 0])))
+
+(def ^:private branch-summary-cache
+  "The per-branch `[ahead behind conflicts]` summary, keyed by
+  `(base-snapshot-id, source-revn, branch-revn)` — exactly the inputs the
+  computation reads. A stale key is a cache miss, and a cache miss is the
+  old behaviour, so the cache needs no invalidation logic; `keepalive`
+  and `max-size` bound memory, they never decide correctness."
+  (ucache/create :max-size 2048 :keepalive "10m"))
+
+(defn- summary-cache-key
+  [{:keys [base-snapshot-id source-revn branch-revn]}]
+  [base-snapshot-id source-revn branch-revn])
 
 (sv/defmethod ::get-file-branches
   "List the branches of a file. `ahead`/`behind` are entity-level change
   counts (matching the compare dialog), gated by the cheap revn deltas so
   in-sync branches skip the diff entirely; `main` is realized once and
-  shared across branches."
+  shared across branches.
+
+  The per-branch summary is cached by `(base-snapshot-id, source-revn,
+  branch-revn)`: a repeated listing with no intervening save performs no
+  comparison work, and the tuple names exactly the inputs the computation
+  reads, so a stale key cannot exist and the cache needs no invalidation."
   {::doc/added "2.16"
    ::sm/params schema:get-file-branches}
   [cfg {:keys [::rpc/profile-id file-id include-archived]}]
@@ -456,23 +481,38 @@
                    ;; are not going to be merged as-is, so the expensive diff
                    ;; would be wasted work (and their base may be released)
                    open?     (fn [row] (= "open" (:status row)))
+                   cached    (fn [row] (ucache/get branch-summary-cache (summary-cache-key row)))
                    ;; realize main once, only if some open branch diverged
+                   ;; AND its summary is not cached
                    need?     (some (fn [r] (and (open? r)
+                                                (nil? (cached r))
                                                 (let [[a b] (revn-deltas r)] (or (pos? a) (pos? b)))))
                                    rows)
-                   main-data (when need? (:data (bfc/get-file cfg file-id :realize? true)))]
-               (mapv (fn [{:keys [base-snapshot-id branch-file-id] :as row}]
-                       (let [[ahead-revn behind-revn] (revn-deltas row)
-                             [ahead behind conflicts]
-                             (if (open? row)
-                               (branch-diff-counts cfg main-data
-                                                   {:id (:id row)
-                                                    :source-file-id file-id
-                                                    :branch-file-id branch-file-id
-                                                    :base-snapshot-id base-snapshot-id
-                                                    :ahead-revn ahead-revn
-                                                    :behind-revn behind-revn})
-                               [0 0 0])]
+                   main-data (when need? (:data (bfc/get-file cfg file-id :realize? true)))
+                   counts    (fn [row]
+                               (let [k (summary-cache-key row)
+                                     [ahead-revn behind-revn] (revn-deltas row)]
+                                 (or (ucache/get branch-summary-cache k)
+                                     (try
+                                       (ucache/get branch-summary-cache
+                                                   k
+                                                   (fn [_]
+                                                     (branch-diff-counts!
+                                                      cfg main-data
+                                                      {:id (:id row)
+                                                       :source-file-id file-id
+                                                       :branch-file-id (:branch-file-id row)
+                                                       :base-snapshot-id (:base-snapshot-id row)
+                                                       :ahead-revn ahead-revn
+                                                       :behind-revn behind-revn})))
+                                       (catch Throwable cause
+                                         (l/wrn :hint "unable to compute branch diff counts"
+                                                :branch-file-id (str (:branch-file-id row))
+                                                :source-file-id (str file-id)
+                                                :cause cause)
+                                         [0 0 0])))))]
+               (mapv (fn [row]
+                       (let [[ahead behind conflicts] (if (open? row) (counts row) [0 0 0])]
                          (-> row
                              (assoc :ahead ahead :behind behind :conflicts conflicts)
                              (dissoc :branch-revn :source-revn :base-snapshot-id :base-branch-revn))))
