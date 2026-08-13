@@ -111,11 +111,16 @@
           :value (tr "nitrate.code-activation.submit")
           :on-click on-accept}]]
        [:div {:class (stl/css :footer-text)}
-        (tr "nitrate.code-activation.footer-before")
-        [:a {:class (stl/css :link)
-             :on-click on-download-request-click}
-         (tr "nitrate.code-activation.footer-link")]
-        (tr "nitrate.code-activation.footer-after") " "
-        [:a {:class (stl/css :link)
-             :href "mailto:sales@nitrate.com"}
-         "sales@nitrate.com"]]]]]))
+        [:div {:class (stl/css :code-label)} (tr "nitrate.code-activation.footer-title")]
+        [:div
+
+         [:a {:class (stl/css :link)
+              :on-click on-download-request-click}
+          (tr "nitrate.code-activation.footer-download")]]
+        [:div
+         (tr "nitrate.code-activation.footer-after") " "
+         [:a {:class (stl/css :link)
+              :href "mailto:sales@nitrate.com"}
+          "sales@nitrate.com"]
+         " "
+         (tr "nitrate.code-activation.footer-before")]]]]]))
