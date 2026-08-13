@@ -48,7 +48,7 @@
 
 (sv/defmethod ::get-nitrate-connectivity
   {::rpc/auth true
-   ::doc/added "2.14"
+   ::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:connectivity}
   [cfg _params]
@@ -64,7 +64,7 @@
 
 (sv/defmethod ::get-subscription-warning
   {::rpc/auth true
-   ::doc/added "2.14"
+   ::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:subscription-warning}
   [cfg {:keys [::rpc/profile-id]}]
@@ -80,7 +80,7 @@
 
 (sv/defmethod ::redeem-nitrate-activation-code
   {::rpc/auth true
-   ::doc/added "2.14"
+   ::doc/added "2.18"
    ::sm/params schema:redeem-activation-code-params
    ::sm/result schema:redeem-activation-code-result}
   [cfg {:keys [::rpc/profile-id activation-code]}]
@@ -112,7 +112,7 @@
   "Returns a Base64-encoded JSON file requesting a Nitrate activation code.
   Payload includes nitrateId, publicKey, email and iat."
   {::rpc/auth true
-   ::doc/added "2.20"
+   ::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result ::sm/text}
   [cfg {:keys [::rpc/profile-id]}]
@@ -360,7 +360,7 @@
 
 (sv/defmethod ::leave-organization
   {::rpc/auth true
-   ::doc/added "2.15"
+   ::doc/added "2.18"
    ::sm/params schema:leave-organization
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -404,7 +404,7 @@
    [:organization-name ::sm/text]])
 
 (sv/defmethod ::remove-team-from-organization
-  {::doc/added "2.17"
+  {::doc/added "2.18"
    ::sm/params schema:remove-team-from-organization}
   [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
 
@@ -473,7 +473,7 @@
 
 (sv/defmethod ::add-team-to-organization
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:add-team-to-organization
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
@@ -558,7 +558,7 @@
 
 (sv/defmethod ::check-organization-members
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:check-organization-members-params
    ::sm/result [:map-of :string :boolean]
    ::db/transaction true}
@@ -583,7 +583,7 @@
 
 (sv/defmethod ::all-organization-members-in-team
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:all-organization-members-in-team-params
    ::sm/result ::sm/boolean}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
@@ -607,7 +607,7 @@
 
 (sv/defmethod ::all-team-members-in-organizations
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:all-team-members-in-organizations-params
    ::sm/result [:map-of ::sm/uuid ::sm/boolean]}
   [cfg {:keys [::rpc/profile-id team-id organization-ids]}]
@@ -643,7 +643,7 @@
 
 (sv/defmethod ::check-team-external-invitations
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:check-team-external-invitations-params
    ::sm/result schema:check-team-external-invitations-result
    ::db/transaction true}
@@ -677,7 +677,7 @@
   the client must redirect there. The OIDC provider itself handles
   re-authentication transparently if the user already has an active SSO session."
   {::rpc/auth true
-   ::doc/added "2.19"
+   ::doc/added "2.18"
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id team-id organization-id url] :as params}]
