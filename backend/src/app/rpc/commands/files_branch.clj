@@ -860,7 +860,7 @@
                                                    :session-id session-id}))))]
              (cond
                (seq unresolved)
-               {:status :conflicts :conflicts conflicts}
+               (audited {:status :conflicts :conflicts conflicts} tpoint :merge)
 
                :else
                (let [{:keys [changes unsupported]}
@@ -869,14 +869,15 @@
                                          merge-summary)]
                  (cond
                    (seq unsupported)
-                   {:status :unsupported :kinds (vec unsupported)}
+                   (audited {:status :unsupported :kinds (vec unsupported)} tpoint :merge)
 
                    (empty? changes)
                    ;; Nothing to integrate (branch matches main): close the
                    ;; branch without touching main.
                    (let [ts (ct/now)]
                      (finish-branch! ts)
-                     {:status :merged :revn (:revn main-file) :source-file-id main-id})
+                     (audited {:status :merged :revn (:revn main-file) :source-file-id main-id}
+                              tpoint :merge))
 
                    :else
                    (let [team  (teams/get-team conn :profile-id profile-id :file-id main-id)
@@ -1086,7 +1087,7 @@
 
            (cond
              (seq unresolved)
-             {:status :conflicts :conflicts conflicts}
+             (audited {:status :conflicts :conflicts conflicts} tpoint :update-from-main)
 
              :else
              ;; target = branch, source = main -> changes that bring main's
@@ -1100,7 +1101,7 @@
                                        merge-summary)]
                (cond
                  (seq unsupported)
-                 {:status :unsupported :kinds (vec unsupported)}
+                 (audited {:status :unsupported :kinds (vec unsupported)} tpoint :update-from-main)
 
                  (empty? changes)
                  (let [ts (ct/now)]
@@ -1109,7 +1110,7 @@
                    ;; is emptied (old ops were built against the old base)
                    (db/delete! conn :file-branch-change {:branch-id branch-id})
                    (reposition-base! ts (:revn branch-file))
-                   {:status :updated :revn (:revn branch-file)})
+                   (audited {:status :updated :revn (:revn branch-file)} tpoint :update-from-main))
 
                  :else
                  (let [ts (ct/now)]
