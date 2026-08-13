@@ -258,6 +258,37 @@ zeros with a warning on every listing.
 side-effect-free engine: it reads three `:data` blobs and returns a serializable
 summary. It never mutates anything.
 
+### Bounding the branch side to what the op log touched
+
+`compute-merge` accepts `{:only-pages #{page-id …}}`, and every page pass
+honours it, the presence pass included (that one strips the shapes of every
+page it looks at, which is most of what a whole-file comparison costs).
+
+The caller that supplies it is `files-branch::branch-affected-pages`. It reads
+the branch's op log (`binfile::get-branch-changes`) and folds
+`validate::extract-affected-ids` over it, which is sound here for a reason
+specific to this storage model: a branch's `:data` **is** the base snapshot
+plus that log, so a log touching only those pages cannot differ from base
+anywhere else. The forward pass (the branch's own changes) is bounded; the
+reverse pass reports MAIN's changes and stays whole-file, because nothing on
+this side knows which pages main touched.
+
+The bound is dropped, and the comparison stays whole-file, whenever the log
+holds one change the reducer cannot scope to a page or a component: a page or
+component deletion, a page reorder, a colour, a typography, a token, or
+file-level plugin data. That is not a nicety. Those omissions are safe when
+the set bounds a *validation* and unsafe when it bounds a *diff*, so the
+precondition is checked per change (`scoped-change?`) rather than assumed.
+
+Measured on a 21,169-shape file with a one-page edit: the comparison drops
+from 402 ms to 3 ms and touches 1 page instead of 48, while reading the op
+log and folding it costs 1 ms. The rest of a compare is realizing the two
+sides plus the base, which pruning does not address.
+
+One consequence to know about: after `update-branch-from-main`, the squashed
+log is value-derived and re-emits most of the file, so those branches fall
+back to the whole-file comparison.
+
 ### `three-way-entities` — the per-entity truth table
 
 `three-way-entities` diffs one indexed collection (`id -> value`) across
