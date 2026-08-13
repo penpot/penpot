@@ -555,6 +555,37 @@ so it is stored as one payload rather than as an objects map. And the
 operation does not bump `revn`: the state a client already holds is the
 state that gets persisted.
 
+## Size gates and what each operation records
+
+Before this, nothing in the feature limited size, so the failure mode at
+enterprise scale was a timeout: an operation that never returns and a user
+who cannot tell whether it is working. Three config keys hold the limits,
+and each default is a measured cost divided into a 30 s budget and halved:
+
+| key | default | where it comes from |
+| --- | --- | --- |
+| `branching-max-shapes` | 50,000 | a merge on 21,169 shapes costs about 6 s, so 0.28 ms per shape |
+| `branching-max-pages` | 500 | a whole-file comparison of 48 pages costs 402 ms, so 8.4 ms per page |
+| `branching-max-oplog-changes` | 100,000 | one value-derived squash already emits about 19,000 changes |
+
+`check-file-size-limits!` runs on branch creation, compare, merge and
+update-from-main, against the realized file; `check-oplog-depth-limit!` runs
+on compare, merge and update. A refusal is a `:restriction` whose data
+carries `:code`, `:limit`, `:actual` and `:operation`, and whose hint names
+what to do instead: split the file, or materialise the branch and keep
+working on it as an ordinary file. **No gate truncates anything** — each one
+either refuses the whole operation or lets it through.
+
+The listing is deliberately not gated. It renders the branch panel, so
+refusing it would take the panel away rather than protect it, and its cost
+is bounded by the summary cache instead.
+
+Every branch operation attaches `:branch-operation`, `:branch-outcome` and
+`:branch-duration-ms` to its own audit event (`audited`), because the
+generic RPC event records who called what and not how long it took, and
+duration is the number the first enterprise trial will be asked about. Every
+outcome carries them, the no-op merge and the two refusal shapes included.
+
 ## RPC API summary
 
 All commands live in `app.rpc.commands.files-branch`, are gated by
