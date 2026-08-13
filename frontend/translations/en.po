@@ -6073,12 +6073,6 @@ msgstr ""
 "The payment was not completed. Please try again. "
 "If the problem persists, contact us: support@penpot.app."
 
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"We couldn’t confirm your subscription. Please check your subscription "
-"status on the Subscription page. You may try again if needed."
-
 #: src/app/main/ui/settings/sidebar.cljs:114, src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:565
 msgid "subscription.labels"
 msgstr "Subscription"
