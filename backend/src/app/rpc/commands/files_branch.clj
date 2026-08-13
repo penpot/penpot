@@ -1005,6 +1005,100 @@
 
                        {:status :updated :revn (:revn updated)}))))))))))))
 
+;; --- COMMAND: materialize-file-branch
+
+(def ^:private schema:materialize-file-branch
+  [:map {:title "materialize-file-branch"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::materialize-file-branch
+  "Turn a branch file into an ordinary file: persist its derived state as
+  the file's own data payload, drop the op log, release the pinned base
+  snapshot, close any pull request over it, and clear the branch marker so
+  every read and write path takes the ordinary route from then on
+  (`binfile::get-file*` and `files-update::update-file*` both switch on
+  that flag).
+
+  This is the preview's exit door: with it the `:branching` flag can go
+  off and the engine can be replaced without stranding anybody with a file
+  nobody can open.
+
+  It keys on the branch FILE rather than on the branch metadata, which is
+  what makes it idempotent: a file carrying no live branch row is already
+  materialised, and the command reports that without touching anything."
+  {::doc/added "2.16"
+   ::webhooks/event? true
+   ::sm/params schema:materialize-file-branch
+   ::climit/id [[:materialize-file-branch/global]]}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (check-branching-enabled!)
+  (files/check-edition-permissions! cfg profile-id file-id)
+  (db/tx-run!
+   cfg
+   (fn [{:keys [::db/conn] :as cfg}]
+     ;; the advisory lock every save on this file takes: a concurrent
+     ;; branch save must not land between the derive and the persist, or
+     ;; its op would be dropped together with the log
+     (db/xact-lock! conn file-id)
+
+     (let [branch (db/get* conn :file-branch {:branch-file-id file-id})]
+       (if (nil? branch)
+         {:status :materialized :file-id file-id :changed false}
+         (let [file  (bfc/get-file cfg file-id :realize? true)
+               team  (teams/get-team conn :profile-id profile-id :file-id file-id)
+               delay (ldel/get-deletion-delay team)
+               ts    (ct/now)]
+
+           (binding [pmap/*tracked* (pmap/create-tracked)
+                     pmap/*load-fn*  (partial fdata/load-pointer cfg file-id)
+                     cfeat/*current*  (:features file)
+                     cfeat/*previous* (:features file)]
+
+             (let [libs   (bfc/get-resolved-file-libraries cfg file)
+                   errors (not-empty (cfv/validate-file file libs))
+                   file   (if errors
+                            (update file :data cpc/process-changes
+                                    (cfr/repair-file file libs errors))
+                            file)]
+
+               ;; the derived state becomes the file's own payload
+               (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) file)
+
+               ;; from here the ordinary paths apply
+               (db/update! conn :file
+                           {:is-branch false}
+                           {:id file-id}
+                           {::db/return-keys false})
+
+               ;; the payload replaced the log
+               (db/delete! conn :file-branch-change {:branch-id (:id branch)})
+
+               ;; a review sandbox over a file that is no longer a branch
+               ;; has nothing left to review
+               (close-branch-pull-requests! cfg (:id branch)
+                                            {:profile-id profile-id
+                                             :status "closed"
+                                             :deleted-at (ct/in-future delay)})
+
+               ;; nothing derives from the base any more, so the pin goes
+               (release-base-snapshot! cfg branch (ct/in-future delay))
+
+               ;; The branch row is archived rather than deleted: its pull
+               ;; requests reference it with ON DELETE CASCADE, so deleting
+               ;; it would take the review history along, and `archived` is
+               ;; a status the schema already allows.
+               (db/update! conn :file-branch
+                           {:status "archived"
+                            :deleted-at (ct/in-future delay)
+                            :updated-at ts}
+                           {:id (:id branch)}
+                           {::db/return-keys false})
+
+               {:status :materialized
+                :file-id file-id
+                :changed true
+                :revn (:revn file)}))))))))
+
 ;; --- COMMAND QUERY: get-file-branch-info
 
 (def ^:private schema:get-file-branch-info

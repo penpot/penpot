@@ -6,8 +6,10 @@
 
 (ns backend-tests.rpc-file-branch-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.files.branch-merge :as bm]
+   [app.common.files.validate :as cfv]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -922,3 +924,79 @@
           (let [row (th/db-get :file-media-object {:id (:id added)})]
             (t/is (= (:id file) (:file-id row)))
             (t/is (= (:id sobj2) (:media-id row)))))))))
+
+(t/deftest materialize-branch-into-an-ordinary-file
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "exit-door"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          page-1         (uuid/random)
+          page-2         (uuid/random)]
+
+      (t/testing "a non-trivial op log: two saves on the branch"
+        (doseq [[page-id nm] [[page-1 "log-one"] [page-2 "log-two"]]]
+          (let [bf  (th/db-get :file {:id branch-file-id})
+                out (th/command! {::th/type :update-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id branch-file-id
+                                  :session-id (uuid/random)
+                                  :revn (:revn bf)
+                                  :vern (:vern bf)
+                                  :features cfeat/supported-features
+                                  :changes [{:type :add-page :id page-id :name nm}]})]
+            (t/is (nil? (:error out)))))
+        (t/is (= 2 (count (th/db-query :file-branch-change {:branch-id branch-id})))))
+
+      (let [before (:result (th/command! {::th/type :get-file
+                                          ::rpc/profile-id (:id profile)
+                                          :id branch-file-id}))]
+
+        (t/testing "materialize persists the derived state and drops the branch"
+          (let [out (th/command! {::th/type :materialize-file-branch
+                                  ::rpc/profile-id (:id profile)
+                                  :file-id branch-file-id})]
+            (t/is (nil? (:error out)))
+            (t/is (= :materialized (-> out :result :status)))
+            (t/is (true? (-> out :result :changed))))
+
+          (let [row (th/db-get :file {:id branch-file-id})]
+            (t/is (false? (:is-branch row)))
+            (t/is (some? (:data row))))
+
+          (t/is (empty? (th/db-query :file-branch-change {:branch-id branch-id})))
+
+          (let [row (th/db-get :file-branch {:id branch-id})]
+            (t/is (= "archived" (:status row)))
+            (t/is (some? (:deleted-at row)))))
+
+        (t/testing "the file still opens with the state the log produced"
+          (let [after (:result (th/command! {::th/type :get-file
+                                             ::rpc/profile-id (:id profile)
+                                             :id branch-file-id}))
+                pages (-> after :data :pages-index)]
+            (t/is (contains? pages page-1))
+            (t/is (contains? pages page-2))
+            (t/is (= (-> before :data :pages) (-> after :data :pages)))))
+
+        (t/testing "the materialised file validates against its libraries"
+          (let [errors (db/run! th/*system*
+                                (fn [cfg]
+                                  (let [f (bfc/get-file cfg branch-file-id :realize? true)]
+                                    (cfv/validate-file f (bfc/get-resolved-file-libraries cfg f)))))]
+            (t/is (empty? errors))))
+
+        (t/testing "materializing again is a no-op"
+          (let [out (th/command! {::th/type :materialize-file-branch
+                                  ::rpc/profile-id (:id profile)
+                                  :file-id branch-file-id})]
+            (t/is (nil? (:error out)))
+            (t/is (= :materialized (-> out :result :status)))
+            (t/is (false? (-> out :result :changed)))))))))
