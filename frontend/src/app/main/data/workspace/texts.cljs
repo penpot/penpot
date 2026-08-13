@@ -1329,7 +1329,16 @@
                 finalize-save-undo-first?
                 (if (and finalize? (or (not new-shape?) (not content-has-text?)))
                   false
-                  effective-save-undo?)]
+                  effective-save-undo?)
+
+                ;; Whether any content-changing edit happened this editing session.
+                session-touched? (some? (get-in state [:workspace-text-session-geom id]))
+                ;; A finalize on an existing shape that wasn't edited must not create any undo entry
+                ;; (exception being newly created shapes)
+                finalize-no-op?  (and finalize?
+                                      (not new-shape?)
+                                      content-has-text?
+                                      (not session-touched?))]
 
             (rx/concat
              (rx/of
@@ -1360,7 +1369,8 @@
                 :undo-group (when new-shape? id)})
 
               ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
-              (when (some? resize-modifiers)
+              ;; Skipped for a no-op finalize: applying it would record an undo transaction.
+              (when (and (some? resize-modifiers) (not finalize-no-op?))
                 (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
 
              (when finalize?
@@ -1378,7 +1388,7 @@
                           (dwsh/delete-shapes #{id})))
                   (rx/empty))
                 (rx/concat
-                 (if content-has-text?
+                 (if (and content-has-text? (not finalize-no-op?))
                    (rx/of
                     (dch/commit-changes
                      (build-finalize-commit-changes it state id
