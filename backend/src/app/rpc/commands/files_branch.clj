@@ -452,8 +452,13 @@
   `(base-snapshot-id, source-revn, branch-revn)` — exactly the inputs the
   computation reads. A stale key is a cache miss, and a cache miss is the
   old behaviour, so the cache needs no invalidation logic; `keepalive`
-  and `max-size` bound memory, they never decide correctness."
-  (ucache/create :max-size 2048 :keepalive "10m"))
+  and `max-size` bound memory, they never decide correctness.
+
+  The window is a working day rather than minutes because the fetch this
+  exists for is a file open: an entry is a uuid and five numbers, so
+  keeping it costs nothing, and a shorter window pays the whole cold cost
+  again for a designer who comes back after lunch."
+  (ucache/create :max-size 8192 :keepalive "8h"))
 
 (defn- summary-cache-key
   [{:keys [base-snapshot-id source-revn branch-revn]}]
