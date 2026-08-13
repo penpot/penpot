@@ -242,6 +242,16 @@ there is a two-level gate (`branch-diff-counts`):
    branch: count errors degrade to zeros with a warning (the merge itself
    still refuses loudly).
 
+The computed `[ahead behind conflicts]` summary is cached in-memory
+(`files-branch::branch-summary-cache`) keyed by
+`(base-snapshot-id, source-revn, branch-revn)`. The key names exactly the
+inputs the computation reads, so a stale entry cannot exist and the cache
+needs no invalidation logic: a cache miss is the cold path, and a repeated
+listing with no intervening save performs no comparison work. The cache
+bounds memory (`max-size`, `keepalive`) and never decides correctness, and
+a failed computation is not stored, so a broken branch keeps degrading to
+zeros with a warning on every listing.
+
 ## The three-way diff engine
 
 `app.common.files.branch-merge` is the heart of the feature. It is a pure,
