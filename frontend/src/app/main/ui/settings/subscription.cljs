@@ -425,7 +425,7 @@
 
         nitrate-toast-message
         (condp = params-subscription
-          dnt/nitrate-checkout-finish-error-token (tr "subscription.error.nitrate.checkout-finish-failed")
+          dnt/nitrate-checkout-finish-error-token (tr "subscription.error.nitrate.checkout-failed")
           dnt/nitrate-checkout-cancelled-token    (tr "subscription.error.nitrate.checkout-cancelled")
           nil)
 
