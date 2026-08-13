@@ -301,6 +301,14 @@
       AND deleted_at IS NULL
     ORDER BY revn ASC")
 
+(defn get-branch-changes
+  "The branch's op log as decoded change batches, oldest first. This is
+  the complete delta between the branch and its merge base, which is what
+  lets a caller bound work to what the branch touched."
+  [{:keys [::db/conn] :as cfg} branch-file-id]
+  (->> (db/exec! conn [sql:get-branch-changes branch-file-id])
+       (mapv (fn [{:keys [changes]}] (blob/decode changes)))))
+
 (defn- branch-file-data
   "Derive the `:data` of a branch file: the merge-base snapshot plus
   every op appended to the branch's log, replayed in revn order.

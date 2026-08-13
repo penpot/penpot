@@ -295,97 +295,106 @@
               (or pd {}))))
 
 (defn- diff-pages
-  [base theirs ours]
-  (let [bpi (or (:pages-index base) {}) tpi (or (:pages-index theirs) {}) opi (or (:pages-index ours) {})
-        bids (set (keys bpi)) tids (set (keys tpi)) oids (set (keys opi))
-        common (set/intersection bids tids oids)
+  ([base theirs ours] (diff-pages base theirs ours nil))
+  ([base theirs ours only-pages]
+   ;; `only-pages` bounds every page pass, the presence one included,
+   ;; because `page-content` strips the shapes of every page it looks at
+   ;; and that is most of what a whole-file comparison costs. It is the
+   ;; caller's job to establish that `ours` cannot differ from `base`
+   ;; outside that set (see `compute-merge`).
+   (let [keep?    (if (some? only-pages) #(contains? only-pages %) (constantly true))
+         bpi (or (:pages-index base) {}) tpi (or (:pages-index theirs) {}) opi (or (:pages-index ours) {})
+         bids (into #{} (filter keep?) (keys bpi))
+         tids (into #{} (filter keep?) (keys tpi))
+         oids (into #{} (filter keep?) (keys opi))
+         common (set/intersection bids tids oids)
 
-        ;; page add/delete (mergeable: :page). Presence is diffed over the
-        ;; page CONTENT so that deleting a page the other side edited raises
-        ;; a delete conflict instead of silently dropping those edits;
-        ;; content-only modifications are filtered out (granular passes own
-        ;; them) and conflict payloads are slimmed (a full page is huge).
-        presence (-> (three-way-entities (page-content-map bpi bids)
-                                         (page-content-map tpi tids)
-                                         (page-content-map opi oids)
-                                         {:kind :page})
-                     (presence-only)
-                     (update :conflicts #(slim-conflict-sides slim-page %)))
-        ;; page name/background/grid on common pages (mergeable: :page via mod-page)
-        meta-map (fn [pi] (into {} (map (fn [id] [id (page-meta (get pi id))])) common))
-        meta-diff (three-way-entities (meta-map bpi) (meta-map tpi) (meta-map opi) {:kind :page})
-        ;; residual page attrs on common pages (NOT mergeable -> refused, never dropped)
-        extra-map (fn [pi] (into {} (map (fn [id] [id (page-extra (get pi id))])) common))
-        extra-diff (three-way-entities (extra-map bpi) (extra-map tpi) (extra-map opi) {:kind :page-attrs})
-        ;; page order on common pages. The entity id is `:page-order` (NOT a
-        ;; bare `:order`) so its conflict resolution cannot collide with the
-        ;; token-set-order one and matches what `compute-changes` reads.
-        order-of (fn [data] (filterv common (or (:pages data) [])))
-        order (three-way-entities {:page-order (order-of base)} {:page-order (order-of theirs)} {:page-order (order-of ours)}
-                                  {:kind :page-order})
-        ;; guides / flows per common page (mergeable: :page-guide / :page-flow)
-        sub-of (fn [data pid k] (get-in data [:pages-index pid k] {}))
-        guides-diffs (map (fn [pid]
-                            (three-way-entities (sub-of base pid :guides)
-                                                (sub-of theirs pid :guides)
-                                                (sub-of ours pid :guides)
-                                                {:kind :page-guide :page-id pid}))
-                          common)
-        flows-diffs (map (fn [pid]
-                           (three-way-entities (sub-of base pid :flows)
-                                               (sub-of theirs pid :flows)
-                                               (sub-of ours pid :flows)
-                                               {:kind :page-flow :page-id pid}))
-                         common)
-        ;; default-grids per common page (mergeable: :page-grid -> :set-default-grid)
-        grids-diffs (map (fn [pid]
-                           (three-way-entities (sub-of base pid :default-grids)
-                                               (sub-of theirs pid :default-grids)
-                                               (sub-of ours pid :default-grids)
-                                               {:kind :page-grid :page-id pid}))
-                         common)
-        ;; page-level plugin-data per common page (mergeable: :page-plugin -> :set-plugin-data)
-        plugin-of (fn [data pid] (flatten-plugin-data (get-in data [:pages-index pid :plugin-data] {})))
-        plugins-diffs (map (fn [pid]
-                             (three-way-entities (plugin-of base pid)
-                                                 (plugin-of theirs pid)
-                                                 (plugin-of ours pid)
-                                                 {:kind :page-plugin :page-id pid}))
+         ;; page add/delete (mergeable: :page). Presence is diffed over the
+         ;; page CONTENT so that deleting a page the other side edited raises
+         ;; a delete conflict instead of silently dropping those edits;
+         ;; content-only modifications are filtered out (granular passes own
+         ;; them) and conflict payloads are slimmed (a full page is huge).
+         presence (-> (three-way-entities (page-content-map bpi bids)
+                                          (page-content-map tpi tids)
+                                          (page-content-map opi oids)
+                                          {:kind :page})
+                      (presence-only)
+                      (update :conflicts #(slim-conflict-sides slim-page %)))
+         ;; page name/background/grid on common pages (mergeable: :page via mod-page)
+         meta-map (fn [pi] (into {} (map (fn [id] [id (page-meta (get pi id))])) common))
+         meta-diff (three-way-entities (meta-map bpi) (meta-map tpi) (meta-map opi) {:kind :page})
+         ;; residual page attrs on common pages (NOT mergeable -> refused, never dropped)
+         extra-map (fn [pi] (into {} (map (fn [id] [id (page-extra (get pi id))])) common))
+         extra-diff (three-way-entities (extra-map bpi) (extra-map tpi) (extra-map opi) {:kind :page-attrs})
+         ;; page order on common pages. The entity id is `:page-order` (NOT a
+         ;; bare `:order`) so its conflict resolution cannot collide with the
+         ;; token-set-order one and matches what `compute-changes` reads.
+         order-of (fn [data] (filterv common (or (:pages data) [])))
+         order (three-way-entities {:page-order (order-of base)} {:page-order (order-of theirs)} {:page-order (order-of ours)}
+                                   {:kind :page-order})
+         ;; guides / flows per common page (mergeable: :page-guide / :page-flow)
+         sub-of (fn [data pid k] (get-in data [:pages-index pid k] {}))
+         guides-diffs (map (fn [pid]
+                             (three-way-entities (sub-of base pid :guides)
+                                                 (sub-of theirs pid :guides)
+                                                 (sub-of ours pid :guides)
+                                                 {:kind :page-guide :page-id pid}))
                            common)
-        ;; objects (shapes) on common pages (mergeable: :shape). The page
-        ;; root frame (uuid/zero) is skipped and the shapes are diffed
-        ;; STRIPPED of derived attrs (`shape-ignored-attrs`) so that pure
-        ;; `:shapes`/`:touched`/geometry-cache churn neither shows up as a
-        ;; change nor manufactures false conflicts (their merge is driven
-        ;; by add/del/move ops, not by these values).
-        obj-diffs (map (fn [pid]
-                         (let [bo  (get-in base [:pages-index pid :objects] {})
-                               to  (get-in theirs [:pages-index pid :objects] {})
-                               oo  (get-in ours [:pages-index pid :objects] {})
-                               res (three-way-entities (strip-shapes bo) (strip-shapes to) (strip-shapes oo)
-                                                       {:kind :shape :page-id pid
-                                                        :ignore-ids #{uuid/zero}})
-                               ;; enrich each entry with the shape's type/component
-                               ;; nature, read from whichever side still has it
-                               enrich (fn [e]
-                                        (merge e (shape-display-meta
-                                                  (or (get oo (:id e))
-                                                      (get to (:id e))
-                                                      (get bo (:id e))))))
-                               ;; conflict payloads must carry the FULL shapes
-                               ;; (the diff classified stripped copies, but the
-                               ;; conflict UI renders real previews that need
-                               ;; :selrect/:points/:transform)
-                               rehydrate (fn [e]
-                                           (assoc e
-                                                  :base (get bo (:id e))
-                                                  :main (get to (:id e))
-                                                  :branch (get oo (:id e))))]
-                           {:changes   (mapv enrich (:changes res))
-                            :conflicts (mapv (comp rehydrate enrich) (:conflicts res))}))
-                       common)]
-    (merge-results (concat [presence meta-diff extra-diff order]
-                           guides-diffs flows-diffs grids-diffs plugins-diffs obj-diffs))))
+         flows-diffs (map (fn [pid]
+                            (three-way-entities (sub-of base pid :flows)
+                                                (sub-of theirs pid :flows)
+                                                (sub-of ours pid :flows)
+                                                {:kind :page-flow :page-id pid}))
+                          common)
+         ;; default-grids per common page (mergeable: :page-grid -> :set-default-grid)
+         grids-diffs (map (fn [pid]
+                            (three-way-entities (sub-of base pid :default-grids)
+                                                (sub-of theirs pid :default-grids)
+                                                (sub-of ours pid :default-grids)
+                                                {:kind :page-grid :page-id pid}))
+                          common)
+         ;; page-level plugin-data per common page (mergeable: :page-plugin -> :set-plugin-data)
+         plugin-of (fn [data pid] (flatten-plugin-data (get-in data [:pages-index pid :plugin-data] {})))
+         plugins-diffs (map (fn [pid]
+                              (three-way-entities (plugin-of base pid)
+                                                  (plugin-of theirs pid)
+                                                  (plugin-of ours pid)
+                                                  {:kind :page-plugin :page-id pid}))
+                            common)
+         ;; objects (shapes) on common pages (mergeable: :shape). The page
+         ;; root frame (uuid/zero) is skipped and the shapes are diffed
+         ;; STRIPPED of derived attrs (`shape-ignored-attrs`) so that pure
+         ;; `:shapes`/`:touched`/geometry-cache churn neither shows up as a
+         ;; change nor manufactures false conflicts (their merge is driven
+         ;; by add/del/move ops, not by these values).
+         obj-diffs (map (fn [pid]
+                          (let [bo  (get-in base [:pages-index pid :objects] {})
+                                to  (get-in theirs [:pages-index pid :objects] {})
+                                oo  (get-in ours [:pages-index pid :objects] {})
+                                res (three-way-entities (strip-shapes bo) (strip-shapes to) (strip-shapes oo)
+                                                        {:kind :shape :page-id pid
+                                                         :ignore-ids #{uuid/zero}})
+                                ;; enrich each entry with the shape's type/component
+                                ;; nature, read from whichever side still has it
+                                enrich (fn [e]
+                                         (merge e (shape-display-meta
+                                                   (or (get oo (:id e))
+                                                       (get to (:id e))
+                                                       (get bo (:id e))))))
+                                ;; conflict payloads must carry the FULL shapes
+                                ;; (the diff classified stripped copies, but the
+                                ;; conflict UI renders real previews that need
+                                ;; :selrect/:points/:transform)
+                                rehydrate (fn [e]
+                                            (assoc e
+                                                   :base (get bo (:id e))
+                                                   :main (get to (:id e))
+                                                   :branch (get oo (:id e))))]
+                            {:changes   (mapv enrich (:changes res))
+                             :conflicts (mapv (comp rehydrate enrich) (:conflicts res))}))
+                        common)]
+     (merge-results (concat [presence meta-diff extra-diff order]
+                            guides-diffs flows-diffs grids-diffs plugins-diffs obj-diffs)))))
 
 ;; --- Tokens ---
 ;;
@@ -631,33 +640,43 @@
      :conflicts [<conflict descriptor> ...] ; need resolution
      :stats     {:added n :modified n :deleted n :conflicts n}}
 
+  `opts` may carry `:only-pages`, a set of page ids the page passes are
+  bounded to. It is sound exactly when `ours` cannot differ from `base`
+  outside that set, because then no page outside it can carry an
+  `ours`-side change and no page outside it can hold a conflict, which
+  needs one. A branch whose op log touches only those pages satisfies
+  that by construction, since its state IS the base plus that log. It is
+  NOT sound for the direction that reports main's changes, and passing it
+  there would hide them.
+
   NOTE: token-lib diffing is not yet implemented (handled in a later
   phase); `:tokens-lib` changes are not reported here."
-  [base main branch dir]
-  (let [[theirs ours] (if (= dir :main->branch) [branch main] [main branch])
-        results  [(three-way-entities (strip-modified-at (:colors base))
-                                      (strip-modified-at (:colors theirs))
-                                      (strip-modified-at (:colors ours))
-                                      {:kind :color})
-                  (three-way-entities (strip-modified-at (:typographies base))
-                                      (strip-modified-at (:typographies theirs))
-                                      (strip-modified-at (:typographies ours))
-                                      {:kind :typography})
-                  (three-way-entities (strip-modified-at (:components base))
-                                      (strip-modified-at (:components theirs))
-                                      (strip-modified-at (:components ours))
-                                      {:kind :component})
-                  (three-way-entities (:media base) (:media theirs) (:media ours)
-                                      {:kind :media})
-                  (diff-pages base theirs ours)
-                  (diff-tokens base theirs ours)]
-        {:keys [changes conflicts]} (merge-results results)]
-    {:changes   changes
-     :conflicts conflicts
-     :stats     {:added     (count (filterv #(= :added (:status %)) changes))
-                 :modified  (count (filterv #(= :modified (:status %)) changes))
-                 :deleted   (count (filterv #(= :deleted (:status %)) changes))
-                 :conflicts (count conflicts)}}))
+  ([base main branch dir] (compute-merge base main branch dir nil))
+  ([base main branch dir {:keys [only-pages]}]
+   (let [[theirs ours] (if (= dir :main->branch) [branch main] [main branch])
+         results  [(three-way-entities (strip-modified-at (:colors base))
+                                       (strip-modified-at (:colors theirs))
+                                       (strip-modified-at (:colors ours))
+                                       {:kind :color})
+                   (three-way-entities (strip-modified-at (:typographies base))
+                                       (strip-modified-at (:typographies theirs))
+                                       (strip-modified-at (:typographies ours))
+                                       {:kind :typography})
+                   (three-way-entities (strip-modified-at (:components base))
+                                       (strip-modified-at (:components theirs))
+                                       (strip-modified-at (:components ours))
+                                       {:kind :component})
+                   (three-way-entities (:media base) (:media theirs) (:media ours)
+                                       {:kind :media})
+                   (diff-pages base theirs ours only-pages)
+                   (diff-tokens base theirs ours)]
+         {:keys [changes conflicts]} (merge-results results)]
+     {:changes   changes
+      :conflicts conflicts
+      :stats     {:added     (count (filterv #(= :added (:status %)) changes))
+                  :modified  (count (filterv #(= :modified (:status %)) changes))
+                  :deleted   (count (filterv #(= :deleted (:status %)) changes))
+                  :conflicts (count conflicts)}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MERGE -> CHANGES (Phase 3, no-conflict path)

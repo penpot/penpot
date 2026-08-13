@@ -403,6 +403,47 @@
   (-> (media-pairs cfg branch-file-id source-file-id)
       (assoc branch-file-id source-file-id)))
 
+(def ^:private scoped-change-types
+  "The change types `validate::extract-affected-ids` maps to a page or a
+  component id. Every other type (a page or component deletion, page
+  order, colors, typographies, tokens, file-level plugin data) is real in
+  a diff and invisible to that reducer, so a log containing one has no
+  complete affected set and cannot bound a comparison."
+  #{:add-obj :mod-obj :del-obj :fix-obj :mov-objects :reorder-children :reg-objects
+    :add-page :mod-page :add-component :mod-component :restore-component})
+
+(defn- scoped-change?
+  [{:keys [type page-id component-id id]}]
+  (and (contains? scoped-change-types type)
+       (case type
+         (:add-page :mod-page :add-component :mod-component)
+         (some? id)
+
+         ;; restores touch the component definition AND the page its main
+         ;; instance lands on, so both ids have to be there for the set to
+         ;; be complete
+         :restore-component
+         (and (some? id) (some? page-id))
+
+         ;; a shape op carries either a page or a component; one without
+         ;; both scopes to nothing the reducer can name
+         (or (some? page-id) (some? component-id)))))
+
+(defn- branch-affected-pages
+  "The set of page ids a branch's op log touched, or nil when the log
+  holds a change that is not scoped to a page or a component.
+
+  It is exact rather than approximate because of the storage model: a
+  branch's `:data` IS the base snapshot plus this log, so a log that only
+  touches these pages cannot differ from base anywhere else. `nil` is the
+  honest answer for everything else, and it leaves the whole-file
+  comparison in place."
+  [cfg branch-file-id]
+  (let [batches (bfc/get-branch-changes cfg branch-file-id)
+        changes (into [] (mapcat identity) batches)]
+    (when (every? scoped-change? changes)
+      (:page-ids (cfv/extract-affected-ids changes)))))
+
 (defn branch-diff-counts!
   "Entity-level `[ahead behind conflicts]` change counts between a branch
   file and its source (main) — the same numbers the compare dialog lists
@@ -410,6 +451,11 @@
   are used only as a cheap gate to skip the (expensive) 3-way diff when a
   side hasn't moved. `main-data` may be pre-realized and shared across
   branches of the same source; otherwise it is loaded on demand.
+
+  The forward pass is bounded to the pages the branch's op log touched
+  when that set is complete (`branch-affected-pages`); the reverse pass
+  reports MAIN's changes and stays whole-file, because nothing here knows
+  what main touched.
 
   Raises on failure instead of degrading: the caller decides whether the
   result is worth caching, and a value computed from an error must never
@@ -425,7 +471,9 @@
           clean-count (fn [m] (let [s (:stats m)]
                                 (+ (:added s) (:modified s) (:deleted s))))
           fwd (when (pos? ahead-revn)
-                (bm/compute-merge base-data main-data branch-data :branch->main))
+                (bm/compute-merge base-data main-data branch-data :branch->main
+                                  (when-let [pages (branch-affected-pages cfg branch-file-id)]
+                                    {:only-pages pages})))
           bwd (when (pos? behind-revn)
                 (bm/compute-merge base-data branch-data main-data :branch->main))]
       [(if fwd (clean-count fwd) 0)
@@ -554,19 +602,26 @@
 
     (files/check-read-permissions! cfg profile-id (:source-file-id branch))
 
-    (let [main-file   (bfc/get-file cfg (:source-file-id branch) :realize? true)
+    (let [dir         (or direction :branch->main)
+          main-file   (bfc/get-file cfg (:source-file-id branch) :realize? true)
           branch-file (bfc/get-file cfg (:branch-file-id branch) :realize? true)
           main-data   (:data main-file)
           branch-data (bm/remap-refs
                        (:data branch-file)
                        (branch-id-map cfg (:branch-file-id branch) (:source-file-id branch)))
-          base-data   (get-base-data cfg branch)]
+          base-data   (get-base-data cfg branch)
+          ;; only the branch->main direction may be bounded to the pages
+          ;; the branch touched: the other direction is main's changes and
+          ;; nothing here knows which pages those are
+          opts        (when (= dir :branch->main)
+                        (when-let [pages (branch-affected-pages cfg (:branch-file-id branch))]
+                          {:only-pages pages}))]
       ;; `:meta` carries the "when" of each side so the resolution UI can show
       ;; how recent main/branch are (base is pinned at branch creation), plus
       ;; `:main-revn` so the client can do optimistic concurrency on merge
       ;; (`expected-main-revn`). The last editor's identity is intentionally
       ;; omitted: files do not store a reliable "modified-by".
-      (-> (bm/compute-merge base-data main-data branch-data (or direction :branch->main))
+      (-> (bm/compute-merge base-data main-data branch-data dir opts)
           (assoc :meta {:base-at   (:created-at branch)
                         :main-at   (:modified-at main-file)
                         :branch-at (:modified-at branch-file)

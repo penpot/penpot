@@ -885,14 +885,20 @@
     (check-component component file)
     (deref *errors*)))
 
-(defn- extract-affected-ids
+(defn extract-affected-ids
   "Single reduce pass over a changes batch.
   Returns {:page-ids #{uuid …} :component-ids #{uuid …}}.
 
   Only entities that need re-validation after applying `changes` are
   included.  Deleted entities and pure file-level changes (colors,
   tokens, typography…) produce no entries because there is nothing left
-  to check."
+  to check.
+
+  Public because bounding a diff wants the same set as bounding a
+  validation: `files-branch` folds it over a branch's op log to prune the
+  branch side of a comparison. A caller that prunes MUST first establish
+  that every change in the batch is scoped to a page or a component,
+  because the omissions above are safe for validation and not for a diff."
   [changes]
 
   (loop [changes (seq changes)

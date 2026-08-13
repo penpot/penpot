@@ -1006,3 +1006,132 @@
             (t/is (nil? (:error out)))
             (t/is (= :materialized (-> out :result :status)))
             (t/is (false? (-> out :result :changed)))))))))
+
+(defn- with-pruning-checked
+  "Run `f` with the diff engine wrapped so that every pruned comparison is
+  also computed whole-file and the two summaries must agree. Returns the
+  number of pruned comparisons the run performed."
+  [f]
+  (let [orig   bm/compute-merge
+        pruned (atom 0)]
+    (with-redefs [bm/compute-merge
+                  (fn [base main branch dir & [opts]]
+                    (let [res (orig base main branch dir opts)]
+                      (when (:only-pages opts)
+                        (swap! pruned inc)
+                        (t/is (= (orig base main branch dir nil) res)
+                              "the pruned summary differs from the whole-file summary"))
+                      res))]
+      (f))
+    @pruned))
+
+(t/deftest pruned-diff-equals-the-whole-file-diff
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          page-id (-> (th/command! {::th/type :get-file
+                                    ::rpc/profile-id (:id profile)
+                                    :id (:id file)})
+                      :result :data :pages first)
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "pruned"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          rect-id        (uuid/random)]
+
+      (t/testing "a page-scoped edit on the branch and a page on main"
+        (let [bf  (th/db-get :file {:id branch-file-id})
+              out (th/command! {::th/type :update-file
+                                ::rpc/profile-id (:id profile)
+                                :id branch-file-id
+                                :session-id (uuid/random)
+                                :revn (:revn bf)
+                                :vern (:vern bf)
+                                :features cfeat/supported-features
+                                :changes [{:type :add-obj
+                                           :page-id page-id
+                                           :id rect-id
+                                           :parent-id uuid/zero
+                                           :frame-id uuid/zero
+                                           :obj (cts/setup-shape
+                                                 {:id rect-id :name "Pruned" :type :rect
+                                                  :parent-id uuid/zero :frame-id uuid/zero})}]})]
+          (t/is (nil? (:error out))))
+        (let [mf  (th/db-get :file {:id (:id file)})
+              out (th/command! {::th/type :update-file
+                                ::rpc/profile-id (:id profile)
+                                :id (:id file)
+                                :session-id (uuid/random)
+                                :revn (:revn mf)
+                                :vern (:vern mf)
+                                :features cfeat/supported-features
+                                :changes [{:type :add-page :id (uuid/random) :name "main-side"}]})]
+          (t/is (nil? (:error out)))))
+
+      (t/testing "the compare is pruned and reports the same summary"
+        (let [result (volatile! nil)
+              pruned (with-pruning-checked
+                       (fn []
+                         (vreset! result (th/command! {::th/type :get-branch-diff
+                                                       ::rpc/profile-id (:id profile)
+                                                       :branch-id branch-id}))))]
+          (t/is (nil? (:error @result)))
+          (t/is (pos? pruned) "the compare was not pruned at all")
+          (t/is (some #(= rect-id (:id %)) (:changes (:result @result))))))
+
+      (t/testing "the listing is pruned and reports the same counts"
+        (let [result (volatile! nil)
+              pruned (with-pruning-checked
+                       (fn []
+                         (vreset! result (th/command! {::th/type :get-file-branches
+                                                       ::rpc/profile-id (:id profile)
+                                                       :file-id (:id file)}))))
+              row    (first (:result @result))]
+          (t/is (nil? (:error @result)))
+          (t/is (pos? pruned))
+          (t/is (= 1 (:ahead row)))
+          (t/is (= 1 (:behind row))))))))
+
+(t/deftest an-unscoped-log-keeps-the-whole-file-diff
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          create   (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)
+                                          :name "unscoped"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          color-id (uuid/random)
+          color    {:id color-id :name "Brand" :color "#ff0000" :opacity 1}]
+
+      (t/testing "a file-level change on the branch: the reducer cannot name it"
+        (let [bf  (th/db-get :file {:id branch-file-id})
+              out (th/command! {::th/type :update-file
+                                ::rpc/profile-id (:id profile)
+                                :id branch-file-id
+                                :session-id (uuid/random)
+                                :revn (:revn bf)
+                                :vern (:vern bf)
+                                :features cfeat/supported-features
+                                :changes [{:type :add-color :color color}]})]
+          (t/is (nil? (:error out)))))
+
+      (t/testing "the compare falls back to the whole file and still sees it"
+        (let [result (volatile! nil)
+              pruned (with-pruning-checked
+                       (fn []
+                         (vreset! result (th/command! {::th/type :get-branch-diff
+                                                       ::rpc/profile-id (:id profile)
+                                                       :branch-id branch-id}))))]
+          (t/is (nil? (:error @result)))
+          (t/is (zero? pruned) "an unscoped log must not be pruned")
+          (t/is (some #(= color-id (:id %)) (:changes (:result @result)))))))))
