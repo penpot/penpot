@@ -632,6 +632,36 @@
               (transient {})
               (or index {}))))
 
+(defn- compute-merge*
+  "The comparison itself. Both arities of `compute-merge` land here rather
+  than one delegating to the other through the var, so that a test which
+  counts engine calls counts comparisons and not dispatches."
+  [base main branch dir only-pages]
+  (let [[theirs ours] (if (= dir :main->branch) [branch main] [main branch])
+        results  [(three-way-entities (strip-modified-at (:colors base))
+                                      (strip-modified-at (:colors theirs))
+                                      (strip-modified-at (:colors ours))
+                                      {:kind :color})
+                  (three-way-entities (strip-modified-at (:typographies base))
+                                      (strip-modified-at (:typographies theirs))
+                                      (strip-modified-at (:typographies ours))
+                                      {:kind :typography})
+                  (three-way-entities (strip-modified-at (:components base))
+                                      (strip-modified-at (:components theirs))
+                                      (strip-modified-at (:components ours))
+                                      {:kind :component})
+                  (three-way-entities (:media base) (:media theirs) (:media ours)
+                                      {:kind :media})
+                  (diff-pages base theirs ours only-pages)
+                  (diff-tokens base theirs ours)]
+        {:keys [changes conflicts]} (merge-results results)]
+    {:changes   changes
+     :conflicts conflicts
+     :stats     {:added     (count (filterv #(= :added (:status %)) changes))
+                 :modified  (count (filterv #(= :modified (:status %)) changes))
+                 :deleted   (count (filterv #(= :deleted (:status %)) changes))
+                 :conflicts (count conflicts)}}))
+
 (defn compute-merge
   "Compute the three-way diff between the merge `base`, `main` and
   `branch` file `:data`. Returns:
@@ -651,32 +681,9 @@
 
   NOTE: token-lib diffing is not yet implemented (handled in a later
   phase); `:tokens-lib` changes are not reported here."
-  ([base main branch dir] (compute-merge base main branch dir nil))
+  ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
-   (let [[theirs ours] (if (= dir :main->branch) [branch main] [main branch])
-         results  [(three-way-entities (strip-modified-at (:colors base))
-                                       (strip-modified-at (:colors theirs))
-                                       (strip-modified-at (:colors ours))
-                                       {:kind :color})
-                   (three-way-entities (strip-modified-at (:typographies base))
-                                       (strip-modified-at (:typographies theirs))
-                                       (strip-modified-at (:typographies ours))
-                                       {:kind :typography})
-                   (three-way-entities (strip-modified-at (:components base))
-                                       (strip-modified-at (:components theirs))
-                                       (strip-modified-at (:components ours))
-                                       {:kind :component})
-                   (three-way-entities (:media base) (:media theirs) (:media ours)
-                                       {:kind :media})
-                   (diff-pages base theirs ours only-pages)
-                   (diff-tokens base theirs ours)]
-         {:keys [changes conflicts]} (merge-results results)]
-     {:changes   changes
-      :conflicts conflicts
-      :stats     {:added     (count (filterv #(= :added (:status %)) changes))
-                  :modified  (count (filterv #(= :modified (:status %)) changes))
-                  :deleted   (count (filterv #(= :deleted (:status %)) changes))
-                  :conflicts (count conflicts)}})))
+   (compute-merge* base main branch dir only-pages)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MERGE -> CHANGES (Phase 3, no-conflict path)
