@@ -30,6 +30,7 @@
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
+   [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -54,6 +55,99 @@
     (ex/raise :type :restriction
               :code :branching-disabled
               :hint "the branching feature is not enabled on this instance")))
+
+;; --- Size gates
+;;
+;; Nothing in this feature limited size before, so the failure mode at
+;; enterprise scale was a timeout: an operation that never returns and a
+;; user who cannot tell whether it is working. Every limit below is a
+;; measured cost divided into a 30 s budget and then halved, taken from
+;; the numbers in `pp:vcs:tp-measurement-harness`:
+;;
+;;  * a merge on the 21,169-shape design system costs about 6 s, which is
+;;    0.28 ms per shape, so 30 s is about 105,000 shapes -> 50,000.
+;;  * a whole-file comparison of 48 pages costs 402 ms, which is 8.4 ms
+;;    per page, so the page limit is far above any real design system and
+;;    exists to bound the presence pass -> 500.
+;;  * one value-derived squash already emits about 19,000 changes for a
+;;    one-page delta (`pp:vcs:tp-squash-rewrites-most-of-the-file`), so a
+;;    depth limit has to clear that with room -> 100,000 changes.
+;;
+;; A refusal names the limit, the actual value, and what to do instead.
+;; None of them truncates anything.
+
+(defn- branching-limit
+  [key default]
+  (or (cf/get key) default))
+
+(defn- check-file-size-limits!
+  "Refuse an operation on a file whose realized state is beyond what the
+  feature was measured to survive. `file` must already be realized."
+  [{:keys [data] :as file} operation]
+  (let [max-shapes (branching-limit :branching-max-shapes 50000)
+        max-pages  (branching-limit :branching-max-pages 500)
+        pages      (count (:pages-index data))
+        shapes     (reduce-kv (fn [total _ page] (+ total (count (:objects page))))
+                              0
+                              (or (:pages-index data) {}))]
+
+    (when (> pages max-pages)
+      (ex/raise :type :restriction
+                :code :branching-page-limit-exceeded
+                :hint (str "this file has " pages " pages and branching is limited to "
+                           max-pages "; split the file, or materialise the branch to keep "
+                           "working on it as an ordinary file")
+                :operation operation
+                :limit max-pages
+                :actual pages))
+
+    (when (> shapes max-shapes)
+      (ex/raise :type :restriction
+                :code :branching-shape-limit-exceeded
+                :hint (str "this file has " shapes " shapes and branching is limited to "
+                           max-shapes "; split the file, or materialise the branch to keep "
+                           "working on it as an ordinary file")
+                :operation operation
+                :limit max-shapes
+                :actual shapes))
+    file))
+
+(defn- check-oplog-depth-limit!
+  "Refuse an operation on a branch whose op log is deeper than the derive
+  was measured to survive. `changes` is the flattened log."
+  [changes branch-file-id operation]
+  (let [limit (branching-limit :branching-max-oplog-changes 100000)
+        depth (count changes)]
+    (when (> depth limit)
+      (ex/raise :type :restriction
+                :code :branching-oplog-limit-exceeded
+                :hint (str "this branch has " depth " changes in its op log and the limit is "
+                           limit "; merge it, or materialise it into an ordinary file")
+                :operation operation
+                :branch-file-id branch-file-id
+                :limit limit
+                :actual depth))
+    changes))
+
+;; --- Audit: what an operation cost and how it ended
+;;
+;; The generic RPC audit event records who called what with which params.
+;; It does not record how long the call took, and duration is the number
+;; the first enterprise trial will be asked about, so every branch
+;; operation attaches it to its own event.
+
+(defn- audited
+  "Attach `:duration-ms` and `:outcome` to the audit event of a branch
+  operation. `result` is returned unchanged to the caller."
+  [result tpoint operation]
+  (let [duration (inst-ms (tpoint))]
+    (l/inf :hint "branch operation" :operation (name operation)
+           :outcome (name (or (:status result) :ok))
+           :duration duration)
+    (vary-meta result update ::audit/props merge
+               {:branch-operation (name operation)
+                :branch-outcome (name (or (:status result) :ok))
+                :branch-duration-ms duration})))
 
 ;; --- Helpers: media pairing
 ;;
@@ -235,7 +329,8 @@
   (check-branching-enabled!)
   (files/check-edition-permissions! cfg profile-id file-id)
 
-  (let [file-row (db/get-by-id cfg :file file-id)
+  (let [tpoint   (ct/tpoint)
+        file-row (db/get-by-id cfg :file file-id)
         project  (db/get-by-id cfg :project (:project-id file-row))]
 
     (when (:is-branch file-row)
@@ -267,7 +362,8 @@
                   ;; snapshot GC while the branch is open (it is
                   ;; released when the branch is deleted or its base
                   ;; moves).
-                  (let [file (bfc/get-file cfg file-id :realize? true)
+                  (let [file (-> (bfc/get-file cfg file-id :realize? true)
+                                 (check-file-size-limits! :create-branch))
                         base (fsnap/create! cfg file
                                             {:label (str "branch-base/" name)
                                              :profile-id profile-id
@@ -344,13 +440,14 @@
                                  :status "open"}
                                 {::db/return-keys false})
 
-                    {:id meta-id
-                     :branch-file-id branch-id
-                     :source-file-id file-id
-                     :base-revn (:revn file)
-                     :name name
-                     :description description
-                     :status "open"})))))
+                    (audited {:id meta-id
+                              :branch-file-id branch-id
+                              :source-file-id file-id
+                              :base-revn (:revn file)
+                              :name name
+                              :description description
+                              :status "open"}
+                             tpoint :create-branch))))))
 
 ;; --- COMMAND QUERY: get-file-branches
 
@@ -429,20 +526,29 @@
          ;; both scopes to nothing the reducer can name
          (or (some? page-id) (some? component-id)))))
 
-(defn- branch-affected-pages
-  "The set of page ids a branch's op log touched, or nil when the log
-  holds a change that is not scoped to a page or a component.
+(defn- branch-log
+  "The branch's op log flattened into one change vector, oldest first."
+  [cfg branch-file-id]
+  (into [] (mapcat identity) (bfc/get-branch-changes cfg branch-file-id)))
+
+(defn- affected-pages
+  "The set of page ids a log touched, or nil when it holds a change that is
+  not scoped to a page or a component.
 
   It is exact rather than approximate because of the storage model: a
   branch's `:data` IS the base snapshot plus this log, so a log that only
   touches these pages cannot differ from base anywhere else. `nil` is the
   honest answer for everything else, and it leaves the whole-file
   comparison in place."
+  [changes]
+  (when (every? scoped-change? changes)
+    (:page-ids (cfv/extract-affected-ids changes))))
+
+(defn- branch-affected-pages
+  "`affected-pages` of the branch's whole log. Used by the listing, which
+  never refuses, so it reads the log without checking its depth."
   [cfg branch-file-id]
-  (let [batches (bfc/get-branch-changes cfg branch-file-id)
-        changes (into [] (mapcat identity) batches)]
-    (when (every? scoped-change? changes)
-      (:page-ids (cfv/extract-affected-ids changes)))))
+  (affected-pages (branch-log cfg branch-file-id)))
 
 (defn branch-diff-counts!
   "Entity-level `[ahead behind conflicts]` change counts between a branch
@@ -602,9 +708,13 @@
 
     (files/check-read-permissions! cfg profile-id (:source-file-id branch))
 
-    (let [dir         (or direction :branch->main)
-          main-file   (bfc/get-file cfg (:source-file-id branch) :realize? true)
+    (let [tpoint      (ct/tpoint)
+          dir         (or direction :branch->main)
+          main-file   (-> (bfc/get-file cfg (:source-file-id branch) :realize? true)
+                          (check-file-size-limits! :compare))
           branch-file (bfc/get-file cfg (:branch-file-id branch) :realize? true)
+          log         (-> (branch-log cfg (:branch-file-id branch))
+                          (check-oplog-depth-limit! (:branch-file-id branch) :compare))
           main-data   (:data main-file)
           branch-data (bm/remap-refs
                        (:data branch-file)
@@ -614,7 +724,7 @@
           ;; the branch touched: the other direction is main's changes and
           ;; nothing here knows which pages those are
           opts        (when (= dir :branch->main)
-                        (when-let [pages (branch-affected-pages cfg (:branch-file-id branch))]
+                        (when-let [pages (affected-pages log)]
                           {:only-pages pages}))]
       ;; `:meta` carries the "when" of each side so the resolution UI can show
       ;; how recent main/branch are (base is pinned at branch creation), plus
@@ -625,7 +735,8 @@
           (assoc :meta {:base-at   (:created-at branch)
                         :main-at   (:modified-at main-file)
                         :branch-at (:modified-at branch-file)
-                        :main-revn (:revn main-file)})))))
+                        :main-revn (:revn main-file)})
+          (audited tpoint :compare)))))
 
 ;; --- COMMAND: merge-file-branch
 
@@ -670,7 +781,8 @@
                 :code :branch-not-open
                 :branch-id branch-id))
 
-    (let [main-id        (:source-file-id branch)
+    (let [tpoint         (ct/tpoint)
+          main-id        (:source-file-id branch)
           branch-file-id (:branch-file-id branch)]
       ;; Only editors of main can integrate (same rule as Figma).
       (files/check-edition-permissions! cfg profile-id main-id)
@@ -685,7 +797,10 @@
          ;; the branch is marked merged (and possibly deleted) below.
          (run! (partial db/xact-lock! conn) (sort [main-id branch-file-id]))
 
-         (let [main-file   (bfc/get-file cfg main-id :realize? true)
+         (let [main-file   (-> (bfc/get-file cfg main-id :realize? true)
+                               (check-file-size-limits! :merge))
+               _           (-> (branch-log cfg branch-file-id)
+                               (check-oplog-depth-limit! branch-file-id :merge))
                branch-file (bfc/get-file cfg branch-file-id :realize? true)
                base-data   (get-base-data cfg branch)
 
@@ -819,7 +934,8 @@
                                               :session-id session-id
                                               :revn (:revn merged)})
 
-                         {:status :merged :revn (:revn merged) :source-file-id main-id})))))))))))))
+                         (audited {:status :merged :revn (:revn merged) :source-file-id main-id}
+                                  tpoint :merge))))))))))))))
 
 ;; --- COMMAND: update-branch-from-main
 
@@ -883,7 +999,8 @@
     (when (not= "open" (:status branch))
       (ex/raise :type :validation :code :branch-not-open :branch-id branch-id))
 
-    (let [branch-file-id (:branch-file-id branch)
+    (let [tpoint         (ct/tpoint)
+          branch-file-id (:branch-file-id branch)
           main-id        (:source-file-id branch)]
       ;; Editing the branch -> need edition permissions on the branch file.
       (files/check-edition-permissions! cfg profile-id branch-file-id)
@@ -893,7 +1010,10 @@
        (fn [{:keys [::db/conn] :as cfg}]
          (db/xact-lock! conn branch-file-id)
 
-         (let [main-file   (bfc/get-file cfg main-id :realize? true)
+         (let [main-file   (-> (bfc/get-file cfg main-id :realize? true)
+                               (check-file-size-limits! :update-from-main))
+               _           (-> (branch-log cfg branch-file-id)
+                               (check-oplog-depth-limit! branch-file-id :update-from-main))
                branch-file (bfc/get-file cfg branch-file-id :realize? true)
                base-raw    (get-base-data cfg branch)
 
@@ -1058,7 +1178,8 @@
                                             :session-id session-id
                                             :revn (:revn updated)})
 
-                       {:status :updated :revn (:revn updated)}))))))))))))
+                       (audited {:status :updated :revn (:revn updated)}
+                                tpoint :update-from-main)))))))))))))
 
 ;; --- COMMAND: materialize-file-branch
 

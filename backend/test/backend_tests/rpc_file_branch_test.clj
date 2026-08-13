@@ -1135,3 +1135,96 @@
           (t/is (nil? (:error @result)))
           (t/is (zero? pruned) "an unscoped log must not be pruned")
           (t/is (some #(= color-id (:id %)) (:changes (:result @result)))))))))
+
+(t/deftest size-gates-refuse-and-name-the-limit
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})]
+
+      (t/testing "the shape gate refuses branch creation, names the limit and creates nothing"
+        (with-redefs [cf/get (th/config-get-mock {:branching-max-shapes 0})]
+          (let [out  (th/command! {::th/type :create-file-branch
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)
+                                   :name "too-many-shapes"})
+                data (ex-data (:error out))]
+            (t/is (some? (:error out)))
+            (t/is (= :restriction (:type data)))
+            (t/is (= :branching-shape-limit-exceeded (:code data)))
+            (t/is (= 0 (:limit data)))
+            (t/is (pos? (:actual data)))
+            (t/is (str/includes? (:hint data) "materialise"))
+            (t/is (empty? (th/db-query :file-branch {:source-file-id (:id file)}))))))
+
+      (t/testing "the page gate refuses branch creation and names the limit"
+        (with-redefs [cf/get (th/config-get-mock {:branching-max-pages 0})]
+          (let [out  (th/command! {::th/type :create-file-branch
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)
+                                   :name "too-many-pages"})
+                data (ex-data (:error out))]
+            (t/is (some? (:error out)))
+            (t/is (= :restriction (:type data)))
+            (t/is (= :branching-page-limit-exceeded (:code data)))
+            (t/is (= 0 (:limit data)))
+            (t/is (pos? (:actual data))))))
+
+      (t/testing "the op-log depth gate refuses a compare and names the limit"
+        (let [create (:result (th/command! {::th/type :create-file-branch
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)
+                                            :name "deep-log"}))
+              branch-id      (:id create)
+              branch-file-id (:branch-file-id create)
+              bf             (th/db-get :file {:id branch-file-id})
+              _              (th/command! {::th/type :update-file
+                                           ::rpc/profile-id (:id profile)
+                                           :id branch-file-id
+                                           :session-id (uuid/random)
+                                           :revn (:revn bf)
+                                           :vern (:vern bf)
+                                           :features cfeat/supported-features
+                                           :changes [{:type :add-page :id (uuid/random) :name "one"}]})]
+          (with-redefs [cf/get (th/config-get-mock {:branching-max-oplog-changes 0})]
+            (let [out  (th/command! {::th/type :get-branch-diff
+                                     ::rpc/profile-id (:id profile)
+                                     :branch-id branch-id})
+                  data (ex-data (:error out))]
+              (t/is (some? (:error out)))
+              (t/is (= :restriction (:type data)))
+              (t/is (= :branching-oplog-limit-exceeded (:code data)))
+              (t/is (= 0 (:limit data)))
+              (t/is (= 1 (:actual data)))
+              (t/is (str/includes? (:hint data) "materialise")))))))))
+
+(t/deftest branch-operations-record-duration-and-outcome
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          out     (th/command! {::th/type :create-file-branch
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:id file)
+                                :name "audited"})
+          props   (-> out :result meta :app.loggers.audit/props)]
+
+      (t/testing "creation carries its own audit props"
+        (t/is (nil? (:error out)))
+        (t/is (= "create-branch" (:branch-operation props)))
+        (t/is (= "open" (:branch-outcome props)))
+        (t/is (int? (:branch-duration-ms props))))
+
+      (t/testing "a merge carries them too, with its outcome"
+        (let [out   (th/command! {::th/type :merge-file-branch
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id (-> out :result :id)})
+              props (-> out :result meta :app.loggers.audit/props)]
+          (t/is (nil? (:error out)))
+          (t/is (= "merge" (:branch-operation props)))
+          (t/is (= "merged" (:branch-outcome props)))
+          (t/is (int? (:branch-duration-ms props))))))))

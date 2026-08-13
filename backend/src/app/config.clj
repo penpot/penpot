@@ -45,6 +45,14 @@
    :auto-file-snapshot-every 5
    :auto-file-snapshot-timeout "3h"
 
+   ;; Branching size gates. Derived from measurement rather than taste:
+   ;; on a 21,169-shape design system a merge costs about 6 s, so the
+   ;; shape limit is the count at which an operation would approach a
+   ;; 30 s timeout, halved. See `app.rpc.commands.files-branch`.
+   :branching-max-shapes 50000
+   :branching-max-pages 500
+   :branching-max-oplog-changes 100000
+
    :public-uri "http://localhost:3449"
 
    :host "localhost"
@@ -158,6 +166,10 @@
 
     [:auto-file-snapshot-every {:optional true} ::sm/int]
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
+
+    [:branching-max-shapes {:optional true} ::sm/int]
+    [:branching-max-pages {:optional true} ::sm/int]
+    [:branching-max-oplog-changes {:optional true} ::sm/int]
 
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
