@@ -6809,6 +6809,134 @@ msgstr "Branch deleted"
 msgid "workspace.branches.lifecycle.error"
 msgstr "The branch operation could not be completed"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.link"
+msgstr "What branching can and can't do yet"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.title"
+msgstr "Branching limits"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.subtitle"
+msgstr "What this technology preview refuses, and what to do instead"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.size.title"
+msgstr "Size"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.size.shapes"
+msgstr ""
+"A file with more than %s shapes can't be branched. Split the file, or keep "
+"working on it without branches."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.size.pages"
+msgstr "A file with more than %s pages can't be branched."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.size.changes"
+msgstr ""
+"A branch that has collected more than %s changes can't be compared or "
+"merged. Merge it, or turn it into an ordinary file."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.size.loading"
+msgstr "Loading this instance's limits…"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.scope.title"
+msgstr "Out of scope in this preview"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.scope.nested"
+msgstr "A branch can't be branched again."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.scope.libraries"
+msgstr ""
+"A branch covers one file. Changes a shared library makes elsewhere aren't "
+"branched with it."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.scope.comments"
+msgstr "Comments and comment threads stay on the file they were written on."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.scope.page-attrs"
+msgstr ""
+"A few page settings are reported as changed but not merged. The comparison "
+"names them so nothing is lost silently."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.merge.title"
+msgstr "What a merge won't decide for you"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.merge.whole-entities"
+msgstr ""
+"A conflict is resolved one element at a time: you choose this branch's "
+"version or main's."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.merge.no-partial"
+msgstr "A merge takes the whole branch. There's no partial merge yet."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.merge.main-moved"
+msgstr ""
+"If main changes while you're resolving, the comparison is reloaded and you "
+"review it again."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.merge.base-missing"
+msgstr ""
+"If the point this branch started from is no longer available, the branch can "
+"still be turned into an ordinary file, but it can't be merged."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.limits.exit"
+msgstr ""
+"Any branch can become an ordinary file, keeping its content. Nothing you "
+"make here depends on branching staying switched on."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-shapes"
+msgstr ""
+"This file has more shapes than branching supports (%s). Split the file, or "
+"keep working on it without branches."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-pages"
+msgstr "This file has more pages than branching supports (%s)."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-changes"
+msgstr ""
+"This branch has collected more changes than a comparison supports (%s). "
+"Merge it, or turn it into an ordinary file."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-nested"
+msgstr "A branch can't be branched again. Branch from main instead."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-base-missing"
+msgstr ""
+"The point this branch started from is no longer available, so it can't be "
+"compared or merged. It can still become an ordinary file."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-stale"
+msgstr ""
+"This branch is no longer in the state the panel showed. Reopen the branches "
+"panel to see where it is now."
+
+#: src/app/main/data/workspace/branches.cljs
+msgid "workspace.branches.limits.refuse-name"
+msgstr "A branch name can't be empty."
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:799
 msgid "workspace.branches.loading"
 msgstr "Loading branches…"

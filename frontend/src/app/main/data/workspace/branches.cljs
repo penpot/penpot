@@ -50,9 +50,11 @@
 
 (defonce default-state
   {:status :loading
-   :data nil})
+   :data nil
+   :limits nil})
 
 (declare fetch-branches)
+(declare fetch-branching-limits)
 (declare fetch-branch-context)
 (declare show-branches-panel)
 
@@ -65,7 +67,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (fetch-branches)))))
+      (rx/of (fetch-branches)
+             (fetch-branching-limits)))))
 
 (defn update-branches-state
   [branch-state]
@@ -90,6 +93,57 @@
              (rx/map #(update-branches-state {:status :loaded :data %}))
              (rx/catch (fn [_]
                          (rx/of (update-branches-state {:status :loaded :data []})))))))))
+
+(defn fetch-branching-limits
+  "Load the size limits this instance refuses beyond, so the panel can
+  state them before a user meets one. The numbers live in the backend
+  config and are never restated here."
+  []
+  (ptk/reify ::fetch-branching-limits
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (nil? (get-in state [:workspace-branches :limits]))
+        (->> (rp/cmd! :get-branching-limits {})
+             (rx/map #(update-branches-state {:limits %}))
+             (rx/catch (fn [_] (rx/empty))))))))
+
+(defn- refusal-notification
+  "The notification for a branching refusal, naming the limit it hit and
+  what to do instead, or `fallback` when the cause is not one. The number
+  comes from the refusal itself: the copy never keeps its own copy of a
+  limit, so it cannot drift from the config the gate reads."
+  [cause fallback]
+  (let [{:keys [code limit]} (ex-data cause)]
+    (case code
+      :branching-shape-limit-exceeded
+      (ntf/warn (tr "workspace.branches.limits.refuse-shapes" (str limit)))
+
+      :branching-page-limit-exceeded
+      (ntf/warn (tr "workspace.branches.limits.refuse-pages" (str limit)))
+
+      :branching-oplog-limit-exceeded
+      (ntf/warn (tr "workspace.branches.limits.refuse-changes" (str limit)))
+
+      :cannot-branch-a-branch
+      (ntf/warn (tr "workspace.branches.limits.refuse-nested"))
+
+      :base-snapshot-missing
+      (ntf/error (tr "workspace.branches.limits.refuse-base-missing"))
+
+      ;; the branch changed state under an open panel: one line for the
+      ;; whole family, because what the user does next is the same
+      (:branch-not-found :branch-merged :branch-not-open)
+      (ntf/warn (tr "workspace.branches.limits.refuse-stale"))
+
+      :invalid-branch-name
+      (ntf/warn (tr "workspace.branches.limits.refuse-name"))
+
+      ;; the same refusal as the `:unsupported` merge status, raised while
+      ;; squashing an update, so it reads the same to a user
+      :unsupported-update-squash
+      (ntf/warn (tr "workspace.branches.update.unsupported"))
+
+      (ntf/error fallback))))
 
 ;; --- Dashboard popover (list a file's branches from the dashboard)
 
@@ -124,7 +178,7 @@
     (watch [_ _ _]
       (->> (rp/cmd! :update-file-branch {:id id :name name})
            (rx/mapcat (fn [_] (rx/of (fetch-branches) (fetch-branch-context))))
-           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.branches.lifecycle.error")))))))))
+           (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
 
 (defn set-branch-description
   "Update a branch's free-text description (shown in the Branch info modal).
@@ -136,7 +190,7 @@
     (watch [_ _ _]
       (->> (rp/cmd! :update-file-branch {:id id :description description})
            (rx/mapcat (fn [_] (rx/of (fetch-branches) (fetch-branch-context))))
-           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.branches.lifecycle.error")))))))))
+           (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
 
 (defn archive-branch
   ([id] (archive-branch id true))
@@ -147,7 +201,7 @@
      (watch [_ _ _]
        (->> (rp/cmd! :archive-file-branch {:id id :archived archived?})
             (rx/mapcat (fn [_] (rx/of (fetch-branches))))
-            (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.branches.lifecycle.error"))))))))))
+            (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error"))))))))))
 
 (defn delete-branch
   [id]
@@ -158,7 +212,7 @@
       (->> (rp/cmd! :delete-file-branch {:id id})
            (rx/mapcat (fn [_] (rx/of (ntf/success (tr "workspace.branches.lifecycle.deleted"))
                                      (fetch-branches))))
-           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.branches.lifecycle.error")))))))))
+           (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
 
 (defn create-branch
   "Create a branch from a file. With no `file-id`, branches the currently
@@ -212,8 +266,8 @@
                      ;; from dashboard: jump into the new branch
                      (rx/of (dcm/go-to-workspace :file-id branch-file-id))))))
                (rx/catch
-                (fn [_]
-                  (rx/of (ntf/error (tr "workspace.branches.create.error"))))))))))))
+                (fn [cause]
+                  (rx/of (refusal-notification cause (tr "workspace.branches.create.error"))))))))))))
 
 (defn open-branch
   "Navigate to the branch file as a normal workspace file. Switching
@@ -381,8 +435,8 @@
                   :conflicts   (rx/of (modal/show :branch-conflicts {:branch branch :mode :update}))
                   :unsupported (rx/of (ntf/warn (tr "workspace.branches.update.unsupported")))
                   (rx/of (ntf/error (tr "workspace.branches.update.error"))))))
-             (rx/catch (fn [_]
-                         (rx/of (ntf/error (tr "workspace.branches.update.error")))))))))))
+             (rx/catch (fn [cause]
+                         (rx/of (refusal-notification cause (tr "workspace.branches.update.error")))))))))))
 
 (defn set-conflict-resolution
   "Choose `:main` or `:branch` for a whole conflicting entity (by id). This
@@ -477,5 +531,5 @@
                     ;; user resolves against the current state
                     (rx/of (ntf/warn (tr "workspace.branches.merge.main-moved"))
                            (fetch-branch-diff branch-id))
-                    (rx/of (ntf/error (tr "workspace.branches.merge.error")))))))))))))
+                    (rx/of (refusal-notification cause (tr "workspace.branches.merge.error")))))))))))))
 

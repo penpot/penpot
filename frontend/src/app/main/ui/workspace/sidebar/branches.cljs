@@ -316,6 +316,77 @@
                     :on-click on-submit}
         (tr "workspace.branches.create.submit")]]]]))
 
+;; --- Preview limits dialog (modal)
+;;
+;; Every refusal the branching commands can emit has a line here, so a user
+;; who meets one reads the feature as scoped rather than as broken. The three
+;; numbers are fetched from the backend (`::get-branching-limits`) and never
+;; restated in the copy: the config the gates read is their one home.
+
+(mf/defc limits-dialog*
+  {::mf/register modal/components
+   ::mf/register-as :branch-limits}
+  []
+  (let [{:keys [limits]} (mf/deref branches)
+
+        on-close
+        (mf/use-fn #(st/emit! (modal/hide)))
+
+        item
+        (mf/use-fn
+         (fn [text]
+           [:li {:class (stl/css :limits-item) :key text} text]))]
+
+    (mf/with-effect []
+      (st/emit! (dwb/fetch-branching-limits)))
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:div {:class (stl/css :modal-header-icon)}
+        [:> i/icon* {:icon-id i/git-branch}]]
+       [:div {:class (stl/css :modal-header-text)}
+        [:h2 {:class (stl/css :modal-title)} (tr "workspace.branches.limits.title")]
+        [:span {:class (stl/css :modal-subtitle)} (tr "workspace.branches.limits.subtitle")]]
+       [:> button* {:variant "ghost"
+                    :icon i/close
+                    :aria-label (tr "labels.close")
+                    :on-click on-close}]]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :limits-section)}
+        [:h3 {:class (stl/css :limits-section-title)} (tr "workspace.branches.limits.size.title")]
+        [:ul {:class (stl/css :limits-list)}
+         (if (some? limits)
+           [:*
+            (item (tr "workspace.branches.limits.size.shapes" (dm/str (:max-shapes limits))))
+            (item (tr "workspace.branches.limits.size.pages" (dm/str (:max-pages limits))))
+            (item (tr "workspace.branches.limits.size.changes" (dm/str (:max-oplog-changes limits))))]
+           (item (tr "workspace.branches.limits.size.loading")))]]
+
+       [:div {:class (stl/css :limits-section)}
+        [:h3 {:class (stl/css :limits-section-title)} (tr "workspace.branches.limits.scope.title")]
+        [:ul {:class (stl/css :limits-list)}
+         (item (tr "workspace.branches.limits.scope.nested"))
+         (item (tr "workspace.branches.limits.scope.libraries"))
+         (item (tr "workspace.branches.limits.scope.comments"))
+         (item (tr "workspace.branches.limits.scope.page-attrs"))]]
+
+       [:div {:class (stl/css :limits-section)}
+        [:h3 {:class (stl/css :limits-section-title)} (tr "workspace.branches.limits.merge.title")]
+        [:ul {:class (stl/css :limits-list)}
+         (item (tr "workspace.branches.limits.merge.whole-entities"))
+         (item (tr "workspace.branches.limits.merge.no-partial"))
+         (item (tr "workspace.branches.limits.merge.main-moved"))
+         (item (tr "workspace.branches.limits.merge.base-missing"))]]
+
+       [:> context-notification* {:level :info :type :context}
+        (tr "workspace.branches.limits.exit")]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:> button* {:variant "primary" :on-click on-close}
+        (tr "labels.close")]]]]))
+
 ;; --- Merge confirmation dialog (modal)
 
 (mf/defc merge-branch-dialog*
@@ -863,7 +934,10 @@
         (mf/use-fn
          (mf/deps file)
          (fn [_]
-           (modal/show! :create-branch {:file-name (:name file)})))]
+           (modal/show! :create-branch {:file-name (:name file)})))
+
+        on-show-limits
+        (mf/use-fn #(modal/show! :branch-limits {}))]
 
     (mf/with-effect []
       (st/emit! (dwb/init-branches-state))
@@ -932,7 +1006,15 @@
                                      :entry entry
                                      :profiles profiles
                                      :menu-open? (= open-menu k)
-                                     :on-set-menu (partial set-menu k)}]))])])])]))
+                                     :on-set-menu (partial set-menu k)}]))])])])
+
+     ;; the preview's limits belong where the feature is used, not in the
+     ;; release notes: a user who meets a refusal finds the reason here
+     [:div {:class (stl/css :branches-footer)}
+      [:button {:class (stl/css :branches-limits-link)
+                :on-click on-show-limits}
+       [:> i/icon* {:icon-id i/help :size "s"}]
+       [:span (tr "workspace.branches.limits.link")]]]]))
 
 ;; --- Compare changes dialog (read-only 3-way diff)
 

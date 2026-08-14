@@ -1522,3 +1522,56 @@
 .branches-archived-count {
   margin-inline-start: auto;
 }
+
+.branches-footer {
+  margin-block-start: auto;
+  padding: var(--sp-s);
+  border-block-start: 1px solid var(--color-background-quaternary);
+}
+
+.branches-limits-link {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-foreground-secondary);
+
+  &:hover {
+    color: var(--color-accent-primary);
+  }
+}
+
+.limits-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-m);
+}
+
+.limits-section-title {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.limits-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin: 0;
+  padding-inline-start: var(--sp-l);
+  list-style: disc;
+}
+
+.limits-item {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+}
