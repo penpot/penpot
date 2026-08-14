@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-nitrate-test
   (:require
    [app.auth.oidc :as oidc]
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -1123,3 +1124,45 @@
                               ::rpc/profile-id (:id profile)})]
         (t/is (not (th/success? out)))
         (t/is (th/ex-of-code? (:error out) :nitrate-identity-unavailable))))))
+
+(t/deftest redeem-nitrate-activation-code-used
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags     (conj cf/flags :admin-console)
+                  nitrate/call (fn [_cfg method _params]
+                                 (t/is (= :redeem-activation-code method))
+                                 (ex/raise :type :nitrate-http-error
+                                           :status 409
+                                           :hint "activation code already used"))]
+      (let [out (th/command! {::th/type :redeem-nitrate-activation-code
+                              ::rpc/profile-id (:id profile)
+                              :activation-code "already-used-code"})]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-code? (:error out) :used-activation-code))))))
+
+(t/deftest redeem-nitrate-activation-code-expired
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags     (conj cf/flags :admin-console)
+                  nitrate/call (fn [_cfg method _params]
+                                 (t/is (= :redeem-activation-code method))
+                                 (ex/raise :type :nitrate-http-error
+                                           :status 410
+                                           :hint "activation code expired"))]
+      (let [out (th/command! {::th/type :redeem-nitrate-activation-code
+                              ::rpc/profile-id (:id profile)
+                              :activation-code "expired-code"})]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-code? (:error out) :expired-activation-code))))))
+
+(t/deftest redeem-nitrate-activation-code-invalid
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags     (conj cf/flags :admin-console)
+                  nitrate/call (fn [_cfg method _params]
+                                 (t/is (= :redeem-activation-code method))
+                                 (ex/raise :type :nitrate-http-error
+                                           :status 422
+                                           :hint "invalid activation code"))]
+      (let [out (th/command! {::th/type :redeem-nitrate-activation-code
+                              ::rpc/profile-id (:id profile)
+                              :activation-code "invalid-code"})]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-code? (:error out) :invalid-activation-code))))))

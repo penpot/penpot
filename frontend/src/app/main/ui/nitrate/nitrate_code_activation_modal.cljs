@@ -53,10 +53,10 @@
                           (modal/show {:type :nitrate-activation-success})
                           (dprof/refresh-profile))))
                      (fn [error]
-                       ;; TODO: "Already used" is not yet detectable (CC upserts on reuse).
                        (let [code (-> error ex-data :code)]
                          (reset! error* (case code
                                           :expired-activation-code (tr "nitrate.activation-code.expired-error")
+                                          :used-activation-code    (tr "nitrate.activation-code.used-error")
                                           (tr "nitrate.activation-code.invalid-error")))))))))))
 
         on-key-down
