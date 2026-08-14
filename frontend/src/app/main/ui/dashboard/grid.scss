@@ -353,6 +353,7 @@ $thumbnail-default-height: px2rem(168);
 .library-name-block {
   color: var(--color-foreground-secondary);
   inline-size: calc(100% - var(--sp-xxl) - var(--sp-s));
+  text-align: left;
 }
 
 .library-item-name {
