@@ -323,6 +323,11 @@
 ;; numbers are fetched from the backend (`::get-branching-limits`) and never
 ;; restated in the copy: the config the gates read is their one home.
 
+(mf/defc limits-item*
+  {::mf/private true}
+  [{:keys [text]}]
+  [:li {:class (stl/css :limits-item)} text])
+
 (mf/defc limits-dialog*
   {::mf/register modal/components
    ::mf/register-as :branch-limits}
@@ -330,12 +335,7 @@
   (let [{:keys [limits]} (mf/deref branches)
 
         on-close
-        (mf/use-fn #(st/emit! (modal/hide)))
-
-        item
-        (mf/use-fn
-         (fn [text]
-           [:li {:class (stl/css :limits-item) :key text} text]))]
+        (mf/use-fn #(st/emit! (modal/hide)))]
 
     (mf/with-effect []
       (st/emit! (dwb/fetch-branching-limits)))
@@ -359,26 +359,26 @@
         [:ul {:class (stl/css :limits-list)}
          (if (some? limits)
            [:*
-            (item (tr "workspace.branches.limits.size.shapes" (dm/str (:max-shapes limits))))
-            (item (tr "workspace.branches.limits.size.pages" (dm/str (:max-pages limits))))
-            (item (tr "workspace.branches.limits.size.changes" (dm/str (:max-oplog-changes limits))))]
-           (item (tr "workspace.branches.limits.size.loading")))]]
+            [:> limits-item* {:text (tr "workspace.branches.limits.size.shapes" (dm/str (:max-shapes limits)))}]
+            [:> limits-item* {:text (tr "workspace.branches.limits.size.pages" (dm/str (:max-pages limits)))}]
+            [:> limits-item* {:text (tr "workspace.branches.limits.size.changes" (dm/str (:max-oplog-changes limits)))}]]
+           [:> limits-item* {:text (tr "workspace.branches.limits.size.loading")}])]]
 
        [:div {:class (stl/css :limits-section)}
         [:h3 {:class (stl/css :limits-section-title)} (tr "workspace.branches.limits.scope.title")]
         [:ul {:class (stl/css :limits-list)}
-         (item (tr "workspace.branches.limits.scope.nested"))
-         (item (tr "workspace.branches.limits.scope.libraries"))
-         (item (tr "workspace.branches.limits.scope.comments"))
-         (item (tr "workspace.branches.limits.scope.page-attrs"))]]
+         [:> limits-item* {:text (tr "workspace.branches.limits.scope.nested")}]
+         [:> limits-item* {:text (tr "workspace.branches.limits.scope.libraries")}]
+         [:> limits-item* {:text (tr "workspace.branches.limits.scope.comments")}]
+         [:> limits-item* {:text (tr "workspace.branches.limits.scope.page-attrs")}]]]
 
        [:div {:class (stl/css :limits-section)}
         [:h3 {:class (stl/css :limits-section-title)} (tr "workspace.branches.limits.merge.title")]
         [:ul {:class (stl/css :limits-list)}
-         (item (tr "workspace.branches.limits.merge.whole-entities"))
-         (item (tr "workspace.branches.limits.merge.no-partial"))
-         (item (tr "workspace.branches.limits.merge.main-moved"))
-         (item (tr "workspace.branches.limits.merge.base-missing"))]]
+         [:> limits-item* {:text (tr "workspace.branches.limits.merge.whole-entities")}]
+         [:> limits-item* {:text (tr "workspace.branches.limits.merge.no-partial")}]
+         [:> limits-item* {:text (tr "workspace.branches.limits.merge.main-moved")}]
+         [:> limits-item* {:text (tr "workspace.branches.limits.merge.base-missing")}]]]
 
        [:> context-notification* {:level :info :type :context}
         (tr "workspace.branches.limits.exit")]]
