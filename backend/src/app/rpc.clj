@@ -261,23 +261,28 @@
 (defn- wrap-nitrate-sso
   "Enforce Nitrate organization SSO authentication for RPC handlers.
 
-   Resolves the organization/team context from request params using priority order:
-   1. Explicit :organization-id param
-   2. Explicit :team-id param
-   3. Explicit :project-id param -> lookup project.team_id
-   4. Explicit :file-id param -> lookup file's team via join
-   5. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
+   Resolves the organization/team context from request params:
+   1. Explicit :organization-id param identifies the organization directly
+   2. The team comes from the first available of: explicit :team-id, explicit
+      :project-id -> lookup project.team_id, explicit :file-id -> lookup file's
+      team via join, or the :id param dispatched by ::rpc/id-type metadata
+      (:team, :project, or :file)
 
    Once the context is resolved, checks if the user is authorized within that organization's
-   SSO session using nitrate/sso-session-authorized?. Authorized results are cached
-   by [profile-id cache-ref] for 15 minutes to avoid repeated lookups.
+   SSO session using nitrate/sso-session-authorized?, against the organization when it is
+   known and against the team otherwise. The team is resolved either way, so the raised
+   error can carry it. Authorized results are cached by [profile-id cache-ref] for 15
+   minutes to avoid repeated lookups.
 
    Only activates when:
    - Nitrate flag is enabled
    - Endpoint requires authentication (::auth true by default)
    - Endpoint is not marked with ::nitrate/organization-sso false
 
-   Raises :nitrate-sso-required error if user is not authorized in the organization."
+   Raises :nitrate-sso-required error if user is not authorized in the organization.
+   The error carries the resolved :organization-id and :team-id so the client can
+   restart the SSO flow (via :check-nitrate-sso) instead of reporting a plain
+   permission failure."
   [_ f mdata]
   (if (and (contains? cf/flags :admin-console)
            (::auth mdata true) ;; only for endpoints that needs auth
@@ -302,17 +307,22 @@
                 cached     (cache/get organization-sso-auth-cache cache-key)
                 result     (if (some? cached)
                              cached
-                             (let [team-id                  (when-not organization-id
-                                                              (or team-id
-                                                                  (when project-id
-                                                                    (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
+                             ;; The team is resolved even when the organization is
+                             ;; already known: the client needs it to restart the
+                             ;; SSO flow without sending non-members through the
+                             ;; organization's identity provider.
+                             (let [team-id                  (or team-id
+                                                                (when project-id
+                                                                  (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
+                                                                (when file-id
                                                                   (:id (teams/get-team-for-file cfg file-id))))
                                    request                  (-> (meta params) (get ::http/request))
                                    {:keys [authorized sso]} (if organization-id
                                                               (nitrate/sso-session-authorized? cfg organization-id nil request)
                                                               (nitrate/sso-session-authorized? cfg nil team-id request))
                                    entry                    {:authorized      authorized
-                                                             :organization-id (:organization-id sso)}]
+                                                             :organization-id (or (:organization-id sso) organization-id)
+                                                             :team-id         team-id}]
                                (when authorized
                                  (cache/get organization-sso-auth-cache cache-key (constantly entry)))
                                entry))]
@@ -320,6 +330,8 @@
               (f cfg params)
               (ex/raise :type :authentication
                         :code :nitrate-sso-required
+                        :organization-id (:organization-id result)
+                        :team-id (:team-id result)
                         :hint "organization SSO authentication required")))
           (f cfg params))))
     f))
