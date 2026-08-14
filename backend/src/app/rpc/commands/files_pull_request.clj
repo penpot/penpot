@@ -159,22 +159,24 @@
   "Attach the derived attributes the UI needs: reviews (+ aggregate
   `review-state`), `outdated` (the branch moved past the review snapshot,
   cheap revn gate) and entity-level ahead/behind/conflicts counts against
-  main (only for open pull requests, gated like the branches listing)."
-  [cfg main-data reviews-map {:keys [id status source-file-id target-file-id
-                                     base-snapshot-id review-revn branch-revn]
+  main (only for open pull requests, gated like the branches listing).
+
+  The counts come from the branch summary cache, keyed on the same tuple
+  the branches listing uses, so ten open pull requests on one file cost
+  one computation per branch and nothing at all once that panel has been
+  opened."
+  [cfg main-data reviews-map {:keys [id status file-branch-id source-file-id target-file-id
+                                     review-revn branch-revn]
                               :as row}]
   (let [reviews (get reviews-map id [])
         open?   (= "open" status)
-        [ahead-revn behind-revn] (fbranch/revn-deltas row)
         [ahead behind conflicts]
         (if open?
-          (fbranch/branch-diff-counts cfg main-data
-                                      {:id id
-                                       :source-file-id target-file-id
-                                       :branch-file-id source-file-id
-                                       :base-snapshot-id base-snapshot-id
-                                       :ahead-revn ahead-revn
-                                       :behind-revn behind-revn})
+          (fbranch/cached-diff-counts cfg main-data
+                                      (assoc row
+                                             :id file-branch-id
+                                             :source-file-id target-file-id
+                                             :branch-file-id source-file-id))
           [0 0 0])]
     (-> row
         (assoc :reviews (mapv #(dissoc % :pull-request-id) reviews))
@@ -401,7 +403,12 @@
   pull request is annotated with its reviews, the aggregate
   `review-state`, the `outdated` flag and the entity-level
   ahead/behind/conflicts counts (gated by the cheap revn deltas, with
-  main realized once and shared, like the branches listing)."
+  main realized once and shared, like the branches listing).
+
+  Those counts come from the branch summary cache that the branches
+  listing fills, keyed on the same tuple: a repeated listing with no
+  intervening save performs no comparison work and realizes no file, and
+  ten open pull requests on one branch pay for one computation."
   {::doc/added "2.16"
    ::sm/params schema:get-file-pull-requests}
   [cfg {:keys [::rpc/profile-id file-id include-closed]}]
@@ -415,7 +422,10 @@
                                                  (boolean include-closed)])
                      reviews-map (get-reviews-map cfg rows)
                      open?       (fn [row] (= "open" (:status row)))
+                     ;; realize main once, and only for a diverged pull
+                     ;; request whose summary is not already cached
                      need?       (some (fn [r] (and (open? r)
+                                                    (nil? (fbranch/cached-summary r))
                                                     (let [[a b] (fbranch/revn-deltas r)]
                                                       (or (pos? a) (pos? b)))))
                                        rows)

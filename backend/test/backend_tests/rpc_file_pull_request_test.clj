@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-file-pull-request-test
   (:require
    [app.common.features :as cfeat]
+   [app.common.files.branch-merge :as bm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -537,6 +538,48 @@
           (t/is (nil? (:error out)))
           (t/is (= 1 (count (:result out))))
           (t/is (= "closed" (-> out :result first :status))))))))
+
+(t/deftest pull-request-listing-shares-the-branch-summary-cache
+  (with-redefs [cf/flags pr-flags]
+    (let [author (th/create-profile* 1 {:is-active true})
+          file   (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+          branch (create-branch* author file "feature")
+          branches (fn [] (:result (th/command! {::th/type :get-file-branches
+                                                 ::rpc/profile-id (:id author)
+                                                 :file-id (:id file)})))
+          prs      (fn [] (:result (th/command! {::th/type :get-file-pull-requests
+                                                 ::rpc/profile-id (:id author)
+                                                 :file-id (:id file)})))
+          summary  (fn [row] (select-keys row [:ahead :behind :conflicts]))]
+
+      ;; diverge both sides so the comparison is real work
+      (add-color* author (:branch-file-id branch) "Brand")
+      (add-color* author (:id file) "Accent")
+      (t/is (nil? (:error (create-pr* author (:id branch) {}))))
+
+      (let [orig-merge bm/compute-merge
+            calls      (atom 0)]
+        (with-redefs [bm/compute-merge (fn [& args] (swap! calls inc) (apply orig-merge args))]
+          (let [cold-branch (first (branches))
+                cold-calls  @calls
+                _           (reset! calls 0)
+                warm-pr     (first (prs))
+                pr-calls    @calls
+                _           (reset! calls 0)
+                repeat-pr   (first (prs))]
+
+            (t/testing "the branches listing pays for the comparison"
+              (t/is (pos? cold-calls))
+              (t/is (= {:ahead 1 :behind 1 :conflicts 0} (summary cold-branch))))
+
+            (t/testing "the pull-request listing arrives warm and agrees"
+              (t/is (zero? pr-calls))
+              (t/is (= (summary cold-branch) (summary warm-pr))))
+
+            (t/testing "and a repeat of it performs no comparison work either"
+              (t/is (zero? @calls))
+              (t/is (= (summary warm-pr) (summary repeat-pr))))))))))
 
 (t/deftest branching-flag-gates-pull-request-commands
   (let [author (th/create-profile* 1 {:is-active true})
