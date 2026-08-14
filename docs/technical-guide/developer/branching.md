@@ -252,6 +252,17 @@ bounds memory (`max-size`, `keepalive`) and never decides correctness, and
 a failed computation is not stored, so a broken branch keeps degrading to
 zeros with a warning on every listing.
 
+All three readers of these numbers go through `cached-diff-counts` and share
+the one cache: `::get-file-branches` (the branch panel), `::get-file-branch-info`
+(asked on every file open) and `::get-file-pull-requests` (the review list).
+They ask the same question about the same pair, so whichever runs first warms
+the others, and none of them realizes main when every row it needs is already
+cached. Measured on the 21,169-shape design system with nine open branches and
+eight open pull requests: a cold pull-request listing costs 20,073 ms with 9
+file realizations and 8 base-snapshot loads, its repeat 3 ms with none, and the
+branch listing that follows it pays only for the one branch that has no pull
+request.
+
 ## The three-way diff engine
 
 `app.common.files.branch-merge` is the heart of the feature. It is a pure,
