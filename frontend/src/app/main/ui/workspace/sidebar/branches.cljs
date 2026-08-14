@@ -349,7 +349,7 @@
       (st/emit! (dwb/fetch-branching-limits)))
 
     [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-container)}
+     [:div {:class (stl/css :modal-container :limits-container)}
       [:div {:class (stl/css :modal-header)}
        [:div {:class (stl/css :modal-header-icon)}
         [:> i/icon* {:icon-id i/git-branch}]]
