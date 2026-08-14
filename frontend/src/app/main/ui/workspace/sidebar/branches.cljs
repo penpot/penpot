@@ -324,12 +324,12 @@
 ;; restated in the copy: the config the gates read is their one home.
 
 (defn- grouped
-  "A limit as a reader sees it: 50,000 rather than 50000, in the user's own
-  locale, because these numbers are read once and compared to a file size."
+  "A limit as a reader sees it: 50,000 rather than 50000. Grouped here
+  rather than with `toLocaleString`, which silently returns the ungrouped
+  digits on a build without full ICU data."
   [n]
-  (if (number? n)
-    (.toLocaleString ^js n)
-    (dm/str n)))
+  (-> (dm/str n)
+      (str/replace #"\B(?=(\d{3})+(?!\d))" ",")))
 
 (mf/defc limits-item*
   {::mf/private true}

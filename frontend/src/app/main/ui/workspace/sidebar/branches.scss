@@ -1529,11 +1529,16 @@
   border-block-start: 1px solid var(--color-background-quaternary);
 }
 
-// The limits dialog is the only long modal here: bound it to the viewport
-// and let the sections scroll rather than spilling past the container.
+// The limits dialog is the only long modal here. `%modal-container-base` is
+// a flex column that does not clip, so the content div has to own the
+// scrolling: cap it against the viewport and let it shrink inside the flex
+// parent (`min-height: 0`), otherwise the sections spill past the container.
 .limits-content {
-  max-height: 60vh;
+  max-height: min(60vh, 32rem);
+  min-height: 0;
+  flex: 1 1 auto;
   overflow-y: auto;
+  padding-inline-end: var(--sp-xs);
 }
 
 .branches-limits-link {
