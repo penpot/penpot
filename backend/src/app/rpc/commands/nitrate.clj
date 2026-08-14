@@ -101,6 +101,7 @@
             (ex/raise :type :validation
                       :code (case status
                               410 :expired-activation-code
+                              409 :used-activation-code
                               :invalid-activation-code)
                       :cause cause)
             (throw cause)))))))

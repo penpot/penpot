@@ -4252,6 +4252,9 @@ msgstr "Este código ha caducado."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Código inválido."
 
+msgid "nitrate.activation-code.used-error"
+msgstr "Este código ya ha sido utilizado."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
 msgid "nitrate.activation-success.active-until"
 msgstr "Tu plan está activo hasta el %s."

@@ -4377,6 +4377,9 @@ msgstr "This code has expired."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Invalid code."
 
+msgid "nitrate.activation-code.used-error"
+msgstr "This code has already been used."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
 msgid "nitrate.activation-success.active-until"
 msgstr "Your plan is active until %s."
