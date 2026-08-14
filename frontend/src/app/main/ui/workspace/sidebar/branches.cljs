@@ -323,6 +323,14 @@
 ;; numbers are fetched from the backend (`::get-branching-limits`) and never
 ;; restated in the copy: the config the gates read is their one home.
 
+(defn- grouped
+  "A limit as a reader sees it: 50,000 rather than 50000, in the user's own
+  locale, because these numbers are read once and compared to a file size."
+  [n]
+  (if (number? n)
+    (.toLocaleString ^js n)
+    (dm/str n)))
+
 (mf/defc limits-item*
   {::mf/private true}
   [{:keys [text]}]
@@ -353,15 +361,15 @@
                     :aria-label (tr "labels.close")
                     :on-click on-close}]]
 
-      [:div {:class (stl/css :modal-content)}
+      [:div {:class (stl/css :modal-content :limits-content)}
        [:div {:class (stl/css :limits-section)}
         [:h3 {:class (stl/css :limits-section-title)} (tr "workspace.branches.limits.size.title")]
         [:ul {:class (stl/css :limits-list)}
          (if (some? limits)
            [:*
-            [:> limits-item* {:text (tr "workspace.branches.limits.size.shapes" (dm/str (:max-shapes limits)))}]
-            [:> limits-item* {:text (tr "workspace.branches.limits.size.pages" (dm/str (:max-pages limits)))}]
-            [:> limits-item* {:text (tr "workspace.branches.limits.size.changes" (dm/str (:max-oplog-changes limits)))}]]
+            [:> limits-item* {:text (tr "workspace.branches.limits.size.shapes" (grouped (:max-shapes limits)))}]
+            [:> limits-item* {:text (tr "workspace.branches.limits.size.pages" (grouped (:max-pages limits)))}]
+            [:> limits-item* {:text (tr "workspace.branches.limits.size.changes" (grouped (:max-oplog-changes limits)))}]]
            [:> limits-item* {:text (tr "workspace.branches.limits.size.loading")}])]]
 
        [:div {:class (stl/css :limits-section)}

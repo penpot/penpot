@@ -1529,6 +1529,13 @@
   border-block-start: 1px solid var(--color-background-quaternary);
 }
 
+// The limits dialog is the only long modal here: bound it to the viewport
+// and let the sections scroll rather than spilling past the container.
+.limits-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .branches-limits-link {
   @include t.use-typography("body-small");
 
