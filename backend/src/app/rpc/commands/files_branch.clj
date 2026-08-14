@@ -129,6 +129,21 @@
                 :actual depth))
     changes))
 
+(def ^:private schema:get-branching-limits
+  [:map {:title "get-branching-limits"}])
+
+(sv/defmethod ::get-branching-limits
+  "The size limits this instance refuses beyond, so the UI can publish them
+  before a user meets one. Read from config on every call: the limits have
+  exactly one home, and a page that states them must not keep its own copy."
+  {::doc/added "2.16"
+   ::sm/params schema:get-branching-limits}
+  [_cfg _params]
+  (check-branching-enabled!)
+  {:max-shapes (branching-limit :branching-max-shapes 50000)
+   :max-pages (branching-limit :branching-max-pages 500)
+   :max-oplog-changes (branching-limit :branching-max-oplog-changes 100000)})
+
 ;; --- Audit: what an operation cost and how it ended
 ;;
 ;; The generic RPC audit event records who called what with which params.

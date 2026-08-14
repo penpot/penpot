@@ -1200,6 +1200,28 @@
               (t/is (= 1 (:actual data)))
               (t/is (str/includes? (:hint data) "materialise")))))))))
 
+(t/deftest published-limits-are-the-ones-the-gates-enforce
+  (let [profile (th/create-profile* 1 {:is-active true})
+        limits  (fn [] (th/command! {::th/type :get-branching-limits
+                                     ::rpc/profile-id (:id profile)}))]
+
+    (t/testing "the defaults are published"
+      (with-redefs [cf/flags (conj cf/flags :branching)]
+        (let [out (limits)]
+          (t/is (nil? (:error out)))
+          (t/is (= {:max-shapes 50000 :max-pages 500 :max-oplog-changes 100000}
+                   (:result out))))))
+
+    (t/testing "and they are read from config, not from the page"
+      (with-redefs [cf/flags (conj cf/flags :branching)
+                    cf/get (th/config-get-mock {:branching-max-shapes 7})]
+        (t/is (= 7 (-> (limits) :result :max-shapes)))))
+
+    (t/testing "the query is gated like every other branching command"
+      (let [data (ex-data (:error (limits)))]
+        (t/is (= :restriction (:type data)))
+        (t/is (= :branching-disabled (:code data)))))))
+
 (t/deftest branch-operations-record-duration-and-outcome
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
