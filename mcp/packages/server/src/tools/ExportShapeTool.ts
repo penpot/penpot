@@ -160,7 +160,14 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
             if (args.format === "png") {
                 return new PNGResponse(await this.toPngImageBytes(imageData));
             } else {
-                return TextResponse.fromData(imageData);
+                // The plugin returns byte data wrapped in a base64 envelope
+                // ({ __type: "base64", data: <base64> }) for both formats. SVG
+                // needs the same envelope decoding as PNG (ImageContent.byteData),
+                // then the bytes must be decoded as UTF-8 text — feeding the raw
+                // envelope into TextContent.textData produces null bytes (see #10878).
+                const svgBytes = ImageContent.byteData(imageData);
+                const svgText = Buffer.from(svgBytes).toString("utf-8");
+                return TextResponse.fromData(svgText);
             }
         } else {
             // save to file requested: make sure file system access is enabled
@@ -171,7 +178,10 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
             if (args.format === "png") {
                 FileUtils.writeBinaryFile(args.filePath, await this.toPngImageBytes(imageData));
             } else {
-                FileUtils.writeTextFile(args.filePath, TextContent.textData(imageData));
+                // decode the base64 envelope (see comment above) before writing text
+                const svgBytes = ImageContent.byteData(imageData);
+                const svgText = Buffer.from(svgBytes).toString("utf-8");
+                FileUtils.writeTextFile(args.filePath, svgText);
             }
             return new TextResponse(`The shape has been exported to ${args.filePath}`);
         }
