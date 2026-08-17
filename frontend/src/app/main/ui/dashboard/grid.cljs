@@ -480,7 +480,8 @@
       [:li {:class (stl/css-case :grid-item true
                                  :project-thumbnail true
                                  :library-item library-view?)}
-       [:div {:class (stl/css-case :is-selected selected?)
+       [:div {:class (stl/css-case :is-selected selected?
+                                   :grid-item-button true)
               :ref node-ref
               :role "button"
               :title (:name file)

@@ -346,7 +346,8 @@
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})))
+          (assoc :workspace-presence {})
+          (update :workspace-global dissoc :default-font)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -544,7 +545,7 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only?)
+          (update :workspace-global dissoc :read-only? :default-font)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 

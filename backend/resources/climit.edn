@@ -39,4 +39,10 @@
  {:permits 3}
 
  :create-file-snapshot/by-profile
- {:permits 1 :queue 2 :timeout 60000}}
+ {:permits 1 :queue 2 :timeout 60000}
+
+ :send-user-feedback/global
+ {:permits 4}
+
+ :send-user-feedback/by-profile
+ {:permits 1 :queue 3}}

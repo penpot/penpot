@@ -36,6 +36,24 @@
   (t/is (= "" (d/get-initials nil)))
   (t/is (= "" (d/get-initials "!!! ???"))))
 
+(t/deftest normalize-string-test
+  ;; nil input returns empty string
+  (t/is (= "" (d/normalize-string nil)))
+  ;; empty string returns empty string
+  (t/is (= "" (d/normalize-string "")))
+  ;; leading whitespace is trimmed
+  (t/is (= "hello" (d/normalize-string "  hello")))
+  ;; trailing whitespace is trimmed
+  (t/is (= "hello" (d/normalize-string "hello  ")))
+  ;; both leading and trailing whitespace are trimmed
+  (t/is (= "hello" (d/normalize-string "  hello  ")))
+  ;; internal whitespace is preserved
+  (t/is (= "hello world" (d/normalize-string "  hello world  ")))
+  ;; non-string input is returned unchanged
+  (t/is (= 42 (d/normalize-string 42)))
+  (t/is (= :keyword (d/normalize-string :keyword)))
+  (t/is (= true (d/normalize-string true))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Ordered Data Structures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

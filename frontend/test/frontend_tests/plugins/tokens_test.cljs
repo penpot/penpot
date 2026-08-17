@@ -385,18 +385,18 @@
         theme-id  (uuid/next)
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
-        invalid   (atom [])]
-    (with-redefs [u/locate-token-set   (constantly nil)
-                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
-                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
-                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+        errors    (atom [])]
+    (with-redefs [u/locate-token-set         (constantly nil)
+                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
+                  u/throw-validation-errors? (constantly true)
+                  dwtl/update-token-theme    (fn [id theme] {:id id :theme theme})
+                  st/emit!                   (fn ([event] (swap! emitted conj event) nil)
+                                               ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
         ;; Non-id, non-proxy arguments are rejected by the schema coercer.
-        (.addSet theme-proxy 42)
-        (.removeSet theme-proxy nil)
+        (try (.addSet theme-proxy 42) (catch :default e (swap! errors conj e)))
+        (try (.removeSet theme-proxy nil) (catch :default e (swap! errors conj e)))
         (t/is (empty? @emitted))
-        (t/is (= 2 (count @invalid)))
-        (t/is (every? #(= :error (first %)) @invalid))))))
+        (t/is (= 2 (count @errors)))
+        (t/is (every? #(instance? js/Error %) @errors))))))
 

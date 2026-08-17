@@ -1392,13 +1392,7 @@
         on-sub-menu-pointer-enter
         (mf/use-fn
          (fn [_]
-           (mf/set-ref-val! hovering?* true)))
-
-        on-power-up-click
-        (mf/use-fn
-         (fn []
-           (st/emit! (ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
-           (dom/open-new-window "https://penpot.app/pricing")))]
+           (mf/set-ref-val! hovering?* true)))]
 
     (mf/with-effect [teams]
       (when (and (contains? cf/flags :admin-console)
@@ -1419,17 +1413,6 @@
            [:> dashboard-cta* {:profile profile}]
            [:> subscription-sidebar* {:profile profile}])))
 
-
-     ;; TODO remove this block when subscriptions is full implemented
-     (when (contains? cf/flags :subscriptions-old)
-       [:button {:class (stl/css :upgrade-plan-section)
-                 :on-click on-power-up-click}
-        [:div {:class (stl/css :penpot-free)}
-         [:span (tr "dashboard.upgrade-plan.penpot-free")]
-         [:span {:class (stl/css :no-limits)}
-          (tr "dashboard.upgrade-plan.no-limits")]]
-        [:div {:class (stl/css :power-up)}
-         (tr "subscription.dashboard.upgrade-plan.power-up")]])
 
      (when (and team profile)
        [:& comments-section

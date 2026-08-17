@@ -147,7 +147,6 @@
     :render-switch
     :hide-release-modal
     :subscriptions
-    :subscriptions-old
     :inspect-styles
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
@@ -178,7 +177,8 @@
     :stroke-path
     :stroke-per-side
 
-    :custom-shortcuts})
+    :custom-shortcuts
+    :remote-media-processing})
 
 (def all-flags
   (set/union email login varia))

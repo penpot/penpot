@@ -28,6 +28,14 @@
       (swap! form assoc-in [:extra-errors :password-1]
              {:message (tr "errors.email-as-password")})
 
+      :weak-password
+      (let [details (:details data)
+            options (when (seq details)
+                      (mapv tr details))]
+        (swap! form assoc-in [:extra-errors :password-1]
+               {:message (tr "errors.weak-password")
+                :options options}))
+
       (let [msg (tr "generic.error")]
         (st/emit! (ntf/error msg))))))
 

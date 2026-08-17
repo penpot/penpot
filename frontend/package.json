@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "browserslist": [
     "defaults"
   ],
@@ -59,10 +59,10 @@
     "@penpot/tokenscript": "link:packages/tokenscript",
     "@penpot/ua-parser": "penpot/ua-parser#1.0.0",
     "@playwright/test": "1.62.1",
-    "@storybook/addon-docs": "10.5.5",
-    "@storybook/addon-themes": "10.5.5",
-    "@storybook/addon-vitest": "10.5.5",
-    "@storybook/react-vite": "10.5.5",
+    "@storybook/addon-docs": "10.5.6",
+    "@storybook/addon-themes": "10.5.6",
+    "@storybook/addon-vitest": "10.5.6",
+    "@storybook/react-vite": "10.5.6",
     "@tokens-studio/sd-transforms": "2.0.3",
     "@types/node": "^26.1.2",
     "@vitest/browser": "4.1.10",
@@ -85,7 +85,7 @@
     "lodash": "^4.18.1",
     "lodash.debounce": "^4.0.8",
     "map-stream": "0.0.7",
-    "marked": "^18.0.7",
+    "marked": "^18.0.9",
     "mkdirp": "^3.0.1",
     "mustache": "^4.2.0",
     "nodemon": "^3.1.14",
@@ -112,7 +112,7 @@
     "sax": "^1.6.1",
     "scheduler": "^0.27.0",
     "source-map-support": "^0.5.21",
-    "storybook": "10.5.5",
+    "storybook": "10.5.6",
     "style-dictionary": "5.5.0",
     "stylelint": "^17.14.1",
     "stylelint-config-standard-scss": "^17.0.0",
@@ -131,6 +131,6 @@
   },
   "dependencies": {
     "@penpot/ui": "link:packages/ui",
-    "react-aria-components": "^1.19.0"
+    "react-aria-components": "^1.20.0"
   }
 }
