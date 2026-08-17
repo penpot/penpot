@@ -42,7 +42,7 @@
 (defn lookup-tokens-source-data
   [state]
   (let [current-file-data (lookup-file-data state)
-        tokens-source-id (cfo/get-tokens-source current-file-data)]
+        tokens-source-id (cfo/get-effective-tokens-source current-file-data)]
     (lookup-file-data state tokens-source-id)))
 
 (defn lookup-tokens-lib
