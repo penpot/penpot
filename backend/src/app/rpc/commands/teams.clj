@@ -196,11 +196,11 @@
    ::sm/params schema:get-teams}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (cond->> (get-teams conn profile-id)
-      (contains? cf/flags :admin-console)
-      (map #(nitrate/add-organization-info-to-team cfg % params))
-      (contains? cf/flags :admin-console)
-      (remove #(get-in % [:organization :expired-license])))))
+    (let [teams (get-teams conn profile-id)]
+      (if (contains? cf/flags :admin-console)
+        (->> (nitrate/add-organization-info-to-teams cfg teams params)
+             (remove #(get-in % [:organization :expired-license])))
+        teams))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -538,6 +538,9 @@
   ;; When creating inside an organization, verify the user has permission to do so.
   ;; Fail closed: if organization permissions cannot be fetched, deny the operation.
   (when (and organization-id (contains? cf/flags :admin-console))
+    ;; Verify caller is a member of the organization
+    (nitrate/assert-membership cfg profile-id organization-id)
+
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
                                            {:organization-id organization-id})]
       (if (nil? organization-perms)

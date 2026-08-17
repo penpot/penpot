@@ -1,5 +1,6 @@
 (ns app.main.data.nitrate
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.organization :as cto]
    [app.common.uri :as u]
@@ -350,6 +351,24 @@
                        (rx/of (rt/nav-raw :uri (str redirect-uri))))
                      (rx/empty)))))))))))
 
+
+(defn retry-organization-sso
+  "Retries the organization SSO login flow after a failed attempt, reusing
+  the same check-nitrate-sso RPC used elsewhere to move the user through
+  the organization's identity provider. Passing `team-id` enables the
+  backend's non-member short-circuit. Falls back to navigating straight
+  to `dest-url` when no fresh SSO redirect is needed or available."
+  [{:keys [team-id organization-id dest-url]}]
+  (ptk/reify ::retry-organization-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :check-nitrate-sso (d/without-nils {:team-id team-id
+                                                        :organization-id organization-id
+                                                        :url dest-url}))
+           (rx/map (fn [{:keys [redirect-uri]}]
+                     (rt/nav-raw :uri (or redirect-uri dest-url))))
+           (rx/catch (fn [_]
+                       (rx/of (rt/nav-raw :uri dest-url))))))))
 
 (defn- fetch-organizations-allowed
   "Returns an rx observable of an `organizations-allowed` map (organization-id -> boolean).
