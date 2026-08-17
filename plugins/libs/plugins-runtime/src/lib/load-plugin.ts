@@ -29,10 +29,6 @@ const closeAllPlugins = () => {
 };
 
 window.addEventListener('message', (event) => {
-  if (event.origin !== window.location.origin) {
-    return;
-  }
-
   try {
     const senderPlugin = plugins.find((it) => it.iframeWindow === event.source);
 
