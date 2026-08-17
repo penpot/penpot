@@ -62,7 +62,7 @@
         tokens-lib   (cfo/get-tokens-lib data)
         tokens       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
         token-sets   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
-        token-themes (if (some? tokens-lib) (count (ctob/get-themes tokens-lib)) 0)
+        token-themes (if (some? tokens-lib) (count (ctob/get-themes-no-hidden tokens-lib)) 0)
 
         empty?       (and (zero? components)
                           (zero? graphics)
@@ -431,7 +431,7 @@
                        (dwl/sync-file file-id library-id))
              ;; When the unlinked library is the current tokens source,
              ;; we must reset it to the local library.
-             (when (cfo/tokens-source? local-library library-id)
+             (when (cfo/effective-tokens-source? local-library library-id)
                (st/emit! (dwtl/set-tokens-source (:id local-library)))))))
         
         import-tokens
@@ -509,21 +509,21 @@
        [:div {:class (stl/css :item-content)}
         [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
         [:ul {:class (stl/css :item-contents)}
-         [:> library-description* {:summary summary}]]
-        ]
+         [:> library-description* {:summary summary}]]]
        (when (and (contains? cf/flags :token-lib-sync)
-                  (cfo/tokens-source? local-library (:id local-library)))
+                  (cfo/effective-tokens-source? local-library (:id local-library))
+                  (cfo/has-own-tokens? local-library))
          [:> text* {:class (stl/css :tokens-source-label)
                     :as "span"
                     :typography "body-medium"}
           (tr "workspace.libraries.tokens-source")])
-       (when (contains? cf/flags :token-lib-sync)
-          (when (not= (cfo/get-tokens-source local-library) (:id local-library))
-            [:> button* {:variant "secondary"
-                         :type "button"
-                         :data-library-id (dm/str (:id local-library))
-                         :on-click set-as-tokens-source}
-             (tr "workspace.libraries.set-as-tokens-source")]))
+       (when (and (contains? cf/flags :token-lib-sync)
+                  (not (cfo/effective-tokens-source? local-library (:id local-library))))
+         [:> button* {:variant "secondary"
+                      :type "button"
+                      :data-library-id (dm/str (:id local-library))
+                      :on-click set-as-tokens-source}
+          (tr "workspace.libraries.set-as-tokens-source")])
 
        (if ^boolean is-shared
          [:> button* {:variant "secondary"
@@ -535,7 +535,7 @@
                       :type "button"
                       :on-click publish}
           (tr "common.publish")])]
-    
+
       [:div  {:class (stl/css :section-list-linked)}
        [:> title-bar* {:collapsable false
                        :title       (tr "workspace.libraries.connected-libraries")
@@ -558,14 +558,15 @@
                   [:> library-description* {:summary summary :hint-name parent-name}])]]
 
               [:div {:class (stl/css :library-actions)}
-               (when (and (cfo/tokens-source? local-library id) (contains? cf/flags :token-lib-sync))
+               (when (and (contains? cf/flags :token-lib-sync)
+                          (cfo/effective-tokens-source? local-library id))
                  [:> text* {:class (stl/css :tokens-source-label)
                             :as "span"
                             :typography "body-medium"}
                   (tr "workspace.libraries.tokens-source")])
                (if (contains? cf/flags :token-lib-sync)
                  (when (and (cfo/tokens-provider? (:data library))
-                            (not (cfo/tokens-source? local-library id)))
+                            (not (cfo/effective-tokens-source? local-library id)))
                    [:> button* {:variant "secondary"
                                 :type "button"
                                 :data-library-id (dm/str id)

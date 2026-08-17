@@ -72,7 +72,7 @@
 
         tokens-source
         (mf/with-memo [current-file-data]
-          (cfo/get-tokens-source current-file-data))]
+          (cfo/get-effective-tokens-source current-file-data))]
     [:*
      [:> token-set-context-menu*]
      [:section {:data-testid "token-management-sidebar"

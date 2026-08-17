@@ -512,7 +512,7 @@
         tokens-lib         (cfo/get-tokens-lib data)
         tokens-count       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
         token-sets-count   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
-        token-themes-count (if (some? tokens-lib) (count (ctob/get-themes tokens-lib)) 0)]
+        token-themes-count (if (some? tokens-lib) (count (ctob/get-themes-no-hidden tokens-lib)) 0)]
 
     {:components components-sample
      :variants {:count (count variant-ids)}
