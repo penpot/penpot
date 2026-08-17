@@ -568,8 +568,8 @@
         WHERE p.team_id = ?
           AND fmo.deleted_at IS NULL
           AND f.deleted_at IS NULL
-       UNION ALL
-       SELECT fmo.thumbnail_id AS so_id
+        UNION
+        SELECT fmo.thumbnail_id AS so_id
          FROM file_media_object AS fmo
          JOIN file AS f ON (f.id = fmo.file_id)
          JOIN project AS p ON (p.id = f.project_id)
@@ -577,26 +577,26 @@
           AND fmo.thumbnail_id IS NOT NULL
           AND fmo.deleted_at IS NULL
           AND f.deleted_at IS NULL
-       UNION ALL
-       SELECT v.otf_file_id AS so_id
+        UNION
+        SELECT v.otf_file_id AS so_id
          FROM team_font_variant AS v
         WHERE v.team_id = ?
           AND v.otf_file_id IS NOT NULL
           AND v.deleted_at IS NULL
-       UNION ALL
-       SELECT v.ttf_file_id AS so_id
+        UNION
+        SELECT v.ttf_file_id AS so_id
          FROM team_font_variant AS v
         WHERE v.team_id = ?
           AND v.ttf_file_id IS NOT NULL
           AND v.deleted_at IS NULL
-       UNION ALL
-       SELECT v.woff1_file_id AS so_id
+        UNION
+        SELECT v.woff1_file_id AS so_id
          FROM team_font_variant AS v
         WHERE v.team_id = ?
           AND v.woff1_file_id IS NOT NULL
           AND v.deleted_at IS NULL
-       UNION ALL
-       SELECT v.woff2_file_id AS so_id
+        UNION
+        SELECT v.woff2_file_id AS so_id
          FROM team_font_variant AS v
         WHERE v.team_id = ?
           AND v.woff2_file_id IS NOT NULL

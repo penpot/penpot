@@ -400,6 +400,47 @@
       ;; total=0, incr=500, best quote=1000 → 0+500 <= 1000 → ok
       (check-ok! "allowed by team+profile quote"))))
 
+(t/deftest media-storage-bytes-quote-deduped
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-media-storage-bytes-per-team 1100})}]
+
+    (let [prof    (th/create-profile* 1)
+          team-id (:default-team-id prof)
+          proj    (th/create-project* 1 {:profile-id (:id prof)
+                                         :team-id team-id})
+          file1   (th/create-file* 1 {:profile-id (:id prof)
+                                      :project-id (:id proj)
+                                      :is-shared false})
+          file2   (th/create-file* 2 {:profile-id (:id prof)
+                                      :project-id (:id proj)
+                                      :is-shared false})
+
+          ;; One physical storage object of 500 bytes
+          so-id   (uuid/random)
+          _       (th/db-insert! :storage-object {:id so-id
+                                                  :size 500
+                                                  :backend "test"})
+
+          ;; Two file_media_object rows pointing at the SAME storage object
+          ;; (simulates the deduplication path: same content uploaded twice)
+          _       (th/create-file-media-object*
+                   {:file-id (:id file1) :media-id so-id
+                    :name "icon" :mtype "image/svg+xml"})
+          _       (th/create-file-media-object*
+                   {:file-id (:id file2) :media-id so-id
+                    :name "icon" :mtype "image/svg+xml"})
+
+          data    {::quotes/id ::quotes/media-storage-bytes-per-team
+                   ::quotes/profile-id (:id prof)
+                   ::quotes/team-id team-id
+                   ::quotes/incr 200}]
+
+      ;; Physical size is 500. With UNION (correct), total=500, 500+200=700 ≤ 1100 → ok.
+      ;; With UNION ALL (buggy), total=1000, 1000+200=1200 > 1100 → rejected.
+      (quotes/check! th/*system* data)
+      (t/is (true? true) "deduped storage counted once, under quota"))))
+
 (t/deftest media-upload-enforces-storage-quote
   (with-mocks [mock {:target 'app.config/get
                      :return (th/config-get-mock
