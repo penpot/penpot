@@ -363,7 +363,8 @@
                                       :page-id page-id
                                       :file-id file-id
                                       :vport vport
-                                      :zoom zoom}])
+                                      :zoom zoom
+                                      :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay* {:vport vport

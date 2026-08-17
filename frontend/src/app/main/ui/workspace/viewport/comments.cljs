@@ -13,6 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [rumext.v2 :as mf]))
 
 ;; Pin transform for the bubble's frame so it follows the frame during a drag,
@@ -70,7 +71,7 @@
 
 (mf/defc comments-layer*
   {::mf/wrap [mf/memo]}
-  [{:keys [vbox vport zoom file-id page-id]}]
+  [{:keys [vbox vport zoom file-id page-id show-rulers]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
         vport-w     (dm/get-prop vport :width)
@@ -114,7 +115,15 @@
       {:id "comments"
        :class (stl/css :workspace-comments-container)
        :style {:width (dm/str vport-w "px")
-               :height (dm/str vport-h "px")}}
+               :height (dm/str vport-h "px")
+               ;; This layer sits above the canvas, so without clipping the
+               ;; bubbles paint over the rulers as they pan past them. Keep
+               ;; them out of the ruler bars, like `clip-handlers` does for
+               ;; the selection handlers.
+               :clip-path (when show-rulers
+                            (dm/fmt "inset(%px 0 0 %px)"
+                                    rulers/ruler-area-size
+                                    rulers/ruler-area-size))}}
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
 

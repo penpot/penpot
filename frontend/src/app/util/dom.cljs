@@ -875,35 +875,17 @@
   [url]
   (.replaceState (.-history globals/window) nil "" url))
 
-(defn- update-query-params
-  "Apply `f` to the query-params map of `url`, returning the updated URL string.
-  Handles both plain query strings and fragment-based (hash) URLs."
-  [url f]
-  (let [transform (fn [parsed]
-                    (update parsed :query
-                            (fn [q]
-                              (-> (u/query-string->map (or q ""))
-                                  f
-                                  u/map->query-string))))
-        parsed    (u/uri url)
-        fragment  (:fragment parsed)]
-    (if (str/blank? fragment)
-      (str (transform parsed))
-      (-> parsed
-          (assoc :fragment (str (transform (u/parse fragment))))
-          str))))
-
 (defn append-query-param
   "Return a new URL string with the given query parameter added or replaced.
   Handles both plain query strings and fragment-based (hash) URLs."
   [url key value]
-  (update-query-params url #(assoc % key value)))
+  (u/append-query-param url key value))
 
 (defn remove-query-param
   "Return a new URL string with the given query parameter removed.
   Handles both plain query strings and fragment-based (hash) URLs."
   [url key]
-  (update-query-params url #(dissoc % key)))
+  (u/remove-query-param url key))
 
 (defn reload-current-window
   ([]

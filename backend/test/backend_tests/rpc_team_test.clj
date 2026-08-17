@@ -719,6 +719,67 @@
       (t/is (not= (:default-team-id profile1) (:id item1))))))
 
 
+(t/deftest get-teams-fetches-organizations-in-one-batch
+  (let [profile           (th/create-profile* 1 {:is-active true})
+        organization-team (th/create-team* 1 {:profile-id (:id profile)})
+        plain-team        (th/create-team* 2 {:profile-id (:id profile)})
+        expired-team      (th/create-team* 3 {:profile-id (:id profile)})
+        organization-id   (uuid/random)
+        calls             (atom [])
+        organization      {:id organization-id
+                           :name "Acme"
+                           :slug "acme"
+                           :owner-id (:id profile)
+                           :avatar-bg-url "https://example.com/avatar.svg"}
+        nitrate-call      (fn [_cfg method params]
+                            (swap! calls conj [method params])
+                            [{:id (:id organization-team)
+                              :is-your-penpot false
+                              :organization organization}
+                             {:id (:id expired-team)
+                              :is-your-penpot false
+                              :organization (assoc organization :expired-license true)}])
+        params            {::th/type :get-teams
+                           ::rpc/profile-id (:id profile)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call nitrate-call]
+      (let [out    (th/command! params)
+            teams (:result out)]
+        (t/is (th/success? out))
+        (t/is (= 1 (count @calls)))
+        (t/is (= :get-teams-organizations (ffirst @calls)))
+        (t/is (= #{(:default-team-id profile)
+                   (:id organization-team)
+                   (:id plain-team)
+                   (:id expired-team)}
+                 (-> @calls first second :team-ids set)))
+        (t/is (= #{(:default-team-id profile)
+                   (:id organization-team)
+                   (:id plain-team)}
+                 (into #{} (map :id) teams)))
+        (t/is (= organization
+                 (->> teams
+                      (filter #(= (:id organization-team) (:id %)))
+                      first
+                      :organization)))))))
+
+
+(t/deftest get-teams-rejects-invalid-organization-batch-response
+  (let [profile (th/create-profile* 1 {:is-active true})
+        calls   (atom [])
+        params  {::th/type :get-teams
+                 ::rpc/profile-id (:id profile)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call (fn [_cfg method call-params]
+                                 (swap! calls conj [method call-params])
+                                 nil)]
+      (let [out (th/command! params)]
+        (t/is (not (th/success? out)))
+        (t/is (= :nitrate-unavailable (th/ex-type (:error out))))
+        (t/is (= 1 (count @calls)))
+        (t/is (= :get-teams-organizations (ffirst @calls)))))))
+
+
 (t/deftest team-deletion-1
   (let [profile1 (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile1)})
@@ -1096,3 +1157,53 @@
                 :name "My Valid Team"}
           out  (th/command! data)]
       (t/is (th/success? out)))))
+
+(t/deftest create-team-in-organization-regression
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner           (th/create-profile* 401 {:is-active true})
+          non-member      (th/create-profile* 402 {:is-active true})
+          organization-id (uuid/random)
+          params          {::th/type :create-team
+                           ::rpc/profile-id (:id owner)
+                           :name "Test Team"
+                           :organization-id organization-id}
+
+          nitrate-call-fn
+          (fn [_cfg method p]
+            (case method
+              :get-organization-membership
+              (if (= (:profile-id p) (:id non-member))
+                {:organization-id organization-id :is-member false}
+                {:organization-id organization-id :is-member true})
+
+              :get-organization-permissions
+              {:owner-id (:id owner)
+               :permissions {:create-teams "any"}}
+
+              :set-team-organization
+              (let [team-id (:team-id p)]
+                {:id team-id
+                 :name "Test Team"
+                 :organization-id organization-id
+                 :default-project-id (uuid/random)})
+
+              nil))]
+
+      ;; Non-member should be denied with :user-doesnt-belong-organization
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call nitrate-call-fn]
+        (let [out (th/command! (assoc params ::rpc/profile-id (:id non-member)))]
+          (t/is (not (th/success? out)))
+          (let [edata (-> out :error ex-data)]
+            (t/is (= :validation (:type edata)))
+            (t/is (= :user-doesnt-belong-organization (:code edata))))))
+
+      ;; Authorized member should succeed
+      (th/reset-mock! audit-mock)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call nitrate-call-fn]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (let [team (:result out)]
+            (t/is (uuid? (:id team)))
+            (t/is (= "Test Team" (:name team)))))))))

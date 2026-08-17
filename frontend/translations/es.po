@@ -1254,7 +1254,7 @@ msgstr "Tu proyecto ha sido movido con éxito"
 
 #, unused
 msgid "dashboard.team-belong-organization"
-msgstr "Este equipo ahora pertenece a la organización %s"
+msgstr "Este equipo ahora es parte de la organización %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
 msgid "dashboard.team-info"
@@ -1266,7 +1266,7 @@ msgstr "Integrantes del equipo"
 
 #, unused
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Este equipo ya no pertenece a la organización %s"
+msgstr "Este equipo ya no es parte de la organización %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
@@ -4252,6 +4252,9 @@ msgstr "Este código ha caducado."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Código inválido."
 
+msgid "nitrate.activation-code.used-error"
+msgstr "Este código ya ha sido utilizado."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
 msgid "nitrate.activation-success.active-until"
 msgstr "Tu plan está activo hasta el %s."
@@ -5936,13 +5939,6 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el "
 "problema persiste, contáctanos: support@penpot.app."
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"No hemos podido confirmar tu suscripción. Revisa el estado de tu "
-"suscripción en la página de Suscripciones. Puedes volver a intentarlo si lo "
-"necesitas."
 
 #: src/app/main/ui/settings/sidebar.cljs:114, src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:565
 msgid "subscription.labels"
@@ -9989,3 +9985,12 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "notifications.invitation-canceled"
 msgstr "Esta invitación ya no está disponible."
+
+msgid "labels.sso-error.title"
+msgstr "No pudimos iniciar sesión en tu organización"
+
+msgid "labels.sso-error.desc-message"
+msgstr "El inicio de sesión con el proveedor de identidad de tu organización no se completó. Es posible que el proveedor no esté disponible o que tu cuenta aún no esté en su directorio. Tu cuenta de Penpot no se ha visto afectada."
+
+msgid "labels.sso-error.retry"
+msgstr "Intentar de nuevo"

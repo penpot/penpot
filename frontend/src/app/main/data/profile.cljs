@@ -43,28 +43,30 @@
 (defn set-profile
   "Initialize profile state, only logged-in profile data should be
   passed to this event"
-  [{:keys [id] :as profile}]
-  (ptk/reify ::set-profile
-    IDeref
-    (-deref [_] profile)
+  [profile]
+  (let [profile (update profile :theme not-empty)
+        id      (:id profile)]
+    (ptk/reify ::set-profile
+      IDeref
+      (-deref [_] profile)
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc :profile-id id)
-          (assoc :profile profile)))
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (assoc :profile-id id)
+            (assoc :profile profile)))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [profile (:profile state)]
-        (->> (rx/from (i18n/set-locale (:lang profile)))
-             (rx/ignore))))
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [profile (:profile state)]
+          (->> (rx/from (i18n/set-locale (:lang profile)))
+               (rx/ignore))))
 
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [profile (:profile state)]
-        (swap! storage/user assoc :profile profile)
-        (plugins.register/init)))))
+      ptk/EffectEvent
+      (effect [_ state _]
+        (let [profile (:profile state)]
+          (swap! storage/user assoc :profile profile)
+          (plugins.register/init))))))
 
 (def profile-fetched?
   (ptk/type? ::profile-fetched))

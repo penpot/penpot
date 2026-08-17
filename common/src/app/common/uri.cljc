@@ -67,6 +67,36 @@
               path
               (str path "/")))))
 
+(defn- update-query-params
+  "Apply `f` to the query-params map of `url`, returning the updated URL string.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url f]
+  (let [transform (fn [parsed]
+                    (update parsed :query
+                            (fn [q]
+                              (-> (query-string->map (or q ""))
+                                  f
+                                  map->query-string))))
+        parsed    (uri url)
+        fragment  (:fragment parsed)]
+    (if (str/blank? fragment)
+      (str (transform parsed))
+      (-> parsed
+          (assoc :fragment (str (transform (parse fragment))))
+          str))))
+
+(defn append-query-param
+  "Return a new URL string with the given query parameter added or replaced.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url key value]
+  (update-query-params url #(assoc % key value)))
+
+(defn remove-query-param
+  "Return a new URL string with the given query parameter removed.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url key]
+  (update-query-params url #(dissoc % key)))
+
 #?(:clj
    (defmethod print-method lambdaisland.uri.URI [^URI this ^java.io.Writer writer]
      (.write writer "#")
