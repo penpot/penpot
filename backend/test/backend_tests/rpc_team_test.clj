@@ -1207,3 +1207,102 @@
           (let [team (:result out)]
             (t/is (uuid? (:id team)))
             (t/is (= "Test Team" (:name team)))))))))
+
+;; --- T7-F-01: Role ceiling in team invitations ---
+
+(t/deftest admin-cannot-create-invitation-with-owner-role
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [owner   (th/create-profile* 1 {:is-active true})
+          admin   (th/create-profile* 2 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id owner)})]
+
+      ;; Add admin as team member with :admin role
+      (th/create-team-role* {:team-id (:id team)
+                             :profile-id (:id admin)
+                             :role :admin})
+
+      ;; Admin tries to create invitation with :owner role (emails+role format)
+      ;; This should FAIL with :cant-promote-to-owner
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id admin)
+                  :team-id (:id team)
+                  :role :owner
+                  :emails ["invitee@example.com"]}
+            out  (th/command! data)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :cant-promote-to-owner))
+        (t/is (= 0 (:call-count @mock)))))))
+
+(t/deftest admin-cannot-create-invitation-with-owner-role-invitations-format
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [owner   (th/create-profile* 1 {:is-active true})
+          admin   (th/create-profile* 2 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id owner)})]
+
+      ;; Add admin as team member with :admin role
+      (th/create-team-role* {:team-id (:id team)
+                             :profile-id (:id admin)
+                             :role :admin})
+
+      ;; Admin tries to create invitation with :owner role (invitations format)
+      ;; This should FAIL with :cant-promote-to-owner
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id admin)
+                  :team-id (:id team)
+                  :invitations [{:email "invitee@example.com" :role :owner}]}
+            out  (th/command! data)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :cant-promote-to-owner))
+        (t/is (= 0 (:call-count @mock)))))))
+
+(t/deftest admin-cannot-update-invitation-role-to-owner
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [owner   (th/create-profile* 1 {:is-active true})
+          admin   (th/create-profile* 2 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id owner)})]
+
+      ;; Add admin as team member with :admin role
+      (th/create-team-role* {:team-id (:id team)
+                             :profile-id (:id admin)
+                             :role :admin})
+
+      ;; Owner creates an invitation with :editor role
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id owner)
+                  :team-id (:id team)
+                  :role :editor
+                  :emails ["invitee@example.com"]}
+            out  (th/command! data)]
+        (t/is (th/success? out)))
+
+      (th/reset-mock! mock)
+
+      ;; Admin tries to update invitation role to :owner
+      ;; This should FAIL with :cant-promote-to-owner
+      (let [data {::th/type :update-team-invitation-role
+                  ::rpc/profile-id (:id admin)
+                  :team-id (:id team)
+                  :email "invitee@example.com"
+                  :role :owner}
+            out  (th/command! data)]
+        (t/is (not (th/success? out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :cant-promote-to-owner))))))
+
+(t/deftest owner-can-create-invitation-with-owner-role
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [owner   (th/create-profile* 1 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id owner)})]
+
+      ;; Owner creates invitation with :owner role
+      ;; This should SUCCEED (owner has full privileges)
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id owner)
+                  :team-id (:id team)
+                  :role :owner
+                  :emails ["invitee@example.com"]}
+            out  (th/command! data)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:call-count @mock)))))))
