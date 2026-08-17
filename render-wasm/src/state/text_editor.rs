@@ -447,10 +447,8 @@ impl TextEditorState {
         let Some(_last_text_span) = last_paragraph.children().last() else {
             return false;
         };
-        let mut offset = 0;
-        for span in last_paragraph.children() {
-            offset += span.text.len();
-        }
+        // Offsets are counted in characters, not bytes.
+        let offset = text_helpers::paragraph_char_count(last_paragraph);
         self.extend_selection_from_position(&TextPositionWithAffinity::new(
             PositionWithAffinity {
                 position: offset as i32,

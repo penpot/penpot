@@ -30,6 +30,7 @@
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts-v3 :as dwt-v3]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -699,13 +700,19 @@
 
            (rx/concat (rx/of (dwsh/update-shapes shape-ids update-shape options))
                       (when (features/active-feature? state "text-editor-wasm/v1")
-                        (let [styles ((comp update-node-fn migrate-node))
-                              result (wasm.api/apply-styles-to-selection styles)]
+                        ;; Transform each span so add-fill preserves its existing fills.
+                        (let [result (wasm.api/apply-styles-to-selection
+                                      (comp update-node-fn migrate-node)
+                                      {:with-fills? true})]
                           (when result
                             (rx/of (v2-update-text-shape-content
                                     (:shape-id result)
                                     (:content result)
-                                    :update-name? true)))))))))
+                                    :update-name? true)
+                                   ;; Refresh the panel now, not only after a reselect.
+                                   (dwt-v3/v3-update-text-editor-styles
+                                    (:shape-id result)
+                                    {:fills (:fills result)})))))))))
 
      ptk/EffectEvent
      (effect [_ state _]
@@ -824,7 +831,8 @@
       (let [multiple? (->> data vals (d/seek #(= % :multiple)))]
         (cond-> state
           (not multiple?)
-          (assoc-in [:workspace-global :default-font] data))))))
+          (assoc-in [:workspace-global :default-font]
+                    (dissoc data :typography-ref-id :typography-ref-file)))))))
 
 (defn apply-text-modifier
   [shape text-modifier]
@@ -968,7 +976,14 @@
     (watch [_ state stream]
       (let [text-editor-instance (:workspace-editor state)
             objects              (dsh/lookup-page-objects state)
-            text-ids             (resolve-text-ids objects id)]
+            text-ids             (resolve-text-ids objects id)
+
+            wasm-editing?
+            (and (features/active-feature? state "text-editor-wasm/v1")
+                 (= id (wasm.api/text-editor-get-active-shape-id)))
+
+            wasm-editing-selection?
+            (and wasm-editing? (wasm.api/text-editor-has-selection?))]
         (if (and (features/active-feature? state "text-editor/v2")
                  (some? text-editor-instance))
           (rx/empty)
@@ -978,15 +993,40 @@
                (rx/of (update-root-attrs {:id id :attrs attrs}))
                (rx/empty)))
 
-           (let [attrs (select-keys attrs txt/paragraph-attrs)]
-             (if-not (empty? attrs)
-               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))
-               (rx/empty)))
+           ;; `:line-height` is stored on both the paragraph and its spans, and
+           ;; the renderer takes the larger of the two.
+           (let [pattrs (if wasm-editing-selection?
+                          (conj txt/paragraph-attrs :line-height)
+                          txt/paragraph-attrs)
+                 attrs  (select-keys attrs pattrs)
+                 result (when (and (seq attrs) wasm-editing?)
+                          (wasm.api/apply-paragraph-attrs-to-selection attrs))]
+             (cond
+               (empty? attrs)
+               (rx/empty)
+
+               (some? result)
+               (rx/of (v2-update-text-shape-content
+                       (:shape-id result) (:content result)
+                       :update-name? true))
+
+               :else
+               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))))
 
            (let [attrs (select-keys attrs txt/text-node-attrs)]
-             (if-not (empty? attrs)
-               (rx/of (update-text-attrs {:id id :attrs attrs}))
-               (rx/empty)))
+             (cond
+               (or (empty? attrs) wasm-editing-selection?)
+               (rx/empty)
+
+               ;; Collapsed caret: stash a pending caret style for the next typed
+               ;; character instead of restyling the whole shape.
+               wasm-editing?
+               (do
+                 (wasm.text-editor/merge-pending-caret-styles! id attrs)
+                 (rx/of (dwt-v3/v3-update-text-editor-styles id attrs)))
+
+               :else
+               (rx/of (update-text-attrs {:id id :attrs attrs}))))
 
            (when (and (features/active-feature? state "text-editor/v2")
                       (not (features/active-feature? state "text-editor-wasm/v1")))
@@ -1208,7 +1248,7 @@
   Includes :name when update-name? so we can skip save-undo on the preceding
   update-shapes for finalize without losing name undo."
   [it state id {:keys [new-shape? content-has-text? content original-content
-                       update-name? name]}]
+                       update-name? name resize-geom]}]
   (let [page-id    (:current-page-id state)
         objects    (dsh/lookup-page-objects state page-id)
         shape*     (get objects id)
@@ -1220,7 +1260,8 @@
                        (cond-> new-shape?
                          (-> (pcb/set-undo-group id)
                              (pcb/set-stack-undo? true))))
-        final-geom (select-keys shape* [:selrect :points :width :height])
+        ;; `resize-geom` is the post-resize geometry; `shape*` still holds the pre-resize selrect.
+        final-geom (or resize-geom (select-keys shape* [:selrect :points :width :height]))
         geom-keys  (if new-shape? [:selrect :points] [:selrect :points :width :height])
         old-geom   (when (and content-has-text? (not= :fixed (:grow-type shape*)))
                      (or (get-in state [:workspace-text-session-geom id])
@@ -1272,6 +1313,13 @@
                 ;; modifier machinery, made auto-width typing very laggy.
                 new-size (when (and finalize? (not= :fixed (:grow-type shape)))
                            (dwwt/get-wasm-text-new-size shape content))
+                ;; Also compute the resized geometry for the finalize commit; the
+                ;; async `apply-wasm-modifiers` below never updates this `state`.
+                resize-modifiers (when (some? new-size)
+                                   (dwwt/resize-wasm-text-modifiers shape content))
+                resize-geom (when resize-modifiers
+                              (-> (gsh/transform-shape shape (get-in resize-modifiers [id :modifiers]))
+                                  (select-keys [:selrect :points :width :height])))
                 ;; New shapes: single undo on finalize only (no per-keystroke undo)
                 effective-save-undo? (if new-shape? finalize? save-undo?)
                 effective-stack-undo? (and new-shape? finalize?)
@@ -1281,7 +1329,16 @@
                 finalize-save-undo-first?
                 (if (and finalize? (or (not new-shape?) (not content-has-text?)))
                   false
-                  effective-save-undo?)]
+                  effective-save-undo?)
+
+                ;; Whether any content-changing edit happened this editing session.
+                session-touched? (some? (get-in state [:workspace-text-session-geom id]))
+                ;; A finalize on an existing shape that wasn't edited must not create any undo entry
+                ;; (exception being newly created shapes)
+                finalize-no-op?  (and finalize?
+                                      (not new-shape?)
+                                      content-has-text?
+                                      (not session-touched?))]
 
             (rx/concat
              (rx/of
@@ -1311,12 +1368,10 @@
                 :stack-undo? effective-stack-undo?
                 :undo-group (when new-shape? id)})
 
-              ;; `new-size` is only computed on finalize (see above), so this commits
-              ;; the final auto-width/auto-height geometry via `apply-wasm-modifiers`
-              ;; like other transform flows (flex parents, sidebar width, etc.).
-              (when (some? new-size)
-                (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
-                  (dwm/apply-wasm-modifiers modifiers {:undo-group (when new-shape? id)}))))
+              ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
+              ;; Skipped for a no-op finalize: applying it would record an undo transaction.
+              (when (and (some? resize-modifiers) (not finalize-no-op?))
+                (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
 
              (when finalize?
                (rx/concat
@@ -1333,7 +1388,7 @@
                           (dwsh/delete-shapes #{id})))
                   (rx/empty))
                 (rx/concat
-                 (if content-has-text?
+                 (if (and content-has-text? (not finalize-no-op?))
                    (rx/of
                     (dch/commit-changes
                      (build-finalize-commit-changes it state id
@@ -1349,7 +1404,8 @@
                                                      ;; behavior (their create is bundled in the undo group).
                                                      :original-content (if new-shape? original-content prev-content)
                                                      :update-name? update-name?
-                                                     :name name})))
+                                                     :name name
+                                                     :resize-geom resize-geom})))
                    (rx/empty))
                  (rx/of (dwt/finish-transform)
                         (fn [state]

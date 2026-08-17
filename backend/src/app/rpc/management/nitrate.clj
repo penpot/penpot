@@ -12,11 +12,13 @@
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar schema:nitrate-sso]]
+   [app.common.types.organization :as cto]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -24,7 +26,7 @@
    [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
    [app.rpc.commands.auth :as auth]
@@ -54,7 +56,7 @@
 
 (sv/defmethod ::authenticate
   "Authenticate the current user"
-  {::doc/added "2.14"
+  {::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:profile
    ::nitrate/sso false}
@@ -94,7 +96,7 @@
 
 (sv/defmethod ::get-penpot-version
   "Get the current Penpot version"
-  {::doc/added "2.14"
+  {::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:get-penpot-version-result
    ::rpc/auth false}
@@ -106,7 +108,7 @@
 
 (sv/defmethod ::get-teams
   "List teams for which current user is owner"
-  {::doc/added "2.14"
+  {::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:get-teams-result
    ::nitrate/sso false}
@@ -119,7 +121,7 @@
 
 (def ^:private schema:upload-organization-logo
   [:map
-   [:content media/schema:upload]
+   [:content media.v/schema:upload]
    [:organization-id ::sm/uuid]
    [:previous-id {:optional true} ::sm/uuid]])
 
@@ -130,11 +132,12 @@
   "Store an organization logo in penpot storage and return its ID.
   Accepts an optional previous-id to mark the old logo for garbage
   collection when replacing an existing one."
-  {::doc/added "2.17"
+  {::doc/added "2.18"
    ::sm/params schema:upload-organization-logo
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
+  (media.v/validate-media-type! content cm/image-types)
   (when previous-id
     (sto/touch-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))
@@ -151,8 +154,8 @@
 
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
-  {::doc/added "2.14"
-   ::sm/params schema:team-with-organization
+  {::doc/added "2.18"
+   ::sm/params cto/schema:team-with-organization
    ::rpc/auth false}
   [cfg team]
   (notifications/notify-team-change cfg (select-keys team [:id :is-your-penpot :organization]) nil)
@@ -168,7 +171,7 @@
 
 (sv/defmethod ::notify-user-added-to-organization
   "Notify to Penpot that an user has joined an organization from nitrate"
-  {::doc/added "2.14"
+  {::doc/added "2.18"
    ::sm/params schema:notify-user-added-to-organization
    ::rpc/auth false}
   [cfg {:keys [profile-id organization-id]}]
@@ -199,7 +202,7 @@
 
 (sv/defmethod ::get-managed-profiles
   "List profiles that belong to teams for which current user is owner"
-  {::doc/added "2.14"
+  {::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:managed-profile-result
    ::nitrate/sso false}
@@ -239,7 +242,7 @@
 
 (sv/defmethod ::get-teams-summary
   "Get summary information for a list of teams"
-  {::doc/added "2.15"
+  {::doc/added "2.18"
    ::sm/params schema:get-teams-summary-params
    ::sm/result schema:get-teams-summary-result
    ::nitrate/sso false}
@@ -360,7 +363,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::notify-organization-deletion
   "For a deleted organization, preserve organization teams and only prefix or delete
    imported Your Penpot teams before notifying connected users."
-  {::doc/added "2.15"
+  {::doc/added "2.18"
    ::sm/params schema:notify-organization-deletion
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
@@ -406,7 +409,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::get-profile-by-email
   "Get profile by email"
-  {::doc/added "2.15"
+  {::doc/added "2.18"
    ::sm/params [:map [:email ::sm/email]]
    ::sm/result schema:profile
    ::nitrate/sso false}
@@ -430,7 +433,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::get-profile-by-id
   "Get profile by email"
-  {::doc/added "2.15"
+  {::doc/added "2.18"
    ::sm/params [:map [:id ::sm/uuid]]
    ::sm/result schema:profile
    ::nitrate/sso false}
@@ -465,7 +468,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::get-organization-member-team-counts
   "Get the number of non-default teams each profile belongs to within a set of teams."
-  {::doc/added "2.15"
+  {::doc/added "2.18"
    ::sm/params schema:get-organization-member-team-counts-params
    ::sm/result schema:get-organization-member-team-counts-result
    ::rpc/auth false}
@@ -488,15 +491,33 @@ RETURNING id, deleted_at;")
 
 ;; API: invite-to-organization
 
+(defn- get-invitation-organization
+  [cfg profile-id organization-id]
+  (let [{:keys [id name owner-id logo-id avatar-bg-url sso-active]}
+        (nitrate/call cfg :get-organization-summary {:organization-id organization-id})]
+    (when-not (= profile-id owner-id)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "not found"))
+    {:id            id
+     :name          name
+     :initials      (if logo-id "" (d/get-initials name))
+     :logo          (when logo-id (u/uri (files/resolve-public-uri logo-id)))
+     :avatar-bg-url (when-not logo-id avatar-bg-url)
+     :sso-active    (true? sso-active)}))
+
 (sv/defmethod ::invite-to-organization
   "Invite to organization"
-  {::doc/added "2.15"
+  {::doc/added "2.18"
    ::sm/params [:map
                 [:email ::sm/email]
-                [:organization schema:organization-with-avatar]]
+                [:organization cto/schema:organization-with-avatar]]
    ::nitrate/sso false}
-  [cfg params]
-  (db/tx-run! cfg ti/create-organization-invitation params)
+  [cfg {profile-id ::rpc/profile-id
+        :keys [organization]
+        :as params}]
+  (let [organization (get-invitation-organization cfg profile-id (:id organization))]
+    (db/tx-run! cfg ti/create-organization-invitation (assoc params :organization organization)))
   nil)
 
 
@@ -519,7 +540,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::get-organization-invitations
   "Get valid invitations for an organization, returning at most one invitation per email."
-  {::doc/added "2.16"
+  {::doc/added "2.18"
    ::sm/params schema:get-organization-invitations-params
    ::sm/result schema:get-organization-invitations-result
    ::nitrate/sso false}
@@ -547,7 +568,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::delete-organization-invitations
   "Delete all invitations for one email in an organization scope (organization + organization teams)."
-  {::doc/added "2.16"
+  {::doc/added "2.18"
    ::sm/params schema:delete-organization-invitations-params
    ::nitrate/sso false}
   [cfg {:keys [organization-id email]}]
@@ -612,7 +633,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::remove-from-organization
   "Remove an user from an organization"
-  {::doc/added "2.17"
+  {::doc/added "2.18"
    ::sm/params [:map
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]
@@ -657,7 +678,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-remove-from-organization-summary
   "Get a summary of the teams that would be deleted, transferred, or exited
    if the user were removed from the organization"
-  {::doc/added "2.17"
+  {::doc/added "2.18"
    ::sm/params [:map
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]
@@ -688,11 +709,11 @@ RETURNING id, deleted_at;")
    [:user-name [:maybe ::sm/text]]
    [:renewal-date :string]
    [:estimated-amount :double]
-   [:organizations [:vector schema:organization-with-avatar]]])
+   [:organizations [:vector cto/schema:organization-with-avatar]]])
 
 (sv/defmethod ::send-renewal-email
   "Send an Enterprise subscription renewal notice email to a user."
-  {::doc/added "2.17"
+  {::doc/added "2.18"
    ::sm/params schema:send-renewal-email-params
    ::rpc/auth false}
   [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
@@ -805,7 +826,7 @@ RETURNING id, deleted_at;")
   "Push audit events from nitrate (strictly for nitrate backend
   events)"
 
-  {::doc/added "2.19"
+  {::doc/added "2.18"
    ::audit/skip true
    ::sm/params schema:push-audit-events-params
    ::rpc/auth false}
@@ -912,7 +933,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-teams-detail
   "Get detailed information for all non-deleted teams in an organization,
    including owner info and project/file/member counts."
-  {::doc/added "2.20"
+  {::doc/added "2.18"
    ::sm/params schema:get-teams-detail-params
    ::sm/result schema:get-teams-detail-result
    ::nitrate/sso false}
@@ -940,8 +961,8 @@ RETURNING id, deleted_at;")
   "Validate an organization SSO configuration by generating a login redirect URL.
   Nitrate calls this while configuring SSO to verify client credentials and OIDC
   discovery before saving the settings."
-  {::doc/added "2.20"
-   ::sm/params schema:nitrate-sso
+  {::doc/added "2.18"
+   ::sm/params cto/schema:nitrate-sso
    ::sm/result schema:check-organization-sso-result
    ::rpc/auth false}
   [cfg params]
@@ -950,7 +971,7 @@ RETURNING id, deleted_at;")
 ;; ---- API: notify-organization-sso-change
 (sv/defmethod ::notify-organization-sso-change
   "Nitrate notifies that an organization sso values have changed"
-  {::doc/added "2.19"
+  {::doc/added "2.18"
    ::sm/params [:map
                 [:organization-id ::sm/uuid]
                 [:updated-props ::sm/boolean]
@@ -997,17 +1018,17 @@ RETURNING id, deleted_at;")
    created users skip email verification and onboarding. Emails that already
    belong to an existing profile are skipped. Intended for the Nitrate admin
    bulk-creation screen; access is gated by the shared key and, in Nitrate, an
-   email allow-list. Requires the `nitrate-bulk-create-profiles` flag, disabled
+   email allow-list. Requires the `admin-console-bulk-create-profiles` flag, disabled
    by default so it is only available on test environments."
-  {::doc/added "2.19"
+  {::doc/added "2.18"
    ::sm/params schema:bulk-create-profiles-params
    ::sm/result schema:bulk-create-profiles-result
    ::rpc/auth false}
   [cfg {:keys [password emails]}]
 
-  (when-not (contains? cf/flags :nitrate-bulk-create-profiles)
+  (when-not (contains? cf/flags :admin-console-bulk-create-profiles)
     (ex/raise :type :restriction
-              :code :nitrate-bulk-create-profiles-not-allowed
+              :code :bulk-create-profiles-not-allowed
               :hint "Bulk profile creation is disabled by config."))
 
   (let [derived (aauth/derive-password password)]

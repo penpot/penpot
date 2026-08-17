@@ -669,7 +669,8 @@
                                       :page-id page-id
                                       :file-id file-id
                                       :vport vport
-                                      :zoom zoom}])
+                                      :zoom zoom
+                                      :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
@@ -799,6 +800,7 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not read-only?)
                   (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*

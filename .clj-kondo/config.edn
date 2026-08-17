@@ -88,6 +88,9 @@
   :dynamic-var-not-earmuffed
   {:level :off}
 
+  :type-mismatch
+  {:level :off}
+
   :used-underscored-binding
   {:level :warning}
 

@@ -1069,6 +1069,25 @@
   [cfg {:keys [::rpc/profile-id] :as params}]
   (db/tx-run! cfg delete-file (assoc params :profile-id profile-id)))
 
+;; --- Library relation helpers
+
+(defn- check-library-team-ownership!
+  "Verify that file and library belong to the same team.
+  Prevents cross-team library relation injection."
+  [conn file-id library-id]
+  (let [sql "SELECT EXISTS (
+               SELECT 1 FROM file AS f
+               JOIN project AS fp ON (fp.id = f.project_id)
+               JOIN file AS l ON (l.id = ?)
+               JOIN project AS lp ON (lp.id = l.project_id)
+               WHERE f.id = ? AND fp.team_id = lp.team_id
+             ) AS ok"
+        row (db/exec-one! conn [sql library-id file-id])]
+    (when-not (:ok row)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "file and library must belong to the same team"))))
+
 ;; --- MUTATION COMMAND: link-file-to-library
 
 (def sql:link-file-to-library
@@ -1104,6 +1123,7 @@
 
   (check-edition-permissions! conn profile-id file-id)
   (check-edition-permissions! conn profile-id library-id)
+  (check-library-team-ownership! conn file-id library-id)
 
   (let [transitive-deps (bfc/get-libraries cfg [library-id])]
     (when (contains? transitive-deps file-id)
@@ -1135,6 +1155,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (check-edition-permissions! conn profile-id file-id)
   (check-edition-permissions! conn profile-id library-id)
+  (check-library-team-ownership! conn file-id library-id)
   (unlink-file-from-library conn params)
   nil)
 
@@ -1159,6 +1180,7 @@
   [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (check-edition-permissions! conn profile-id file-id)
   (check-edition-permissions! conn profile-id library-id)
+  (check-library-team-ownership! conn file-id library-id)
   (update-sync conn params))
 
 ;; --- MUTATION COMMAND: ignore-sync

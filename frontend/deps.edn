@@ -1,6 +1,7 @@
 {:paths ["src" "vendor" "resources" "test"]
  :deps
- {penpot/common
+ {;; Carries `app.common.render-wasm.*`, shared with the headless exporter.
+  penpot/common
   {:local/root "../common"}
 
   org.clojure/clojure {:mvn/version "1.12.2"}

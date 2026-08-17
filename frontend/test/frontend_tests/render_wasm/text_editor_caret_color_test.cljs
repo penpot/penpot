@@ -11,7 +11,7 @@
    anything else (no fill, gradient, image fills, mixed selection) it falls back
    to an inverted caret (white painted with a Difference blend)."
   (:require
-   [app.render-wasm.serializers.color :as sr-clr]
+   [app.common.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.text-editor :as text-editor]
    [cljs.test :as t :include-macros true]))
 

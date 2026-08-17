@@ -15,9 +15,9 @@
    font URL get no callback (fetch-font returns nil when the URL is already
    in :fetching) and are permanently stuck with fallback-font layout metrics."
   (:require
+   [app.common.render-wasm.mem :as mem]
+   [app.common.render-wasm.wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]))
 

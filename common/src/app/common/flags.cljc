@@ -147,7 +147,6 @@
     :render-switch
     :hide-release-modal
     :subscriptions
-    :subscriptions-old
     :inspect-styles
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
@@ -164,13 +163,13 @@
     ;; redis for caching data
     :redis-cache
 
-    ;; Activates the nitrate module
-    :nitrate
+    ;; Activates the admin-console module
+    :admin-console
 
-    ;; disabled by default. When enabled, allows the nitrate
+    ;; disabled by default. When enabled, allows the admin-console
     ;; `bulk-create-profiles` method to create batches of already
     ;; active profiles. Only intended for test environments.
-    :nitrate-bulk-create-profiles
+    :admin-console-bulk-create-profiles
 
     :mcp
     :background-blur
@@ -178,7 +177,11 @@
     :stroke-path
     :stroke-per-side
 
-    :custom-shortcuts})
+    ;; Exporter only: uses render-wasm for export instead of browser
+    ;; renderer.
+    :wasm-export
+    :custom-shortcuts
+    :remote-media-processing})
 
 (def all-flags
   (set/union email login varia))

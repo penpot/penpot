@@ -34,6 +34,12 @@ Skipping this step is the #1 cause of incorrect or incomplete work.
 
 ---
 
+## Writing Rules
+
+Use the `ste` skill when the user explicitly requests STE, `/ste`, or ASD-STE100.
+
+---
+
 # Memory system
 
 Memories are the **primary project guidance** — not docs or readme files.

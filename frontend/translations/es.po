@@ -1254,7 +1254,7 @@ msgstr "Tu proyecto ha sido movido con éxito"
 
 #, unused
 msgid "dashboard.team-belong-organization"
-msgstr "Este equipo ahora pertenece a la organización %s"
+msgstr "Este equipo ahora es parte de la organización %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
 msgid "dashboard.team-info"
@@ -1266,7 +1266,7 @@ msgstr "Integrantes del equipo"
 
 #, unused
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Este equipo ya no pertenece a la organización %s"
+msgstr "Este equipo ya no es parte de la organización %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
@@ -1716,6 +1716,34 @@ msgstr "La contraseña de confirmación debe coincidir"
 #, unused
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password"
+msgstr "La contraseña no cumple los requisitos"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.too-short"
+msgstr "Al menos 8 caracteres"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "Al menos 1 letra minúscula"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "Al menos 1 letra mayúscula"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-digits"
+msgstr "Al menos 1 dígito"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.insufficient-special"
+msgstr "Al menos 1 carácter especial"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+msgid "errors.weak-password.in-dictionary"
+msgstr "La contraseña es demasiado común"
 
 #: src/app/main/errors.cljs:267
 msgid "errors.paste-data-validation"
@@ -4224,6 +4252,9 @@ msgstr "Este código ha caducado."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Código inválido."
 
+msgid "nitrate.activation-code.used-error"
+msgstr "Este código ya ha sido utilizado."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
 msgid "nitrate.activation-success.active-until"
 msgstr "Tu plan está activo hasta el %s."
@@ -4266,7 +4297,7 @@ msgstr "Pega aquí tu código de activación"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
 msgid "nitrate.code-activation.renew-title"
-msgstr "RENOVAR NITRATE"
+msgstr "RENOVAR ENTERPRISE"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:101
 msgid "nitrate.code-activation.submit"
@@ -4274,7 +4305,7 @@ msgstr "Activar"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
 msgid "nitrate.code-activation.title"
-msgstr "Activar Nitrate"
+msgstr "Activar Enterprise"
 
 msgid "nitrate.contact-sales.button"
 msgstr "Contactar con ventas"
@@ -4381,14 +4412,14 @@ msgstr "Activo hasta el %s"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
 msgid "nitrate.subscription.renew-success"
-msgstr "Tu suscripción de Nitrate se ha renovado."
+msgstr "Tu suscripción de Enterprise se ha renovado."
 
 #: src/app/main/ui/settings/subscription.cljs:584
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "Cancelar subscripción"
 
 msgid "nitrate.subscription.settings.manual-contact-us"
-msgstr "Para cancelar tu suscripción a Nitrate, ponte en contacto con nosotros en:"
+msgstr "Para cancelar tu suscripción a Enterprise, ponte en contacto con nosotros en:"
 
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
@@ -5908,13 +5939,6 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el "
 "problema persiste, contáctanos: support@penpot.app."
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"No hemos podido confirmar tu suscripción. Revisa el estado de tu "
-"suscripción en la página de Suscripciones. Puedes volver a intentarlo si lo "
-"necesitas."
 
 #: src/app/main/ui/settings/sidebar.cljs:114, src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:565
 msgid "subscription.labels"
@@ -9961,3 +9985,12 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "notifications.invitation-canceled"
 msgstr "Esta invitación ya no está disponible."
+
+msgid "labels.sso-error.title"
+msgstr "No pudimos iniciar sesión en %s"
+
+msgid "labels.sso-error.desc-message"
+msgstr "El inicio de sesión con el proveedor de identidad de tu organización no se completó. Es posible que el proveedor no esté disponible o que tu cuenta aún no esté en su directorio."
+
+msgid "labels.sso-error.retry"
+msgstr "Intentar de nuevo"

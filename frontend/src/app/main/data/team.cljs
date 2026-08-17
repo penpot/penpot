@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.schema :as sm]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -42,7 +42,7 @@
   default team when the candidate requires SSO and the user has no
   valid SSO session for it."
   [{:keys [team-id default-team-id]}]
-  (if (or (not (contains? cf/flags :nitrate))
+  (if (or (not (contains? cf/flags :admin-console))
           (= team-id default-team-id))
     (rx/of team-id)
     (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url (rt/get-current-href)})
@@ -116,13 +116,13 @@
         (with-refreshed-team team-id
           (fn [team]
             (let [organization (:organization team)
-                  in-organization?      (and (contains? cf/flags :nitrate) organization)
+                  in-organization?      (and (contains? cf/flags :admin-console) organization)
                   can-create?  (if in-organization?
-                                 (nitrate-perms/allowed? :create-team
-                                                         {:organization-perms {:owner-id    (:owner-id organization)
-                                                                               :permissions (:permissions organization)}
-                                                          :profile-id profile-id
-                                                          :team-perms (:permissions team)})
+                                 (cto/allowed? :create-team
+                                               {:organization-perms {:owner-id    (:owner-id organization)
+                                                                     :permissions (:permissions organization)}
+                                                :profile-id profile-id
+                                                :team-perms (:permissions team)})
                                  true)]
               (rx/of (if can-create?
                        (modal/show :team-form (if in-organization?
@@ -142,13 +142,13 @@
         (with-refreshed-team team-id
           (fn [team]
             (let [organization         (:organization team)
-                  in-organization?     (and (contains? cf/flags :nitrate) organization)
+                  in-organization?     (and (contains? cf/flags :admin-console) organization)
                   can-delete? (if in-organization?
-                                (nitrate-perms/allowed? :delete-team
-                                                        {:organization-perms {:owner-id    (:owner-id organization)
-                                                                              :permissions (:permissions organization)}
-                                                         :profile-id profile-id
-                                                         :team-perms (:permissions team)})
+                                (cto/allowed? :delete-team
+                                              {:organization-perms {:owner-id    (:owner-id organization)
+                                                                    :permissions (:permissions organization)}
+                                               :profile-id profile-id
+                                               :team-perms (:permissions team)})
                                 (boolean (dm/get-in team [:permissions :is-owner])))
                   message     (if in-organization?
                                 (tr "modals.delete-organization-team-confirm.message" (:name organization))
@@ -173,9 +173,9 @@
                                             :team team
                                             :origin (or origin :team)
                                             :invite-email invite-email}))]
-        (if (and (contains? cf/flags :nitrate)
-                 (not (nitrate-perms/allowed? :add-anybody-to-team
-                                              {:organization-perms (:organization team)})))
+        (if (and (contains? cf/flags :admin-console)
+                 (not (cto/allowed? :add-anybody-to-team
+                                    {:organization-perms (:organization team)})))
           (->> (rp/cmd! :all-organization-members-in-team
                         {:team-id (:id team)
                          :organization-id (get-in team [:organization :id])})
@@ -203,9 +203,8 @@
         (with-refreshed-team team-id
           (fn [team]
             (let [organization         (:organization team)
-                  can-invite? (nitrate-perms/can-send-invitations?
-                               {:nitrate-enabled? (contains? cf/flags :nitrate)
-                                :organization organization
+                  can-invite? (cto/can-send-invitations?
+                               {:organization organization
                                 :profile-id profile-id
                                 :team-permissions (:permissions team)})]
               (rx/of (if can-invite?
@@ -615,11 +614,11 @@
   (ptk/reify ::check-and-submit-invite-members
     ptk/WatchEvent
     (watch [_ _ _]
-      (if (contains? cf/flags :nitrate)
+      (if (contains? cf/flags :admin-console)
         (with-refreshed-team team-id
           (fn [team]
-            (if (not (nitrate-perms/allowed? :add-anybody-to-team
-                                             {:organization-perms (:organization team)}))
+            (if (not (cto/allowed? :add-anybody-to-team
+                                   {:organization-perms (:organization team)}))
               (->> (rp/cmd! :check-organization-members {:organization-id (get-in team [:organization :id])
                                                          :emails (vec (:emails params))})
                    (rx/mapcat

@@ -14,7 +14,6 @@ use super::RawShapeType;
 
 const FLAG_CLIP_CONTENT: u8 = 0b0000_0001;
 const FLAG_HIDDEN: u8 = 0b0000_0010;
-const CONSTRAINT_NONE: u8 = 0xFF;
 
 const RAW_BASE_PROPS_SIZE: usize = std::mem::size_of::<RawBasePropsData>();
 
@@ -87,19 +86,11 @@ impl RawBasePropsData {
     }
 
     fn constraint_h(&self) -> Option<ConstraintH> {
-        if self.constraint_h == CONSTRAINT_NONE {
-            None
-        } else {
-            Some(RawConstraintH::from(self.constraint_h).into())
-        }
+        RawConstraintH::from(self.constraint_h).into()
     }
 
     fn constraint_v(&self) -> Option<ConstraintV> {
-        if self.constraint_v == CONSTRAINT_NONE {
-            None
-        } else {
-            Some(RawConstraintV::from(self.constraint_v).into())
-        }
+        RawConstraintV::from(self.constraint_v).into()
     }
 }
 
@@ -219,10 +210,10 @@ mod tests {
         bytes[33] = FLAG_CLIP_CONTENT | FLAG_HIDDEN;
         // blend_mode = Overlay (15)
         bytes[34] = 15;
-        // constraint_h = Center (3)
-        bytes[35] = 3;
-        // constraint_v = Scale (4)
-        bytes[36] = 4;
+        // constraint_h = Center (4)
+        bytes[35] = 4;
+        // constraint_v = Scale (5)
+        bytes[36] = 5;
         // opacity
         bytes[40..44].copy_from_slice(&0.5_f32.to_le_bytes());
         // rotation

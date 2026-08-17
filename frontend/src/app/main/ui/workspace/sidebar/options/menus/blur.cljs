@@ -296,7 +296,7 @@
         (if mixed-state
           [:div  {:class (stl/css :first-row)}
            [:span {:class (stl/css :mixed-label)}
-            (tr "labels.mixed-values")]
+            (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.blur-options.remove-blur")
                              :on-click handle-delete-all

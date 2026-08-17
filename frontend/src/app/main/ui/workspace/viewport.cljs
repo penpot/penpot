@@ -366,7 +366,8 @@
                                       :page-id page-id
                                       :file-id file-id
                                       :vport vport
-                                      :zoom zoom}])
+                                      :zoom zoom
+                                      :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay* {:vport vport
@@ -511,6 +512,7 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not read-only?)
                   (not mode-inspect?))
          [:> msr/selection-size-badge*
           {:shapes selected-shapes

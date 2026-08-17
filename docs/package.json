@@ -35,9 +35,9 @@
     "eleventy-plugin-nesting-toc": "^1.3.0",
     "eleventy-plugin-youtube-embed": "^1.13.2",
     "luxon": "^3.7.2",
-    "markdown-it": "^14.3.0",
+    "markdown-it": "^15.0.0",
     "markdown-it-anchor": "^9.2.1",
     "markdown-it-plantuml": "^1.4.1"
   },
-  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c"
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }

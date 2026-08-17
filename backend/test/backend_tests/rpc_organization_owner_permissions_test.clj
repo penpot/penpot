@@ -28,7 +28,7 @@
 
 (defn- with-organization-owner-access
   [{:keys [organization-owner-id organization-id team-id]} f]
-  (with-redefs [cf/flags (conj cf/flags :nitrate)
+  (with-redefs [cf/flags (conj cf/flags :admin-console)
                 nitrate/organization-owner-of-team?
                 (fn [_cfg profile-id candidate-team-id]
                   (and (= organization-owner-id profile-id)
@@ -50,7 +50,16 @@
                        :organization (organization-data organization-id organization-owner-id)}
                       {:id (:team-id params)
                        :is-your-penpot false
-                       :organization nil})))]
+                       :organization nil})
+
+                    :get-teams-organizations
+                    (->> (:team-ids params)
+                         (keep (fn [candidate-team-id]
+                                 (when (= team-id candidate-team-id)
+                                   {:id team-id
+                                    :is-your-penpot false
+                                    :organization (organization-data organization-id organization-owner-id)})))
+                         vec)))]
     (f)))
 
 (defn- with-captured-messages

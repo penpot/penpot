@@ -42,3 +42,7 @@ opt-level = 3
 lto = "fat"
 strip = true
 codegen-units = 1
+
+[profile.size]
+inherits = "release"
+opt-level = "z"

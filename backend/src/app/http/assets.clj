@@ -7,6 +7,7 @@
 (ns app.http.assets
   "Assets related handlers."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
@@ -42,18 +43,22 @@
 
 (defn- get-file-media-object
   [pool id]
-  (db/get pool :file-media-object {:id id} {::db/remove-deleted false}))
+  (db/get* pool :file-media-object {:id id} {::db/remove-deleted false}))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]
   (let [sig-max-age (or signature-max-age default-signature-max-age)
         cch-max-age (or cache-max-age default-cache-max-age)
-        {:keys [host port] :as url} (sto/get-object-url storage obj {:max-age sig-max-age})]
+        {:keys [host port] :as url} (sto/get-object-url storage obj {:max-age sig-max-age})
+        bucket  (-> obj meta :bucket)
+        headers (cond-> {"location" (str url)
+                         "x-host"   (cond-> host port (str ":" port))
+                         "x-mtype"  (-> obj meta :content-type)
+                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                  (not (contains? public-buckets bucket))
+                  (assoc "content-disposition" "attachment"))]
     {::yres/status  307
-     ::yres/headers {"location" (str url)
-                     "x-host"   (cond-> host port (str ":" port))
-                     "x-mtype"  (-> obj meta :content-type)
-                     "cache-control" (str "max-age=" (inst-ms cch-max-age))}}))
+     ::yres/headers headers}))
 
 (defn- serve-object-from-fs
   [{:keys [::path ::cache-max-age]} obj]
@@ -61,9 +66,12 @@
         purl    (u/join (u/uri path)
                         (sto/object->relative-path obj))
         mdata   (meta obj)
-        headers {"x-accel-redirect" (:path purl)
-                 "content-type" (:content-type mdata)
-                 "cache-control" (str "max-age=" (inst-ms cch-max-age))}]
+        bucket  (:bucket mdata)
+        headers (cond-> {"x-accel-redirect" (:path purl)
+                         "content-type" (:content-type mdata)
+                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                  (not (contains? public-buckets bucket))
+                  (assoc "content-disposition" "attachment"))]
     {::yres/status 204
      ::yres/headers headers}))
 
@@ -109,13 +117,21 @@
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
   [{:keys [::sto/storage] :as cfg} request kf]
-  (let [pool (::db/pool storage)
-        id   (get-id request)
-        mobj (get-file-media-object pool id)
-        sobj (sto/get-object storage (kf mobj))]
-    (if sobj
-      (serve-object cfg sobj)
-      {::yres/status 404})))
+  (let [pool       (::db/pool storage)
+        id         (get-id request)
+        mobj       (get-file-media-object pool id)]
+    (if (nil? mobj)
+      {::yres/status 404}
+      (let [file-id    (:file-id mobj)
+            profile-id (or (::session/profile-id request)
+                           (::actoken/profile-id request))
+            perms      (bfc/get-file-permissions pool profile-id file-id)]
+        (if-not (:can-read perms)
+          {::yres/status 404}
+          (let [sobj (sto/get-object storage (kf mobj))]
+            (if sobj
+              (serve-object cfg sobj)
+              {::yres/status 404})))))))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."

@@ -68,7 +68,7 @@ function slug(value) {
 }
 
 async function findGfontsJson() {
-  const dir = "resources/fonts";
+  const dir = "../common/resources/fonts";
   const entries = await fs.readdir(dir);
   const matches = entries.filter((f) => /^gfonts\..*\.json$/.test(f)).sort();
   if (matches.length === 0) {

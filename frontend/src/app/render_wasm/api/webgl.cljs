@@ -8,7 +8,7 @@
   "WebGL utilities for pixel capture and rendering"
   (:require
    [app.common.logging :as log]
-   [app.render-wasm.wasm :as wasm]
+   [app.common.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
 
 (defn get-webgl-context

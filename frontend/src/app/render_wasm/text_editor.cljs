@@ -7,16 +7,18 @@
 (ns app.render-wasm.text-editor
   "Text editor WASM bindings"
   (:require
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.mem :as mem]
+   [app.common.render-wasm.serializers :as sr]
+   [app.common.render-wasm.serializers.color :as sr-clr]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.fonts :as main-fonts]
+   ;; Required for side effects: binds the generated enums.
+   [app.render-wasm.api.enums]
    [app.render-wasm.api.fonts :as fonts]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.serializers.color :as sr-clr]
-   [app.render-wasm.wasm :as wasm]
    [app.util.color :as uc]
    [app.util.dom :as dom]))
 
@@ -222,6 +224,12 @@
   (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
 
+(defn text-editor-pointer-down-extend
+  "Extends the selection up to the pointer instead of collapsing the caret."
+  [{:keys [x y]}]
+  (when (wasm/ready?)
+    (h/call wasm/internal-module "_text_editor_pointer_down_extend" x y)))
+
 (defn text-editor-pointer-move
   [{:keys [x y]}]
   (when (wasm/ready?)
@@ -345,10 +353,15 @@
                       :text-direction (sr/untranslate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
                       :text-decoration (sr/untranslate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
                       :text-transform (sr/untranslate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
-                      :line-height (text-editor-get-style-property line-height-state line-height-value)
-                      :letter-spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)
-                      :font-size (text-editor-get-style-property font-size-state font-size-value)
-                      :font-weight (text-editor-get-style-property font-weight-state font-weight-value)
+                      ;; WASM reports size/weight as numbers, but the rest of Penpot (and the backend schema) expects strings.
+                      :line-height (let [height (text-editor-get-style-property line-height-state line-height-value)]
+                                     (if (= height :multiple) height (str height)))
+                      :letter-spacing (let [spacing (text-editor-get-style-property letter-spacing-state letter-spacing-value)]
+                                        (if (= spacing :multiple) spacing (str spacing)))
+                      :font-size (let [size (text-editor-get-style-property font-size-state font-size-value)]
+                                   (if (= size :multiple) size (str size)))
+                      :font-weight (let [weight (text-editor-get-style-property font-weight-state font-weight-value)]
+                                     (if (= weight :multiple) weight (str weight)))
                       :font-style font-style-value
                       :font-family (text-editor-get-style-property font-family-id-state font-id)
                       :font-id (text-editor-get-style-property font-family-id-state font-id)
@@ -534,6 +547,24 @@
   [shape-id content]
   (swap! shape-text-contents assoc shape-id content))
 
+;; Typography chosen at a collapsed caret: not applied to existing text, but
+;; picked up (as a new span) by the next inserted text. Keyed by shape-id.
+(def ^:private pending-caret-styles (atom {}))
+
+(defn merge-pending-caret-styles!
+  "Stack `styles` onto the shape's pending caret style."
+  [shape-id styles]
+  (swap! pending-caret-styles update shape-id merge styles))
+
+(defn get-pending-caret-styles
+  [shape-id]
+  (get @pending-caret-styles shape-id))
+
+(defn clear-pending-caret-styles!
+  "Drop every pending caret style; only the active shape can hold one."
+  []
+  (reset! pending-caret-styles {}))
+
 (defn- merge-exported-texts-into-content
   "Merge exported span texts back into the existing content tree.
 
@@ -623,10 +654,9 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
-(defn- apply-attrs-to-paragraph
-  "Apply attrs to spans within [sel-start, sel-end) char range of a single paragraph.
-   Splits spans at boundaries as needed."
-  [para sel-start sel-end attrs]
+(defn apply-attrs-to-paragraph
+  "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
+  [para sel-start sel-end styles]
   (let [spans  (:children para)
 
         result (loop [spans spans
@@ -645,8 +675,10 @@
                        (recur (rest spans) span-end (conj acc span))
                        (let [before   (when (> ol-start pos)
                                         (assoc span :text (subs text 0 (- ol-start pos))))
-                             selected (merge span attrs
-                                             {:text (subs text (- ol-start pos) (- ol-end pos))})
+                             selected (-> (if (fn? styles)
+                                            (styles span)
+                                            (merge span styles))
+                                          (assoc :text (subs text (- ol-start pos) (- ol-end pos))))
                              after    (when (< ol-end span-end)
                                         (assoc span :text (subs text (- ol-end pos))))]
                          (recur (rest spans) span-end
@@ -658,15 +690,81 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
+(defn- paragraph-selected-spans
+  "Return the spans of `para` that overlap the [sel-start, sel-end) char range."
+  [para sel-start sel-end]
+  (loop [spans (:children para)
+         pos   0
+         acc   []]
+    (if (empty? spans)
+      acc
+      (let [span     (first spans)
+            span-end (+ pos (count (:text span)))
+            overlap? (< (max pos sel-start) (min span-end sel-end))]
+        (recur (rest spans) span-end (cond-> acc overlap? (conj span)))))))
+
+(defn selection-fills
+  "The selection's fills: shared vector if all spans match, `:multiple` if not, nil if empty."
+  [content {:keys [start-para start-offset end-para end-offset]}]
+  (let [paragraphs (:children (first (:children content)))
+        selected   (mapcat (fn [idx para]
+                             (cond
+                               (or (< idx start-para) (> idx end-para)) nil
+                               (= start-para end-para) (paragraph-selected-spans para start-offset end-offset)
+                               (= idx start-para)      (paragraph-selected-spans para start-offset (para-char-count para))
+                               (= idx end-para)        (paragraph-selected-spans para 0 end-offset)
+                               :else                   (paragraph-selected-spans para 0 (para-char-count para))))
+                           (range (count paragraphs))
+                           paragraphs)
+        fills-set  (into #{} (map :fills) selected)]
+    (cond
+      (empty? selected)       nil
+      (= 1 (count fills-set)) (first fills-set)
+      :else                   :multiple)))
+
+(defn- apply-styles-over-range
+  "Apply `styles` (attrs map or per-span fn) to the char range of `content`, splitting spans."
+  [content {:keys [start-para start-offset end-para end-offset]} styles]
+  (let [paragraph-set  (first (:children content))
+        paragraphs     (:children paragraph-set)
+        new-paragraphs (mapv (fn [idx para]
+                               (cond
+                                 ;; paragraph outside the range of paragraphs.
+                                 (or (< idx start-para) (> idx end-para))
+                                 para
+
+                                 ;; same paragraph.
+                                 (= start-para end-para)
+                                 (apply-attrs-to-paragraph para start-offset end-offset styles)
+
+                                 ;; first paragraph
+                                 (= idx start-para)
+                                 (apply-attrs-to-paragraph para start-offset (para-char-count para) styles)
+
+                                 ;; final paragraph
+                                 (= idx end-para)
+                                 (apply-attrs-to-paragraph para 0 end-offset styles)
+
+                                 ;; any other paragraph
+                                 :else
+                                 (apply-attrs-to-paragraph para 0 (para-char-count para) styles)))
+                             (range (count paragraphs))
+                             paragraphs)]
+    (assoc content :children [(assoc paragraph-set :children new-paragraphs)])))
+
+(defn- clean-styles
+  "Drop nil-valued attrs (unlike the DOM path, our merge would keep them and fail
+   the backend schema); a per-span fn is passed through untouched."
+  [styles]
+  (if (fn? styles)
+    styles
+    (into {} (remove (comp nil? val)) styles)))
+
 (defn apply-styles-to-selection
-  [attrs use-shape-fn set-shape-text-content-fn]
+  "Apply `styles` (attrs map, or a fn per span) to the selected spans; `:with-fills?` also returns `:fills`."
+  [styles use-shape-fn set-shape-text-content-fn & [{:keys [with-fills?]}]]
   (when (wasm/ready?)
-    (let [;; Drop nil-valued attrs so they are never merged onto text spans.
-          ;; The DOM editor path strips these in `attrs->styles`; the WASM merge
-          ;; here (`apply-attrs-to-paragraph`) does not, so an unresolved attr
-          ;; (e.g. nil :font-family/:font-weight/:font-style from an unloaded
-          ;; font) would corrupt the span and fail the backend schema.
-          attrs     (into {} (remove (comp nil? val)) attrs)
+    (let [styles    (clean-styles styles)
           shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
 
@@ -676,45 +774,60 @@
             (let [normalized-selection (normalize-selection selection)
                   {:keys [start-para start-offset end-para end-offset]} normalized-selection
 
-                  collapsed?      (and (= start-para end-para) (= start-offset end-offset))
+                  collapsed?  (and (= start-para end-para) (= start-offset end-offset))
 
-                  paragraph-set   (first (:children content))
-                  paragraphs      (:children paragraph-set)
-
-                  new-paragraphs
-                  (when (not collapsed?)
-                    (mapv (fn [idx para]
-                            (cond
-                              ;; paragraph outside the range of paragraphs.
-                              (or (< idx start-para) (> idx end-para))
-                              para
-
-                              ;; same paragraph.
-                              (= start-para end-para)
-                              (apply-attrs-to-paragraph para start-offset end-offset attrs)
-
-                              ;; first paragraph
-                              (= idx start-para)
-                              (apply-attrs-to-paragraph para start-offset (para-char-count para) attrs)
-
-                              ;; final paragraph
-                              (= idx end-para)
-                              (apply-attrs-to-paragraph para 0 end-offset attrs)
-
-                              ;; any other paragraph
-                              :else
-                              (apply-attrs-to-paragraph para 0 (para-char-count para) attrs)))
-
-                          (range (count paragraphs))
-                          paragraphs))
-
-                  new-content (when new-paragraphs
-                                (assoc content :children
-                                       [(assoc paragraph-set :children new-paragraphs)]))]
+                  new-content (when (not collapsed?)
+                                (apply-styles-over-range content normalized-selection styles))]
 
               (when new-content
                 (update-cached-content! shape-id new-content)
                 (use-shape-fn shape-id)
                 (set-shape-text-content-fn shape-id new-content)
-                {:shape-id shape-id
-                 :content  new-content}))))))))
+                (cond-> {:shape-id shape-id
+                         :content  new-content}
+                  with-fills?
+                  (assoc :fills (selection-fills new-content normalized-selection)))))))))))
+
+(defn apply-styles-to-range
+  "Like `apply-styles-to-selection` but over an explicit range (used to restyle
+   just-inserted text); returns `{:shape-id :content}` or nil."
+  [shape-id {:keys [start-para start-offset end-para end-offset] :as range} styles
+   use-shape-fn set-shape-text-content-fn]
+  (when (wasm/ready?)
+    (let [styles  (clean-styles styles)
+          content (get-cached-content shape-id)]
+      (when (and content
+                 (seq styles)
+                 (not (and (= start-para end-para) (= start-offset end-offset))))
+        (let [new-content (apply-styles-over-range content range styles)]
+          (update-cached-content! shape-id new-content)
+          (use-shape-fn shape-id)
+          (set-shape-text-content-fn shape-id new-content)
+          {:shape-id shape-id
+           :content  new-content})))))
+
+(defn apply-paragraph-attrs-to-selection
+  "Apply paragraph level attrs (text-align, text-direction) to the whole
+   paragraphs the editor selection touches; a collapsed caret means just the one
+   it sits in."
+  [attrs use-shape-fn set-shape-text-content-fn]
+  (when (wasm/ready?)
+    (let [shape-id  (text-editor-get-active-shape-id)
+          selection (text-editor-get-selection)]
+      (when (and shape-id selection)
+        (when-let [content (get-cached-content shape-id)]
+          (let [{:keys [start-para end-para]} (normalize-selection selection)
+                paragraph-set  (first (:children content))
+                new-paragraphs (into []
+                                     (map-indexed (fn [idx para]
+                                                    (if (<= start-para idx end-para)
+                                                      (merge para attrs)
+                                                      para)))
+                                     (:children paragraph-set))
+                new-content    (assoc content :children
+                                      [(assoc paragraph-set :children new-paragraphs)])]
+            (update-cached-content! shape-id new-content)
+            (use-shape-fn shape-id)
+            (set-shape-text-content-fn shape-id new-content)
+            {:shape-id shape-id
+             :content  new-content}))))))

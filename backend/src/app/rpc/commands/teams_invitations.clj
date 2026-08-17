@@ -14,7 +14,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -46,10 +46,29 @@
 
 (def sql:upsert-organization-invitation
   "insert into team_invitation(id, team_id, org_id, email_to, created_by, role, valid_until)
-   values (?, null, ?, ?, ?, ?, ?)
-       on conflict(org_id, email_to) where team_id is null do
-          update set role = ?, valid_until = ?, updated_at = now()
-   returning *")
+    values (?, null, ?, ?, ?, ?, ?)
+        on conflict(org_id, email_to) where team_id is null do
+           update set role = ?, valid_until = ?, updated_at = now()
+    returning *")
+
+(def ^:private sql:check-recent-invitation
+  "SELECT 1 FROM team_invitation
+   WHERE team_id = ? AND email_to = ?
+     AND updated_at > now() - interval '5 minutes'
+   LIMIT 1")
+
+(def ^:private sql:check-recent-org-invitation
+  "SELECT 1 FROM team_invitation
+   WHERE org_id = ? AND email_to = ?
+     AND updated_at > now() - interval '5 minutes'
+   LIMIT 1")
+
+(defn- recently-invited?
+  [{:keys [::db/conn]} team-id org-id email]
+  (let [query (if org-id
+                [sql:check-recent-org-invitation org-id email]
+                [sql:check-recent-invitation team-id email])]
+    (some? (db/exec-one! conn query))))
 
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until organization-id organization-name team-id member-id member-email role]}]
@@ -89,14 +108,7 @@
 (def ^:private schema:create-organization-invitation
   [:map {:title "params:create-organization-invitation"}
    [::rpc/profile-id ::sm/uuid]
-   [:organization
-    [:map
-     [:id ::sm/uuid]
-     [:name :string]
-     [:initials [:maybe :string]]
-     [:logo ::sm/uri]
-     [:avatar-bg-url [:maybe ::sm/uri]]
-     [:sso-active [:maybe ::sm/boolean]]]]
+   [:organization cto/schema:organization-with-avatar]
    [:profile
     [:map
      [:id ::sm/uuid]
@@ -147,7 +159,7 @@
 
     ;; When nitrate is active and the team belongs to an organization, check that
     ;; the email is already an organization member unless the organization explicitly allows adding anybody.
-    (when (and (contains? cf/flags :nitrate)
+    (when (and (contains? cf/flags :admin-console)
                (:organization team))
       (assert-email-can-be-invited member organization-member-ids))
 
@@ -166,8 +178,8 @@
 
         (if organization
           ;; Insert the invited member to the organization
-          (when (contains? cf/flags :nitrate)
-            (teams/initialize-user-in-nitrate-organization cfg (:id member) (:id organization) email))
+          (when (contains? cf/flags :admin-console)
+            (teams/initialize-user-in-organization cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
           (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
 
@@ -185,35 +197,36 @@
         (teams/check-email-bounce conn email true)
         (teams/check-email-spam conn email true)
 
-        (let [id         (uuid/next)
-              expire     (if organization
-                           (ct/in-future "876000h")  ;; Organization invitations doesn't expire
-                           (ct/in-future "168h")) ;; 7 days
-              invitation (db/exec-one! conn (if organization
-                                              [sql:upsert-organization-invitation id
-                                               (:id organization)
-                                               (str/lower email)
-                                               (:id profile)
-                                               (name role) expire
-                                               (name role) expire]
-                                              [sql:upsert-team-invitation id
-                                               (:id team)
-                                               (str/lower email)
-                                               (:id profile)
-                                               (name role) expire
-                                               (name role) expire]))
-              updated?   (not= id (:id invitation))
-              profile-id (:id profile)
+        (let [id              (uuid/next)
+              expire          (if organization
+                                (ct/in-future "876000h")  ;; Organization invitations doesn't expire
+                                (ct/in-future "168h")) ;; 7 days
+              recent?         (recently-invited? cfg (:id team) (:id organization) email)
+              invitation      (db/exec-one! conn (if organization
+                                                   [sql:upsert-organization-invitation id
+                                                    (:id organization)
+                                                    (str/lower email)
+                                                    (:id profile)
+                                                    (name role) expire
+                                                    (name role) expire]
+                                                   [sql:upsert-team-invitation id
+                                                    (:id team)
+                                                    (str/lower email)
+                                                    (:id profile)
+                                                    (name role) expire
+                                                    (name role) expire]))
+              updated?        (not= id (:id invitation))
+              profile-id      (:id profile)
               team-organization-id (get-in team [:organization :id])
-              tprops     {:profile-id profile-id
-                          :invitation-id (:id invitation)
-                          :valid-until expire
-                          :team-id (:id team)
-                          :organization-id (:id organization)
-                          :organization-name (:name organization)
-                          :member-email (:email-to invitation)
-                          :member-id (:id member)
-                          :role role}
+              tprops          {:profile-id profile-id
+                               :invitation-id (:id invitation)
+                               :valid-until expire
+                               :team-id (:id team)
+                               :organization-id (:id organization)
+                               :organization-name (:name organization)
+                               :member-email (:email-to invitation)
+                               :member-id (:id member)
+                               :role role}
               audit-props
               (cond-> {:invitation-id (:id invitation)
                        :valid-until expire
@@ -234,8 +247,8 @@
                         (and team-organization-id
                              member
                              (contains? all-organization-member-ids (:id member))))))
-              itoken     (create-invitation-token cfg tprops)
-              ptoken     (create-profile-identity-token cfg profile-id)]
+              itoken          (create-invitation-token cfg tprops)
+              ptoken          (create-profile-identity-token cfg profile-id)]
 
           (when (contains? cf/flags :log-invitation-tokens)
             (l/info :hint "invitation token" :token itoken))
@@ -251,9 +264,10 @@
                           (assoc :props props))]
             (audit/submit cfg event))
 
-          (when (allow-invitation-emails? member)
+          (when (and (allow-invitation-emails? member)
+                     (not recent?))
             (if organization
-              (when (contains? cf/flags :nitrate)
+              (when (contains? cf/flags :admin-console)
                 (eml/send! {::eml/conn conn
                             ::eml/factory eml/invite-to-organization
                             :public-uri (cf/get :public-uri)
@@ -346,12 +360,12 @@
   - invitations (vector of {:email :role} maps)"
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
   (let [;; Enrich team with organization info once for all invitations when nitrate is active
-        team             (if (contains? cf/flags :nitrate)
+        team             (if (contains? cf/flags :admin-console)
                            (nitrate/add-organization-info-to-team cfg team {})
                            team)
         organization              (:organization team)
         organization-id           (:id organization)
-        restricted?      (and organization-id (not (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms organization})))
+        restricted?      (and organization-id (not (cto/allowed? :add-anybody-to-team {:organization-perms organization})))
         all-organization-member-ids
         (when organization-id
           (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id})))
@@ -446,6 +460,10 @@
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
+        team     (db/get-by-id cfg :team team-id)
+        team-with-org (when (contains? cf/flags :admin-console)
+                        (nitrate/add-organization-info-to-team cfg team {}))
+        organization (:organization team-with-org)
         ;; Determine which format is being used
         using-emails-format? (and emails role)
         ;; Handle both parameter formats
@@ -460,6 +478,24 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    (when (and (contains? cf/flags :admin-console)
+               organization
+               (not (cto/allowed? :send-invitations
+                                  {:organization-perms {:owner-id    (:owner-id organization)
+                                                        :permissions (:permissions organization)}
+                                   :profile-id profile-id
+                                   :team-perms perms})))
+      (ex/raise :type :validation
+                :code :insufficient-permissions
+                :hint "Organization policy does not allow you to send invitations"))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms))
+               (or (= role :owner)
+                   (some #(= :owner (:role %)) (:invitations params))))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
@@ -603,6 +639,11 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms)) (= role :owner))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (db/update! conn :team-invitation
                 {:role (name role) :updated-at (ct/now)}

@@ -1070,11 +1070,16 @@ impl Shape {
         extrect
     }
 
-    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+    fn own_extrect_bounds(&self) -> Bounds {
+        self.expand_own_bounds(self.own_base_bounds())
+    }
+
+    /// The shape's own geometry bounds, before stroke/shadow/blur margins.
+    fn own_base_bounds(&self) -> Bounds {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
-        let mut bounds = match &shape.shape_type {
+        match &shape.shape_type {
             Type::Path(_) | Type::Bool(_) => {
                 if let Some(path) = shape.get_skia_path() {
                     let cap_margin = shape.cap_bounds_margin();
@@ -1091,11 +1096,35 @@ impl Shape {
                 text_content.calculate_bounds(shape, false)
             }
             _ => shape.calculate_bounds(false),
-        };
+        }
+    }
 
-        bounds = self.apply_stroke_bounds(bounds, max_stroke);
+    fn expand_own_bounds(&self, bounds: Bounds) -> Bounds {
+        let max_stroke = Stroke::max_bounds_width(self.strokes.iter(), self.is_open());
+        let mut bounds = self.apply_stroke_bounds(bounds, max_stroke);
         bounds = self.apply_shadow_bounds(bounds);
         bounds = self.apply_blur_bounds(bounds);
+        bounds
+    }
+
+    /// Bound for a `SaveLayerRec` wrapping this shape's own drawing, in
+    /// untransformed space (callers concatenate [`Self::centered_transform`]
+    /// first). Includes shadow/blur margins, so it is also a valid input bound
+    /// for a layer whose paint carries an image filter.
+    pub fn layer_bounds(&self) -> math::Rect {
+        let mut bounds = self.own_base_bounds();
+
+        if matches!(self.shape_type, Type::Text(_)) {
+            let mut rect = bounds.to_rect();
+            rect.join(self.selrect);
+            bounds = Bounds::from_rect(&rect);
+        }
+
+        self.expand_own_bounds(bounds).to_rect()
+    }
+
+    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        let mut bounds = self.own_extrect_bounds();
         bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
         bounds = self.apply_children_blur(bounds, shapes_pool);
 

@@ -1706,6 +1706,96 @@ describe("SelectionController", () => {
     );
   });
 
+  test("`selectAll` should collapse the caret on the line break when the editor is empty", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    textEditorMock.element.focus();
+    selectionController.selectAll();
+    expect(selectionController.focusNode).toBe(
+      root.firstChild.firstChild.firstChild,
+    );
+    expect(selectionController.isCollapsed).toBe(true);
+  });
+
+  test("`insertIntoFocus` should insert text when the focus node is a paragraph", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText("Hello, ");
+    const root = textEditorMock.root;
+    const paragraph = root.firstChild;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, paragraph, 1);
+    selectionController.insertIntoFocus("World!");
+    expect(root.textContent).toBe("Hello, World!");
+  });
+
+  test("`insertIntoFocus` should insert text when the focus node is the root", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText("Hello, ");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, root, 1);
+    selectionController.insertIntoFocus("World!");
+    expect(root.textContent).toBe("Hello, World!");
+  });
+
+  test("`insertIntoFocus` should insert text when the focus node is the editor element", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText("Hello, ");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, textEditorMock.element, 0);
+    selectionController.insertIntoFocus("World!");
+    expect(root.textContent).toBe("World!Hello, ");
+  });
+
+  test("`insertIntoFocus` should insert text when there is no known focus node", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("");
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    textEditorMock.element.focus();
+    expect(selectionController.focusNode).toBe(null);
+    selectionController.insertIntoFocus("Hello, World!");
+    expect(root.textContent).toBe("Hello, World!");
+  });
+
+  test("`insertPaste` should insert a fragment when the focus node is a paragraph", () => {
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText(", World!");
+    const root = textEditorMock.root;
+    const paragraph = root.firstChild;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(selection, textEditorMock, paragraph, 0);
+    const fragment = document.createDocumentFragment();
+    fragment.append(createParagraphWith(["Hello"]));
+    selectionController.insertPaste(fragment);
+    expect(root.textContent).toBe("Hello, World!");
+  });
+
   test("`cursorToEnd` should move cursor to the end", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
       createParagraphWith(["Hello, "], {

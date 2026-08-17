@@ -1,7 +1,8 @@
 (ns app.main.data.nitrate
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.common.types.organization :as cto]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -84,9 +85,8 @@
 
 (defn can-send-invitations?
   [{:keys [organization profile-id team-permissions]}]
-  (nitrate-perms/can-send-invitations?
-   {:nitrate-enabled? (contains? cf/flags :nitrate)
-    :organization organization
+  (cto/can-send-invitations?
+   {:organization organization
     :profile-id profile-id
     :team-permissions team-permissions}))
 
@@ -149,7 +149,7 @@
 
 (defn is-valid-license?
   [profile]
-  (and (contains? cf/flags :nitrate)
+  (and (contains? cf/flags :admin-console)
        ;; Possible values: "active" "canceled" "incomplete" "incomplete_expired" "past_due" "paused" "trialing" "unpaid"
        (contains? #{"active" "past_due" "trialing"}
                   (dm/get-in profile [:subscription :status]))))
@@ -279,7 +279,7 @@
         (dt/with-refreshed-team team-id
           (fn [team]
             (let [source-organization (:organization team)
-                  can-move?  (nitrate-perms/allowed?
+                  can-move?  (cto/allowed?
                               :move-team
                               {:organization-perms {:owner-id    (:owner-id source-organization)
                                                     :permissions (:permissions source-organization)}
@@ -352,13 +352,42 @@
                      (rx/empty)))))))))))
 
 
+(defn check-organization-sso
+  "Asks the backend whether the organization SSO gate can be satisfied for
+  `dest-url`, returning an observable of the raw `:check-nitrate-sso`
+  result: `:authorized` with a `:reason` of `:sso-satisfied` or
+  `:no-team-access`, or `:authorized false` with a `:redirect-uri` (nil
+  when SSO is required but the provider is unusable). Failures are not
+  caught, so a network blip stays a network error for the caller to
+  handle instead of masquerading as an answer."
+  [{:keys [team-id organization-id dest-url]}]
+  (rp/cmd! :check-nitrate-sso (d/without-nils {:team-id team-id
+                                               :organization-id organization-id
+                                               :url dest-url})))
+
+(defn retry-organization-sso
+  "Retries the organization SSO login flow after a failed attempt, reusing
+  the same check-nitrate-sso RPC used elsewhere to move the user through
+  the organization's identity provider. Passing `team-id` enables the
+  backend's non-member short-circuit. Falls back to navigating straight
+  to `dest-url` when no fresh SSO redirect is needed or available."
+  [{:keys [dest-url] :as params}]
+  (ptk/reify ::retry-organization-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (check-organization-sso params)
+           (rx/map (fn [{:keys [redirect-uri]}]
+                     (rt/nav-raw :uri (or redirect-uri dest-url))))
+           (rx/catch (fn [_]
+                       (rx/of (rt/nav-raw :uri dest-url))))))))
+
 (defn- fetch-organizations-allowed
   "Returns an rx observable of an `organizations-allowed` map (organization-id -> boolean).
    Organizations where :add-anybody-to-team is permitted are pre-approved;
    the rest are verified via :all-team-members-in-organizations."
   [team-id organizations]
-  (let [add-anybody-organizations (filterv #(nitrate-perms/allowed? :add-anybody-to-team {:organization-perms %}) organizations)
-        organizations-to-check    (filterv #(not (nitrate-perms/allowed? :add-anybody-to-team {:organization-perms %})) organizations)
+  (let [add-anybody-organizations (filterv #(cto/allowed? :add-anybody-to-team {:organization-perms %}) organizations)
+        organizations-to-check    (filterv #(not (cto/allowed? :add-anybody-to-team {:organization-perms %})) organizations)
         organization-ids-to-check (mapv :id organizations-to-check)]
     (if (empty? organization-ids-to-check)
       (rx/of (into {} (map (fn [organization] [(:id organization) true])) organizations))

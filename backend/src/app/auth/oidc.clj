@@ -620,9 +620,6 @@
       (some? (:external-session-id state))
       (assoc :external-session-id (:external-session-id state))
 
-      (some? (:token/expires-in tdata))
-      (assoc :sso-token-exp (ct/in-future {:seconds (:token/expires-in tdata)}))
-
       ;; If state token comes with props, merge them. The state token
       ;; props can contain pm_ and utm_ prefixed query params.
       (map? (:props state))
@@ -649,6 +646,15 @@
                     (assoc :path "/#/auth/login")
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
+
+(defn- redirect-with-organization-sso-error
+  [{:keys [dest-url organization-id organization-name]}]
+  (-> (str (or dest-url (cf/get :public-uri)))
+      (u/append-query-param :sso-error true)
+      (u/append-query-param :organization-id organization-id)
+      (cond-> organization-name
+        (u/append-query-param :organization-name organization-name))
+      (redirect-response)))
 
 (defn- redirect-to-register
   [cfg info provider]
@@ -776,7 +782,7 @@
 
 (defn prepare-organization-sso-provider
   "Build an OIDC provider map dynamically from the Nitrate organization SSO config.
-  Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
+   Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
   [cfg {:keys [client-id client-secret issuer]}]
   (prepare-oidc-provider cfg
                          {:type             "oidc"
@@ -785,8 +791,7 @@
                           :base-uri         (some-> (non-blank-uri issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           default-oidc-scopes
-                          :skip-ssrf-check? true}))
+                          :scopes           default-oidc-scopes}))
 
 (defn build-organization-sso-auth-redirect-uri
   "Build the OIDC authorization redirect URI for an organization SSO config.
@@ -888,6 +893,42 @@
     {::yres/status 200
      ::yres/body {:redirect-uri uri}}))
 
+(defn- organization-sso-callback-handler
+  "Handle the organization-SSO branch of the OIDC callback: state carries
+  :dest-url — exchange the authorization code with the OIDC provider to
+  verify authentication actually occurred, then redirect back to dest-url."
+  [cfg request state code]
+  (let [dest-url (:dest-url state)]
+    (try
+      (let [organization-id (:organization-id state)
+            sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
+            provider        (prepare-organization-sso-provider cfg sso)
+            _info           (get-info cfg provider state code)
+            session         (session/get-session request)
+            exp             (ct/in-future {:minutes 15})]
+        (when (and session organization-id)
+          (let [props (-> (or (:props session) {})
+                          (update :sso assoc organization-id exp))]
+            (session/update-session (::session/manager cfg) (assoc session :props props))))
+        (redirect-response dest-url))
+      (catch Throwable cause
+        (let [{:keys [code]} (ex-data cause)]
+          (binding [l/*context* (errors/request->context request)]
+            (if (some? code)
+              (l/warn :hint "organization sso callback failed"
+                      :code code
+                      :message (ex-message cause)
+                      :organization-id (:organization-id state))
+              (l/err :hint "unexpected error on organization sso callback"
+                     :organization-id (:organization-id state)
+                     :cause cause))))
+        (let [organization-id   (:organization-id state)
+              organization-name (:name (nitrate/call cfg :get-organization-summary {:organization-id organization-id}))]
+          (redirect-with-organization-sso-error
+           {:dest-url dest-url
+            :organization-id organization-id
+            :organization-name organization-name}))))))
+
 (defn- callback-handler
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
@@ -899,18 +940,8 @@
 
         ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
-        (if-let [dest-url (:dest-url state)]
-          (let [organization-id (:organization-id state)
-                sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
-                provider        (prepare-organization-sso-provider cfg sso)
-                info            (get-info cfg provider state code)
-                session         (session/get-session request)
-                exp             (or (:sso-token-exp info) (ct/in-future {:hours 48}))]
-            (when (and session organization-id)
-              (let [props (-> (or (:props session) {})
-                              (update :sso assoc organization-id exp))]
-                (session/update-session (::session/manager cfg) (assoc session :props props))))
-            (redirect-response dest-url))
+        (if (:dest-url state)
+          (organization-sso-callback-handler cfg request state code)
 
           (let [provider (resolve-provider cfg state)
                 info     (get-info cfg provider state code)

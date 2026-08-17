@@ -13,8 +13,17 @@
    [app.common.exceptions :as ex]
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.props :as props]
+   [app.common.render-wasm.helpers :as h]
+   [app.common.render-wasm.mem :as mem]
+   [app.common.render-wasm.mem.heap32 :as mem.h32]
+   [app.common.render-wasm.serialize-shape :as serialize-shape]
+   [app.common.render-wasm.serializers :as sr]
+   [app.common.render-wasm.serializers.color :as sr-clr]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.path :as path]
@@ -31,23 +40,17 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
+   ;; Required for side effects: binds the generated enums.
+   [app.render-wasm.api.enums]
    [app.render-wasm.api.fonts :as f]
-   [app.render-wasm.api.props :as props]
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.gesture :as wasm-gesture]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.mem.heap32 :as mem.h32]
    [app.render-wasm.performance :as perf]
    [app.render-wasm.rulers-state :as rulers-state]
-   [app.render-wasm.serialize-shape :as serialize-shape]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
    [app.render-wasm.text-editor :as text-editor]
-   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.functions :as fns]
@@ -63,6 +66,15 @@
    [rumext.v2 :as mf]))
 
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+(defn- wasm-get-numeric-value
+  "Read a positive numeric query param (e.g. `?dpr=2`)."
+  [name]
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (get p name))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
 
 ;; --- Page transition state (WASM viewport)
 ;;
@@ -281,6 +293,7 @@
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-toggle-overtype-mode text-editor/text-editor-toggle-overtype-mode)
 (def text-editor-pointer-down text-editor/text-editor-pointer-down)
+(def text-editor-pointer-down-extend text-editor/text-editor-pointer-down-extend)
 (def text-editor-pointer-move text-editor/text-editor-pointer-move)
 (def text-editor-pointer-up text-editor/text-editor-pointer-up)
 (def text-editor-get-current-styles text-editor/text-editor-get-current-styles)
@@ -296,14 +309,18 @@
 
 (defn get-dpr
   "Returns the current device pixel ratio. Use instead of `dpr` wherever
-   the value must reflect browser-zoom changes that happen after load."
+   the value must reflect browser-zoom changes that happen after load.
+
+   Override with query param `?dpr=2` (or any positive number) for HiDPI repro
+   without relying on the real `devicePixelRatio`."
   []
-  (if use-dpr?
-    (let [d (.-devicePixelRatio ^js ug/window)]
-      ;; In workers `ug/window` is a mock without `devicePixelRatio`,
-      ;; so guard against nil/NaN/non-positive values.
-      (if (and (number? d) (pos? d)) d 1.0))
-    1.0))
+  (or (wasm-get-numeric-value :dpr)
+      (if use-dpr?
+        (let [d (.-devicePixelRatio ^js ug/window)]
+          ;; In workers `ug/window` is a mock without `devicePixelRatio`,
+          ;; so guard against nil/NaN/non-positive values.
+          (if (and (number? d) (pos? d)) d 1.0))
+        1.0)))
 
 (def noop-fn
   (constantly nil))
@@ -703,11 +720,31 @@
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
-   Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
-  [attrs]
-  (let [result (text-editor/apply-styles-to-selection attrs use-shape set-shape-text-content)]
+   Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving.
+   `:with-fills?` also returns the selection's `:fills`."
+  [styles & [opts]]
+  (let [result (text-editor/apply-styles-to-selection styles use-shape set-shape-text-content opts)]
     (request-render "apply-styles-to-selection")
     result))
+
+(defn apply-paragraph-attrs-to-selection
+  "Apply paragraph attrs to the paragraphs the editor selection touches.
+   Returns {:shape-id :content} for saving."
+  [attrs]
+  (let [result (text-editor/apply-paragraph-attrs-to-selection attrs use-shape set-shape-text-content)]
+    (request-render "apply-paragraph-attrs-to-selection")
+    result))
+
+(defn apply-pending-caret-styles!
+  "Apply the shape's pending caret style over `range` (the just-typed text) and
+   clear it; returns {:shape-id :content} or nil when there is none."
+  [shape-id range]
+  (when-let [styles (text-editor/get-pending-caret-styles shape-id)]
+    (let [result (text-editor/apply-styles-to-range
+                  shape-id range styles use-shape set-shape-text-content)]
+      (text-editor/clear-pending-caret-styles!)
+      (request-render "apply-pending-caret-styles")
+      result)))
 
 (defn set-parent-id
   [id]
@@ -1285,8 +1322,8 @@
                    langs)
 
             (let [text   (apply str (map :text spans))
-                  emoji? (if emoji? emoji? (t/contains-emoji? text))
-                  langs  (t/collect-used-languages langs text)]
+                  emoji? (if emoji? emoji? (cfnt/contains-emoji? text))
+                  langs  (cfnt/collect-used-languages langs text)]
 
               ;; FIXME: this should probably be somewhere else
               (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
@@ -1297,8 +1334,8 @@
 
         (let [updated-fonts
               (-> #{}
-                  (cond-> ^boolean emoji? (f/add-emoji-font))
-                  (f/add-noto-fonts langs))
+                  (cond-> ^boolean emoji? (cfnt/add-emoji-font))
+                  (cfnt/add-noto-fonts langs))
               fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))
@@ -1404,7 +1441,7 @@
     ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
     ;; ends (e.g. selecting a shape opens the options panel and resizes the
     ;; viewport), which previously blanked.
-    (internal-render 0 RENDER-FLAG-SYNC-TILES)
+    (internal-render (js/performance.now) RENDER-FLAG-SYNC-TILES)
     ;; The direct render above bypasses the rAF `render` loop, so repaint the
     ;; editor overlay explicitly. Only when this was a full frame: a progressive
     ;; render keeps painting through the rAF loop and its partial frames must not
@@ -1419,7 +1456,7 @@
               (if (view-gesture-active?)
                 ;; Pan/zoom pause: render without ending the interaction.
                 (do
-                  (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                  (internal-render (js/performance.now) RENDER-FLAG-SYNC-TILES)
                   (render-text-editor-overlay-after-frame!))
                 (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
@@ -2151,14 +2188,6 @@
       (set! (.-height canvas) new-physical-h)
       (set-render-options! dpr)
       (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))))
-
-(defn- wasm-get-numeric-value
-  [name]
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (get p name))]
-    (let [n (if (string? raw) (js/parseFloat raw) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
 
 (defn- wasm-set-param-from-route-params-if-present
   [param-name]

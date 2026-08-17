@@ -19,7 +19,7 @@ jobs:
     with:
       gh_ref: "develop"
 
-  build-admin-console-docker:
+  build-docker-admin-console:
     uses: ./.github/workflows/build-docker-admin-console.yml
     secrets: inherit
     with:

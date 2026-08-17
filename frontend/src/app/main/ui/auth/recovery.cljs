@@ -28,8 +28,18 @@
       (= password-1 password-2))]])
 
 (defn- on-error
-  [_form _error]
-  (st/emit! (ntf/error (tr "errors.invalid-recovery-token"))))
+  [form error]
+  (let [{:keys [type code] :as edata} (ex-data error)]
+    (if (= [:validation :weak-password] [type code])
+      (let [details (:details edata)
+            options (when (seq details)
+                      (mapv tr details))]
+        (swap! form assoc-in [:extra-errors :password-1]
+               {:message (tr "errors.weak-password")
+                :options options}))
+
+      (let [msg (tr "errors.invalid-recovery-token")]
+        (st/emit! (ntf/error msg))))))
 
 (defn- on-success
   [_]
@@ -38,7 +48,7 @@
 
 (defn- on-submit
   [form _event]
-  (let [mdata  {:on-error on-error
+  (let [mdata  {:on-error (partial on-error form)
                 :on-success on-success}
         params {:token (get-in @form [:clean-data :token])
                 :password (get-in @form [:clean-data :password-2])}]

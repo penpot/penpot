@@ -192,6 +192,35 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     });
 }
 
+/// Like `text_editor_pointer_down`, but keeps the current anchor and moves the
+/// focus to the pointer instead of collapsing the caret there (Shift+click).
+#[no_mangle]
+pub extern "C" fn text_editor_pointer_down_extend(x: f32, y: f32) {
+    with_state!(state, {
+        if !get_text_editor_state().has_focus {
+            return;
+        }
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+        let point = Point::new(x, y);
+        get_text_editor_state().start_pointer_selection();
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            get_text_editor_state().extend_selection_from_position(&position);
+            // The click after pointerup would collapse the caret and drop the
+            // selection we just extended.
+            get_text_editor_state().is_click_event_skipped = true;
+            get_text_editor_state().update_styles(text_content);
+        }
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
     with_state!(state, {
@@ -1060,17 +1089,40 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
-    if !get_text_editor_state().selection.is_selection() {
-        return false;
-    }
-    let sel = &get_text_editor_state().selection;
-    unsafe {
-        *buffer_ptr = sel.anchor.paragraph as u32;
-        *buffer_ptr.add(1) = sel.anchor.offset as u32;
-        *buffer_ptr.add(2) = sel.focus.paragraph as u32;
-        *buffer_ptr.add(3) = sel.focus.offset as u32;
-    }
-    true
+    with_state!(state, {
+        if get_text_editor_state().active_shape_id.is_none() {
+            return false;
+        }
+
+        let sel = get_text_editor_state().selection;
+
+        // The frontend indexes these offsets into JS strings, which are UTF-16.
+        let (anchor_offset, focus_offset) = match get_text_editor_state()
+            .active_shape_id
+            .and_then(|shape_id| state.shapes.get(&shape_id))
+            .map(|shape| &shape.shape_type)
+        {
+            Some(Type::Text(text_content)) => {
+                let paragraphs = text_content.paragraphs();
+                let to_utf16 = |position: TextPositionWithAffinity| {
+                    paragraphs
+                        .get(position.paragraph)
+                        .map(|para| para.char_offset_to_utf16(position.offset))
+                        .unwrap_or(position.offset)
+                };
+                (to_utf16(sel.anchor), to_utf16(sel.focus))
+            }
+            _ => (sel.anchor.offset, sel.focus.offset),
+        };
+
+        unsafe {
+            *buffer_ptr = sel.anchor.paragraph as u32;
+            *buffer_ptr.add(1) = anchor_offset as u32;
+            *buffer_ptr.add(2) = sel.focus.paragraph as u32;
+            *buffer_ptr.add(3) = focus_offset as u32;
+        }
+        true
+    })
 }
 
 // ============================================================================
@@ -1099,11 +1151,11 @@ fn get_cursor_rect(
     let mut y_offset = valign_offset;
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.offset;
+            let utf16_pos = paragraphs[cursor.paragraph].char_offset_to_utf16(cursor.offset);
 
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let rects = laid_out_para.get_rects_for_range(
-                char_pos..char_pos,
+                utf16_pos..utf16_pos,
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );
@@ -1187,7 +1239,7 @@ fn get_selection_rects(
         if range_start < range_end {
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );

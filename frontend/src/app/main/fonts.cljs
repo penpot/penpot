@@ -6,10 +6,10 @@
 
 (ns app.main.fonts
   "Fonts management and loading logic."
-  (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.types.text :as txt]
    [app.common.uri :as u]
@@ -24,27 +24,6 @@
    [promesa.core :as p]))
 
 (log/set-level! :warn)
-
-(def google-fonts
-  (preload-gfonts "fonts/gfonts.2025.11.28.json"))
-
-(def local-fonts
-  [{:id "sourcesanspro"
-    :name "Source Sans Pro"
-    :family "sourcesanspro"
-    :variants
-    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight" :ttf-url "sourcesanspro-extralight.ttf"}
-     {:id "200italic" :name "200 Italic" :weight "200" :style "italic" :suffix "extralightitalic" :ttf-url "sourcesanspro-extralightitalic.ttf"}
-     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light" :ttf-url "sourcesanspro-light.ttf"}
-     {:id "300italic" :name "300 Italic"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
-     {:id "regular" :name "400" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
-     {:id "italic" :name "400 Italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
-     {:id "600" :name "600" :weight "600" :style "normal" :suffix "semibold" :ttf-url "sourcesanspro-semibold.ttf"}
-     {:id "600italic" :name "600 Italic" :weight "600" :style "italic" :suffix "semibolditalic" :ttf-url "sourcesanspro-semibolditalic.ttf"}
-     {:id "bold" :name "700" :weight "700" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
-     {:id "bolditalic" :name "700 Italic" :weight "700" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
-     {:id "black" :name "900" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
-     {:id "blackitalic" :name "900 Italic" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
 
 (defonce fontsdb (l/atom {}))
 (defonce fonts (l/atom []))
@@ -65,10 +44,10 @@
                  fonts (map #(assoc % :backend backend) fonts)]
              (merge db (d/index-by :id fonts))))))
 
-(register! :builtin local-fonts)
+(register! :builtin cfnt/local-fonts)
 
 (when (contains? cf/flags :google-fonts-provider)
-  (register! :google google-fonts))
+  (register! :google cfnt/catalog))
 
 (defn get-font-data [id]
   (get @fontsdb id))
@@ -266,8 +245,7 @@
 
 (defn- process-gfont-css
   [css]
-  (let [base (u/join cf/public-uri "internal/gfonts/font")]
-    (str/replace css "https://fonts.gstatic.com/s" (dm/str base))))
+  (cfnt/gstatic->proxy-url css (u/join cf/public-uri "internal/gfonts/font")))
 
 (defn- fetch-gfont-css
   [url]
@@ -397,42 +375,12 @@
 
 (defn find-closest-variant
   "Find the closest font weight variant in `font` for `target-weight` with optional `target-style` match.
-  When exactly between two weights, choose the higher one."
+  When exactly between two weights, choose the higher one.
+
+  The algorithm lives in `app.common.fonts` so the headless exporter resolves the
+  same variant for the same text."
   [font target-weight target-style]
-  (when-let [target-weight (d/parse-integer target-weight)]
-    (let [variants (:variants font [])
-          result
-          (reduce
-           (fn [closest-match variant]
-             (let [weight (d/parse-integer (:weight variant))
-                   distance (abs (- target-weight weight))
-                   matches-style? (= target-style (:style variant))
-                   current {:variant variant
-                            :weight weight
-                            :distance distance}]
-               (cond
-                 ;; Exact match found
-                 (and (zero? distance)
-                      (if target-style matches-style? true))
-                 (reduced current)
-
-                 (nil? closest-match) current
-
-                 ;; Update best match if this variant is closer or equal distance but higher weight
-                 (or (< distance (:distance closest-match))
-                     (and (= distance (:distance closest-match))
-                          (> weight (:weight closest-match))))
-                 current
-
-                 ;; Same weight as the `closest-match` but the style matches `target-style`
-                 (and (= weight (:weight closest-match)) matches-style?)
-                 current
-
-                 :else
-                 closest-match)))
-           nil
-           variants)]
-      (:variant result))))
+  (cfnt/closest-variant (:variants font []) target-weight target-style))
 
 ;; Font embedding functions
 (defn get-node-fonts
