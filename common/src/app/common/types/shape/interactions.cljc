@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.bounds :as gsb]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]))
 
@@ -139,8 +138,8 @@
   [:map {:title "OpenOverlayInteraction"}
    [:action-type [:= :open-overlay]]
    [:event-type [::sm/one-of event-types]]
-   [:overlay-position ::gpt/point]
-   [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+   [:overlay-position {:optional true} ::gpt/point]
+   [:overlay-pos-type {:optional true} [::sm/one-of overlay-positioning-types]]
    [:destination {:optional true} [:maybe ::sm/uuid]]
    [:close-click-outside {:optional true} :boolean]
    [:background-overlay {:optional true} :boolean]
@@ -151,8 +150,8 @@
   [:map {:title "ToggleOverlayInteraction"}
    [:action-type [:= :toggle-overlay]]
    [:event-type [::sm/one-of event-types]]
-   [:overlay-position ::gpt/point]
-   [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+   [:overlay-position {:optional true} ::gpt/point]
+   [:overlay-pos-type {:optional true} [::sm/one-of overlay-positioning-types]]
    [:destination {:optional true} [:maybe ::sm/uuid]]
    [:close-click-outside {:optional true} :boolean]
    [:background-overlay {:optional true} :boolean]
@@ -482,7 +481,13 @@
 
     (if (nil? dest-frame)
       [(gpt/point 0 0) [:top :left]]
-      (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
+      (let [;; Use the destination frame selrect (the visible frame box) to compute
+            ;; the overlay position, not its full object bounds. Bounds include
+            ;; padding for shadows, blur, strokes and overflowing children, which
+            ;; would make centered/right/bottom positions off by half that padding
+            ;; (the visible frame ends up shifted). The viewer reserves the bounds
+            ;; size and re-aligns the selrect separately (see viewer/calculate-delta).
+            overlay-size           (:selrect dest-frame)
             base-frame-size        (:selrect base-frame)
             relative-to-shape-size (:selrect relative-to-shape)
             relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))

@@ -119,8 +119,9 @@
     [:allowed-origins {:optional true} [::sm/set :string]]
 
     [:exporter-shared-key {:optional true} :string]
-    [:nitrate-shared-key {:optional true} :string]
+    [:admin-console-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
+    [:media-processor-shared-key {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
@@ -146,6 +147,9 @@
     [:imagemagick-time-limit {:optional true} :string]
     [:imagemagick-width-limit {:optional true} :string]
     [:imagemagick-height-limit {:optional true} :string]
+
+    [:media-processing-service-uri {:optional true} ::sm/uri]
+    [:media-processing-service-timeout {:optional true} ::sm/int]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
@@ -253,6 +257,8 @@
     [:urepl-port {:optional true} ::sm/int]
     [:prepl-host {:optional true} :string]
     [:prepl-port {:optional true} ::sm/int]
+    [:nrepl-host {:optional true} :string]
+    [:nrepl-port {:optional true} ::sm/int]
 
     [:file-data-backend {:optional true} [:enum "db" "legacy-db" "storage"]]
 
@@ -262,7 +268,7 @@
 
     [:netty-io-threads {:optional true} ::sm/int]
 
-    [:nitrate-backend-uri {:optional true} ::sm/uri]
+    [:admin-console-uri {:optional true} ::sm/uri]
 
     ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]

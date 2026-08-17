@@ -1,16 +1,19 @@
 import esbuild from 'esbuild';
 import { copy } from 'fs-extra';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
-const source = 'libs/plugins-styles';
-const dist = 'dist/plugins-styles';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const source = resolve(root, 'libs/plugins-styles');
+const dist = resolve(root, 'dist/plugins-styles');
 
 const handleErr = (err) => {
   console.error(err);
   process.exit(1);
 };
 
-esbuild
-  .build({
+Promise.all([
+  esbuild.build({
     entryPoints: [`${source}/src/lib/styles.css`],
     bundle: true,
     outfile: `${dist}/styles.css`,
@@ -18,9 +21,8 @@ esbuild
     loader: {
       '.svg': 'dataurl',
     },
-  })
-  .catch(handleErr);
-
-copy(`${source}/package.json`, `${dist}/package.json`).catch(handleErr);
-copy(`${source}/README.md`, `${dist}/README.md`).catch(handleErr);
-copy(`LICENSE`, `${dist}/LICENSE`).catch(handleErr);
+  }),
+  copy(`${source}/package.json`, `${dist}/package.json`),
+  copy(`${source}/README.md`, `${dist}/README.md`),
+  copy(resolve(root, 'LICENSE'), `${dist}/LICENSE`),
+]).catch(handleErr);

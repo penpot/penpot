@@ -86,6 +86,20 @@
   (track! :set-shape-grow-type)
   nil)
 
+(defn- mock-set-modifiers-start
+  []
+  (track! :set-modifiers-start)
+  nil)
+
+(defn- mock-set-modifiers-end
+  []
+  (track! :set-modifiers-end)
+  nil)
+
+(defn- mock-get-selection-rect
+  ([_ids] (track! :get-selection-rect) nil)
+  ([_ids _] (track! :get-selection-rect) nil))
+
 (defn- mock-initialized?
   []
   (track! :initialized?)
@@ -161,12 +175,26 @@
   "Stores the original WASM function values so they can be restored."
   (atom {}))
 
+;; Nesting depth of setup/teardown pairs. Only the outermost setup saves the
+;; originals and installs the mocks, and only the outermost teardown restores
+;; them, so a `with-wasm-mocks*` inside a fixture that already installed the
+;; mocks does not capture mocks as "originals" and leak them.
+(def ^:private install-depth (atom 0))
+
+(declare install-wasm-mocks!)
+
 (defn setup-wasm-mocks!
   "Install WASM mocks via `set!` that persist across async boundaries.
-   Also resets call counts. Call `teardown-wasm-mocks!` to restore."
+   Also resets call counts. Call `teardown-wasm-mocks!` to restore.
+   Nested calls are no-ops apart from resetting call counts."
   []
   ;; Reset call tracking
   (reset-call-counts!)
+  (when (= 1 (swap! install-depth inc))
+    (install-wasm-mocks!)))
+
+(defn- install-wasm-mocks!
+  []
   ;; Save originals
   (reset! originals
           {:initialized?            wasm.api/initialized?
@@ -181,6 +209,9 @@
            :set-shape-text-content  wasm.api/set-shape-text-content
            :set-shape-text-images   wasm.api/set-shape-text-images
            :get-text-dimensions     wasm.api/get-text-dimensions
+           :set-modifiers-start     wasm.api/set-modifiers-start
+           :set-modifiers-end       wasm.api/set-modifiers-end
+           :get-selection-rect      wasm.api/get-selection-rect
            :font-stored?            wasm.fonts/font-stored?
            :make-font-data          wasm.fonts/make-font-data
            :get-content-fonts       wasm.fonts/get-content-fonts})
@@ -197,14 +228,25 @@
   (set! wasm.api/set-shape-text-content  mock-set-shape-text-content)
   (set! wasm.api/set-shape-text-images   mock-set-shape-text-images)
   (set! wasm.api/get-text-dimensions     mock-get-text-dimensions)
+  (set! wasm.api/set-modifiers-start     mock-set-modifiers-start)
+  (set! wasm.api/set-modifiers-end       mock-set-modifiers-end)
+  (set! wasm.api/get-selection-rect      mock-get-selection-rect)
   (set! wasm.fonts/font-stored?          mock-font-stored?)
   (set! wasm.fonts/make-font-data        mock-make-font-data)
   (set! wasm.fonts/get-content-fonts     mock-get-content-fonts))
 
+(declare restore-wasm-mocks!)
+
 (defn teardown-wasm-mocks!
-  "Restore the original WASM functions saved by `setup-wasm-mocks!`."
+  "Restore the original WASM functions saved by `setup-wasm-mocks!`.
+   Nested calls are no-ops; only the outermost teardown restores."
   []
-  (let [orig @originals]
+  (when (zero? (swap! install-depth #(max 0 (dec %))))
+    (restore-wasm-mocks!)))
+
+(defn- restore-wasm-mocks!
+  []
+  (when-let [orig (not-empty @originals)]
     (set! wasm.api/initialized?            (:initialized? orig))
     (set! wasm.api/use-shape               (:use-shape orig))
     (set! wasm.api/calculate-position-data (:calculate-position-data orig))
@@ -217,6 +259,9 @@
     (set! wasm.api/set-shape-text-content  (:set-shape-text-content orig))
     (set! wasm.api/set-shape-text-images   (:set-shape-text-images orig))
     (set! wasm.api/get-text-dimensions     (:get-text-dimensions orig))
+    (set! wasm.api/set-modifiers-start     (:set-modifiers-start orig))
+    (set! wasm.api/set-modifiers-end       (:set-modifiers-end orig))
+    (set! wasm.api/get-selection-rect      (:get-selection-rect orig))
     (set! wasm.fonts/font-stored?          (:font-stored? orig))
     (set! wasm.fonts/make-font-data        (:make-font-data orig))
     (set! wasm.fonts/get-content-fonts     (:get-content-fonts orig)))

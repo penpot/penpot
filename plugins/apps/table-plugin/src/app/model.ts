@@ -29,10 +29,7 @@ export interface ThemePluginEvent {
 }
 
 export type PluginMessageEvent =
-  | InitPluginEvent
-  | TablePluginEvent
-  | ThemePluginEvent
-  | TableConfigEvent;
+  InitPluginEvent | TablePluginEvent | ThemePluginEvent | TableConfigEvent;
 
 export type Cell = { column: number; row: number };
 

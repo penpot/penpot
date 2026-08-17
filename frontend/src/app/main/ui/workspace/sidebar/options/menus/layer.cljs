@@ -302,7 +302,7 @@
           :on-change handle-opacity-change
           :min 0
           :max 100
-          :className (stl/css :numeric-input)}]]
+          :class (stl/css :numeric-input)}]]
 
        [:div {:class (stl/css :actions)}
         (cond

@@ -85,6 +85,7 @@ From the `mcp/` directory, run
 
 * `pnpm run build` to test the build of all packages
 * `pnpm run fmt` to apply the auto-formatter
+* Cross-cutting testing principles and anti-patterns: `mem:testing`.
 
 ## Devenv plugin/server wiring
 

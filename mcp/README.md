@@ -59,14 +59,10 @@ The project requires [Node.js](https://nodejs.org/) (tested with v22.x).
 The easiest way to launch the servers is to use `npx` to run the appropriate
 version that matches your Penpot version.
 
-* If you are using the latest Penpot release, e.g. as served on [design.penpot.app](https://design.penpot.app), run:
-  ```shell
-  npx -y @penpot/mcp@latest
-  ```
-* If you are participating in the MCP beta-test, which uses [test-mcp.penpot.dev](https://test-mcp.penpot.dev), run:
-  ```shell
-  npx -y @penpot/mcp@beta
-  ```
+If you are using the latest Penpot release, e.g. as served on [design.penpot.app](https://design.penpot.app), run:
+```shell
+npx -y @penpot/mcp@latest
+```
 
 Once the servers are running, continue with step 2.
 
@@ -78,24 +74,13 @@ On Windows, use the Git Bash terminal to ensure compatibility with the provided 
 
 ##### Clone the Appropriate Branch of the Repository 
 
-> [!IMPORTANT]
-> The branches are subject to change in the future.  
-> Be sure to check the instructions for the latest information on which branch to use.
+Clone the Penpot repository, using the proper branch/tag depending on the
+version of Penpot you want to use the MCP server with.  
+For instance, to target the latest development version, use the `develop` branch:
 
-Clone the Penpot repository, using the proper branch depending on the
-version of Penpot you want to use the MCP server with.
-
-  * For the current Penpot release 2.14, use the `mcp-prod-2.14.1` branch:
-
-    ```shell
-    git clone https://github.com/penpot/penpot.git --branch mcp-prod-2.14.1 --depth 1
-    ```
-
-  * For the MCP beta-test, use the `staging` branch:
-
-    ```shell
-    git clone https://github.com/penpot/penpot.git --branch staging --depth 1
-    ```
+```shell
+git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+```
 
 Then change into the `mcp` directory:
 
@@ -180,15 +165,26 @@ By default, the server runs on port 4401 and provides:
 - **Modern Streamable HTTP endpoint**: `http://localhost:4401/mcp`
 - **Legacy SSE endpoint**: `http://localhost:4401/sse`
 
-These endpoints can be used directly by MCP clients that support them.
+You can change the port by setting the `PENPOT_MCP_SERVER_PORT` environment variable
+before starting the server. These endpoints can be used directly by MCP clients that support them.
 Simply configure the client to connect the MCP server by providing the respective URL.
 
-When using a client that only supports stdio transport,
-a proxy like `mcp-remote` is required.
+#### Configuring your client
+
+You can configure your client with the [add-mcp](https://github.com/neon-solutions/add-mcp) helper.
+Simply call 
+
+    npx -y add-mcp -g -n penpot http://localhost:4401/mcp
+
+and follow the interactive dialogue to configure the clients of your choice.
+The config entry name is `penpot` (override it with `-n <name>`) and the URL points to the local http
+endpoint (adjust the port if you changed `PENPOT_MCP_SERVER_PORT`).
+
+When using a client that only supports stdio transport like **Claude Desktop**,
+a proxy like [mcp-remote](https://github.com/geelen/mcp-remote) is required. 
+More information on connecting your client follows below.
 
 #### Using a Proxy for stdio Transport
-
-NOTE: only relevant if you are executing this outside of devenv
 
 The `mcp-remote` package can proxy stdio transport to HTTP/SSE, 
 allowing clients that support only stdio to connect to the MCP server indirectly.
@@ -232,12 +228,6 @@ After updating the configuration file, restart Claude Desktop completely for the
 After the restart, you should see the MCP server listed when clicking on the "Search and tools" icon at the bottom
 of the prompt input area.
 
-#### Example: Claude Code
-
-To add the Penpot MCP server to a Claude Code project, issue the command
-
-    claude mcp add penpot -t http http://localhost:4401/mcp
-
 ## Repository Structure
 
 This repository is a monorepo containing four main components:
@@ -277,6 +267,7 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_REPL_PORT`                           | Port for the REPL server (development/debugging)                           | `4403`         |
 | `PENPOT_MCP_REMOTE_MODE`                         | Enable remote mode (disables file system access). Set to `true` to enable. | `false`        |
 | `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools. Set to `true` to enable.      | `false`        |
+| `PENPOT_MCP_TOOL_TIMEOUT_S`                      | Timeout, in seconds, for tool calls dispatched to the Penpot plugin        | `120`          |
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).   | `0` (no limit) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
 
@@ -296,9 +287,9 @@ The Penpot MCP server can be configured using environment variables.
 ## Beyond Local Execution
 
 The above instructions describe how to run the MCP server and plugin server locally.
-We are working on enabling remote deployments of the MCP server, particularly
-in [multi-user mode](docs/multi-user-mode.md), where multiple Penpot users will
-be able to connect to the same MCP server instance.
+
+The Penpot MCP server can also support multiple remote users simultaneously
+in [multi-user mode](docs/multi-user-mode.md).
 
 To run the server remotely (even for a single user),
 you may set the following environment variables to configure the two servers

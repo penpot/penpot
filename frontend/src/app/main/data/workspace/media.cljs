@@ -44,6 +44,17 @@
   [input]
   (svgo/optimize input svgo/defaultOptions))
 
+(defn valid-svg-string?
+  "True when `text` parses as SVG XML. Lets callers reject malformed markup
+  up front instead of failing asynchronously inside the import pipeline."
+  [text]
+  (and (string? text)
+       (not (str/blank? text))
+       (try
+         (tubax/xml->clj text)
+         true
+         (catch :default _ false))))
+
 (defn svg->clj
   [[name text]]
   (try

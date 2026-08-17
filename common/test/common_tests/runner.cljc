@@ -18,10 +18,12 @@
    [common-tests.data-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
+   [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.validate-test]
    [common-tests.geom-align-test]
+   [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
    [common-tests.geom-flex-layout-test]
    [common-tests.geom-grid-layout-test]
@@ -46,6 +48,7 @@
    [common-tests.logic.chained-propagation-test]
    [common-tests.logic.comp-creation-test]
    [common-tests.logic.comp-detach-with-nested-test]
+   [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
    [common-tests.logic.comp-remove-swap-slots-test]
    [common-tests.logic.comp-reset-test]
    [common-tests.logic.comp-sync-test]
@@ -58,6 +61,7 @@
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.token-test]
    [common-tests.logic.variants-switch-test]
+   [common-tests.math-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
    [common-tests.record-test]
@@ -73,8 +77,8 @@
    [common-tests.types.container-test]
    [common-tests.types.fill-test]
    [common-tests.types.modifiers-test]
-   [common-tests.types.nitrate-permissions-test]
    [common-tests.types.objects-map-test]
+   [common-tests.types.organization-test]
    [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
@@ -92,9 +96,11 @@
    'common-tests.data-test
    'common-tests.files-changes-test
    'common-tests.files-builder-test
+   'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-test
    'common-tests.files.validate-test
    'common-tests.geom-align-test
+   'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
    'common-tests.geom-flex-layout-test
    'common-tests.geom-grid-layout-test
@@ -119,6 +125,7 @@
    'common-tests.logic.chained-propagation-test
    'common-tests.logic.comp-creation-test
    'common-tests.logic.comp-detach-with-nested-test
+   'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-remove-swap-slots-test
    'common-tests.logic.comp-reset-test
    'common-tests.logic.comp-sync-test
@@ -131,6 +138,7 @@
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.token-test
    'common-tests.logic.variants-switch-test
+   'common-tests.math-test
    'common-tests.media-test
    'common-tests.path-names-test
    'common-tests.record-test
@@ -146,8 +154,8 @@
    'common-tests.types.container-test
    'common-tests.types.fill-test
    'common-tests.types.modifiers-test
-   'common-tests.types.nitrate-permissions-test
    'common-tests.types.objects-map-test
+   'common-tests.types.organization-test
    'common-tests.types.path-data-test
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test

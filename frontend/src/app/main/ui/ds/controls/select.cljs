@@ -204,6 +204,10 @@
     (mf/with-effect [options]
       (mf/set-ref-val! options-ref options))
 
+    (mf/with-effect [default-selected options]
+      (reset! selected-id*
+              (get-selected-option-id options default-selected)))
+
     [:div {:class [wrapper-class (stl/css :select-wrapper)]
            :on-click on-click
            :ref select-ref

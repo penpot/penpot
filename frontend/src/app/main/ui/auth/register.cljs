@@ -21,6 +21,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; --- PAGE: Register
@@ -103,8 +104,20 @@
                (st/emit! (ntf/error (tr "errors.email-already-exists")))
 
                [:validation :email-as-password]
-               (swap! form assoc-in [:errors :password]
-                      {:message (tr "errors.email-as-password")})
+               (st/emit! (ntf/error (tr "errors.email-as-password")))
+
+               [:validation :weak-password]
+               (let [details  (:details edata)
+                     items    (when (seq details)
+                                (->> details
+                                     (map #(str "<li>" (tr %) "</li>"))
+                                     (str/join "")))
+                     detail   (when items
+                                (str "<ul>" items "</ul>"))]
+                 (st/emit! (ntf/show {:content (tr "errors.weak-password")
+                                      :detail detail
+                                      :type :toast
+                                      :level :error})))
 
                (do
                  (when-let [explain (get edata :explain)]

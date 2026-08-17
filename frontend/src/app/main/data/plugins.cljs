@@ -39,6 +39,7 @@
                     :uri plugin-url
                     :omit-default-headers true
                     :response-type :json})
+       (rx/timeout 15000)
        (rx/map :body)
        (rx/map #(preg/parse-manifest plugin-url %))))
 
@@ -82,7 +83,7 @@
 
 (defn- load-plugin!
   [{:keys [plugin-id name version description host code icon permissions]}]
-  (st/emit! (pflag/clear plugin-id)
+  (st/emit! (pflag/initialize plugin-id version)
             (save-current-plugin plugin-id))
 
   (let [load-plugin (unchecked-get ug/global "ɵloadPlugin")]

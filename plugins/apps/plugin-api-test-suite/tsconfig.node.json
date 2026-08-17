@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": [
+    "tools/**/*.ts",
+    "ci/**/*.ts",
+    "vite.config.ts",
+    "vite.config.headless.ts",
+    "vite.config.tests.ts",
+    "vite.config.iife.ts"
+  ]
+}

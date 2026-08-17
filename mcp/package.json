@@ -1,6 +1,6 @@
 {
   "name": "@penpot/mcp",
-  "version": "2.16.0",
+  "version": "2.17.0",
   "description": "MCP server for Penpot integration",
   "license": "MPL-2.0",
   "bin": {
@@ -14,6 +14,7 @@
     "start:multi-user": "pnpm -r --parallel run start:multi-user",
     "bootstrap": "pnpm -r install && pnpm run build && pnpm run start",
     "bootstrap:multi-user": "pnpm -r install && pnpm run build && pnpm run start:multi-user",
+    "client-setup": "node bin/client-setup.js",
     "fmt": "prettier --write packages/",
     "fmt:check": "prettier --check packages/",
     "test": "pnpm -r run test"
@@ -22,9 +23,9 @@
     "type": "git",
     "url": "https://github.com/penpot/penpot.git"
   },
-  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "devDependencies": {
-    "concurrently": "^10.0.3",
-    "prettier": "^3.8.4"
+    "concurrently": "^10.0.4",
+    "prettier": "^3.9.6"
   }
 }

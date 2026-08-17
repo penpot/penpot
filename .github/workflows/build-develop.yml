@@ -11,12 +11,16 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "develop"
-      build_wasm: "yes"
-      build_storybook: "yes"
 
   build-docker:
     needs: build-bundle
     uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: "develop"
+
+  build-docker-admin-console:
+    uses: ./.github/workflows/build-docker-admin-console.yml
     secrets: inherit
     with:
       gh_ref: "develop"

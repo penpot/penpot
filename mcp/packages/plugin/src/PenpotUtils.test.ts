@@ -130,3 +130,34 @@ test("createVariantContainer — returns the container from createVariantFromCom
 
     assert.equal(result, container);
 });
+
+// ---------------------------------------------------------------------------
+// findShapes root handling
+// (community report https://community.penpot.app/t/mcp-api-issue-list/10700
+// issue #15: including the matching root itself is a footgun — a predicate
+// meant for descendants can accidentally select and mutate the container).
+// ---------------------------------------------------------------------------
+
+function makeShapeTree() {
+    const childA = { name: "child-a", fills: [{}] };
+    const childB = { name: "child-b", fills: [{}] };
+    const root = { name: "root", fills: [{}], children: [childA, childB] };
+    return { root, childA, childB };
+}
+
+test("findShapes — matches descendants of the given root", () => {
+    const { root, childA, childB } = makeShapeTree();
+
+    const result = PenpotUtils.findShapes((s: any) => s.fills.length > 0, root as any);
+
+    assert.ok(result.includes(childA as any));
+    assert.ok(result.includes(childB as any));
+});
+
+test("findShapes — excludes the root shape itself from the results", () => {
+    const { root } = makeShapeTree();
+
+    const result = PenpotUtils.findShapes((s: any) => s.fills.length > 0, root as any);
+
+    assert.ok(!result.includes(root as any));
+});

@@ -1,8 +1,5 @@
 export type GenerationTypes =
-  | 'paragraphs'
-  | 'sentences'
-  | 'words'
-  | 'characters';
+  'paragraphs' | 'sentences' | 'words' | 'characters';
 
 export interface InitPluginUIEvent {
   type: 'ready';
@@ -35,6 +32,4 @@ export interface ThemePluginEvent {
 }
 
 export type PluginMessageEvent =
-  | InitPluginEvent
-  | SelectionPluginEvent
-  | ThemePluginEvent;
+  InitPluginEvent | SelectionPluginEvent | ThemePluginEvent;

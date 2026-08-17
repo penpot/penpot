@@ -22,14 +22,10 @@
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
-(mf/defc svg-root
-  {::mf/wrap-props false}
-  [props]
+(mf/defc svg-root*
+  [{:keys [shape children]}]
 
-  (let [shape       (unchecked-get props "shape")
-        children    (unchecked-get props "children")
-
-        x           (dm/get-prop shape :x)
+  (let [x           (dm/get-prop shape :x)
         y           (dm/get-prop shape :y)
         w           (dm/get-prop shape :width)
         h           (dm/get-prop shape :height)
@@ -53,13 +49,9 @@
      [:g.svg-raw {:transform (gsh/transform-str shape)}
       [:> "svg" props children]]]))
 
-(mf/defc svg-element
-  {::mf/wrap-props false}
-  [props]
-  (let [shape       (unchecked-get props "shape")
-        children    (unchecked-get props "children")
-
-        ids-mapping (mf/use-ctx svg-ids-ctx)
+(mf/defc svg-element*
+  [{:keys [shape children]}]
+  (let [ids-mapping (mf/use-ctx svg-ids-ctx)
         render-id   (mf/use-ctx muc/render-id)
 
         tag         (-> shape :content :tag)
@@ -119,13 +111,13 @@
         [:style style-content]
 
         ^boolean svg-root?
-        [:& svg-root {:shape shape}
+        [:> svg-root* {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
         (and ^boolean svg-tag?
              ^boolean valid-tag?)
-        [:& svg-element {:shape shape}
+        [:> svg-element* {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 

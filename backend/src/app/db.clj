@@ -331,7 +331,10 @@
 
   This expands to a single SQL statement with placeholders for every
   value being inserted. For large data sets, this may exceed the limit
-  of sql string size and/or number of parameters."
+  of sql string size and/or number of parameters.
+
+  See `insert-many-chunked!` for a safe alternative that automatically
+  partitions rows to stay within the parameter limit."
   [ds table cols rows & {:as opts}]
   (let [conn (get-connectable ds)
         sql  (sql/insert-many table cols rows opts)
@@ -340,6 +343,24 @@
                (into default-insert-opts (rename-opts opts)))
         opts (update opts :return-keys boolean)]
     (jdbc/execute! conn sql opts)))
+
+(def ^:private default-max-params
+  "PostgreSQL PreparedStatement parameter limit."
+  65535)
+
+(defn insert-many-chunked!
+  "Like `insert-many!` but partitions rows into chunks that stay within
+  PostgreSQL's 65,535 PreparedStatement parameter limit.
+
+  The chunk size is computed as `floor(max-params / num-columns)`,
+  so callers do not need to calculate it. All chunks execute within
+  the same transaction when called inside `tx-run!`."
+  [ds table cols rows & {:keys [max-params] :as opts
+                         :or   {max-params default-max-params}}]
+  (let [chunk-size (quot max-params (count cols))
+        opts       (dissoc opts :max-params)]
+    (doseq [chunk (partition-all chunk-size rows)]
+      (apply insert-many! ds table cols chunk (mapcat identity opts)))))
 
 (defn update!
   "A helper that build an UPDATE SQL statement and executes it.

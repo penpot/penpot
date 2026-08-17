@@ -16,7 +16,7 @@
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -225,23 +225,23 @@
            [:div {:class (stl/css :grid-coord-group)}
             [:span {:class (stl/css :icon)} deprecated-icon/flex-vertical]
             [:div {:class (stl/css :coord-input)}
-             [:> numeric-input*
+             [:> deprecated-input/numeric-input*
               {:placeholder "--"
                :title "Column"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :column)
-               :integer true
+               :is-integer true
                :value column}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
             [:span {:class (stl/css :icon)} deprecated-icon/flex-horizontal]
             [:div {:class (stl/css :coord-input)}
-             [:> numeric-input*
+             [:> deprecated-input/numeric-input*
               {:placeholder "--"
                :title "Row"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :row)
-               :integer true
+               :is-integer true
                :value row}]]]])
 
         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
@@ -249,35 +249,35 @@
            [:div {:class (stl/css :grid-coord-group)}
             [:span {:class (stl/css :icon)} deprecated-icon/flex-vertical]
             [:div {:class (stl/css :coord-input)}
-             [:> numeric-input*
+             [:> deprecated-input/numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :column)
-               :integer true
+               :is-integer true
                :value column}]]
             [:div {:class (stl/css :coord-input)}
-             [:> numeric-input*
+             [:> deprecated-input/numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :column)
-               :integer true
+               :is-integer true
                :value column-end}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
             [:span {:class (stl/css :icon)} deprecated-icon/flex-horizontal]
             [:div {:class (stl/css :coord-input :double)}
-             [:> numeric-input*
+             [:> deprecated-input/numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :row)
-               :integer true
+               :is-integer true
                :value row}]]
             [:div {:class (stl/css :coord-input)}
-             [:> numeric-input*
+             [:> deprecated-input/numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :row)
-               :integer true
+               :is-integer true
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}

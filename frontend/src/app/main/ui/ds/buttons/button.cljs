@@ -42,4 +42,4 @@
                                                (on-ref node)))})]
     [:> element props
      (when icon [:> icon* {:icon-id icon :size "m"}])
-     [:span {:class (stl/css :label-wrapper)} children]]))
+     children]))

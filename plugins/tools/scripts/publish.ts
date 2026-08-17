@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -64,6 +64,21 @@ const readPackageJson = (packagePath: string): PackageJson => {
 const writePackageJson = (packagePath: string, content: PackageJson): void => {
   const filePath = join(process.cwd(), packagePath, 'package.json');
   writeFileSync(filePath, JSON.stringify(content, null, 2) + '\n');
+};
+
+const getPublishPath = (packagePath: string): string => {
+  return join('dist', packagePath.split('/').pop()!);
+};
+
+const prepareRuntimePackage = (): void => {
+  const source = 'libs/plugins-runtime';
+  const dist = getPublishPath(source);
+
+  mkdirSync(dist, { recursive: true });
+  cpSync(join(source, 'package.json'), join(dist, 'package.json'));
+  cpSync(join(source, 'README.md'), join(dist, 'README.md'));
+  cpSync('LICENSE', join(dist, 'LICENSE'));
+  cpSync(join(source, 'dist'), join(dist, 'dist'), { recursive: true });
 };
 
 const incrementVersion = (
@@ -164,6 +179,7 @@ const log = (message: string, verbose: boolean, forceLog = false): void => {
         stdio: 'inherit',
       },
     );
+    prepareRuntimePackage();
   } else {
     console.log('   [DRY RUN] Skipping build\n');
   }
@@ -176,7 +192,7 @@ const log = (message: string, verbose: boolean, forceLog = false): void => {
 
     for (const packagePath of PACKAGES) {
       const pkg = readPackageJson(packagePath);
-      const distPath = join('dist', packagePath.split('/').pop()!);
+      const distPath = getPublishPath(packagePath);
 
       if (args.dryRun) {
         console.log(
@@ -188,7 +204,7 @@ const log = (message: string, verbose: boolean, forceLog = false): void => {
             `pnpm publish --tag ${tag} --access public --no-git-checks`,
             {
               cwd: join(process.cwd(), distPath),
-              stdio: args.verbose ? 'inherit' : 'pipe',
+              stdio: 'inherit',
             },
           );
           console.log(`   ✅ Published ${pkg.name}@${newVersion}`);

@@ -637,7 +637,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🔥"
                                                     },
@@ -654,7 +659,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👩🏿\u200d🚀"
                                                     },
@@ -671,7 +681,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👺"
                                                     },
@@ -688,7 +703,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🚀"
                                                     }
@@ -706,7 +726,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             },
                                             {
@@ -726,7 +751,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": ""
                                                     }
@@ -744,7 +774,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             }
                                         ]
@@ -2395,7 +2430,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🔥"
                                                     },
@@ -2412,7 +2452,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👩🏿\u200d🚀"
                                                     },
@@ -2429,7 +2474,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👺"
                                                     },
@@ -2446,7 +2496,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🚀"
                                                     }
@@ -2464,7 +2519,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             },
                                             {
@@ -2484,7 +2544,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": ""
                                                     }
@@ -2502,7 +2567,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             }
                                         ]
@@ -3433,7 +3503,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🔥"
                                                     },
@@ -3450,7 +3525,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👩🏿\u200d🚀"
                                                     },
@@ -3467,7 +3547,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👺"
                                                     },
@@ -3484,7 +3569,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🚀"
                                                     }
@@ -3502,7 +3592,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             },
                                             {
@@ -3522,7 +3617,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": ""
                                                     }
@@ -3540,7 +3640,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             }
                                         ]

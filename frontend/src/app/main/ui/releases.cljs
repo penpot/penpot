@@ -35,6 +35,7 @@
    [app.main.ui.releases.v2-14]
    [app.main.ui.releases.v2-15]
    [app.main.ui.releases.v2-16]
+   [app.main.ui.releases.v2-17]
    [app.main.ui.releases.v2-2]
    [app.main.ui.releases.v2-3]
    [app.main.ui.releases.v2-4]
@@ -106,4 +107,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "2.16")))
+  (rc/render-release-notes (assoc params :version "2.17")))

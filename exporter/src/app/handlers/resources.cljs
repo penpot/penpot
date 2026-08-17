@@ -79,7 +79,7 @@
                                     :method "POST"
                                     :body fdata
                                     :dispatcher agent}
-                       uri     (-> (cf/get :public-uri)
+                       uri     (-> (cf/get-internal-uri)
                                    (u/ensure-path-slash)
                                    (u/join "api/management/methods/upload-tempfile")
                                    (str))]

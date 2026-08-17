@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
+   [app.main.constants :as mconst]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
@@ -103,6 +104,11 @@
 
                  (when on-change
                    (on-change modifiers)))))))]
+
+    (mf/with-effect []
+      (fn []
+        (when @resizing?
+          (fcc/clear-transform-preview!))))
 
     [:rect.margin-rect
      {:x (:x rect-data)
@@ -224,7 +230,7 @@
        [:& fcc/flex-display-pill
         {:height pill-height
          :width pill-width
-         :font-size (/ fcc/font-size zoom)
+         :font-size (/ mconst/font-size zoom)
          :border-radius (/ fcc/flex-display-pill-border-radius zoom)
          :color fcc/warning-color
          :x (:x @mouse-pos)

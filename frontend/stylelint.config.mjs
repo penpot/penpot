@@ -14,6 +14,12 @@ export default {
     "at-rule-no-unknown": null,
     "declaration-property-value-no-unknown": null,
     "property-no-unknown": [true, { ignoreProperties: ["text-box"] }],
+    "declaration-block-no-redundant-longhand-properties": [
+      true,
+      {
+        ignoreShorthands: ["grid-template"],
+      },
+    ],
     "selector-pseudo-class-no-unknown": [
       true,
       { ignorePseudoClasses: ["global"] }, // TODO: Avoid global selector usage and remove this exception

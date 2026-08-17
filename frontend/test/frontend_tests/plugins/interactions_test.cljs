@@ -11,7 +11,8 @@
    [app.plugins.api :as api]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
-   [frontend-tests.helpers.wasm :as thw]))
+   [frontend-tests.helpers.wasm :as thw]
+   [potok.v2.core :as ptk]))
 
 (defn- flows-of
   "The vals of the current page flows from the store."
@@ -80,3 +81,27 @@
           (.addInteraction board1 "click" #js {:type "open-url" :url "https://example.com"})
           (t/is (empty? (flows-of store context page))
                 "open-url interactions do not create a flow"))))))
+
+(def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
+
+(defn- throws?
+  [thunk]
+  (try (thunk) false (catch :default _ true)))
+
+(t/deftest interaction-delay-accepts-zero
+  ;; Regression: the InteractionProxy `:delay` setter rejected 0 via
+  ;; `(not (pos? value))`, but the model (`set-delay` -> `check-safe-int`) allows
+  ;; 0 (an immediate after-delay interaction). With `throwValidationErrors`
+  ;; enabled, setting 0 must NOT throw (its validation guard passes), while a
+  ;; negative value must still be rejected.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context plugin-id)
+            _           (set! st/state store)
+            ^js board1  (.createBoard context)
+            ^js board2  (.createBoard context)
+            ^js inter   (.addInteraction board1 "after-delay" #js {:type "navigate-to" :destination board2} 300)]
+        (ptk/emit! store #(assoc-in % [:plugins :flags plugin-id :throw-validation-errors] true))
+        (t/is (not (throws? #(set! (.-delay inter) 0))) "delay = 0 must be accepted")
+        (t/is (throws? #(set! (.-delay inter) -1)) "negative delay must be rejected")))))

@@ -83,6 +83,10 @@
   border: $b-1 solid var(--color-accent-select);
 }
 
+.plan-card-current {
+  border: $b-1 solid var(--color-foreground-secondary);
+}
+
 .plan-card-header {
   display: flex;
   justify-content: space-between;
@@ -146,7 +150,10 @@
 }
 
 .benefits-list {
+  list-style-position: outside;
+  list-style-type: disc;
   margin-block: 0;
+  margin-inline: var(--sp-l);
 }
 
 .benefits-title,
@@ -154,6 +161,10 @@
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
+}
+
+.benefit-label {
+  font-weight: 600;
 }
 
 .other-subscriptions {
@@ -431,7 +442,7 @@
   align-items: center;
   display: flex;
   gap: var(--sp-s);
-  margin-block-end: px2rem(34);
+  margin-block: var(--sp-xl);
 }
 
 .price-value {

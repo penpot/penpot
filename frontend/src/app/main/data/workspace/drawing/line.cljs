@@ -63,7 +63,8 @@
                    (-> object
                        (assoc :content content)
                        (assoc :selrect selrect)
-                       (assoc :points points')))))))
+                       (assoc :points points')
+                       (assoc :click-draw? false)))))))
 
 (defn- setup-frame
   []
@@ -101,9 +102,10 @@
       (update-in state [:workspace-drawing :object]
                  (fn [{:keys [content selrect] :as shape}]
                    (cond-> shape
-                     (or (empty? content)
-                         (nil? selrect)
-                         (<= (count content) 1))
+                     (and (not (:click-draw? shape))
+                          (or (empty? content)
+                              (nil? selrect)
+                              (<= (count content) 1)))
                      (assoc :initialized? false)))))))
 
 (defn- arrow-strokes
@@ -125,11 +127,13 @@
   (let [arrow? (= tool :arrow)]
     (ptk/reify ::handle-drawing
       ptk/WatchEvent
-      (watch [_ _ stream]
+      (watch [_ state stream]
         (let [stopper (mse/drag-stopper stream)
+              zoom    (dm/get-in state [:workspace-local :zoom] 1)
               start   @ms/mouse-position
               shape   (cts/setup-shape {:type :path
                                         :initialized? true
+                                        :click-draw? true
                                         :frame-id uuid/zero
                                         :parent-id uuid/zero
                                         :strokes (arrow-strokes arrow?)
@@ -139,6 +143,7 @@
            (rx/of #(update % :workspace-drawing assoc :object shape))
 
            (->> ms/mouse-position
+                (rx/filter #(> (* (gpt/distance % start) zoom) 10))
                 (rx/with-latest-from ms/mouse-position-shift)
                 (rx/map (fn [[point shift?]]
                           (if shift?

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="${PENPOT_DB_HOST:-postgres}"
+USER="${PENPOT_DB_USER:-penpot}"
+PASSWORD="${PENPOT_DB_PASSWORD:-penpot}"
+DB="${PENPOT_DB_NAME:-penpot}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --test)
+            DB="penpot_test"
+            shift
+            ;;
+        --host|-h)
+            HOST="$2"
+            shift 2
+            ;;
+        --user|-U)
+            USER="$2"
+            shift 2
+            ;;
+        --db|-d)
+            DB="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+export PGPASSWORD="$PASSWORD"
+exec pg_dump -h "$HOST" -U "$USER" -d "$DB" --schema-only --no-owner --no-privileges "$@"

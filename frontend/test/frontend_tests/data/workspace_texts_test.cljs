@@ -9,9 +9,12 @@
    [app.common.geom.rect :as grc]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
 
@@ -374,3 +377,138 @@
                  "exactly one typography was added")
            (t/is (= "0.1" (:letter-spacing (first typographies)))
                  "float letter-spacing is normalised to 2-decimal string")))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: save-font must not persist typography refs into the global default font
+;;
+;; Root cause of #10925: typography assets are file-specific references, but
+;; save-font used to write :typography-ref-id / :typography-ref-file into the
+;; session-global [:workspace-global :default-font]. That state survives a file
+;; switch, and v2-default-text-content bakes it into brand-new text shapes in
+;; the other file, so they got a non-existent typography asset instead of the
+;; default Penpot font. save-font now strips those two keys.
+;; ---------------------------------------------------------------------------
+
+(t/deftest save-font-strips-typography-refs-from-default-font
+  (t/async
+    done
+    (let [file  (-> (cthf/sample-file :file1)
+                    (cths/add-sample-shape :text1
+                                           :type    :text
+                                           :x 0 :y 0
+                                           :content (txt/change-text nil "hello")))
+          store (ths/setup-store file)
+          attrs {:font-id "roboto"
+                 :font-family "Roboto"
+                 :font-variant-id "regular"
+                 :font-size "14"
+                 :typography-ref-id (uuid/next)
+                 :typography-ref-file (:id file)}]
+      (ths/run-store
+       store done [(dwt/save-font attrs)]
+       (fn [new-state]
+         (let [default-font (get-in new-state [:workspace-global :default-font])]
+           (t/is (some? default-font))
+           (t/is (= "roboto" (:font-id default-font)))
+           (t/is (nil? (:typography-ref-id default-font)))
+           (t/is (nil? (:typography-ref-file default-font)))))))))
+
+(t/deftest save-font-preserves-other-font-attrs
+  (t/async
+    done
+    (let [store (ths/setup-store (cthf/sample-file :file1))
+          attrs {:font-family "Open Sans"
+                 :font-id "opensans"
+                 :font-variant-id "regular"
+                 :font-size "18"
+                 :line-height "1.5"
+                 :letter-spacing "0"
+                 :typography-ref-id (uuid/next)
+                 :typography-ref-file (uuid/next)}]
+      (ths/run-store store done [(dwt/save-font attrs)]
+                     (fn [new-state]
+                       (let [default-font (get-in new-state [:workspace-global :default-font])]
+                         (t/is (= "Open Sans" (:font-family default-font)))
+                         (t/is (= "18" (:font-size default-font)))
+                         (t/is (= "1.5" (:line-height default-font)))
+                         (t/is (nil? (:typography-ref-id default-font)))
+                         (t/is (nil? (:typography-ref-file default-font)))))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: fix-position with degenerate selrect
+;; ---------------------------------------------------------------------------
+
+(t/deftest fix-position-zero-width-selrect-does-not-throw
+  (t/testing "fix-position on a shape with zero selrect width does not throw"
+    (let [shape     (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 50)
+          modifiers (ctm/change-dimensions-modifiers shape :width 200 {:ignore-lock? true})
+          shape'    (assoc shape :modifiers modifiers)
+          result    (vth/fix-position shape')]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest fix-position-zero-height-selrect-does-not-throw
+  (t/testing "fix-position on a shape with zero selrect height does not throw"
+    (let [shape     (make-degenerate-text-shape :x 0 :y 0 :width 100 :height 0)
+          modifiers (ctm/change-dimensions-modifiers shape :height 80 {:ignore-lock? true})
+          shape'    (assoc shape :modifiers modifiers)
+          result    (vth/fix-position shape')]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+(t/deftest fix-position-zero-width-and-height-selrect-does-not-throw
+  (t/testing "fix-position on a fully degenerate selrect does not throw"
+    (let [shape     (make-degenerate-text-shape :x 0 :y 0 :width 0 :height 0)
+          modifiers (ctm/change-dimensions-modifiers shape :width 150 {:ignore-lock? true})
+          shape'    (assoc shape :modifiers modifiers)
+          result    (vth/fix-position shape')]
+      (t/is (some? result))
+      (t/is (some? (:selrect result))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: ensure-valid-text-content
+;; ---------------------------------------------------------------------------
+
+(t/deftest ensure-valid-text-content-empty-children-repaired
+  (t/testing "root with empty :children vector is repaired to canonical tree"
+    (let [broken  {:type         "root"
+                   :vertical-align "top"
+                   :children     []}
+          fixed   (dwt/ensure-valid-text-content broken)]
+      (t/is (= "root" (:type fixed)))
+      (t/is (vector? (:children fixed)))
+      (t/is (= 1 (count (:children fixed)))
+            "exactly one paragraph-set is seeded")
+      (t/is (= "paragraph-set" (get-in fixed [:children 0 :type])))
+      (t/is (pos? (count (get-in fixed [:children 0 :children])))
+            "paragraph-set has at least one paragraph")
+      (t/is (= "" (get-in fixed [:children 0 :children 0 :children 0 :text]))
+            "seeded span has empty text")
+      (t/is (= "top" (:vertical-align fixed))
+            "preserves the original :vertical-align"))))
+
+(t/deftest ensure-valid-text-content-missing-children-repaired
+  (t/testing "root with no :children key is repaired to canonical tree"
+    (let [broken  {:type "root" :vertical-align "center"}
+          fixed   (dwt/ensure-valid-text-content broken)]
+      (t/is (vector? (:children fixed)))
+      (t/is (pos? (count (:children fixed))))
+      (t/is (= "center" (:vertical-align fixed))))))
+
+(t/deftest ensure-valid-text-content-healthy-tree-unchanged
+  (t/testing "a well-formed content is returned unchanged"
+    (let [healthy {:type "root"
+                   :children [{:type "paragraph-set"
+                               :children [{:type "paragraph"
+                                           :children [{:text "hello"}]}]}]}
+          fixed   (dwt/ensure-valid-text-content healthy)]
+      (t/is (= healthy fixed)))))
+
+(t/deftest ensure-valid-text-content-nil-unchanged
+  (t/testing "nil content is returned unchanged (no repair)"
+    (t/is (nil? (dwt/ensure-valid-text-content nil)))))
+
+(t/deftest ensure-valid-text-content-non-root-unchanged
+  (t/testing "a non-root content (e.g. paragraph) is left alone"
+    (let [node {:type "paragraph" :children []}]
+      (t/is (= node (dwt/ensure-valid-text-content node))))))

@@ -612,7 +612,37 @@
        (map first)
        vec))
 
+(defn- order-variant-children
+  "Reorders the children of a variant container so that the variant components
+   (as returned by cfv/find-variant-components, which reverses the children
+   vector) appear in the given order of ids. Ids that are not children of the
+   container are ignored; children not covered by ids keep their position at
+   the end."
+  [variant-id ordered-ids]
+  (ptk/reify ::order-variant-children
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id   (:current-page-id state)
+            objects   (dsh/lookup-page-objects state page-id)
+            children  (set (dm/get-in objects [variant-id :shapes]))
+            ;; The desired :shapes vector is the reverse of ordered-ids;
+            ;; change-parent at index 0 inverts the order of the given shapes,
+            ;; so they are passed in ordered-ids order
+            shapes    (->> ordered-ids
+                           (filter children)
+                           (mapv (d/getf objects)))]
+        (when (> (count shapes) 1)
+          (let [changes (-> (pcb/empty-changes it page-id)
+                            (pcb/with-objects objects)
+                            (pcb/change-parent variant-id shapes 0))]
+            (rx/of (dch/commit-changes changes)
+                   (ptk/data-event :layout/update {:ids [variant-id]}))))))))
+
 (defn combine-as-variants
+  "Combines the components identified by the main-instance ids `ids` into a
+   new variant container. If `ids` is a sequential collection, its order
+   determines the order of the resulting variant components; unordered
+   collections are normalized to the layer-tree order."
   [ids {:keys [page-id trigger variant-id]}]
   (ptk/reify ::combine-as-variants
     ptk/WatchEvent
@@ -622,12 +652,15 @@
             combine
             (fn [current-page]
               (let [objects       (dsh/lookup-page-objects state current-page)
-                    ids           (->> ids
+                    ids           (->> (if (sequential? ids)
+                                         ids
+                                         (cfh/order-by-indexed-shapes objects ids))
                                        (cfh/clean-loops objects)
                                        (remove (fn [id]
                                                  (let [shape (get objects id)]
                                                    (or (not (ctc/main-instance? shape))
-                                                       (ctc/is-variant? shape))))))]
+                                                       (ctc/is-variant? shape)))))
+                                       (vec))]
                 (when (> (count ids) 1)
                   (let [shapes        (mapv #(get objects %) ids)
                         rect          (bounding-rect shapes)
@@ -657,7 +690,10 @@
 
                      (rx/of (dwu/start-undo-transaction undo-id)
                             (transform-in-variant (first ids) variant-id delta prefix add-wrapper? false false)
-                            (dwsh/relocate-shapes (into #{} (-> ids rest reverse)) variant-id 0)
+                            (dwsh/relocate-shapes (into #{} (rest ids)) variant-id 0)
+                            ;; relocate-shapes inserts the shapes in layer-tree
+                            ;; order, so restore the intended order afterwards
+                            (order-variant-children variant-id ids)
                             (dwsh/update-shapes ids #(-> %
                                                          (assoc :constraints-h :left)
                                                          (assoc :constraints-v :top)

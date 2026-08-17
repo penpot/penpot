@@ -10,13 +10,23 @@
    [app.main.store :as st]
    [app.util.dom :as dom]))
 
+(defn- get-element
+  "Given a DOM node, returns the nearest Element, walking up from text nodes."
+  [target]
+  (if (and (some? target)
+           (not= (.-nodeType target) js/Node.ELEMENT_NODE))
+    (.-parentElement target)
+    target))
+
 (defn v1-closest-text-editor-content
   [target]
-  (.closest ^js target ".public-DraftEditor-content"))
+  (when-let [el (get-element target)]
+    (.closest ^js el ".public-DraftEditor-content")))
 
 (defn v2-closest-text-editor-content
   [target]
-  (.closest ^js target "[data-itype=\"editor\"]"))
+  (when-let [el (get-element target)]
+    (.closest ^js el "[data-itype=\"editor\"]")))
 
 (defn closest-text-editor-content
   [target]
@@ -36,8 +46,18 @@
   []
   (dom/query "[data-itype=\"editor\"]"))
 
+(defn v3-get-text-editor-content
+  []
+  (dom/get-element "text-editor-wasm-input"))
+
 (defn get-text-editor-content
   []
-  (if (features/active-feature? @st/state "text-editor/v2")
+  (cond
+    (features/active-feature? @st/state "text-editor-wasm/v1")
+    (v3-get-text-editor-content)
+
+    (features/active-feature? @st/state "text-editor/v2")
     (v2-get-text-editor-content)
+
+    :else
     (v1-get-text-editor-content)))

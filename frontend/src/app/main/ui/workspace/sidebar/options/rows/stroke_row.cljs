@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.color :as ctc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
    [app.main.store :as st]
@@ -35,6 +36,10 @@
            on-color-detach
            on-remove
            on-stroke-width-change
+           per-side-available
+           per-side-disabled
+           on-stroke-per-side-toggle
+           on-stroke-width-side-change
            on-stroke-dash-change
            on-stroke-gap-change
            on-stroke-style-change
@@ -98,15 +103,78 @@
 
         stroke-width (:stroke-width stroke)
 
+        per-side? (and per-side-available
+                       (not per-side-disabled)
+                       (true? (:stroke-per-side stroke)))
+
+        per-side-expanded* (mf/use-state false)
+        per-side-expanded? (deref per-side-expanded*)
+
+        all-sides-equal?
+        (mf/with-memo [stroke]
+          (let [width  (:stroke-width stroke)
+                top    (d/nilv (:stroke-width-top stroke) width)
+                right  (d/nilv (:stroke-width-right stroke) width)
+                bottom (d/nilv (:stroke-width-bottom stroke) width)
+                left   (d/nilv (:stroke-width-left stroke) width)]
+            (= top right bottom left)))
+
+        show-multiple-placeholder? (or per-side-expanded? (not all-sides-equal?))
+
+        per-side-toggle-label
+        (if per-side-disabled
+          (tr "workspace.options.stroke.per-side-disabled")
+          (tr "workspace.options.stroke.per-side"))
+
+        on-per-side-toggle
+        (mf/use-fn
+         (mf/deps per-side? on-stroke-per-side-toggle index)
+         (fn []
+           (if per-side?
+             (swap! per-side-expanded* not)
+             (do
+               (when on-stroke-per-side-toggle
+                 (on-stroke-per-side-toggle index))
+               (reset! per-side-expanded* true)))))
+
+        on-width-top-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-top %))
+
+        on-width-right-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-right %))
+
+        on-width-bottom-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-bottom %))
+
+        on-width-left-change
+        (mf/use-fn
+         (mf/deps index on-stroke-width-side-change)
+         #(on-stroke-width-side-change index :stroke-width-left %))
+
         on-width-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-change ids)
+         (mf/deps index on-stroke-width-change ids per-side?)
          (fn [value]
-           (soc/emit-value-or-token
-            value
-            #(on-stroke-width-change index %)
-            ids
-            #{:stroke-width})))
+           (if per-side?
+             (st/emit! (dc/change-stroke-attrs
+                        ids
+                        {:stroke-width value
+                         :stroke-width-top value
+                         :stroke-width-right value
+                         :stroke-width-bottom value
+                         :stroke-width-left value}
+                        index))
+             (soc/emit-value-or-token
+              value
+              #(on-stroke-width-change index %)
+              ids
+              #{:stroke-width}))))
 
         ;; The SVG renderer defaults dash and gap to `stroke-width + 10` when
         ;; unset. Showing that value as placeholder makes the override obvious.
@@ -171,12 +239,20 @@
         on-caps-start-change
         (mf/use-fn
          (mf/deps index on-stroke-cap-start-change)
-         #(on-stroke-cap-start-change index (keyword %)))
+         (fn [cap]
+           (let [cap (if (= cap "none")
+                       nil
+                       (keyword cap))]
+             (on-stroke-cap-start-change index cap))))
 
         on-caps-end-change
         (mf/use-fn
          (mf/deps index on-stroke-cap-end-change)
-         #(on-stroke-cap-end-change index (keyword %)))
+         (fn [cap]
+           (let [cap (if (= cap "none")
+                       nil
+                       (keyword cap))]
+             (on-stroke-cap-end-change index cap))))
 
         on-detach-token-color
         (mf/use-fn
@@ -191,16 +267,16 @@
            (on-detach-token token #{:stroke-width})))
 
         stroke-caps-options
-        [{:value nil :label (tr "workspace.options.stroke-cap.none")}
-         :separator
-         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon :stroke-arrow}
-         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon :stroke-triangle}
-         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon :stroke-rectangle}
-         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon :stroke-circle}
-         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon :stroke-diamond}
-         :separator
-         {:value :round :label (tr "workspace.options.stroke-cap.round") :icon :stroke-rounded}
-         {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :stroke-squared}]
+        [{:id "none" :value "none" :label (tr "workspace.options.stroke-cap.none")}
+         {:label "" :type :separator :id "separator"}
+         {:id "line-arrow" :value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon i/stroke-arrow}
+         {:id "triangle-arrow" :value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon i/stroke-triangle}
+         {:id "square-marker" :value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon i/stroke-rectangle}
+         {:id "circle-marker" :value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon i/stroke-circle}
+         {:id "diamond-marker" :value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon i/stroke-diamond}
+         {:label "" :type :separator :id "separator"}
+         {:id "round" :value :round :label (tr "workspace.options.stroke-cap.round") :icon i/stroke-rounded}
+         {:id "square" :value :square :label (tr "workspace.options.stroke-cap.square") :icon i/stroke-squared}]
 
         on-cap-switch
         (mf/use-fn
@@ -256,7 +332,8 @@
 
      ;; Stroke Width, Alignment & Style
      (if token-numeric-inputs
-       [:div {:class (stl/css :stroke-options-tokens)}
+       [:div {:class (stl/css-case :stroke-options-tokens true
+                                   :stroke-options-tokens-with-toggle per-side-available)}
         [:> numeric-input-wrapper* {:on-change on-width-change
                                     :on-detach on-detach-token-width
                                     :icon i/stroke-size
@@ -267,7 +344,13 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width")
                                     :applied-token (get applied-tokens :stroke-width)
-                                    :value stroke-width}]
+                                    :placeholder (if show-multiple-placeholder?
+                                                   (tr "settings.multiple")
+                                                   "--")
+                                    :nillable true
+                                    :value (if all-sides-equal?
+                                             stroke-width
+                                             nil)}]
         [:> select* {:default-selected (d/name stroke-alignment)
                      :options stroke-alignment-options
                      :variant "icon-only"
@@ -284,16 +367,28 @@
                        :variant "icon-only"
                        :disabled (if (= :multiple hidden?) true hidden?)
                        :dropdown-alignment :right
-                       :on-change on-style-change}])]
+                       :on-change on-style-change}])
+        (when per-side-available
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed per-side-expanded?
+                            :aria-label per-side-toggle-label
+                            :disabled per-side-disabled
+                            :on-click on-per-side-toggle
+                            :icon i/stroke-extended
+                            :data-testid "stroke.per-side-toggle"}])]
 
        [:div {:class (stl/css :stroke-options)}
         [:div {:class (stl/css :stroke-width-input)
                :title (tr "workspace.options.stroke-width")}
          [:> icon* {:icon-id i/stroke-size
                     :size "s"}]
-         [:> deprecated-input/numeric-input* {:value stroke-width
+         [:> deprecated-input/numeric-input* {:value (if show-multiple-placeholder?
+                                                       nil
+                                                       stroke-width)
                                               :min 0
-                                              :placeholder (tr "settings.multiple")
+                                              :placeholder (if show-multiple-placeholder?
+                                                             (tr "settings.multiple")
+                                                             "--")
                                               :on-change on-width-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
@@ -306,12 +401,65 @@
                      :on-change on-alignment-change}]]
 
         (when-not disable-stroke-style
-          [:div {:class (stl/css :stroke-style-select)
+          [:div {:class (stl/css-case :stroke-style-select true
+                                      :stroke-style-select-compact per-side-available)
                  :data-testid "stroke.style"}
            [:& select {:default-value stroke-style
                        :options stroke-style-options
                        :disabled hidden?
-                       :on-change on-style-change}]])])
+                       :on-change on-style-change}]])
+        (when per-side-available
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed per-side-expanded?
+                            :aria-label per-side-toggle-label
+                            :disabled per-side-disabled
+                            :on-click on-per-side-toggle
+                            :icon i/stroke-extended
+                            :data-testid "stroke.per-side-toggle"}])])
+
+     (when per-side-expanded?
+       [:div {:class (stl/css :stroke-sides-options)
+              :data-testid "stroke.per-side-options"}
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-top")}
+         [:> icon* {:icon-id i/stroke-top
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-top stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-top-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-right")}
+         [:> icon* {:icon-id i/stroke-right
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-right stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-right-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-bottom")}
+         [:> icon* {:icon-id i/stroke-bottom
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-bottom stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-bottom-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]
+        [:div {:class (stl/css :stroke-side-input)
+               :title (tr "workspace.options.stroke-width-left")}
+         [:> icon* {:icon-id i/stroke-left
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-left stroke) stroke-width)
+                                              :min 0
+                                              :on-change on-width-left-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]]])
 
      ;; Stroke Dash / Gap (only visible for dashed style)
      (when (= stroke-style :dashed)
@@ -340,16 +488,18 @@
      ;; Stroke Caps
      (when show-caps
        [:div {:class (stl/css :stroke-caps-options)}
-        [:& select {:default-value (:stroke-cap-start stroke)
-                    :options stroke-caps-options
-                    :disabled hidden?
-                    :on-change on-caps-start-change}]
+        [:> select* {:default-selected (or (d/name (:stroke-cap-start stroke)) "none")
+                     :options stroke-caps-options
+                     :data-testid "stroke.cap-start"
+                     :disabled hidden?
+                     :on-change on-caps-start-change}]
         [:> icon-button* {:variant "secondary"
                           :aria-label (tr "labels.switch")
                           :disabled hidden?
                           :on-click on-cap-switch
                           :icon i/switch}]
-        [:& select {:default-value (:stroke-cap-end stroke)
-                    :options stroke-caps-options
-                    :disabled hidden?
-                    :on-change on-caps-end-change}]])]))
+        [:> select* {:default-selected (or (d/name (:stroke-cap-end stroke)) "none")
+                     :options stroke-caps-options
+                     :data-testid "stroke.cap-end"
+                     :disabled hidden?
+                     :on-change on-caps-end-change}]])]))

@@ -18,7 +18,7 @@
       :strokeColor
       {:get (fn [] (:stroke-color @state))
        :set (fn [v]
-              (swap! state #(-> % (assoc :stroke-color v) (dissoc :stroke-color-gradient)))
+              (swap! state #(-> % (assoc :stroke-color v) (dissoc :stroke-color-gradient :stroke-image)))
               (on-change!))}
 
       :strokeColorRefFile
@@ -62,7 +62,13 @@
                                          (on-change!))]
                   (gradients/gradient-proxy gradient-state gradient-change!))))
        :set (fn [v]
-              (swap! state #(-> % (assoc :stroke-color-gradient (parser/parse-gradient v)) (dissoc :stroke-color)))
+              (swap! state #(-> % (assoc :stroke-color-gradient (parser/parse-gradient v)) (dissoc :stroke-color :stroke-image)))
+              (on-change!))}
+
+      :strokeImage
+      {:get (fn [] (format/format-image (:stroke-image @state)))
+       :set (fn [v]
+              (swap! state #(-> % (assoc :stroke-image (parser/parse-image-data v)) (dissoc :stroke-color :stroke-color-gradient)))
               (on-change!))})))
 
 (defn format-strokes

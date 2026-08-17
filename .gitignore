@@ -9,10 +9,13 @@
 .clj-kondo
 .cpcache
 .lsp
+.env
 .nrepl-port
 .nyc_output
 .rebel_readline_history
 .repl
+opencode.json
+.opencode/package-lock.json
 /*.jpg
 /*.md
 !CHANGES.md
@@ -30,7 +33,6 @@
 /.clj-kondo/.cache
 /_dump
 /notes
-/.opencode/package-lock.json
 /plans
 /prompts
 /playground/
@@ -56,6 +58,8 @@
 /docker/images/bundle*
 /exporter/target
 /exporter/.shadow-cljs
+/exporter/resources/wasm/
+/exporter/src/app/wasm/shared.js
 /frontend/.storybook/preview-body.html
 /frontend/.storybook/preview-head.html
 /frontend/playwright-report/
@@ -72,8 +76,6 @@
 /frontend/target/
 /frontend/test-results/
 /frontend/.shadow-cljs
-/other/
-/scripts/
 /nexus/
 /tmp/
 /vendor/**/target
@@ -88,6 +90,7 @@
 /blob-report/
 /playwright/.cache/
 /render-wasm/target/
+/media-processor/dist/
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
@@ -98,5 +101,9 @@
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
+/.opencode/plans
+/.opencode/reports
+/.opencode/prompts
+/.ci-logs
 /.codex/
 /tools/__pycache__

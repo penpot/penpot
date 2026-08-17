@@ -27,6 +27,7 @@
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.constants :as mconst]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -142,8 +143,7 @@
 
     ptk/EffectEvent
     (effect [_ _ _]
-      (rx/push! ms/wasm-modifiers nil)
-      (rx/push! ms/workspace-selrect nil))))
+      (ms/clear-transform-preview!))))
 
 ;; -- Resize --------------------------------------------------------
 
@@ -308,6 +308,7 @@
                     (if (features/active-feature? state "render-wasm/v1")
                       (rx/merge
                        (->> resize-events-stream
+                            (rx/sample mconst/resize-sample-time)
                             (rx/mapcat
                              (fn [modifiers]
                                (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
@@ -327,12 +328,21 @@
                                (dwm/create-modif-tree shape-ids %)
                                :ignore-constraints (contains? layout :scale-text)))))
 
-                      (->> resize-events-stream
-                           (rx/mapcat
+                      (let [emit-modifiers
                             (fn [modifiers]
                               (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
-                                (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text))))))
-                           (rx/take-until stopper)))]
+                                (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))]
+                        ;; Throttle the live preview to limit re-renders; the trailing
+                        ;; rx/last applies the exact final frame.
+                        (rx/merge
+                         (->> resize-events-stream
+                              (rx/sample mconst/resize-sample-time)
+                              (rx/mapcat emit-modifiers)
+                              (rx/take-until stopper))
+                         (->> resize-events-stream
+                              (rx/take-until stopper)
+                              (rx/last)
+                              (rx/mapcat emit-modifiers)))))]
 
                 (rx/concat
                  ;; This initial stream waits for some pixels to be move before making the resize
@@ -514,6 +524,7 @@
           (rx/concat
            (rx/merge
             (->> angle-stream
+                 (rx/sample mconst/rotation-sample-time)
                  (rx/map #(dwm/set-wasm-modifiers (rotation-modifiers % shapes group-center)))
                  (rx/take-until stopper))
             (->> angle-stream
@@ -523,14 +534,22 @@
 
            (rx/of (finish-transform)))
 
-          (rx/concat
-           (rx/merge
-            (->> angle-stream
-                 (rx/map
-                  #(dwm/set-rotation-modifiers % shapes group-center))
-                 (rx/take-until stopper)))
-           (rx/of (dwm/apply-modifiers)
-                  (finish-transform))))))))
+          (let [emit-modifiers
+                (fn [angle] (dwm/set-rotation-modifiers angle shapes group-center))]
+            ;; Throttle the live preview to limit re-renders; the trailing
+            ;; rx/last applies the exact final frame.
+            (rx/concat
+             (rx/merge
+              (->> angle-stream
+                   (rx/sample mconst/rotation-sample-time)
+                   (rx/map emit-modifiers)
+                   (rx/take-until stopper))
+              (->> angle-stream
+                   (rx/take-until stopper)
+                   (rx/last)
+                   (rx/map emit-modifiers)))
+             (rx/of (dwm/apply-modifiers)
+                    (finish-transform)))))))))
 
 (defn increase-rotation
   "Rotate shapes a fixed angle, from a keyboard action."
@@ -783,7 +802,7 @@
                        (rx/take-until duplicate-stopper)
                        ;; Sample at a fixed cadence to keep preview smooth. Unlike a throttle,
                        ;; this tends to avoid perceptible "jumps" while still capping WASM work.
-                       (rx/sample 16)
+                       (rx/sample mconst/move-sample-time)
                        (rx/map
                         (fn [[modifiers snap-ignore-axis]]
                           (dwm/set-wasm-modifiers modifiers
@@ -822,6 +841,8 @@
 
                (rx/merge
                 (->> modifiers-stream
+                     ;; Throttle the live preview to limit re-renders.
+                     (rx/sample mconst/move-sample-time)
                      (rx/map
                       (fn [[modifiers snap-ignore-axis]]
                         (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis}))))
@@ -843,10 +864,13 @@
                 ;; Last event will write the modifiers creating the changes
                 (->> move-stream
                      (rx/last)
+                     (rx/with-latest-from modifiers-stream)
                      (rx/mapcat
-                      (fn [[_ target-frame drop-index drop-cell]]
+                      (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
                         (let [undo-id (js/Symbol)]
                           (rx/of (dwu/start-undo-transaction undo-id)
+                                 ;; Apply the exact final modifiers; the preview may drop the last frame.
+                                 (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis})
                                  (dwm/apply-modifiers {:undo-transation? false})
                                  (move-shapes-to-frame ids target-frame drop-index drop-cell)
                                  (finish-transform)
@@ -998,6 +1022,9 @@
                 (rx/concat
                  (rx/merge
                   (->> modif-stream
+                       ;; Sample at a fixed cadence to cap re-renders, mirroring the
+                       ;; drag/resize/rotation paths throttled in #10560.
+                       (rx/sample mconst/move-sample-time)
                        (rx/map #(dwm/set-wasm-modifiers % {:ignore-snap-pixel true})))
 
                   (->> modif-stream
@@ -1006,17 +1033,28 @@
                   (rx/of (nudge-selected-shapes direction shift?)))
                  (rx/of (finish-transform))))
 
-              (rx/concat
-               (rx/merge
-                (->> move-events
-                     (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                     (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
-                     (rx/map #(dwm/set-modifiers % false true))
-                     (rx/take-until stopper))
-                (rx/of (nudge-selected-shapes direction shift?)))
+              (let [modif-stream
+                    (->> move-events
+                         (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
+                         (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
+                         (rx/take-until stopper))]
+                (rx/concat
+                 (rx/merge
+                  (->> modif-stream
+                       ;; Sample at a fixed cadence to cap re-renders, mirroring the
+                       ;; drag/resize/rotation paths throttled in #10560.
+                       (rx/sample mconst/move-sample-time)
+                       (rx/map #(dwm/set-modifiers % false true)))
+                  ;; Un-sampled final write ensures the modifiers atom holds the
+                  ;; exact cumulative position before `apply-modifiers` commits,
+                  ;; even if `sample` drops the tail value on completion.
+                  (->> modif-stream
+                       (rx/last)
+                       (rx/map #(dwm/set-modifiers % false true)))
+                  (rx/of (nudge-selected-shapes direction shift?)))
 
-               (rx/of (dwm/apply-modifiers)
-                      (finish-transform)))))
+                 (rx/of (dwm/apply-modifiers)
+                        (finish-transform))))))
           (rx/empty))))))
 
 (defn move-selected

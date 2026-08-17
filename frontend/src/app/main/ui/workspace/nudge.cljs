@@ -11,7 +11,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -50,14 +50,14 @@
        [:div {:class (stl/css :input-wrapper)}
         [:label {:class (stl/css :modal-msg)
                  :for "nudge-small"} (tr "modals.small-nudge")]
-        [:> numeric-input* {:min 0.01
-                            :id "nudge-small"
-                            :value (:small nudge)
-                            :on-change update-small}]]
+        [:> deprecated-input/numeric-input* {:min 0.01
+                                             :id "nudge-small"
+                                             :value (:small nudge)
+                                             :on-change update-small}]]
        [:div {:class (stl/css :input-wrapper)}
         [:label {:class (stl/css :modal-msg)
                  :for "nudge-big"} (tr "modals.big-nudge")]
-        [:> numeric-input* {:min 0.01
-                            :id "nudge-big"
-                            :value (:big nudge)
-                            :on-change update-big}]]]]]))
+        [:> deprecated-input/numeric-input* {:min 0.01
+                                             :id "nudge-big"
+                                             :value (:big nudge)
+                                             :on-change update-big}]]]]]))

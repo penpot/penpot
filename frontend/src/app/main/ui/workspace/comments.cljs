@@ -11,6 +11,7 @@
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
@@ -99,7 +100,8 @@
          (fn []
            (if from-viewer
              (st/emit! (dcmt/update-options {:show-sidebar? false}))
-             (st/emit! (dw/clear-edition-mode)
+             (st/emit! (dwdc/clear-drawing)
+                       (dw/clear-edition-mode)
                        (dw/deselect-all true)))))
 
         tgroups     (->> threads

@@ -14,9 +14,9 @@ Center](https://help.penpot.app/).
 - [Reporting Bugs](#reporting-bugs)
 - [Pull Requests](#pull-requests)
   - [Workflow](#workflow)
-  - [Title format](#title-format)
-  - [Description](#description)
-  - [Branch naming](#branch-naming)
+  - [Format](#format)
+    - [Title format](#title-format)
+    - [Description](#description)
   - [Review process](#review-process)
   - [What we won't accept](#what-we-wont-accept)
   - [Good first issues](#good-first-issues)
@@ -73,35 +73,23 @@ Advisories](https://github.com/penpot/penpot/security/advisories)
 4. **Format and lint** — run the checks described in
    [Formatting and Linting](#formatting-and-linting) before submitting.
 
-### Title format
+### Format
+
+#### Title
+
+> **IMPORTANT:** When a PR is squash-merged, the PR title becomes the
+> commit message on the main branch. Getting the title right matters.
 
 Pull request titles **must** follow the same convention as commit subjects:
 
 ```
-:emoji: <subject>
+:emoji: Subject line (imperative, capitalized, no period, <=70 chars)
 ```
 
-- Use the **imperative mood** (e.g. "Fix", not "Fixed").
-- Capitalize the first letter of the subject.
-- Do not end the subject with a period.
-- Keep the subject to **70 characters** or fewer.
-- Use one of the [commit type emojis](#commit-types) listed below.
+Read [Creating Commits](./.serena/memories/workflow/creating-commits.md)
+for more concrete information.
 
-When a PR contains multiple unrelated commits, choose the emoji that
-best represents the dominant change.
-
-**Examples:**
-
-```
-:bug: Fix unexpected error on launching modal
-:sparkles: Enable new modal for profile
-:zap: Improve performance of dashboard navigation
-```
-
-> **Note:** When a PR is squash-merged, the PR title becomes the
-> commit message on the main branch. Getting the title right matters.
-
-### Description
+#### Description
 
 Every pull request should include a description that helps reviewers
 understand the change quickly:
@@ -114,24 +102,8 @@ understand the change quickly:
 5. **Breaking changes** — call out anything that affects existing users
    or requires migration steps.
 
-### Branch naming
-
-Use a descriptive branch name that reflects the type and scope of the
-change:
-
-```
-<type>/<short-description>
-```
-
-Types: `fix`, `feat`, `refactor`, `docs`, `chore`, `perf`.
-
-Optionally include the issue number:
-
-```
-fix/9122-email-blacklisting
-feat/export-webp
-refactor/layout-sizing
-```
+Read [Creating PRs](./.serena/memories/workflow/creating-prs.md)
+for more concrete information.
 
 ### Review process
 
@@ -151,10 +123,10 @@ refactor/layout-sizing
 To save time on both sides, please avoid submitting PRs that:
 
 - Introduce new dependencies without prior discussion.
-- Change the build system or CI configuration without maintainer
-  approval.
-- Mix unrelated changes in a single PR — keep PRs focused on one
-  concern.
+- Change the build system or CI configuration without maintainer approval.
+- Mix unrelated changes in a single PR — keep PRs focused on one concern.
+- Submit AI-generated code without human review.
+- Skip local syntax and formatting checks before submitting.
 - Skip the [discussion step](#workflow) for non-bug-fix changes.
 
 ### Good first issues
@@ -217,36 +189,8 @@ Commit messages must follow this format:
 
 ## Formatting and Linting
 
-We use [cljfmt](https://github.com/weavejester/cljfmt) for formatting and
-[clj-kondo](https://github.com/clj-kondo/clj-kondo) for linting.
-
-```bash
-# Check formatting (does not modify files)
-./scripts/check-fmt
-
-# Fix formatting (modifies files in place)
-./scripts/fmt
-
-# Lint
-./scripts/lint
-```
-
-For frontend SCSS, we use `stylelint` for linting and
-`Prettier` for formatting:
-
-```bash
-cd frontend
-
-# Lint SCSS
-pnpm run lint:scss (does not modify files)
-
-# Fix SCSS formatting (modifies files in place)
-pnpm run fmt:scss
-```
-
-Ideally, run these as git pre-commit hooks.
-[Husky](https://typicode.github.io/husky/#/) is a convenient option for
-setting this up.
+Each module has its own linting and formatting commands — see the relevant one on the
+[Serena Memories](./.serena/memories/)
 
 ## Changelog
 

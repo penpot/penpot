@@ -22,6 +22,7 @@
 (def ^:svg-id logo-subscription "logo-subscription")
 (def ^:svg-id logo-subscription-light "logo-subscription-light")
 (def ^:svg-id nitrate-welcome "nitrate-welcome")
+(def ^:svg-id nitrate-welcome-light "nitrate-welcome-light")
 (def ^:svg-id marketing-arrows "marketing-arrows")
 (def ^:svg-id marketing-exchange "marketing-exchange")
 (def ^:svg-id marketing-file "marketing-file")

@@ -13,7 +13,6 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :as co]
    [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -27,7 +26,6 @@
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
-   [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
@@ -687,38 +685,12 @@
       (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
-(defn handle-change-team-org
-  [{:keys [team notification]}]
-  (ptk/reify ::handle-change-team-org
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [current-team-id (:current-team-id state)
-            organization (:organization team)]
-        (when (and (contains? cf/flags :nitrate)
-                   notification
-                   (= (:id team) current-team-id))
-          (rx/of (ntf/show {:content (tr notification (:name organization))
-                            :type :toast
-                            :level :info
-                            :timeout nil})))))
-    ptk/UpdateEvent
-    (update [_ state]
-      (if (contains? cf/flags :nitrate)
-        (let [team-id      (:id team)
-              team-name    (:name team)
-              organization (:organization team)]
-          (d/update-in-when state [:teams team-id]
-                            (fn [team]
-                              (cond-> (co/apply-organization team organization)
-                                team-name (assoc :name team-name)))))
-        state))))
-
-(defn- handle-user-org-change
+(defn- handle-user-organization-change
   [{:keys [organization-id organization-name notification]}]
-  (ptk/reify ::handle-user-org-change
+  (ptk/reify ::handle-user-organization-change
     ptk/WatchEvent
     (watch [_ state _]
-      (when (and notification (contains? cf/flags :nitrate))
+      (when (and notification (contains? cf/flags :admin-console))
         (let [team-id (:current-team-id state)
               team    (dm/get-in state [:teams team-id])]
           (rx/of (ntf/show {:content (tr notification organization-name)
@@ -726,7 +698,7 @@
                             :level :info
                             :timeout nil})
                  (dtm/fetch-teams)
-                 ;; When the user is currently on a team of the org
+                 ;; When the user is currently on a team of the organization
                  (when (= organization-id (dm/get-in team [:organization :id]))
                    (dcm/go-to-dashboard-recent {:team-id :default}))))))))
 
@@ -736,45 +708,26 @@
   (ptk/reify ::handle-organization-deleted
     ptk/WatchEvent
     (watch [_ state _]
-      (when (contains? cf/flags :nitrate)
+      (when (contains? cf/flags :admin-console)
         (let [team-id        (:current-team-id state)
               current-team   (dm/get-in state [:teams team-id])
-              current-org-id (dm/get-in current-team [:organization :id])
+              current-organization-id (dm/get-in current-team [:organization :id])
               teams-set      (set teams)
               notify?        (contains? teams-set team-id)
               fetch?         (some (:teams state) teams)
               go-to-default? (or (some #{team-id} deleted-teams)
-                                 (= organization-id current-org-id))]
+                                 (= organization-id current-organization-id))]
           (rx/concat
            (when go-to-default? ;; If the user is currently on one of the deleted teams
              (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
 
-           (when notify? ;; If the user is currently on one of the org teams
-             (rx/of (ntf/show {:content (tr "dashboard.org-deleted" organization-name)
+           (when notify? ;; If the user is currently on one of the organization teams
+             (rx/of (ntf/show {:content (tr "dashboard.organization-deleted" organization-name)
                                :type :toast
                                :level :info
                                :timeout nil})))
-           (when fetch? ;; If the user belonged to the org
+           (when fetch? ;; If the user belonged to the organization
              (rx/of (dtm/fetch-teams)))))))))
-
-(defn- handle-nitrate-change-sso
-  [{:keys [organization-id]}]
-  (ptk/reify ::handle-nitrate-change-sso
-    ptk/WatchEvent
-    (watch [_ state _]
-      (when (contains? cf/flags :nitrate)
-        (let [team-id (:current-team-id state)
-              team    (dm/get-in state [:teams team-id])
-              org-id  (dm/get-in team [:organization :id])]
-          (when (= organization-id org-id)
-            (let [url (rt/get-current-href)]
-              (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
-                   (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
-                                (if authorized
-                                  (rx/empty)
-                                  (if redirect-uri
-                                    (rx/of (rt/nav-raw :uri (str redirect-uri)))
-                                    (rx/empty)))))))))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
@@ -782,10 +735,10 @@
     :notification            (dcm/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
     :team-membership-change  (dcm/team-membership-change msg)
-    :team-org-change         (handle-change-team-org msg)
-    :user-org-change         (handle-user-org-change msg)
+    :team-organization-change         (dcm/handle-change-team-organization msg)
+    :user-organization-change         (handle-user-organization-change msg)
     :organization-deleted    (handle-organization-deleted msg)
-    :organization-change-sso (handle-nitrate-change-sso msg)
+    :organization-change-sso (dcm/handle-organization-change-sso msg)
     nil))
 
 

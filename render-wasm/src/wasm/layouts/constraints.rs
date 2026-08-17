@@ -7,11 +7,12 @@ use crate::with_current_shape_mut;
 #[repr(u8)]
 #[allow(dead_code)]
 pub enum RawConstraintH {
-    Left = 0,
-    Right = 1,
-    Leftright = 2, // odd casing to comply with cljs value
-    Center = 3,
-    Scale = 4,
+    None = 0,
+    Left = 1,
+    Right = 2,
+    Leftright = 3, // odd casing to comply with cljs value
+    Center = 4,
+    Scale = 5,
 }
 
 impl From<u8> for RawConstraintH {
@@ -20,14 +21,15 @@ impl From<u8> for RawConstraintH {
     }
 }
 
-impl From<RawConstraintH> for ConstraintH {
+impl From<RawConstraintH> for Option<ConstraintH> {
     fn from(value: RawConstraintH) -> Self {
         match value {
-            RawConstraintH::Left => ConstraintH::Left,
-            RawConstraintH::Right => ConstraintH::Right,
-            RawConstraintH::Leftright => ConstraintH::LeftRight,
-            RawConstraintH::Center => ConstraintH::Center,
-            RawConstraintH::Scale => ConstraintH::Scale,
+            RawConstraintH::None => None,
+            RawConstraintH::Left => Some(ConstraintH::Left),
+            RawConstraintH::Right => Some(ConstraintH::Right),
+            RawConstraintH::Leftright => Some(ConstraintH::LeftRight),
+            RawConstraintH::Center => Some(ConstraintH::Center),
+            RawConstraintH::Scale => Some(ConstraintH::Scale),
         }
     }
 }
@@ -36,11 +38,12 @@ impl From<RawConstraintH> for ConstraintH {
 #[repr(u8)]
 #[allow(dead_code)]
 pub enum RawConstraintV {
-    Top = 0,
-    Bottom = 1,
-    Topbottom = 2, // odd casing to comply with cljs value
-    Center = 3,
-    Scale = 4,
+    None = 0,
+    Top = 1,
+    Bottom = 2,
+    Topbottom = 3, // odd casing to comply with cljs value
+    Center = 4,
+    Scale = 5,
 }
 
 impl From<u8> for RawConstraintV {
@@ -49,14 +52,15 @@ impl From<u8> for RawConstraintV {
     }
 }
 
-impl From<RawConstraintV> for ConstraintV {
+impl From<RawConstraintV> for Option<ConstraintV> {
     fn from(value: RawConstraintV) -> Self {
         match value {
-            RawConstraintV::Top => ConstraintV::Top,
-            RawConstraintV::Bottom => ConstraintV::Bottom,
-            RawConstraintV::Topbottom => ConstraintV::TopBottom,
-            RawConstraintV::Center => ConstraintV::Center,
-            RawConstraintV::Scale => ConstraintV::Scale,
+            RawConstraintV::None => None,
+            RawConstraintV::Top => Some(ConstraintV::Top),
+            RawConstraintV::Bottom => Some(ConstraintV::Bottom),
+            RawConstraintV::Topbottom => Some(ConstraintV::TopBottom),
+            RawConstraintV::Center => Some(ConstraintV::Center),
+            RawConstraintV::Scale => Some(ConstraintV::Scale),
         }
     }
 }
@@ -64,16 +68,16 @@ impl From<RawConstraintV> for ConstraintV {
 #[no_mangle]
 pub extern "C" fn set_shape_constraint_h(constraint: u8) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let constraint = RawConstraintH::from(constraint);
-        shape.set_constraint_h(Some(constraint.into()));
+        let constraint: Option<ConstraintH> = RawConstraintH::from(constraint).into();
+        shape.set_constraint_h(constraint);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn set_shape_constraint_v(constraint: u8) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let constraint = RawConstraintV::from(constraint);
-        shape.set_constraint_v(Some(constraint.into()));
+        let constraint: Option<ConstraintV> = RawConstraintV::from(constraint).into();
+        shape.set_constraint_v(constraint);
     });
 }
 

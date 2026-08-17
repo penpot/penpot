@@ -249,7 +249,7 @@
 (defn is-variant-container?
   "Check if this shape is a variant container"
   [shape]
-  (:is-variant-container shape))
+  (boolean (:is-variant-container shape)))
 
 (defn set-touched-group
   [touched group]

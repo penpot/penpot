@@ -343,20 +343,23 @@
          (dch/commit-changes changes))))))
 
 (defn duplicate-token-set
-  [id]
-  (ptk/reify ::duplicate-token-set
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [data       (dsh/lookup-file-data state)
-            tokens-lib (get data :tokens-lib)
-            suffix     (tr "workspace.tokens.duplicate-suffix")]
+  ([id]
+   (duplicate-token-set id nil))
+  ([id {:keys [id-ref]}]
+   (ptk/reify ::duplicate-token-set
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [data       (dsh/lookup-file-data state)
+             tokens-lib (get data :tokens-lib)
+             suffix     (tr "workspace.tokens.duplicate-suffix")]
 
-        (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]
-          (let [changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/set-token-set (ctob/get-id token-set) token-set))]
-            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
-                   (dch/commit-changes changes))))))))
+         (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]
+           (when id-ref (reset! id-ref (ctob/get-id token-set)))
+           (let [changes (-> (pcb/empty-changes it)
+                             (pcb/with-library-data data)
+                             (pcb/set-token-set (ctob/get-id token-set) token-set))]
+             (rx/of (set-selected-token-set-id (ctob/get-id token-set))
+                    (dch/commit-changes changes)))))))))
 
 (defn set-enabled-token-set
   [name enabled?]

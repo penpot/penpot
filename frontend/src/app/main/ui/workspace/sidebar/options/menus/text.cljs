@@ -498,6 +498,8 @@
         (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
 
     [:section {:class      (stl/css :element-set)
+               ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
+               :data-keep-editing-on-blur true
                :aria-label (tr "workspace.options.text-options.text-section")}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  true

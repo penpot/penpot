@@ -9,8 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.render-wasm.wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
    [app.util.webapi :as webapi]

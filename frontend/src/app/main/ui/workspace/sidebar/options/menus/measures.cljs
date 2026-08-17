@@ -48,7 +48,12 @@
    :selrect
    :points
    :show-content
-   :hide-in-viewer])
+   :hide-in-viewer
+
+   ;; Needed to disable/enable width/height
+   ;; otherwise the memo will not detect changes
+   :layout-item-h-sizing
+   :layout-item-v-sizing])
 
 (def ^:private generic-options
   #{:size :position :rotation})
@@ -130,7 +135,7 @@
                        acc))))
           acc)))))
 
-(defn- check-measures-menu-props
+(defn check-measures-menu-props
   [old-props new-props]
   (let [o-values (unchecked-get old-props "values")
         n-values (unchecked-get new-props "values")]
@@ -150,10 +155,12 @@
                      (get n-values :hide-in-viewer))
          (identical? (get o-values :width)
                      (get n-values :width))
-         (identical? (get o-values :width)
-                     (get n-values :width))
          (identical? (get o-values :height)
                      (get n-values :height))
+         (identical? (get o-values :layout-item-h-sizing)
+                     (get n-values :layout-item-h-sizing))
+         (identical? (get o-values :layout-item-v-sizing)
+                     (get n-values :layout-item-v-sizing))
          (identical? (get o-values :points)
                      (get n-values :points))
          (identical? (get o-values :selrect)
@@ -564,7 +571,7 @@
               :no-validate true
               :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
               :on-change on-width-change
-              :disabled disabled-width-sizing?
+              :is-disabled disabled-width-sizing?
               :class (stl/css :numeric-input)
               :value (:width values)}]]
            [:div {:class (stl/css-case :height true
@@ -575,7 +582,7 @@
                                                  :no-validate true
                                                  :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
                                                  :on-change on-height-change
-                                                 :disabled disabled-height-sizing?
+                                                 :is-disabled disabled-height-sizing?
                                                  :class (stl/css :numeric-input)
                                                  :value (:height values)}]]])
 
@@ -625,7 +632,7 @@
             [:> deprecated-input/numeric-input* {:no-validate true
                                                  :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
                                                  :on-change on-pos-x-change
-                                                 :disabled disabled-position?
+                                                 :is-disabled disabled-position?
                                                  :class (stl/css :numeric-input)
                                                  :value (:x values)}]]
 

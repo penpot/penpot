@@ -45,31 +45,37 @@ This is an incomplete list of devenv related subcommands found on
 manage.sh script:
 
 ```bash
-./manage.sh build-devenv --local # builds the local devenv docker image
-./manage.sh start-devenv         # brings up the shared infra + ws0 in background
-./manage.sh run-devenv           # ws0 with non-agentic tmux, attached (legacy alias)
-./manage.sh run-devenv-agentic   # one agentic instance; --ws to target ws1+; see below
-./manage.sh attach-devenv        # re-attaches to the tmux session of a running instance
-./manage.sh stop-devenv          # stops one instance (or --all); infra stops with the last
-./manage.sh drop-devenv          # removes containers (data volumes preserved)
+./manage.sh build-devenv --local            # builds the local devenv docker image
+./manage.sh start-devenv                    # brings up the shared infra + ws0 in background
+./manage.sh run-devenv --attach             # bring up main devenv instance and attach to its tmux session
+./manage.sh run-devenv --agentic --attach   # bring up main devenv instance in agentic mode and attach tmux
+./manage.sh attach-devenv                   # re-attaches to the tmux session of a running instance
+./manage.sh stop-devenv                     # stops one instance (or --all); infra stops with the last
+./manage.sh drop-devenv                     # removes containers (data volumes preserved)
 ```
+
+### Agentic Mode
+
+The `--agentic` flag enables additional features for AI-assisted development.
+See the dedicated section [Agentic Dev Environment](../agentic-devenv/) for details.
 
 ### Parallel workspaces
 
-The devenv runs as separate compose projects: shared infra (`penpotdev-infra`:
-Postgres, MinIO, mailer, LDAP) plus one `penpotdev-wsN` project per runtime
-instance. `ws0` (a.k.a. `main`) binds the live repo; `ws1+` bind clones the
-developer maintains explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
-(default `~/.penpot/penpot_workspaces/`).
+The devenv runs as separate compose projects:
+  * shared infra (`penpotdev-infra`: Postgres, MinIO, mailer, LDAP)
+  * `penpotdev-wsN` project per runtime instance.
+     - `ws0` (a.k.a. `main`) is the current state of your repo;
+     - `ws1` and up are clones that you maintain explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
+       (default `~/.penpot/penpot_workspaces/`). You can explicitly sync them
+       with the `--sync` flag (automatic on first start).
 
-Each call to `run-devenv-agentic` brings up one instance, and ws0 is always
-running whenever any ws1+ is — `--ws N` (N≥1) auto-starts ws0 first if it
-isn't already up:
+Each call to `run-devenv` brings up one instance. Workspaces are independent
+and can be started and stopped in any order:
 
 ```bash
-./manage.sh run-devenv-agentic           # main (ws0)
-./manage.sh run-devenv-agentic --ws 1    # ws0 if needed, then ws1
-./manage.sh run-devenv-agentic --ws 2 --sync   # ws2, re-seeding from the live repo
+./manage.sh run-devenv                 # main (ws0)
+./manage.sh run-devenv --ws 1          # ws1
+./manage.sh run-devenv --ws 2 --sync   # ws2, re-seeding from the live repo
 ```
 
 Starting an instance that is already running is an error. `--sync` is only
@@ -84,12 +90,12 @@ the frontend's MCP flag) is copied into each workspace on its initial sync
 only. After that the developer maintains it in each workspace; subsequent
 `--sync` runs leave the workspace copy alone.
 
-Stopping mirrors the start invariant — ws0 is the last to stop, and shared
-infra stops with it:
+Stopping is equally flexible — each workspace is independent. Shared infra
+stops only when no instances remain running:
 
 ```bash
 ./manage.sh stop-devenv --ws 1           # stops ws1; ws0 + infra stay up
-./manage.sh stop-devenv                  # stops ws0 + infra; errors if ws1+ still running
+./manage.sh stop-devenv                  # stops ws0; infra stays up if ws1+ still running
 ./manage.sh stop-devenv --all            # stops every ws1+ first, then ws0 + infra
 ```
 
@@ -102,12 +108,12 @@ Host ports are offset by `10000 × N`:
 | Serena MCP | `http://localhost:14181` | `http://localhost:24181` | `http://localhost:34181` |
 
 Container-internal ports stay fixed. Target a specific instance with
-`--ws N` on `attach-devenv`, `run-devenv-agentic`, `stop-devenv`,
+`--ws N` on `attach-devenv`, `run-devenv`, `stop-devenv`,
 `start-coding-agent`, `run-devenv-shell`, and `isolated-shell`. `--ws`
 accepts a **non-negative integer only** — `--ws main` or `--ws ws1` is
 rejected, keeping the flag shape uniform across commands. `run-devenv` is
-ws0-only and takes no workspace flag. `run-devenv-agentic` also accepts
-`--serena-context CTX` and `--git-user-name NAME` / `--git-user-email
+ws0-only and takes no workspace flag. `run-devenv` also accepts
+`--serena-context CTX` (used together with `--agentic`) and `--git-user-name NAME` / `--git-user-email
 EMAIL` (see below).
 
 Configuration lives in one tracked file, `docker/devenv/defaults.env` (the
@@ -116,7 +122,7 @@ derived and injected automatically, so there is no per-instance file to edit.
 
 ### Git identity inside the container
 
-`run-devenv-agentic` wires a Git author identity into the container's
+`run-devenv` wires a Git author identity into the container's
 **global** git config (`git config --global user.{name,email}`) so commits
 made from inside the devenv carry a real author/committer. Without this,
 the container would commit as the unconfigured `penpot@<container>`
@@ -130,7 +136,7 @@ returns at the working directory `manage.sh` is invoked from — local
 `git commit` on the host would record. If neither is available the script
 prints a warning and continues — commits will fail inside the container
 until you set an identity. The values are applied every time
-`run-devenv-agentic` brings an instance up (idempotent), so re-running
+`run-devenv` brings an instance up (idempotent), so re-running
 with different flags is the way to change the in-container identity.
 
 ### Shared state and workers
@@ -143,12 +149,14 @@ file-summary cache, rate-limit counters) isolated.
 Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
 disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
 `task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
-runs them against the shared DB and MinIO. The "ws0 always up when ws1+ is
-up" invariant exists for this reason: it keeps a single worker-bearer and
-avoids the multi-instance cron-dedup race (the lock on `scheduled_task` is
-released when the task body finishes, so two cron timers firing the same
-scheduled instant with a gap larger than the body's runtime can both
-execute it).
+runs them against the shared DB and MinIO. Workers are fire-and-forget:
+`wrk/submit!` inserts a row and returns; RPC handlers never wait on
+completion. The "ws0 only" policy avoids multi-instance worker races (cron
+dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across
+submitters).
+
+Each workspace is independent and can be started and stopped in any order.
+Shared infrastructure shuts down only when no instances remain running.
 
 ### Upgrading from a pre-parallel devenv
 
@@ -185,11 +193,10 @@ docker rm   penpotdev-postgres-1 penpotdev-minio-1 penpotdev-minio-setup-1 \
 docker network rm penpotdev_default 2>/dev/null
 
 # Bring up infra + ws0 under the new project layout.
-./manage.sh run-devenv-agentic
+./manage.sh run-devenv
 ```
 
-After the cleanup, normal `./manage.sh start-devenv` / `run-devenv` /
-`run-devenv-agentic` commands work against the new layout. The legacy
+After the cleanup, normal `./manage.sh start-devenv` / `run-devenv` work against the new layout. The legacy
 `penpotdev` compose project is no longer used.
 
 Having the container running and tmux opened inside the container,
@@ -412,16 +419,28 @@ After creating or modifying this file, **reload the browser** (no need to restar
 ### Backend flags via PENPOT_FLAGS
 
 Backend feature flags are controlled through the `PENPOT_FLAGS` environment
-variable using the same `enable-<flag>` / `disable-<flag>` format. You can set
-this in the `docker/devenv/docker-compose.yaml` file under the `main` service
-`environment` section:
+variable using the same `enable-<flag>` / `disable-<flag>` format. The devenv
+sets its own list in `backend/scripts/_env`.
 
-```yaml
-environment:
-  - PENPOT_FLAGS=enable-access-tokens enable-mcp
+To change that list for your checkout, create `backend/scripts/_env.local`.
+`backend/scripts/start-dev` sources it immediately after `_env`, and the file
+is gitignored, so your override never appears in `git status`:
+
+```bash
+export PENPOT_FLAGS="$PENPOT_FLAGS enable-access-tokens enable-mcp"
 ```
 
-This requires **restarting the backend** to take effect.
+Flags are applied left to right and the last entry wins, so appending to
+`$PENPOT_FLAGS` both adds flags and switches off ones that `_env` enables:
+`disable-demo-users` at the end turns off the demo users that `_env` enables
+earlier.
+
+Setting `PENPOT_FLAGS` in the container environment does not work for this,
+because `_env` expands the inherited value *before* its own list. Any flag it
+sets afterwards wins over yours.
+
+This requires **restarting the backend** to take effect: stop the process in
+the `backend` tmux window and run `./scripts/start-dev` again.
 
 > **Note**: Some features (e.g., access tokens, webhooks) need both frontend and
 > backend flags enabled to work end-to-end. The frontend flag enables the UI, while

@@ -3,4 +3,4 @@
 corepack enable;
 corepack install;
 pnpm install;
-pnpx playwright install chromium;
+pnpm exec playwright install chromium;

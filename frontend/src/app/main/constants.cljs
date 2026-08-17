@@ -308,3 +308,36 @@
   normal progress becomes tagged as slow if no event received in the
   specified amount of time"
   1000)
+
+;; ------------------------------------------------
+;; Typography
+;; ------------------------------------------------
+
+(def ^:const font-size 11)
+
+;; ------------------------------------------------
+;; Colors (CSS custom properties)
+;; ------------------------------------------------
+
+(def ^:const select-color "var(--color-accent-tertiary)")
+
+(def ^:const distance-color "var(--color-accent-quaternary)")
+(def ^:const distance-text-color "var(--app-white)")
+
+;; ------------------------------------------------
+;; Selection rectangle & guides
+;; ------------------------------------------------
+
+(def ^:const selection-rect-width 1)
+
+;; ------------------------------------------------
+;; Transform preview sampling
+;; ------------------------------------------------
+
+(def ^:const default-sample-time
+  "Default time in ms for the sampling of transforms, this caps to one per frame the preview of modifiers"
+  16)
+
+(def ^:const resize-sample-time default-sample-time)
+(def ^:const rotation-sample-time default-sample-time)
+(def ^:const move-sample-time default-sample-time)

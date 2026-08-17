@@ -108,6 +108,15 @@ fn calculate_group_bounds(
     shape_bounds.with_points(result)
 }
 
+fn calculate_masked_group_bounds(
+    shape: &Shape,
+    shapes: ShapesPoolRef,
+    bounds: &HashMap<Uuid, Bounds>,
+) -> Option<Bounds> {
+    let mask = shape.mask_id().and_then(|id| shapes.get(id))?;
+    Some(bounds.find(mask))
+}
+
 fn calculate_bool_bounds(
     shape: &Shape,
     shapes: ShapesPoolRef,
@@ -349,10 +358,10 @@ fn propagate_reflow(
             layout_reflows.insert(*id);
         }
         Type::Group(Group { masked: true }) => {
-            let children_ids = shape.children_ids(true);
-            if let Some(child) = children_ids.first().and_then(|id| shapes.get(id)) {
-                let child_bounds = bounds.find(child);
-                bounds.insert(shape.id, child_bounds);
+            // Masked group bounds are the mask shape bounds (first child in stored
+            // order, children_ids returns children in reverse order)
+            if let Some(shape_bounds) = calculate_masked_group_bounds(shape, shapes, bounds) {
+                bounds.insert(shape.id, shape_bounds);
             }
             reflown.insert(*id);
         }
@@ -587,5 +596,36 @@ mod tests {
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);
+    }
+
+    #[test]
+    fn test_masked_group_bounds_are_mask_bounds() {
+        let parent_id = Uuid::new_v4();
+        let shapes = {
+            let mut shapes = ShapesPool::new();
+            shapes.initialize(10);
+
+            let mask_id = Uuid::new_v4();
+            let mask = shapes.add_shape(mask_id);
+            mask.set_selrect(1.0, 1.0, 5.0, 5.0);
+
+            let content_id = Uuid::new_v4();
+            let content = shapes.add_shape(content_id);
+            content.set_selrect(0.0, 0.0, 10.0, 10.0);
+
+            let parent = shapes.add_shape(parent_id);
+            parent.set_shape_type(Type::Group(Group { masked: true }));
+            parent.add_child(mask_id);
+            parent.add_child(content_id);
+            parent.set_selrect(1.0, 1.0, 5.0, 5.0);
+            shapes
+        };
+
+        let parent = shapes.get(&parent_id).unwrap();
+
+        let bounds = calculate_masked_group_bounds(parent, &shapes, &HashMap::new()).unwrap();
+
+        assert_eq!(bounds.width(), 4.0);
+        assert_eq!(bounds.height(), 4.0);
     }
 }

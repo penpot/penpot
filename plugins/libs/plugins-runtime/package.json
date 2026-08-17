@@ -1,10 +1,10 @@
 {
   "name": "@penpot/plugins-runtime",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "dependencies": {
-    "@penpot/plugin-types": "^1.4.2",
+    "@penpot/plugin-types": "workspace:^",
     "ses": "^2.1.0",
-    "zod": "^3.22.4"
+    "zod": "^3.25.76"
   },
   "module": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -15,5 +15,6 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest"
-  }
+  },
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }

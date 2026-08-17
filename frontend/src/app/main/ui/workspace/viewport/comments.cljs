@@ -8,19 +8,70 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [rumext.v2 :as mf]))
+
+;; Pin transform for the bubble's frame so it follows the frame during a drag,
+;; scoped per frame to avoid re-rendering the whole layer each tick.
+(defn- use-frame-position-modifier
+  [frame-id]
+  (let [modifiers (mf/deref refs/workspace-modifiers)
+        wasm-mods (mf/deref refs/workspace-wasm-modifiers)
+        objects   (mf/deref refs/workspace-page-objects)]
+    (dwcm/frame-pin-transform (get objects frame-id)
+                              (get-in modifiers [frame-id :modifiers])
+                              (get wasm-mods frame-id))))
+
+(mf/defc comment-floating-bubble-wrapper*
+  {::mf/private true}
+  [{:keys [thread zoom is-open offset ring]}]
+  (let [position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-bubble*
+     {:thread thread
+      :zoom zoom
+      :position-modifier position-modifier
+      :offset offset
+      :ring ring
+      :is-open is-open}]))
+
+(mf/defc comment-floating-group-wrapper*
+  {::mf/private true}
+  [{:keys [thread-group zoom]}]
+  (let [thread            (first thread-group)
+        position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-group*
+     {:thread-group thread-group
+      :zoom zoom
+      :position-modifier position-modifier}]))
+
+(mf/defc comment-floating-ghost-wrapper*
+  {::mf/private true}
+  [{:keys [thread-group zoom]}]
+  (let [thread            (first thread-group)
+        position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-ghost*
+     {:thread-group thread-group
+      :zoom zoom
+      :position-modifier position-modifier}]))
+
+(mf/defc comment-floating-thread-wrapper*
+  {::mf/private true}
+  [{:keys [thread viewport zoom]}]
+  (let [position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-thread*
+     {:thread thread
+      :viewport viewport
+      :position-modifier position-modifier
+      :zoom zoom}]))
 
 (mf/defc comments-layer*
   {::mf/wrap [mf/memo]}
-  [{:keys [vbox vport zoom file-id page-id]}]
+  [{:keys [vbox vport zoom file-id page-id show-rulers]}]
   (let [vbox-x      (dm/get-prop vbox :x)
         vbox-y      (dm/get-prop vbox :y)
         vport-w     (dm/get-prop vport :width)
@@ -34,37 +85,11 @@
 
         threads-map (mf/deref refs/threads)
 
-        ;; Active transform modifiers (e.g. while dragging a board). We use
-        ;; them to move comment bubbles live alongside their frame, instead of
-        ;; only repositioning them at drop time. The SVG (legacy) renderer keeps
-        ;; them in `:workspace-modifiers`, while the WASM renderer pushes them
-        ;; through the `wasm-modifiers` stream as plain transform matrices.
-        modifiers   (mf/deref refs/workspace-modifiers)
-        wasm-mods   (into {} (mf/deref refs/workspace-wasm-modifiers))
-        objects     (mf/deref refs/workspace-page-objects)
-
         threads
         (mf/with-memo [threads-map local profile page-id]
           (->> (vals threads-map)
                (filter #(= (:page-id %) page-id))
                (dcm/apply-filters local profile)))
-
-        ;; Returns the position translation matrix for a frame that is being
-        ;; transformed, or nil when the frame has no active modifier. The delta
-        ;; matches `move-frame-comment-threads` (frame top-left displacement) so
-        ;; the bubble does not jump when the modifier is committed.
-        frame-position-modifier
-        (fn [frame-id]
-          (when-let [frame (get objects frame-id)]
-            (let [frame'
-                  (if-let [modifier (get-in modifiers [frame-id :modifiers])]
-                    (gsh/transform-shape frame modifier)
-                    (when-let [transform (get wasm-mods frame-id)]
-                      (gsh/apply-transform frame transform)))]
-              (when (some? frame')
-                (let [delta (gpt/to-vec (gpt/point (:x frame) (:y frame))
-                                        (gpt/point (:x frame') (:y frame')))]
-                  (gmt/translate-matrix delta))))))
 
         viewport
         (assoc vport :offset-x pos-x :offset-y pos-y)
@@ -81,36 +106,62 @@
       (st/emit! (dwcm/initialize-comments file-id))
       (fn [] (st/emit! ::dwcm/finalize)))
 
+    ;; Any viewport change (pan/zoom) collapses an expanded cluster back.
+    (mf/with-effect [vbox zoom]
+      (st/emit! (dcm/collapse-comment-group)))
+
     [:div {:class (stl/css :comments-section)}
      [:div
       {:id "comments"
        :class (stl/css :workspace-comments-container)
        :style {:width (dm/str vport-w "px")
-               :height (dm/str vport-h "px")}}
+               :height (dm/str vport-h "px")
+               ;; This layer sits above the canvas, so without clipping the
+               ;; bubbles paint over the rulers as they pan past them. Keep
+               ;; them out of the ruler bars, like `clip-handlers` does for
+               ;; the selection handlers.
+               :clip-path (when show-rulers
+                            (dm/fmt "inset(%px 0 0 %px)"
+                                    rulers/ruler-area-size
+                                    rulers/ruler-area-size))}}
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
 
-       (for [thread-group (cmt/group-bubbles zoom threads)]
-         (let [group? (> (count thread-group) 1)
-               thread (first thread-group)]
-           (if group?
-             [:> cmt/comment-floating-group* {:thread-group thread-group
-                                              :zoom zoom
-                                              :position-modifier (frame-position-modifier (:frame-id thread))
-                                              :key (:seqn thread)}]
-             [:> cmt/comment-floating-bubble* {:thread thread
-                                               :zoom zoom
-                                               :position-modifier (frame-position-modifier (:frame-id thread))
-                                               :is-open (= (:id thread) (:open local))
-                                               :key (:seqn thread)}])))
+       (for [thread-group (dwcm/group-bubbles zoom threads)]
+         (let [group?    (> (count thread-group) 1)
+               thread    (first thread-group)
+               expanded? (and group?
+                              (= (:expanded local) (into #{} (map :id) thread-group)))]
+           (cond
+             expanded?
+             [:* {:key (:seqn thread)}
+              [:> comment-floating-ghost-wrapper* {:thread-group thread-group
+                                                   :zoom zoom}]
+              (for [[thread offset ring] (cmt/expanded-group-offsets zoom thread-group)]
+                [:> comment-floating-bubble-wrapper* {:thread thread
+                                                      :zoom zoom
+                                                      :offset offset
+                                                      :ring ring
+                                                      :is-open false
+                                                      :key (:seqn thread)}])]
+
+             group?
+             [:> comment-floating-group-wrapper* {:thread-group thread-group
+                                                  :zoom zoom
+                                                  :key (:seqn thread)}]
+
+             :else
+             [:> comment-floating-bubble-wrapper* {:thread thread
+                                                   :zoom zoom
+                                                   :is-open (= (:id thread) (:open local))
+                                                   :key (:seqn thread)}])))
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
-             [:> cmt/comment-floating-thread*
+             [:> comment-floating-thread-wrapper*
               {:thread thread
                :viewport viewport
-               :position-modifier (frame-position-modifier (:frame-id thread))
                :zoom zoom}])))
 
        (when-let [draft (:draft local)]

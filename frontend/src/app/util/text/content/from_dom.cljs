@@ -42,8 +42,7 @@
   (let [attrs (or attrs [])
         value-empty? (fn [v]
                        (or (nil? v)
-                           (and (string? v) (empty? v))
-                           (and (coll? v) (empty? v))))]
+                           (and (string? v) (empty? v))))]
     (reduce (fn [acc key]
               (let [style (.-style element)
                     value (if (contains? styles/mapping key)

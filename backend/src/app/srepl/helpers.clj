@@ -15,7 +15,7 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.features.file-snapshots :as fsnap]
-   [app.main :as main]))
+   [app.system :as sys]))
 
 (def ^:dynamic *system* nil)
 
@@ -37,13 +37,13 @@
 (defn get-file
   "Get the migrated data of one file."
   ([id]
-   (get-file (or *system* main/system) id))
+   (get-file (or *system* sys/system) id))
   ([system id]
    (db/run! system bfc/get-file id)))
 
 (defn get-raw-file
   "Get the migrated data of one file."
-  ([id] (get-raw-file (or *system* main/system) id))
+  ([id] (get-raw-file (or *system* sys/system) id))
   ([system id]
    (db/run! system
             (fn [system]

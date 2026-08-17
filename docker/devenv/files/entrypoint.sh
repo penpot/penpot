@@ -19,7 +19,7 @@ chown -R penpot:users ${SERENA_HOME}
 
 chown penpot:users /home/penpot
 # we need to be able to install rust-analyzer and possibly other dependencies with rustup
-chown -R penpot:ubuntu /opt/rustup
+chown -R penpot:penpot /opt/rustup
 
 rsync -ar --chown=penpot:users /opt/cargo/ /home/penpot/.cargo/
 

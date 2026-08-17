@@ -575,15 +575,33 @@
            (wasm.api/push-ruler-theme-colors!)
            (wasm.api/request-render "rulers-colors-theme")))))
 
+    ;; Text-editor-wasm: push the theme colors (selection background, caret)
+    ;; into the WASM text editor so the selection follows the design tokens per
+    ;; theme (purple on light, teal on dark) instead of a hardcoded default.
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (wasm.api/text-editor-apply-theme)
+        (theme/add-color-scheme-listener!
+         (fn []
+           (wasm.api/text-editor-apply-theme)
+           (wasm.api/request-render "text-editor-colors-theme")))))
+
+    ;; Ruler overlay updates below only change the UI surface, not the shapes,
+    ;; and they fire on a stable viewbox (toggles / selection changes, not pan).
+    ;; They re-present via `render-from-backbuffer!` — reusing the crisp last
+    ;; frame + fresh UI — instead of a full `request-render` (which would kick
+    ;; off a progressive tile-by-tile re-render that flashes) or a cached-atlas
+    ;; blit (whose scale-capped atlas flashes crisp->blurry on zoomed-in views,
+    ;; e.g. when the text editor opens at high zoom).
     (mf/with-effect [@canvas-init? frame-visible?]
       (when @canvas-init?
         (wasm.api/set-rulers-frame-visible! frame-visible?)
-        (wasm.api/request-render "rulers-frame")))
+        (wasm.api/render-from-backbuffer!)))
 
     (mf/with-effect [@canvas-init? show-rulers?]
       (when @canvas-init?
         (wasm.api/set-rulers-visible! show-rulers?)
-        (wasm.api/request-render "rulers-visible")))
+        (wasm.api/render-from-backbuffer!)))
 
     (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
       (when (and @canvas-init? show-rulers?)
@@ -594,7 +612,7 @@
                      (some-> ruler-selection :width) (some-> ruler-selection :height)]
       (when (and @canvas-init? show-rulers?)
         (wasm.api/set-rulers-selection! ruler-selection)
-        (wasm.api/request-render "rulers-selection")))
+        (wasm.api/render-from-backbuffer!)))
 
     ;; Paint background + rulers instantly, before shapes finish loading. Runs
     ;; after the ruler push effects so the WASM ruler state is already set.
@@ -648,7 +666,8 @@
                                       :page-id page-id
                                       :file-id file-id
                                       :vport vport
-                                      :zoom zoom}])
+                                      :zoom zoom
+                                      :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
@@ -778,9 +797,11 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not read-only?)
+                  (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
+          {:shapes selected-shapes
            :zoom zoom}])
 
        (when show-measures?

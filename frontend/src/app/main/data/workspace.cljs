@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
+   [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
@@ -60,11 +61,13 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwva]
    [app.main.data.workspace.viewport :as dwv]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.errors]
    [app.main.features :as features]
@@ -72,11 +75,9 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -275,7 +276,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc :thumbnails thumbnails)
+          (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
           (update :files assoc file-id file)))))
 
 (defn zoom-to-frame
@@ -345,19 +346,17 @@
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})))
+          (assoc :workspace-presence {})
+          (update :workspace-global dissoc :default-font)))
 
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
-            ;; since render-wasm/v1 can be hot-toggled by the user, we need to query it
-            ;; from the state with active-feature?
-            render-wasm-enabled? #(features/active-feature? @st/state "render-wasm/v1")
-            render-wasm-ready?   #(and (render-wasm-enabled?)
-                                       wasm-state/context-initialized?
-                                       (not @wasm-state/context-lost?))]
+            render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
+            render-wasm-ready?   #(and render-wasm-enabled?
+                                       (wasm-state/ready?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -368,7 +367,7 @@
                (rx/concat
                 ;; Fetch all essential data that should be loaded before the file
                 (rx/merge
-                 (if ^boolean (render-wasm-enabled?)
+                 (if ^boolean render-wasm-enabled?
                    (->> (rx/from @wasm/module)
                         (rx/filter true?)
                         (rx/tap (fn [_]
@@ -404,6 +403,7 @@
                        (rx/of (dpj/initialize-project (:project-id file))
                               (dwn/initialize team-id file-id)
                               (dwsl/initialize-shape-layout)
+                              (dwtxt/initialize-text-reflow)
                               (fetch-libraries file-id features)
                               (-> (workspace-initialized file-id)
                                   (with-meta {:team-id team-id
@@ -440,6 +440,17 @@
                       (rx/observe-on :async)
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
+
+               ;; Keep comment thread positions in sync on undo/redo
+               (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
+
+               ;; Resize auto-grow text shapes whose selrect does not match
+               ;; the WASM text layout once their fonts finish loading.
+               (->> stream
+                    (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
+                    (rx/map deref)
+                    (rx/map (fn [{:keys [ids]}]
+                              (dwwt/resize-wasm-text-all ids))))
 
                (let [local-commits-s
                      (->> stream
@@ -534,7 +545,7 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only?)
+          (update :workspace-global dissoc :read-only? :default-font)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
@@ -544,6 +555,7 @@
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
+               (dwtxt/finalize-text-reflow)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)
                (modal/hide)
@@ -775,44 +787,46 @@
   #{:up :down :bottom :top})
 
 (defn vertical-order-selected
-  [loc]
-  (dm/assert!
-   "expected valid location"
-   (contains? valid-vertical-locations loc))
-  (ptk/reify ::vertical-order-selected
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page-id         (:current-page-id state)
-            objects         (dsh/lookup-page-objects state page-id)
-            selected-ids    (dsh/lookup-selected state)
-            selected-shapes (map (d/getf objects) selected-ids)
-            undo-id (js/Symbol)
+  ([loc]
+   (vertical-order-selected loc nil))
+  ([loc ids]
+   (dm/assert!
+    "expected valid location"
+    (contains? valid-vertical-locations loc))
+   (ptk/reify ::vertical-order-selected
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id         (:current-page-id state)
+             objects         (dsh/lookup-page-objects state page-id)
+             selected-ids    (or ids (dsh/lookup-selected state))
+             selected-shapes (map (d/getf objects) selected-ids)
+             undo-id (js/Symbol)
 
-            move-shape
-            (fn [changes shape]
-              (let [parent        (get objects (:parent-id shape))
-                    sibling-ids   (:shapes parent)
-                    current-index (d/index-of sibling-ids (:id shape))
-                    index-in-selection (d/index-of selected-ids (:id shape))
-                    new-index     (case loc
-                                    :top (count sibling-ids)
-                                    :down (max 0 (- current-index 1))
-                                    :up (min (count sibling-ids) (+ (inc current-index) 1))
-                                    :bottom index-in-selection)]
-                (pcb/change-parent changes
-                                   (:id parent)
-                                   [shape]
-                                   new-index)))
+             move-shape
+             (fn [changes shape]
+               (let [parent        (get objects (:parent-id shape))
+                     sibling-ids   (:shapes parent)
+                     current-index (d/index-of sibling-ids (:id shape))
+                     index-in-selection (d/index-of selected-ids (:id shape))
+                     new-index     (case loc
+                                     :top (count sibling-ids)
+                                     :down (max 0 (- current-index 1))
+                                     :up (min (count sibling-ids) (+ (inc current-index) 1))
+                                     :bottom index-in-selection)]
+                 (pcb/change-parent changes
+                                    (:id parent)
+                                    [shape]
+                                    new-index)))
 
-            changes (reduce move-shape
-                            (-> (pcb/empty-changes it page-id)
-                                (pcb/with-objects objects))
-                            selected-shapes)]
+             changes (reduce move-shape
+                             (-> (pcb/empty-changes it page-id)
+                                 (pcb/with-objects objects))
+                             selected-shapes)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:ids selected-ids})
-               (dwu/commit-undo-transaction undo-id))))))
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dch/commit-changes changes)
+                (ptk/data-event :layout/update {:ids selected-ids})
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn set-shape-index
   [file-id page-id id new-index]
@@ -1196,9 +1210,20 @@
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (show-context-menu
-              (-> params (assoc :kind :page :selected (:id page))))))))
+    (watch [_ state _]
+      (let [id       (:id page)
+            selected (dm/get-in state [:workspace-local :selected-pages])
+            ;; When the right-clicked page is part of a multi-selection we
+            ;; keep it; otherwise the menu targets just that page.
+            multi?   (and (contains? selected id) (> (count selected) 1))]
+        (rx/concat
+         (if multi?
+           (rx/empty)
+           (rx/of (dwpg/select-page id)))
+         (rx/of (show-context-menu
+                 (-> params (assoc :kind :page
+                                   :selected id
+                                   :selected-pages (if multi? selected #{id}))))))))))
 
 (defn show-track-context-menu
   [{:keys [grid-id type index] :as params}]
@@ -1557,6 +1582,7 @@
 (dm/export dwcp/paste-shapes)
 (dm/export dwcp/paste-data-valid?)
 (dm/export dwcp/copy-link-to-clipboard)
+(dm/export dwcp/copy-id-to-clipboard)
 (dm/export dwcp/copy-as-image)
 
 ;; Drawing
@@ -1639,3 +1665,11 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
+(dm/export dwpg/delete-pages)
+(dm/export dwpg/select-page)
+(dm/export dwpg/toggle-page-selection)
+(dm/export dwpg/select-pages-range)
+(dm/export dwpg/clear-page-selection)
+
+;; Shapes
+(dm/export dwsh/delete-shapes)

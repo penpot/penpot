@@ -152,24 +152,41 @@
         subscription-type
         (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
 
+        team-count (count teams)
+
+        account-age-days (dnt/account-age-days profile)
+
         teams-loaded? (seq teams)
 
-        no-orgs-created? (mf/with-memo [teams]
-                           (and (seq teams)
-                                (->> teams
-                                     vals
-                                     (not-any? :organization))))
+        no-organizations-created? (mf/with-memo [teams]
+                                    (and (seq teams)
+                                         (->> teams
+                                              vals
+                                              (not-any? :organization))))
 
         handle-click
         (mf/use-fn
-         (mf/deps nitrate-license subscription-type)
+         (mf/deps account-age-days subscription-type team-count)
          (fn []
-           (if (= subscription-type "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+           (st/emit!
+            (ev/event
+             (cond-> {::ev/name "open-subscription-modal"
+                      ::ev/origin "dashboard:promotional-banner"
+                      :product "nitrate:enterprise"
+                      :source "frontend"
+                      :has-teams (pos? team-count)
+                      :team-count team-count}
+               (some? account-age-days)
+               (assoc :account-age-days account-age-days)))
+            (dnt/show-nitrate-popup :nitrate-form
+                                    (cond-> {:subscription-start-origin "dashboard:promotional-banner"}
+                                      (= subscription-type "unlimited")
+                                      (assoc :show-contact-sales-option true))))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-ac-create-org)
+        (mf/use-fn
+         #(dnt/go-to-nitrate-ac-create-organization
+           "dashboard:first-organization-promotional-banner"))
 
         handle-open-renew-modal
         (mf/use-fn #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))]
@@ -182,17 +199,17 @@
 
     [:*
      ;; TODO add translations for this texts when we have the definitive ones
-     (if (and nitrate? teams-loaded? no-orgs-created? (not show-subscription-warning?))
+     (if (and nitrate? teams-loaded? no-organizations-created? (not show-subscription-warning?))
        ;; Banner for users with active nitrate license but no organizations created
        [:div {:class (stl/css :nitrate-banner :highlighted)}
         [:div {:class (stl/css :nitrate-content)}
          [:span {:class (stl/css :nitrate-title)} (tr "subscription.banner.see-enterprise")]]
         [:div {:class (stl/css :nitrate-content)}
-         [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-org-info")]
+         [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-organization-info")]
          [:> button* {:variant "primary"
                       :type "button"
                       :class (stl/css :nitrate-bottom-button)
-                      :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-org")]]]
+                      :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-organization")]]]
 
        ;; Banner for users without nitrate license
        (when (not nitrate?)
@@ -200,7 +217,7 @@
           [:div {:class (stl/css :nitrate-content)}
            [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
           [:div {:class (stl/css :nitrate-content)}
-           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
+           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description-text")]
            [:> button* {:variant "primary"
                         :type "button"
                         :class (stl/css :nitrate-bottom-button)

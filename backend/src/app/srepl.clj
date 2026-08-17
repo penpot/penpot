@@ -19,7 +19,8 @@
    [clojure.core :as c]
    [clojure.core.server :as ccs]
    [clojure.main :as cm]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [nrepl.server :as nrepl]))
 
 (defn- repl-init
   []
@@ -107,37 +108,106 @@
         (finally
           (remove-tap tapfn))))))
 
-;; --- State initialization
+;; --- UREPL
 
-(defmethod ig/assert-key ::server
+(defmethod ig/assert-key ::urepl
   [_ params]
-  (assert (int? (::port params)) "expected valid port")
-  (assert (string? (::host params)) "expected valid host"))
+  (assert (int? (:port params)) "expected valid port")
+  (assert (string? (:host params)) "expected valid host"))
 
-(defmethod ig/expand-key ::server
-  [[type :as k] v]
-  {k (assoc v ::flag (keyword (str (name type) "-server")))})
+(defmethod ig/init-key ::urepl
+  [_ {:keys [:port :host] :as cfg}]
+  (when (contains? cf/flags :urepl-server)
 
-(defmethod ig/init-key ::server
-  [[type _] {:keys [::flag ::port ::host] :as cfg}]
-  (when (contains? cf/flags flag)
-
-    (l/inf :hint "initializing repl server"
-           :name (name type)
-           :port port
-           :host host)
-
-    (let [accept (case type
-                   ::prepl 'app.srepl/json-repl
-                   ::urepl 'app.srepl/user-repl)
+    (l/inf :hint "init urepl server" :host host :port port)
+    (let [accept 'app.srepl/user-repl
           params {:address host
                   :port port
-                  :name (name type)
+                  :name "urepl"
                   :accept accept}]
 
       (ccs/start-server params)
-      (assoc params :type type))))
+      "urepl")))
 
-(defmethod ig/halt-key! ::server
+(defmethod ig/halt-key! ::urepl
+  [_ name]
+  (some-> name ccs/stop-server))
+
+(defmethod ig/resume-key ::urepl
+  [key opts _ old-name]
+  (if old-name
+    (do
+      (l/inf :hint "keep urepl server")
+      old-name)
+    (ig/init-key key opts)))
+
+(defmethod ig/suspend-key! ::urepl
+  [_ _]
+  (l/inf :hint "keep urepl server"))
+
+;; --- PREPL
+
+(defmethod ig/assert-key ::prepl
   [_ params]
-  (some-> params :name ccs/stop-server))
+  (assert (int? (:port params)) "expected valid port")
+  (assert (string? (:host params)) "expected valid host"))
+
+(defmethod ig/init-key ::prepl
+  [_ {:keys [:port :host] :as cfg}]
+  (when (contains? cf/flags :prepl-server)
+
+    (l/inf :hint "init prepl server" :host host :port port)
+    (let [accept 'app.srepl/json-repl
+          params {:address host
+                  :port port
+                  :name "prepl"
+                  :accept accept}]
+
+      (ccs/start-server params)
+      "prepl")))
+
+
+(defmethod ig/halt-key! ::prepl
+  [_ name]
+  (some-> name ccs/stop-server))
+
+(defmethod ig/resume-key ::prepl
+  [key opts _ old-name]
+  (if old-name
+    (do
+      (l/inf :hint "keep prepl server")
+      old-name)
+    (ig/init-key key opts)))
+
+(defmethod ig/suspend-key! ::prepl
+  [_ _]
+  (l/inf :hint "keep prepl server"))
+
+;; --- NREPL
+
+(defmethod ig/assert-key ::nrepl
+  [_ params]
+  (assert (int? (:port params)) "expected valid port")
+  (assert (string? (:host params)) "expected valid host"))
+
+(defmethod ig/init-key ::nrepl
+  [_ {:keys [:port :host] :as cfg}]
+  (when (contains? cf/flags :nrepl-server)
+    (l/inf :hint "init nrepl server" :host host :port port)
+    (nrepl/start-server :bind host :port port)))
+
+(defmethod ig/halt-key! ::nrepl
+  [_ server]
+  (some-> server nrepl/stop-server))
+
+(defmethod ig/resume-key ::nrepl
+  [key opts _ old-server]
+  (if old-server
+    (do
+      (l/inf :hint "keep nrepl server")
+      old-server)
+    (ig/init-key key opts)))
+
+(defmethod ig/suspend-key! ::nrepl
+  [_ _]
+  (l/inf :hint "keep nrepl server"))

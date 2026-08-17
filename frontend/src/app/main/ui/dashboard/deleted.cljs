@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.dashboard.grid :refer [grid*]]
+   [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
@@ -57,10 +58,13 @@
 
 (mf/defc header*
   {::mf/private true}
-  []
-  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+  [{:keys [layout on-change]}]
+  [:header {:class (stl/css :dashboard-header)
+            :data-testid "dashboard-header"}
    [:div#dashboard-deleted-title {:class (stl/css :dashboard-title)}
-    [:h1 (tr "dashboard.projects-title")]]])
+    [:h1 (tr "dashboard.projects-title")]]
+   [:div {:class (stl/css :dashboard-header-actions)}
+    [:> layout-toggle* {:layout layout :on-change on-change}]]])
 
 (mf/defc project-context-menu*
   {::mf/private true}
@@ -87,18 +91,17 @@
             :id     "project-delete"
             :handler on-delete-project}])]
 
-    [:> context-menu*
-     {:on-close on-close
-      :show show
-      :fixed (or (not= top 0) (not= left 0))
-      :min-width true
-      :top top
-      :left left
-      :options options}]))
+    [:> context-menu* {:on-close on-close
+                       :show show
+                       :fixed (or (not= top 0) (not= left 0))
+                       :min-width true
+                       :top top
+                       :left left
+                       :options options}]))
 
 (mf/defc deleted-project-item*
   {::mf/private true}
-  [{:keys [project files]}]
+  [{:keys [project files layout]}]
   (let [project-files  (filterv #(= (:project-id %) (:id project)) files)
 
         empty?         (empty? project-files)
@@ -176,14 +179,14 @@
                                 :type 1
                                 :subtitle (tr "dashboard.empty-placeholder-files-subtitle")}]
 
-        [:> grid*
-         {:project project
-          :files project-files
-          :origin :deleted
-          :can-edit false
-          :can-restore true
-          :limit limit
-          :selected-files selected-files}])]]))
+        [:> grid* {:project project
+                   :files project-files
+                   :origin :deleted
+                   :can-edit false
+                   :can-restore true
+                   :limit limit
+                   :layout layout
+                   :selected-files selected-files}])]]))
 
 (mf/defc menu*
   {::mf/private true}
@@ -217,7 +220,15 @@
 
 (mf/defc deleted-section*
   [{:keys [team projects]}]
-  (let [deleted-map
+  (let [layout* (hooks/use-persisted-state lt/layout-key lt/default-layout)
+        layout  (deref layout*)
+
+        on-layout-change
+        (mf/use-fn
+         (fn [value]
+           (reset! layout* (keyword value))))
+
+        deleted-map
         (mf/deref ref:deleted-files)
 
         projects
@@ -241,7 +252,7 @@
 
         ;; Calculate deletion days based on team subscription
         deletion-days
-        (let [profile          (mf/deref refs/profile)
+        (let [profile           (mf/deref refs/profile)
               subscription-type (get-subscription-type (:subscription team))
               nitrate-type      (get-in profile [:subscription :type])
               nitrate-active?   (dnt/is-valid-license? profile)]
@@ -286,13 +297,16 @@
                 (dd/clear-selected-files)))
 
     [:*
-     [:> header* {:team team}]
+     [:> header* {:team team
+                  :layout layout
+                  :on-change on-layout-change}]
      [:section {:class (stl/css :dashboard-container :no-bg)
                 :data-testid "deleted-page-section"}
       [:*
        [:div {:class (stl/css :no-bg)}
 
-        [:> menu* {:team-id team-id :section :dashboard-deleted}]
+        [:> menu* {:team-id team-id
+                   :section :dashboard-deleted}]
 
         (if (seq projects)
           [:*
@@ -322,6 +336,7 @@
                                 (sort-by :modified-at #(compare %2 %1))))]
                [:> deleted-project-item* {:project project
                                           :files files
+                                          :layout layout
                                           :key id}]))]
 
           ;; when no deleted projects

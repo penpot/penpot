@@ -363,7 +363,8 @@
                                       :page-id page-id
                                       :file-id file-id
                                       :vport vport
-                                      :zoom zoom}])
+                                      :zoom zoom
+                                      :show-rulers show-rulers?}])
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay* {:vport vport
@@ -507,9 +508,11 @@
        (when (and (seq selected-shapes)
                   (not transform)
                   (not text-editing?)
-                  (not edition))
+                  (not edition)
+                  (not read-only?)
+                  (not mode-inspect?))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
+          {:shapes selected-shapes
            :zoom zoom}])
 
        (when show-measures?

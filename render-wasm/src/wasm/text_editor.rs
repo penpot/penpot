@@ -6,9 +6,10 @@ use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
 use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::{TextEditorEvent, TextSelection};
+use crate::state::{State, TextEditorEvent, TextSelection};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
+use crate::uuid::Uuid;
 use crate::wasm::fills::RawFillData;
 use crate::wasm::text::{
     helpers as text_helpers, RawTextAlign, RawTextDecoration, RawTextDirection, RawTextTransform,
@@ -32,12 +33,17 @@ pub enum CursorDirection {
 // STATE MANAGEMENT
 // ============================================================================
 
+/// Apply the editor theme. When `invert` is true the caret is painted with a
+/// Difference blend mode (pass white as `cursor_color` to always show the
+/// inverted color of the background); otherwise it is painted with the given
+/// solid `cursor_color`.
 #[no_mangle]
-pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u32) {
+pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u32, invert: bool) {
     // NOTE: In the future could be interesting to fill al this data from
     // a structure pointer.
     get_text_editor_state().theme.selection_color = Color::new(selection_color);
     get_text_editor_state().theme.cursor_color = Color::new(cursor_color);
+    get_text_editor_state().theme.cursor_invert = invert;
 }
 
 #[no_mangle]
@@ -186,6 +192,35 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     });
 }
 
+/// Like `text_editor_pointer_down`, but keeps the current anchor and moves the
+/// focus to the pointer instead of collapsing the caret there (Shift+click).
+#[no_mangle]
+pub extern "C" fn text_editor_pointer_down_extend(x: f32, y: f32) {
+    with_state!(state, {
+        if !get_text_editor_state().has_focus {
+            return;
+        }
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+        let point = Point::new(x, y);
+        get_text_editor_state().start_pointer_selection();
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            get_text_editor_state().extend_selection_from_position(&position);
+            // The click after pointerup would collapse the caret and drop the
+            // selection we just extended.
+            get_text_editor_state().is_click_event_skipped = true;
+            get_text_editor_state().update_styles(text_content);
+        }
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
     with_state!(state, {
@@ -324,7 +359,7 @@ pub extern "C" fn text_editor_composition_start() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn text_editor_composition_end() -> Result<()> {
-    let bytes = crate::mem::bytes();
+    let bytes = crate::mem::bytes_or_empty();
     let text = match String::from_utf8(bytes) {
         Ok(text) => text,
         Err(_) => return Ok(()),
@@ -380,7 +415,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn text_editor_composition_update() -> Result<()> {
-    let bytes = crate::mem::bytes();
+    let bytes = crate::mem::bytes_or_empty();
     let text = match String::from_utf8(bytes) {
         Ok(text) => text,
         Err(_) => return Ok(()),
@@ -722,27 +757,20 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
             .unwrap_or(RawTextTransform::None as u32);
 
         let font_family_id = styles
-            .font_family
+            .font_family_id
             .value()
             .as_ref()
             .map(|value| {
-                let (a, b, c, d) = uuid_to_u32_quartet(&value.id());
+                let (a, b, c, d) = uuid_to_u32_quartet(value);
                 [a, b, c, d]
             })
             .unwrap_or_default();
 
-        let font_family_weight = styles
-            .font_family
+        let font_style = styles
+            .font_style
             .value()
             .as_ref()
-            .map(|value| value.weight())
-            .unwrap_or_default();
-
-        let font_family_style = styles
-            .font_family
-            .value()
-            .as_ref()
-            .map(|value| value.style() as u32)
+            .map(|value| *value as u32)
             .unwrap_or_default();
 
         let font_size = styles.font_size.value().unwrap_or(0.0);
@@ -767,35 +795,35 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
             }
         }
 
-        // Layout: 48-byte fixed header + fixed values + serialized fills.
+        // Layout: 56-byte fixed header + fixed values + serialized fills.
         let mut bytes = Vec::with_capacity(132 + fill_bytes.len());
 
-        // Header data                                                                          // offset // index
+        // Header data (multiple-states)                                                         // offset // index
         bytes.extend_from_slice(&vertical_align.to_le_bytes()); // 0      // 0
         bytes.extend_from_slice(&(*styles.text_align.state() as u32).to_le_bytes()); // 4      // 1
         bytes.extend_from_slice(&(*styles.text_direction.state() as u32).to_le_bytes()); // 8      // 2
         bytes.extend_from_slice(&(*styles.text_decoration.state() as u32).to_le_bytes()); // 12     // 3
         bytes.extend_from_slice(&(*styles.text_transform.state() as u32).to_le_bytes()); // 16     // 4
-        bytes.extend_from_slice(&(*styles.font_family.state() as u32).to_le_bytes()); // 20     // 5
+        bytes.extend_from_slice(&(*styles.font_family_id.state() as u32).to_le_bytes()); // 20     // 5
         bytes.extend_from_slice(&(*styles.font_size.state() as u32).to_le_bytes()); // 24     // 6
         bytes.extend_from_slice(&(*styles.font_weight.state() as u32).to_le_bytes()); // 28     // 7
         bytes.extend_from_slice(&(*styles.font_variant_id.state() as u32).to_le_bytes()); // 32     // 8
         bytes.extend_from_slice(&(*styles.line_height.state() as u32).to_le_bytes()); // 36     // 9
         bytes.extend_from_slice(&(*styles.letter_spacing.state() as u32).to_le_bytes()); // 40     // 10
-        bytes.extend_from_slice(&fill_count.to_le_bytes()); // 44     // 11
-        bytes.extend_from_slice(&(fill_multiple as u32).to_le_bytes()); // 48     // 12
+        bytes.extend_from_slice(&(*styles.font_style.state() as u32).to_le_bytes()); // 44     // 11
+        bytes.extend_from_slice(&fill_count.to_le_bytes()); // 48     // 12
+        bytes.extend_from_slice(&(fill_multiple as u32).to_le_bytes()); // 52     // 13
 
         // Value section.
-        bytes.extend_from_slice(&text_align.to_le_bytes()); // 52     // 13
-        bytes.extend_from_slice(&text_direction.to_le_bytes()); // 56     // 14
-        bytes.extend_from_slice(&text_decoration.to_le_bytes()); // 60     // 15
-        bytes.extend_from_slice(&text_transform.to_le_bytes()); // 64     // 16
-        bytes.extend_from_slice(&font_family_id[0].to_le_bytes()); // 68     // 17
-        bytes.extend_from_slice(&font_family_id[1].to_le_bytes()); // 72     // 18
-        bytes.extend_from_slice(&font_family_id[2].to_le_bytes()); // 76     // 19
-        bytes.extend_from_slice(&font_family_id[3].to_le_bytes()); // 80     // 20
-        bytes.extend_from_slice(&font_family_style.to_le_bytes()); // 84     // 21
-        bytes.extend_from_slice(&font_family_weight.to_le_bytes()); // 88     // 22
+        bytes.extend_from_slice(&text_align.to_le_bytes()); // 56     // 14
+        bytes.extend_from_slice(&text_direction.to_le_bytes()); // 60     // 15
+        bytes.extend_from_slice(&text_decoration.to_le_bytes()); // 64     // 16
+        bytes.extend_from_slice(&text_transform.to_le_bytes()); // 68     // 17
+        bytes.extend_from_slice(&font_family_id[0].to_le_bytes()); // 72     // 18
+        bytes.extend_from_slice(&font_family_id[1].to_le_bytes()); // 76     // 19
+        bytes.extend_from_slice(&font_family_id[2].to_le_bytes()); // 80     // 20
+        bytes.extend_from_slice(&font_family_id[3].to_le_bytes()); // 84     // 21
+        bytes.extend_from_slice(&font_style.to_le_bytes()); // 88     // 22
         bytes.extend_from_slice(&font_size.to_le_bytes()); // 92     // 23
         bytes.extend_from_slice(&font_weight.to_le_bytes()); // 96     // 24
         bytes.extend_from_slice(&font_variant_id[0].to_le_bytes()); // 100    // 25
@@ -856,6 +884,63 @@ pub extern "C" fn text_editor_update_blink(timestamp_ms: f32) {
     get_text_editor_state().update_blink(timestamp_ms);
 }
 
+/// Refresh a text shape's layout if the editor marked it dirty, so the
+/// caret/selection overlay is measured against up-to-date glyph geometry.
+fn update_text_layout_if_needed(state: &mut State, shape_id: Uuid) {
+    let Some(shape) = state.shapes.get_mut(&shape_id) else {
+        return;
+    };
+
+    let selrect = shape.selrect();
+
+    let Type::Text(text_content) = &mut shape.shape_type else {
+        return;
+    };
+
+    if text_content.needs_update_layout() {
+        text_content.update_layout(selrect);
+    }
+}
+
+/// Repaint the caret/selection over the last fully rendered frame.
+///
+/// Re-composes Target from the Backbuffer (which still holds the last complete
+/// render) and draws the editor overlay on top, in a single submitted frame.
+///
+/// This exists because the caret blink must erase the previous caret, which
+/// means restoring the pixels underneath it. Doing that via `render_from_cache`
+/// rebuilds the frame from the document atlas, and that atlas is capped at
+/// scale <= 1.0 — on a zoomed-in view it gets blitted heavily upscaled, so the
+/// blink alternates between the crisp render and a softer approximation, which
+/// reads as a flash. Reusing the Backbuffer is pixel-identical at any zoom.
+#[no_mangle]
+pub extern "C" fn text_editor_render_caret() {
+    with_state!(state, {
+        let Some(shape_id) = get_text_editor_state().active_shape_id else {
+            return;
+        };
+
+        update_text_layout_if_needed(state, shape_id);
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+
+        get_render_state().compose_frame(&state.shapes);
+
+        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
+        let viewbox = get_render_state().viewbox;
+        text_editor_render::render_overlay(
+            canvas,
+            &viewbox,
+            &get_render_state().options,
+            get_text_editor_state(),
+            shape,
+        );
+        get_render_state().flush_and_submit();
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn text_editor_render_overlay() {
     with_state!(state, {
@@ -863,18 +948,7 @@ pub extern "C" fn text_editor_render_overlay() {
             return;
         };
 
-        if let Some(shape) = state.shapes.get(&shape_id) {
-            if let Type::Text(text_content) = &shape.shape_type {
-                if text_content.needs_update_layout() {
-                    let selrect = shape.selrect();
-                    if let Some(shape) = state.shapes.get_mut(&shape_id) {
-                        if let Type::Text(text_content) = &mut shape.shape_type {
-                            text_content.update_layout(selrect);
-                        }
-                    }
-                }
-            }
-        }
+        update_text_layout_if_needed(state, shape_id);
 
         let Some(shape) = state.shapes.get(&shape_id) else {
             return;
@@ -1015,17 +1089,40 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
-    if !get_text_editor_state().selection.is_selection() {
-        return false;
-    }
-    let sel = &get_text_editor_state().selection;
-    unsafe {
-        *buffer_ptr = sel.anchor.paragraph as u32;
-        *buffer_ptr.add(1) = sel.anchor.offset as u32;
-        *buffer_ptr.add(2) = sel.focus.paragraph as u32;
-        *buffer_ptr.add(3) = sel.focus.offset as u32;
-    }
-    true
+    with_state!(state, {
+        if get_text_editor_state().active_shape_id.is_none() {
+            return false;
+        }
+
+        let sel = get_text_editor_state().selection;
+
+        // The frontend indexes these offsets into JS strings, which are UTF-16.
+        let (anchor_offset, focus_offset) = match get_text_editor_state()
+            .active_shape_id
+            .and_then(|shape_id| state.shapes.get(&shape_id))
+            .map(|shape| &shape.shape_type)
+        {
+            Some(Type::Text(text_content)) => {
+                let paragraphs = text_content.paragraphs();
+                let to_utf16 = |position: TextPositionWithAffinity| {
+                    paragraphs
+                        .get(position.paragraph)
+                        .map(|para| para.char_offset_to_utf16(position.offset))
+                        .unwrap_or(position.offset)
+                };
+                (to_utf16(sel.anchor), to_utf16(sel.focus))
+            }
+            _ => (sel.anchor.offset, sel.focus.offset),
+        };
+
+        unsafe {
+            *buffer_ptr = sel.anchor.paragraph as u32;
+            *buffer_ptr.add(1) = anchor_offset as u32;
+            *buffer_ptr.add(2) = sel.focus.paragraph as u32;
+            *buffer_ptr.add(3) = focus_offset as u32;
+        }
+        true
+    })
 }
 
 // ============================================================================
@@ -1054,11 +1151,11 @@ fn get_cursor_rect(
     let mut y_offset = valign_offset;
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.offset;
+            let utf16_pos = paragraphs[cursor.paragraph].char_offset_to_utf16(cursor.offset);
 
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let rects = laid_out_para.get_rects_for_range(
-                char_pos..char_pos,
+                utf16_pos..utf16_pos,
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );
@@ -1142,7 +1239,7 @@ fn get_selection_rects(
         if range_start < range_end {
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
-                range_start..range_end,
+                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             );

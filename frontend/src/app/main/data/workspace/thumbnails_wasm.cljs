@@ -68,7 +68,9 @@
                           {sel-w :width sel-h :height} (:selrect frame)
                           max-size (mth/max (or ext-w sel-w) (or ext-h sel-h))
                           scale (mth/max 1 (/ target-size max-size))
-                          png-bytes (wasm.api/render-shape-pixels frame-id scale)]
+                          ;; Thumbnails are always PNG: they need the alpha
+                          ;; channel and are consumed as a `image/png` data uri.
+                          png-bytes (wasm.api/render-shape-pixels frame-id scale :png)]
                       (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
                         (do
                           (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
@@ -81,7 +83,8 @@
                          (fn [err]
                            (rx/error! subs err)))))
 
-                    (rx/error! subs "Frame not found")))
+                    ;; A missing frame. Nothing to render, so end quietly. 
+                    (rx/end! subs)))
                 (catch :default err
                   (rx/error! subs err)))))]
        #(timers/cancel-af! req-id)))))
@@ -168,7 +171,7 @@
     (ptk/reify ::persist-thumbnail
       ptk/WatchEvent
       (watch [_ state _]
-        (let [data-uri (dm/get-in state [:thumbnails object-id])]
+        (let [data-uri (dm/get-in state [:thumbnails object-id :uri])]
           (if (and (some? data-uri)
                    (str/starts-with? data-uri "data:"))
             (let [blob (wapi/data-uri->blob data-uri)]

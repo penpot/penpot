@@ -48,21 +48,22 @@ desc: Learn how to import and export files in Penpot, the free, open-source desi
 <figure><img src="/img/import-export/import-selection.webp" alt="Import penpot file" /></figure>
 
 <h2 id="penpot-formats">Penpot file format</h2>
-<p>Penpot export to a unique format that streamline the import and export of files and assets by being more efficient and interoperable.</p>
+<p>Penpot exports to a unique format that streamlines the import and export of files and assets by being more efficient and interoperable.</p>
 <p>Unlike other design tools, <strong>Penpot's format is built on standard languages</strong>. The exported file is essentially a ZIP archive containing binary assets (such as bitmap and vector images) alongside a readable JSON structure. By avoiding proprietary formats, Penpot empowers users with autonomy from specific tools while enabling seamless third-party integrations.</p>
+<p>For a detailed look at what's inside a .penpot file, see <a href="/user-guide/export-import/penpot-file-format/">The .penpot file format</a>. Developers can also check the <a href="/technical-guide/developer/data-model/penpot-file-format/">technical specification</a>.</p>
 
 <h3>Deprecated Penpot file formats</h3>
 <p class="advice">These formats can only be exported from version 2.3 or earlier versions, but can be imported to any Penpot version.</p>
 <p>There are two different deprecated Penpot file formats in which you can import/export Penpot files. A standard one and a binary one. You always have the chance to use both for any file.</p>
-<h4>[Deprecated] Penpot file (.penpot).</h4>
+<h4>[Deprecated] Binary file (.penpot) — v1</h4>
 <p>The fast one. Binary Penpot specific.</p>
 <ul>
   <li>✅ Highly efficient in terms of memory and transfer time when exporting and importing.</li>
   <li>❌ It can be opened only in Penpot.</li>
   <li>❌ Not transparent, code difficult to explore.</li>
 </ul>
-<h4>[Deprecated] Standard file (.zip).</h4>
-<p>The open one. A compressed file that includes SVG and JSON.</p>
+<h4>[Deprecated] Standard file (.zip) — v2 (never released)</h4>
+<p>The open one. A compressed file that includes SVG and JSON. This format was developed but never released to users.</p>
 <ul>
   <li>✅ Allows the file to be opened by other softwares (still, for those cases export to SVG seems to be the common practice).</li>
   <li>✅ Allows some automations and integrations.</li>

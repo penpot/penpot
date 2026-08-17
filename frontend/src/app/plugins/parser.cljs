@@ -214,6 +214,7 @@
 ;;   strokeCapStart?: StrokeCap;
 ;;   strokeCapEnd?: StrokeCap;
 ;;   strokeColorGradient?: Gradient;
+;;   strokeImage?: ImageData;
 ;; }
 (defn parse-stroke
   [^js stroke]
@@ -228,7 +229,8 @@
       :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
       :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
       :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)
-      :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)})))
+      :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)
+      :stroke-image (-> (obj/get stroke "strokeImage") parse-image-data)})))
 
 (defn parse-strokes
   [^js strokes]
@@ -336,17 +338,17 @@
     (d/without-nils
      {:type (-> (obj/get guide "type") parse-keyword)
       :display (obj/get guide "display")
-      :params (-> (obj/get guide "params") parse-frame-guide-column-params)})))
+      :params (-> (obj/get guide "params") parse-frame-guide-square-params)})))
 
 (defn parse-frame-guide
   [^js guide]
   (when (some? guide)
     (case (obj/get guide "type")
       "column"
-      parse-frame-guide-column
+      (parse-frame-guide-column guide)
 
       "row"
-      parse-frame-guide-row
+      (parse-frame-guide-row guide)
 
       "square"
       (parse-frame-guide-square guide))))
@@ -488,7 +490,7 @@
          {:action-type action-type
           :destination (-> (obj/get action "destination") (obj/get "$id"))
           :relative-to (-> (obj/get action "relativeTo") (obj/get "$id"))
-          :overlay-pos-type (-> (obj/get action "position") parse-keyword)
+          :overlay-pos-type (or (-> (obj/get action "position") parse-keyword) :center)
           :overlay-position (-> (obj/get action "manualPositionLocation") parse-point)
           :close-click-outside (obj/get action "closeWhenClickOutside")
           :background-overlay (obj/get action "addBackgroundOverlay")

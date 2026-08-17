@@ -1,4 +1,4 @@
-use crate::ui::{Guide, GuideKind};
+use crate::ui::{Color, Guide, GuideKind, Rect};
 
 pub struct GuidePool {
     horizontal: Vec<Guide>,
@@ -78,15 +78,64 @@ impl GuidePool {
     }
 }
 
+impl Default for GuidePool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct RulerState {
+    pub visible: bool,
+    // The rounded canvas frame/border. Drawn even when `visible` is false
+    // (rulers toggled off), but hidden in hide-UI mode.
+    pub frame: bool,
+    pub offset_x: f32,
+    pub offset_y: f32,
+    pub selection: Option<Rect>,
+    pub bg_color: Color,
+    pub border_color: Color,
+    pub label_color: Color,
+    pub accent_color: Color,
+}
+
+impl Default for RulerState {
+    fn default() -> Self {
+        Self {
+            visible: false,
+            frame: true,
+            offset_x: 0.0,
+            offset_y: 0.0,
+            selection: None,
+            bg_color: Color::from_argb(0xff, 0x18, 0x18, 0x1a),
+            border_color: Color::from_argb(0xff, 0x2e, 0x2e, 0x36),
+            label_color: Color::from_argb(0xff, 0xb1, 0xb2, 0xb5),
+            accent_color: Color::from_argb(0xff, 0x91, 0xff, 0x11),
+        }
+    }
+}
+
+impl RulerState {
+    pub fn set_selection(&mut self, has: bool, x: f32, y: f32, w: f32, h: f32) {
+        self.selection = if has {
+            Some(Rect::from_xywh(x, y, w, h))
+        } else {
+            None
+        };
+    }
+}
+
 pub struct UIState {
     guides: GuidePool,
-    // TODO: show grid, rulers, etc.
+    rulers: RulerState,
+    // TODO: show grid
 }
 
 impl UIState {
     pub fn new() -> Self {
         Self {
-            guides: GuidePool::new(),
+            guides: GuidePool::default(),
+            rulers: RulerState::default(),
         }
     }
 
@@ -100,6 +149,14 @@ impl UIState {
 
     pub fn find_guide_at(&self, x: f32, y: f32, zoom: f32, tolerance: f32) -> Option<&Guide> {
         self.guides.find_at(x, y, zoom, tolerance)
+    }
+
+    pub fn ruler_state(&self) -> &RulerState {
+        &self.rulers
+    }
+
+    pub fn ruler_state_mut(&mut self) -> &mut RulerState {
+        &mut self.rulers
     }
 }
 

@@ -1,5 +1,23 @@
 # AI AGENT GUIDE
 
+## HARD RULES (always apply — no exceptions)
+
+- **Never `git push`, force-push, or modify `git origin`** (or any other remote).
+  The user pushes from their own shell. If a push is required to surface the
+  agent's work (e.g. force-push after an amend), state this in the response and
+  wait for the user to push. Do not change the remote URL, do not switch SSH↔HTTPS.
+- **Never amend a commit that has been pushed** unless the user explicitly asks.
+  If the user pushes, treat that commit as final from the agent's side.
+- **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
+  Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
+  This prevents hiding test failures. See `mem:testing` for details.
+- **Read the workflow memory BEFORE the corresponding action**:
+  - Before `git commit` → `mem:workflow/creating-commits` (commit format, AI-assisted-by trailer)
+  - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, Issue Type)
+  - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, AI note)
+  Don't infer format from the title of a previous commit/issue/PR — the memory
+  is the source of truth.
+
 ## CRITICAL: Read module memories BEFORE writing any code
 
 Do this **before planning, before coding, before touching any file**:
@@ -77,3 +95,22 @@ precision while maintaining a strong focus on maintainability and performance.
    down into atomic steps.
 2. Be concise and autonomous.
 3. Do **not** touch unrelated modules unless the task explicitly requires it.
+
+---
+
+# Available Scripts & Tools
+
+## Native opencode Tools (callable directly by the LLM)
+
+- `paren-repair` — Fix mismatched delimiters + reformat Clojure files. Example: `paren-repair(files="src/foo.clj, src/bar.cljs")`
+- `penpot-psql` — Execute SQL against the Penpot database. Example: `penpot-psql(sql="SELECT version();")`
+
+## Scripts (from repo root via `scripts/<name>`)
+
+- `scripts/paren-repair` — Fix mismatched delimiters in Clojure/CLJS files + reformat with cljfmt. See `mem:scripts/paren-repair`.
+- `scripts/psql` — Connect to the Penpot PostgreSQL database (wraps `psql` with env-var defaults). See `mem:scripts/psql`.
+- `scripts/nrepl-eval.mjs` — Evaluate Clojure code via nREPL (backend + frontend).
+- `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
+- `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
+- `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `scripts/ci --help`.
+

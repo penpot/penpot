@@ -24,7 +24,8 @@
   (:import
    io.undertow.server.RequestTooBigException
    java.io.InputStream
-   java.io.OutputStream))
+   java.io.OutputStream
+   java.security.MessageDigest))
 
 (set! *warn-on-reflection* true)
 
@@ -65,12 +66,25 @@
                 :else
                 request)))
 
+          ;; The specific-exception branches below (IAE,
+          ;; RequestTooBigException, EOFException) raise with
+          ;; `ex/raise` rather than calling `errors/handle` directly.
+          ;; This is intentional: the throw is caught by the
+          ;; top-level error handler in `app.http/router-handler`
+          ;; (`backend/src/app/http.clj`), which routes every
+          ;; uncaught exception through `errors/handle`. The
+          ;; per-route `wrap-errors` middleware in the route list
+          ;; is a defensive layer; correctness does not depend on
+          ;; it. Raising here keeps the cond uniform with the
+          ;; existing RequestTooBigException / EOFException
+          ;; branches.
           (handle-error [cause request]
             (cond
-              (instance? RuntimeException cause)
-              (if-let [cause (ex-cause cause)]
-                (handle-error cause request)
-                (errors/handle cause request))
+              (instance? IllegalArgumentException cause)
+              (ex/raise :type :validation
+                        :code :malformed-json
+                        :hint (ex-message cause)
+                        :cause cause)
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
@@ -82,6 +96,11 @@
                         :code :malformed-json
                         :hint (ex-message cause)
                         :cause cause)
+
+              (instance? RuntimeException cause)
+              (if-let [cause (ex-cause cause)]
+                (handle-error cause request)
+                (errors/handle cause request))
 
               :else
               (errors/handle cause request)))]
@@ -311,6 +330,11 @@
   {:name ::auth
    :compile (constantly wrap-auth)})
 
+(defn- constant-time-eq?
+  "Compare strings in constant time to prevent timing attacks."
+  [^String a ^String b]
+  (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
+
 (defn- wrap-shared-key-auth
   [handler keys]
   (if (seq keys)
@@ -320,7 +344,7 @@
         (let [key-id (-> key-id str/lower keyword)]
           (if (and (string? key)
                    (contains? keys key-id)
-                   (= key (get keys key-id)))
+                   (constant-time-eq? key (get keys key-id)))
             (-> request
                 (assoc ::http/auth-key-id key-id)
                 (handler))

@@ -11,6 +11,10 @@
 @use "ds/mixins.scss" as *;
 @use "ds/_utils.scss" as *;
 
+// Must match BOX_HEIGHT in scripts/build-fonts-preview.js (the sprite bakes each
+// font name into that box at 1 unit == 1px).
+$font-preview-box-height: 28px;
+
 .typography-entry {
   --actions-visibility: hidden;
   --typography-entry-background-color: var(--color-background-tertiary);
@@ -341,6 +345,7 @@
   background: var(--color-background-tertiary);
   border: $b-1 solid var(--color-background-quaternary);
   border-block-end: none;
+  padding: var(--sp-xxs);
 }
 
 .font-selector-dropdown {
@@ -375,6 +380,7 @@
 .font-item {
   @extend %asset-element;
 
+  width: px2rem(280);
   margin-bottom: var(--sp-xs);
   border-radius: $br-8;
   display: flex;
@@ -390,6 +396,31 @@
 
   flex-grow: 1;
   min-inline-size: 0;
+}
+
+// --- FLAG :font-preview row styling. Only applied when font-item* adds the
+// .font-item-preview-on modifier; remove this whole block with the flag so rows
+// render exactly as before.
+.font-item-preview-on {
+  // Center & clip so a previewed font's own metrics never grow/overflow the row.
+  align-items: center;
+  overflow: hidden;
+
+  // Match the label size to the vector previews.
+  .font-item-label {
+    @include t.use-typography("body-medium");
+
+    line-height: 1.2;
+  }
+}
+
+// `currentColor` makes the glyph fill follow the row text color (theme + selected).
+.font-item-preview {
+  flex-grow: 1;
+  min-inline-size: 0;
+  inline-size: 100%;
+  block-size: $font-preview-box-height;
+  fill: currentcolor;
 }
 
 .font-selector-dropdown-full-size {
@@ -421,12 +452,6 @@
   border-start-start-radius: 0;
   border-start-end-radius: 0;
   border: $b-1 solid var(--color-background-quaternary);
-
-  // TODO: this should belong to typography-entry , but atm we don't have a clear
-  // way of accessing whether we are in fullsize mode or not
-  .selected {
-    padding-inline-end: 0;
-  }
 }
 
 .dropdown-icon {

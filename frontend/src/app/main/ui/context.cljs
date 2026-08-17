@@ -33,6 +33,8 @@
 (def is-render?           (mf/create-context false))
 (def is-component?        (mf/create-context false))
 
+(def shortcuts-ctx (mf/create-context nil))
+
 (def sidebar
   "A context that intends to store the current sidebar position,
   useful for components that behaves distinctly if they are showed in

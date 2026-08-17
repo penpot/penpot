@@ -77,7 +77,7 @@
                   (on-object (assoc object :path path))
                   (p/recur (rest objects))))))]
 
-    (let [base-uri (-> (cf/get :public-uri)
+    (let [base-uri (-> (cf/get-internal-uri)
                        (u/ensure-path-slash))]
       (bw/exec! (prepare-options base-uri)
                 (partial render base-uri)))))

@@ -355,11 +355,15 @@
 
 (defn has-point?
   [shape point]
-  (if (or ^boolean (cfh/path-shape? shape)
-          ^boolean (cfh/bool-shape? shape)
-          ^boolean (cfh/circle-shape? shape))
-    (slow-has-point? shape point)
-    (fast-has-point? shape point)))
+  (let [rotation (dm/get-prop shape :rotation)]
+    ;; Rotated shapes don't match their axis-aligned box, so use the polygon test.
+    (if (or ^boolean (cfh/path-shape? shape)
+            ^boolean (cfh/bool-shape? shape)
+            ^boolean (cfh/circle-shape? shape)
+            (and (some? rotation)
+                 (not ^boolean (mth/almost-zero? rotation))))
+      (slow-has-point? shape point)
+      (fast-has-point? shape point))))
 
 (defn rect-contains-shape?
   [rect shape]

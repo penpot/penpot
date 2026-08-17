@@ -1,4 +1,4 @@
-FROM ubuntu:26.04 AS base
+FROM dhi.io/debian-base:trixie-debian13-dev AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -13,6 +13,8 @@ RUN set -ex; \
         rsync \
         wget \
         sudo \
+        libpam-modules \
+        libpam-runtime \
         tmux \
         vim \
         curl \
@@ -24,7 +26,39 @@ RUN set -ex; \
         ca-certificates \
         \
         binutils \
-        build-essential autoconf libtool pkg-config
+        build-essential autoconf libtool pkg-config \
+    ; \
+    mkdir -p /usr/lib/pam.d; \
+    printf '%s\n' \
+        '#%PAM-1.0' \
+        'auth       required   pam_unix.so nullok' \
+        'account    required   pam_unix.so' \
+        'password   required   pam_unix.so' \
+        'session    required   pam_unix.so' \
+        'session    required   pam_limits.so' \
+        | tee /etc/pam.d/sudo /usr/lib/pam.d/sudo > /dev/null; \
+    printf '%s\n' \
+        '#%PAM-1.0' \
+        'auth       required   pam_deny.so' \
+        'account    required   pam_deny.so' \
+        'password   required   pam_deny.so' \
+        'session    required   pam_deny.so' \
+        | tee /etc/pam.d/other /usr/lib/pam.d/other > /dev/null; \
+    if [ ! -s /etc/nsswitch.conf ]; then \
+        printf '%s\n' \
+            'passwd:         files' \
+            'group:          files' \
+            'shadow:         files' \
+            'gshadow:        files' \
+            'hosts:          files dns' \
+            'networks:       files' \
+            'protocols:      files' \
+            'services:       files' \
+            'ethers:         files' \
+            'rpc:            files' \
+            'netgroup:       files' \
+            > /etc/nsswitch.conf; \
+    fi
 
 ################################################################################
 ## NODE SETUP
@@ -32,7 +66,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.16.0 \
+ENV NODE_VERSION=v24.18.1 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -60,6 +94,33 @@ RUN set -eux; \
     corepack enable; \
     rm -rf /tmp/nodejs.tar.gz;
 
+################################################################################
+## OPENCODE SETUP
+################################################################################
+
+FROM base AS setup-opencode
+
+ENV OPENCODE_VERSION=1.18.11
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-x64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; exit 1; \
+         ;; \
+    esac; \
+    curl -fsSL ${BINARY_URL} -o /tmp/opencode.tar.gz; \
+    mkdir -p /tmp/opencode; \
+    tar -xzf /tmp/opencode.tar.gz -C /tmp/opencode; \
+    chmod +x /tmp/opencode/opencode; \
+    rm -f /tmp/opencode.tar.gz;
+
 
 ################################################################################
 ## CADDYSERVER SETUP
@@ -67,7 +128,7 @@ RUN set -eux; \
 
 FROM base AS setup-caddy
 
-ENV CADDY_VERSION=2.11.2
+ENV CADDY_VERSION=2.11.4
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -99,18 +160,18 @@ RUN set -eux; \
 FROM base AS setup-jvm
 
 # https://clojure.org/releases/tools
-ENV CLOJURE_VERSION=1.12.4.1618
+ENV CLOJURE_VERSION=1.12.5.1664
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='cc1b459dc442d7422b46a3b5fe52acaea54879fa7913e29a05650cef54687f5f'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.30.11-ca-jdk26.0.1-linux_aarch64.tar.gz'; \
+         ESUM='5b222fce0b7076a10ac7ae3b1009a6c2caf4f35bc4e81de72010af6750c5e146'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='7d6663ea8d4298df65de065e32f9f449745ff607d30ba5d13777cb92e9d4613d'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.30.11-ca-jdk26.0.1-linux_x64.tar.gz'; \
+         ESUM='4b7c114917aebd0fc6284fc7111245d7747a4d9603bd12d86b384b1abc9d575d'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -181,16 +242,16 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.04.15 \
-    BABASHKA_VERSION=1.12.208 \
-    CLJFMT_VERSION=0.16.4 \
-    PIXI_VERSION=0.67.2 \
-    GITHUB_CLI_VERSION=2.91.0 \
-    UV_VERSION=0.11.9 \
+ENV CLJKONDO_VERSION=2026.07.24 \
+    BABASHKA_VERSION=1.13.219 \
+    CLJFMT_VERSION=0.16.5 \
+    PIXI_VERSION=0.75.0 \
+    GITHUB_CLI_VERSION=2.97.0 \
+    UV_VERSION=0.12.1 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.5.0
+    SERENA_VERSION=1.6.1
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -347,13 +408,17 @@ RUN set -ex; \
 FROM base AS devenv-base
 
 RUN set -ex; \
-    usermod -l penpot -d /home/penpot -G users -s /bin/bash ubuntu; \
+    apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install passwd; \
+    groupadd -f users; \
+    useradd -u 1000 -m -d /home/penpot -G users -s /bin/bash penpot; \
     passwd penpot -d; \
     echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qq dist-upgrade; \
+    apt-get -qqy --no-install-recommends install init-system-helpers; \
     apt-get -qqy install --no-install-recommends \
       redis-tools \
       gnupg2 \
@@ -387,16 +452,16 @@ RUN set -ex; \
       fonts-freefont-ttf \
       poppler-utils \
       \
-      libasound2t64 \
-      libatk-bridge2.0-0t64 \
-      libatk1.0-0t64 \
-      libatspi2.0-0t64 \
+      libasound2 \
+      libatk-bridge2.0-0 \
+      libatk1.0-0 \
+      libatspi2.0-0 \
       libcairo2 \
-      libcups2t64 \
+      libcups2 \
       libdbus-1-3 \
       libdrm2 \
       libgbm1 \
-      libglib2.0-0t64 \
+      libglib2.0-0 \
       libnspr4 \
       libnss3 \
       libpango-1.0-0 \
@@ -410,14 +475,14 @@ RUN set -ex; \
       libxrandr2 \
       \
       libpng16-16 \
-      libjpeg-turbo8 \
+      libjpeg62-turbo \
       libtiff6 \
       libwebp7 \
       libopenexr-3-1-30 \
       libfreetype6 \
       libfontconfig1 \
       libglib2.0-0 \
-      libxml2-16 \
+      libxml2 \
       liblcms2-2 \
       libheif1 \
       libopenjp2-7 \
@@ -428,12 +493,15 @@ RUN set -ex; \
       libwebpdemux2 \
       libzip5 \
     ; \
-    rm -rf /var/lib/apt/lists/*;
+    rm -rf /var/lib/apt/lists/*; \
+    mkdir -p /usr/local/bin; \
+    ln -sf /usr/bin/fdfind /usr/local/bin/fd; \
+    ln -sf /usr/bin/batcat /usr/local/bin/bat;
 
 RUN set -ex; \
     install -d /usr/share/postgresql-common/pgdg; \
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc; \
-    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-16; \
     apt-get clean; \
@@ -460,7 +528,7 @@ ENV LANG='C.UTF-8' \
     SERENA_CONTEXT="claude-code" \
     PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
@@ -471,6 +539,7 @@ COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
+COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
@@ -491,3 +560,4 @@ COPY files/init.sh             /home/init.sh
 
 ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]
+

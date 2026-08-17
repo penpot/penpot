@@ -27,17 +27,17 @@
     "@11ty/eleventy": "^3.1.6",
     "@11ty/eleventy-navigation": "^1.0.5",
     "@11ty/eleventy-plugin-rss": "^3.0.0",
-    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
     "@tigersway/eleventy-plugin-ancestry": "^1.0.3",
     "@types/markdown-it": "14.1.2",
     "elasticlunr": "^0.9.5",
-    "eleventy-plugin-metagen": "^1.8.3",
+    "eleventy-plugin-metagen": "^1.8.4",
     "eleventy-plugin-nesting-toc": "^1.3.0",
-    "eleventy-plugin-youtube-embed": "^1.10.2",
-    "luxon": "^3.4.4",
-    "markdown-it": "^14.1.0",
-    "markdown-it-anchor": "^9.0.1",
+    "eleventy-plugin-youtube-embed": "^1.13.2",
+    "luxon": "^3.7.2",
+    "markdown-it": "^15.0.0",
+    "markdown-it-anchor": "^9.2.1",
     "markdown-it-plantuml": "^1.4.1"
   },
-  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620"
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }

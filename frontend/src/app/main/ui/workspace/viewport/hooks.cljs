@@ -479,7 +479,7 @@
 
 (defn setup-shortcuts
   [path-editing? drawing-path? text-editing? grid-editing?]
-  (hooks/use-shortcuts ::workspace wsc/shortcuts)
+  (hooks/use-shortcuts ::workspace wsc/shortcuts :workspace)
 
   (mf/with-effect []
     (.addEventListener js/window "keydown" wsc/on-display-guides-keydown)
@@ -490,18 +490,20 @@
     (cond
       grid-editing?
       (do
-        (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts))
+        (st/emit! (dsc/push-shortcuts ::grid gsc/shortcuts :workspace
+                                      :merge-shortcuts :auto))
         (fn []
           (st/emit! (dsc/pop-shortcuts ::grid))))
 
       (or drawing-path? path-editing?)
       (do
-        (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
+        (st/emit! (dsc/push-shortcuts ::path psc/shortcuts :workspace
+                                      :merge-shortcuts :auto))
         (fn []
           (st/emit! (dsc/pop-shortcuts ::path))))
 
       text-editing?
       (do
-        (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+        (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts :workspace))
         (fn []
           (st/emit! (dsc/pop-shortcuts ::text)))))))

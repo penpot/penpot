@@ -8,7 +8,7 @@
   "Generic error handling"
   (:require
    [app.common.exceptions :as ex]
-   [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
@@ -134,13 +134,14 @@
       (with-out-str
         (println "Context:")
         (println "--------------------")
-        (println "Hint:    " (or (:hint data) (ex-message cause) "--"))
-        (println "Prof ID: " (str (or profile-id "--")))
-        (println "Team ID: " (str (or team-id "--")))
+        (println "Timestamp:" (ct/format-inst (ct/now) :rfc1123))
+        (println "Hint:     " (or (:hint data) (ex-message cause) "--"))
+        (println "Prof ID:  " (str (or profile-id "--")))
+        (println "Team ID:  " (str (or team-id "--")))
         (when-let [file-id (or (:file-id data) file-id)]
-          (println "File ID: " (str file-id)))
-        (println "Version: " (:full cf/version))
-        (println "HREF:    " (rt/get-current-href))
+          (println "File ID:  " (str file-id)))
+        (println "Version:  " (:full cf/version))
+        (println "HREF:     " (rt/get-current-href))
         (println)
 
         (println
@@ -149,7 +150,7 @@
 
         (println "Last events:")
         (println "--------------------")
-        (pp/pprint @st/last-events {:length 200})
+        (println (st/format-last-events))
         (println)))
     (catch :default cause
       (.error js/console "error on generating report" cause)
@@ -353,16 +354,16 @@
 ;; That are special case server-errors that should be treated
 ;; differently.
 
-(derive :not-found ::exceptional-state)
-(derive :bad-gateway ::exceptional-state)
-(derive :service-unavailable ::exceptional-state)
-(derive :nitrate-unavailable ::exceptional-state)
-
-(defmethod ptk/handle-error ::exceptional-state
+(defn- handle-exceptional-state
   [error]
   (when-let [instance (get error ::instance)]
     (ex/print-throwable instance :prefix "Exceptional State"))
   (ts/schedule #(st/emit! (rt/assign-exception error))))
+
+(defmethod ptk/handle-error :not-found [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
 
 (defn- redirect-to-dashboard
   []

@@ -62,7 +62,7 @@
                     :skip-children skip-children
                     :wasm (when is-wasm "true")
                     :scale scale}
-            uri    (-> (cf/get :public-uri)
+            uri    (-> (cf/get-internal-uri)
                        (u/ensure-path-slash)
                        (u/join "render.html")
                        (assoc :query (u/map->query-string params)))]

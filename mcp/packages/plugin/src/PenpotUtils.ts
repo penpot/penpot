@@ -87,16 +87,20 @@ export class PenpotUtils {
     public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[] {
         let result = new Array<Shape>();
 
-        let find = function (shape: Shape | null) {
+        // Walk the descendants of the given shape, testing the predicate on each
+        // one. The starting shape is never tested itself: findShapes searches
+        // *within* a container, so a predicate meant for descendants cannot
+        // accidentally select (and later mutate) the container it was handed.
+        let walk = function (shape: Shape | null) {
             if (!shape) {
                 return;
             }
-            if (predicate(shape)) {
-                result.push(shape);
-            }
             if ("children" in shape && shape.children) {
                 for (let child of shape.children) {
-                    find(child);
+                    if (predicate(child)) {
+                        result.push(child);
+                    }
+                    walk(child);
                 }
             }
         };
@@ -105,11 +109,11 @@ export class PenpotUtils {
             const pages = penpot.currentFile?.pages;
             if (pages) {
                 for (let page of pages) {
-                    find(page.root);
+                    walk(page.root);
                 }
             }
         } else {
-            find(root);
+            walk(root);
         }
         return result;
     }
@@ -210,8 +214,6 @@ export class PenpotUtils {
     public static getBounds(shape: Shape): Bounds {
         if (shape.type === "text") {
             const text = shape as Text;
-            // TODO: Remove ts-ignore once type definitions are updated
-            // @ts-ignore
             return text.textBounds;
         } else {
             return shape.bounds;
@@ -469,7 +471,6 @@ export class PenpotUtils {
      */
     public static findTokensByName(name: string): any[] {
         const tokens: any[] = [];
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -490,7 +491,6 @@ export class PenpotUtils {
      * @returns The first matching token, or null if not found
      */
     public static findTokenByName(name: string): any | null {
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -511,7 +511,6 @@ export class PenpotUtils {
      * @returns The TokenSet containing this token, or null if not found
      */
     public static getTokenSet(token: any): any | null {
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -567,7 +566,6 @@ export class PenpotUtils {
         }
 
         // 1. Create the variant container
-        // @ts-ignore — createVariantFromComponents was added after plugin-types@1.4.1
         const container: VariantContainer = (penpot as any).createVariantFromComponents(components.map((c) => c.shape));
         const variants = container.variants;
         if (!variants) {
@@ -613,7 +611,6 @@ export class PenpotUtils {
      */
     public static tokenOverview(): Record<string, Record<string, string[]>> {
         const overview: Record<string, Record<string, string[]>> = {};
-        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {

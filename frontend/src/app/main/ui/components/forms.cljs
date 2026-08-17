@@ -180,11 +180,17 @@
 
       (cond
         (and touched? (:message error) show-error)
-        (let [message (:message error)]
+        (let [message (:message error)
+              options (:options error)]
           [:div {:id (dm/str "error-" input-name)
                  :class (stl/css :error)
                  :data-testid (dm/str data-testid "-error")}
-           message])
+           message
+           (when (seq options)
+             [:ul {:class (stl/css :error-options)}
+              (for [opt options]
+                [:li {:key opt
+                      :class (stl/css :error-option)} opt])])])
 
         ;; FIXME: DEPRECATED
         (and touched? (:code error) show-error)
@@ -459,7 +465,7 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
+  [{:keys [form label class trim valid-item-fn caution-item-fn on-submit] :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
@@ -560,28 +566,29 @@
         on-paste
         (mf/use-fn
          (fn [event]
-           (let [paste-data (-> event .-clipboardData (.getData "text"))]
-             (when (and (string? paste-data)
-                        (re-find #"[,\s]" paste-data))
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
+           (when-let [clipboard-data (.-clipboardData event)]
+             (let [paste-data (.getData clipboard-data "text")]
+               (when (and (string? paste-data)
+                          (re-find #"[,\s]" paste-data))
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
 
-               ;; Mark as touched
-               (swap! form assoc-in [:touched input-name] true)
+                 ;; Mark as touched
+                 (swap! form assoc-in [:touched input-name] true)
 
-               ;; Split pasted text by commas and/or whitespace, add each valid part
-               (let [parts (->> (str/split paste-data #",|\s+")
-                                (map str/trim)
-                                (remove str/empty?))]
-                 (doseq [part parts]
-                   (when (valid-item-fn part)
-                     (swap! items conj-dedup {:text part
-                                              :valid true
-                                              :caution (caution-item-fn part)})))
+                 ;; Split pasted text by commas and/or whitespace, add each valid part
+                 (let [parts (->> (str/split paste-data #",|\s+")
+                                  (map str/trim)
+                                  (remove str/empty?))]
+                   (doseq [part parts]
+                     (when (valid-item-fn part)
+                       (swap! items conj-dedup {:text part
+                                                :valid true
+                                                :caution (caution-item-fn part)})))
 
-                 ;; Reset input value and mark as untouched after successful paste
-                 (reset! value "")
-                 (swap! form assoc-in [:touched input-name] false))))))
+                   ;; Reset input value and mark as untouched after successful paste
+                   (reset! value "")
+                   (swap! form assoc-in [:touched input-name] false)))))))
 
         on-blur
         (mf/use-fn
@@ -610,6 +617,7 @@
 
     [:div {:class klass}
      [:input {:id (name input-name)
+              :name (name input-name)
               :class in-klass
               :type "text"
               :auto-focus auto-focus?
