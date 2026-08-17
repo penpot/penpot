@@ -44,6 +44,10 @@ pub(crate) use resources::RenderResources;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+/// Above this many uncached tiles, a preserved-target render yields instead of
+/// painting everything in one blocking call.
+const MAX_SYNC_TILES_ON_PRESERVED_TARGET: usize = 4;
+
 #[repr(u8)]
 pub enum FrameType {
     None = 0,
@@ -481,14 +485,17 @@ impl RenderState {
     /// - **Top-level only**: cache entries are built for direct children of the root.
     /// - **Moved node**: only allow cache reuse for *pure translations* (no scale/rotate/skew),
     ///   because other transforms would require resampling and can diverge from the live render.
-    /// - **Other cached nodes**: if the moving bounds overlap this cached crop, invalidate it so
-    ///   we don't show stale content while something moves over/inside it.
+    /// - **Other cached nodes**: reusable unless the crop holds stale pixels of the moving
+    ///   content (`moved_bounds_before`), or the movers paint *under* this node and now
+    ///   overlap it (`movers_paint_above`).
     fn should_use_cached_top_level_during_interactive(
         &mut self,
         node_id: Uuid,
         tree: ShapesPoolRef,
         moved_ids: &[Uuid],
         moved_bounds: Option<Rect>,
+        moved_bounds_before: Option<Rect>,
+        movers_paint_above: bool,
     ) -> bool {
         if !self.backbuffer_crop_cache.contains_key(&node_id) {
             return false;
@@ -525,19 +532,26 @@ impl RenderState {
                 .is_some_and(|s| s.is_safe_for_drag_crop_cache(tree));
         }
 
+        let Some(src_doc_bounds) = self
+            .backbuffer_crop_cache
+            .get(&node_id)
+            .map(|crop| crop.src_doc_bounds)
+        else {
+            return false;
+        };
+
+        // The crop was captured before the gesture, so it still holds the movers where they
+        // started: reusing it there would paint a ghost. This also covers a mover that is a
+        // descendant of this node.
+        if moved_bounds_before.is_some_and(|before| before.intersects(src_doc_bounds)) {
+            return false;
+        }
+
         match moved_bounds {
-            // Something is actually moving/resizing. If the moving content overlaps this
-            // cached crop, do not use the cached pixels for this frame. We intentionally
-            // keep the cache entry: overlap is typically transient during drag, and once
-            // the moving content leaves the area the crop becomes valid again (stationary
-            // shape unchanged).
-            Some(moved) => {
-                let intersects = self
-                    .backbuffer_crop_cache
-                    .get(&node_id)
-                    .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
-                !intersects
-            }
+            // Overlap only matters when a mover paints *under* this node, where the crop
+            // would cover it (the crop is a backbuffer crop, so it carries the backdrop as
+            // it was). Movers that paint above are drawn after the blit and stay visible.
+            Some(moved) => movers_paint_above || !moved.intersects(src_doc_bounds),
 
             // Interactive-transform mode is active but nothing is moving (no modifiers):
             // e.g. editing a text shape inside this board reflows its content without
@@ -2398,8 +2412,15 @@ impl RenderState {
         } else {
             // Keep progressive yielding, except for a localized shape edit on a
             // stable viewbox (e.g. recoloring) which renders in one frame.
-            let allow_stop =
-                !preserve_target || self.zoom_changed() || self.options.is_interactive_transform();
+            // "Localized" is a tile count: a gesture commit invalidates the whole
+            // viewport, and rendering that without yielding blocks the thread
+            // handling pointerup until every tile is done.
+            let queued_uncached = self.pending_tiles.visible_uncached.len()
+                + self.pending_tiles.interest_uncached.len();
+            let allow_stop = !preserve_target
+                || self.zoom_changed()
+                || self.options.is_interactive_transform()
+                || queued_uncached > MAX_SYNC_TILES_ON_PRESERVED_TARGET;
             frame_type = self.continue_render_loop(base_object, tree, timestamp, allow_stop)?;
 
             // This is an option to debug frames.
@@ -3411,44 +3432,70 @@ impl RenderState {
             target_surface = SurfaceId::Export;
         }
 
-        // During interactive transforms we compute the union of the current bounds of all
-        // modified shapes (doc-space @ 100% zoom, scale=1.0). This is used as a cheap overlap
-        // guard to decide when cached top-level crops are unsafe to reuse (something is moving
-        // over/inside them), without doing expensive ancestor walks per node.
+        // Bounds of the moving shapes (doc space @ 100% zoom), as cheap overlap guards for
+        // cached top-level crops. Current and pre-modifier bounds are kept apart: the
+        // pre-modifier union says where the crops hold stale pixels, the current union says
+        // what the movers now cover. Unioning them would make a drag that started far away
+        // poison every crop between the start and the cursor.
         //
         // `modifier_ids` is pre-computed once here and reused throughout the loop to avoid
         // repeated allocations (formerly O(N_shapes) HashMap builds) per node.
         let modifier_ids = tree.modifier_ids();
-        let moved_bounds = if self.options.is_interactive_transform() && !modifier_ids.is_empty() {
-            let mut acc: Option<Rect> = None;
+        let interactive_moving =
+            self.options.is_interactive_transform() && !modifier_ids.is_empty();
+        let mut moved_bounds: Option<Rect> = None;
+        let mut moved_bounds_before: Option<Rect> = None;
+        if interactive_moving {
+            let join = |acc: &mut Option<Rect>, r: Rect| match acc {
+                None => *acc = Some(r),
+                Some(prev) => {
+                    prev.join(r);
+                }
+            };
             for id in modifier_ids.iter() {
-                // Current (post-modifier) bounds
                 if let Some(s) = tree.get(id) {
                     let r = self.get_cached_extrect(s, tree, 1.0);
-                    acc = Some(match acc {
-                        None => r,
-                        Some(mut prev) => {
-                            prev.join(r);
-                            prev
-                        }
-                    });
+                    join(&mut moved_bounds, r);
                 }
-
-                // Pre-modifier bounds: important so cached top-level crops that still contain the
-                // shape at its original position are considered "unsafe" even after the shape
-                // has moved away (e.g. dragging a child out of a clipped frame).
                 if let Some(raw) = tree.get_raw(id) {
                     let r0 = self.get_cached_extrect(raw, tree, 1.0);
-                    acc = Some(match acc {
-                        None => r0,
-                        Some(mut prev) => {
-                            prev.join(r0);
-                            prev
-                        }
-                    });
+                    join(&mut moved_bounds_before, r0);
                 }
             }
-            acc
+        }
+
+        // `children_ids(false)` reverses, so index 0 is the topmost root and a *lower* index
+        // paints later. A crop stays reusable under an overlapping mover only when every
+        // mover paints above it, i.e. sits at a strictly lower index.
+        let root_paint_index: HashMap<Uuid, usize> = if interactive_moving {
+            tree.get(&Uuid::nil())
+                .map(|root| {
+                    root.children_ids(false)
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, id)| (id, i))
+                        .collect()
+                })
+                .unwrap_or_default()
+        } else {
+            HashMap::new()
+        };
+        let index_of_root = |id: &Uuid| root_paint_index.get(id).copied();
+        let top_level_ancestor = |mut id: Uuid| -> Option<Uuid> {
+            for _ in 0..64 {
+                let parent = tree.get_raw(&id).and_then(|s| s.parent_id)?;
+                if parent == Uuid::nil() {
+                    return Some(id);
+                }
+                id = parent;
+            }
+            None
+        };
+        let moved_max_root_index = if interactive_moving {
+            modifier_ids
+                .iter()
+                .map(|id| top_level_ancestor(*id).and_then(|top| index_of_root(&top)))
+                .try_fold(0usize, |acc, idx| idx.map(|i| acc.max(i)))
         } else {
             None
         };
@@ -3554,12 +3601,21 @@ impl RenderState {
             // draw it directly from Backbuffer crop on the current tile surface and skip
             // traversing/rendering the subtree.
             if self.options.is_interactive_transform() {
+                let movers_paint_above = match (moved_max_root_index, index_of_root(&node_id)) {
+                    (Some(moved_idx), Some(node_idx)) => moved_idx < node_idx,
+                    _ => false,
+                };
                 let use_cached = self.should_use_cached_top_level_during_interactive(
                     node_id,
                     tree,
                     modifier_ids,
                     moved_bounds,
+                    moved_bounds_before,
+                    movers_paint_above,
                 );
+
+                if !use_cached && self.backbuffer_crop_cache.contains_key(&node_id) {
+                }
 
                 if use_cached {
                     if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {

@@ -1371,35 +1371,37 @@ impl Surfaces {
         );
         let src_rect_f = skia::Rect::from(src_rect);
 
-        let backbuffer_canvas = self.backbuffer.canvas();
-
-        // Draw background
-        // let mut paint = skia::Paint::default();
-        // paint.set_color(color);
-        // backbuffer_canvas.draw_rect(tile_rect, &paint);
-
-        // Draw current surface directly to target (no snapshot)
-        self.current.draw(
-            backbuffer_canvas,
-            (
-                tile_rect.left - src_rect_f.left,
-                tile_rect.top - src_rect_f.top,
-            ),
-            sampling_options,
-            None,
+        let origin = (
+            tile_rect.left - src_rect_f.left,
+            tile_rect.top - src_rect_f.top,
         );
 
-        // Also draw to cache for render_from_cache
+        // Clipped to the tile: `current` is a whole tile surface with margins on
+        // every side, cleared to the background colour, so an unclipped draw
+        // repaints a 256px halo of background over the neighbouring tiles.
+        // Rounded out because the viewbox offset can be fractional, and a clip
+        // that rounds inwards would leave a seam between adjacent tiles.
+        let clip = skia::Rect::from_ltrb(
+            tile_rect.left.floor(),
+            tile_rect.top.floor(),
+            tile_rect.right.ceil(),
+            tile_rect.bottom.ceil(),
+        );
+
+        let backbuffer_canvas = self.backbuffer.canvas();
+        backbuffer_canvas.save();
+        backbuffer_canvas.clip_rect(clip, None, false);
+        self.current
+            .draw(backbuffer_canvas, origin, sampling_options, None);
+        backbuffer_canvas.restore();
+
         if draw_on_cache == DrawOnCache::Yes {
-            self.current.draw(
-                self.cache.canvas(),
-                (
-                    tile_rect.left - src_rect_f.left,
-                    tile_rect.top - src_rect_f.top,
-                ),
-                sampling_options,
-                None,
-            );
+            let cache_canvas = self.cache.canvas();
+            cache_canvas.save();
+            cache_canvas.clip_rect(clip, None, false);
+            self.current
+                .draw(cache_canvas, origin, sampling_options, None);
+            cache_canvas.restore();
         }
     }
 
