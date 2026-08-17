@@ -673,10 +673,15 @@
 (sv/defmethod ::check-nitrate-sso
   "Check if a user needs to login into the organization SSO.
   Accepts either team-id (to look up the organization via the team) or organization-id directly.
-  Returns {:authorized true} when SSO is not active or the user cannot access the team.
+  Returns {:authorized true :reason :sso-satisfied} when SSO is not active or the
+  session already holds a valid entry for the organization, and
+  {:authorized true :reason :no-team-access} when the gate was skipped because the
+  user cannot access the team; the reason lets the client tell a usable session
+  apart from a plain permission failure.
   Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
-  re-authentication transparently if the user already has an active SSO session."
+  re-authentication transparently if the user already has an active SSO session.
+  A nil :redirect-uri means SSO is required but the provider is not usable."
   {::rpc/auth true
    ::doc/added "2.18"
    ::sm/params schema:check-nitrate-sso
@@ -687,11 +692,11 @@
              (not (teams/has-read-permissions? cfg profile-id team-id)))
       ;; Let the destination RPC enforce its own permissions. Starting SSO before
       ;; access is established sends unrelated users through the organization's IdP.
-      {:authorized true}
+      {:authorized true :reason :no-team-access}
       (let [request                  (rph/get-request params)
             {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
         (if authorized
-          {:authorized true}
+          {:authorized true :reason :sso-satisfied}
           (if (oidc/organization-sso-discovery-uri sso)
             {:authorized false
              :redirect-uri (oidc/build-organization-sso-auth-redirect-uri cfg sso
@@ -699,4 +704,4 @@
                                                                           :organization-id organization-id)}
             {:authorized false
              :redirect-uri nil}))))
-    {:authorized true}))
+    {:authorized true :reason :sso-satisfied}))

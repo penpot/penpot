@@ -490,6 +490,13 @@
                 :code :insufficient-permissions
                 :hint "Organization policy does not allow you to send invitations"))
 
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms))
+               (or (= role :owner)
+                   (some #(= :owner (:role %)) (:invitations params))))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
+
     (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
                 :code :max-invitations-by-request
@@ -632,6 +639,11 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms)) (= role :owner))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (db/update! conn :team-invitation
                 {:role (name role) :updated-at (ct/now)}
