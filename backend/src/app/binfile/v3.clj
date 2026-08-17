@@ -42,6 +42,7 @@
    [datoteka.io :as io])
   (:import
    java.io.File
+   java.io.FilterInputStream
    java.io.InputStream
    java.io.OutputStreamWriter
    java.lang.AutoCloseable
@@ -430,6 +431,31 @@
   [^ZipFile input ^ZipEntry entry]
   (.getInputStream input entry))
 
+(defn- size-limiting-stream
+  "Wraps an InputStream to enforce a maximum number of decompressed bytes.
+  Raises :validation :max-file-size-reached when the limit is exceeded."
+  ^InputStream
+  [^InputStream input ^long max-size]
+  (let [counter (atom 0)]
+    (proxy [FilterInputStream] [input]
+      (read
+        ([]
+         (let [b (.read input)]
+           (when (pos? b)
+             (when (> (swap! counter inc) max-size)
+               (ex/raise :type :validation
+                         :code :max-file-size-reached
+                         :hint (str "stream exceeded max size: " max-size))))
+           b))
+        ([buf off len]
+         (let [n (.read input buf off len)]
+           (when (pos? n)
+             (when (> (swap! counter + (long n)) max-size)
+               (ex/raise :type :validation
+                         :code :max-file-size-reached
+                         :hint (str "stream exceeded max size: " max-size))))
+           n))))))
+
 (defn- zip-entry-reader
   [^ZipFile input ^ZipEntry entry]
   (-> (zip-entry-stream input entry)
@@ -438,10 +464,12 @@
 (defn- zip-entry-storage-content
   "Wraps a ZipFile and ZipEntry into a penpot storage compatible
   object and avoid creating temporal objects"
-  [input entry]
-  (let [hash  (delay (->> entry
-                          (zip-entry-stream input)
-                          (sto.impl/calculate-hash)))]
+  [input entry & {:keys [max-size]}]
+  (let [stream-fn (fn []
+                    (cond-> (zip-entry-stream input entry)
+                      max-size (size-limiting-stream max-size)))
+        hash      (delay (->> (stream-fn)
+                              (sto.impl/calculate-hash)))]
     (reify
       sto.impl/IContentObject
       (get-size [_]
@@ -458,7 +486,7 @@
         (throw (UnsupportedOperationException. "not implemented")))
 
       (make-input-stream [_ _]
-        (zip-entry-stream input entry))
+        (stream-fn))
       (make-output-stream [_ _]
         (throw (UnsupportedOperationException. "not implemented"))))))
 
@@ -844,9 +872,9 @@
 
             ext     (cmedia/mtype->extension (:content-type object))
             path    (str "objects/" id ext)
-            content (->> path
-                         (get-zip-entry input)
-                         (zip-entry-storage-content input))]
+            content (zip-entry-storage-content input
+                                               (get-zip-entry input path)
+                                               :max-size (::bfc/import-max-object-size cfg))]
 
         (when (not= (:size object) (sto/get-size content))
           (ex/raise :type :validation

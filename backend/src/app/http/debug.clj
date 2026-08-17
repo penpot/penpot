@@ -318,7 +318,9 @@
                                 ::bfc/overwrite false
                                 ::bfc/profile-id profile-id
                                 ::bfc/project-id project-id
-                                ::bfc/input path)]
+                                ::bfc/input path
+                                ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size)
+                                ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
           (bf.v3/import-files! cfg)
           {::yres/status  200
            ::yres/headers {"content-type" "text/plain"}
@@ -354,7 +356,9 @@
                         ::bfc/profile-id profile-id
                         ::bfc/project-id project-id
                         ::bfc/input path
-                        ::bfc/features (cfeat/get-team-enabled-features cf/flags team))]
+                        ::bfc/features (cfeat/get-team-enabled-features cf/flags team)
+                        ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size)
+                        ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
 
       (if (= format :binfile-v3)
         (bf.v3/import-files! cfg)
