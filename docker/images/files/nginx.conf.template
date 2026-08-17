@@ -161,6 +161,16 @@ http {
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
+            # Regenerated from the environment on every container start
+            # (see nginx-entrypoint.sh) while its URL is only versioned by
+            # the build, so a flags only restart leaves the URL untouched.
+            # Caching it like a build asset would keep returning users on
+            # the previous PENPOT_FLAGS for up to a week.
+            location = /js/config.js {
+                include /etc/nginx/nginx-security-headers.conf;
+                add_header Cache-Control "no-store, no-cache, max-age=0" always;
+            }
+
             location ~* \.(js|css|jpg|png|svg|gif|ttf|woff|woff2|wasm|map)$ {
                 include /etc/nginx/nginx-security-headers.conf;
                 add_header Cache-Control "public, max-age=604800" always; # 7 days
