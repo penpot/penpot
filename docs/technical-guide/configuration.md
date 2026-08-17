@@ -588,7 +588,7 @@ PENPOT_FLAGS: [...] enable-auto-file-snapshot               # Enable automatic v
 
 # Backend
 PENPOT_AUTO_FILE_SNAPSHOT_EVERY: 5             # How many save operations trigger the auto-save-version?
-PENPOT_AUTO_FILE_SNAPSHOT_TIIMEOUT: "1h"       # How often is an automatic save forced even if the `every` trigger is not met?
+PENPOT_AUTO_FILE_SNAPSHOT_TIMEOUT: "1h"       # How often is an automatic save forced even if the `every` trigger is not met?
 ```
 
 Setting custom values for auto-file-snapshot does not change the behaviour for manual versions.
