@@ -1,5 +1,7 @@
+use super::counters::Counter;
 use super::{filters, RenderState, Shape, SurfaceId, DEFAULT_EMOJI_FONT};
 use crate::{
+    count,
     error::Result,
     math::Rect,
     shapes::{
@@ -21,6 +23,7 @@ pub fn stroke_paragraph_builder_group_from_text(
     bounds: &Rect,
     use_shadow: Option<bool>,
 ) -> (Vec<ParagraphBuilderGroup>, Option<f32>) {
+    count!(Counter::ParagraphBuilds);
     let fallback_fonts = get_fallback_fonts();
     let fonts = get_font_collection();
     let mut paragraph_group = Vec::new();

@@ -1,3 +1,4 @@
+pub mod counters;
 mod debug;
 mod fills;
 pub mod filters;
@@ -22,6 +23,7 @@ use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
+use counters::Counter;
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
@@ -36,7 +38,7 @@ use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
-use crate::{get_gpu_state, get_resources, performance};
+use crate::{count, get_gpu_state, get_resources, performance};
 
 pub use fonts::*;
 pub use images::*;
@@ -956,6 +958,7 @@ impl RenderState {
     /// on top of Target, then present. Backbuffer is left clean so it can be reused
     /// as-is across interactive-transform frames without stale overlay pixels.
     pub fn present_frame(&mut self, tree: ShapesPoolRef) {
+        count!(Counter::FramePresents);
         self.compose_frame(tree);
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
@@ -1122,15 +1125,23 @@ impl RenderState {
     pub fn draw_shape_surface_stack_into(&mut self, shape: Option<&Shape>, target: SurfaceId) {
         performance::begin_measure!("apply_drawing_to_render_canvas");
 
+        count!(Counter::SurfaceStackComposites);
+        let surface_px = {
+            let (w, h) = self.surfaces.surface_size(SurfaceId::Fills);
+            (w as f64) * (h as f64)
+        };
+
         let paint = skia::Paint::default();
 
         // Only draw surfaces that have content (dirty flag optimization)
         if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            count!(Counter::SurfaceStackDrawPx, surface_px);
             self.surfaces
                 .draw_into(SurfaceId::TextDropShadows, target, Some(&paint));
         }
 
         if self.surfaces.is_dirty(SurfaceId::Fills) {
+            count!(Counter::SurfaceStackDrawPx, surface_px);
             self.surfaces
                 .draw_into(SurfaceId::Fills, target, Some(&paint));
         }
@@ -1141,16 +1152,19 @@ impl RenderState {
         }
 
         if render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
+            count!(Counter::SurfaceStackDrawPx, surface_px);
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, target, Some(&paint));
         }
 
         if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            count!(Counter::SurfaceStackDrawPx, surface_px);
             self.surfaces
                 .draw_into(SurfaceId::Strokes, target, Some(&paint));
         }
 
         if !render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
+            count!(Counter::SurfaceStackDrawPx, surface_px);
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, target, Some(&paint));
         }
@@ -1171,6 +1185,10 @@ impl RenderState {
         }
 
         if dirty_surfaces_to_clear != 0 {
+            count!(
+                Counter::SurfaceStackClearPx,
+                surface_px * dirty_surfaces_to_clear.count_ones() as f64
+            );
             self.surfaces.apply_mut(dirty_surfaces_to_clear, |s| {
                 s.canvas().clear(skia::Color::TRANSPARENT);
             });
@@ -1339,6 +1357,8 @@ impl RenderState {
         #[cfg(feature = "stats")]
         self.stats.count(shape.id);
 
+        count!(Counter::ShapePaints);
+
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
@@ -1413,6 +1433,7 @@ impl RenderState {
             && target_surface != SurfaceId::Export;
 
         if can_render_directly {
+            count!(Counter::ShapePaintsDirect);
             let translation = self
                 .surfaces
                 .get_render_context_translation(self.render_area, scale);
@@ -2230,6 +2251,7 @@ impl RenderState {
                 img
             };
 
+            count!(Counter::CropEntriesBuilt);
             self.backbuffer_crop_cache.insert(
                 id,
                 InteractiveDragCrop {
@@ -2294,6 +2316,7 @@ impl RenderState {
         self.surfaces.gc();
 
         if self.current_tile.is_some() && !self.pending_nodes.is_empty() {
+            count!(Counter::TilesDiscardedInflight);
         }
 
         self.pending_nodes.clear();
@@ -2319,6 +2342,7 @@ impl RenderState {
         timestamp: i32,
         sync_render: bool,
     ) -> Result<FrameType> {
+        count!(Counter::RenderLoopStarts);
         self.clear(tree);
 
         let _start = performance::begin_timed_log!("start_render_loop");
@@ -2483,6 +2507,7 @@ impl RenderState {
         timestamp: i32,
         allow_stop: bool,
     ) -> Result<FrameType> {
+        count!(Counter::RenderLoopContinues);
         performance::begin_measure!("continue_render_loop");
         let timestamp = self.render_budget_start(timestamp);
         let frame_type =
@@ -3501,6 +3526,7 @@ impl RenderState {
         };
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
+            count!(Counter::WalkerVisits);
             let node_id = node_render_state.id;
             let visited_children = node_render_state.visited_children;
             let visited_mask = node_render_state.visited_mask;
@@ -3593,6 +3619,7 @@ impl RenderState {
                 }
 
                 if !is_visible {
+                    count!(Counter::WalkerCulled);
                     continue;
                 }
             }
@@ -3615,10 +3642,12 @@ impl RenderState {
                 );
 
                 if !use_cached && self.backbuffer_crop_cache.contains_key(&node_id) {
+                    count!(Counter::CropRejected);
                 }
 
                 if use_cached {
                     if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
+                        count!(Counter::CropBlits);
                         let crop_image = &crop.image;
                         let crop_src_selrect = crop.src_selrect;
 
@@ -3909,6 +3938,7 @@ impl RenderState {
                     }
 
                     if early_return {
+                        count!(Counter::PartialYields);
                         self.viewer_render_root = None;
                         return Ok(FrameType::Partial);
                     }
@@ -3920,6 +3950,7 @@ impl RenderState {
                     // (`current_tile_had_shapes` was set when we populated pending_nodes
                     // for this tile).
                     if !is_empty || self.current_tile_had_shapes {
+                        count!(Counter::TilesPainted);
                         if self.options.is_interactive_transform() {
                             // During drag, avoid snapshot-based caching. Draw Current directly
                             // into Target (and Cache) to reduce stalls.
@@ -3966,6 +3997,7 @@ impl RenderState {
 
                 let Some(ids) = self.tiles.get_shapes_at(next_tile) else {
                     // If the tile is empty we do not need to render it.
+                    count!(Counter::TilesEmptySkipped);
                     continue;
                 };
 
@@ -3973,6 +4005,7 @@ impl RenderState {
                 if !viewer_masked_pass && self.surfaces.has_cached_tile_surface(next_tile) {
                     // If the tile is cached, then we do not need to
                     // render it.
+                    count!(Counter::TilesCacheHit);
                     continue;
                 }
 
@@ -4093,6 +4126,7 @@ impl RenderState {
         shape: &Shape,
         tree: ShapesPoolRef,
     ) -> HashSet<tiles::Tile> {
+        count!(Counter::ShapeTileUpdates);
         let tile_rect = self.get_tiles_for_shape(shape, tree);
 
         // Collect old tiles to avoid borrow conflict with remove_shape_at

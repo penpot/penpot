@@ -1017,6 +1017,21 @@ pub extern "C" fn render_stats() {
 }
 
 #[no_mangle]
+pub extern "C" fn perf_counter_count() -> u32 {
+    render::counters::COUNTER_COUNT as u32
+}
+
+#[no_mangle]
+pub extern "C" fn perf_counter_get(index: u32) -> f64 {
+    render::counters::get(index as usize)
+}
+
+#[no_mangle]
+pub extern "C" fn perf_counters_reset() {
+    render::counters::reset();
+}
+
+#[no_mangle]
 pub fn free_gpu_resources() {
     get_render_state().free_gpu_resources();
 }

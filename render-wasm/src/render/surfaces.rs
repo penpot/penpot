@@ -5,7 +5,9 @@ use crate::{get_gpu_state, performance};
 
 use skia_safe::{self as skia, IRect, Paint, RRect, Rect};
 
+use super::counters::Counter;
 use super::{gpu_state::GpuState, tiles, tiles::Tile, tiles::TileRect, tiles::TileViewbox};
+use crate::count;
 use crate::math::Point;
 
 use base64::{engine::general_purpose, Engine as _};
@@ -552,6 +554,11 @@ impl Surfaces {
     ) {
         self.tiles.update(viewbox, tile_viewbox);
         if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
+            count!(Counter::TileAtlasSnapshots);
+            count!(
+                Counter::TileAtlasSnapshotPx,
+                (self.tile_atlas.width() as f64) * (self.tile_atlas.height() as f64)
+            );
             self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
             self.tiles.snapshot();
         }
@@ -1215,6 +1222,7 @@ impl Surfaces {
         let sampling = self.sampling_options;
 
         // DocAtlas + tile atlas via Surface::draw (no image_snapshot sync).
+        count!(Counter::DocAtlasWrites);
         let _ = self.atlas.blit_current_drawable_into_atlas(
             gpu_state,
             &mut self.current,
@@ -1224,6 +1232,7 @@ impl Surfaces {
         );
         self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
 
+        count!(Counter::TileAtlasWrites);
         let tile_ref = self.tiles.add(tile_viewbox, tile);
         let dst = tile_ref.rect;
         let mut current = self.current.clone();
@@ -1343,6 +1352,7 @@ impl Surfaces {
     }
 
     pub fn remove_cached_tile_surface(&mut self, tile: Tile) {
+        count!(Counter::TilesInvalidated);
         let gpu_state = get_gpu_state();
         // Mark tile as invalid
         // Old content stays visible until new tile overwrites it atomically,
@@ -1409,6 +1419,7 @@ impl Surfaces {
     /// Used by `rebuild_tiles` (full rebuild). For shallow rebuilds that preserve
     /// the cache canvas for scaled previews, use `invalidate_tile_cache` instead.
     pub fn remove_cached_tiles(&mut self, color: skia::Color) {
+        count!(Counter::TileCacheWipes);
         self.tiles.clear();
         self.atlas.tile_doc_rects.clear();
         self.cache.canvas().clear(color);
@@ -1419,6 +1430,7 @@ impl Surfaces {
     /// so that `render_from_cache` can still show a scaled preview of the old
     /// content while new tiles are being rendered.
     pub fn invalidate_tile_cache(&mut self) {
+        count!(Counter::TileCacheWipes);
         self.tiles.clear();
         self.atlas.tile_doc_rects.clear();
         self.tile_atlas_image = None;

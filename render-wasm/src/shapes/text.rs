@@ -1,5 +1,7 @@
+use crate::render::counters::Counter;
 use crate::render::text::calculate_decoration_metrics;
 use crate::{
+    count,
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
     utils::Browser,
@@ -707,6 +709,7 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
+        count!(Counter::ParagraphBuilds);
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
@@ -742,6 +745,7 @@ impl TextContent {
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
     pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
+        count!(Counter::ParagraphBuilds);
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
@@ -1487,6 +1491,7 @@ pub fn calculate_text_layout_data(
     paragraph_builder_groups: &mut [ParagraphBuilderGroup],
     skip_position_data: bool,
 ) -> TextLayoutData {
+    count!(Counter::TextLayouts);
     let selrect_width = shape.selrect().width();
     let text_width = text_content.get_width(selrect_width);
     let selrect_height = shape.selrect().height();

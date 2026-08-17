@@ -154,6 +154,61 @@
       (wasm.h/call module "_render_stats")
       (js/console.warn "[debug] render-wasm module not ready or missing _render_stats"))))
 
+;; Mirrors `render::counters::NAMES` by index (render-wasm/src/render/counters.rs).
+(def ^:private wasm-perf-counter-names
+  ["render_loop_starts"
+   "render_loop_continues"
+   "partial_yields"
+   "tiles_painted"
+   "tiles_cache_hit"
+   "tiles_empty_skipped"
+   "tiles_invalidated"
+   "tile_cache_wipes"
+   "tiles_discarded_inflight"
+   "walker_visits"
+   "walker_culled"
+   "shape_paints"
+   "shape_paints_direct"
+   "surface_stack_composites"
+   "surface_stack_draw_px"
+   "surface_stack_clear_px"
+   "paragraph_builds"
+   "text_layouts"
+   "doc_atlas_writes"
+   "tile_atlas_writes"
+   "cache_surface_writes"
+   "tile_atlas_snapshots"
+   "tile_atlas_snapshot_px"
+   "frame_presents"
+   "crop_entries_built"
+   "crop_blits"
+   "crop_rejected"
+   "shape_tile_updates"])
+
+(defn ^:export wasmPerfCounters
+  "Snapshot of the render counters. Call `wasmPerfCountersReset` first to scope
+  them to one interaction."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_perf_counter_get"))]
+    (if (fn? f)
+      (let [total  (wasm.h/call module "_perf_counter_count")
+            result #js {}]
+        (dotimes [i total]
+          (unchecked-set result
+                         (nth wasm-perf-counter-names i (str "counter_" i))
+                         (wasm.h/call module "_perf_counter_get" i)))
+        result)
+      (js/console.warn "[debug] render-wasm module not ready or missing _perf_counter_get"))))
+
+(defn ^:export wasmPerfCountersReset
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_perf_counters_reset"))]
+    (if (fn? f)
+      (wasm.h/call module "_perf_counters_reset")
+      (js/console.warn "[debug] render-wasm module not ready or missing _perf_counters_reset"))))
+
 (defn ^:export wasmAtlasConsole
   "Logs the current render-wasm atlas as an image in the JS console (if present)."
   []
