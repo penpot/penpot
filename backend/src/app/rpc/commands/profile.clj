@@ -78,6 +78,10 @@
     [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
    [:nudge {:optional true} schema:nudge]])
 
+(def schema:props-writeable
+  "Props schema for user-writable fields (excludes system-managed keys)."
+  (reduce sm/dissoc-key schema:props system-managed-props))
+
 (def schema:profile
   [:map {:title "Profile"}
    [:id ::sm/uuid]
@@ -461,7 +465,7 @@
 (def ^:private
   schema:update-profile-props
   [:map {:title "update-profile-props"}
-   [:props schema:props]])
+   [:props schema:props-writeable]])
 
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
