@@ -424,7 +424,7 @@
 (defn is-reference? [token]
   (str/includes? (:value token) "{"))
 
-;; Tokens lib in file data
+;; Tokens lib and status in file data
 
 (defn make-tokens-status-from-lib
   "Make a TokensStatus from a TokensLib, activating the themes and sets
@@ -463,42 +463,47 @@
     (update :tokens-status #(or % (ctos/make-tokens-status)))))
 
 (defn get-tokens-source
-  "Return the current tokens source of the file. When there is no explicit :tokens-source attribute,
-   the source is the file itself."
+  "Return the current value of :tokens-source attribute."
+  [file-data]
+  (:tokens-source file-data))
+
+(defn get-effective-tokens-source
+  "Return the current tokens source of the file. When there is no explicit
+   :tokens-source attribute, the source is the file itself."
   [file-data]
   (or (:tokens-source file-data) (:id file-data)))
 
 (defn set-tokens-source
   [file-data tokens-source]
+  (assert (or (nil? tokens-source) (uuid? tokens-source)) "expected nil or valid uuid")
   (assoc file-data :tokens-source tokens-source))
 
-(defn tokens-source?
-  "Returns true if the given id is the current tokens source of the file-data.
-   When no tokens-source is set, the file's own id is considered the source if there are any tokens in it."
+(defn effective-tokens-source?
+  "Returns true if the given id is the current tokens source of the file-data."
   [file-data id]
   (assert (uuid? id) "expected valid uuid")
-  (let [source    (:tokens-source file-data)
-        tokens-lib (:tokens-lib file-data)
-        has-tokens? (and (some? tokens-lib)
-                         (not (ctob/empty-lib? tokens-lib)))]
-    (if (= id (:id file-data))
-      (and has-tokens?
-           (or (nil? source) (= source id)))
-      (= source id))))
+  (= (get-effective-tokens-source file-data) id))
+
+(defn has-own-tokens?
+  "Returns true if the file-data contains a tokens-library itself and the library
+   contains some tokens. Note that it still may be true even if the tokens source
+   is external (in this case the own library is inactive, but still exists)."
+  [file-data]
+  (let [tokens-lib (:tokens-lib file-data)]
+  (and (some? tokens-lib)
+       (not (ctob/empty-lib? tokens-lib)))))
 
 (defn tokens-provider?
   "Returns true if the file MAY become a tokens source. This is if the file has tokens and has
    not configured another tokens source."
   [file-data]
-  (and (some? (:tokens-lib file-data))
-       (or (nil? (:tokens-source file-data))
-           (= (:tokens-source file-data) (:id file-data)))))
+  (and (has-own-tokens? file-data)
+       (effective-tokens-source? file-data (:id file-data))))
 
 (defn editable-tokens?
-  "Returns true if the file-data owns its tokens (no external source or source is itself)."
+  "Returns true if the file-data is its own tokens source."
   [file-data]
-  (let [source (:tokens-source file-data)]
-    (or (nil? source) (= source (:id file-data)))))
+  (effective-tokens-source? file-data (:id file-data)))
 
 (defn get-tokens-lib
   [file-data]

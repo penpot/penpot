@@ -70,7 +70,7 @@
   [file-id]
   (let [file             (locate-file file-id)
         file-data        (ctf/file-data file)
-        tokens-source-id (cfo/get-tokens-source file-data)
+        tokens-source-id (cfo/get-effective-tokens-source file-data)
         tokens-file      (locate-file tokens-source-id)
         tokens-file-data (ctf/file-data tokens-file)]
     (cfo/get-tokens-lib tokens-file-data)))

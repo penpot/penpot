@@ -781,6 +781,7 @@
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-theme-tree-no-hidden [_] "get a nested tree of all themes in the library except the hidden theme")
   (get-themes [_] "get an ordered sequence of all themes in the library")
+  (get-themes-no-hidden [_] "get an ordered sequence of all themes in the library except the hidden theme")
   (get-themes-in-group [_ group] "get an ordered sequence of the themes in the group")
   (get-theme [_ id] "get one theme looking for id")
   (get-theme-by-name [_ group name] "get one theme looking for group and name")
@@ -1191,6 +1192,10 @@
   (get-themes [_]
     (->> (tree-seq d/ordered-map? vals themes)
          (filter (partial instance? TokenTheme))))
+
+  (get-themes-no-hidden [this]
+    (->> (get-themes this)
+         (remove #(hidden-theme? %))))
 
   (get-themes-in-group [_ group]
     (->> (get themes group)
