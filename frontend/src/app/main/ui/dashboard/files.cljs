@@ -147,7 +147,6 @@
                                 (sort-by :modified-at)
                                 (reverse)))
 
-
         can-edit?          (-> team :permissions :can-edit)
         project-id         (:id project)
         is-draft-proyect   (:is-default project)
@@ -155,8 +154,13 @@
         [rowref limit]     (hooks/use-dynamic-grid-item-width)
 
         file-count         (or (count files) 0)
+
+        loading?           (and (some? (:count project))
+                                (not= (:count project) file-count))
+
         empty-state-viewer (and (not can-edit?)
-                                (= 0 file-count))
+                                (= 0 file-count)
+                                (not loading?))
 
         selected-files     (mf/deref refs/selected-files)
 
@@ -208,7 +212,7 @@
                                             (tr "dashboard.empty-placeholder-drafts-subtitle")
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
         [:> grid* {:project project
-                   :files files
+                   :files (if loading? nil files)
                    :selected-files selected-files
                    :can-edit can-edit?
                    :origin :files
