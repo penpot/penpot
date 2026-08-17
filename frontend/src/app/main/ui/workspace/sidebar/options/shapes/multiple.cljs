@@ -304,11 +304,26 @@
               (= existing new-val)     acc
               :else                    (assoc acc t-attr :multiple))))
 
+        ;; Merging an empty `applied-tokens` into an accumulator that a previous
+        ;; empty merge already produced is a fixed point, so long runs of
+        ;; token-less shapes of the same type only pay for the first one.
+        stable-token-acc (volatile! nil)
+
         merge-token-values
         (fn [acc token-attrs applied-tokens]
           "Merges token values across all token attributes derived from the shape's
            editable attributes."
-          (reduce #(merge-attr %1 applied-tokens %2) acc token-attrs))
+          (let [no-tokens? (empty? applied-tokens)
+                stable     (deref stable-token-acc)]
+            (if (and no-tokens?
+                     (some? stable)
+                     (identical? (nth stable 0) token-attrs)
+                     (identical? (nth stable 1) acc))
+              acc
+              (let [result (reduce #(merge-attr %1 applied-tokens %2) acc token-attrs)]
+                (when no-tokens?
+                  (vreset! stable-token-acc [token-attrs result]))
+                result))))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
