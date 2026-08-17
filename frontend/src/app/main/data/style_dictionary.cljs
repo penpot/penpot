@@ -557,7 +557,8 @@
   (.. sd-token -original -name))
 
 (defn sd-token-uuid [^js sd-token]
-  (uuid (.-uuid (.. sd-token -original -id))))
+  (when-let [id (.. sd-token -original -id)]
+    (uuid (.-uuid id))))
 
 (defn- merge-name-collisions
   "Re-attach tokens that `ctob/tokens-tree` / `backtrace-tokens-tree`

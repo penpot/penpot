@@ -41,17 +41,6 @@
       (ex/raise :type :validation
                 :code :cant-move-default-team))))
 
-(defn assert-membership [cfg profile-id organization-id]
-  (let [membership (nitrate/call cfg :get-organization-membership {:profile-id profile-id
-                                                                   :organization-id organization-id})]
-    (when-not (:organization-id membership)
-      (ex/raise :type :validation
-                :code :organization-does-not-exist))
-
-    (when-not (:is-member membership)
-      (ex/raise :type :validation
-                :code :user-doesnt-belong-organization))))
-
 
 (def schema:connectivity
   [:map {:title "nitrate-connectivity"}
@@ -59,7 +48,7 @@
 
 (sv/defmethod ::get-nitrate-connectivity
   {::rpc/auth true
-   ::doc/added "2.14"
+   ::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:connectivity}
   [cfg _params]
@@ -75,7 +64,7 @@
 
 (sv/defmethod ::get-subscription-warning
   {::rpc/auth true
-   ::doc/added "2.14"
+   ::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result schema:subscription-warning}
   [cfg {:keys [::rpc/profile-id]}]
@@ -91,7 +80,7 @@
 
 (sv/defmethod ::redeem-nitrate-activation-code
   {::rpc/auth true
-   ::doc/added "2.14"
+   ::doc/added "2.18"
    ::sm/params schema:redeem-activation-code-params
    ::sm/result schema:redeem-activation-code-result}
   [cfg {:keys [::rpc/profile-id activation-code]}]
@@ -112,6 +101,7 @@
             (ex/raise :type :validation
                       :code (case status
                               410 :expired-activation-code
+                              409 :used-activation-code
                               :invalid-activation-code)
                       :cause cause)
             (throw cause)))))))
@@ -123,7 +113,7 @@
   "Returns a Base64-encoded JSON file requesting a Nitrate activation code.
   Payload includes nitrateId, publicKey, email and iat."
   {::rpc/auth true
-   ::doc/added "2.20"
+   ::doc/added "2.18"
    ::sm/params [:map]
    ::sm/result ::sm/text}
   [cfg {:keys [::rpc/profile-id]}]
@@ -335,7 +325,7 @@
     (when-not skip-validation
       (assert-valid-teams cfg profile-id id default-team-id teams-to-delete teams-to-leave))
 
-    (assert-membership cfg profile-id id)
+    (nitrate/assert-membership cfg profile-id id)
 
     ;; delete only eligible teams (non-protected and without files)
     (doseq [id deletable-team-ids]
@@ -371,7 +361,7 @@
 
 (sv/defmethod ::leave-organization
   {::rpc/auth true
-   ::doc/added "2.15"
+   ::doc/added "2.18"
    ::sm/params schema:leave-organization
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -415,13 +405,13 @@
    [:organization-name ::sm/text]])
 
 (sv/defmethod ::remove-team-from-organization
-  {::doc/added "2.17"
+  {::doc/added "2.18"
    ::sm/params schema:remove-team-from-organization}
   [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
-  (assert-membership cfg profile-id organization-id)
+  (nitrate/assert-membership cfg profile-id organization-id)
   ;; Check moveTeams permission on the source organization
   (when (contains? cf/flags :admin-console)
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
@@ -484,14 +474,14 @@
 
 (sv/defmethod ::add-team-to-organization
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:add-team-to-organization
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
-  (assert-membership cfg profile-id organization-id)
+  (nitrate/assert-membership cfg profile-id organization-id)
 
   (when (contains? cf/flags :admin-console)
     (let [organization-member-ids-before (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
@@ -569,13 +559,13 @@
 
 (sv/defmethod ::check-organization-members
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:check-organization-members-params
    ::sm/result [:map-of :string :boolean]
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id organization-id emails]}]
   (or (when (contains? cf/flags :admin-console)
-        (assert-membership cfg profile-id organization-id)
+        (nitrate/assert-membership cfg profile-id organization-id)
         (let [emails-array   (db/create-array conn "text" emails)
               profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
               email->id      (into {} (map (fn [p] [(:email p) (:id p)])) profiles)
@@ -594,7 +584,7 @@
 
 (sv/defmethod ::all-organization-members-in-team
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:all-organization-members-in-team-params
    ::sm/result ::sm/boolean}
   [cfg {:keys [::rpc/profile-id team-id organization-id]}]
@@ -603,7 +593,7 @@
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
-      (assert-membership cfg profile-id organization-id)
+      (nitrate/assert-membership cfg profile-id organization-id)
       (let [organization-members     (nitrate/call cfg :get-organization-members {:organization-id organization-id})
             organization-member-ids  (into #{} organization-members)
             team-members    (db/query cfg :team-profile-rel {:team-id team-id})
@@ -618,7 +608,7 @@
 
 (sv/defmethod ::all-team-members-in-organizations
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:all-team-members-in-organizations-params
    ::sm/result [:map-of ::sm/uuid ::sm/boolean]}
   [cfg {:keys [::rpc/profile-id team-id organization-ids]}]
@@ -631,7 +621,7 @@
       (let [team-members    (db/query cfg :team-profile-rel {:team-id team-id})
             team-member-ids (into #{} (map :profile-id team-members))]
         ;; Validate requester membership in all organizations before fetching members.
-        (run! #(assert-membership cfg profile-id %) organization-ids)
+        (run! #(nitrate/assert-membership cfg profile-id %) organization-ids)
 
         (into {}
               (map (fn [organization-id]
@@ -654,7 +644,7 @@
 
 (sv/defmethod ::check-team-external-invitations
   {::rpc/auth true
-   ::doc/added "2.17"
+   ::doc/added "2.18"
    ::sm/params schema:check-team-external-invitations-params
    ::sm/result schema:check-team-external-invitations-result
    ::db/transaction true}
@@ -664,7 +654,7 @@
       (when-not (or (:is-admin perms) (:is-owner perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
-      (assert-membership cfg profile-id organization-id)
+      (nitrate/assert-membership cfg profile-id organization-id)
       (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
         {:has-external-invitations (boolean (seq external-emails))
          :allows-anybody allows-anybody}))
@@ -683,12 +673,17 @@
 (sv/defmethod ::check-nitrate-sso
   "Check if a user needs to login into the organization SSO.
   Accepts either team-id (to look up the organization via the team) or organization-id directly.
-  Returns {:authorized true} when SSO is not active or the user cannot access the team.
+  Returns {:authorized true :reason :sso-satisfied} when SSO is not active or the
+  session already holds a valid entry for the organization, and
+  {:authorized true :reason :no-team-access} when the gate was skipped because the
+  user cannot access the team; the reason lets the client tell a usable session
+  apart from a plain permission failure.
   Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
-  re-authentication transparently if the user already has an active SSO session."
+  re-authentication transparently if the user already has an active SSO session.
+  A nil :redirect-uri means SSO is required but the provider is not usable."
   {::rpc/auth true
-   ::doc/added "2.19"
+   ::doc/added "2.18"
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
   [cfg {:keys [::rpc/profile-id team-id organization-id url] :as params}]
@@ -697,11 +692,11 @@
              (not (teams/has-read-permissions? cfg profile-id team-id)))
       ;; Let the destination RPC enforce its own permissions. Starting SSO before
       ;; access is established sends unrelated users through the organization's IdP.
-      {:authorized true}
+      {:authorized true :reason :no-team-access}
       (let [request                  (rph/get-request params)
             {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
         (if authorized
-          {:authorized true}
+          {:authorized true :reason :sso-satisfied}
           (if (oidc/organization-sso-discovery-uri sso)
             {:authorized false
              :redirect-uri (oidc/build-organization-sso-auth-redirect-uri cfg sso
@@ -709,4 +704,4 @@
                                                                           :organization-id organization-id)}
             {:authorized false
              :redirect-uri nil}))))
-    {:authorized true}))
+    {:authorized true :reason :sso-satisfied}))

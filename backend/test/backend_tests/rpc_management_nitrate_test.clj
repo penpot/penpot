@@ -178,7 +178,7 @@
           (t/is (th/success? out))
           (t/is (= "Trusted Organization" (:name organization)))
           (t/is (= "" (:initials organization)))
-          (t/is (str/ends-with? (:logo organization)
+          (t/is (str/ends-with? (str (:logo organization))
                                 (str "/assets/by-id/" logo-id)))
           (t/is (nil? (:avatar-bg-url organization)))
           (t/is (true? (:sso-active organization))))))))
