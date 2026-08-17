@@ -358,9 +358,8 @@ pub(crate) struct RenderState {
     pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
     pub render_area: Rect,
-    // render_area expanded by surface margins — used for visibility checks so that
-    // shapes in the margin zone are rendered (needed for background blur sampling).
-    pub render_area_with_margins: Rect,
+    /// Region a shape must touch to be painted for the current tile.
+    pub cull_area: Rect,
     pub tile_viewbox: tiles::TileViewbox,
     pub tiles: tiles::TileHashMap,
     pub pending_tiles: PendingTiles,
@@ -576,7 +575,7 @@ impl RenderState {
             pending_nodes: vec![],
             current_tile: None,
             render_area: Rect::new_empty(),
-            render_area_with_margins: Rect::new_empty(),
+            cull_area: Rect::new_empty(),
             tiles,
             tile_viewbox: tiles::TileViewbox::new_with_interest(
                 &viewbox,
@@ -1080,16 +1079,12 @@ impl RenderState {
         }
 
         let fast_mode = self.options.is_fast_mode();
-        // Decide *now* (at the first real cache blit) whether we need to clear Cache.
-        // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
-        // while still preventing stale pixels from surviving across full-quality renders.
+        // Nothing writes Cache any more; the flag is what `start_render_loop`
+        // reads to decide whether `cached_viewbox` may advance.
         if !fast_mode && !self.cache_cleared_this_render {
             self.surfaces.clear_cache(self.background_color);
             self.cache_cleared_this_render = true;
         }
-        // In fast mode the viewport is moving (pan/zoom) so Cache surface
-        // positions would be wrong — only save to the tile HashMap.
-        let tile_rect = self.get_current_aligned_tile_bounds()?;
 
         let current_tile = *self
             .current_tile
@@ -1103,8 +1098,6 @@ impl RenderState {
         self.surfaces.draw_current_tile_into_tile_atlas(
             &self.tile_viewbox,
             &current_tile,
-            &tile_rect,
-            fast_mode,
             self.render_area,
         );
 
@@ -2001,16 +1994,31 @@ impl RenderState {
         self.current_tile = Some(tile);
         let scale = self.get_scale();
         self.render_area = tiles::get_tile_rect(tile, scale);
+        // One device pixel of slack for edges that land on the boundary. Callers
+        // test bounds that already carry stroke/shadow/blur bleed.
+        let epsilon = 1.0 / scale;
+        self.cull_area = skia::Rect::from_ltrb(
+            self.render_area.left - epsilon,
+            self.render_area.top - epsilon,
+            self.render_area.right + epsilon,
+            self.render_area.bottom + epsilon,
+        );
+        self.surfaces.update_render_context(self.render_area, scale);
+    }
+
+    /// Widens the cull area to the surface margins, for tiles whose content
+    /// samples the backdrop (`render_background_blur` caps sigma to `margin / 3`).
+    fn widen_cull_area_for_backdrop(&mut self) {
+        let scale = self.get_scale();
         let margins = self.surfaces.margins();
         let margin_w = margins.width as f32 / scale;
         let margin_h = margins.height as f32 / scale;
-        self.render_area_with_margins = skia::Rect::from_ltrb(
+        self.cull_area = skia::Rect::from_ltrb(
             self.render_area.left - margin_w,
             self.render_area.top - margin_h,
             self.render_area.right + margin_w,
             self.render_area.bottom + margin_h,
         );
-        self.surfaces.update_render_context(self.render_area, scale);
     }
 
     fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
@@ -2259,6 +2267,9 @@ impl RenderState {
         self.stats.clear();
 
         self.surfaces.gc();
+
+        if self.current_tile.is_some() && !self.pending_nodes.is_empty() {
+        }
 
         self.pending_nodes.clear();
         if self.pending_nodes.capacity() < tree.len() {
@@ -2530,7 +2541,7 @@ impl RenderState {
         let saved_focus_mode = self.focus_mode.clone();
         let saved_export_context = self.export_context;
         let saved_render_area = self.render_area;
-        let saved_render_area_with_margins = self.render_area_with_margins;
+        let saved_cull_area = self.cull_area;
         let saved_current_tile = self.current_tile;
         let saved_pending_nodes = std::mem::take(&mut self.pending_nodes);
         let saved_nested_fills = std::mem::take(&mut self.nested_fills);
@@ -2560,7 +2571,7 @@ impl RenderState {
 
             self.surfaces.resize_export_surface(scale, extrect);
             self.render_area = extrect;
-            self.render_area_with_margins = extrect;
+            self.cull_area = extrect;
             self.surfaces.update_render_context(extrect, scale);
 
             // `resize_export_surface` swaps in a brand-new (zeroed, i.e.
@@ -2601,7 +2612,7 @@ impl RenderState {
         self.focus_mode = saved_focus_mode;
         self.export_context = saved_export_context;
         self.render_area = saved_render_area;
-        self.render_area_with_margins = saved_render_area_with_margins;
+        self.cull_area = saved_cull_area;
         self.current_tile = saved_current_tile;
         self.pending_nodes = saved_pending_nodes;
         self.nested_fills = saved_nested_fills;
@@ -3065,7 +3076,7 @@ impl RenderState {
         // Account for the shadow offset so the temporary surface fully contains the shifted blur.
         bounds.offset(world_offset);
         // Early cull if the shadow bounds are outside the render area.
-        if !bounds.intersects(self.render_area_with_margins) && target_surface != SurfaceId::Export
+        if !bounds.intersects(self.cull_area) && target_surface != SurfaceId::Export
         {
             return Ok(());
         }
@@ -3510,11 +3521,11 @@ impl RenderState {
                     || if is_container || has_effects {
                         let element_extrect =
                             extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
-                        element_extrect.intersects(self.render_area_with_margins)
+                        element_extrect.intersects(self.cull_area)
                             && !transformed_element.visually_insignificant(scale, tree)
                     } else {
                         let selrect = transformed_element.selrect();
-                        selrect.intersects(self.render_area_with_margins)
+                        selrect.intersects(self.cull_area)
                             && !transformed_element.visually_insignificant(scale, tree)
                     };
 
@@ -3923,6 +3934,10 @@ impl RenderState {
                             valid_ids.push(*root_id);
                         }
                     }
+                }
+
+                if tile_has_bg_blur {
+                    self.widen_cull_area_for_backdrop();
                 }
 
                 if !valid_ids.is_empty() {

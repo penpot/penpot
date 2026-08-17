@@ -1208,8 +1208,6 @@ impl Surfaces {
         &mut self,
         tile_viewbox: &TileViewbox,
         tile: &Tile,
-        tile_rect: &skia::Rect,
-        skip_cache_surface: bool,
         tile_doc_rect: skia::Rect,
     ) {
         let gpu_state = get_gpu_state();
@@ -1231,18 +1229,6 @@ impl Surfaces {
         let mut current = self.current.clone();
         draw_surface_src_rect_to_dst(&mut current, self.tile_atlas.canvas(), src, dst, sampling);
 
-        if !skip_cache_surface {
-            // Optional legacy Cache surface fill (debug). Pan/zoom preview
-            // uses DocAtlas + tile-atlas textures via render_from_cache.
-            let mut current = self.current.clone();
-            draw_surface_src_rect_to_dst(
-                &mut current,
-                self.cache.canvas(),
-                src,
-                *tile_rect,
-                sampling,
-            );
-        }
     }
 
     pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
