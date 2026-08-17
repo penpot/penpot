@@ -155,6 +155,12 @@ pub fn render_text_shadows(
         return Ok(());
     }
 
+    // Before `canvas_and_mark_dirty`: an empty-but-dirty layer still costs a
+    // full surface composite.
+    if shadows.is_empty() {
+        return Ok(());
+    }
+
     let canvas = render_state
         .surfaces
         .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::TextDropShadows));

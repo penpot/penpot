@@ -1688,23 +1688,34 @@ impl RenderState {
 
                     let inner_shadows = shape.inner_shadow_paints();
                     let blur_filter = shape.image_filter(1.);
-                    let mut paragraphs_with_shadows =
-                        text_content.paragraph_builder_group_from_text(Some(true));
-                    let (mut stroke_paragraphs_with_shadows_list, _shadow_opacities): (
-                        Vec<_>,
-                        Vec<_>,
-                    ) = shape
-                        .visible_strokes()
-                        .rev()
-                        .map(|stroke| {
-                            text::stroke_paragraph_builder_group_from_text(
-                                text_content,
-                                stroke,
-                                &shape.selrect(),
-                                Some(true),
-                            )
-                        })
-                        .unzip();
+
+                    // Safe to leave empty: every consumer is inside `for shadow in
+                    // <list>` or guarded by `!skip_drop_shadows`.
+                    let has_shadow_passes = if parent_shadows.is_some() {
+                        !skip_drop_shadows
+                    } else {
+                        !drop_shadows.is_empty() || !inner_shadows.is_empty()
+                    };
+
+                    let mut paragraphs_with_shadows = Vec::new();
+                    let mut stroke_paragraphs_with_shadows_list = Vec::new();
+                    if has_shadow_passes {
+                        paragraphs_with_shadows =
+                            text_content.paragraph_builder_group_from_text(Some(true));
+                        stroke_paragraphs_with_shadows_list = shape
+                            .visible_strokes()
+                            .rev()
+                            .map(|stroke| {
+                                text::stroke_paragraph_builder_group_from_text(
+                                    text_content,
+                                    stroke,
+                                    &shape.selrect(),
+                                    Some(true),
+                                )
+                                .0
+                            })
+                            .collect();
+                    }
 
                     if let Some(parent_shadows) = parent_shadows {
                         if !skip_drop_shadows {
