@@ -144,17 +144,18 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
   <a class="direct-link" href="#module-single-sign-on">#</a>
 </h3>
 
-  <p>Single Sign-On lets you require all members of your organization to authenticate through your corporate identity provider (IdP) before accessing any of the organization's teams and files. Once SSO is active, anyone who is removed from your directory automatically loses access to the organization's teams, without you having to manage it manually in Penpot.</p>
+  <p>Single Sign-On lets you require all members of your organization to authenticate through your corporate identity provider (IdP) before accessing any of the organization's teams and files.</p>
   <p>SSO applies to teams and files only. The Admin Console is always accessible without SSO, so you can always reach your configuration to adjust or deactivate it, even if your own directory entry changes.</p>
 
-  <h4>Supported identity providers</h4>
-  <p>You can configure SSO with any of the following:</p>
-  <ul>
-    <li>Generic authentication (OpenID Connect)</li>
-    <li>Azure Active Directory (OpenID Connect)</li>
-    <li>Google (OAuth)</li>
-  </ul>
-  <p>Clicking the <strong>Activate SSO</strong> button runs a test connection against your IdP. If the connection fails, your draft is kept and no changes are applied.</p>
+  <h4>Configuring your identity provider</h4>
+  <p>Before setting up SSO in Penpot, you need to register Penpot as an application in your identity provider. The steps vary by provider, but you will always need to set the following <strong>callback URL</strong> in your IdP configuration:</p>
+  <p><strong><code>https://&lt;your-penpot-domain&gt;/api/auth/oidc/callback</code></strong></p>
+  <p>Your IdP will then give you a <strong>Client ID</strong> and <strong>Client Secret</strong> to use in Penpot. Once you have those:</p>
+  <ol>
+    <li>Open the Admin Console.</li>
+    <li>Select <strong>SSO Config</strong>.</li>
+    <li>Choose your provider and fill in the fields.</li>
+  </ol>
 
   <figure>
     <a href="/img/enterprise/enterprise-module-sso.webp" target="_blank">
@@ -162,7 +163,29 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
     </a>
   </figure>
 
-  <p>If the test passes, members who are not in your directory will lose access to the organization's teams the moment SSO is activated. Once confirmed, SSO becomes active immediately.</p>
+  <h5>Generic authentication (OpenID Connect)</h5>
+  <p>Use this option for any identity provider that supports the OIDC protocol, such as Okta, Keycloak, or Auth0.</p>
+  <ul>
+    <li><strong>Issuer / Authority URL:</strong> base URL of your OIDC provider, used to autodiscover endpoints</li>
+    <li><strong>Client ID:</strong> client identifier assigned by your provider</li>
+    <li><strong>Client Secret:</strong> client secret assigned by your provider</li>
+  </ul>
+
+  <h5>Azure Active Directory (OpenID Connect)</h5>
+  <ul>
+    <li><strong>Issuer / Authority URL:</strong> <code>https://login.microsoftonline.com/&lt;your-tenant-id&gt;/v2.0/</code></li>
+    <li><strong>Client ID:</strong> Application (client) ID from your Azure app registration</li>
+    <li><strong>Client Secret:</strong> client secret value from your Azure app registration</li>
+  </ul>
+
+  <h5>Google (OAuth)</h5>
+  <ul>
+    <li><strong>Client ID:</strong> client identifier from your Google Cloud OAuth 2.0 credentials</li>
+    <li><strong>Client Secret:</strong> client secret from your Google Cloud OAuth 2.0 credentials</li>
+  </ul>
+
+  <p>When all fields are filled, click <strong>Activate SSO</strong>. Penpot will run a test connection against your IdP. If the connection fails, your draft is kept and no changes are applied.</p>
+  <p>If the test passes, a confirmation dialog will appear. It will warn you that members not in your directory will lose access to the organization's teams once SSO is active. Review your member list if needed, then confirm. SSO becomes active immediately.</p>
 
   <h4>What happens to existing sessions</h4>
   <p>When SSO is activated, any member who is currently inside one of the organization's teams is cut off immediately and sent through the SSO login. This does not log them out of Penpot entirely. They can still reach teams that do not belong to your organization without re-authenticating.</p>
