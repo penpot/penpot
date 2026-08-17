@@ -127,6 +127,7 @@ describe('plugin-loader', () => {
         sendMessage: vi.fn(),
       },
       iframeWindow: mockIframeWindow,
+      manifest: { ...manifest, host: 'http://localhost:4202' },
     } as unknown as Awaited<ReturnType<typeof createPlugin>>;
 
     vi.mocked(createPlugin).mockResolvedValue(mockPluginWithIframe);
@@ -135,7 +136,7 @@ describe('plugin-loader', () => {
 
     const event = new MessageEvent('message', {
       data: 'test-message',
-      origin: window.location.origin,
+      origin: 'http://localhost:4202',
     });
     Object.defineProperty(event, 'source', { value: mockIframeWindow });
     window.dispatchEvent(event);
@@ -145,15 +146,17 @@ describe('plugin-loader', () => {
     );
   });
 
-  it('should reject messages from unrecognized origins', async () => {
+  it('should reject messages from unrecognized sources', async () => {
     await loadPlugin(manifest);
 
-    window.dispatchEvent(
-      new MessageEvent('message', {
-        data: 'malicious-message',
-        origin: 'https://evil.com',
-      }),
-    );
+    const event = new MessageEvent('message', {
+      data: 'malicious-message',
+      origin: 'https://evil.com',
+    });
+    Object.defineProperty(event, 'source', {
+      value: { nodeType: 999 } as unknown as Window,
+    });
+    window.dispatchEvent(event);
 
     expect(mockPluginApi.plugin.sendMessage).not.toHaveBeenCalled();
   });
@@ -168,6 +171,7 @@ describe('plugin-loader', () => {
         sendMessage: vi.fn(),
       },
       iframeWindow: mockIframeWindow1,
+      manifest: { ...manifest, host: 'http://localhost:4202' },
     } as unknown as Awaited<ReturnType<typeof createPlugin>>;
 
     const mockPluginApi2 = {
@@ -176,6 +180,7 @@ describe('plugin-loader', () => {
         sendMessage: vi.fn(),
       },
       iframeWindow: mockIframeWindow2,
+      manifest: { ...manifest, host: 'http://localhost:4203' },
     } as unknown as Awaited<ReturnType<typeof createPlugin>>;
 
     vi.mocked(createPlugin).mockResolvedValue(mockPluginApi1);
@@ -186,12 +191,13 @@ describe('plugin-loader', () => {
 
     const event = new MessageEvent('message', {
       data: 'test',
-      origin: window.location.origin,
+      origin: 'http://localhost:4203',
     });
     Object.defineProperty(event, 'source', { value: mockIframeWindow2 });
     window.dispatchEvent(event);
 
     expect(mockPluginApi2.plugin.sendMessage).toHaveBeenCalledWith('test');
+    expect(mockPluginApi1.plugin.sendMessage).not.toHaveBeenCalled();
   });
 
   it('should load plugin using ɵloadPlugin', async () => {
