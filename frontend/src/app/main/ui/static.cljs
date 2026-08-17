@@ -484,7 +484,7 @@
   `request-dialog*` used by the no-permission dialogs) when the organization
   SSO exchange with the identity provider fails."
   {::mf/private true}
-  [{:keys [organization-id team-id profile is-workspace is-dashboard]}]
+  [{:keys [organization-id team-id profile is-workspace is-dashboard organization-name]}]
   (let [clean-url
         (mf/with-memo []
           (-> (rt/get-current-href)
@@ -520,7 +520,7 @@
     [:> context-wrapper* {:is-dashboard (or is-dashboard (not is-workspace))
                           :is-workspace is-workspace
                           :profile profile}
-     [:> request-dialog* {:title (tr "labels.sso-error.title")
+     [:> request-dialog* {:title (tr "labels.sso-error.title", organization-name)
                           :content [(tr "labels.sso-error.desc-message")]
                           :button-text (tr "labels.sso-error.retry")
                           :on-button-click on-retry
@@ -532,7 +532,6 @@
   [{:keys [data] :as props}]
   (let [type   (get data :type)
         cause  (get data ::errors/instance)
-        organization-id (get data :organization-id)
 
         report (mf/with-memo [cause]
                  (when (ex/exception? cause)
@@ -564,7 +563,8 @@
       [:> nitrate-unavailable*]
 
       :sso-error
-      [:> sso-error-section* {:organization-id organization-id
+      [:> sso-error-section* {:organization-id (get data :organization-id)
+                              :organization-name (get data :organization-name)
                               :team-id (get data :team-id)
                               :profile (mf/deref refs/profile)
                               :is-workspace (get data :is-workspace false)
