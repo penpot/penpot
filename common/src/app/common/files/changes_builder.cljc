@@ -1121,7 +1121,7 @@
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         file-id      (:id library-data)
-        prev-val     (:tokens-source library-data)]
+        prev-val     (cfo/get-tokens-source library-data)]
     (-> changes
         (update :redo-changes conj {:type :set-tokens-source
                                     :file-id file-id
