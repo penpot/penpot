@@ -46,6 +46,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as uri]
@@ -180,8 +181,8 @@
         result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)
-        reset     (* (/ (inst-ms interval) rate)
-                     (- capacity remaining))]
+        reset     (long (mth/ceil (double (* (/ (inst-ms interval) rate)
+                                             (- capacity remaining)))))]
     (l/trace :hint "limit processed"
              :method method
              :limit (name (::name limit))
