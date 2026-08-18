@@ -3,6 +3,7 @@ import { createPluginManager } from './plugin-manager';
 import { loadManifestCode, getValidUrl, prepareUrl } from './parse-manifest.js';
 import { PluginModalElement } from './modal/plugin-modal.js';
 import { openUIApi } from './api/openUI.api.js';
+import { validateUIUrl } from './validate-url.js';
 import type { Context, Theme } from '@penpot/plugin-types';
 import type { Manifest } from './models/manifest.model.js';
 
@@ -14,6 +15,10 @@ vi.mock('./parse-manifest.js', () => ({
 
 vi.mock('./api/openUI.api.js', () => ({
   openUIApi: vi.fn(),
+}));
+
+vi.mock('./validate-url.js', () => ({
+  validateUIUrl: vi.fn(),
 }));
 
 describe('createPluginManager', () => {
@@ -293,5 +298,39 @@ describe('createPluginManager', () => {
 
     expect(mockContext.removeListener).toHaveBeenCalled();
     expect(onCloseCallback).toHaveBeenCalled();
+  });
+
+  it('should validate the modal URL before opening', async () => {
+    const pluginManager = await createPluginManager(
+      mockContext,
+      manifest,
+      onCloseCallback,
+      onReloadModal,
+    );
+
+    pluginManager.openModal('Test Modal', '/test-url');
+
+    expect(validateUIUrl).toHaveBeenCalledWith(
+      'https://example.com/plugin',
+    );
+  });
+
+  it('should throw when URL validation fails', async () => {
+    vi.mocked(validateUIUrl).mockImplementation(() => {
+      throw new Error("Plugin UI URL must not point to Penpot's own domain");
+    });
+
+    const pluginManager = await createPluginManager(
+      mockContext,
+      manifest,
+      onCloseCallback,
+      onReloadModal,
+    );
+
+    expect(() => pluginManager.openModal('Test Modal', '/test-url')).toThrow(
+      "Plugin UI URL must not point to Penpot's own domain",
+    );
+
+    expect(openUIApi).not.toHaveBeenCalled();
   });
 });

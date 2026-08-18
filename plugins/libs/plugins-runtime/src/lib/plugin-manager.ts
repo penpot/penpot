@@ -7,6 +7,7 @@ import { openUIApi } from './api/openUI.api.js';
 import { OpenUIOptions } from './models/open-ui-options.model.js';
 import { RegisterListener } from './models/plugin.model.js';
 import { openUISchema } from './models/open-ui-options.schema.js';
+import { validateUIUrl } from './validate-url.js';
 
 export async function createPluginManager(
   context: Context,
@@ -94,6 +95,7 @@ export async function createPluginManager(
   const openModal = (name: string, url: string, options?: OpenUIOptions) => {
     const theme = context.theme as Theme;
     const modalUrl = prepareUrl(manifest, url, { theme });
+    validateUIUrl(modalUrl);
 
     if (modal?.getAttribute('iframe-src') === modalUrl) {
       return;
