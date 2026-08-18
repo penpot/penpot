@@ -128,6 +128,13 @@ function reloadIcon(): SVGSVGElement {
   return svgIcon(['M13 8a5 5 0 1 1-1.46-3.54', 'M13 2.5v3h-3'], false);
 }
 
+/** Shows whether a group is expanded. */
+function chevronIcon(): SVGSVGElement {
+  const icon = svgIcon(['M6 3.5 10.5 8 6 12.5'], false);
+  icon.classList.add('group-chevron');
+  return icon;
+}
+
 function render() {
   root.replaceChildren(
     renderHeader(),
@@ -273,9 +280,12 @@ function renderRow(test: TestMeta): HTMLElement {
   return row;
 }
 
-function renderGroupSummary(
+/** Builds a group header with separate select, toggle, and run controls. */
+function renderGroupHeader(
   name: string,
   groupTestList: TestMeta[],
+  panelId: string,
+  expanded: boolean,
 ): HTMLElement {
   const statuses = groupTestList.map(
     (t) => results.get(t.id)?.status ?? 'pending',
@@ -291,12 +301,12 @@ function renderGroupSummary(
   const groupCheckbox = el('input', {
     type: 'checkbox',
     className: 'checkbox-input',
+    title: `Select every test in "${name}"`,
+    ariaLabel: `Select every test in "${name}"`,
     checked: selectedCount === total && total > 0,
     disabled: running,
   });
   groupCheckbox.indeterminate = selectedCount > 0 && selectedCount < total;
-  // Keep the checkbox from toggling the <details> when clicked.
-  groupCheckbox.addEventListener('click', (e) => e.stopPropagation());
   groupCheckbox.addEventListener('change', () => {
     if (groupCheckbox.checked) ids.forEach((id) => selected.add(id));
     else ids.forEach((id) => selected.delete(id));
@@ -305,17 +315,14 @@ function renderGroupSummary(
 
   const runButton = el('button', {
     className: 'icon-button run-group',
+    type: 'button',
     title: `Run "${name}"`,
     ariaLabel: `Run "${name}"`,
     disabled: running,
   });
   runButton.dataset.appearance = 'secondary';
   runButton.append(playIcon());
-  runButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    run(ids);
-  });
+  runButton.addEventListener('click', () => run(ids));
 
   const counts = el('span', { className: 'group-counts' }, [
     el('span', { className: 'count-pass', textContent: `${passed}` }),
@@ -327,14 +334,26 @@ function renderGroupSummary(
     }),
   ]);
 
-  return el('summary', { className: 'group-summary' }, [
-    groupCheckbox,
+  const toggle = el('button', { className: 'group-toggle', type: 'button' }, [
+    chevronIcon(),
     el('span', {
       className: `status-dot dot-${aggregate}`,
       title: statusLabel(aggregate),
     }),
     el('span', { className: 'group-name', textContent: name }),
     counts,
+  ]);
+  toggle.setAttribute('aria-expanded', String(expanded));
+  toggle.setAttribute('aria-controls', panelId);
+  toggle.addEventListener('click', () => {
+    if (expanded) expandedGroups.delete(name);
+    else expandedGroups.add(name);
+    render();
+  });
+
+  return el('div', { className: 'group-header' }, [
+    groupCheckbox,
+    toggle,
     runButton,
   ]);
 }
@@ -342,25 +361,24 @@ function renderGroupSummary(
 function renderList(): HTMLElement {
   const container = el('div', { className: 'groups' });
 
-  for (const group of groupTests()) {
-    const details = el('details', { className: 'group' });
+  groupTests().forEach((group, index) => {
     // Groups are collapsed by default; remember the ones the user expands.
-    details.open = expandedGroups.has(group.name);
-    details.addEventListener('toggle', () => {
-      if (details.open) expandedGroups.add(group.name);
-      else expandedGroups.delete(group.name);
-    });
+    const expanded = expandedGroups.has(group.name);
+    const panelId = `group-panel-${index}`;
 
-    details.append(renderGroupSummary(group.name, group.tests));
-
-    const list = el('ul', { className: 'test-list' });
+    const list = el('ul', { className: 'test-list', id: panelId });
+    list.hidden = !expanded;
     for (const test of group.tests) {
       list.append(renderRow(test));
     }
-    details.append(list);
 
-    container.append(details);
-  }
+    container.append(
+      el('div', { className: 'group' }, [
+        renderGroupHeader(group.name, group.tests, panelId, expanded),
+        list,
+      ]),
+    );
+  });
 
   return container;
 }

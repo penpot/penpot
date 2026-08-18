@@ -17,44 +17,54 @@
 (def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
 
 (t/deftest comment-thread-remove-allows-the-owner
-  (let [owner-id  (random-uuid)
-        file-id   (random-uuid)
-        page-id   (random-uuid)
-        thread-id (random-uuid)
-        emitted   (atom nil)
-        thread    (comments/comment-thread-proxy
-                   plugin-id
-                   file-id
-                   page-id
-                   {:id thread-id :owner-id owner-id})]
-    (set! st/state (atom {:profile {:id owner-id}}))
-    (with-redefs [r/check-permission (constantly true)
-                  dc/delete-comment-thread-on-workspace
-                  (mock/stub (fn [params callback]
-                               (callback)
-                               [:delete-thread params]))
-                  st/emit! (mock/stub (fn [event] (reset! emitted event)))]
-      (let [result (.remove thread)]
-        (t/is (instance? js/Promise result))
-        (t/is (= [:delete-thread {:id thread-id}] @emitted))))))
+  (t/async done
+    (let [owner-id  (random-uuid)
+          file-id   (random-uuid)
+          page-id   (random-uuid)
+          thread-id (random-uuid)
+          emitted   (atom nil)
+          thread    (comments/comment-thread-proxy
+                     plugin-id
+                     file-id
+                     page-id
+                     {:id thread-id :owner-id owner-id})]
+      (set! st/state (atom {:profile {:id owner-id}}))
+      (mock/with-mocks
+        {r/check-permission (constantly true)
+         dc/delete-comment-thread-on-workspace
+         (mock/stub (fn [params callback]
+                      (callback)
+                      [:delete-thread params]))
+         st/emit! (mock/stub (fn [event] (reset! emitted event)))}
+        (fn [done']
+          (let [result (.remove thread)]
+            (t/is (instance? js/Promise result))
+            (t/is (= [:delete-thread {:id thread-id}] @emitted))
+            (done')))
+        done))))
 
 (t/deftest page-remove-comment-thread-emits-delete-event
-  (let [file-id   (random-uuid)
-        page-id   (random-uuid)
-        thread-id (random-uuid)
-        emitted   (atom nil)
-        page      (page/page-proxy plugin-id file-id page-id)
-        thread    (comments/comment-thread-proxy
-                   plugin-id
-                   file-id
-                   page-id
-                   {:id thread-id :owner-id (random-uuid)})]
-    (with-redefs [r/check-permission (constantly true)
-                  dc/delete-comment-thread-on-workspace
-                  (mock/stub (fn [params callback]
-                               (callback)
-                               [:delete-thread params]))
-                  st/emit! (mock/stub (fn [event] (reset! emitted event)))]
-      (let [result (.removeCommentThread page thread)]
-        (t/is (instance? js/Promise result))
-        (t/is (= [:delete-thread {:id thread-id}] @emitted))))))
+  (t/async done
+    (let [file-id   (random-uuid)
+          page-id   (random-uuid)
+          thread-id (random-uuid)
+          emitted   (atom nil)
+          page      (page/page-proxy plugin-id file-id page-id)
+          thread    (comments/comment-thread-proxy
+                     plugin-id
+                     file-id
+                     page-id
+                     {:id thread-id :owner-id (random-uuid)})]
+      (mock/with-mocks
+        {r/check-permission (constantly true)
+         dc/delete-comment-thread-on-workspace
+         (mock/stub (fn [params callback]
+                      (callback)
+                      [:delete-thread params]))
+         st/emit! (mock/stub (fn [event] (reset! emitted event)))}
+        (fn [done']
+          (let [result (.removeCommentThread page thread)]
+            (t/is (instance? js/Promise result))
+            (t/is (= [:delete-thread {:id thread-id}] @emitted))
+            (done')))
+        done))))

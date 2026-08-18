@@ -28,7 +28,6 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.pages :as dwpg]
-   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -47,6 +46,7 @@
    [app.plugins.local-storage :as local-storage]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
+   [app.plugins.reflow :as wrfp]
    [app.plugins.shape :as shape]
    [app.plugins.system-events :as se]
    [app.plugins.user :as user]
@@ -416,7 +416,10 @@
                   (cb/with-objects (:objects page))
                   (cb/add-object shape))]
 
-          (st/emit! (ch/commit-changes changes)
+          ;; Track the commit until the renderer starts.
+          (st/emit! (ptk/data-event :text/reflow {:ids [(:id shape)]
+                                                  :page-id (:id page)})
+                    (ch/commit-changes changes)
                     (se/event plugin-id "create-shape" :type :text))
 
           (when (features/active-feature? @st/state "render-wasm/v1")
@@ -734,10 +737,5 @@
 
     :waitForLayoutUpdate
     (fn [timeout]
-      ;; Always a promise, so a bad argument travels as a rejection.
-      (if (u/valid-timeout? timeout)
-        ;; Resolves once every shape with reflow work in flight has settled.
-        (wrf/wait-for-layout-update timeout)
-        (js/Promise.
-         (fn [_ reject]
-           (u/reject-not-valid reject :waitForLayoutUpdate timeout)))))))
+      ;; Resolves once every shape with reflow work in flight has settled.
+      (wrfp/wait-for-layout-update timeout))))

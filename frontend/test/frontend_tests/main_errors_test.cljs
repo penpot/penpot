@@ -164,169 +164,151 @@
    :team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"})
 
 (t/deftest expired-organization-sso-navigates-to-identity-provider
-  (t/testing "the browser is sent to the identity provider instead of an error page"
-    (let [events (atom [])]
-      (with-redefs [rp/cmd!
-                    (mock/stub
-                     (fn [_command _params]
-                       (rx/of {:authorized false
-                               :redirect-uri "https://idp.example.com/authorize"})))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    st/emit!
-                    (mock/stub (fn [& emitted] (swap! events into emitted)))]
-
-        (errors/on-error (sso-required-error))
-
-        (t/is (= [::rt/nav-raw] (mapv ptk/type @events)))))))
+  (t/async done
+    (t/testing "the browser is sent to the identity provider instead of an error page"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized false
+                                       :redirect-uri "https://idp.example.com/authorize"})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [::rt/nav-raw] (mapv ptk/type @events)))
+            (done'))
+          done)))))
 
 (t/deftest expired-organization-sso-comes-back-to-the-current-location
-  (t/testing "the SSO check asks the provider to return the user where they were"
-    (let [rpc-calls (atom [])]
-      (with-redefs [rp/cmd!
-                    (mock/stub
-                     (fn [command params]
-                       (swap! rpc-calls conj {:command command :params params})
-                       (rx/of {:authorized false
-                               :redirect-uri "https://idp.example.com/authorize"})))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    st/emit! mock/noop]
-
-        (errors/on-error (sso-required-error))
-
-        (t/is (= [{:command :check-nitrate-sso
-                   :params {:team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"
-                            :organization-id organization-id
-                            :url workspace-href}}]
-                 @rpc-calls))))))
+  (t/async done
+    (t/testing "the SSO check asks the provider to return the user where they were"
+      (let [rpc-calls (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [command params]
+                               (swap! rpc-calls conj {:command command :params params})
+                               (rx/of {:authorized false
+                                       :redirect-uri "https://idp.example.com/authorize"})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         mock/noop}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [{:command :check-nitrate-sso
+                       :params {:team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"
+                                :organization-id organization-id
+                                :url workspace-href}}]
+                     @rpc-calls))
+            (done'))
+          done)))))
 
 (t/deftest already-satisfied-organization-sso-retries-the-location
-  (t/testing "a session renewed meanwhile (e.g. in another tab) reloads instead of erroring"
-    (let [events (atom [])]
-      (with-redefs [rp/cmd!
-                    (mock/stub
-                     (fn [_command _params]
-                       (rx/of {:authorized true :reason :sso-satisfied})))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    st/emit!
-                    (mock/stub (fn [& emitted] (swap! events into emitted)))]
-
-        (errors/on-error (sso-required-error))
-
-        (t/is (= [::rt/reload] (mapv ptk/type @events)))))))
+  (t/async done
+    (t/testing "a session renewed meanwhile (e.g. in another tab) reloads instead of erroring"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized true :reason :sso-satisfied})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [::rt/reload] (mapv ptk/type @events)))
+            (done'))
+          done)))))
 
 (t/deftest organization-sso-without-usable-provider-shows-the-sso-error-dialog
-  (t/testing "SSO is required but there is nowhere to go: offer a retry, not a permission error"
-    (let [assigned* (atom nil)]
-      (with-redefs [rp/cmd!
-                    (mock/stub
-                     (fn [_command _params]
-                       (rx/of {:authorized false :redirect-uri nil})))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    rt/assign-exception
-                    (fn [error]
-                      (reset! assigned* error)
-                      (ptk/data-event ::assigned error))]
-
-        (errors/on-error (sso-required-error))
-
-        (t/is (= :sso-error (:type @assigned*)))
-        (t/is (= organization-id (:organization-id @assigned*)))
-        (t/is (true? (:is-workspace @assigned*)))))))
+  (t/async done
+    (t/testing "SSO is required but there is nowhere to go: offer a retry, not a permission error"
+      (let [assigned* (atom nil)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized false :redirect-uri nil})))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error]
+                                 (reset! assigned* error)
+                                 (ptk/data-event ::assigned error))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= :sso-error (:type @assigned*)))
+            (t/is (= organization-id (:organization-id @assigned*)))
+            (t/is (true? (:is-workspace @assigned*)))
+            (done'))
+          done)))))
 
 (t/deftest organization-sso-without-team-access-reports-a-permission-failure
-  (t/testing "a user who cannot reach the team keeps getting the authentication error"
-    (let [assigned* (atom nil)]
-      (with-redefs [rp/cmd!
-                    (mock/stub
-                     (fn [_command _params]
-                       (rx/of {:authorized true :reason :no-team-access})))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    rt/assign-exception
-                    (fn [error]
-                      (reset! assigned* error)
-                      (ptk/data-event ::assigned error))]
-
-        (errors/on-error (sso-required-error))
-
-        (t/is (= :authentication (:type @assigned*)))
-        (t/is (= :nitrate-sso-required (:code @assigned*)))))))
+  (t/async done
+    (t/testing "a user who cannot reach the team keeps getting the authentication error"
+      (let [assigned* (atom nil)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized true :reason :no-team-access})))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error]
+                                 (reset! assigned* error)
+                                 (ptk/data-event ::assigned error))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= :authentication (:type @assigned*)))
+            (t/is (= :nitrate-sso-required (:code @assigned*)))
+            (done'))
+          done)))))
 
 (t/deftest organization-sso-does-not-retry-on-an-unexplained-authorization
-  (t/testing "reloading on an answer we don't understand would spin on the same rejection"
-    (let [events (atom [])]
-      (with-redefs [rp/cmd!
-                    (mock/stub (fn [_command _params] (rx/of {:authorized true})))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    rt/assign-exception
-                    (fn [error] (ptk/data-event ::assigned error))
-
-                    ;; async-emit! is variadic-only, so the replacement must be
-                    ;; variadic too for the compiled static dispatch to find it
-                    st/async-emit!
-                    (fn [& emitted] (swap! events into emitted))]
-
-        (errors/on-error (sso-required-error))
-
-        (t/is (= [::assigned] (mapv ptk/type @events)))))))
+  (t/async done
+    (t/testing "reloading on an answer we don't understand would spin on the same rejection"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub (fn [_command _params] (rx/of {:authorized true})))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error] (ptk/data-event ::assigned error))
+           st/async-emit!   (fn [& emitted] (swap! events into emitted))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [::assigned] (mapv ptk/type @events)))
+            (done'))
+          done)))))
 
 (t/deftest organization-sso-error-without-context-is-reported-as-it-arrives
-  (t/testing "with no organization and no team there is nothing to check"
-    (let [rpc-calls (atom 0)
-          assigned* (atom nil)]
-      (with-redefs [rp/cmd!
-                    (mock/stub (fn [_command _params]
-                                 (swap! rpc-calls inc)
-                                 (rx/empty)))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    rt/assign-exception
-                    (fn [error]
-                      (reset! assigned* error)
-                      (ptk/data-event ::assigned error))]
-
-        (errors/on-error {:type :authentication
-                          :code :nitrate-sso-required})
-
-        (t/is (zero? @rpc-calls))
-        (t/is (= :nitrate-sso-required (:code @assigned*)))))))
+  (t/async done
+    (t/testing "with no organization and no team there is nothing to check"
+      (let [rpc-calls (atom 0)
+            assigned* (atom nil)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub (fn [_command _params]
+                                         (swap! rpc-calls inc)
+                                         (rx/empty)))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error]
+                                 (reset! assigned* error)
+                                 (ptk/data-event ::assigned error))}
+          (fn [done']
+            (errors/on-error {:type :authentication
+                              :code :nitrate-sso-required})
+            (t/is (zero? @rpc-calls))
+            (t/is (= :nitrate-sso-required (:code @assigned*)))
+            (done'))
+          done)))))
 
 (t/deftest a-resultless-organization-sso-check-does-not-wedge-later-rejections
-  (t/testing "the one-in-flight guard is released even when no answer arrives"
-    (let [rpc-calls (atom 0)]
-      (with-redefs [rp/cmd!
-                    (mock/stub (fn [_command _params]
-                                 (swap! rpc-calls inc)
-                                 (rx/empty)))
-
-                    rt/get-current-href
-                    (constantly workspace-href)
-
-                    st/emit! mock/noop]
-
-        (errors/on-error (sso-required-error))
-        (errors/on-error (sso-required-error))
-
-        (t/is (= 2 @rpc-calls))))))
+  (t/async done
+    (t/testing "the one-in-flight guard is released even when no answer arrives"
+      (let [rpc-calls (atom 0)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub (fn [_command _params]
+                                         (swap! rpc-calls inc)
+                                         (rx/empty)))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         mock/noop}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (errors/on-error (sso-required-error))
+            (t/is (= 2 @rpc-calls))
+            (done'))
+          done)))))
 
 ;; A failing check must stay a failing check: the generic handling turns it
 ;; into a toast, whereas swallowing it would show a permission error for

@@ -29,6 +29,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.streams :as ms]
@@ -452,6 +453,16 @@
 
         (gpt/subtract new-pos pt-obj)))))
 
+(defn- get-new-dom-text-ids
+  [state changes]
+  (when-not (features/active-feature? state "render-wasm/v1")
+    (->> (:redo-changes changes)
+         (keep (fn [{:keys [type obj]}]
+                 (when (and (= type :add-obj)
+                            (cfh/text-shape? obj))
+                   (:id obj))))
+         (not-empty))))
+
 (defn duplicate-shapes
   [ids & {:keys [move-delta? alt-duplication? change-selection? return-ref]
           :or {move-delta? false alt-duplication? false change-selection? true return-ref nil}}]
@@ -493,6 +504,9 @@
                                      (map #(get-in % [:obj :id]))
                                      (into (d/ordered-set)))
 
+                new-dom-text-ids
+                (get-new-dom-text-ids state changes)
+
                 id-duplicated   (first new-ids)
 
                 frames          (into #{}
@@ -531,6 +545,11 @@
              ;; Warning: This order is important for the focus mode.
              (->> (rx/of
                    (dwu/start-undo-transaction undo-id)
+                   ;; Track cloned texts before they mount.
+                   (when new-dom-text-ids
+                     (ptk/data-event :text/reflow
+                                     {:ids new-dom-text-ids
+                                      :page-id (:id page)}))
                    (dch/commit-changes changes)
                    (when change-selection?
                      (select-shapes new-ids))
