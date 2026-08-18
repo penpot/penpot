@@ -657,10 +657,15 @@
   [type]
   (let [type  (if (= type :curve) :path type)
         attrs (get-minimal-shape type)
-        attrs (cond-> attrs
-                (and (not= :path type)
-                     (not= :bool type))
-                (-> (assoc :x 0)
+        attrs (if (or (= :path type)
+                      (= :bool type))
+                (-> attrs
+                    (assoc :x nil)
+                    (assoc :y nil)
+                    (assoc :width nil)
+                    (assoc :height nil))
+                (-> attrs
+                    (assoc :x 0)
                     (assoc :y 0)
                     (assoc :width 0.01)
                     (assoc :height 0.01)))

@@ -117,7 +117,8 @@
              :data-testid "settings-profile"}
         [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
 
-       (when (contains? cf/flags :subscriptions)
+       (when (or (contains? cf/flags :subscriptions)
+                 (contains? cf/flags :admin-console))
          [:li {:class (stl/css-case :current subscription?
                                     :settings-item true)
                :on-click go-settings-subscription

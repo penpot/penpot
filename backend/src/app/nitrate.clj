@@ -167,6 +167,9 @@
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:owner-id ::sm/uuid]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:sso-active {:optional true} [:maybe ::sm/boolean]]
    [:teams
     [:vector
      [:map
@@ -258,6 +261,14 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri "api/teams/" team-id)
                       cto/schema:team-with-organization params))
+
+(defn- get-teams-organizations-api
+  [cfg {:keys [team-ids] :as params}]
+  (let [params (assoc params :request-params {:team-ids team-ids})]
+    (request-to-nitrate cfg :post
+                        (generate-nitrate-uri "api/teams/organizations")
+                        [:vector cto/schema:team-with-organization]
+                        params)))
 
 (defn- get-organization-membership-api
   [cfg {:keys [profile-id organization-id] :as params}]
@@ -489,6 +500,7 @@
   [_ cfg]
   (when (contains? cf/flags :admin-console)
     {:get-team-organization                 (partial get-team-organization-api cfg)
+     :get-teams-organizations               (partial get-teams-organizations-api cfg)
      :set-team-organization                 (partial set-team-organization-api cfg)
      :get-organization-membership           (partial get-organization-membership-api cfg)
      :get-organization-membership-by-team   (partial get-organization-membership-by-team-api cfg)
@@ -596,22 +608,25 @@
                    :cause cause)
           profile)))))
 
+(defn- apply-organization-info-to-team
+  [team team-with-organization]
+  (let [organization (:organization team-with-organization)]
+    (if (some? organization)
+      (-> (cto/apply-organization team (assoc organization :custom-photo
+                                              (when-let [logo-id (:logo-id organization)]
+                                                (generate-public-uri "assets/by-id/" logo-id))))
+          (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-organization)))))
+      team)))
+
 (defn add-organization-info-to-team
   "Enriches a team map with organization information from Nitrate.
-  Adds organization-id, organization-name, organization-slug, organization-owner-id, and your-penpot fields.
   Returns the original team unchanged if the request fails or organization data is nil.
   Propagates `:nitrate-unavailable` so the request is rejected when Nitrate is unreachable."
   [cfg team params]
   (try
-    (let [params        (assoc (or params {}) :team-id (:id team))
-          team-with-organization (call cfg :get-team-organization params)
-          organization           (:organization team-with-organization)]
-      (if (some? organization)
-        (-> (cto/apply-organization team (assoc organization :custom-photo
-                                                (when-let [logo-id (:logo-id organization)]
-                                                  (generate-public-uri "assets/by-id/" logo-id))))
-            (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-organization)))))
-        team))
+    (let [params                 (assoc (or params {}) :team-id (:id team))
+          team-with-organization (call cfg :get-team-organization params)]
+      (apply-organization-info-to-team team team-with-organization))
     (catch Throwable cause
       (if (= :nitrate-unavailable (-> cause ex-data :type))
         (throw cause)
@@ -620,6 +635,23 @@
                    :team-id (:id team)
                    :cause cause)
           team)))))
+
+(defn add-organization-info-to-teams
+  "Enriches teams with organization information using one batched Nitrate request.
+  Teams absent from the Nitrate response are returned unchanged.
+  Rejects the request when Nitrate does not return a valid batch response."
+  [cfg teams params]
+  (let [request-params          (assoc (or params {}) :team-ids (mapv :id teams))
+        teams-with-organization (call cfg :get-teams-organizations request-params)]
+    (when (nil? teams-with-organization)
+      (ex/raise :type :nitrate-unavailable
+                :hint "nitrate did not return a valid teams organization response"))
+    (let [organizations-by-team (into {} (map (juxt :id identity)) teams-with-organization)]
+      (mapv (fn [{:keys [id] :as team}]
+              (if-let [team-with-organization (get organizations-by-team id)]
+                (apply-organization-info-to-team team team-with-organization)
+                team))
+            teams))))
 
 (defn set-team-organization
   "Associates a team with an organization in Nitrate.
@@ -637,3 +669,17 @@
                 :context {:team-id (:id team)
                           :organization-id (:organization-id params)}))
     team))
+
+(defn assert-membership
+  "Verifies that the user is a member of the organization.
+  Raises an exception if the organization doesn't exist or the user is not a member."
+  [cfg profile-id organization-id]
+  (let [membership (call cfg :get-organization-membership {:profile-id profile-id
+                                                           :organization-id organization-id})]
+    (when-not (:organization-id membership)
+      (ex/raise :type :validation
+                :code :organization-does-not-exist))
+
+    (when-not (:is-member membership)
+      (ex/raise :type :validation
+                :code :user-doesnt-belong-organization))))

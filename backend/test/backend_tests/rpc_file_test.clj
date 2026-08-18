@@ -733,7 +733,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows))))
         (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
-                 (-> rows first :object-id))))
+                 (->> rows (remove (comp some? :deleted-at)) first :object-id))))
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
@@ -2377,8 +2377,6 @@
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
 
-;; --- Security Fix Tests ---
-
 (t/deftest link-file-to-library-circular-reference
   (let [profile (th/create-profile* 1)
         file1   (th/create-file* 1 {:profile-id (:id profile)
@@ -2448,3 +2446,24 @@
     (t/is (th/ex-info? (:error out)))
     (let [edata (-> out :error ex-data)]
       (t/is (= :validation (:type edata))))))
+
+(t/deftest get-file-libraries-nonexistent-file
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-file-libraries
+                           ::rpc/profile-id (:id prof)
+                           :file-id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-file-libraries-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)})
+        out   (th/command! {::th/type :get-file-libraries
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
