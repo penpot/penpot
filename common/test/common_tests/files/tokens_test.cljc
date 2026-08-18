@@ -1312,3 +1312,168 @@
           tokens-status' (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)]
       (t/is (= #{} (ctos/get-active-theme-ids tokens-status')))
       (t/is (= #{} (ctos/get-active-set-ids tokens-status'))))))
+
+;; Mismatched tokens-status and tokens-lib
+;;
+;; The tokens-status may contain IDs for themes and sets that do not exist in
+;; the tokens-lib (e.g. when the status comes from the tokens lib of a different source).
+;; All functions must handle this gracefully: return a reasonable result, never
+;; throw an exception.
+
+(t/deftest test-mismatched-status-lib
+  (let [real-theme-1 (thi/new-id! :real-theme-1)
+        real-theme-2 (thi/new-id! :real-theme-2)
+        real-set-a   (thi/new-id! :real-set-a)
+        real-set-b   (thi/new-id! :real-set-b)
+        real-set-c   (thi/new-id! :real-set-c)
+        invalid-theme-id (thi/new-id! :invalid-theme)
+        invalid-set-id   (thi/new-id! :invalid-set)
+
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id real-set-a :name "real-set-a"))
+                       (ctob/add-set (ctob/make-token-set :id real-set-b :name "real-set-b"))
+                       (ctob/add-set (ctob/make-token-set :id real-set-c :name "real-set-c"))
+                       (ctob/add-token real-set-a (ctob/make-token :name "spacing" :type :spacing :value "8px"))
+                       (ctob/add-token real-set-b (ctob/make-token :name "radius" :type :border-radius :value "4px"))
+                       (ctob/add-theme (ctob/make-token-theme :id real-theme-1
+                                                              :name "theme-1"
+                                                              :group "colors"
+                                                              :sets #{"real-set-a"}))
+                       (ctob/add-theme (ctob/make-token-theme :id real-theme-2
+                                                              :name "theme-2"
+                                                              :group "colors"
+                                                              :sets #{"real-set-b" "real-set-c"})))
+
+        ;; Status has one valid and one invalid theme, one valid and one invalid set
+        tokens-status (ctos/make-tokens-status :active-theme-ids #{real-theme-1 invalid-theme-id}
+                                               :active-set-ids #{real-set-a invalid-set-id})]
+
+    (t/testing "activate-theme with non-existent theme id returns status unchanged"
+      (let [status' (cfo/activate-theme tokens-status tokens-lib invalid-theme-id)]
+        (t/is (identical? tokens-status status'))))
+
+    (t/testing "activate-theme with valid theme works despite invalid ids in status"
+      (let [status' (cfo/activate-theme tokens-status tokens-lib real-theme-2)]
+        (t/is (ctos/theme-active? status' real-theme-2))
+        (t/is (not (ctos/theme-active? status' real-theme-1)))
+        (t/is (ctos/theme-active? status' invalid-theme-id))
+        (t/is (contains? (ctos/get-active-set-ids status') real-set-b))
+        (t/is (contains? (ctos/get-active-set-ids status') real-set-c))))
+
+    (t/testing "deactivate-theme with non-existent theme id recalculates sets"
+      (let [status' (cfo/deactivate-theme tokens-status tokens-lib invalid-theme-id)]
+        (t/is (not (ctos/theme-active? status' invalid-theme-id)))
+        (t/is (ctos/theme-active? status' real-theme-1))
+        (t/is (contains? (ctos/get-active-set-ids status') real-set-a))))
+
+    (t/testing "toggle-theme-active with non-existent theme id deactivates it"
+      (let [status' (cfo/toggle-theme-active tokens-status tokens-lib invalid-theme-id)]
+        (t/is (not (ctos/theme-active? status' invalid-theme-id)))
+        (t/is (ctos/theme-active? status' real-theme-1))))
+
+    (t/testing "toggle-theme-active with valid inactive theme activates it"
+      (let [status' (cfo/toggle-theme-active tokens-status tokens-lib real-theme-2)]
+        (t/is (ctos/theme-active? status' real-theme-2))
+        (t/is (contains? (ctos/get-active-set-ids status') real-set-b))
+        (t/is (contains? (ctos/get-active-set-ids status') real-set-c))))
+
+    (t/testing "set-theme-active false with non-existent theme recalculates sets"
+      (let [status' (cfo/set-theme-active tokens-status tokens-lib invalid-theme-id false)]
+        (t/is (not (ctos/theme-active? status' invalid-theme-id)))
+        (t/is (contains? (ctos/get-active-set-ids status') real-set-a))))
+
+    (t/testing "set-theme-active true with non-existent theme returns status unchanged"
+      (let [status' (cfo/set-theme-active tokens-status tokens-lib invalid-theme-id true)]
+        (t/is (identical? tokens-status status'))))
+
+    (t/testing "get-active-themes filters out non-existent theme ids"
+      (let [active-themes (cfo/get-active-themes tokens-status tokens-lib)]
+        (t/is (= 1 (count active-themes)))
+        (t/is (= real-theme-1 (ctob/get-id (first active-themes))))))
+
+    (t/testing "get-active-sets filters out non-existent set ids"
+      (let [active-sets (cfo/get-active-sets tokens-status tokens-lib)]
+        (t/is (= 1 (count active-sets)))
+        (t/is (= real-set-a (ctob/get-id (first active-sets))))))
+
+    (t/testing "set-set-active with non-existent set id returns status unchanged"
+      (t/is (identical? tokens-status (cfo/set-set-active tokens-status tokens-lib invalid-set-id true)))
+      (t/is (identical? tokens-status (cfo/set-set-active tokens-status tokens-lib invalid-set-id false))))
+
+    (t/testing "activate-set with non-existent set id returns status unchanged"
+      (t/is (identical? tokens-status (cfo/activate-set tokens-status tokens-lib invalid-set-id))))
+
+    (t/testing "deactivate-set with non-existent set id returns status unchanged"
+      (t/is (identical? tokens-status (cfo/deactivate-set tokens-status tokens-lib invalid-set-id))))
+
+    (t/testing "toggle-set-active with non-existent set id returns status unchanged"
+      (t/is (identical? tokens-status (cfo/toggle-set-active tokens-status tokens-lib invalid-set-id))))
+
+    (t/testing "sets-at-path-all-active? with invalid set ids in status don't cause errors"
+      ;; real-set-a is at [] and is active (plus invalid-set-id); real-set-b, real-set-c at [] inactive
+      (t/is (= :partial (cfo/sets-at-path-all-active? tokens-status tokens-lib [])))
+      ;; All sets at [] active (with invalid id still in status)
+      (let [all-active-status (ctos/make-tokens-status :active-theme-ids #{}
+                                                       :active-set-ids #{real-set-a real-set-b real-set-c invalid-set-id})]
+        (t/is (= :all (cfo/sets-at-path-all-active? all-active-status tokens-lib [])))))
+
+    (t/testing "toggle-set-group-active with invalid set ids in status don't cause errors"
+      ;; Status has real-set-a + invalid-set-id active -> :partial at []
+      ;; Toggling :partial deactivates all at [], invalid-set-id remains
+      (let [status' (cfo/toggle-set-group-active tokens-status tokens-lib [])]
+        (t/is (not (ctos/set-active? status' real-set-a)))
+        (t/is (not (ctos/set-active? status' real-set-b)))
+        (t/is (not (ctos/set-active? status' real-set-c)))
+        (t/is (ctos/set-active? status' invalid-set-id)))
+      ;; All sets at [] active + invalid-set-id -> :all at []
+      ;; Toggling :all deactivates all at [], invalid-set-id remains
+      (let [all-active (ctos/make-tokens-status :active-theme-ids #{}
+                                                :active-set-ids #{real-set-a real-set-b real-set-c invalid-set-id})
+            status'    (cfo/toggle-set-group-active all-active tokens-lib [])]
+        (t/is (not (ctos/set-active? status' real-set-a)))
+        (t/is (not (ctos/set-active? status' real-set-b)))
+        (t/is (not (ctos/set-active? status' real-set-c)))
+        (t/is (ctos/set-active? status' invalid-set-id))))
+
+    (t/testing "get-tokens-in-active-sets with invalid set ids returns tokens from valid sets only"
+      (let [tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
+        (t/is (= 1 (count tokens)))
+        (t/is (contains? tokens "spacing"))
+        (t/is (not (contains? tokens "radius")))))
+
+    (t/testing "get-tokens-in-active-sets-force with invalid set ids and valid force set"
+      (let [tokens (cfo/get-tokens-in-active-sets-force tokens-status tokens-lib real-set-b)]
+        (t/is (= 2 (count tokens)))
+        (t/is (contains? tokens "spacing"))
+        (t/is (contains? tokens "radius"))))
+
+    (t/testing "get-tokens-in-active-sets-force with non-existent force set id"
+      (let [tokens (cfo/get-tokens-in-active-sets-force tokens-status tokens-lib invalid-set-id)]
+        (t/is (= 1 (count tokens)))
+        (t/is (contains? tokens "spacing"))))
+
+    (t/testing "all-invalid status: every id is non-existent in lib"
+      (let [all-invalid (ctos/make-tokens-status :active-theme-ids #{invalid-theme-id}
+                                                 :active-set-ids #{invalid-set-id})]
+        ;; get-active-themes returns empty
+        (t/is (empty? (cfo/get-active-themes all-invalid tokens-lib)))
+        ;; get-active-sets returns empty
+        (t/is (empty? (cfo/get-active-sets all-invalid tokens-lib)))
+        ;; get-tokens-in-active-sets returns empty
+        (t/is (empty? (cfo/get-tokens-in-active-sets all-invalid tokens-lib)))
+        ;; get-tokens-in-active-sets-force returns only force set tokens
+        (let [tokens (cfo/get-tokens-in-active-sets-force all-invalid tokens-lib real-set-a)]
+          (t/is (= 1 (count tokens)))
+          (t/is (contains? tokens "spacing")))
+        ;; activate-theme for non-existent id is no-op
+        (t/is (identical? all-invalid (cfo/activate-theme all-invalid tokens-lib invalid-theme-id)))
+        ;; deactivate-theme removes non-existent id and recalculates (empty) sets
+        (let [status' (cfo/deactivate-theme all-invalid tokens-lib invalid-theme-id)]
+          (t/is (not (ctos/theme-active? status' invalid-theme-id)))
+          (t/is (= #{} (ctos/get-active-set-ids status'))))
+        ;; toggle-theme-active toggles non-existent id (deactivates)
+        (let [status' (cfo/toggle-theme-active all-invalid tokens-lib invalid-theme-id)]
+          (t/is (not (ctos/theme-active? status' invalid-theme-id))))
+        ;; set-theme-active false removes non-existent id
+        (let [status' (cfo/set-theme-active all-invalid tokens-lib invalid-theme-id false)]
+          (t/is (not (ctos/theme-active? status' invalid-theme-id))))))))

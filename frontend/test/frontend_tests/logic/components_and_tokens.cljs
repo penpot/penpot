@@ -5,16 +5,13 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 (ns frontend-tests.logic.components-and-tokens
   (:require
-   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as geom]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
-   [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
-   [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.main.data.helpers :as dsh]
