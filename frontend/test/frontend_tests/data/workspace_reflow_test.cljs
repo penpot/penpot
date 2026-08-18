@@ -286,19 +286,22 @@
               :variants [{:id "regular"}]})
       (swap! fonts/loaded disj font-id)
       (swap! fonts/loading dissoc font-id)
-      (with-redefs [globals/browser? (constantly true)
-                    http/send! (fn [_] (rx/throw (js/Error. "font fetch failed")))]
-        (wrf/run-pending! :font [id] #(fonts/ensure-loaded! font-id)))
-      (-> (pwrf/wait-for-layout-update [id] 500)
-          (.then (fn []
-                   (t/is (not (contains? @fonts/loading font-id))
-                         "a failed load must not remain cached as loading")))
-          (.catch #(t/is false "failed DOM font load leaked pending work"))
-          (.then (fn []
-                   (swap! fonts/fontsdb dissoc font-id)
-                   (swap! fonts/loaded disj font-id)
-                   (swap! fonts/loading dissoc font-id)
-                   (done)))))))
+      (mock/with-mocks
+        {globals/browser? (constantly true)
+         http/send!       (fn [_] (rx/throw (js/Error. "font fetch failed")))}
+        (fn [done']
+          (wrf/run-pending! :font [id] #(fonts/ensure-loaded! font-id))
+          (-> (pwrf/wait-for-layout-update [id] 500)
+              (.then (fn []
+                       (t/is (not (contains? @fonts/loading font-id))
+                             "a failed load must not remain cached as loading")))
+              (.catch #(t/is false "failed DOM font load leaked pending work"))
+              (.then (fn []
+                       (swap! fonts/fontsdb dissoc font-id)
+                       (swap! fonts/loaded disj font-id)
+                       (swap! fonts/loading dissoc font-id)
+                       (done')))))
+        done))))
 
 (t/deftest failed-google-font-css-does-not-abort-shared-consumers
   (t/async done
@@ -338,23 +341,26 @@
                     :weight 700
                     :style 0
                     :emoji? false}]
-      (with-redefs [http/send! (fn [_] (rx/throw (js/Error. "shared fetch failed")))]
-        (let [request (#'wasm.fonts/fetch-font regular font-url false false)
-              duplicate (#'wasm.fonts/fetch-font bold font-url false false)]
-          (t/is (some? request) "the first face owns the shared fetch")
-          (t/is (nil? duplicate) "the second face reuses the shared fetch")
-          (->> ((:callback request))
-               (rx/subs!
-                (fn [_])
-                (fn [_]
-                  (t/is false "the shared fetch failure escaped its fallback")
-                  (done))
-                (fn []
-                  (t/is (wasm.fonts/font-ready? regular)
-                        "the first face settled through fallback")
-                  (t/is (wasm.fonts/font-ready? bold)
-                        "the deduplicated face settled through fallback")
-                  (done)))))))))
+      (mock/with-mocks
+        {http/send! (fn [_] (rx/throw (js/Error. "shared fetch failed")))}
+        (fn [done']
+          (let [request (#'wasm.fonts/fetch-font regular font-url false false)
+                duplicate (#'wasm.fonts/fetch-font bold font-url false false)]
+            (t/is (some? request) "the first face owns the shared fetch")
+            (t/is (nil? duplicate) "the second face reuses the shared fetch")
+            (->> ((:callback request))
+                 (rx/subs!
+                  (fn [_])
+                  (fn [_]
+                    (t/is false "the shared fetch failure escaped its fallback")
+                    (done'))
+                  (fn []
+                    (t/is (wasm.fonts/font-ready? regular)
+                          "the first face settled through fallback")
+                    (t/is (wasm.fonts/font-ready? bold)
+                          "the deduplicated face settled through fallback")
+                    (done'))))))
+        done))))
 
 (t/deftest missing-wasm-font-url-settles-without-entering-fetch-map
   (t/async done
