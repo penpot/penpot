@@ -44,6 +44,7 @@
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.file-test]
+   [frontend-tests.plugins.flex-test]
    [frontend-tests.plugins.format-test]
    [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
@@ -143,6 +144,7 @@
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.file-test
+   'frontend-tests.plugins.flex-test
    'frontend-tests.plugins.format-test
    'frontend-tests.plugins.grid-test
    'frontend-tests.plugins.interactions-test

@@ -64,6 +64,9 @@
          (or (not (string? value)) (empty? value))
          (u/not-valid plugin-id :name value)
 
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
+
          :else
          (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
 
@@ -79,12 +82,20 @@
          (not (shape/shape-proxy? value))
          (u/not-valid plugin-id :startingBoard value)
 
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :startingBoard "Plugin doesn't have 'content:write' permission")
+
          :else
          (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}
 
     :remove
     (fn []
-      (st/emit! (dwi/remove-flow page-id id)))))
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dwi/remove-flow page-id id))))))
 
 (defn page-proxy? [proxy]
   (obj/type-of? proxy "PageProxy"))
@@ -315,6 +326,9 @@
         (not (shape/shape-proxy? frame))
         (u/not-valid plugin-id :createFlow-frame frame)
 
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :createFlow "Plugin doesn't have 'content:write' permission")
+
         :else
         (let [flow-id (uuid/next)]
           (st/emit!
@@ -327,6 +341,9 @@
       (cond
         (not (flow-proxy? flow))
         (u/not-valid plugin-id :removeFlow-flow flow)
+
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :removeFlow "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit!
