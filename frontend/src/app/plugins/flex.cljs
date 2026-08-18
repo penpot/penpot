@@ -325,7 +325,12 @@
 
     :remove
     (fn []
-      (st/emit! (dwsl/remove-layout #{id})))
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dwsl/remove-layout #{id}))))
 
     :appendChild
     (fn [child]
@@ -349,6 +354,9 @@
 
           (u/changes-component-copy-structure? objects shape child-shape)
           (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit!

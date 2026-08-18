@@ -61,8 +61,9 @@
       :createdBy
       {:get
        (fn []
-         (when-let [user-data (get users (:profile-id @data))]
-           (user/user-proxy plugin-id user-data)))}
+         (when (r/check-permission plugin-id "user:read")
+           (when-let [user-data (get users (:profile-id @data))]
+             (user/user-proxy plugin-id user-data))))}
 
       :createdAt
       {:get #(:created-at @data)}

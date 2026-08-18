@@ -42,6 +42,7 @@
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.file-test]
+   [frontend-tests.plugins.flex-test]
    [frontend-tests.plugins.format-test]
    [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
@@ -53,6 +54,7 @@
    [frontend-tests.plugins.shape-bugfixes-test]
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
+   [frontend-tests.plugins.user-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-dimensions-test]
@@ -139,6 +141,7 @@
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.file-test
+   'frontend-tests.plugins.flex-test
    'frontend-tests.plugins.format-test
    'frontend-tests.plugins.grid-test
    'frontend-tests.plugins.interactions-test
@@ -150,6 +153,7 @@
    'frontend-tests.plugins.shape-bugfixes-test
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
+   'frontend-tests.plugins.user-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
