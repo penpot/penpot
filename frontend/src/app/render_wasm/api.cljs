@@ -67,6 +67,15 @@
 
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
 
+(defn- wasm-get-numeric-value
+  "Read a positive numeric query param (e.g. `?dpr=2`)."
+  [name]
+  (when-let [raw (let [p (rt/get-params @st/state)]
+                   (get p name))]
+    (let [n (if (string? raw) (js/parseFloat raw) raw)]
+      (when (and (number? n) (not (js/isNaN n)) (pos? n))
+        n))))
+
 ;; --- Page transition state (WASM viewport)
 ;;
 ;; Goal: avoid showing tile-by-tile rendering during page switches (and initial load),
@@ -300,14 +309,18 @@
 
 (defn get-dpr
   "Returns the current device pixel ratio. Use instead of `dpr` wherever
-   the value must reflect browser-zoom changes that happen after load."
+   the value must reflect browser-zoom changes that happen after load.
+
+   Override with query param `?dpr=2` (or any positive number) for HiDPI repro
+   without relying on the real `devicePixelRatio`."
   []
-  (if use-dpr?
-    (let [d (.-devicePixelRatio ^js ug/window)]
-      ;; In workers `ug/window` is a mock without `devicePixelRatio`,
-      ;; so guard against nil/NaN/non-positive values.
-      (if (and (number? d) (pos? d)) d 1.0))
-    1.0))
+  (or (wasm-get-numeric-value :dpr)
+      (if use-dpr?
+        (let [d (.-devicePixelRatio ^js ug/window)]
+          ;; In workers `ug/window` is a mock without `devicePixelRatio`,
+          ;; so guard against nil/NaN/non-positive values.
+          (if (and (number? d) (pos? d)) d 1.0))
+        1.0)))
 
 (def noop-fn
   (constantly nil))
@@ -721,6 +734,17 @@
   (let [result (text-editor/apply-paragraph-attrs-to-selection attrs use-shape set-shape-text-content)]
     (request-render "apply-paragraph-attrs-to-selection")
     result))
+
+(defn apply-pending-caret-styles!
+  "Apply the shape's pending caret style over `range` (the just-typed text) and
+   clear it; returns {:shape-id :content} or nil when there is none."
+  [shape-id range]
+  (when-let [styles (text-editor/get-pending-caret-styles shape-id)]
+    (let [result (text-editor/apply-styles-to-range
+                  shape-id range styles use-shape set-shape-text-content)]
+      (text-editor/clear-pending-caret-styles!)
+      (request-render "apply-pending-caret-styles")
+      result)))
 
 (defn set-parent-id
   [id]
@@ -2164,14 +2188,6 @@
       (set! (.-height canvas) new-physical-h)
       (set-render-options! dpr)
       (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))))
-
-(defn- wasm-get-numeric-value
-  [name]
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (get p name))]
-    (let [n (if (string? raw) (js/parseFloat raw) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
 
 (defn- wasm-set-param-from-route-params-if-present
   [param-name]

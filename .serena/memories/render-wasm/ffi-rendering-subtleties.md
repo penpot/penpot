@@ -17,6 +17,8 @@
 
 ## Tile/render behavior
 
+- Raster `Fill::Image`: skip `save_layer` unless the shape has an image filter; plain
+  Rect/Frame (no corners) also skip the container clip (`draw_image_fill` in fills.rs).
 - Interactive transforms are distinct from viewport fast mode. `set_modifiers_start` enables fast mode and interactive transform; interactive transform still flushes each animation frame.
 - During interactive transform, modifier tile invalidation is deferred to `render()` once per rAF. Outside interactive transform, `set_modifiers` rebuilds modifier tiles immediately.
 - `set_modifiers_end` disables fast/interactive state and cancels pending async render; the caller must request the final full-quality render.

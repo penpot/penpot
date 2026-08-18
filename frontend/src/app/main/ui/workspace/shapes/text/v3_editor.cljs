@@ -23,6 +23,20 @@
 
 (def caret-blink-interval-ms 250)
 
+;; Elements carrying this attr keep the edit alive when focus moves onto them (see `keep-editing-on-blur?`).
+(def ^:private keep-editing-selector "[data-keep-editing-on-blur]")
+
+(defn- keep-editing-on-blur?
+  "True when a surface `blur` must NOT exit the editor:
+   - Firefox triggering a blur when MacOS Character Viewer is open
+   - Focus switched to a data-keep-editing-on-blur region (e.g. typography options),
+     ancestors or descendants"
+  [^js event ^js surface]
+  (or (= (.-activeElement js/document) surface)
+      (when-let [related (dom/get-related-target event)]
+        (or (some? (.closest related keep-editing-selector))
+            (some? (.querySelector related keep-editing-selector))))))
+
 (defn- sync-wasm-text-editor-content!
   "Sync WASM text editor content back to the shape via the standard
   commit pipeline. Called after every text-modifying input."
@@ -38,6 +52,48 @@
                  :update-name? true
                  :name name
                  :finalize? finalize?)))))
+
+;; Keys that move/reset the caret (or delete): pressing any abandons the pending
+;; caret style. Plain character keys instead reach `on-input`, which consumes it.
+(def ^:private caret-abandon-keys
+  #{"ArrowLeft" "ArrowRight" "ArrowUp" "ArrowDown"
+    "Home" "End" "PageUp" "PageDown"
+    "Enter" "Backspace" "Delete" "Escape" "Tab"})
+
+(defn- caret-position
+  "Collapsed caret as {:para :offset} from the WASM selection, or nil."
+  []
+  (when-let [{:keys [focus-para focus-offset]} (text-editor/text-editor-get-selection)]
+    {:para focus-para :offset focus-offset}))
+
+(defn- typed-range
+  "Normalized range covering the text inserted between `before` and `after`, or nil."
+  [before after]
+  (when (and before after)
+    (if (or (< (:para before) (:para after))
+            (and (= (:para before) (:para after))
+                 (<= (:offset before) (:offset after))))
+      {:start-para (:para before) :start-offset (:offset before)
+       :end-para   (:para after)  :end-offset   (:offset after)}
+      {:start-para (:para after)  :start-offset (:offset after)
+       :end-para   (:para before) :end-offset   (:offset before)})))
+
+(defn- sync-with-pending-caret-styles!
+  "Commit an insertion that consumed a pending caret style: sync the new text,
+   then restyle the just-typed `range` into its own span. `before` is the
+   pre-insert caret."
+  [shape-id before]
+  (let [range (typed-range before (caret-position))]
+    ;; Sync first so the cached content stays index-aligned with WASM.
+    (text-editor/text-editor-sync-content)
+    (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
+      (let [text (txt/content->text content)
+            name (when (not= text "") (txt/generate-shape-name text))]
+        (st/emit! (dwt/v2-update-text-shape-content
+                   shape-id content
+                   :update-name? true
+                   :name name)))
+      (sync-wasm-text-editor-content!))))
 
 (defn- reset-input-node
   "Empties the contenteditable capture surface and restores a collapsed caret
@@ -163,6 +219,8 @@
         on-composition-start
         (mf/use-fn
          (fn [_event]
+           ;; IME composition supplies its own text; drop any pending caret style.
+           (text-editor/clear-pending-caret-styles!)
            (text-editor/text-editor-composition-start)))
 
         on-composition-update
@@ -190,6 +248,8 @@
         (mf/use-fn
          (fn [^js event]
            (dom/prevent-default event)
+           ;; Pasted text keeps the surrounding style; drop any pending caret style.
+           (text-editor/clear-pending-caret-styles!)
            (let [clipboard-data (.-clipboardData event)
                  text (.getData clipboard-data "text/plain")]
              (when (and text (seq text))
@@ -229,6 +289,10 @@
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
                    shift? (.-shiftKey event)]
+               ;; Ctrl+A adds select-all to the caret-abandon-keys set.
+               (when (or (contains? caret-abandon-keys key)
+                         (and ctrl? (= (str/lower key) "a")))
+                 (text-editor/clear-pending-caret-styles!))
                (cond
                  ;; Escape: finalize and stop
                  (= key "Escape")
@@ -365,8 +429,14 @@
                  (let [pending (mf/ref-val pending-replace-ref)]
                    (dotimes [_ pending]
                      (text-editor/text-editor-delete-backward)))
-                 (text-editor/text-editor-insert-text data)
-                 (sync-wasm-text-editor-content!)
+                 (let [shape-id        (text-editor/text-editor-get-active-shape-id)
+                       ;; The inserted character adopts a pending caret style, if any.
+                       pending-styles? (some? (text-editor/get-pending-caret-styles shape-id))
+                       before          (when pending-styles? (caret-position))]
+                   (text-editor/text-editor-insert-text data)
+                   (if pending-styles?
+                     (sync-with-pending-caret-styles! shape-id before)
+                     (sync-wasm-text-editor-content!)))
                  (wasm.api/request-render-preserving-target "text-input"))
                (mf/set-ref-val! pending-replace-ref 0)
                ;; IMPORTANT: do NOT clear the surface here (see keep-input-alive):
@@ -379,6 +449,9 @@
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
+             ;; Repositioning the caret abandons the pending caret style (also
+             ;; covers click and double-click, which fire pointer-down first).
+             (text-editor/clear-pending-caret-styles!)
              (mf/set-ref-val! dragging-ref true)
              (if (.-shiftKey event)
                (wasm.api/text-editor-pointer-down-extend off-pt)
@@ -431,12 +504,10 @@
         on-blur
         (mf/use-fn
          (fn [^js event]
-           ;; MacOS Character Viewer on Firefox fires a `blur` when it opens.
-           ;; To avoid losing the selected character, we need guard against
-           ;; `activeElement` being the surface itself.
+           ;; A blur exits the editor unless keep-editing-on-blur? is true
            (when-not (and (some? event)
-                          (= (.-activeElement js/document)
-                             (mf/ref-val contenteditable-ref)))
+                          (keep-editing-on-blur? event (mf/ref-val contenteditable-ref)))
+             (text-editor/clear-pending-caret-styles!)
              (sync-wasm-text-editor-content! {:finalize? true})
              (wasm.api/text-editor-blur))))
 
