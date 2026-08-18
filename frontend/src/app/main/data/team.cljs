@@ -609,50 +609,56 @@
 
 (defn check-and-submit-invite-members
   "Fetches fresh team data from the server to ensure up-to-date organization
-  permissions, then submits member invitations or shows a restriction modal."
+  permissions, then submits member invitations or shows a permission error."
   [{:keys [team-id] :as params} origin do-invite-members]
   (ptk/reify ::check-and-submit-invite-members
     ptk/WatchEvent
-    (watch [_ _ _]
-      (if (contains? cf/flags :admin-console)
-        (with-refreshed-team team-id
-          (fn [team]
-            (if (not (cto/allowed? :add-anybody-to-team
-                                   {:organization-perms (:organization team)}))
-              (->> (rp/cmd! :check-organization-members {:organization-id (get-in team [:organization :id])
-                                                         :emails (vec (:emails params))})
-                   (rx/mapcat
-                    (fn [result]
-                      (let [blocked (into [] (comp (filter (fn [[_ v]] (not v)))
-                                                   (map first))
-                                          result)]
-                        (cond
-                          (empty? blocked)
-                          (do (do-invite-members params origin) (rx/empty))
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (if (contains? cf/flags :admin-console)
+          (with-refreshed-team team-id
+            (fn [team]
+              (if (not (cto/can-send-invitations?
+                        {:organization (:organization team)
+                         :profile-id profile-id
+                         :team-permissions (:permissions team)}))
+                (rx/of (modal/show :no-permission-modal {:type :invite-members}))
+                (if (not (cto/allowed? :add-anybody-to-team
+                                       {:organization-perms (:organization team)}))
+                  (->> (rp/cmd! :check-organization-members {:organization-id (get-in team [:organization :id])
+                                                             :emails (vec (:emails params))})
+                       (rx/mapcat
+                        (fn [result]
+                          (let [blocked (into [] (comp (filter (fn [[_ v]] (not v)))
+                                                       (map first))
+                                              result)]
+                            (cond
+                              (empty? blocked)
+                              (do (do-invite-members params origin) (rx/empty))
 
-                          (= (count blocked) (count result))
-                          (rx/of
-                           (modal/show
-                            {:type :alert
-                             :title (tr "modals.invite-restricted-members.all-blocked-title")
-                             :message (tr "modals.invite-restricted-members.all-blocked")
-                             :accept-label (tr "labels.accept")
-                             :accept-style :primary}))
+                              (= (count blocked) (count result))
+                              (rx/of
+                               (modal/show
+                                {:type :alert
+                                 :title (tr "modals.invite-restricted-members.all-blocked-title")
+                                 :message (tr "modals.invite-restricted-members.all-blocked")
+                                 :accept-label (tr "labels.accept")
+                                 :accept-style :primary}))
 
-                          :else
-                          (rx/of
-                           (modal/show
-                            {:type :invite-restricted-members
-                             :blocked-emails blocked
-                             :on-accept (fn []
-                                          (let [valid-emails (into #{} (filter (fn [e] (get result e)))
-                                                                   (:emails params))
-                                                params'      (assoc params :emails valid-emails)]
-                                            (do-invite-members params' origin)))})))))))
-              (do (do-invite-members params origin)
-                  (rx/empty)))))
-        (do (do-invite-members params origin)
-            (rx/empty))))))
+                              :else
+                              (rx/of
+                               (modal/show
+                                {:type :invite-restricted-members
+                                 :blocked-emails blocked
+                                 :on-accept (fn []
+                                              (let [valid-emails (into #{} (filter (fn [e] (get result e)))
+                                                                       (:emails params))
+                                                    params'      (assoc params :emails valid-emails)]
+                                                (do-invite-members params' origin)))})))))))
+                  (do (do-invite-members params origin)
+                      (rx/empty))))))
+          (do (do-invite-members params origin)
+              (rx/empty)))))))
 
 (defn copy-invitation-link
   [{:keys [email team-id] :as params}]
