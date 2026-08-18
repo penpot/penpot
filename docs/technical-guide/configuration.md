@@ -438,7 +438,7 @@ with this flag enabled, the Penpot configuration will disable as well the librar
 The mechanisms for installing Penpot in HA depend largely on how each infrastructure is managed.
 In this section, we mention the key factors to consider when replicating a Penpot installation:
 
-The components that can be replicated are the `frontend`, the `backend`, and the `exporter`.
+The components that can be replicated are the `frontend`, the `backend`, the `exporter` and the `mcp`.
 Replication management depends on the infrastructure, whether it's a load balancer or a Kubernetes deployment with HPA.
 
 In a high-availability (HA) scenario, managing the state outside of replicas is crucial. This affects the following components:
@@ -446,12 +446,6 @@ In a high-availability (HA) scenario, managing the state outside of replicas is 
 - Database: Penpot typically operates with a single database instance. This database can also have a replica in case the primary instance fails.
 - Valkey: Penpot only needs one Valkey instance to function correctly. Due to the nature of the data it manages, replication isn't even essential.
 - User media storage: This should not be configured with local storage but rather with centralized storage, such as Kubernetes PVC or S3.
-
-
-__Since version 2.15.0__
-
-Starting with version 2.15, we have introduced the MCP server. Due to architectural constraints, using the MCP server requires running only a single instance of Penpot.
-If the MCP server is not installed, then Penpot can scale normally and multiple application instances may be deployed without restrictions.
 
 ## Backend
 
