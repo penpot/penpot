@@ -769,3 +769,98 @@
         (t/is (some? (:error out)))
         (t/is (= :restriction (-> out :error ex-data :type)))
         (t/is (= :max-quote-reached (-> out :error ex-data :code)))))))
+
+;; --- Clone File Media Object BOLA tests ---
+
+(defn- create-storage-object!
+  [content content-type]
+  (let [storage (:app.storage/storage th/*system*)]
+    (sto/put-object! storage {::sto/content (sto/content content)
+                              :content-type content-type})))
+
+(t/deftest clone-file-media-object-success
+  (let [prof1  (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:default-team-id prof1)})
+        file1  (th/create-file* 1 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        sobj   (create-storage-object! "image-content" "image/png")
+        mobj   (th/create-file-media-object* {:file-id (:id file1)
+                                              :name "test-media"
+                                              :width 100
+                                              :height 100
+                                              :mtype "image/png"
+                                              :media-id (:id sobj)})
+        file2  (th/create-file* 2 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof1)
+                :file-id         (:id file2)
+                :is-local        true
+                :id              (:id mobj)}
+        out    (th/command! params)]
+
+    (t/is (nil? (:error out)))
+    (let [result (:result out)]
+      (t/is (= (:id file2) (:file-id result)))
+      (t/is (= (:name mobj) (:name result)))
+      (t/is (= (:media-id mobj) (:media-id result)))
+      (t/is (uuid? (:id result)))
+      (t/is (not= (:id mobj) (:id result))))))
+
+(t/deftest clone-file-media-object-no-read-access
+  (let [prof1  (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:default-team-id prof1)})
+        file1  (th/create-file* 1 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        sobj   (create-storage-object! "private-content" "image/png")
+        mobj   (th/create-file-media-object* {:file-id (:id file1)
+                                              :name "private-media"
+                                              :width 100
+                                              :height 100
+                                              :mtype "image/png"
+                                              :media-id (:id sobj)})
+
+        prof2  (th/create-profile* 2)
+        _      (th/create-project* 2 {:profile-id (:id prof2)
+                                      :team-id (:default-team-id prof2)})
+        file2  (th/create-file* 2 {:profile-id (:id prof2)
+                                   :project-id (:default-project-id prof2)
+                                   :is-shared false})
+
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof2)
+                :file-id         (:id file2)
+                :is-local        true
+                :id              (:id mobj)}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :not-found (:type error-data)))
+      (t/is (= :object-not-found (:code error-data))))))
+
+(t/deftest clone-file-media-object-source-not-found
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id         (:id file)
+                :is-local        true
+                :id              (uuid/random)}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :not-found (:type error-data)))
+      (t/is (= :object-not-found (:code error-data))))))
