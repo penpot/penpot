@@ -23,6 +23,7 @@
    [app.util.http :as http]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each {:before wrf/reset-pending!
@@ -309,19 +310,22 @@
               :backend :google
               :family "Optional CSS Test"
               :variants [{:id "regular"}]})
-      (with-redefs [http/send! (fn [_] (rx/throw (js/Error. "font css fetch failed")))]
-        (->> (fonts/fetch-font-css {:font-id font-id})
-             (rx/subs!
-              #(swap! values conj %)
-              (fn [_]
-                (cleanup)
-                (t/is false "an optional font CSS failure escaped the shared helper")
-                (done))
-              (fn []
-                (cleanup)
-                (t/is (empty? @values)
-                      "a failed optional font contributes no CSS")
-                (done))))))))
+      (mock/with-mocks
+        {http/send! (fn [_] (rx/throw (js/Error. "font css fetch failed")))}
+        (fn [done']
+          (->> (fonts/fetch-font-css {:font-id font-id})
+               (rx/subs!
+                #(swap! values conj %)
+                (fn [_]
+                  (cleanup)
+                  (t/is false "an optional font CSS failure escaped the shared helper")
+                  (done'))
+                (fn []
+                  (cleanup)
+                  (t/is (empty? @values)
+                        "a failed optional font contributes no CSS")
+                  (done')))))
+        done))))
 
 (t/deftest deduplicated-wasm-font-failure-settles-every-face
   (t/async done
