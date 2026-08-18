@@ -105,64 +105,88 @@
   "Create changes for dropping a token set or token set.
   Throws for impossible moves."
   [changes tokens-lib params]
-  (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
-    (pcb/move-token-set changes params)
+  (if tokens-lib
+    (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
+      (pcb/move-token-set changes params)
+      changes)
     changes))
 
 (defn generate-move-token-set-group
   "Create changes for dropping a token set or token set group.
   Throws for impossible moves"
   [changes tokens-lib params]
-  (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
-    (pcb/move-token-set-group changes params)
+  (if tokens-lib
+    (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
+      (pcb/move-token-set-group changes params)
+      changes)
     changes))
 
 (defn generate-delete-token-set-group
   "Create changes for deleting a token set group."
   [changes tokens-lib path]
-  (let [sets (ctob/get-sets-at-path tokens-lib path)]
-    (reduce (fn [changes set]
-              (pcb/set-token-set changes (ctob/get-id set) nil))
-            changes
-            sets)))
+  (if tokens-lib
+    (let [sets (ctob/get-sets-at-path tokens-lib path)]
+      (reduce (fn [changes set]
+                (pcb/set-token-set changes (ctob/get-id set) nil))
+              changes
+              sets))
+    changes))
 
 ;; Tokens Status
 
 (defn- update-tokens-status
   [changes tokens-status update-fn & args]
-  (let [tokens-status' (apply update-fn tokens-status args)]
-    (if (not= tokens-status tokens-status')
-      (pcb/set-tokens-status changes tokens-status')
-      changes)))
+  (if tokens-status
+    (let [tokens-status' (apply update-fn tokens-status args)]
+      (if (not= tokens-status tokens-status')
+        (pcb/set-tokens-status changes tokens-status')
+        changes))
+    changes))
 
 (defn generate-activate-theme
   [changes tokens-status tokens-lib id]
-  (update-tokens-status changes tokens-status cfo/activate-theme tokens-lib id))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/activate-theme tokens-lib id)
+    changes))
 
 (defn generate-deactivate-theme
   [changes tokens-status tokens-lib id]
-  (update-tokens-status changes tokens-status cfo/deactivate-theme tokens-lib id))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/deactivate-theme tokens-lib id)
+    changes))
 
 (defn generate-set-theme-status
   [changes tokens-status tokens-lib id active?]
-  (update-tokens-status changes tokens-status cfo/set-theme-active tokens-lib id active?))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/set-theme-active tokens-lib id active?)
+    changes))
 
 (defn generate-toggle-theme
   [changes tokens-status tokens-lib id]
-  (update-tokens-status changes tokens-status cfo/toggle-theme-active tokens-lib id))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/toggle-theme-active tokens-lib id)
+    changes))
 
 (defn generate-set-enabled-token-set
   [changes tokens-status tokens-lib id enabled?]
-  (update-tokens-status changes tokens-status cfo/set-set-active tokens-lib id enabled?))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/set-set-active tokens-lib id enabled?)
+    changes))
 
 (defn generate-toggle-token-set
   [changes tokens-status tokens-lib id]
-  (update-tokens-status changes tokens-status cfo/toggle-set-active tokens-lib id))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/toggle-set-active tokens-lib id)
+    changes))
 
 (defn generate-toggle-token-set-group
   [changes tokens-status tokens-lib group-path]
-  (update-tokens-status changes tokens-status cfo/toggle-set-group-active tokens-lib group-path))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/toggle-set-group-active tokens-lib group-path)
+    changes))
 
 (defn generate-sync-tokens-status-with-lib
   [changes tokens-status tokens-lib]
-  (update-tokens-status changes tokens-status cfo/sync-tokens-status-with-lib tokens-lib))
+  (if tokens-lib
+    (update-tokens-status changes tokens-status cfo/sync-tokens-status-with-lib tokens-lib)
+    changes))

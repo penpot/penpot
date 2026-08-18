@@ -888,3 +888,155 @@
                       (clt/generate-sync-tokens-status-with-lib tokens-status tokens-lib))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
+
+;; Nil-safety: all public functions must be no-op with nil tokens-lib or tokens-status
+
+(t/deftest nil-tokens-lib-generate-move-token-set-test
+  (t/testing "generate-move-token-set is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)]
+      (t/is (= changes
+               (clt/generate-move-token-set changes nil {:from-index 0
+                                                         :to-index 1
+                                                         :position :top}))))))
+
+(t/deftest nil-tokens-lib-generate-move-token-set-group-test
+  (t/testing "generate-move-token-set-group is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)]
+      (t/is (= changes
+               (clt/generate-move-token-set-group changes nil {:from-index 0
+                                                               :to-index 1
+                                                               :position :top}))))))
+
+(t/deftest nil-tokens-lib-generate-delete-token-set-group-test
+  (t/testing "generate-delete-token-set-group is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)]
+      (t/is (= changes
+               (clt/generate-delete-token-set-group changes nil ["group"]))))))
+
+(t/deftest nil-tokens-status-generate-activate-theme-test
+  (t/testing "generate-activate-theme is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-activate-theme changes nil tokens-lib (uuid/next)))))))
+
+(t/deftest nil-tokens-lib-generate-activate-theme-test
+  (t/testing "generate-activate-theme is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-activate-theme changes tokens-status nil (uuid/next)))))))
+
+(t/deftest nil-tokens-status-generate-deactivate-theme-test
+  (t/testing "generate-deactivate-theme is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-deactivate-theme changes nil tokens-lib (uuid/next)))))))
+
+(t/deftest nil-tokens-lib-generate-deactivate-theme-test
+  (t/testing "generate-deactivate-theme is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-deactivate-theme changes tokens-status nil (uuid/next)))))))
+
+(t/deftest nil-tokens-status-generate-set-theme-status-test
+  (t/testing "generate-set-theme-status is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-set-theme-status changes nil tokens-lib (uuid/next) true))))))
+
+(t/deftest nil-tokens-lib-generate-set-theme-status-test
+  (t/testing "generate-set-theme-status is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-set-theme-status changes tokens-status nil (uuid/next) true))))))
+
+(t/deftest nil-tokens-status-generate-toggle-theme-test
+  (t/testing "generate-toggle-theme is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-toggle-theme changes nil tokens-lib (uuid/next)))))))
+
+(t/deftest nil-tokens-lib-generate-toggle-theme-test
+  (t/testing "generate-toggle-theme is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-toggle-theme changes tokens-status nil (uuid/next)))))))
+
+(t/deftest nil-tokens-status-generate-set-enabled-token-set-test
+  (t/testing "generate-set-enabled-token-set is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-set-enabled-token-set changes nil tokens-lib (uuid/next) true))))))
+
+(t/deftest nil-tokens-lib-generate-set-enabled-token-set-test
+  (t/testing "generate-set-enabled-token-set is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-set-enabled-token-set changes tokens-status nil (uuid/next) true))))))
+
+(t/deftest nil-tokens-status-generate-toggle-token-set-test
+  (t/testing "generate-toggle-token-set is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-toggle-token-set changes nil tokens-lib (uuid/next)))))))
+
+(t/deftest nil-tokens-lib-generate-toggle-token-set-test
+  (t/testing "generate-toggle-token-set is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-toggle-token-set changes tokens-status nil (uuid/next)))))))
+
+(t/deftest nil-tokens-status-generate-toggle-token-set-group-test
+  (t/testing "generate-toggle-token-set-group is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-toggle-token-set-group changes nil tokens-lib ["foo" "bar"]))))))
+
+(t/deftest nil-tokens-lib-generate-toggle-token-set-group-test
+  (t/testing "generate-toggle-token-set-group is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-toggle-token-set-group changes tokens-status nil ["foo" "bar"]))))))
+
+(t/deftest nil-tokens-status-generate-sync-tokens-status-with-lib-test
+  (t/testing "generate-sync-tokens-status-with-lib is no-op with nil tokens-status"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-lib (tht/get-tokens-lib file)]
+      (t/is (= changes
+               (clt/generate-sync-tokens-status-with-lib changes nil tokens-lib))))))
+
+(t/deftest nil-tokens-lib-generate-sync-tokens-status-with-lib-test
+  (t/testing "generate-sync-tokens-status-with-lib is no-op with nil tokens-lib"
+    (let [changes (pcb/empty-changes)
+          file (tht/sample-file-with-tokens)
+          tokens-status (tht/get-tokens-status file)]
+      (t/is (= changes
+               (clt/generate-sync-tokens-status-with-lib changes tokens-status nil))))))

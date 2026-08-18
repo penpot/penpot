@@ -32,12 +32,14 @@
   (ptk/reify ::end+
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data (dsh/lookup-file-data state)]
-        (->> (cfo/get-tokens-in-active-sets
-              (cfo/get-tokens-status data)
-              (cfo/get-tokens-lib data))
-             (sd/resolve-tokens)
-             (rx/mapcat #(rx/of (end))))))))
+      (let [data (dsh/lookup-file-data state)
+            tokens-status (cfo/get-tokens-status data)
+            tokens-lib    (cfo/get-tokens-lib data)]
+        (if (and tokens-status tokens-lib)
+          (->> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
+               (sd/resolve-tokens)
+               (rx/mapcat #(rx/of (end))))
+          (rx/of (end)))))))
 
 (defn stop-on
   "Helper function to be used with async version of run-store.
