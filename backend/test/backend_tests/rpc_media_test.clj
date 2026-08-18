@@ -581,6 +581,41 @@
     (t/is (some? (:error out)))
     (t/is (= :not-found (-> out :error ex-data :type)))))
 
+(t/deftest chunked-upload-other-profile-cannot-assemble
+  ;; assemble-chunks must scope the session lookup to the requesting
+  ;; profile so that a different profile cannot assemble chunks from
+  ;; a session they do not own (BOLA / CWE-639).
+  (let [prof1      (th/create-profile* 1)
+        prof2      (th/create-profile* 2)
+        session-id (create-session! prof1 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}]
+
+    ;; prof1 uploads a chunk into their own session
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof1)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile})]
+      (t/is (nil? (:error out))))
+
+    ;; prof2 tries to assemble prof1's session via create-font-variant
+    ;; (which calls assemble-chunks without ownership check)
+    (let [out (th/command! {::th/type        :create-font-variant
+                            ::rpc/profile-id (:id prof2)
+                            :team-id         (:default-team-id prof2)
+                            :font-id         (uuid/next)
+                            :font-family     "TestFont"
+                            :font-weight     400
+                            :font-style      "normal"
+                            :uploads         {"font/ttf" session-id}})]
+      (t/is (some? (:error out)))
+      (t/is (= :not-found (-> out :error ex-data :type)))
+      (t/is (= :object-not-found (-> out :error ex-data :code))))))
+
 (t/deftest chunked-upload-invalid-media-type
   (let [prof       (th/create-profile* 1)
         _          (th/create-project* 1 {:profile-id (:id prof)
