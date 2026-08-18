@@ -6,8 +6,11 @@
 
 (ns frontend-tests.plugins.library-test
   (:require
+   [app.common.types.component :as ctk]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.store :as st]
    [app.plugins.library :as library]
    [app.plugins.register :as r]
@@ -93,3 +96,112 @@
       (t/is (contains? (:color @captured) :image))
       (t/is (not (contains? (:color @captured) :color)))
       (t/is (not (contains? (:color @captured) :gradient))))))
+
+;; ---------------------------------------------------------------------------
+;; Permission checks (T9-F-02)
+;; ---------------------------------------------------------------------------
+
+(t/deftest variant-add-variant-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission (constantly false)
+                  u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  st/emit!           mock/noop]
+      (let [proxy (library/variant-proxy plugin-id file-id id)]
+        (.addVariant proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addVariant "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest variant-add-property-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission (constantly false)
+                  u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  st/emit!           mock/noop]
+      (let [proxy (library/variant-proxy plugin-id file-id id)]
+        (.addProperty proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addProperty "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest variant-remove-property-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission     (constantly false)
+                  u/not-valid            (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  library/get-variant-components (constantly [{:variant-properties [{:name "color" :value "red"}]}])
+                  st/emit!               mock/noop]
+      (let [proxy (library/variant-proxy plugin-id file-id id)]
+        (.removeProperty proxy 0)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :removeProperty "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest variant-rename-property-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission     (constantly false)
+                  u/not-valid            (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  library/get-variant-components (constantly [{:variant-properties [{:name "color" :value "red"}]}])
+                  st/emit!               mock/noop]
+      (let [proxy (library/variant-proxy plugin-id file-id id)]
+        (.renameProperty proxy 0 "newName")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :renameProperty "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest component-transform-in-variant-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission    (constantly false)
+                  u/not-valid           (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  u/locate-library-component (constantly {:id id :main-instance-id id})
+                  ctk/is-variant?       (constantly false)
+                  st/emit!              mock/noop]
+      (let [proxy (library/lib-component-proxy plugin-id file-id id)]
+        (.transformInVariant proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :transformInVariant "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest component-add-variant-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission    (constantly false)
+                  u/not-valid           (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  u/locate-library-component (constantly {:id id :main-instance-id id})
+                  ctk/is-variant?       (constantly true)
+                  st/emit!              mock/noop]
+      (let [proxy (library/lib-component-proxy plugin-id file-id id)]
+        (.addVariant proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addVariant "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest component-set-variant-property-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        errors    (atom [])]
+    (with-redefs [r/check-permission    (constantly false)
+                  u/not-valid           (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  u/locate-library-component (constantly {:id id :variant-properties [{:name "color"}]})
+                  st/emit!              mock/noop]
+      (let [proxy (library/lib-component-proxy plugin-id file-id id)]
+        (.setVariantProperty proxy 0 "red")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :setVariantProperty "Plugin doesn't have 'library:write' permission"]
+                 (first @errors)))))))
