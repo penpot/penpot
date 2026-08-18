@@ -534,6 +534,10 @@
                                 :deleted-at deleted-at
                                 :id profile-id}})
 
+    ;; Invalidate all sessions for this profile to ensure immediate
+    ;; access revocation across all devices
+    (session/invalidate-all cfg profile-id)
+
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))
 

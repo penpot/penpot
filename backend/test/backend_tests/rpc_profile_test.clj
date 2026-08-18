@@ -388,6 +388,31 @@
     (let [result (th/run-task! :objects-gc {:min-age 0})]
       (t/is (= 10 (:processed result))))))
 
+(t/deftest profile-deletion-invalidates-all-sessions
+  (let [prof (th/create-profile* 1)
+
+        ;; Insert 3 sessions for this profile directly into the database
+        session-ids (doall
+                     (for [i (range 3)]
+                       (let [sid (uuid/random)]
+                         (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                           sid (:id prof) (str "user-agent-" i)])
+                         sid)))]
+
+    ;; Verify sessions exist
+    (let [count-before (:count (th/db-exec-one! ["SELECT count(*) FROM http_session_v2 WHERE profile_id = ?" (:id prof)]))]
+      (t/is (= 3 count-before)))
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof)}
+          out    (th/command! params)]
+      (t/is (nil? (:error out))))
+
+    ;; Verify ALL sessions were invalidated (not just one)
+    (let [count-after (:count (th/db-exec-one! ["SELECT count(*) FROM http_session_v2 WHERE profile_id = ?" (:id prof)]))]
+      (t/is (= 0 count-after)))))
+
 
 (t/deftest email-blacklist-1
   (t/is (false? (email.blacklist/enabled? th/*system*)))

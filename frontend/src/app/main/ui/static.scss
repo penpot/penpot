@@ -69,6 +69,7 @@
 // SVG inside deco-before — no class available on the raw element
 .deco-before svg {
   position: absolute;
+  fill: var(--color-foreground-secondary);
   block-size: 1537px;
   inline-size: px2rem(80);
   inset-block-end: 0;
@@ -76,6 +77,7 @@
 
 // SVG inside deco-after2 — no class available on the raw element
 .deco-after2 svg {
+  fill: var(--color-foreground-secondary);
   block-size: 1537px;
   inline-size: px2rem(80);
 }

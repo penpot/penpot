@@ -19,6 +19,7 @@
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.alert]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -87,6 +88,7 @@
 
         route                (mf/deref refs/route)
         invite-email         (-> route :query-params :invite-email)
+        team-id              (:id team)
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -101,15 +103,20 @@
 
         on-invite-member
         (mf/use-fn
-         (mf/deps team invite-email)
+         (mf/deps team-id invite-email)
          (fn []
-           (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+           (st/emit! (dtm/check-and-invite-members {:team-id team-id
                                                     :origin :team
                                                     :invite-email invite-email}))))]
 
-    (mf/with-effect [team invite-email]
-      (when invite-email
-        (on-invite-member)))
+    ;; Depend on `team-id` (stable) rather than `team` (a map whose
+    ;; reference changes on every teams/members fetch) and clear
+    ;; `invite-email` from the URL once consumed, so this can't
+    ;; keep re-triggering `check-and-invite-members` in a loop.
+    (mf/with-effect [team-id invite-email]
+      (when (and team-id invite-email)
+        (on-invite-member)
+        (st/emit! (rt/nav (get-in route [:data :name]) {:team-id team-id} {::rt/replace true}))))
 
     [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}

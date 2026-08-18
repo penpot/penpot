@@ -11,6 +11,7 @@
    [app.common.pprint :as pp]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
@@ -19,6 +20,7 @@
    [backend-tests.storage-test :refer [configure-storage-backend]]
    [buddy.core.bytes :as b]
    [clojure.test :as t]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]))
 
@@ -50,12 +52,33 @@
                            :path path
                            :mtype "image/png"
                            :size 7}}
-        out1    (th/management-command! params)
-        out2    (th/management-command! params)]
+        config  (assoc cf/config :public-uri "https://example.com/penpot")
+        out1    (binding [cf/config config]
+                  (th/management-command! params))
+        out2    (binding [cf/config config]
+                  (th/management-command! params))]
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
+    (t/is (str/starts-with? (str (get-in out1 [:result :uri]))
+                            "https://example.com/penpot/assets/by-id/"))
     (t/is (not= (get-in out1 [:result :id])
                 (get-in out2 [:result :id])))))
+
+(t/deftest upload-tempfile-rejects-html-content-type
+  ;; N2-13: upload-tempfile must reject non-allowed content types
+  (let [profile (th/create-profile* 1 {:is-active true})
+        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
+        _       (io/write* path "<script>alert(1)</script>")
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "evil.html"
+                           :path path
+                           :mtype "text/html"
+                           :size 27}}
+        out     (th/management-command! params)]
+    (t/is (some? (:error out)))
+    (t/is (= :validation (th/ex-type (:error out))))
+    (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
 
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)

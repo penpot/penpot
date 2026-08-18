@@ -56,6 +56,15 @@ fn clip_to_shape(
     }
 }
 
+/// Axis-aligned rect/frame with no corner radii: `dest` fills `selrect`, so a
+/// clip to the container is a no-op before `draw_image_rect`.
+fn is_axis_aligned_image_rect(shape: &Shape) -> bool {
+    matches!(
+        &shape.shape_type,
+        Type::Rect(Rect { corners: None }) | Type::Frame(Frame { corners: None, .. })
+    )
+}
+
 fn draw_image_fill(
     render_state: &mut RenderState,
     shape: &Shape,
@@ -85,29 +94,53 @@ fn draw_image_fill(
 
     let src_rect = get_source_rect(size, container, image_fill);
     let dest_rect = container;
+    let sampling = get_resources().sampling_options;
 
-    let mut image_paint = skia::Paint::default();
-    image_paint.set_anti_alias(antialias);
+    // `save_layer` is only required when a shape-level image filter (blur) must
+    // run over the clipped image. Otherwise a plain save/clip (or no clip for
+    // axis-aligned rects) avoids an offscreen buffer per fill — the hot path
+    // for photo-heavy boards during tile walks.
     if let Some(filter) = shape.image_filter(1.) {
-        image_paint.set_image_filter(filter.clone());
+        let mut layer_paint = skia::Paint::default();
+        layer_paint.set_anti_alias(antialias);
+        layer_paint.set_image_filter(filter);
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+        canvas.save_layer(&layer_rec);
+        clip_to_shape(canvas, shape, container, antialias);
+        canvas.draw_image_rect_with_sampling_options(
+            image,
+            Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+            dest_rect,
+            sampling,
+            paint,
+        );
+        canvas.restore();
+        return;
     }
 
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
-    // Save the current canvas state
-    canvas.save_layer(&layer_rec);
+    let mut draw_paint = paint.clone();
+    draw_paint.set_anti_alias(antialias);
 
+    if is_axis_aligned_image_rect(shape) {
+        canvas.draw_image_rect_with_sampling_options(
+            image,
+            Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+            dest_rect,
+            sampling,
+            &draw_paint,
+        );
+        return;
+    }
+
+    canvas.save();
     clip_to_shape(canvas, shape, container, antialias);
-
-    // Draw the image with the calculated destination rectangle
     canvas.draw_image_rect_with_sampling_options(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        get_resources().sampling_options,
-        paint,
+        sampling,
+        &draw_paint,
     );
-
-    // Restore the canvas to remove the clipping
     canvas.restore();
 }
 

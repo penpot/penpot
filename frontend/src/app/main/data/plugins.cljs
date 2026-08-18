@@ -39,6 +39,7 @@
                     :uri plugin-url
                     :omit-default-headers true
                     :response-type :json})
+       (rx/timeout 15000)
        (rx/map :body)
        (rx/map #(preg/parse-manifest plugin-url %))))
 

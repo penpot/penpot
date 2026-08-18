@@ -13,11 +13,25 @@
    [clojure.test :as t]))
 
 (t/deftest validate-url-allows-public-https
-  (t/is (true? (ssrf/safe-url? "https://example.com/foo")))
-  (t/is (true? (ssrf/safe-url? "https://example.com:8080/path?q=1"))))
+  (let [original ssrf/resolve-host]
+    (with-redefs [ssrf/resolve-host
+                  (fn [hostname]
+                    (if (= hostname "example.com")
+                      (into-array java.net.InetAddress
+                                  [(java.net.InetAddress/getByName "93.184.216.34")])
+                      (original hostname)))]
+      (t/is (true? (ssrf/safe-url? "https://example.com/foo")))
+      (t/is (true? (ssrf/safe-url? "https://example.com:8080/path?q=1"))))))
 
 (t/deftest validate-url-allows-public-http
-  (t/is (true? (ssrf/safe-url? "http://example.com/foo"))))
+  (let [original ssrf/resolve-host]
+    (with-redefs [ssrf/resolve-host
+                  (fn [hostname]
+                    (if (= hostname "example.com")
+                      (into-array java.net.InetAddress
+                                  [(java.net.InetAddress/getByName "93.184.216.34")])
+                      (original hostname)))]
+      (t/is (true? (ssrf/safe-url? "http://example.com/foo"))))))
 
 (t/deftest validate-url-blocks-disallowed-schemes
   (t/is (false? (ssrf/safe-url? "file:///etc/passwd")))

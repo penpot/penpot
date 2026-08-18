@@ -11,10 +11,17 @@
     - stale-asset-error?          – pure predicate
     - exception->error-data       – pure transformer
     - on-error re-entrancy guard  – prevents recursive invocations
-    - flash schedules async emit  – ntf/show is not emitted synchronously"
+    - flash schedules async emit  – ntf/show is not emitted synchronously
+    - organization SSO recovery   – expired SSO sessions go back to the provider"
   (:require
    [app.main.errors :as errors]
+   [app.main.repo :as rp]
+   [app.main.router :as rt]
+   [app.main.store :as st]
+   [app.util.timers :as tm]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 ;; ---------------------------------------------------------------------------
@@ -134,3 +141,231 @@
     (errors/on-error (ex-info "test" {:type ::test-reentrant :hint "first"}))
     ;; The guard must have allowed only the first invocation through.
     (t/is (= 1 @reentrant-call-count))))
+
+;; ---------------------------------------------------------------------------
+;; Expired organization SSO session
+;;
+;; The backend rejects SSO-guarded requests with an :authentication error
+;; coded :nitrate-sso-required once the organization SSO session lapses.
+;; The user must be sent back through the identity provider instead of
+;; being told they have no access to the file.
+;; ---------------------------------------------------------------------------
+
+(def ^:private workspace-href
+  "https://penpot.example.com/#/workspace?team-id=b8f8bb52-8b70-8144-8004-4a5085f0bdc9")
+
+(def ^:private organization-id "d1a4c0f2-2f36-8114-8006-1b0e6d9d0c11")
+
+(defn- sso-required-error
+  []
+  {:type :authentication
+   :code :nitrate-sso-required
+   :organization-id organization-id
+   :team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"})
+
+(t/deftest expired-organization-sso-navigates-to-identity-provider
+  (t/testing "the browser is sent to the identity provider instead of an error page"
+    (let [events (atom [])]
+      (with-redefs [rp/cmd!
+                    (mock/stub
+                     (fn [_command _params]
+                       (rx/of {:authorized false
+                               :redirect-uri "https://idp.example.com/authorize"})))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    st/emit!
+                    (mock/stub (fn [& emitted] (swap! events into emitted)))]
+
+        (errors/on-error (sso-required-error))
+
+        (t/is (= [::rt/nav-raw] (mapv ptk/type @events)))))))
+
+(t/deftest expired-organization-sso-comes-back-to-the-current-location
+  (t/testing "the SSO check asks the provider to return the user where they were"
+    (let [rpc-calls (atom [])]
+      (with-redefs [rp/cmd!
+                    (mock/stub
+                     (fn [command params]
+                       (swap! rpc-calls conj {:command command :params params})
+                       (rx/of {:authorized false
+                               :redirect-uri "https://idp.example.com/authorize"})))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    st/emit! mock/noop]
+
+        (errors/on-error (sso-required-error))
+
+        (t/is (= [{:command :check-nitrate-sso
+                   :params {:team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"
+                            :organization-id organization-id
+                            :url workspace-href}}]
+                 @rpc-calls))))))
+
+(t/deftest already-satisfied-organization-sso-retries-the-location
+  (t/testing "a session renewed meanwhile (e.g. in another tab) reloads instead of erroring"
+    (let [events (atom [])]
+      (with-redefs [rp/cmd!
+                    (mock/stub
+                     (fn [_command _params]
+                       (rx/of {:authorized true :reason :sso-satisfied})))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    st/emit!
+                    (mock/stub (fn [& emitted] (swap! events into emitted)))]
+
+        (errors/on-error (sso-required-error))
+
+        (t/is (= [::rt/reload] (mapv ptk/type @events)))))))
+
+(t/deftest organization-sso-without-usable-provider-shows-the-sso-error-dialog
+  (t/testing "SSO is required but there is nowhere to go: offer a retry, not a permission error"
+    (let [assigned* (atom nil)]
+      (with-redefs [rp/cmd!
+                    (mock/stub
+                     (fn [_command _params]
+                       (rx/of {:authorized false :redirect-uri nil})))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    rt/assign-exception
+                    (fn [error]
+                      (reset! assigned* error)
+                      (ptk/data-event ::assigned error))]
+
+        (errors/on-error (sso-required-error))
+
+        (t/is (= :sso-error (:type @assigned*)))
+        (t/is (= organization-id (:organization-id @assigned*)))
+        (t/is (true? (:is-workspace @assigned*)))))))
+
+(t/deftest organization-sso-without-team-access-reports-a-permission-failure
+  (t/testing "a user who cannot reach the team keeps getting the authentication error"
+    (let [assigned* (atom nil)]
+      (with-redefs [rp/cmd!
+                    (mock/stub
+                     (fn [_command _params]
+                       (rx/of {:authorized true :reason :no-team-access})))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    rt/assign-exception
+                    (fn [error]
+                      (reset! assigned* error)
+                      (ptk/data-event ::assigned error))]
+
+        (errors/on-error (sso-required-error))
+
+        (t/is (= :authentication (:type @assigned*)))
+        (t/is (= :nitrate-sso-required (:code @assigned*)))))))
+
+(t/deftest organization-sso-does-not-retry-on-an-unexplained-authorization
+  (t/testing "reloading on an answer we don't understand would spin on the same rejection"
+    (let [events (atom [])]
+      (with-redefs [rp/cmd!
+                    (mock/stub (fn [_command _params] (rx/of {:authorized true})))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    rt/assign-exception
+                    (fn [error] (ptk/data-event ::assigned error))
+
+                    ;; async-emit! is variadic-only, so the replacement must be
+                    ;; variadic too for the compiled static dispatch to find it
+                    st/async-emit!
+                    (fn [& emitted] (swap! events into emitted))]
+
+        (errors/on-error (sso-required-error))
+
+        (t/is (= [::assigned] (mapv ptk/type @events)))))))
+
+(t/deftest organization-sso-error-without-context-is-reported-as-it-arrives
+  (t/testing "with no organization and no team there is nothing to check"
+    (let [rpc-calls (atom 0)
+          assigned* (atom nil)]
+      (with-redefs [rp/cmd!
+                    (mock/stub (fn [_command _params]
+                                 (swap! rpc-calls inc)
+                                 (rx/empty)))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    rt/assign-exception
+                    (fn [error]
+                      (reset! assigned* error)
+                      (ptk/data-event ::assigned error))]
+
+        (errors/on-error {:type :authentication
+                          :code :nitrate-sso-required})
+
+        (t/is (zero? @rpc-calls))
+        (t/is (= :nitrate-sso-required (:code @assigned*)))))))
+
+(t/deftest a-resultless-organization-sso-check-does-not-wedge-later-rejections
+  (t/testing "the one-in-flight guard is released even when no answer arrives"
+    (let [rpc-calls (atom 0)]
+      (with-redefs [rp/cmd!
+                    (mock/stub (fn [_command _params]
+                                 (swap! rpc-calls inc)
+                                 (rx/empty)))
+
+                    rt/get-current-href
+                    (constantly workspace-href)
+
+                    st/emit! mock/noop]
+
+        (errors/on-error (sso-required-error))
+        (errors/on-error (sso-required-error))
+
+        (t/is (= 2 @rpc-calls))))))
+
+;; A failing check must stay a failing check: the generic handling turns it
+;; into a toast, whereas swallowing it would show a permission error for
+;; what may be a momentary network blip. The mocked RPC fails on a later
+;; tick, like a real request, so the handler is not inside on-error's
+;; re-entrancy guard when the failure arrives.
+
+(def ^:private check-failures (atom []))
+
+(defmethod ptk/handle-error ::test-check-failure
+  [error]
+  (swap! check-failures conj error))
+
+(t/deftest failing-organization-sso-check-is-not-reported-as-missing-access
+  (t/async done
+    (reset! check-failures [])
+    (let [assigned* (atom nil)]
+      (mock/with-mocks
+        {rp/cmd!
+         (mock/stub
+          (fn [_command _params]
+            (->> (rx/timer 0)
+                 (rx/mapcat (fn [_]
+                              (rx/throw (ex-info "boom" {:type ::test-check-failure})))))))
+
+         rt/get-current-href
+         (constantly workspace-href)
+
+         rt/assign-exception
+         (fn [error]
+           (reset! assigned* error)
+           (ptk/data-event ::assigned error))}
+
+        (fn [done']
+          (errors/on-error (sso-required-error))
+          (tm/schedule
+           50
+           (fn []
+             (t/is (= [::test-check-failure] (mapv :type @check-failures)))
+             (t/is (nil? @assigned*))
+             (done'))))
+        done))))

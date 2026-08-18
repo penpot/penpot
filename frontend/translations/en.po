@@ -1243,7 +1243,7 @@ msgstr "Your project has been moved successfully"
 
 #, unused
 msgid "dashboard.team-belong-organization"
-msgstr "This team now belongs to %s"
+msgstr "This team is now part of the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
 msgid "dashboard.team-info"
@@ -1255,7 +1255,7 @@ msgstr "Team members"
 
 #, unused
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "This team no longer belongs to the organization %s"
+msgstr "This team is no longer part of the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
@@ -4377,6 +4377,9 @@ msgstr "This code has expired."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Invalid code."
 
+msgid "nitrate.activation-code.used-error"
+msgstr "This code has already been used."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
 msgid "nitrate.activation-success.active-until"
 msgstr "Your plan is active until %s."
@@ -6072,12 +6075,6 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "The payment was not completed. Please try again. "
 "If the problem persists, contact us: support@penpot.app."
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"We couldn’t confirm your subscription. Please check your subscription "
-"status on the Subscription page. You may try again if needed."
 
 #: src/app/main/ui/settings/sidebar.cljs:114, src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:565
 msgid "subscription.labels"
@@ -10339,3 +10336,12 @@ msgstr "Click to close the path"
 
 msgid "notifications.invitation-canceled"
 msgstr "This invitation is no longer available."
+
+msgid "labels.sso-error.title"
+msgstr "We couldn't sign you in to %s"
+
+msgid "labels.sso-error.desc-message"
+msgstr "Sign-in with your organization's identity provider didn't complete. The provider may be unavailable, or your account may not be in its directory yet."
+
+msgid "labels.sso-error.retry"
+msgstr "Try again"
