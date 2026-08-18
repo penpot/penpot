@@ -346,13 +346,21 @@
   (ct/duration {:minutes 10}))
 
 (defn- get-object-url
-  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
+  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]}
+   {:keys [max-age content-disposition] :or {max-age default-max-age}}]
   (assert (ct/duration? max-age) "expected valid duration instance")
 
-  (let [gor  (.. (GetObjectRequest/builder)
+  ;; The content-disposition option is signed into the presigned url, so the
+  ;; object store sets that header on the response the client fetches after
+  ;; following the redirect. It is only set when asked for, so urls for
+  ;; objects served inline stay byte identical to before.
+  (let [gorb (.. (GetObjectRequest/builder)
                  (bucket bucket)
-                 (key (dm/str prefix (impl/id->path id)))
-                 (build))
+                 (key (dm/str prefix (impl/id->path id))))
+        gorb (cond-> gorb
+               (some? content-disposition)
+               (.responseContentDisposition ^String content-disposition))
+        gor  (.build gorb)
         gopr (.. (GetObjectPresignRequest/builder)
                  (signatureDuration ^Duration max-age)
                  (getObjectRequest ^GetObjectRequest gor)
