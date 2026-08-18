@@ -251,7 +251,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when (fn? on-toggle)
-             (on-toggle (ctob/get-name set)))))
+             (on-toggle (ctob/get-id set)))))
 
         on-edit-submit'
         (mf/use-fn

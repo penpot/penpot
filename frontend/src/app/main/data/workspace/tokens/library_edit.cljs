@@ -350,7 +350,8 @@
              tokens-lib (dsh/lookup-tokens-lib state)
              suffix     (tr "workspace.tokens.duplicate-suffix")]
 
-         (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]
+         (when-let [token-set (when tokens-lib
+                                (ctob/duplicate-set id tokens-lib {:suffix suffix}))]
            (when id-ref (reset! id-ref (ctob/get-id token-set)))
            (let [changes (-> (pcb/empty-changes it)
                              (pcb/with-library-data data)
@@ -604,21 +605,22 @@
                          (lookup-token-set state set-id)
                          (lookup-token-set state))
              data      (dsh/lookup-file-data state)
-             token     (-> (dsh/lookup-tokens-lib state)
-                           (ctob/get-token (ctob/get-id token-set) id))
-             token'    (->> (merge token params)
-                            (into {})
-                            (ctob/make-token))
-             token-type (:type token)
-             changes   (-> (pcb/empty-changes it)
-                           (pcb/with-library-data data)
-                           (pcb/set-token (ctob/get-id token-set)
-                                          id
-                                          token'))]
-         (toggle-token-path (str (name token-type) "." (:name token)))
-         (rx/of (dch/commit-changes changes)
-                (ev/event (-> {::ev/name "edit-token" :type token-type}
-                              (merge (meta it))))))))))
+             tokens-lib (dsh/lookup-tokens-lib state)]
+         (when (and tokens-lib token-set)
+           (let [token     (ctob/get-token tokens-lib (ctob/get-id token-set) id)
+                 token'    (->> (merge token params)
+                                (into {})
+                                (ctob/make-token))
+                 token-type (:type token)
+                 changes   (-> (pcb/empty-changes it)
+                               (pcb/with-library-data data)
+                               (pcb/set-token (ctob/get-id token-set)
+                                              id
+                                              token'))]
+             (toggle-token-path (str (name token-type) "." (:name token)))
+             (rx/of (dch/commit-changes changes)
+                    (ev/event (-> {::ev/name "edit-token" :type token-type}
+                                  (merge (meta it))))))))))))
 
 (defn bulk-update-tokens
   [set-id token-ids type old-path new-path & {:keys [undo-group]}]
@@ -658,19 +660,20 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            tokens-lib (dsh/lookup-tokens-lib state)
             token-set (if set-id
                         (lookup-token-set state set-id)
-                        (lookup-token-set state))
-            token     (-> (dsh/lookup-tokens-lib state)
-                          (ctob/get-token (ctob/get-id token-set) token-id))
-            token-type (:type token)
+                        (lookup-token-set state))]
+        (when (and tokens-lib token-set)
+          (let [token     (ctob/get-token tokens-lib (ctob/get-id token-set) token-id)
+                token-type (:type token)
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/set-token set-id token-id nil))]
-        (rx/of (dch/commit-changes changes)
-               (ev/event (-> {::ev/name "delete-token" :type token-type}
-                             (merge (meta it)))))))))
+                changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/set-token set-id token-id nil))]
+            (rx/of (dch/commit-changes changes)
+                   (ev/event (-> {::ev/name "delete-token" :type token-type}
+                                 (merge (meta it)))))))))))
 
 (defn bulk-delete-tokens
   [set-id token-ids]
