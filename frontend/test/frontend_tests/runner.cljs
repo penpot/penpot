@@ -56,6 +56,7 @@
    [frontend-tests.plugins.shape-bugfixes-test]
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
+   [frontend-tests.plugins.user-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-dimensions-test]
@@ -156,6 +157,7 @@
    'frontend-tests.plugins.shape-bugfixes-test
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
+   'frontend-tests.plugins.user-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
