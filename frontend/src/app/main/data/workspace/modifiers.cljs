@@ -727,46 +727,46 @@
         ;; `clear-local-transform`.
         (ensure-interactive-transform-start!)
         (let [snap-pixel?  (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
-              translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))])
+              translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
 
-        (if translation?
-          ;; Pure translation: no structure changes needed. If structure
-          ;; modifiers were active from a previous non-translation frame
-          ;; (e.g. shape hovered over a frame then dragged back out),
-          ;; clear them now so the shape is not clipped by the old frame.
-          (when @wasm-structure-modifiers-active?
-            (wasm.api/clean-modifiers)
-            (vreset! wasm-structure-modifiers-active? false))
-          (let [objects (dsh/lookup-page-objects state)]
-            (set-wasm-props! objects (:prev-wasm-props state) (:wasm-props state))
-            (wasm.api/clean-modifiers)
-            (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
-            (vreset! wasm-structure-modifiers-active? true)))
-        (let [geometry-entries (parse-geometry-modifiers modif-tree)
-              root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
-              wasm-ready?      (wasm.api/initialized?)
-              ;; While the GL context is down (lost / mid-reload), keep the
-              ;; root transforms so SVG selection/preview can still move.
-              ;; `propagate-modifiers` returns [] when not ready, do not
-              ;; treat that as "no modifiers".
-              modifiers
-              (cond
-                (or (not wasm-ready?)
-                    (and translation? (not snap-pixel?)))
-                root-modifiers
+          (if translation?
+            ;; Pure translation: no structure changes needed. If structure
+            ;; modifiers were active from a previous non-translation frame
+            ;; (e.g. shape hovered over a frame then dragged back out),
+            ;; clear them now so the shape is not clipped by the old frame.
+            (when @wasm-structure-modifiers-active?
+              (wasm.api/clean-modifiers)
+              (vreset! wasm-structure-modifiers-active? false))
+            (let [objects (dsh/lookup-page-objects state)]
+              (set-wasm-props! objects (:prev-wasm-props state) (:wasm-props state))
+              (wasm.api/clean-modifiers)
+              (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
+              (vreset! wasm-structure-modifiers-active? true)))
+          (let [geometry-entries (parse-geometry-modifiers modif-tree)
+                root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
+                wasm-ready?      (wasm.api/initialized?)
+                ;; While the GL context is down (lost / mid-reload), keep the
+                ;; root transforms so SVG selection/preview can still move.
+                ;; `propagate-modifiers` returns [] when not ready, do not
+                ;; treat that as "no modifiers".
+                modifiers
+                (cond
+                  (or (not wasm-ready?)
+                      (and translation? (not snap-pixel?)))
+                  root-modifiers
 
-                :else
-                (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
-                  (if (seq propagated) propagated root-modifiers)))]
-          (when wasm-ready?
-            (wasm.api/set-modifiers modifiers))
-          (let [ids     (into [] xf:map-key geometry-entries)
-                selrect (when wasm-ready?
-                          (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
-                            (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
-                            (wasm.api/get-selection-rect ids)))]
-            (rx/of (set-temporary-selrect selrect)
-                   (set-temporary-modifiers modifiers))))))))
+                  :else
+                  (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
+                    (if (seq propagated) propagated root-modifiers)))]
+            (when wasm-ready?
+              (wasm.api/set-modifiers modifiers))
+            (let [ids     (into [] xf:map-key geometry-entries)
+                  selrect (when wasm-ready?
+                            (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
+                              (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
+                              (wasm.api/get-selection-rect ids)))]
+              (rx/of (set-temporary-selrect selrect)
+                     (set-temporary-modifiers modifiers)))))))))
 
 (defn propagate-structure-modifiers
   [modif-tree objects]
@@ -820,88 +820,89 @@
                 (parse-geometry-modifiers modif-tree)
 
                 snap-pixel?
-                (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
+                (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-            transforms
-            (cond
-              (and translation? (not snap-pixel?))
-              ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
-              ;; translation matrix onto every descendant. Without
-              ;; this step the commit would only touch the dragged
-              ;; primaries and descendants would snap back to their
-              ;; pre-drag positions on drop.
-              ;;
-              ;; Skipped when `snap-pixel?` is on: WASM applies
-              ;; per-shape pixel correction (different scale/translate
-              ;; per descendant) which we can't replicate cheaply on
-              ;; the CLJS side.
-              (reduce
-               (fn [acc [id data]]
-                 (let [t (:transform data)
-                       subtree-ids
-                       (or (get subtree-ids-by-id id)
-                           (cfh/get-children-ids-with-self objects id))]
-                   (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
-               {}
-               geometry-entries)
+                transforms
+                (cond
+                  (and translation? (not snap-pixel?))
+                  ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
+                  ;; translation matrix onto every descendant. Without
+                  ;; this step the commit would only touch the dragged
+                  ;; primaries and descendants would snap back to their
+                  ;; pre-drag positions on drop.
+                  ;;
+                  ;; Skipped when `snap-pixel?` is on: WASM applies
+                  ;; per-shape pixel correction (different scale/translate
+                  ;; per descendant) which we can't replicate cheaply on
+                  ;; the CLJS side.
+                  (reduce
+                   (fn [acc [id data]]
+                     (let [t (:transform data)
+                           subtree-ids
+                           (or (get subtree-ids-by-id id)
+                               (cfh/get-children-ids-with-self objects id))]
+                       (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
+                   {}
+                   geometry-entries)
 
-              ;; Context lost / mid-reload: do not call into WASM. Use
-              ;; root transforms (and splat translation onto descendants
-              ;; when we can) so the commit still lands in file data.
-              (not (wasm.api/initialized?))
-              (if translation?
-                (reduce
-                 (fn [acc [id data]]
-                   (let [t (:transform data)
-                         subtree-ids
-                         (or (get subtree-ids-by-id id)
-                             (cfh/get-children-ids-with-self objects id))]
-                     (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
-                 {}
-                 geometry-entries)
-                (into {}
-                      (map (fn [[id data]] [id (:transform data)]))
-                      geometry-entries))
+                  ;; Context lost / mid-reload: do not call into WASM. Use
+                  ;; root transforms (and splat translation onto descendants
+                  ;; when we can) so the commit still lands in file data.
+                  (not (wasm.api/initialized?))
+                  (if translation?
+                    (reduce
+                     (fn [acc [id data]]
+                       (let [t (:transform data)
+                             subtree-ids
+                             (or (get subtree-ids-by-id id)
+                                 (cfh/get-children-ids-with-self objects id))]
+                         (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
+                     {}
+                     geometry-entries)
+                    (into {}
+                          (map (fn [[id data]] [id (:transform data)]))
+                          geometry-entries))
 
-              :else
-              (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
+                  :else
+                  (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
 
-              ignore-tree
-              (calculate-ignore-tree-wasm transforms objects)
+                ignore-tree
+                (calculate-ignore-tree-wasm transforms objects)
 
-              options
-              (-> params
-                  (assoc :reg-objects? true)
-                  (assoc :ignore-tree ignore-tree)
-                  (assoc :translation? translation?)
-                  ;; Attributes that can change in the transform. This
-                  ;; way we don't have to check all the attributes
-                  (assoc :attrs transform-attrs))
+                options
+                (-> params
+                    (assoc :reg-objects? true)
+                    (assoc :ignore-tree ignore-tree)
+                    (assoc :translation? translation?)
+                    ;; Attributes that can change in the transform. This
+                    ;; way we don't have to check all the attributes
+                    (assoc :attrs transform-attrs))
 
-              modif-tree
-              (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
+                modif-tree
+                (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
 
-              ids
-              (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
+                ids
+                (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
-              update-shape
-              (fn [shape]
-                (let [shape-id  (dm/get-prop shape :id)
-                      transform (get transforms shape-id)
-                      modifiers (dm/get-in modif-tree [shape-id :modifiers])]
-                  (-> shape
-                      (gsh/apply-transform transform)
-                      (ctm/apply-structure-modifiers modifiers))))
+                update-shape
+                (fn [shape]
+                  (let [shape-id  (dm/get-prop shape :id)
+                        transform (get transforms shape-id)
+                        modifiers (dm/get-in modif-tree [shape-id :modifiers])]
+                    (-> shape
+                        (gsh/apply-transform transform)
+                        (ctm/apply-structure-modifiers modifiers))))
 
-              bool-ids
-              (into #{}
-                    (comp
-                     (mapcat (partial cfh/get-parents-with-self objects))
-                     (filter cfh/bool-shape?)
-                     (map :id))
-                    ids)
+                bool-ids
+                (into #{}
+                      (comp
+                       (mapcat (partial cfh/get-parents-with-self objects))
+                       (filter cfh/bool-shape?)
+                       (map :id))
+                      ids)
 
-              undo-id (js/Symbol))
+                undo-id (js/Symbol)]
+
             (rx/concat
              (if undo-transation?
                (rx/of (dwu/start-undo-transaction undo-id))
