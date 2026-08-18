@@ -9,18 +9,9 @@ use crate::uuid::Uuid;
 
 use super::shape_renderer::ShapeRenderer;
 use super::text;
+use super::RenderResources;
 use super::RenderState;
 use super::{get_dest_rect, get_source_rect};
-
-// ---------------------------------------------------------------------------
-// VectorTarget — vector export backend selector
-// ---------------------------------------------------------------------------
-
-/// Vector export backend selector (PDF today; SVG could be added as a variant).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum VectorTarget {
-    Pdf,
-}
 
 // ---------------------------------------------------------------------------
 // VectorRenderer — implements ShapeRenderer for canvas-based vector export
@@ -29,23 +20,16 @@ pub(super) enum VectorTarget {
 /// Canvas-based vector render backend (CPU Skia canvas, no GPU surfaces).
 pub(super) struct VectorRenderer<'a> {
     canvas: &'a Canvas,
-    shared: &'a mut RenderState,
+    shared: &'a mut RenderResources,
     scale: f32,
-    _target: VectorTarget,
 }
 
 impl<'a> VectorRenderer<'a> {
-    pub fn new(
-        canvas: &'a Canvas,
-        shared: &'a mut RenderState,
-        scale: f32,
-        target: VectorTarget,
-    ) -> Self {
+    pub fn new(canvas: &'a Canvas, shared: &'a mut RenderResources, scale: f32) -> Self {
         Self {
             canvas,
             shared,
             scale,
-            _target: target,
         }
     }
 }
@@ -95,11 +79,14 @@ impl ShapeRenderer for VectorRenderer<'_> {
     }
 
     fn draw_drop_shadows(&mut self, shape: &Shape) -> Result<()> {
+        let layer_bounds = shape.layer_bounds();
         for shadow in shape.drop_shadows_visible() {
             if let Some(filter) = shadow.get_drop_shadow_filter() {
                 let mut paint = Paint::default();
                 paint.set_image_filter(filter);
-                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                let layer_rec = skia::canvas::SaveLayerRec::default()
+                    .bounds(&layer_bounds)
+                    .paint(&paint);
                 self.canvas.save_layer(&layer_rec);
                 let mut fill_paint = Paint::default();
                 fill_paint.set_anti_alias(true);
@@ -115,10 +102,14 @@ impl ShapeRenderer for VectorRenderer<'_> {
         if !shape.has_fills() {
             return Ok(());
         }
+        let layer_bounds = shape.layer_bounds();
         for shadow in shape.inner_shadows_visible() {
             let paint = shadow.get_inner_shadow_paint(true, shape.image_filter(1.).as_ref());
-            self.canvas
-                .save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+            self.canvas.save_layer(
+                &skia::canvas::SaveLayerRec::default()
+                    .bounds(&layer_bounds)
+                    .paint(&paint),
+            );
             let mut fill_paint = Paint::default();
             fill_paint.set_anti_alias(true);
             fill_paint.set_color(skia::Color::BLACK);
@@ -177,9 +168,13 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 })
                 .collect();
 
+            let layer_bounds = shape.layer_bounds();
             for shadow_paint in &drop_shadows {
-                self.canvas
-                    .save_layer(&skia::canvas::SaveLayerRec::default().paint(shadow_paint));
+                self.canvas.save_layer(
+                    &skia::canvas::SaveLayerRec::default()
+                        .bounds(&layer_bounds)
+                        .paint(shadow_paint),
+                );
 
                 text::render_overlay_emoji(
                     self.canvas,
@@ -347,7 +342,10 @@ impl ShapeRenderer for VectorRenderer<'_> {
         if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
             let mut paint = Paint::default();
             paint.set_image_filter(filter);
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            let layer_bounds = shape.layer_bounds();
+            let layer_rec = skia::canvas::SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&paint);
             self.canvas.save_layer(&layer_rec);
             true
         } else {
@@ -364,15 +362,88 @@ impl ShapeRenderer for VectorRenderer<'_> {
 // Tree traversal
 // ---------------------------------------------------------------------------
 
-/// Depth-first render of the shape tree rooted at `id`.
+/// Options threaded through the whole traversal. Carries the export root/page
+/// (needed to re-render the backdrop for background blur) and the background
+/// blur strategy for the active canvas.
+struct TreeOpts<'a> {
+    /// The exported root shape id — the backdrop for any shape is re-rendered
+    /// from here.
+    root: &'a Uuid,
+    /// Root's export bounds (shape space); sizes/positions the offscreen
+    /// backdrop surface to match the page.
+    page: skia::Rect,
+    /// `true` on a PDF canvas (which ignores Skia backdrop filters): background
+    /// blur is produced by rendering the backdrop onto an offscreen raster
+    /// surface and embedding the blurred result as an image. `false` on a raster
+    /// canvas, where a plain Skia backdrop filter works directly.
+    embed_bg_blur: bool,
+    /// When rendering a backdrop, the shape whose own subtree must be omitted
+    /// (so the blur samples only what is *behind* it).
+    skip: Option<&'a Uuid>,
+}
+
+/// Depth-first render of the shape tree rooted at `id`. Used for raster export
+/// (PNG/webp), where background blur is applied with a direct Skia backdrop
+/// filter (raster surfaces support it). `page` must be the same bounds the
+/// caller used to size/translate its surface — the embedded background-blur
+/// backdrop is drawn device-aligned against it.
 pub(super) fn render_tree(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     id: &Uuid,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
+    page: skia::Rect,
 ) -> Result<()> {
+    render_tree_dispatch(shared, canvas, id, tree, scale, page, false)
+}
+
+/// Like [`render_tree`], but for a PDF canvas: background blur is embedded as a
+/// rasterised image (the PDF backend ignores backdrop filters).
+pub(super) fn render_tree_pdf(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    id: &Uuid,
+    tree: ShapesPoolRef,
+    scale: f32,
+    page: skia::Rect,
+) -> Result<()> {
+    render_tree_dispatch(shared, canvas, id, tree, scale, page, true)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_tree_dispatch(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    id: &Uuid,
+    tree: ShapesPoolRef,
+    scale: f32,
+    page: skia::Rect,
+    embed_bg_blur: bool,
+) -> Result<()> {
+    let opts = TreeOpts {
+        root: id,
+        page,
+        embed_bg_blur,
+        skip: None,
+    };
+    render_tree_inner(shared, canvas, id, tree, scale, &opts)
+}
+
+fn render_tree_inner(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    id: &Uuid,
+    tree: ShapesPoolRef,
+    scale: f32,
+    opts: &TreeOpts,
+) -> Result<()> {
+    // When re-rendering a backdrop, omit the blur shape's own subtree so it only
+    // samples what is behind it.
+    if opts.skip == Some(id) {
+        return Ok(());
+    }
+
     let Some(element) = tree.get(id) else {
         return Ok(());
     };
@@ -381,12 +452,28 @@ pub(super) fn render_tree(
         return Ok(());
     }
 
+    // Background blur samples already-drawn content behind the shape, so it must
+    // run before the shape (and its subtree) paints. SVGRaw is excluded,
+    // matching the GPU path; text keeps only the glyph-alpha coverage (see the
+    // text branches below), also matching the GPU path.
+    if !matches!(element.shape_type, Type::SVGRaw(_)) {
+        if let Some(blur) = element.visible_background_blur() {
+            if blur.value > 0.0 {
+                if opts.embed_bg_blur {
+                    render_background_blur_image(shared, canvas, element, tree, scale, opts)?;
+                } else {
+                    render_background_blur_backdrop(canvas, element, blur.value * scale);
+                }
+            }
+        }
+    }
+
     match &element.shape_type {
         Type::Group(group) => {
-            render_group(shared, canvas, element, group.masked, tree, scale, target)?;
+            render_group(shared, canvas, element, group.masked, tree, scale, opts)?;
         }
         Type::Frame(_) => {
-            render_frame(shared, canvas, element, tree, scale, target)?;
+            render_frame(shared, canvas, element, tree, scale, opts)?;
         }
         // Leaf types listed explicitly (no `_`) so a new Type must be handled.
         Type::Rect(_)
@@ -395,10 +482,211 @@ pub(super) fn render_tree(
         | Type::Bool(_)
         | Type::Text(_)
         | Type::SVGRaw(_) => {
-            render_leaf(shared, canvas, element, scale, target)?;
+            render_leaf(shared, canvas, element, scale)?;
         }
     }
 
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Background blur
+// ---------------------------------------------------------------------------
+
+/// Background blur on a canvas that supports Skia backdrop filters (raster).
+/// Blurs the current device contents within the shape silhouette and stamps the
+/// result back with `Src` — or, for text, keeps it only under the glyph/stroke
+/// alpha via a `DstIn` mask (mirrors the GPU path). `sigma_radius` is the blur
+/// radius already multiplied by the export scale.
+fn render_background_blur_backdrop(canvas: &Canvas, shape: &Shape, sigma_radius: f32) {
+    let sigma = radius_to_sigma(sigma_radius);
+    let Some(blur_filter) =
+        skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
+    else {
+        return;
+    };
+
+    let matrix = shape.centered_transform();
+    canvas.save();
+    canvas.concat(&matrix);
+
+    if matches!(shape.shape_type, Type::Text(_)) {
+        // Text has no closed geometry to clip with: blur the backdrop inside
+        // the shape rect (outset by the max outward stroke reach so the mask's
+        // stroke coverage isn't cut off), then keep the blurred result only
+        // where the opaque glyph/stroke mask is, via DstIn.
+        let mut clip_rect = shape.selrect;
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+        if stroke_outset > 0.0 {
+            clip_rect.outset((stroke_outset, stroke_outset));
+        }
+        canvas.clip_rect(clip_rect, skia::ClipOp::Intersect, true);
+
+        // Blur in device space (sigma already includes the export scale); the
+        // clip survives reset_matrix. Remember the full transform to restore it
+        // for painting the mask.
+        let local_to_device = canvas.local_to_device();
+        canvas.reset_matrix();
+
+        // SrcOver composite (NOT Src): Src would clear the backdrop outside
+        // the glyphs within the clip rect; SrcOver + DstIn mask leaves the
+        // unmasked backdrop untouched.
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .backdrop(&blur_filter)
+            .backdrop_tile_mode(skia::TileMode::Clamp);
+        canvas.save_layer(&layer_rec);
+
+        canvas.set_matrix(&local_to_device);
+
+        // Keep the blurred backdrop only where the glyphs/strokes are.
+        let mut mask_paint = Paint::default();
+        mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+        let mask_layer_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+        canvas.save_layer(&mask_layer_rec);
+
+        text::paint_text_mask(canvas, shape);
+
+        canvas.restore(); // mask layer
+        canvas.restore(); // blur layer
+        canvas.restore(); // clip + transform
+        return;
+    }
+
+    // When strokes extend beyond the fill geometry (center/outer), expand the
+    // clip with the stroke coverage so the backdrop is also blurred under the
+    // stroke (mirrors the GPU path).
+    let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+    if stroke_outset > 0.0 {
+        let clip_path = RenderState::background_blur_clip_path(shape, stroke_outset);
+        canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
+    } else {
+        clip_to_shape(canvas, shape, true);
+    }
+    // Apply the blur in device space (sigma already includes the export scale);
+    // the clip, set with the full transform, survives reset_matrix.
+    canvas.reset_matrix();
+
+    let mut paint = Paint::default();
+    paint.set_blend_mode(skia::BlendMode::Src);
+    let layer_rec = skia::canvas::SaveLayerRec::default()
+        .backdrop(&blur_filter)
+        .backdrop_tile_mode(skia::TileMode::Clamp)
+        .paint(&paint);
+    canvas.save_layer(&layer_rec);
+    canvas.restore(); // composite the blurred-backdrop layer
+    canvas.restore(); // pop the clip + transform
+}
+
+/// Background blur for a PDF canvas (backdrop filters unsupported): render the
+/// backdrop — the whole page minus this shape's own subtree — onto an offscreen
+/// raster surface, blur it, and embed the result as an image clipped to the
+/// shape. The rest of the page stays vector.
+///
+/// LIMITATION: the backdrop omits only this shape's subtree, not shapes painted
+/// *after* it. For content stacked on top of the blur shape the foreground would
+/// bleed into the blur; correct for the common case (nothing above the panel).
+fn render_background_blur_image(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    shape: &Shape,
+    tree: ShapesPoolRef,
+    scale: f32,
+    opts: &TreeOpts,
+) -> Result<()> {
+    let bounds = opts.page;
+    let width = (bounds.width() * scale).ceil() as i32;
+    let height = (bounds.height() * scale).ceil() as i32;
+    if width <= 0 || height <= 0 {
+        return Ok(());
+    }
+
+    // Render the backdrop into an offscreen raster surface, in the same
+    // coordinate space as the PDF page (see `render/pdf.rs`).
+    let Some(mut surface) = skia::surfaces::raster_n32_premul((width, height)) else {
+        return Ok(());
+    };
+    {
+        let oc = surface.canvas();
+        oc.clear(skia::Color::TRANSPARENT);
+        oc.scale((scale, scale));
+        oc.translate((-bounds.left(), -bounds.top()));
+        let sub = TreeOpts {
+            root: opts.root,
+            page: opts.page,
+            embed_bg_blur: false,
+            skip: Some(&shape.id),
+        };
+        render_tree_inner(shared, oc, opts.root, tree, scale, &sub)?;
+    }
+    let image = surface.image_snapshot();
+
+    // Bake the blur into a raster bitmap. The PDF backend ignores image filters
+    // at draw time (same limitation as backdrop filters), so we must blur on a
+    // raster surface — where filters work — and embed the pre-blurred result.
+    let is_text = matches!(shape.shape_type, Type::Text(_));
+    let sigma = radius_to_sigma(shape.visible_background_blur().map_or(0.0, |b| b.value) * scale);
+    let blurred = {
+        let Some(mut blur_surface) = skia::surfaces::raster_n32_premul((width, height)) else {
+            return Ok(());
+        };
+        let bc = blur_surface.canvas();
+        bc.clear(skia::Color::TRANSPARENT);
+        let mut paint = Paint::default();
+        if let Some(filter) =
+            skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
+        {
+            paint.set_image_filter(filter);
+        }
+        bc.draw_image(&image, (0.0, 0.0), Some(&paint));
+
+        if is_text {
+            // Text has no closed geometry to clip with on the PDF canvas, and
+            // the PDF backend can't express DstIn either — so bake the
+            // glyph/stroke alpha mask into the raster bitmap here (where blend
+            // modes work) and embed the already-masked result.
+            let mut mask_paint = Paint::default();
+            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+            bc.save_layer(&skia::canvas::SaveLayerRec::default().paint(&mask_paint));
+            // Same page-space transform used to render the backdrop above.
+            bc.scale((scale, scale));
+            bc.translate((-bounds.left(), -bounds.top()));
+            bc.concat(&shape.centered_transform());
+            text::paint_text_mask(bc, shape);
+            bc.restore();
+        }
+
+        blur_surface.image_snapshot()
+    };
+
+    let matrix = shape.centered_transform();
+    canvas.save();
+    canvas.concat(&matrix);
+    if is_text {
+        // Mask is already baked into the bitmap; the clip only bounds it to
+        // the shape rect (outset by the max outward stroke reach so stroke
+        // coverage isn't cut off).
+        let mut clip_rect = shape.selrect;
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+        if stroke_outset > 0.0 {
+            clip_rect.outset((stroke_outset, stroke_outset));
+        }
+        canvas.clip_rect(clip_rect, skia::ClipOp::Intersect, true);
+    } else {
+        // Expand the clip with the stroke coverage when strokes reach beyond
+        // the fill geometry (mirrors the GPU path).
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+        if stroke_outset > 0.0 {
+            let clip_path = RenderState::background_blur_clip_path(shape, stroke_outset);
+            canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
+        } else {
+            clip_to_shape(canvas, shape, true);
+        }
+    }
+    // Draw the pre-blurred full-page bitmap in device space (1 image px per
+    // device unit) so it aligns with the page regardless of the shape transform.
+    canvas.reset_matrix();
+    canvas.draw_image(&blurred, (0.0, 0.0), None);
+    canvas.restore();
     Ok(())
 }
 
@@ -407,13 +695,13 @@ pub(super) fn render_tree(
 // ---------------------------------------------------------------------------
 
 fn render_group(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     masked: bool,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
+    opts: &TreeOpts,
 ) -> Result<()> {
     // A group has no geometry of its own and does NOT propagate a transform to
     // its children: child shapes are stored in absolute coordinates and each
@@ -422,7 +710,7 @@ fn render_group(
     canvas.save();
 
     // Group drop shadow: subtree silhouette, below the opacity/clip layer.
-    render_container_drop_shadows(shared, canvas, element, tree, scale, target, false)?;
+    render_container_drop_shadows(shared, canvas, element, tree, scale, false, opts)?;
 
     // Layer for opacity / blend mode (and group-level layer blur)
     let needs_layer = element.needs_layer();
@@ -441,7 +729,10 @@ fn render_group(
             }
         }
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        let layer_bounds = element.extrect(tree, scale);
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&paint);
         canvas.save_layer(&layer_rec);
     }
 
@@ -452,24 +743,33 @@ fn render_group(
         // as content, then re-draw the mask silhouette (the group's first child)
         // with DstIn to clip everything to it.
         let paint = Paint::default();
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+        let subtree_bounds = element.extrect(tree, scale);
+        canvas.save_layer(
+            &skia::canvas::SaveLayerRec::default()
+                .bounds(&subtree_bounds)
+                .paint(&paint),
+        );
 
         for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
+            render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
         }
 
         if let Some(mask_id) = element.mask_id() {
             let mut mask_paint = Paint::default();
             mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-            canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&mask_paint));
-            render_tree(shared, canvas, mask_id, tree, scale, target)?;
+            canvas.save_layer(
+                &skia::canvas::SaveLayerRec::default()
+                    .bounds(&subtree_bounds)
+                    .paint(&mask_paint),
+            );
+            render_tree_inner(shared, canvas, mask_id, tree, scale, opts)?;
             canvas.restore(); // mask layer
         }
 
         canvas.restore(); // composition layer
     } else {
         for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
+            render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
         }
     }
 
@@ -485,12 +785,12 @@ fn render_group(
 // ---------------------------------------------------------------------------
 
 fn render_frame(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
+    opts: &TreeOpts,
 ) -> Result<()> {
     // A frame's own geometry (background, clip, strokes) is placed by its
     // `centered_transform`, but — like groups — it does NOT propagate that
@@ -503,7 +803,7 @@ fn render_frame(
 
     // Frame drop shadow: background + subtree silhouette, below the clip layer
     // so it extends outside the frame bounds.
-    render_container_drop_shadows(shared, canvas, element, tree, scale, target, true)?;
+    render_container_drop_shadows(shared, canvas, element, tree, scale, true, opts)?;
 
     let needs_layer = element.needs_layer();
 
@@ -523,7 +823,10 @@ fn render_frame(
             }
         }
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        let layer_bounds = element.extrect(tree, scale);
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&paint);
         canvas.save_layer(&layer_rec);
     }
 
@@ -542,7 +845,7 @@ fn render_frame(
     if !element.fills.is_empty() {
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale);
         renderer.draw_fills(element, &element.fills)?;
         renderer.draw_fill_inner_shadows(element)?;
         canvas.restore();
@@ -551,7 +854,7 @@ fn render_frame(
     // Children (absolute coords, no frame transform).
     let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
     for child_id in &children {
-        render_tree(shared, canvas, child_id, tree, scale, target)?;
+        render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
     }
 
     // Strokes over children (clipped frames), in the frame's space.
@@ -559,7 +862,7 @@ fn render_frame(
     if !visible_strokes.is_empty() {
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale);
         renderer.draw_strokes(element, &visible_strokes)?;
         canvas.restore();
     }
@@ -575,30 +878,35 @@ fn render_frame(
 /// layer (its alpha becomes the shadow). `draw_fills` includes the frame
 /// background in the silhouette.
 fn render_container_drop_shadows(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
     draw_fills: bool,
+    opts: &TreeOpts,
 ) -> Result<()> {
+    let subtree_bounds = element.extrect(tree, scale);
     for shadow in element.drop_shadows_visible() {
         let Some(filter) = shadow.get_drop_shadow_filter() else {
             continue;
         };
         let mut paint = Paint::default();
         paint.set_image_filter(filter);
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+        canvas.save_layer(
+            &skia::canvas::SaveLayerRec::default()
+                .bounds(&subtree_bounds)
+                .paint(&paint),
+        );
 
         if draw_fills && !element.fills.is_empty() {
-            let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale);
             renderer.draw_fills(element, &element.fills)?;
         }
 
         let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
         for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
+            render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
         }
 
         canvas.restore();
@@ -611,11 +919,10 @@ fn render_container_drop_shadows(
 // ---------------------------------------------------------------------------
 
 fn render_leaf(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     scale: f32,
-    target: VectorTarget,
 ) -> Result<()> {
     let needs_layer = element.needs_layer();
 
@@ -629,11 +936,14 @@ fn render_leaf(
         let mut paint = Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        let layer_bounds = element.layer_bounds();
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&paint);
         canvas.save_layer(&layer_rec);
     }
 
-    let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+    let mut renderer = VectorRenderer::new(canvas, shared, scale);
 
     // Layer blur (non-text shapes)
     let blur_layer = if !matches!(element.shape_type, Type::Text(_)) {
@@ -695,7 +1005,7 @@ fn render_leaf_content<R: ShapeRenderer + ?Sized>(renderer: &mut R, shape: &Shap
 // ---------------------------------------------------------------------------
 
 fn draw_image_fill(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     shape: &Shape,
     image_fill: &crate::shapes::ImageFill,
@@ -737,7 +1047,7 @@ fn draw_image_fill(
 
 fn draw_single_stroke(
     canvas: &Canvas,
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
@@ -828,7 +1138,8 @@ fn draw_stroke_kind_aware(canvas: &Canvas, shape: &Shape, stroke: &Stroke, paint
         }
         StrokeKind::Outer => {
             canvas.save();
-            canvas.save_layer(&skia::canvas::SaveLayerRec::default());
+            let layer_bounds = shape.layer_bounds();
+            canvas.save_layer(&skia::canvas::SaveLayerRec::default().bounds(&layer_bounds));
             draw_shape_geometry(canvas, shape, paint);
             let mut clear_paint = Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
@@ -848,7 +1159,7 @@ fn draw_stroke_kind_aware(canvas: &Canvas, shape: &Shape, stroke: &Stroke, paint
 /// CPU image over it with `SrcIn` so only the stroke area shows the image.
 fn draw_image_stroke(
     canvas: &Canvas,
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
@@ -861,7 +1172,8 @@ fn draw_image_stroke(
     let container = shape.selrect;
 
     canvas.save();
-    canvas.save_layer(&skia::canvas::SaveLayerRec::default());
+    let layer_bounds = shape.layer_bounds();
+    canvas.save_layer(&skia::canvas::SaveLayerRec::default().bounds(&layer_bounds));
 
     // Opaque stroke silhouette; the SrcIn image draw below fills it.
     draw_stroke_geometry(canvas, scale, shape, stroke, true);

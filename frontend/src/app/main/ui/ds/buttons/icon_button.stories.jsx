@@ -24,6 +24,7 @@ export default {
       options: iconList,
       control: { type: "select" },
     },
+    flyoutIndicator: { control: "boolean" },
     disabled: { control: "boolean" },
     variant: {
       options: ["primary", "secondary", "ghost", "destructive", "action"],
@@ -35,6 +36,7 @@ export default {
     variant: undefined,
     "aria-label": "Lorem ipsum",
     icon: "effects",
+    flyoutIndicator: false,
   },
   render: ({ ...args }) => <IconButton {...args} />,
 };
@@ -68,5 +70,12 @@ export const Action = {
 export const Destructive = {
   args: {
     variant: "destructive",
+  },
+};
+
+export const Flyout = {
+  args: {
+    variant: "ghost",
+    flyoutIndicator: true,
   },
 };

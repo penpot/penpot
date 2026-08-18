@@ -1173,6 +1173,15 @@
   [key coll]
   (sort-by key natural-compare coll))
 
+(defn normalize-string
+  "Normalizes a string by trimming leading/trailing whitespace.
+   Returns empty string for nil input. Non-string input is returned unchanged."
+  [s]
+  (cond
+    (nil? s) ""
+    (string? s) (str/trim s)
+    :else s))
+
 (defn sanitize-string [s]
   (if s
     (-> s

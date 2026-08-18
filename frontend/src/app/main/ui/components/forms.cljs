@@ -180,11 +180,17 @@
 
       (cond
         (and touched? (:message error) show-error)
-        (let [message (:message error)]
+        (let [message (:message error)
+              options (:options error)]
           [:div {:id (dm/str "error-" input-name)
                  :class (stl/css :error)
                  :data-testid (dm/str data-testid "-error")}
-           message])
+           message
+           (when (seq options)
+             [:ul {:class (stl/css :error-options)}
+              (for [opt options]
+                [:li {:key opt
+                      :class (stl/css :error-option)} opt])])])
 
         ;; FIXME: DEPRECATED
         (and touched? (:code error) show-error)

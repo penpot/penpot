@@ -16,17 +16,17 @@
                ;;TODO There is a bug on dashboard with teams notifications.
                ;;For now we send it to uuid/zero instead of team-id
                :topic uuid/zero
-               :message {:type :team-org-change
+               :message {:type :team-organization-change
                          :team team
                          :notification notification})))
 
 
-(defn notify-user-org-change
+(defn notify-user-organization-change
   [cfg profile-id organization-id organization-name notification]
   (let [msgbus (::mbus/msgbus cfg)]
     (mbus/pub! msgbus
                :topic profile-id
-               :message {:type :user-org-change
+               :message {:type :user-organization-change
                          :topic profile-id
                          :organization-id organization-id
                          :organization-name organization-name

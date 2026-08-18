@@ -243,6 +243,7 @@ pub extern "C" fn current_to_path() -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
     let mut result = Vec::<RawSegmentData>::default();
+    let mut even_odd = false;
     with_current_shape!(state, |shape: &Shape| {
         let idx = stroke_index as usize;
         if let Some(stroke) = shape.strokes.get(idx) {
@@ -257,6 +258,7 @@ pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
                 shape.svg_attrs.as_ref(),
                 false,
             ) {
+                even_odd = path.is_even_odd();
                 result = path
                     .segments()
                     .iter()
@@ -267,7 +269,7 @@ pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
         }
     });
 
-    mem::write_vec(result)
+    mem::write_vec_with_header(even_odd as u32, result)
 }
 
 #[cfg(test)]

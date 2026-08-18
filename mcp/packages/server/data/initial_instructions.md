@@ -345,7 +345,7 @@ The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
   * `sets: TokenSet[]` - Token collections (order matters for precedence)
   * `themes: TokenTheme[]` - Presets that activate specific sets
   * `addSet({name: string}): TokenSet` - Create new set
-  * `addTheme(group: string, name: string): TokenTheme` - Create new theme
+  * `addTheme({group: string, name: string}): TokenTheme` - Create new theme
 
 `TokenSet` contains tokens with unique names:
   * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`

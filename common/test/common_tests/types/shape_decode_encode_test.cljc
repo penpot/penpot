@@ -146,3 +146,24 @@
          ;; (app.common.pprint/pprint shape-3)
          (= shape shape-3)))
      {:num 200})))
+
+(t/deftest shape-generator-key-presence
+  "The generator must produce the keys the schema declares required, even when
+  nilable. This is a targeted check for the attributes added to
+  `schema:shape-generic-attrs` and `schema:nilable-geom-attrs`."
+  (let [shapes (sg/sample (sg/generator schema:shape) {:size 200})
+        by-type (group-by :type shapes)]
+    ;; All shapes: rotation, flip-x, flip-y are base record fields, always
+    ;; present (possibly nil).
+    (doseq [shape shapes]
+      (t/is (contains? shape :rotation) "missing :rotation")
+      (t/is (contains? shape :flip-x) "missing :flip-x")
+      (t/is (contains? shape :flip-y) "missing :flip-y"))
+    ;; Bool and path: x/y/width/height are required-but-nilable in the
+    ;; schema. The generator must produce them (nil is a valid value).
+    (doseq [shape (concat (get by-type :bool [])
+                          (get by-type :path []))]
+      (t/is (contains? shape :x) "bool/path missing :x")
+      (t/is (contains? shape :y) "bool/path missing :y")
+      (t/is (contains? shape :width) "bool/path missing :width")
+      (t/is (contains? shape :height) "bool/path missing :height"))))

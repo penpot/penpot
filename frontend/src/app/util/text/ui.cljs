@@ -46,8 +46,18 @@
   []
   (dom/query "[data-itype=\"editor\"]"))
 
+(defn v3-get-text-editor-content
+  []
+  (dom/get-element "text-editor-wasm-input"))
+
 (defn get-text-editor-content
   []
-  (if (features/active-feature? @st/state "text-editor/v2")
+  (cond
+    (features/active-feature? @st/state "text-editor-wasm/v1")
+    (v3-get-text-editor-content)
+
+    (features/active-feature? @st/state "text-editor/v2")
     (v2-get-text-editor-content)
+
+    :else
     (v1-get-text-editor-content)))

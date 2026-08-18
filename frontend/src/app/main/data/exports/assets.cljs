@@ -8,7 +8,6 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
@@ -183,11 +182,11 @@
 (def ^:private wasm-export-types #{:jpeg :webp :png :pdf})
 
 (defn- wasm-export-enabled?
-  "WASM export is available: the flag is set AND render-wasm is active for the
-  current file. When render-wasm is inactive its shape tree isn't loaded, so a
-  client-side WASM render would crash."
+  "WASM export is available when the `wasm-export/v1` feature is active AND
+  render-wasm is active for the current file. When render-wasm is inactive its
+  shape tree isn't loaded, so a client-side WASM render would crash."
   [state]
-  (and (contains? cf/flags :wasm-export)
+  (and (features/active-feature? state "wasm-export/v1")
        (features/active-feature? state "render-wasm/v1")))
 
 (defn- use-wasm-export?
@@ -195,6 +194,15 @@
   [state export]
   (and (wasm-export-enabled? state)
        (contains? wasm-export-types (:type export))))
+
+(defn- request-simple-export-wasm
+  [export]
+  (ptk/reify ::request-simple-export-wasm
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (case (:type export)
+        :pdf (wasm.exports/export-pdf export)
+        (wasm.exports/export-image export)))))
 
 (defn request-simple-export
   [{:keys [export]}]
@@ -209,17 +217,13 @@
       ptk/WatchEvent
       (watch [_ state _]
         (if (use-wasm-export? state export)
-          (do
-            (case (:type export)
-              :pdf (wasm.exports/export-pdf export)
-              (wasm.exports/export-image export))
-            (rx/empty))
+          (rx/of (request-simple-export-wasm export))
           (let [profile-id (:profile-id state)
-                params (normalize-export-shapes-params {:exports [export]
-                                                        :profile-id profile-id
-                                                        :cmd :export-shapes
-                                                        :wait true
-                                                        :is-wasm (wasm-export-enabled? state)})]
+                params     (normalize-export-shapes-params {:exports [export]
+                                                            :profile-id profile-id
+                                                            :cmd :export-shapes
+                                                            :wait true
+                                                            :is-wasm (wasm-export-enabled? state)})]
             (rx/concat
              (dwp/force-persist-and-wait 400)
 

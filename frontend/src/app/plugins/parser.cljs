@@ -214,6 +214,7 @@
 ;;   strokeCapStart?: StrokeCap;
 ;;   strokeCapEnd?: StrokeCap;
 ;;   strokeColorGradient?: Gradient;
+;;   strokeImage?: ImageData;
 ;; }
 (defn parse-stroke
   [^js stroke]
@@ -228,7 +229,8 @@
       :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
       :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
       :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)
-      :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)})))
+      :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)
+      :stroke-image (-> (obj/get stroke "strokeImage") parse-image-data)})))
 
 (defn parse-strokes
   [^js strokes]

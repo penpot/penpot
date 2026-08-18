@@ -17,6 +17,7 @@ import type { CoverageReport, TestResult } from '../src/framework/types';
 //   Optional env: PENPOT_BASE_URL (default https://localhost:3449).
 //   Optional env: TEST_FILTER — run only tests whose group or name contains
 //   the given substring (case-insensitive).
+//   Optional env: RENDER_WASM — force the workspace renderer (`true`/`false`).
 //
 // - MOCKED (`MOCK_BACKEND=1`): serves the prebuilt frontend bundle via the e2e
 //   static server and intercepts every backend RPC with Playwright `page.route`,
@@ -349,6 +350,12 @@ async function main() {
     authToken = session.authToken;
     const file = await createFile(authToken, session.defaultProjectId);
     fileUrl = getFileUrl(file);
+  }
+
+  const renderWasm = process.env['RENDER_WASM'];
+  if (renderWasm === 'true' || renderWasm === 'false') {
+    const separator = fileUrl.includes('?') ? '&' : '?';
+    fileUrl += `${separator}wasm=${renderWasm}`;
   }
 
   const browser = await chromium.launch({

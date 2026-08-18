@@ -63,6 +63,23 @@
     (t/is (= :auto (#'oidc/select-user-info-source :token)))
     (t/is (= :auto (#'oidc/select-user-info-source :userinfo)))))
 
+(t/deftest token-endpoint-errors-detect-valid-client-credentials
+  (let [response {:status 403
+                  :body "{\"error\":\"invalid_grant\",\"error_description\":\"Invalid authorization code\"}"}]
+    (t/is (#'oidc/token-endpoint-valid-client-error? response))
+    (t/is (not (#'oidc/token-endpoint-invalid-client-error? response)))))
+
+(t/deftest token-endpoint-errors-detect-invalid-client-credentials
+  (t/is (#'oidc/token-endpoint-invalid-client-error?
+         {:status 401
+          :body "{\"error\":\"access_denied\",\"error_description\":\"Unauthorized\"}"}))
+  (t/is (#'oidc/token-endpoint-invalid-client-error?
+         {:status 400
+          :body "{\"error\":\"invalid_client\"}"}))
+  (t/is (not (#'oidc/token-endpoint-valid-client-error?
+              {:status 400
+               :body "{\"error\":\"invalid_client\"}"}))))
+
 (t/deftest int-in-range-checks-range-correctly
   (t/testing "values within range return true"
     (t/is (#'oidc/int-in-range? 200 200 300))
@@ -501,3 +518,16 @@
               loc    (redirect-location result)]
           (t/is (= 302 (::yres/status result)))
           (t/is (.contains loc "error=unable-to-auth")))))))
+
+(t/deftest prepare-organization-sso-provider-does-not-skip-ssrf-check
+  (t/testing "organization SSO provider must use SSRF protection"
+    (let [captured-params (atom nil)]
+      (with-redefs [oidc/prepare-oidc-provider (fn [_cfg params]
+                                                 (reset! captured-params params)
+                                                 {:type "oidc" :id "test"})]
+        (#'oidc/prepare-organization-sso-provider {}
+                                                  {:client-id "test-client"
+                                                   :client-secret "test-secret"
+                                                   :issuer "https://idp.example.com"})
+        (t/is (not (true? (:skip-ssrf-check? @captured-params)))
+              "SSRF protection must be disabled for organization SSO")))))

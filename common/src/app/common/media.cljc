@@ -22,6 +22,9 @@
     "image/gif"
     "image/svg+xml"})
 
+(def tempfile-types
+  (conj image-types "application/pdf"))
+
 (defn format->extension
   [format]
   (case format

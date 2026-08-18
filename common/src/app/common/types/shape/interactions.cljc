@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.bounds :as gsb]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]))
 
@@ -76,7 +75,10 @@
   [:map {:title "AnimationDisolve"}
    [:animation-type [:= :dissolve]]
    [:duration ::sm/safe-int]
-   [:easing [::sm/one-of easing-types]]])
+   [:easing [::sm/one-of easing-types]]
+   [:way {:optional true} [::sm/one-of way-types]]
+   [:offset-effect {:optional true} :boolean]
+   [:direction {:optional true} [::sm/one-of direction-types]]])
 
 (def schema:slide-animation
   [:map {:title "AnimationSlide"}
@@ -479,7 +481,13 @@
 
     (if (nil? dest-frame)
       [(gpt/point 0 0) [:top :left]]
-      (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
+      (let [;; Use the destination frame selrect (the visible frame box) to compute
+            ;; the overlay position, not its full object bounds. Bounds include
+            ;; padding for shadows, blur, strokes and overflowing children, which
+            ;; would make centered/right/bottom positions off by half that padding
+            ;; (the visible frame ends up shifted). The viewer reserves the bounds
+            ;; size and re-aligns the selrect separately (see viewer/calculate-delta).
+            overlay-size           (:selrect dest-frame)
             base-frame-size        (:selrect base-frame)
             relative-to-shape-size (:selrect relative-to-shape)
             relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))

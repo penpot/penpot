@@ -13,7 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -163,11 +163,11 @@
        (if (= type :square)
          [:div {:class (stl/css :grid-size)
                 :title (tr "workspace.options.size")}
-          [:> numeric-input* {:min 0.01
-                              :value (or (:size params) "")
-                              :no-validate true
-                              :className (stl/css :numeric-input)
-                              :on-change (handle-change :params :size)}]]
+          [:> deprecated-input/numeric-input* {:min 0.01
+                                               :value (or (:size params) "")
+                                               :no-validate true
+                                               :class (stl/css :numeric-input)
+                                               :on-change (handle-change :params :size)}]]
 
          [:div {:class (stl/css :editable-select-wrapper)}
           [:& editable-select {:value (:size params)
@@ -256,33 +256,33 @@
               (if (= :row type)
                 "H"
                 "W")]
-             [:> numeric-input* {:placeholder "Auto"
-                                 :on-change handle-change-item-length
-                                 :nillable true
-                                 :className (stl/css :numeric-input)
-                                 :value (or (:item-length params) "")}]]
+             [:> deprecated-input/numeric-input* {:placeholder "Auto"
+                                                  :on-change handle-change-item-length
+                                                  :is-nillable true
+                                                  :class (stl/css :numeric-input)
+                                                  :value (or (:item-length params) "")}]]
 
             [:div {:class (stl/css :gutter)
                    :title (tr "workspace.options.grid.params.gutter")}
              [:span {:class (stl/css-case :icon true
                                           :rotated (= type :row))}
               deprecated-icon/gap-horizontal]
-             [:> numeric-input* {:placeholder "0"
-                                 :on-change (handle-change :params :gutter)
-                                 :nillable true
-                                 :className (stl/css :numeric-input)
-                                 :value (or (:gutter params) 0)}]]
+             [:> deprecated-input/numeric-input* {:placeholder "0"
+                                                  :on-change (handle-change :params :gutter)
+                                                  :is-nillable true
+                                                  :class (stl/css :numeric-input)
+                                                  :value (or (:gutter params) 0)}]]
 
             [:div {:class (stl/css :margin)
                    :title (tr "workspace.options.grid.params.margin")}
              [:span {:class (stl/css-case :icon true
                                           :rotated (= type :column))}
               deprecated-icon/grid-margin]
-             [:> numeric-input* {:placeholder "0"
-                                 :on-change (handle-change :params :margin)
-                                 :nillable true
-                                 :className (stl/css :numeric-input)
-                                 :value (or (:margin params) 0)}]]
+             [:> deprecated-input/numeric-input* {:placeholder "0"
+                                                  :on-change (handle-change :params :margin)
+                                                  :is-nillable true
+                                                  :class (stl/css :numeric-input)
+                                                  :value (or (:margin params) 0)}]]
 
             [:button {:class (stl/css-case :show-more-options true
                                            :selected show-more-options?)

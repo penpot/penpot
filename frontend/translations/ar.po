@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Youkho <youkho@gmail.com>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"PO-Revision-Date: 2026-07-18 03:01+0000\n"
+"Last-Translator: jonnysemon <jonnysemon@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -862,11 +862,11 @@ msgstr ""
 
 #: src/app/main/data/auth.cljs:342, src/app/main/ui/auth/register.cljs:91
 msgid "errors.registration-disabled"
-msgstr "التسجيل معطل حاليا."
+msgstr "التسجيل مُعطّل حاليًا."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:469, src/app/main/ui/dashboard/team.cljs:474
 msgid "errors.team-leave.insufficient-members"
-msgstr "أعضاء غير كافيين لمغادرة الفريق ، ربما تريد حذفه."
+msgstr "أعضاء غير كافيين لمغادرة الفريق، ربما تريد حذفه."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:472, src/app/main/ui/dashboard/team.cljs:477
 msgid "errors.team-leave.member-does-not-exists"
@@ -2006,10 +2006,6 @@ msgstr "مرحبًا بك في Penpot!"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "بعد تسمية فريقك، ستتمكن من دعوة الأشخاص للانضمام."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "أدخل اسم الفريق"
-
 #: src/app/main/ui/dashboard/projects.cljs:94, src/app/main/ui/onboarding/team_choice.cljs:199
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "ادعُ أعضاء"
@@ -2113,16 +2109,8 @@ msgstr "مساحة العمل"
 msgid "shortcut-subsection.alignment"
 msgstr "محاذاة"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
-msgid "shortcut-subsection.edit"
-msgstr "عدّل"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "عام"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "عام"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -4716,3 +4704,12 @@ msgstr "افتح قائمة الإصدار"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لتغلق المسار"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "راجع بريدك الإلكتروني!"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+#, unused
+msgid "auth.check-mail"
+msgstr "راجع بريدك الإلكتروني"

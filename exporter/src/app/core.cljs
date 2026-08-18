@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.http :as http]
    [app.redis :as redis]
+   [app.wasm :as wasm]
    [promesa.core :as p]))
 
 (enable-console-print!)
@@ -23,6 +24,12 @@
           :public-uri (str (cf/get :public-uri))
           :internal-uri (str (cf/get-internal-uri))
           :version (:full cf/version))
+  (when (contains? cf/flags :wasm-export)
+    (l/warn :msg "headless wasm export enabled (experimental)"
+            :hint (str "renders run in-process on a single shared wasm module, "
+                       "one at a time; not recommended for busy instances")
+            :wasm-dir wasm/artifact-dir
+            :image-cache-mb wasm/image-cache-mb))
   (p/do!
    (bwr/init)
    (redis/init)

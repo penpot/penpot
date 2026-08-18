@@ -401,7 +401,7 @@
           :on-change on-p1-change
           :on-focus on-focus-p1
           :on-blur on-padding-blur
-          :nillable true
+          :is-nillable true
           :min 0
           :value p1}]])
 
@@ -431,14 +431,14 @@
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left-right]
         [:> deprecated-input/numeric-input*
-         {:className (stl/css :numeric-input)
+         {:class (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
           :aria-label (tr "workspace.layout-grid.editor.padding.horizontal")
           :on-change on-p2-change
           :on-focus on-focus-p2
           :on-blur on-padding-blur
           :min 0
-          :nillable true
+          :is-nillable true
           :value p2}]])]))
 
 (mf/defc multiple-padding-selection*
@@ -771,10 +771,10 @@
           :on-focus on-focus-row-gap
           :on-change on-row-gap-change
           :on-blur on-gap-blur
-          :nillable true
+          :is-nillable true
           :min 0
           :value (:row-gap value)
-          :disabled row-gap-disabled?}]])
+          :is-disabled row-gap-disabled?}]])
 
      (if token-numeric-inputs
        [:> numeric-input-wrapper*
@@ -810,7 +810,7 @@
           :on-focus on-focus-column-gap
           :on-change on-column-gap-change
           :on-blur on-gap-blur
-          :nillable true
+          :is-nillable true
           :min 0
           :value (:column-gap value)
           :disabled col-gap-disabled?}]])]))
@@ -998,7 +998,7 @@
                                             :on-change #(set-column-value type index %)
                                             :placeholder "--"
                                             :min 0
-                                            :disabled (= :auto (:type column))}]]
+                                            :is-disabled (= :auto (:type column))}]]
 
       [:div {:class (stl/css :track-info-unit)}
        [:& select {:class (stl/css :track-info-unit-selector)
@@ -1186,13 +1186,14 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val 0) 0)]
              (cond
                ^boolean multiple?
                (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
 
                (some? type)
                (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
+
 
         ;; Padding
         on-padding-type-change
@@ -1205,13 +1206,17 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [type prop val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val 0) 0)]
              (cond
                (and (= type :simple) (or (= prop :p1) (= prop #{:p1 :p3})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
                (and (= type :simple) (or (= prop :p2) (= prop #{:p2 :p4})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+
+               (and (= type :multiple) (some? prop))
+               (st/emit! (dwsl/update-layout ids {:layout-padding-type :multiple
+                                                  :layout-padding {prop val}}))
 
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
@@ -1427,7 +1432,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val 0) 0)]
              (if multiple?
                (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
                (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
@@ -1441,7 +1446,7 @@
 
         on-padding-change
         (fn [type prop val]
-          (let [val (mth/finite val 0)]
+          (let [val (mth/finite (d/parse-double val 0) 0)]
             (cond
               (and (= type :simple) (= prop :p1))
               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))

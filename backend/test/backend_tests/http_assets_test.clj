@@ -110,7 +110,8 @@
     (doseq [bucket ["file-media-object"
                     "file-object-thumbnail"
                     "team-font-variant"
-                    "file-data-fragment"]]
+                    "file-data-fragment"
+                    "organization"]]
       (t/testing (str "bucket: " bucket)
         (let [object  (create-storage-object! storage bucket "public data")
               request {:path-params {:id (str (:id object))}}
@@ -119,6 +120,19 @@
                 (str "bucket " bucket " should not require auth"))
           (t/is (not= 404 (::yres/status response))
                 (str "bucket " bucket " object should exist")))))))
+
+(t/deftest objects-handler-organization-logo-no-auth
+  ;; Organization logos are embedded in unauthenticated contexts, such as
+  ;; the invitation email image shown to a not-yet-registered invitee, so
+  ;; they must be servable without a session or access token.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "organization" "logo data")
+        request  {:path-params {:id (str (:id object))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (not= 401 (::yres/status response)))
+    (t/is (not= 404 (::yres/status response)))))
 
 (t/deftest objects-handler-public-bucket-with-auth
   ;; Objects in public buckets should also be accessible WITH authentication.
@@ -444,6 +458,135 @@
 ;; ----------------------------------------------------------------
 ;; Tests: objects-handler — expired objects
 ;; ----------------------------------------------------------------
+
+;; ----------------------------------------------------------------
+;; Tests: file-objects-handler — authz required (T2-N1-01)
+;; ----------------------------------------------------------------
+
+(t/deftest file-objects-handler-unauthenticated-returns-404
+  ;; Unauthenticated requests to file-media assets must return 404
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project  (th/create-project* 1 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest file-objects-handler-no-file-perms-returns-404
+  ;; Authenticated user without file read permissions must get 404
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        stranger (th/create-profile* 2)
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id stranger)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest file-objects-handler-with-file-perms-succeeds
+  ;; Authenticated user with file read permissions must get the object
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest file-thumbnails-handler-unauthenticated-returns-404
+  ;; Unauthenticated requests to file-thumbnail assets must return 404
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project  (th/create-project* 1 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}}
+        response (assets/file-thumbnails-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest file-thumbnails-handler-with-file-perms-succeeds
+  ;; Authenticated user with file read permissions must get the thumbnail
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        thumb-storage (create-storage-object! storage "file-object-thumbnail" "thumb data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id thumb-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}
+        response (assets/file-thumbnails-handler cfg request)]
+    ;; Falls back to media-id since no thumbnail-id, but still serves
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest file-objects-handler-non-existent-media-returns-404
+  ;; Request for non-existent file-media-object returns 404
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)
+        request  {:path-params {:id (str (uuid/next))}
+                  ::session/profile-id (:id profile)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest file-objects-handler-nil-profile-id-returns-404
+  ;; When profile-id is nil (invalid session), must return 404
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project  (th/create-project* 1 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id nil}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
 
 (t/deftest objects-handler-expired-object
   ;; Expired objects should return 404 (get-object filters them out).

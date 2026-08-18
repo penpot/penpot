@@ -32,11 +32,12 @@
         date-str        (when cancel-at
                           (ct/format-inst cancel-at "d MMMM, yyyy"))
 
-        on-create-org
+        on-create-organization
         (mf/use-fn
          (fn []
            (modal/hide!)
-           (dnt/go-to-nitrate-ac-create-org)))]
+           (dnt/go-to-nitrate-ac-create-organization
+            "admin-console:after-payment-organization-naming-form")))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -50,7 +51,7 @@
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
-         (tr "nitrate.activation-success.title")]
+         (tr "nitrate.modal-success.title")]
 
         (when (and manual? date-str)
           [:p {:class (stl/css :modal-text-primary)}
@@ -63,6 +64,6 @@
          (tr "nitrate.activation-success.enjoy")]
 
         [:> button* {:variant "primary"
-                     :on-click on-create-org
+                     :on-click on-create-organization
                      :class (stl/css :modal-button)}
-         (tr "nitrate.activation-success.create-org")]]]]]))
+         (tr "nitrate.activation-success.create-organization")]]]]]))

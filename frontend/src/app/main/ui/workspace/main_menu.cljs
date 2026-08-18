@@ -51,11 +51,15 @@
 (mf/defc shortcuts*
   {::mf/private true}
   [{:keys [id]}]
-  [:span {:class (stl/css :shortcut)}
-   (for [sc (scd/split-sc (sc/get-tooltip id))]
-     [:span {:class (stl/css :shortcut-key)
-             :key sc}
-      sc])])
+  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)
+        customized?      (let [c (get-in custom-shortcuts [:workspace id])]
+                           (and c (not= c "")))]
+    [:span {:class (stl/css :shortcut)}
+     (for [sc (scd/split-sc (sc/get-effective-tooltip id custom-shortcuts))]
+       [:span {:class (stl/css-case :shortcut-key true
+                                    :customized-key customized?)
+               :key sc}
+        sc])]))
 
 (mf/defc help-info-menu*
   {::mf/private true
@@ -665,7 +669,7 @@
         (mf/use-fn
          (mf/deps frames)
          (fn [_]
-           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))
+           (st/emit! (de/show-workspace-export-frames-dialog frames))))
 
         on-export-frames-key-down
         (mf/use-fn
@@ -923,13 +927,6 @@
                           (keyword))]
              (reset! selected-sub-menu* menu))))
 
-        on-power-up-click
-        (mf/use-fn
-         (fn []
-           (st/emit! (ev/event {::ev/name "explore-pricing-click"
-                                ::ev/origin "workspace:menu"}))
-           (dom/open-new-window "https://penpot.app/pricing")))
-
         toggle-flag
         (mf/use-fn
          (fn [event]
@@ -981,6 +978,19 @@
             (ev/event {::ev/name "open-plugins-manager"
                        ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
+
+        show-shortcuts
+        (mf/use-fn
+         (mf/deps layout)
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)
+           (reset! selected-sub-menu* nil)
+           (when (contains? layout :collapse-left-sidebar)
+             (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+           (st/emit!
+            (-> (dw/toggle-layout-flag :shortcuts)
+                (vary-meta assoc ::ev/origin "workspace-menu")))))
 
         subscription           (:subscription (:props profile))
         subscription-type      (get-subscription-type subscription)]
@@ -1113,21 +1123,10 @@
        [:> icon* {:icon-id i/arrow-right
                   :class (stl/css :item-arrow)}]]
 
-      (when (and (contains? cf/flags :subscriptions)
-                 (not= "enterprise" subscription-type))
-        [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])
-
-      ;; TODO remove this block when subscriptions is full implemented
-      (when (contains? cf/flags :subscriptions-old)
-        [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
-                                 :on-click    on-power-up-click
-                                 :on-key-down (fn [event]
-                                                (when (kbd/enter? event)
-                                                  (on-power-up-click)))
-                                 :on-pointer-enter close-sub-menu
-                                 :id          "file-menu-power-up"}
-         [:span {:class (stl/css :item-name)}
-          (tr "subscription.workspace.header.menu.option.power-up")]])]
+      (when (or (and (contains? cf/flags :subscriptions)
+                     (not= "enterprise" subscription-type))
+                (contains? cf/flags :admin-console))
+        [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])]
 
      (case selected-sub-menu
        :file
@@ -1148,6 +1147,7 @@
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
+                              :show-shortcuts show-shortcuts
                               :on-close close-sub-menu}]
 
        :plugins

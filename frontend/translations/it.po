@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Jacopo Lodovico Trabia <jacopo.trabia@gmail.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -98,7 +98,7 @@ msgid "auth.new-password"
 msgstr "Inserisci una nuova password"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "Ora fai parte di %s"
 
 #: src/app/main/ui/auth/recovery.cljs:36
@@ -297,7 +297,7 @@ msgid "common.unpublish"
 msgstr "Rimuovi pubblicazione"
 
 #: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
+msgid "dashboard.leave-organization.toast"
 msgstr "Non fai più parte dell'organizzazione %s."
 
 #: src/app/main/ui/dashboard/projects.cljs:90
@@ -365,25 +365,25 @@ msgid "dashboard.change-email"
 msgstr "Cambia indirizzo e-mail"
 
 #, unused
-msgid "dashboard.change-org-modal.accept"
+msgid "dashboard.change-organization-modal.accept"
 msgstr "SPOSTA TEAM"
 
 #, unused
-msgid "dashboard.change-org-modal.choose"
+msgid "dashboard.change-organization-modal.choose"
 msgstr "Sposta in:"
 
 #, unused
-msgid "dashboard.change-org-modal.select"
+msgid "dashboard.change-organization-modal.select"
 msgstr "Seleziona un'organizzazione"
 
 #, unused
-msgid "dashboard.change-org-modal.text"
+msgid "dashboard.change-organization-modal.text"
 msgstr ""
 "I progetti e i file rimarranno disponibili per i membri del team. Il team "
 "riceverà la configurazione dalla nuova organizzazione."
 
 #: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
+msgid "dashboard.change-organization-modal.title"
 msgstr "Cambia organizzazione del team"
 
 #: src/app/main/ui/dashboard/deleted.cljs:316
@@ -395,7 +395,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Crea org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -820,7 +820,7 @@ msgid "dashboard.invite-profile"
 msgstr "Invita nel team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
+msgid "dashboard.leave-organization"
 msgstr "Lascia org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:570, src/app/main/ui/dashboard/sidebar.cljs:577, src/app/main/ui/dashboard/sidebar.cljs:582, src/app/main/ui/dashboard/team.cljs:433
@@ -875,7 +875,7 @@ msgstr "Sposta in un altro team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
-msgstr "I miei team"
+msgstr "I miei Team"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -898,7 +898,7 @@ msgid "dashboard.no-matches-for"
 msgstr "Nessuna corrispondenza trovata per \"%s\""
 
 #: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
+msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "Non hai i permessi per aggiungere team a nessuna delle tue organizzazioni."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
@@ -968,7 +968,7 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Ordina per stato"
 
 #: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
+msgid "dashboard.organization-deleted"
 msgstr "L'organizzazione %s è stata eliminata."
 
 #: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
@@ -1008,7 +1008,7 @@ msgid "dashboard.plugins.try-plugin"
 msgstr "Prova il plugin: "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
+msgid "dashboard.plus-create-new-organization"
 msgstr "+ Crea org"
 
 #: src/app/main/data/dashboard.cljs:805
@@ -1095,36 +1095,36 @@ msgid "dashboard.section.organizations"
 msgstr "Organizzazioni"
 
 #, unused
-msgid "dashboard.select-org-modal.accept"
+msgid "dashboard.select-organization-modal.accept"
 msgstr "AGGIUNGI ALL'ORGANIZZAZIONE"
 
 #, unused
-msgid "dashboard.select-org-modal.choose"
+msgid "dashboard.select-organization-modal.choose"
 msgstr "Scegli un'organizzazione:"
 
 #: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
+msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
 "\"%s\" autorizza solo i membri dell'organizzazione ad unirsi al suo team. "
 "Qualsiasi invito in sospeso a persone al di fuori dell'organizzazione verrà "
 "revocato."
 
 #: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Gli inviti in sospeso ad utenti esterni verranno annullati."
 
 #, unused
-msgid "dashboard.select-org-modal.permission-info"
+msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Qui trovi tutte le organizzazioni dove sei autorizzato a creare o "
 "aggiungere team."
 
 #, unused
-msgid "dashboard.select-org-modal.select"
+msgid "dashboard.select-organization-modal.select"
 msgstr "Seleziona un'organizzazione"
 
 #: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
+msgid "dashboard.select-organization-modal.title"
 msgstr "Aggiungi team ad una organizzazione"
 
 #: src/app/main/ui/settings/options.cljs:66
@@ -1248,7 +1248,7 @@ msgid "dashboard.success-move-project"
 msgstr "Il tuo progetto è stato spostato con successo"
 
 #, unused
-msgid "dashboard.team-belong-org"
+msgid "dashboard.team-belong-organization"
 msgstr "Questo team ora appartiene a %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
@@ -1260,7 +1260,7 @@ msgid "dashboard.team-members"
 msgstr "Membri del team"
 
 #, unused
-msgid "dashboard.team-no-longer-belong-org"
+msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Questo team non appartiene più all'organizzazione %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
@@ -1272,7 +1272,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Aggiungi ad una organizzazione"
 
 #: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
+msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr ""
 "Non hai i permessi per aggiungere questo team a nessuna delle tue "
 "organizzazioni."
@@ -1282,7 +1282,7 @@ msgid "dashboard.team-organization.change"
 msgstr "Cambia organizzazione del team"
 
 #: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
+msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr ""
 "Solo le persone all'interno della tua organizzazione possono essere "
 "invitate."
@@ -1350,7 +1350,7 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
 #, unused
-msgid "dashboard.user-no-longer-belong-org"
+msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Non sei più un membro dell'organizzazione %s"
 
 #: src/app/main/ui/settings/options.cljs:109
@@ -1731,17 +1731,17 @@ msgid "errors.only-creator-can-unlock"
 msgstr "Solo il creatore della versione può sbloccarla"
 
 #, unused
-msgid "errors.org-leave.no-valid-teams"
+msgid "errors.organization-leave.no-valid-teams"
 msgstr ""
 "Si è verificato un problema durante l'abbandono dell'organizzazione. "
 "Riprova."
 
 #, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
+msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "Il proprietario dell'organizzazione non può lasciare l'organizzazione."
 
 #: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
+msgid "errors.organization-not-found"
 msgstr "L'organizzazione non esiste"
 
 #: src/app/main/ui/settings/password.cljs
@@ -4282,10 +4282,6 @@ msgstr "Puoi inviare gli inviti più tardi"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Dopo aver nominato il tuo team, potrai invitare persone ad unirsi ad esso."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Inserisci il nome del team"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Crea team"
@@ -4538,6 +4534,7 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "Questo token non esiste o è stato eliminato."
 
@@ -4588,11 +4585,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Modifica"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Generico"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Generico"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -5086,14 +5079,6 @@ msgstr "Aggancia alla griglia pixel"
 msgid "shortcuts.start-editing"
 msgstr "Inizia a modificare"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Avvia misurazione"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Interrompi misurazione"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Imposta miniature"
@@ -5442,10 +5427,6 @@ msgstr "Ulteriori informazioni"
 msgid "subscription.settings.other-plans"
 msgstr "Altri piani Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "editor per mese"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "organizzazione per mese"
@@ -5499,11 +5480,6 @@ msgstr "Grazie per aver scelto il piano Penpot %s!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Sei %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Ci stai supportando con questo piano dal %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"

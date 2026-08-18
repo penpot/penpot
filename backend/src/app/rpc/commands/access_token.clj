@@ -37,7 +37,8 @@
   (let [token-id   (uuid/next)
         expires-at (some-> expiration (ct/in-future))
         created-at (ct/now)
-        token      (tokens/generate cfg {:iss "access-token"
+        token-iss  (if (= type "mcp") "urn:penpot:mcp-token" "access-token")
+        token      (tokens/generate cfg {:iss token-iss
                                          :uid profile-id
                                          :iat created-at
                                          :tid token-id})

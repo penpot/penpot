@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape.attrs :refer [editable-attrs]]
@@ -208,6 +209,59 @@
   [v]
   (when v (select-keys v blur-keys)))
 
+(def layout-padding-attrs [:p1 :p2 :p3 :p4])
+
+(defn- normalize-layout-padding
+  [value]
+  (if (= value :multiple)
+    (zipmap layout-padding-attrs (repeat :multiple))
+    value))
+
+(defn- merge-layout-padding
+  [values shape-values]
+  (let [current (normalize-layout-padding (get values :layout-padding ::unset))
+        next    (normalize-layout-padding (get shape-values :layout-padding ::unset))]
+    (cond
+      (= current ::unset) next
+      (= next ::unset)    current
+
+      (and (map? current) (map? next))
+      (attrs/get-attrs-multi [current next] layout-padding-attrs)
+
+      (= current next)
+      current
+
+      :else
+      :multiple)))
+
+(defn- same-padding-value?
+  [v1 v2]
+  (if (and (number? v1) (number? v2))
+    (mth/close? v1 v2)
+    (= v1 v2)))
+
+(defn- simple-layout-padding?
+  [{:keys [p1 p2 p3 p4]}]
+  (and (same-padding-value? p1 p3)
+       (same-padding-value? p2 p4)))
+
+(defn- promote-simple-layout-padding-type
+  [{:keys [layout-padding layout-padding-type] :as values}]
+  (cond-> values
+    (and (= layout-padding-type :simple)
+         (map? layout-padding)
+         (not (simple-layout-padding? layout-padding)))
+    (assoc :layout-padding-type :multiple)))
+
+(defn- merge-layout-container-attrs
+  [values shape-values attrs]
+  (let [merged-values (attrs/get-attrs-multi [values shape-values] attrs)
+        merged-values (cond-> merged-values
+                        (or (contains? values :layout-padding)
+                            (contains? shape-values :layout-padding))
+                        (assoc :layout-padding (merge-layout-padding values shape-values)))]
+    (promote-simple-layout-padding-type merged-values)))
+
 (defn get-attrs*
   "Given a group of attributes that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
@@ -217,9 +271,10 @@
         merge-attrs
         (fn [v1 v2]
           (cond
-            (= attr-group :shadow) (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
-            (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
-            :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
+            (= attr-group :shadow)           (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
+            (= attr-group :blur)             (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
+            (= attr-group :layout-container) (merge-layout-container-attrs v1 v2 attrs)
+            :else                            (attrs/get-attrs-multi [v1 v2] attrs)))
 
         merge-attr
         (fn [acc applied-tokens t-attr]

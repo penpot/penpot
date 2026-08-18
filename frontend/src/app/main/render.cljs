@@ -15,6 +15,7 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -59,6 +60,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:const viewbox-decimal-precision 3)
+(def ^:const max-export-dimension 100000)
 (def ^:private default-color clr/canvas)
 
 (mf/defc background
@@ -82,12 +84,20 @@
       (let [bounds
             (->> root-objects
                  (map (partial gsb/get-object-bounds objects))
-                 (grc/join-rects))]
+                 (grc/join-rects))
+            bounds (-> bounds
+                       (update :x mth/finite 0)
+                       (update :y mth/finite 0)
+                       (update :width mth/finite 100000)
+                       (update :height mth/finite 100000))]
+        (when (or (> (:width bounds) max-export-dimension)
+                  (> (:height bounds) max-export-dimension)
+                  (> (+ (:x bounds) (:width bounds)) max-export-dimension)
+                  (> (+ (:y bounds) (:height bounds)) max-export-dimension))
+          (ex/raise :type :validation
+                    :code :export-area-too-large
+                    :hint "export area exceeds maximum allowed dimensions"))
         (-> bounds
-            (update :x mth/finite 0)
-            (update :y mth/finite 0)
-            (update :width mth/finite 100000)
-            (update :height mth/finite 100000)
             (grc/update-rect :position)
             (grc/fix-aspect-ratio aspect-ratio))))))
 
@@ -239,7 +249,7 @@
               :fill "none"}
 
         (when include-metadata
-          [:& export/export-page {:page data}])
+          [:> export/export-page* {:page data}])
 
         (let [shapes (->> shapes
                           (remove cfh/frame-shape?)

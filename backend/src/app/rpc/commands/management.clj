@@ -176,7 +176,7 @@
   ;; profile-id is present; it can be ommited if this function is
   ;; called from SREPL helpers where no profile is available
   (when (uuid? profile-id)
-    (teams/check-read-permissions! conn profile-id team-id))
+    (teams/check-read-permissions! cfg profile-id team-id))
 
   (binding [bfc/*state* (volatile! {:index {team-id (uuid/next)}})]
     (let [projs (bfc/get-team-projects cfg team-id)

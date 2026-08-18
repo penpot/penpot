@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.text.text-edition-outline
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -22,11 +21,13 @@
     (let [selrect-transform (mf/deref refs/workspace-selrect)
           [selrect transform] (dsh/get-selrect selrect-transform shape)
 
-          [sr-width sr-height]
-          (if (or (mth/close? (:width selrect) 0.01) (mth/close? (:height selrect) 0.01))
-            (let [{:keys [width height]} (wasm.api/get-text-dimensions (:id shape))]
-              [width height])
-            [(:width selrect) (:height selrect)])]
+          ;; While editing, the committed selrect lags the text (geometry is
+          ;; finalize-only), so measure the live WASM text for the growing axes:
+          ;; width grows on auto-width, height on auto-width/auto-height.
+          grow-type (:grow-type shape)
+          {live-width :width live-height :height} (wasm.api/get-text-dimensions (:id shape))
+          sr-width  (if (= grow-type :auto-width) live-width (:width selrect))
+          sr-height (if (= grow-type :fixed) (:height selrect) live-height)]
       [:rect.main.viewport-selrect
        {:x (:x selrect)
         :y (:y selrect)

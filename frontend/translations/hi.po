@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi "
-"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
+"hi/>\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1915,9 +1915,8 @@ msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "कोई नहीं"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:112
-#, fuzzy
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr " "
+msgstr ""
 
 #: src/app/main/ui/inspect/attributes/text.cljs:113
 msgid "inspect.attributes.typography.text-decoration.underline"
@@ -2048,7 +2047,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "सक्रिय थीम"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS शॉर्टहैंड को क्लिपबोर्ड पर कॉपी करें"
 
@@ -3728,10 +3726,6 @@ msgstr ""
 "अपनी टीम का नाम रखने के बाद, आप लोगों को आमंत्रित कर सकेंगे शामिल होने के "
 "लिए।"
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "टीम का नाम दर्ज करें"
-
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "टीम बनाएं"
@@ -3882,7 +3876,7 @@ msgstr "आपकी कंपनी कितनी बड़ी है?"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "हमें अपनी नौकरी के बारे में बताइये"
+msgstr "आपकी कंपनी का आकार क्या है?"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
@@ -3982,6 +3976,7 @@ msgid "onboarding.welcome.alt"
 msgstr "पेनपॉट"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "यह token मौजूद नहीं है या हटा दिया गया है।"
 
@@ -4032,11 +4027,7 @@ msgid "shortcut-subsection.edit"
 msgstr "संपादन"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "सार्वभौमिक"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "सार्वभौमिक"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -4530,14 +4521,6 @@ msgstr "पिक्सेल ग्रिड से चिपकाएँ"
 msgid "shortcuts.start-editing"
 msgstr "संपादन शुरू करें"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "मापन शुरू करें"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "मापन बंद करें"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "थंबनेल सेट करें"
@@ -4884,10 +4867,6 @@ msgstr "अधिक जानकारी"
 msgid "subscription.settings.other-plans"
 msgstr "अन्य पेनपॉट योजनाएँ"
 
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "प्रति माह संपादक"
-
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
 msgstr "प्रति माह संगठन"
@@ -4941,11 +4920,6 @@ msgstr "पेनपोट %s योजना चुनने के लिए �
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "आप %s हैं!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "आप इस योजना में हमारा समर्थन तब से कर रहे हैं: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -7603,7 +7577,7 @@ msgstr "मास्क्स"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:566
 msgid "workspace.sidebar.layers.search"
-msgstr "परतें खोजें"
+msgstr "खोजो…"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:639, src/app/main/ui/workspace/sidebar/layers.cljs:733
 msgid "workspace.sidebar.layers.shapes"
@@ -7916,7 +7890,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s सक्रिय सेट"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "मूल मान: %s"
 
@@ -7942,9 +7915,8 @@ msgid "workspace.tokens.reference-error"
 msgstr "संदर्भ त्रुटियाँ: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
-msgstr "हल किया गया मान: %s"
+msgstr "समाधानित मान: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:248
 msgid "workspace.tokens.save-theme"
@@ -8054,9 +8026,8 @@ msgid "workspace.tokens.themes-list"
 msgstr "थीम्स सूची"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
-msgstr "वर्णन"
+msgstr "विवरण"
 
 #: src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:133, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:258
 msgid "workspace.tokens.token-font-family-select"
@@ -8455,3 +8426,38 @@ msgstr "स्वतः सहेजे गए संस्करण %s दि�
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "पथ बंद करने के लिए क्लिक करें"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+#, fuzzy
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "{%s} यह token किसी भी सक्रिय सेट में नहीं है या इसका मान अमान्य है।"
+
+#: src/app/main/data/common.cljs:82
+msgid "notifications.by-code.upgrade-version"
+msgstr "एक नया संस्करण उपलब्ध है ।"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:273
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "पथ पर एक token पहले से मौजूद है: %s"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+#, fuzzy
+msgid "auth.check-email"
+msgstr "अपने ईमेल की जाँच करें!"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "हमने इस पते पर एक वेरिफिकेशन ईमेल भेजा है:"
+
+#: src/app/main/ui/dashboard/deleted.cljs:330
+#, fuzzy
+msgid "dashboard.deleted.empty-state-description"
+msgstr "आपका ट्रैश खाली है। डिलीट की गई फ़ाइलें और प्रोजेक्ट यहाँ दिखाई देंगे।"
+
+#: src/app/main/data/dashboard.cljs:992, src/app/main/ui/dashboard/file_menu.cljs:202
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "फ़ाइल %s को रिस्टोर करते समय एक त्रुटि हुई।"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "एडमिन कंसोल पर जाएं"

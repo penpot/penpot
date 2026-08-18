@@ -459,9 +459,10 @@
     (let [{:keys [status body]} (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
       (if (= status 200)
         (let [data (json/decode body)
-              data {:token/access (get data :access_token)
-                    :token/id     (get data :id_token)
-                    :token/type   (get data :token_type)}]
+              data {:token/access     (get data :access_token)
+                    :token/id         (get data :id_token)
+                    :token/type       (get data :token_type)
+                    :token/expires-in (get data :expires_in)}]
           (l/trc :hint "access token fetched"
                  :token-id (:token/id data)
                  :token-type (:token/type data)
@@ -646,6 +647,15 @@
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
+(defn- redirect-with-organization-sso-error
+  [{:keys [dest-url organization-id organization-name]}]
+  (-> (str (or dest-url (cf/get :public-uri)))
+      (u/append-query-param :sso-error true)
+      (u/append-query-param :organization-id organization-id)
+      (cond-> organization-name
+        (u/append-query-param :organization-name organization-name))
+      (redirect-response)))
+
 (defn- redirect-to-register
   [cfg info provider]
   (let [info   (assoc info
@@ -761,20 +771,110 @@
 ;; ORG SSO HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn prepare-org-sso-provider
-  "Build an OIDC provider map dynamically from the Nitrate org SSO config.
-  Uses OIDC discovery via :base-url (or :issuer as fallback) when
-  token/auth/user URIs are absent."
-  [cfg {:keys [client-id client-secret base-url issuer scopes]}]
+(defn- non-blank-uri
+  [value]
+  (when-not (str/blank? value) value))
+
+(defn organization-sso-discovery-uri
+  "Return the OIDC discovery URI from an organization SSO config."
+  [sso]
+  (non-blank-uri (:issuer sso)))
+
+(defn prepare-organization-sso-provider
+  "Build an OIDC provider map dynamically from the Nitrate organization SSO config.
+   Uses OIDC discovery via :issuer when token/auth/user URIs are absent."
+  [cfg {:keys [client-id client-secret issuer]}]
   (prepare-oidc-provider cfg
                          {:type             "oidc"
                           :client-id        client-id
                           :client-secret    client-secret
-                          :base-uri         (some-> (or base-url issuer)
+                          :base-uri         (some-> (non-blank-uri issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           (into default-oidc-scopes (or scopes #{}))
-                          :skip-ssrf-check? true}))
+                          :scopes           default-oidc-scopes}))
+
+(defn build-organization-sso-auth-redirect-uri
+  "Build the OIDC authorization redirect URI for an organization SSO config.
+  Raises if the config is incomplete or OIDC discovery fails."
+  [cfg sso & {:keys [dest-url organization-id provider]}]
+  (let [organization-id (or organization-id (:organization-id sso))
+        issuer          (organization-sso-discovery-uri sso)
+        dest-url        (or dest-url (str (cf/get :public-uri)))]
+    (when-not issuer
+      (ex/raise :type :validation
+                :code :invalid-sso-config
+                :hint "missing issuer"))
+    (let [oidc-provider (or provider (prepare-organization-sso-provider cfg sso))
+          state-token   (tokens/generate cfg {:iss             "oidc"
+                                              :dest-url        dest-url
+                                              :organization-id organization-id
+                                              :issuer          issuer
+                                              :exp             (ct/in-future "4h")})]
+      (build-auth-redirect-uri oidc-provider state-token))))
+
+(def ^:private probe-auth-code "penpot-sso-config-probe")
+
+(defn- decode-token-error-response
+  [body]
+  (when (and (string? body) (pos? (count body)))
+    (try
+      (json/decode body)
+      (catch Throwable _ nil))))
+
+(defn- token-endpoint-error
+  [response]
+  (some-> response :body decode-token-error-response :error d/name))
+
+(defn- token-endpoint-error-description
+  [response]
+  (some-> response :body decode-token-error-response :error-description))
+
+(defn- token-endpoint-valid-client-error?
+  "Token endpoint rejected the dummy auth code but accepted the client credentials."
+  [response]
+  (= "invalid_grant" (token-endpoint-error response)))
+
+(defn- token-endpoint-invalid-client-error?
+  "Token endpoint rejected the client credentials."
+  [{:keys [status] :as response}]
+  (let [error (token-endpoint-error response)
+        description (str/lower (or (token-endpoint-error-description response) ""))]
+    (or (= status 401)
+        (#{"invalid_client" "unauthorized_client"} error)
+        (and (= error "access_denied")
+             (str/includes? description "unauthorized")))))
+
+(defn- probe-organization-sso-client-credentials
+  "Probe the token endpoint with a dummy authorization code.
+  Valid client credentials are expected to answer with `invalid_grant`."
+  [cfg provider]
+  (let [params {:client_id     (:client-id provider)
+                :client_secret (:client-secret provider)
+                :code          probe-auth-code
+                :grant_type    "authorization_code"
+                :redirect_uri  (build-redirect-uri)}
+        req    {:method  :post
+                :headers {"content-type" "application/x-www-form-urlencoded"
+                          "accept"       "application/json"}
+                :uri     (:token-uri provider)
+                :body    (u/map->query-string params)}
+        response (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
+    (cond
+      (token-endpoint-valid-client-error? response) true
+      (token-endpoint-invalid-client-error? response) false
+      :else false)))
+
+(defn is-organization-sso-config-valid?
+  "Return true when the SSO config can be discovered, can build a login URL,
+  and the client credentials are accepted by the token endpoint."
+  [cfg sso]
+  (try
+    (if (organization-sso-discovery-uri sso)
+      (let [provider (prepare-organization-sso-provider cfg sso)]
+        (and (build-organization-sso-auth-redirect-uri cfg sso :provider provider)
+             (probe-organization-sso-client-credentials cfg provider)))
+      false)
+    (catch Throwable _ false)))
 
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
@@ -793,6 +893,42 @@
     {::yres/status 200
      ::yres/body {:redirect-uri uri}}))
 
+(defn- organization-sso-callback-handler
+  "Handle the organization-SSO branch of the OIDC callback: state carries
+  :dest-url — exchange the authorization code with the OIDC provider to
+  verify authentication actually occurred, then redirect back to dest-url."
+  [cfg request state code]
+  (let [dest-url (:dest-url state)]
+    (try
+      (let [organization-id (:organization-id state)
+            sso             (nitrate/call cfg :get-organization-sso {:organization-id organization-id})
+            provider        (prepare-organization-sso-provider cfg sso)
+            _info           (get-info cfg provider state code)
+            session         (session/get-session request)
+            exp             (ct/in-future {:minutes 15})]
+        (when (and session organization-id)
+          (let [props (-> (or (:props session) {})
+                          (update :sso assoc organization-id exp))]
+            (session/update-session (::session/manager cfg) (assoc session :props props))))
+        (redirect-response dest-url))
+      (catch Throwable cause
+        (let [{:keys [code]} (ex-data cause)]
+          (binding [l/*context* (errors/request->context request)]
+            (if (some? code)
+              (l/warn :hint "organization sso callback failed"
+                      :code code
+                      :message (ex-message cause)
+                      :organization-id (:organization-id state))
+              (l/err :hint "unexpected error on organization sso callback"
+                     :organization-id (:organization-id state)
+                     :cause cause))))
+        (let [organization-id   (:organization-id state)
+              organization-name (:name (nitrate/call cfg :get-organization-summary {:organization-id organization-id}))]
+          (redirect-with-organization-sso-error
+           {:dest-url dest-url
+            :organization-id organization-id
+            :organization-name organization-name}))))))
+
 (defn- callback-handler
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
@@ -802,22 +938,10 @@
             state    (get params :state)
             state    (tokens/verify cfg {:token state :iss "oidc"})]
 
-        ;; Org SSO flow: state carries :dest-url — exchange the authorization
+        ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
-        (if-let [dest-url (:dest-url state)]
-          (let [team-id         (:team-id state)
-                organization-id (:organization-id state)
-                sso             (nitrate/call cfg :get-org-sso-by-team {:team-id team-id})
-                provider        (prepare-org-sso-provider cfg sso)
-                ;; verify token or throw error
-                _info           (get-info cfg provider state code)
-                session         (session/get-session request)
-                exp             (ct/in-future {:hours 48})]
-            (when (and session organization-id)
-              (let [props (-> (or (:props session) {})
-                              (update :sso assoc organization-id exp))]
-                (session/update-session (::session/manager cfg) (assoc session :props props))))
-            (redirect-response dest-url))
+        (if (:dest-url state)
+          (organization-sso-callback-handler cfg request state code)
 
           (let [provider (resolve-provider cfg state)
                 info     (get-info cfg provider state code)

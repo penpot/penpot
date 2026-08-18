@@ -3,6 +3,7 @@ import * as h from "./_helpers.js";
 await h.ensureDirectories();
 await h.compileStyles();
 await h.copyAssets();
+await h.compileFontsPreviewSprite();
 await h.copyWasmPlayground();
 await h.compileSvgSprites();
 await h.compileTranslations();

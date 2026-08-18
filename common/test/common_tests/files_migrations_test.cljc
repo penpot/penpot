@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
-   [app.common.pprint :as pp]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))

@@ -679,18 +679,25 @@ impl Shape {
     pub fn visible_strokes(&self) -> impl DoubleEndedIterator<Item = &Stroke> {
         self.strokes
             .iter()
-            .filter(|stroke| stroke.width > MIN_STROKE_WIDTH)
+            .filter(|stroke| stroke.max_width() > MIN_STROKE_WIDTH)
     }
 
     pub fn has_visible_strokes(&self) -> bool {
         self.strokes
             .iter()
-            .any(|stroke| stroke.width > MIN_STROKE_WIDTH)
+            .any(|stroke| stroke.max_width() > MIN_STROKE_WIDTH)
     }
 
     pub fn add_stroke(&mut self, s: Stroke) {
         self.invalidate_extrect();
         self.strokes.push(s)
+    }
+
+    pub fn set_last_stroke_widths(&mut self, widths: [f32; 4]) -> Result<(), String> {
+        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
+        stroke.widths = Some(widths);
+        self.invalidate_extrect();
+        Ok(())
     }
 
     pub fn set_stroke_fill(&mut self, f: Fill) -> Result<(), String> {
@@ -1063,11 +1070,16 @@ impl Shape {
         extrect
     }
 
-    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+    fn own_extrect_bounds(&self) -> Bounds {
+        self.expand_own_bounds(self.own_base_bounds())
+    }
+
+    /// The shape's own geometry bounds, before stroke/shadow/blur margins.
+    fn own_base_bounds(&self) -> Bounds {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
-        let mut bounds = match &shape.shape_type {
+        match &shape.shape_type {
             Type::Path(_) | Type::Bool(_) => {
                 if let Some(path) = shape.get_skia_path() {
                     let cap_margin = shape.cap_bounds_margin();
@@ -1084,11 +1096,35 @@ impl Shape {
                 text_content.calculate_bounds(shape, false)
             }
             _ => shape.calculate_bounds(false),
-        };
+        }
+    }
 
-        bounds = self.apply_stroke_bounds(bounds, max_stroke);
+    fn expand_own_bounds(&self, bounds: Bounds) -> Bounds {
+        let max_stroke = Stroke::max_bounds_width(self.strokes.iter(), self.is_open());
+        let mut bounds = self.apply_stroke_bounds(bounds, max_stroke);
         bounds = self.apply_shadow_bounds(bounds);
         bounds = self.apply_blur_bounds(bounds);
+        bounds
+    }
+
+    /// Bound for a `SaveLayerRec` wrapping this shape's own drawing, in
+    /// untransformed space (callers concatenate [`Self::centered_transform`]
+    /// first). Includes shadow/blur margins, so it is also a valid input bound
+    /// for a layer whose paint carries an image filter.
+    pub fn layer_bounds(&self) -> math::Rect {
+        let mut bounds = self.own_base_bounds();
+
+        if matches!(self.shape_type, Type::Text(_)) {
+            let mut rect = bounds.to_rect();
+            rect.join(self.selrect);
+            bounds = Bounds::from_rect(&rect);
+        }
+
+        self.expand_own_bounds(bounds).to_rect()
+    }
+
+    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        let mut bounds = self.own_extrect_bounds();
         bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
         bounds = self.apply_children_blur(bounds, shapes_pool);
 
@@ -1135,6 +1171,10 @@ impl Shape {
             .iter()
             .map(|stroke| stroke.cap_bounds_margin())
             .fold(0.0, f32::max)
+    }
+
+    pub fn has_cap_bounds(&self) -> bool {
+        self.cap_bounds_margin() > 0.0
     }
 
     pub fn mask_id(&self) -> Option<&Uuid> {
@@ -1288,6 +1328,15 @@ impl Shape {
                 }
                 BlurType::BackgroundBlur => None,
             })
+    }
+
+    /// Font families used by this shape (the text spans' families), or an
+    /// empty vec for non-text shapes.
+    pub fn font_families(&self) -> Vec<FontFamily> {
+        match &self.shape_type {
+            Type::Text(content) => content.font_families(),
+            _ => Vec::new(),
+        }
     }
 
     #[allow(dead_code)]
@@ -1457,7 +1506,8 @@ impl Shape {
             }
         }
 
-        self.blur.is_none()
+        !self.has_cap_bounds()
+            && self.blur.is_none()
             && self.background_blur.is_none()
             && self.shadows.is_empty()
             && (self.opacity - 1.0).abs() <= 1e-4

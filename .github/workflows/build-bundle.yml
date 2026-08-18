@@ -9,16 +9,6 @@ on:
         type: string
         required: true
         default: 'develop'
-      build_wasm:
-        description: 'BUILD_WASM. Valid values: yes, no'
-        type: string
-        required: false
-        default: 'yes'
-      build_storybook:
-        description: 'BUILD_STORYBOOK. Valid values: yes, no'
-        type: string
-        required: false
-        default: 'yes'
   workflow_call:
     inputs:
       gh_ref:
@@ -26,29 +16,21 @@ on:
         type: string
         required: true
         default: 'develop'
-      build_wasm:
-        description: 'BUILD_WASM. Valid values: yes, no'
-        type: string
-        required: false
-        default: 'yes'
-      build_storybook:
-        description: 'BUILD_STORYBOOK. Valid values: yes, no'
-        type: string
-        required: false
-        default: 'yes'
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.gh_ref }}
   cancel-in-progress: true
 
 jobs:
-  build-bundle:
-    name: Build and Upload Penpot Bundle
+  # ── 1. Decide whether there is anything to build ───────────────────────
+  check:
+    name: Check current bundle
     runs-on: penpot-runner-01
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+    timeout-minutes: 10
+    outputs:
+      gh_ref: ${{ steps.vars.outputs.gh_ref }}
+      bundle_version: ${{ steps.vars.outputs.bundle_version }}
+      exists: ${{ steps.check.outputs.exists }}
 
     steps:
       - name: Checkout repository
@@ -63,10 +45,52 @@ jobs:
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
           echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
+      # The uploaded zip carries its version as S3 metadata. If the
+      # existing object was already built from this same commit, the
+      # whole build job is skipped.
+      - name: Check if this bundle is already built
+        id: check
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          EXISTING_VERSION=$(aws s3api head-object \
+            --bucket ${{ secrets.S3_BUCKET }} \
+            --key "penpot-${{ steps.vars.outputs.gh_ref }}.zip" \
+            --query 'Metadata."bundle-version"' \
+            --output text 2>/dev/null || echo "none")
+
+          if [ "$EXISTING_VERSION" = "${{ steps.vars.outputs.bundle_version }}" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            {
+              echo "### ⏭️ Bundle build skipped"
+              echo ""
+              echo "The bundle in S3 was already built from \`${{ steps.vars.outputs.bundle_version }}\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ── 2. Build and upload, only when needed ──────────────────────────────
+  build:
+    name: Build and Upload Penpot Bundle
+    runs-on: penpot-runner-01
+    timeout-minutes: 90
+    needs: check
+    if: needs.check.outputs.exists == 'false'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.gh_ref }}
+
       - name: Build bundle
         env:
-          BUILD_WASM: ${{ inputs.build_wasm }}
-          BUILD_STORYBOOK: ${{ inputs.build_storybook }}
+          BUILD_WASM: 'yes'
+          BUILD_STORYBOOK: 'yes'
         run: ./manage.sh build-bundle
 
       - name: Prepare directories for zipping
@@ -80,18 +104,32 @@ jobs:
           zip -r zips/penpot.zip penpot
 
       - name: Upload Penpot bundle to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip --metadata bundle-version=${{ steps.vars.outputs.bundle_version }}
+          aws s3 cp zips/penpot.zip \
+            s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.check.outputs.gh_ref }}.zip \
+            --metadata bundle-version=${{ needs.check.outputs.bundle_version }}
 
+  # ── 3. Single failure notification for the whole workflow ─────────────
+  notify:
+    name: Notify failure
+    runs-on: penpot-runner-01
+    timeout-minutes: 5
+    needs: [check, build]
+    if: failure()
+
+    steps:
       - name: Notify Mattermost
-        if: failure()
-        uses: mattermost/action-mattermost-notify@master
+        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e # v2.1.0
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
           MATTERMOST_CHANNEL: bot-alerts-cicd
           TEXT: |
             ❌ 📦 *[PENPOT] Error building penpot bundles.*
-            📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
-               Bundle version: `${{ steps.vars.outputs.bundle_version }}`
+            📄 Triggered from ref: `${{ needs.check.outputs.gh_ref || inputs.gh_ref }}`
+               Bundle version: `${{ needs.check.outputs.bundle_version || 'n/a' }}`
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             @infra

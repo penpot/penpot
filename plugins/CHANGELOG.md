@@ -1,4 +1,17 @@
-## 1.5.0 (Unreleased)
+## 1.6.0 (Unreleased)
+
+### 🚀 Features
+
+- **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
+- **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished. It rejects when the optional timeout elapses, defaulting to 30 seconds so a wait never hangs.
+- **plugin-types**: Added `waitForLayoutUpdate` to the `Shape` interface to wait until the pending layout updates of a shape and its children have finished
+
+### 🩹 Fixes
+
+- **plugins-runtime**: `Library.createComponent()` now rejects invalid input (an empty shape list, or a shape inside a component copy) with a validation error instead of returning a component proxy pointing at nothing.
+- **plugins-runtime**: Setting an individual padding/margin side (`leftPadding`, `topMargin`, …) now re-derives the padding/margin type, switching to `multiple` when the four sides stop being symmetric (so the value is actually painted) and back to `simple` once top/bottom and left/right are mirrored again.
+
+## 1.5.0 (2026-07-08)
 
 ### 💣 Breaking changes & Deprecations
 

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"PO-Revision-Date: 2026-07-31 17:02+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -18,14 +18,14 @@ msgstr "Har du redan ett konto?"
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
 #, unused
 msgid "auth.check-mail"
-msgstr "Kontrollera din e-post"
+msgstr "Kolla din e-post"
 
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
 msgstr ""
-"Kontrollera din e-post och klicka på länken för att verifiera och börja "
-"använda Penpot."
+"Kolla din e-post och klicka på länken för att verifiera och börja använda "
+"Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -96,7 +96,7 @@ msgid "auth.new-password"
 msgstr "Skriv ett nytt lösenord"
 
 #: src/app/main/ui/auth/verify_token.cljs:53
-msgid "auth.notifications.org-invitation-accepted"
+msgid "auth.notifications.organization-invitation-accepted"
 msgstr "Du är nu med i %s"
 
 #: src/app/main/ui/auth/recovery.cljs:36
@@ -293,7 +293,7 @@ msgid "common.unpublish"
 msgstr "Avpublicera"
 
 #: src/app/main/data/nitrate.cljs:165
-msgid "dasboard.leave-org.toast"
+msgid "dashboard.leave-organization.toast"
 msgstr "Du är inte längre med i organisationen %s."
 
 #: src/app/main/ui/dashboard/projects.cljs:90
@@ -363,25 +363,25 @@ msgid "dashboard.change-email"
 msgstr "Ändra e-post"
 
 #, unused
-msgid "dashboard.change-org-modal.accept"
+msgid "dashboard.change-organization-modal.accept"
 msgstr "FLYTTA TEAM"
 
 #, unused
-msgid "dashboard.change-org-modal.choose"
+msgid "dashboard.change-organization-modal.choose"
 msgstr "Flytta till:"
 
 #, unused
-msgid "dashboard.change-org-modal.select"
+msgid "dashboard.change-organization-modal.select"
 msgstr "Välj en organisation"
 
 #, unused
-msgid "dashboard.change-org-modal.text"
+msgid "dashboard.change-organization-modal.text"
 msgstr ""
 "Projekt och filer kommer att förbli tillgängliga för teammedlemmar. Teamet "
 "kommer att hämta konfigurationen från den nya organisationen."
 
 #: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
-msgid "dashboard.change-org-modal.title"
+msgid "dashboard.change-organization-modal.title"
 msgstr "Ändra teamets organisation"
 
 #: src/app/main/ui/dashboard/deleted.cljs:316
@@ -393,7 +393,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(kopia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:371
-msgid "dashboard.create-new-org"
+msgid "dashboard.create-new-organization"
 msgstr "Skapa org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:439
@@ -812,7 +812,7 @@ msgid "dashboard.invite-profile"
 msgstr "Bjud in personer"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
-msgid "dashboard.leave-org"
+msgid "dashboard.leave-organization"
 msgstr "Lämna org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:570, src/app/main/ui/dashboard/sidebar.cljs:577, src/app/main/ui/dashboard/sidebar.cljs:582, src/app/main/ui/dashboard/team.cljs:433
@@ -864,6 +864,7 @@ msgid "dashboard.move-to-other-team"
 msgstr "Flytta till andra team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+#, fuzzy
 msgid "dashboard.my-teams"
 msgstr "Mina team"
 
@@ -888,7 +889,7 @@ msgid "dashboard.no-matches-for"
 msgstr "Inga träffar hittades för ”%s”"
 
 #: src/app/main/ui/dashboard/team_form.cljs:156
-msgid "dashboard.no-org-allows-create-team.message"
+msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "Du har inte behörighet att lägga till team i någon av dina organisationer."
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
@@ -958,7 +959,7 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Sortera efter status"
 
 #: src/app/main/data/dashboard.cljs:753
-msgid "dashboard.org-deleted"
+msgid "dashboard.organization-deleted"
 msgstr "Organisationen %s har tagits bort."
 
 #: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
@@ -998,7 +999,7 @@ msgid "dashboard.plugins.try-plugin"
 msgstr "Testa plugin: "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "dashboard.plus-create-new-org"
+msgid "dashboard.plus-create-new-organization"
 msgstr "+ Skapa org"
 
 #: src/app/main/data/dashboard.cljs:805
@@ -1083,36 +1084,36 @@ msgid "dashboard.section.organizations"
 msgstr "Organisationer"
 
 #, unused
-msgid "dashboard.select-org-modal.accept"
+msgid "dashboard.select-organization-modal.accept"
 msgstr "LÄGG TILL I ORGANISATION"
 
 #, unused
-msgid "dashboard.select-org-modal.choose"
+msgid "dashboard.select-organization-modal.choose"
 msgstr "Välj en organisation:"
 
 #: src/app/main/ui/dashboard/team.cljs:975
-msgid "dashboard.select-org-modal.external-invitations-warning"
+msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
 "\"%s\" tillåter endast organisationsmedlemmar att gå med i dess team. Alla "
 "väntande inbjudningar till personer utanför organisationen kommer att "
 "återkallas."
 
 #: src/app/main/ui/dashboard/team.cljs:971
-msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Väntande inbjudningar till externa användare kommer att avbrytas."
 
 #, unused
-msgid "dashboard.select-org-modal.permission-info"
+msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Här hittar du alla dina organisationer där du har rätt att skapa eller "
 "lägga till team."
 
 #, unused
-msgid "dashboard.select-org-modal.select"
+msgid "dashboard.select-organization-modal.select"
 msgstr "Välj en organisation"
 
 #: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
-msgid "dashboard.select-org-modal.title"
+msgid "dashboard.select-organization-modal.title"
 msgstr "Lägg till team i en organisation"
 
 #: src/app/main/ui/settings/options.cljs:66
@@ -1236,7 +1237,7 @@ msgid "dashboard.success-move-project"
 msgstr "Ditt projekt har flyttats"
 
 #, unused
-msgid "dashboard.team-belong-org"
+msgid "dashboard.team-belong-organization"
 msgstr "Detta team tillhör nu %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
@@ -1248,7 +1249,7 @@ msgid "dashboard.team-members"
 msgstr "Teammedlemmar"
 
 #, unused
-msgid "dashboard.team-no-longer-belong-org"
+msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Detta team tillhör inte längre organisation %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
@@ -1260,7 +1261,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Lägg till i en organisation"
 
 #: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
-msgid "dashboard.team-organization.add.no-valid-orgs"
+msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr ""
 "Du har inte behörighet att lägga till det här teamet i någon av dina "
 "organisationer."
@@ -1270,7 +1271,7 @@ msgid "dashboard.team-organization.change"
 msgstr "Ändra teamorganisation"
 
 #: src/app/main/ui/dashboard/team.cljs:905
-msgid "dashboard.team-organization.disabled-org-tooltip"
+msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr "Endast personer inom din organisation kan bjudas in."
 
 #: src/app/main/ui/dashboard/team.cljs:1639
@@ -1336,7 +1337,7 @@ msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Gratis Penpot"
 
 #, unused
-msgid "dashboard.user-no-longer-belong-org"
+msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Du är inte längre medlem i organisation %s"
 
 #: src/app/main/ui/settings/options.cljs:109
@@ -1712,15 +1713,15 @@ msgid "errors.only-creator-can-unlock"
 msgstr "Endast skaparen av versionen kan låsa upp den"
 
 #, unused
-msgid "errors.org-leave.no-valid-teams"
+msgid "errors.organization-leave.no-valid-teams"
 msgstr "Det uppstod ett fel när du skulle lämna organisationen. Försök igen."
 
 #, unused
-msgid "errors.org-leave.org-owner-cannot-leave"
+msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "Organisationsägaren kan inte lämna organisationen."
 
 #: src/app/main/ui/auth/verify_token.cljs:97
-msgid "errors.org-not-found"
+msgid "errors.organization-not-found"
 msgstr "Den organisationen finns inte"
 
 #: src/app/main/ui/settings/password.cljs
@@ -2409,7 +2410,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Aktiva teman"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "Kopiera CSS-förkortning till urklipp"
 
@@ -3731,17 +3731,17 @@ msgid "modals.add-shared-confirm.message"
 msgstr "Lägg till \"%s\" som delat bibliotek"
 
 #: src/app/main/data/nitrate.cljs:199
-msgid "modals.before-leave-org.message"
+msgid "modals.before-leave-organization.message"
 msgstr ""
 "Du är den enda medlemmen i vissa av teamen. Dessa team kommer att raderas "
 "tillsammans med deras projekt och filer."
 
 #: src/app/main/data/nitrate.cljs:198, src/app/main/ui/dashboard/change_owner.cljs:151
-msgid "modals.before-leave-org.title"
+msgid "modals.before-leave-organization.title"
 msgstr "INNAN DU LÄMNAR ORGANISATIONEN"
 
 #: src/app/main/data/nitrate.cljs:202
-msgid "modals.before-leave-org.warning"
+msgid "modals.before-leave-organization.warning"
 msgstr "Alla team där du är den enda medlemmen kommer att raderas."
 
 #: src/app/main/ui/workspace/nudge.cljs:59
@@ -3801,22 +3801,22 @@ msgstr "Genom att ta bort ditt konto förlorar du alla dina projekt och arkiv."
 
 #: src/app/main/ui/settings/delete_account.cljs
 #, unused
-msgid "modals.delete-account.info.with-orgs"
+msgid "modals.delete-account.info.with-organizations"
 msgstr ""
 "Denna åtgärd kan inte ångras. Ditt konto, din prenumeration och dina "
 "organisationer kommer att raderas omedelbart. Du kommer också att förlora "
 "åtkomsten till dina nuvarande projekt och filer."
 
 #: src/app/main/ui/settings/delete_account.cljs:83
-msgid "modals.delete-account.owned-orgs.list-title"
+msgid "modals.delete-account.owned-organizations.list-title"
 msgstr "Organisationer som kommer att raderas"
 
 #: src/app/main/ui/settings/delete_account.cljs:98
-msgid "modals.delete-account.owned-orgs.members-count"
+msgid "modals.delete-account.owned-organizations.members-count"
 msgstr "%s medlemmar"
 
 #: src/app/main/ui/settings/delete_account.cljs:96
-msgid "modals.delete-account.owned-orgs.teams-count"
+msgid "modals.delete-account.owned-organizations.teams-count"
 msgstr "%s team"
 
 #: src/app/main/ui/settings/delete_account.cljs:64
@@ -3900,7 +3900,7 @@ msgid "modals.delete-font.title"
 msgstr "Tar bort typsnitt"
 
 #: src/app/main/data/team.cljs:129
-msgid "modals.delete-org-team-confirm.message"
+msgid "modals.delete-organization-team-confirm.message"
 msgstr ""
 "Är du säker på att du vill ta bort det här teamet som är en del av "
 "organisation %s?"
@@ -4048,7 +4048,7 @@ msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "Inga inbjudningar skickades"
 
 #: src/app/main/data/team.cljs:162
-msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
 "Endast medlemmar i organisationen \"%s\" kan bjudas in till det här teamet, "
 "och de är alla redan teammedlemmar. Om du behöver mer information, kontakta "
@@ -4135,35 +4135,35 @@ msgid "modals.leave-confirm.title"
 msgstr "Lämnar teamet"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:158
-msgid "modals.leave-org-and-reassign.hint"
+msgid "modals.leave-organization-and-reassign.hint"
 msgstr ""
 "Du är ägare till teamen i vissa organisationer. Vänligen befordra en annan "
 "medlem till att bli ägare."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:161
-msgid "modals.leave-org-and-reassign.hint-delete"
+msgid "modals.leave-organization-and-reassign.hint-delete"
 msgstr ""
 "Du är den enda medlemmen i vissa av teamen. Dessa team kommer att raderas "
 "tillsammans med deras projekt och filer."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:163
-msgid "modals.leave-org-and-reassign.hint-promote"
+msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr ""
 "Du är också ägare till vissa organisationers team. Vänligen befordra en "
 "annan medlem till att bli ägare."
 
 #: src/app/main/data/nitrate.cljs:200, src/app/main/data/nitrate.cljs:209
-msgid "modals.leave-org-confirm.accept"
+msgid "modals.leave-organization-confirm.accept"
 msgstr "Lämna organisation"
 
 #: src/app/main/data/nitrate.cljs:208
-msgid "modals.leave-org-confirm.message"
+msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "Du kommer permanent att förlora åtkomsten till alla team, projekt och filer "
 "i den."
 
 #: src/app/main/data/nitrate.cljs:207
-msgid "modals.leave-org-confirm.title"
+msgid "modals.leave-organization-confirm.title"
 msgstr "Lämnar du organisation %s?"
 
 #: src/app/main/ui/delete_shared.cljs:54
@@ -4239,21 +4239,21 @@ msgid "modals.remove-shared-confirm.message"
 msgstr "Ta bort \"%s\" som delat bibliotek"
 
 #: src/app/main/data/nitrate.cljs:256
-msgid "modals.remove-team-org.accept"
+msgid "modals.remove-team-organization.accept"
 msgstr "Ta bort från organisationen"
 
 #: src/app/main/data/nitrate.cljs:254
-msgid "modals.remove-team-org.info"
+msgid "modals.remove-team-organization.info"
 msgstr ""
 "Projekt och filer kommer att förbli tillgängliga för teammedlemmar, men "
 "organisationens inställningar kommer inte längre att gälla."
 
 #: src/app/main/data/nitrate.cljs:253
-msgid "modals.remove-team-org.text"
+msgid "modals.remove-team-organization.text"
 msgstr "Är du säker på att du vill ta bort teamet '%s' från organisationen '%s'?"
 
 #: src/app/main/data/nitrate.cljs:252
-msgid "modals.remove-team-org.title"
+msgid "modals.remove-team-organization.title"
 msgstr "TA BORT TEAMET FRÅN ORGANISATIONEN"
 
 #: src/app/main/ui/workspace/nudge.cljs:52
@@ -4321,7 +4321,7 @@ msgid "nitrate.activation-success.active-until"
 msgstr "Ditt abonnemang är aktivt till %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:195, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
-msgid "nitrate.activation-success.create-org"
+msgid "nitrate.activation-success.create-organization"
 msgstr "Skapa organisation"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
@@ -4329,18 +4329,11 @@ msgid "nitrate.activation-success.enjoy"
 msgstr "Lycka till med ditt abonnemang!"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+#, fuzzy
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
 "Du kan hantera din prenumeration när som helst från prenumerationssidan i "
 "dina kontoinställningar."
-
-#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
-msgid "nitrate.activation-success.title"
-msgstr "Du är Business Nitrate!"
-
-#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer"
-msgstr "Behöver du en kod? Kontakta oss:"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -4374,7 +4367,7 @@ msgstr ""
 "korrekt konfigurerat."
 
 #, unused
-msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "Din organisation kommer att raderas."
 
 #, unused
@@ -4430,16 +4423,13 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "Full frihet med öppen källkod, med den styrning din organisation behöver"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
+#, fuzzy
 msgid "nitrate.form.enterprise-intro"
 msgstr "Allt dina team behöver för att arbeta säkert i stor skala:"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
 msgstr "per medlem per månad"
-
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
-msgid "nitrate.form.have-code"
-msgstr "Har du en aktiveringskod?"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:86
 msgid "nitrate.form.see-plan"
@@ -4493,7 +4483,7 @@ msgstr "Vi har skickat ett återställningsmail till"
 
 #: src/app/main/ui/auth/recovery_request.cljs:116
 msgid "not-found.login.sent-recovery-check"
-msgstr "Kontrollera din e-post och klicka på länken för att skapa ett nytt lösenord."
+msgstr "Kolla din e-post och klicka på länken för att skapa ett nytt lösenord."
 
 #: src/app/main/ui/static.cljs:174
 msgid "not-found.login.signup-free"
@@ -4612,7 +4602,7 @@ msgstr "Profilen sparades!"
 
 #: src/app/main/ui/settings/change_email.cljs:46
 msgid "notifications.validation-email-sent"
-msgstr "Verifiering e-post skickas till %s. Kontrollera din e-post!"
+msgstr "Verifieringsmejl skickas till %s. Kolla din e-post!"
 
 #, unused
 msgid "onboarding-v2.before-start.desc1"
@@ -4729,10 +4719,6 @@ msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Efter att ha namngett ditt team kommer du att kunna bjuda in människor att "
 "gå med."
-
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Ange namnet på teamet"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:228
 msgid "onboarding.choice.team-up.create-team-without-invite"
@@ -4986,6 +4972,7 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+#, fuzzy
 msgid "options.deleted-token"
 msgstr "Denna token existerar inte eller har raderats."
 
@@ -5040,11 +5027,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Redigera"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Allmän"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Allmän"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
@@ -5550,14 +5533,6 @@ msgstr "Fäst till pixelrutnät"
 msgid "shortcuts.start-editing"
 msgstr "Börja redigera"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
-msgid "shortcuts.start-measure"
-msgstr "Starta mätningen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.stop-measure"
-msgstr "Stoppa mätningen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.thumbnail-set"
 msgstr "Ställ in miniatyrbilder"
@@ -5675,7 +5650,7 @@ msgid "shortcuts.zoom-selected"
 msgstr "Zooma in markerad"
 
 #: src/app/main/ui/dashboard/subscription.cljs:191
-msgid "subscription.banner.create-org-info"
+msgid "subscription.banner.create-organization-info"
 msgstr ""
 "Skapa en organisation och se exakt hur Enterprise fungerar. Sätt regler, "
 "hantera dina team och upptäck en ny nivå av kontroll över ditt "
@@ -5716,12 +5691,6 @@ msgstr "Unlimited-testversion"
 #: src/app/main/ui/dashboard/subscription.cljs:201
 msgid "subscription.dashboard.banner.unlock-features"
 msgstr "Lås upp Enterprise-funktioner"
-
-#: src/app/main/ui/dashboard/subscription.cljs:203
-msgid "subscription.dashboard.banner.unlock-features-description"
-msgstr ""
-"Ställ in detaljerade behörigheter och håll din designverksamhet säker, utan "
-"att kompromissa med friheten av öppen källkod som ditt team redan älskar."
 
 #: src/app/main/ui/dashboard/subscription.cljs:208
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -5841,6 +5810,7 @@ msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Betalningen slutfördes inte. Försök igen när du är redo."
 
 #: src/app/main/ui/settings/subscription.cljs:427
+#, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "Vi kunde inte starta utcheckningen. Försök igen. Om problemet kvarstår, "
@@ -5975,16 +5945,13 @@ msgid "subscription.settings.more-information"
 msgstr "Mer information"
 
 #: src/app/main/ui/settings/subscription.cljs:724
+#, fuzzy
 msgid "subscription.settings.organization-member-month"
 msgstr "org-medlem per månad"
 
 #: src/app/main/ui/settings/subscription.cljs:665
 msgid "subscription.settings.other-plans"
 msgstr "Övriga Penpot-abonnemang"
-
-#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
-msgid "subscription.settings.price-editor-month"
-msgstr "redaktör per månad"
 
 #: src/app/main/ui/settings/subscription.cljs:708
 msgid "subscription.settings.price-organization-month"
@@ -6051,11 +6018,6 @@ msgstr "Tack för att du valt Penpot %s-abonnemanget!"
 #: src/app/main/ui/settings/subscription.cljs:370
 msgid "subscription.settings.success.dialog.title"
 msgstr "Du är %!"
-
-#: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
-msgid "subscription.settings.support-us-since"
-msgstr "Du har stöttat oss med detta abonnemang sedan: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:713
 msgid "subscription.settings.try-it-free"
@@ -9350,7 +9312,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s aktiva uppsättningar"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Ursprungligt värde: %s"
 
@@ -9417,7 +9378,6 @@ msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Dina tokens kommer automatiskt att byta namn till %s.(suffix).(tokenName)"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Uträknat värde: %s"
 
@@ -9550,7 +9510,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Temalista"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beskrivning"
 
@@ -9990,3 +9949,131 @@ msgstr "Autosparade versioner sparas i %s dagar."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicka för att stänga bana"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Kolla din e-post!"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "Vi har skickat ett verifieringsmejl till:"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "errors.tokens.circular-reference"
+msgstr "Token har en cirkulär referens"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs:30, src/app/main/ui/inspect/styles/style_box.cljs:32, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:262, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:274
+msgid "labels.blur-effects"
+msgstr "Oskärpaeffekter"
+
+#: src/app/main/ui/onboarding/questions.cljs:222
+msgid "onboarding.questions.team-size.101-500"
+msgstr "101 - 500"
+
+#: src/app/main/ui/onboarding/questions.cljs:220
+msgid "onboarding.questions.team-size.2-100"
+msgstr "2 - 100"
+
+#: src/app/main/ui/onboarding/questions.cljs:224
+msgid "onboarding.questions.team-size.501-1000"
+msgstr "501 - 1000"
+
+#: src/app/main/ui/onboarding/questions.cljs:218
+msgid "onboarding.questions.team-size.just-me"
+msgstr "Bara jag"
+
+#: src/app/main/ui/onboarding/questions.cljs:228
+msgid "onboarding.questions.team-size.more-than-5001"
+msgstr "5001+"
+
+#: src/app/main/ui/dashboard/subscription.cljs:229
+msgid "subscription.dashboard.banner.renew"
+msgstr "Förnya"
+
+#: src/app/main/ui/dashboard/subscription.cljs:216
+msgid "subscription.dashboard.banner.renew-subscription"
+msgstr "Förnya din prenumeration"
+
+#: src/app/main/ui/dashboard/subscription.cljs:222
+msgid "subscription.dashboard.banner.subscription-expire-days"
+msgstr "Din Enterprise-prenumeration löper ut om %s dagar (%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:220
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Din Enterprise-prenumeration har löpt ut. (%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:421
+msgid "workspace.header.menu.hide-comments"
+msgstr "Dölj kommentarer"
+
+#: src/app/main/ui/workspace/main_menu.cljs:422
+msgid "workspace.header.menu.show-comments"
+msgstr "Visa kommentarer"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:354
+msgid "workspace.libraries.colors.add-library-color"
+msgstr "Lägg till färg i biblioteket"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:371, src/app/main/ui/workspace/colorpicker/libraries.cljs:387
+msgid "workspace.libraries.colors.empty-recent-colors"
+msgstr "Det finns inga nya färger ännu"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:336
+msgid "workspace.libraries.colors.toggle-color-palette"
+msgstr "Växla färgpalett"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#, unused
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Oskärpaeffekter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:273
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Grupposkärpaeffekter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:272
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Oskärpaeffekter för val"
+
+#: src/app/main/ui/onboarding/questions.cljs:226
+msgid "onboarding.questions.team-size.1001-5000"
+msgstr "1001 - 5000"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:144
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Oskärpatyp"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:153
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr ""
+"Bakgrundsoskärpa stöds endast i den nya renderingsmotorn. Växla över till "
+"den nya renderingsmotorn i Inställningar-menyn för att använda den här "
+"effekten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Visa/dölj fler alternativ"
+
+#, unused
+msgid "workspace.toast.comments-hidden"
+msgstr "Kommentarer dolda"
+
+#, unused
+msgid "workspace.toast.comments-visible"
+msgstr "Kommentarer synliga"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
+msgid "workspace.toolbar.mcp"
+msgstr "MCP"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:87
+msgid "workspace.toolbar.mcp-connect-here"
+msgstr "Anslut här"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:84
+msgid "workspace.toolbar.mcp-connected"
+msgstr "MCP ansluten"
+
+#: src/app/main/ui/workspace/palette.cljs:166
+msgid "workspace.toolbar.palette-bar"
+msgstr "Palett"

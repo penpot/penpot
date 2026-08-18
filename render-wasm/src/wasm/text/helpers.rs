@@ -195,6 +195,10 @@ pub fn move_cursor_up(
     _text_content: &TextContent,
 ) -> TextPositionWithAffinity {
     // TODO: Implement proper line-based navigation using line metrics
+    if paragraphs.is_empty() || cursor.paragraph >= paragraphs.len() {
+        return *cursor;
+    }
+
     if cursor.paragraph > 0 {
         let prev_para = cursor.paragraph - 1;
         let char_count = paragraph_char_count(&paragraphs[prev_para]);
@@ -212,6 +216,10 @@ pub fn move_cursor_down(
     _text_content: &TextContent,
 ) -> TextPositionWithAffinity {
     // TODO: Implement proper line-based navigation using line metrics
+    if paragraphs.is_empty() || cursor.paragraph >= paragraphs.len() {
+        return *cursor;
+    }
+
     if cursor.paragraph < paragraphs.len() - 1 {
         let next_para = cursor.paragraph + 1;
         let char_count = paragraph_char_count(&paragraphs[next_para]);
@@ -451,11 +459,13 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
     let end = selection.end();
 
     let paragraphs = text_content.paragraphs_mut();
-    if start.paragraph >= paragraphs.len() {
+    if paragraphs.is_empty() || start.paragraph >= paragraphs.len() {
         return;
     }
 
-    if start.paragraph == end.paragraph {
+    let end_paragraph = end.paragraph.min(paragraphs.len() - 1);
+
+    if start.paragraph == end_paragraph {
         delete_range_in_paragraph(&mut paragraphs[start.paragraph], start.offset, end.offset);
     } else {
         let start_para_len = paragraph_char_count(&paragraphs[start.paragraph]);
@@ -465,19 +475,15 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
             start_para_len,
         );
 
-        delete_range_in_paragraph(&mut paragraphs[end.paragraph], 0, end.offset);
+        delete_range_in_paragraph(&mut paragraphs[end_paragraph], 0, end.offset);
 
-        if end.paragraph < paragraphs.len() {
-            let end_para_children: Vec<_> =
-                paragraphs[end.paragraph].children_mut().drain(..).collect();
-            paragraphs[start.paragraph]
-                .children_mut()
-                .extend(end_para_children);
-        }
+        let end_para_children: Vec<_> =
+            paragraphs[end_paragraph].children_mut().drain(..).collect();
+        paragraphs[start.paragraph]
+            .children_mut()
+            .extend(end_para_children);
 
-        if end.paragraph < paragraphs.len() {
-            paragraphs.drain((start.paragraph + 1)..=end.paragraph);
-        }
+        paragraphs.drain((start.paragraph + 1)..=end_paragraph);
 
         let children = paragraphs[start.paragraph].children_mut();
         let has_content = children.iter().any(|span| !span.text.is_empty());
@@ -491,6 +497,11 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
 
 /// Delete a range of characters within a single paragraph.
 pub fn delete_range_in_paragraph(para: &mut Paragraph, start_offset: usize, end_offset: usize) {
+    // An out of bounds offset must not skip the deletion.
+    let para_len = paragraph_char_count(para);
+    let start_offset = start_offset.min(para_len);
+    let end_offset = end_offset.min(para_len);
+
     if start_offset >= end_offset {
         return;
     }
@@ -839,4 +850,125 @@ pub fn split_paragraph_at_cursor(
     paragraphs.insert(cursor.paragraph + 1, new_para);
 
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Rect;
+    use crate::shapes::{FontFamily, FontStyle, GrowType, TextAlign, TextSpan};
+    use crate::uuid::Uuid;
+
+    fn span(text: &str) -> TextSpan {
+        TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![],
+        )
+    }
+
+    fn paragraph(texts: &[&str]) -> Paragraph {
+        Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            texts.iter().copied().map(span).collect(),
+        )
+    }
+
+    fn content(paragraphs: Vec<Paragraph>) -> TextContent {
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 100.0, 100.0), GrowType::Fixed);
+        for para in paragraphs {
+            content.add_paragraph(para);
+        }
+        content
+    }
+
+    fn text_of(content: &TextContent) -> String {
+        content
+            .paragraphs()
+            .iter()
+            .map(|para| {
+                para.children()
+                    .iter()
+                    .map(|span| span.text.as_str())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn selection(start: (usize, usize), end: (usize, usize)) -> TextSelection {
+        TextSelection {
+            anchor: TextPositionWithAffinity::new_without_affinity(start.0, start.1),
+            focus: TextPositionWithAffinity::new_without_affinity(end.0, end.1),
+        }
+    }
+
+    #[test]
+    fn delete_selection_range_deletes_a_whole_multibyte_paragraph() {
+        let mut content = content(vec![paragraph(&["Añadir"])]);
+        delete_selection_range(&mut content, &selection((0, 0), (0, 6)));
+        assert_eq!(text_of(&content), "");
+    }
+
+    #[test]
+    fn delete_range_in_paragraph_clamps_an_overshooting_end_offset() {
+        let mut para = paragraph(&["Añadir"]);
+        delete_range_in_paragraph(&mut para, 0, 7);
+        assert_eq!(para.children().len(), 1);
+        assert_eq!(para.children()[0].text, "");
+    }
+
+    #[test]
+    fn delete_selection_range_deletes_emoji() {
+        let mut content = content(vec![paragraph(&["Hi 😀"])]);
+        delete_selection_range(&mut content, &selection((0, 0), (0, 4)));
+        assert_eq!(text_of(&content), "");
+    }
+
+    #[test]
+    fn delete_selection_range_never_splits_an_emoji() {
+        let mut content = content(vec![paragraph(&["a😀b"])]);
+        delete_selection_range(&mut content, &selection((0, 1), (0, 2)));
+        assert_eq!(text_of(&content), "ab");
+    }
+
+    #[test]
+    fn delete_selection_range_spanning_several_spans() {
+        let mut content = content(vec![paragraph(&["Añ", "adir"])]);
+        delete_selection_range(&mut content, &selection((0, 1), (0, 4)));
+        assert_eq!(text_of(&content), "Air");
+    }
+
+    #[test]
+    fn delete_selection_range_across_paragraphs() {
+        let mut content = content(vec![
+            paragraph(&["Añadir"]),
+            paragraph(&["Más"]),
+            paragraph(&["Fin"]),
+        ]);
+        delete_selection_range(&mut content, &selection((0, 0), (2, 3)));
+        assert_eq!(content.paragraphs().len(), 1);
+        assert_eq!(text_of(&content), "");
+    }
+
+    #[test]
+    fn delete_selection_range_clamps_an_out_of_range_focus() {
+        let mut content = content(vec![paragraph(&["Añadir"])]);
+        delete_selection_range(&mut content, &selection((0, 0), (5, 99)));
+        assert_eq!(text_of(&content), "");
+    }
 }

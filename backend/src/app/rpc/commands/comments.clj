@@ -230,8 +230,8 @@
   {::doc/added "1.15"
    ::sm/params schema:get-comment-threads}
   [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (files/check-comment-permissions! conn profile-id file-id share-id)
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (files/check-comment-permissions! cfg profile-id file-id share-id)
                  (get-comment-threads conn profile-id file-id))))
 
 (defn- get-comment-threads-sql
@@ -328,8 +328,8 @@
   {::doc/added "1.15"
    ::sm/params schema:get-comment-thread}
   [cfg {:keys [::rpc/profile-id file-id id share-id] :as params}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (files/check-comment-permissions! conn profile-id file-id share-id)
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (files/check-comment-permissions! cfg profile-id file-id share-id)
                  (some-> (db/exec-one! conn [sql:get-comment-thread profile-id file-id id])
                          (decode-row)))))
 
@@ -347,9 +347,9 @@
   {::doc/added "1.15"
    ::sm/params schema:get-comments}
   [cfg {:keys [::rpc/profile-id thread-id share-id]}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (let [{:keys [file-id]} (get-comment-thread conn thread-id)]
-                   (files/check-comment-permissions! conn profile-id file-id share-id)
+                   (files/check-comment-permissions! cfg profile-id file-id share-id)
                    (get-comments conn thread-id)))))
 
 (def sql:get-comments
@@ -406,8 +406,8 @@
    ::doc/changes ["1.15" "Imported from queries and renamed."]
    ::sm/params schema:get-profiles-for-file-comments}
   [cfg {:keys [::rpc/profile-id file-id share-id]}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (files/check-comment-permissions! conn profile-id file-id share-id)
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (files/check-comment-permissions! cfg profile-id file-id share-id)
                  (get-file-comments-users conn file-id profile-id))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -534,9 +534,9 @@
   {::doc/added "1.15"
    ::sm/params schema:update-comment-thread-status
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
   (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
     (upsert-comment-thread-status! conn profile-id id)))
 
 ;; --- COMMAND: Update Comment Thread
@@ -552,9 +552,9 @@
   {::doc/added "1.15"
    ::sm/params schema:update-comment-thread
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id is-resolved share-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id is-resolved share-id]}]
   (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
     (db/update! conn :comment-thread
                 {:is-resolved is-resolved}
                 {:id id})
@@ -582,7 +582,7 @@
         {:keys [team-id project-id] :as file}
         (get-file cfg file-id page-id)]
 
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
 
     (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
                         ::quotes/profile-id profile-id
@@ -653,7 +653,7 @@
         {:keys [file-id page-id] :as thread}
         (get-comment-thread conn thread-id ::sql/for-update true)]
 
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
 
     ;; Don't allow edit comments to not owners
     (when-not (= owner-id profile-id)
@@ -690,9 +690,9 @@
   {::doc/added "1.15"
    ::sm/params schema:delete-comment-thread
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
   (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
@@ -713,14 +713,14 @@
   {::doc/added "1.15"
    ::sm/params schema:delete-comment
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
   (let [{:keys [owner-id thread-id] :as comment}
         (get-comment conn id ::sql/for-update true)
 
         {:keys [file-id]}
         (get-comment-thread conn thread-id)]
 
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
@@ -743,9 +743,9 @@
   {::doc/added "1.15"
    ::sm/params schema:update-comment-thread-position
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at id position frame-id share-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id position frame-id share-id]}]
   (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
     (db/update! conn :comment-thread
                 {:modified-at request-at
                  :position (db/pgpoint position)
@@ -767,9 +767,9 @@
   {::doc/added "1.15"
    ::sm/params schema:update-comment-thread-frame
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at id frame-id share-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id frame-id share-id]}]
   (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (files/check-comment-permissions! cfg profile-id file-id share-id)
     (db/update! conn :comment-thread
                 {:modified-at request-at
                  :frame-id frame-id}

@@ -8,6 +8,9 @@
   wait for the user to push. Do not change the remote URL, do not switch SSH↔HTTPS.
 - **Never amend a commit that has been pushed** unless the user explicitly asks.
   If the user pushes, treat that commit as final from the agent's side.
+- **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
+  Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
+  This prevents hiding test failures. See `mem:testing` for details.
 - **Read the workflow memory BEFORE the corresponding action**:
   - Before `git commit` → `mem:workflow/creating-commits` (commit format, AI-assisted-by trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, Issue Type)
@@ -28,6 +31,12 @@ Do this **before planning, before coding, before touching any file**:
 
 **STOP: Do not proceed until you have read the core memory of every affected module.**
 Skipping this step is the #1 cause of incorrect or incomplete work.
+
+---
+
+## Writing Rules
+
+Use the `ste` skill when the user explicitly requests STE, `/ste`, or ASD-STE100.
 
 ---
 

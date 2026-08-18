@@ -4,24 +4,25 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
   "devDependencies": {
-    "concurrently": "^10.0.3",
+    "concurrently": "^10.0.4",
     "nodemon": "^3.1.14",
-    "prettier": "3.9.4",
+    "prettier": "3.9.6",
     "source-map-support": "^0.5.21",
-    "ws": "^8.21.0"
+    "ws": "^8.21.2"
   },
   "dependencies": {
     "date-fns": "^4.4.0"
   },
   "scripts": {
-    "lint:clj": "clj-kondo --parallel=true --lint src/",
+    "lint:clj": "clj-kondo --config-dir ../.clj-kondo --lint src/",
+    "lint:js": "exit 0",
     "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
     "check-fmt:js": "prettier -c src/**/*.js",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",

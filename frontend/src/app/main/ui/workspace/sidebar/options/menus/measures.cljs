@@ -374,7 +374,7 @@
          (fn [value attr]
            (if (or (string? value) (number? value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (udw/update-dimensions ids attr value))
+                       (udw/update-dimensions-coalesced ids attr value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
@@ -408,7 +408,7 @@
            (if (or (string? value) (number? value))
              (let [value (fixed-decimal-value value)]
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/increase-rotation ids value)))
+               (st/emit! (udw/increase-rotation-coalesced ids value)))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{:rotation}
@@ -571,7 +571,7 @@
               :no-validate true
               :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
               :on-change on-width-change
-              :disabled disabled-width-sizing?
+              :is-disabled disabled-width-sizing?
               :class (stl/css :numeric-input)
               :value (:width values)}]]
            [:div {:class (stl/css-case :height true
@@ -582,7 +582,7 @@
                                                  :no-validate true
                                                  :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
                                                  :on-change on-height-change
-                                                 :disabled disabled-height-sizing?
+                                                 :is-disabled disabled-height-sizing?
                                                  :class (stl/css :numeric-input)
                                                  :value (:height values)}]]])
 
@@ -632,7 +632,7 @@
             [:> deprecated-input/numeric-input* {:no-validate true
                                                  :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
                                                  :on-change on-pos-x-change
-                                                 :disabled disabled-position?
+                                                 :is-disabled disabled-position?
                                                  :class (stl/css :numeric-input)
                                                  :value (:x values)}]]
 

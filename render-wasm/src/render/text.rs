@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout, Stroke,
-        StrokeKind, TextContent,
+        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
+        ParagraphLayout, Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -55,7 +55,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                builder.add_text(&text);
+                add_text_with_tabs(builder, &text, span.font_size);
             }
         }
 
@@ -329,15 +329,21 @@ fn render_text_on_canvas(
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
+    let layer_bounds = shape.layer_bounds();
+
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
-        let blur_layer = SaveLayerRec::default().paint(&blur_paint);
+        let blur_layer = SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&blur_paint);
         canvas.save_layer(&blur_layer);
     }
 
     if let Some(shadow_paint) = shadow {
-        let layer_rec = SaveLayerRec::default().paint(shadow_paint);
+        let layer_rec = SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(shadow_paint);
         canvas.save_layer(&layer_rec);
         draw_text(
             canvas,
@@ -351,7 +357,9 @@ fn render_text_on_canvas(
         if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
             let mut layer_paint = Paint::default();
             layer_paint.set_image_filter(erode);
-            let layer_rec = SaveLayerRec::default().paint(&layer_paint);
+            let layer_rec = SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&layer_paint);
             canvas.save_layer(&layer_rec);
             draw_text(
                 canvas,
@@ -394,6 +402,24 @@ fn paint_text(
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
 ) {
     paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
+}
+
+/// Alpha mask for background blur coverage
+pub fn paint_text_mask(canvas: &Canvas, shape: &Shape) {
+    let text_content = shape.get_text_content();
+    let mut mask_builders = text_content.paragraph_builder_group_opaque();
+    paint_text(canvas, shape, &mut mask_builders);
+
+    // take strokes into account for the bblur mask
+    for stroke in shape.visible_strokes() {
+        let (mut stroke_builders, _) = stroke_paragraph_builder_group_from_text(
+            text_content,
+            stroke,
+            &shape.selrect(),
+            Some(true),
+        );
+        paint_text(canvas, shape, &mut stroke_builders);
+    }
 }
 
 fn paint_text_with_emoji_overlay(
@@ -564,7 +590,10 @@ fn draw_decoration_stroke(
         skia::BlendMode::SrcOut
     };
 
-    canvas.save_layer(&SaveLayerRec::default());
+    let outset = stroke_paint.stroke_width().max(0.0);
+    let layer_bounds = bar.with_outset((outset, outset));
+
+    canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
     let mut mask_paint = Paint::default();
     mask_paint.set_color(skia::Color::BLACK);
     mask_paint.set_anti_alias(true);
@@ -572,7 +601,11 @@ fn draw_decoration_stroke(
 
     let mut blend_paint = Paint::default();
     blend_paint.set_blend_mode(blend);
-    canvas.save_layer(&SaveLayerRec::default().paint(&blend_paint));
+    canvas.save_layer(
+        &SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&blend_paint),
+    );
     canvas.draw_rect(bar, stroke_paint);
     canvas.restore();
     canvas.restore();
@@ -687,7 +720,12 @@ pub fn render_emoji_overlay(
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
-        canvas.save_layer(&SaveLayerRec::default().paint(&blur_paint));
+        let layer_bounds = shape.layer_bounds();
+        canvas.save_layer(
+            &SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&blur_paint),
+        );
     }
 
     for (emoji_para, deco_para) in emoji_layout
@@ -710,13 +748,17 @@ fn draw_text(
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
+    let layer_bounds = shape.layer_bounds();
+
     if let Some(opacity) = layer_opacity {
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
-        let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
+        let layer_rec = SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
     } else {
-        canvas.save_layer(&SaveLayerRec::default());
+        canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
     }
 
     paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
@@ -741,27 +783,41 @@ fn render_masked_stroke_on_canvas(
     blur: Option<&ImageFilter>,
     layer_opacity: Option<f32>,
 ) {
+    let layer_bounds = shape.layer_bounds();
+
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
-        canvas.save_layer(&SaveLayerRec::default().paint(&blur_paint));
+        canvas.save_layer(
+            &SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&blur_paint),
+        );
     }
 
     if let Some(opacity) = layer_opacity {
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
-        canvas.save_layer(&SaveLayerRec::default().paint(&opacity_paint));
+        canvas.save_layer(
+            &SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&opacity_paint),
+        );
     }
 
-    canvas.save_layer(&SaveLayerRec::default());
+    canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
 
-    canvas.save_layer(&SaveLayerRec::default());
+    canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
 
     paint_text(canvas, shape, mask_builders);
 
     let mut stroke_paint = Paint::default();
     stroke_paint.set_blend_mode(stroke_mask_blend);
-    canvas.save_layer(&SaveLayerRec::default().paint(&stroke_paint));
+    canvas.save_layer(
+        &SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&stroke_paint),
+    );
 
     paint_text(canvas, shape, stroke_builders);
 
@@ -771,7 +827,11 @@ fn render_masked_stroke_on_canvas(
     if let Some(fill_builders) = fill_builders {
         let mut dst_over_paint = Paint::default();
         dst_over_paint.set_blend_mode(skia::BlendMode::DstOver);
-        canvas.save_layer(&SaveLayerRec::default().paint(&dst_over_paint));
+        canvas.save_layer(
+            &SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&dst_over_paint),
+        );
 
         paint_text(canvas, shape, fill_builders);
 

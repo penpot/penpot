@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
+   [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
@@ -60,6 +61,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -76,7 +78,6 @@
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -275,7 +276,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc :thumbnails thumbnails)
+          (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
           (update :files assoc file-id file)))))
 
 (defn zoom-to-frame
@@ -345,7 +346,8 @@
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})))
+          (assoc :workspace-presence {})
+          (update :workspace-global dissoc :default-font)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -354,8 +356,7 @@
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
             render-wasm-ready?   #(and render-wasm-enabled?
-                                       wasm-state/context-initialized?
-                                       (not @wasm-state/context-lost?))]
+                                       (wasm-state/ready?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -402,6 +403,7 @@
                        (rx/of (dpj/initialize-project (:project-id file))
                               (dwn/initialize team-id file-id)
                               (dwsl/initialize-shape-layout)
+                              (dwtxt/initialize-text-reflow)
                               (fetch-libraries file-id features)
                               (-> (workspace-initialized file-id)
                                   (with-meta {:team-id team-id
@@ -543,7 +545,7 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only?)
+          (update :workspace-global dissoc :read-only? :default-font)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
@@ -553,6 +555,7 @@
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
                (dwsl/finalize-shape-layout)
+               (dwtxt/finalize-text-reflow)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)
                (modal/hide)
@@ -1207,9 +1210,20 @@
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (show-context-menu
-              (-> params (assoc :kind :page :selected (:id page))))))))
+    (watch [_ state _]
+      (let [id       (:id page)
+            selected (dm/get-in state [:workspace-local :selected-pages])
+            ;; When the right-clicked page is part of a multi-selection we
+            ;; keep it; otherwise the menu targets just that page.
+            multi?   (and (contains? selected id) (> (count selected) 1))]
+        (rx/concat
+         (if multi?
+           (rx/empty)
+           (rx/of (dwpg/select-page id)))
+         (rx/of (show-context-menu
+                 (-> params (assoc :kind :page
+                                   :selected id
+                                   :selected-pages (if multi? selected #{id}))))))))))
 
 (defn show-track-context-menu
   [{:keys [grid-id type index] :as params}]
@@ -1538,9 +1552,11 @@
 (dm/export dwt/trigger-bounding-box-cloaking)
 (dm/export dwt/start-resize)
 (dm/export dwt/update-dimensions)
+(dm/export dwt/update-dimensions-coalesced)
 (dm/export dwt/change-orientation)
 (dm/export dwt/start-rotate)
 (dm/export dwt/increase-rotation)
+(dm/export dwt/increase-rotation-coalesced)
 (dm/export dwt/start-move-selected)
 (dm/export dwt/move-selected)
 (dm/export dwt/update-position)
@@ -1568,6 +1584,7 @@
 (dm/export dwcp/paste-shapes)
 (dm/export dwcp/paste-data-valid?)
 (dm/export dwcp/copy-link-to-clipboard)
+(dm/export dwcp/copy-id-to-clipboard)
 (dm/export dwcp/copy-as-image)
 
 ;; Drawing
@@ -1650,3 +1667,11 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
+(dm/export dwpg/delete-pages)
+(dm/export dwpg/select-page)
+(dm/export dwpg/toggle-page-selection)
+(dm/export dwpg/select-pages-range)
+(dm/export dwpg/clear-page-selection)
+
+;; Shapes
+(dm/export dwsh/delete-shapes)
