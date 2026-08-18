@@ -13,6 +13,7 @@
    [app.common.logging :as l]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.renderer.svg-gradient :as svg-gradient]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [clojure.walk :as walk]
@@ -166,34 +167,11 @@
                 :else
                 (update node "attributes" assoc "fill" color))))
 
-          (get-stops [data]
-            (->> (get-in data ["gradient" "stops"])
-                 (mapv (fn [stop-data]
-                         {"type" "element"
-                          "name" "stop"
-                          "attributes" {"offset" (get stop-data "offset")
-                                        "stop-color" (get stop-data "color")
-                                        "stop-opacity" (get stop-data "opacity")}}))))
-
-          (data->gradient-def [id [color data]]
-            (let [id (str "gradient-" id "-" (subs color 1))
-                  gradient-type (get-in data ["gradient" "type"])]
-              (if (= gradient-type "linear")
-                {"type" "element"
-                 "name" "linearGradient"
-                 "attributes" {"id" id "x1" "0.5" "y1" "1" "x2" "0.5" "y2" "0"}
-                 "elements" (get-stops data)}
-
-                {"type" "element"
-                 "name" "radialGradient"
-                 "attributes" {"id" id "cx" "0.5" "cy" "0.5" "r" "0.5"}
-                 "elements" (get-stops data)})))
-
           (get-gradients [id mapping]
             (->> mapping
                  (filter (fn [[_color data]]
                            (= (get data "type") "gradient")))
-                 (mapv (partial data->gradient-def id))))
+                 (mapv (partial svg-gradient/data->gradient-def id))))
 
           (join-color-layers [{:keys [id x y width height mapping] :as node} layers]
             (l/trace :fn :join-color-layers :mapping mapping)
@@ -370,4 +348,3 @@
                        (assoc :query (u/map->query-string params)))]
       (bw/exec! (prepare-options uri)
                 (partial render uri)))))
-
