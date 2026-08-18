@@ -490,8 +490,8 @@
    is external (in this case the own library is inactive, but still exists)."
   [file-data]
   (let [tokens-lib (:tokens-lib file-data)]
-  (and (some? tokens-lib)
-       (not (ctob/empty-lib? tokens-lib)))))
+    (and (some? tokens-lib)
+         (not (ctob/empty-lib? tokens-lib)))))
 
 (defn tokens-provider?
   "Returns true if the file MAY become a tokens source. This is if the file has tokens and has

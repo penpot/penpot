@@ -177,7 +177,7 @@
      (when hint-name
        [:li {:class (stl/css :hint-line)}
         "(" (tr "workspace.libraries.connected-through") " "
-        [:span {:class (stl/css :hint-library-name)}  hint-name ]
+        [:span {:class (stl/css :hint-library-name)}  hint-name]
         ")"])]))
 
 (mf/defc sample-library-entry*
@@ -359,29 +359,29 @@
   {::mf/private true}
   [{:keys [is-shared linked-libraries shared-libraries on-change-tab]}]
   (let [file-id        (mf/use-ctx ctx/current-file-id)
-        
+
         ;; The summary of the current/local library
         ;; NOTE: we only need a snapshot of current library
         local-library  (deref refs/workspace-data)
         summary        (get-library-summary local-library)
         empty-library? (empty-library? summary)
-        
+
         selected       (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
         dependencies   (mf/with-memo [shared-libraries]
                          (into {} (map (juxt :id :library-file-ids) (vals shared-libraries))))
-        
+
         library-names  (mf/with-memo [shared-libraries]
                          (into {} (map (fn [{:keys [id name]}]
                                          [id name])
                                        (vals shared-libraries))))
-        
+
         find-connected-to
         (mf/use-fn
          (mf/deps dependencies)
          (fn [library-id]
            (->> dependencies
                 (keep (fn [[k v]] (when (contains? v library-id) k))))))
-        
+
         linked-libraries
         (mf/with-memo [linked-libraries find-connected-to library-names]
           (let [libs
@@ -413,11 +413,11 @@
                  (sort-by-name)
                  (mapcat (fn [{:keys [id] :as library}]
                            (cons library (get nested-by-parent id [])))))))
-        
+
         linked-libraries-ids
         (mf/with-memo [linked-libraries]
           (into #{} d/xf:map-id linked-libraries))
-        
+
         unlink-library
         (mf/use-fn
          (mf/deps file-id local-library)
@@ -433,7 +433,7 @@
              ;; we must reset it to the local library.
              (when (cfo/effective-tokens-source? local-library library-id)
                (st/emit! (dwtl/set-tokens-source (:id local-library)))))))
-        
+
         import-tokens
         (mf/use-fn
          (mf/deps file-id)
@@ -444,7 +444,7 @@
              (st/emit! (modal/show
                         :tokens/import-from-library {:file-id file-id
                                                      :library-id library-id})))))
-        
+
         set-as-tokens-source
         (mf/use-fn
          (fn [event]
@@ -452,18 +452,18 @@
                                     (dom/get-data "library-id")
                                     (uuid/parse))]
              (st/emit! (dwtl/set-tokens-source library-id)))))
-        
+
         on-delete-accept
         (mf/use-fn
          (mf/deps file-id)
          #(st/emit! (dwl/set-file-shared file-id false)
                     (modal/show :libraries-dialog {:file-id file-id})))
-        
+
         on-delete-cancel
         (mf/use-fn
          (mf/deps file-id)
          #(st/emit! (modal/show :libraries-dialog {:file-id file-id})))
-        
+
         publish
         (mf/use-fn
          (mf/deps file-id)
@@ -481,7 +481,7 @@
                            :on-cancel cancel-publish}))
                (publish-library))
              (dom/blur! input-node))))
-        
+
         unpublish
         (mf/use-fn
          (mf/deps file-id)
@@ -493,8 +493,8 @@
                        :on-accept on-delete-accept
                        :on-cancel on-delete-cancel
                        :count-libraries 1}))))
-        
-        go-to-shared 
+
+        go-to-shared
         (mf/use-fn
          (mf/deps on-change-tab)
          (fn [_]
