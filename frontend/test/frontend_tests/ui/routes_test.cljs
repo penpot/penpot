@@ -33,14 +33,14 @@
         {cf/flags (conj cf/flags :admin-console)
          ct/now   (mock/stub (fn [] @now))
          rp/cmd!  (mock/stub
-                    (fn [command params]
-                      (t/is (= :check-nitrate-sso command))
-                      (t/is (= team-id (:team-id params)))
-                      (swap! rpc-calls inc)
-                      (rx/of {:authorized true})))
+                   (fn [command params]
+                     (t/is (= :check-nitrate-sso command))
+                     (t/is (= team-id (:team-id params)))
+                     (swap! rpc-calls inc)
+                     (rx/of {:authorized true})))
          st/emit! (mock/stub
-                    (fn [& emitted]
-                      (swap! events into emitted)))}
+                   (fn [& emitted]
+                     (swap! events into emitted)))}
         (fn [done']
           (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
           (reset! now (ct/plus @now #js {:minutes 4 :seconds 59}))
@@ -60,9 +60,9 @@
         {cf/flags (conj cf/flags :admin-console)
          ct/now   (mock/stub (fn [] @now))
          rp/cmd!  (mock/stub
-                    (fn [_ _]
-                      (swap! rpc-calls inc)
-                      (rx/of {:authorized true})))
+                   (fn [_ _]
+                     (swap! rpc-calls inc)
+                     (rx/of {:authorized true})))
          st/emit! mock/noop}
         (fn [done']
           (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
@@ -81,13 +81,13 @@
       (mock/with-mocks
         {cf/flags (conj cf/flags :admin-console)
          rp/cmd!  (mock/stub
-                    (fn [_ _]
-                      (swap! rpc-calls inc)
-                      (rx/of {:authorized false
-                              :redirect-uri "https://idp.example.com/authorize"})))
+                   (fn [_ _]
+                     (swap! rpc-calls inc)
+                     (rx/of {:authorized false
+                             :redirect-uri "https://idp.example.com/authorize"})))
          st/emit! (mock/stub
-                    (fn [& emitted]
-                      (swap! events into emitted)))}
+                   (fn [& emitted]
+                     (swap! events into emitted)))}
         (fn [done']
           (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")
           (#'routes/check-sso-and-navigate match true "https://penpot.example.com/#/workspace")

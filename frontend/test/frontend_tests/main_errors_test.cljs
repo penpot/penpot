@@ -169,9 +169,9 @@
       (let [events (atom [])]
         (mock/with-mocks
           {rp/cmd!          (mock/stub
-                              (fn [_command _params]
-                                (rx/of {:authorized false
-                                        :redirect-uri "https://idp.example.com/authorize"})))
+                             (fn [_command _params]
+                               (rx/of {:authorized false
+                                       :redirect-uri "https://idp.example.com/authorize"})))
            rt/get-current-href (constantly workspace-href)
            st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
           (fn [done']
@@ -186,10 +186,10 @@
       (let [rpc-calls (atom [])]
         (mock/with-mocks
           {rp/cmd!          (mock/stub
-                              (fn [command params]
-                                (swap! rpc-calls conj {:command command :params params})
-                                (rx/of {:authorized false
-                                        :redirect-uri "https://idp.example.com/authorize"})))
+                             (fn [command params]
+                               (swap! rpc-calls conj {:command command :params params})
+                               (rx/of {:authorized false
+                                       :redirect-uri "https://idp.example.com/authorize"})))
            rt/get-current-href (constantly workspace-href)
            st/emit!         mock/noop}
           (fn [done']
@@ -198,7 +198,7 @@
                        :params {:team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"
                                 :organization-id organization-id
                                 :url workspace-href}}]
-                      @rpc-calls))
+                     @rpc-calls))
             (done'))
           done)))))
 
@@ -208,8 +208,8 @@
       (let [events (atom [])]
         (mock/with-mocks
           {rp/cmd!          (mock/stub
-                              (fn [_command _params]
-                                (rx/of {:authorized true :reason :sso-satisfied})))
+                             (fn [_command _params]
+                               (rx/of {:authorized true :reason :sso-satisfied})))
            rt/get-current-href (constantly workspace-href)
            st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
           (fn [done']
@@ -224,8 +224,8 @@
       (let [assigned* (atom nil)]
         (mock/with-mocks
           {rp/cmd!          (mock/stub
-                              (fn [_command _params]
-                                (rx/of {:authorized false :redirect-uri nil})))
+                             (fn [_command _params]
+                               (rx/of {:authorized false :redirect-uri nil})))
            rt/get-current-href (constantly workspace-href)
            rt/assign-exception (fn [error]
                                  (reset! assigned* error)
@@ -244,8 +244,8 @@
       (let [assigned* (atom nil)]
         (mock/with-mocks
           {rp/cmd!          (mock/stub
-                              (fn [_command _params]
-                                (rx/of {:authorized true :reason :no-team-access})))
+                             (fn [_command _params]
+                               (rx/of {:authorized true :reason :no-team-access})))
            rt/get-current-href (constantly workspace-href)
            rt/assign-exception (fn [error]
                                  (reset! assigned* error)

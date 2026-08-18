@@ -24,10 +24,10 @@
           thread-id (random-uuid)
           emitted   (atom nil)
           thread    (comments/comment-thread-proxy
-                      plugin-id
-                      file-id
-                      page-id
-                      {:id thread-id :owner-id owner-id})]
+                     plugin-id
+                     file-id
+                     page-id
+                     {:id thread-id :owner-id owner-id})]
       (set! st/state (atom {:profile {:id owner-id}}))
       (mock/with-mocks
         {r/check-permission (constantly true)
@@ -51,10 +51,10 @@
           emitted   (atom nil)
           page      (page/page-proxy plugin-id file-id page-id)
           thread    (comments/comment-thread-proxy
-                      plugin-id
-                      file-id
-                      page-id
-                      {:id thread-id :owner-id (random-uuid)})]
+                     plugin-id
+                     file-id
+                     page-id
+                     {:id thread-id :owner-id (random-uuid)})]
       (mock/with-mocks
         {r/check-permission (constantly true)
          dc/delete-comment-thread-on-workspace
