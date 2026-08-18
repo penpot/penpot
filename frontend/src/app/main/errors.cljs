@@ -13,6 +13,7 @@
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.router :as rt]
@@ -21,6 +22,7 @@
    [app.util.globals :as g]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -234,9 +236,8 @@
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
-;; profile data and redirect the user to the login page. This is here
-;; and not in app.main.errors because of circular dependency.
-(defmethod ptk/handle-error :authentication
+;; profile data and redirect the user to the login page.
+(defn- show-authentication-error
   [error]
   (let [message (tr "errors.auth.unable-to-login")
         uri     (rt/get-current-href)
@@ -252,6 +253,85 @@
       (do
         (st/emit! (da/logout))
         (ts/schedule 500 #(st/emit! (ntf/warn message)))))))
+
+;; The user does belong to an organization with SSO active, but there is
+;; no provider to send them to (unusable or incomplete SSO config). Show
+;; the SSO error dialog, which offers an explicit retry, rather than
+;; claiming they have no access.
+(defn- show-sso-error
+  [{:keys [organization-id team-id]}]
+  (let [uri (rt/get-current-href)]
+    (st/async-emit!
+     (rt/assign-exception {:type :sso-error
+                           :organization-id organization-id
+                           :team-id team-id
+                           :is-workspace (str/includes? uri "workspace")
+                           :is-dashboard (str/includes? uri "dashboard")}))))
+
+;; A page issues many SSO-guarded requests at once, and all of them fail
+;; together the moment the organization SSO session lapses; without this
+;; only-one-in-flight guard each of them would start its own identity
+;; provider round-trip.
+(def ^:private sso-renewal-pending? (volatile! false))
+
+(defn- renew-organization-sso
+  "Recover from a request rejected by the organization SSO gate.
+
+  Asks the backend what can be done for the current location and acts on
+  the answer: go through the identity provider when there is one (it
+  re-authenticates transparently while the user still has a live session
+  with it), retry the location when the gate turns out to be satisfied
+  already (another tab renewed the session, or SSO was turned off), show
+  the SSO error dialog when SSO is required but unusable, and report a
+  permission failure only when the user really has no access to the team.
+  A failing check is left to the generic error handling, so a network
+  blip is not turned into a permission error."
+  [{:keys [organization-id team-id] :as error}]
+  (when-not @sso-renewal-pending?
+    (vreset! sso-renewal-pending? true)
+    (let [dest-url (rt/get-current-href)]
+      (->> (dnt/check-organization-sso
+            {:organization-id organization-id
+             :team-id team-id
+             :dest-url dest-url})
+           ;; Release the guard however the check ends, including an
+           ;; unsubscription or a completion without a result: a stuck guard
+           ;; would silently drop every later rejection.
+           (rx/finalize (fn [] (vreset! sso-renewal-pending? false)))
+           (rx/subs! (fn [{:keys [authorized reason redirect-uri]}]
+                       (cond
+                         ;; SSO must be renewed and we know where to send them
+                         (some? redirect-uri)
+                         (st/emit! (rt/nav-raw :uri (str redirect-uri)))
+
+                         ;; The gate is satisfied after all, so the request
+                         ;; that failed can be retried. Only an affirmative
+                         ;; reason is accepted here: reloading on any
+                         ;; unrecognized "authorized" answer would spin
+                         ;; whenever the reload hits the same rejection.
+                         (= :sso-satisfied reason)
+                         (st/emit! (rt/reload false))
+
+                         ;; SSO is required but the provider is unusable
+                         (not authorized)
+                         (show-sso-error error)
+
+                         ;; No access to the team, so the gate was never
+                         ;; evaluated: this really is a permission failure
+                         :else
+                         (show-authentication-error error)))
+                     on-error)))))
+
+(defmethod ptk/handle-error :authentication
+  [error]
+  ;; Without an organization or a team there is nothing to check, and asking
+  ;; anyway would fail schema validation and report that instead of the
+  ;; authentication problem the user actually hit.
+  (if (and (= :nitrate-sso-required (get error :code))
+           (or (some? (get error :organization-id))
+               (some? (get error :team-id))))
+    (renew-organization-sso error)
+    (show-authentication-error error)))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From

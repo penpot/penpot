@@ -6,11 +6,12 @@
 
 (ns app.rpc.management.exporter
   (:require
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.media.validation :refer [schema:upload]]
+   [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.storage :as sto]
@@ -21,7 +22,7 @@
 (def ^:private
   schema:upload-tempfile-params
   [:map {:title "upload-templfile-params"}
-   [:content schema:upload]])
+   [:content media.v/schema:upload]])
 
 (def ^:private
   schema:upload-tempfile-result
@@ -32,6 +33,7 @@
    ::sm/params schema:upload-tempfile-params
    ::sm/result schema:upload-tempfile-result}
   [cfg {:keys [::rpc/profile-id content]}]
+  (media.v/validate-media-type! content cm/tempfile-types)
   (let [storage (sto/resolve cfg)
         hash    (sto/calculate-hash (:path content))
         data    (-> (sto/content (:path content))
@@ -45,5 +47,6 @@
         object (sto/put-object! storage content)]
     {:id (:id object)
      :uri (-> (cf/get :public-uri)
-              (u/join "/assets/by-id/")
+              (u/ensure-path-slash)
+              (u/join "assets/by-id/")
               (u/join (str (:id object))))}))

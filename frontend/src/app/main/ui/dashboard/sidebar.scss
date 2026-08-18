@@ -699,12 +699,13 @@
   grid-template-columns: 1fr auto auto;
   gap: var(--sp-s);
   height: 100%;
-  padding: 0 px2rem(10);
+  padding: 0 0 0 px2rem(10);
   width: 100%;
 }
 
 .current-organization-no-options {
   gap: 0;
+  padding: 0 px2rem(8) 0 px2rem(10);
 }
 
 .current-organization .arrow-icon {
@@ -734,11 +735,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: $sz-48;
-  height: $sz-48;
+  width: $sz-28;
+  height: 100%;
+  padding: 0;
+  border-radius: 0 $br-8 $br-8 0;
 
   &:hover {
     --icon-stroke: var(--color-accent-primary);
+
+    cursor: pointer;
   }
 }
 

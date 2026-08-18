@@ -180,6 +180,12 @@ $thumbnail-default-height: px2rem(168);
   }
 }
 
+.grid-item-button {
+  inline-size: 100%;
+  block-size: 100%;
+  padding: 0 px2rem(6);
+}
+
 .project-thumbnail-actions {
   align-items: center;
   display: flex;
@@ -328,7 +334,7 @@ $thumbnail-default-height: px2rem(168);
 // ─── LIBRARY ───────────────────────────────────
 
 .library-thumbnail {
-  border-radius: $br-4;
+  border-radius: $br-8;
   position: relative;
   overflow: hidden;
   background-color: var(--color-background-tertiary);
@@ -347,6 +353,7 @@ $thumbnail-default-height: px2rem(168);
 .library-name-block {
   color: var(--color-foreground-secondary);
   inline-size: calc(100% - var(--sp-xxl) - var(--sp-s));
+  text-align: left;
 }
 
 .library-item-name {

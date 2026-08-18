@@ -21,6 +21,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.media :as media-cmd]
    [app.rpc.commands.projects :as projects]
@@ -62,7 +63,8 @@
                                      :bucket "tempfile"})]
 
         (-> (cf/get :public-uri)
-            (u/join "/assets/by-id/")
+            (u/ensure-path-slash)
+            (u/join "assets/by-id/")
             (u/join (str (:id object)))))
 
       (finally
@@ -142,7 +144,9 @@
 
    ::webhooks/event? true
    ::sse/stream? true
-   ::sm/params schema:import-binfile}
+   ::sm/params schema:import-binfile
+   ::climit/id [[:import-binfile/by-profile ::rpc/profile-id]
+                [:import-binfile/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version upload-id] :as params}]
   (projects/check-edition-permissions! pool profile-id project-id)
   (let [version (or version 3)

@@ -45,4 +45,10 @@
  {:permits 4}
 
  :send-user-feedback/by-profile
- {:permits 1 :queue 3}}
+ {:permits 1 :queue 3}
+
+ :import-binfile/global
+ {:permits 4}
+
+ :import-binfile/by-profile
+ {:permits 1 :queue 2}}

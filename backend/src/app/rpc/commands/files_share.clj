@@ -43,7 +43,7 @@
   [conn {:keys [profile-id file-id pages who-comment who-inspect]}]
   (let [pages (db/create-array conn "uuid" pages)
         slink (db/insert! conn :share-link
-                          {:id (uuid/next)
+                          {:id (uuid/random)
                            :file-id file-id
                            :who-comment who-comment
                            :who-inspect who-inspect

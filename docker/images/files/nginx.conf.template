@@ -111,6 +111,7 @@ http {
         }
 
         location /assets {
+            proxy_set_header Host $proxy_host;
             proxy_pass $PENPOT_BACKEND_URI/assets;
             recursive_error_pages on;
             proxy_intercept_errors on;
@@ -127,10 +128,12 @@ http {
         }
 
         location /api/export {
+            proxy_set_header Host $proxy_host;
             proxy_pass $PENPOT_EXPORTER_URI;
         }
 
         location /api {
+            proxy_set_header Host $proxy_host;
             proxy_pass $PENPOT_BACKEND_URI/api;
             proxy_buffering off;
         }
@@ -142,10 +145,12 @@ http {
 
         location /readyz {
             access_log off;
+            proxy_set_header Host $proxy_host;
             proxy_pass $PENPOT_BACKEND_URI$request_uri;
         }
 
         location /ws/notifications {
+            proxy_set_header Host $proxy_host;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
             proxy_pass $PENPOT_BACKEND_URI/ws/notifications;
