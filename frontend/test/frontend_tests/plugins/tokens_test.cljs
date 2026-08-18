@@ -240,6 +240,7 @@
         set-id  (cthi/new-id! :set)
         dup-id  (cthi/new-id! :dup)]
     (with-redefs [u/locate-tokens-lib (constantly nil)
+                  u/check-editable-tokens (constantly nil)
                   dwtl/duplicate-token-set
                   (mock/stub (fn [id {:keys [id-ref]}]
                                (t/is (= set-id id))
@@ -257,6 +258,7 @@
         set-id   (cthi/new-id! :set)
         captured (atom [])]
     (with-redefs [u/locate-tokens-lib (constantly nil)
+                  u/check-editable-tokens (constantly nil)
                   u/locate-token-theme
                   (fn [_file _theme]
                     (ctob/make-token-theme :id theme-id
@@ -281,6 +283,7 @@
         token-id (cthi/new-id! :token)
         captured (atom nil)]
     (with-redefs [u/locate-tokens-lib (constantly nil)
+                  u/check-editable-tokens (constantly nil)
                   u/locate-token (constantly {:id token-id
                                               :name "font.primary"
                                               :type :font-family
@@ -357,6 +360,7 @@
     (with-redefs [u/locate-tokens-lib     (constantly nil)
                   u/locate-token-set      (fn [_ id] (when (= id set-id) token-set))
                   u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens (constantly nil)
                   u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
                   st/emit!                (fn ([event] (swap! emitted conj event) nil)
@@ -378,6 +382,7 @@
     (with-redefs [u/locate-tokens-lib     (constantly nil)
                   u/locate-token-set      (fn [_ id] (when (= id set-id) token-set))
                   u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens (constantly nil)
                   u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
                   st/emit!                (fn ([event] (swap! emitted conj event) nil)
@@ -395,16 +400,17 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [u/locate-tokens-lib     (constantly nil)
-                  u/locate-token-set      (constantly nil)
-                  u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
-                  u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
-                  u/handle-error          (fn [plugin-id]
-                                            (fn [cause]
-                                              (u/not-valid plugin-id :error (str cause))))
-                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
-                                            ([event & _] (swap! emitted conj event) nil))]
+    (with-redefs [u/locate-tokens-lib        (constantly nil)
+                  u/locate-token-set         (constantly nil)
+                  u/throw-validation-errors? (constantly true)
+                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens    (constantly nil)
+                  u/handle-error             (fn [plugin-id]
+                                               (fn [cause]
+                                                 (u/not-valid plugin-id :error (str cause))))
+                  dwtl/update-token-theme    (fn [id theme] {:id id :theme theme})
+                  st/emit!                   (fn ([event] (swap! emitted conj event) nil)
+                                               ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
         (try (.addSet theme-proxy 42) (catch :default e (swap! invalid conj e)))
         (try (.removeSet theme-proxy nil) (catch :default e (swap! invalid conj e)))

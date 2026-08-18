@@ -983,7 +983,7 @@
   [changes tokens-lib]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-tokens-lib (get library-data :tokens-lib)]
+        prev-tokens-lib (cfo/get-tokens-lib library-data)]
     (-> changes
         (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
         (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
@@ -992,7 +992,7 @@
 (defn set-token [changes set-id token-id token]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token (some-> (get library-data :tokens-lib)
+        prev-token (some-> (cfo/get-tokens-lib library-data)
                            (ctob/get-token set-id token-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token
@@ -1009,7 +1009,7 @@
   [changes id token-set]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
-        prev-token-set (some-> (get library-data :tokens-lib)
+        prev-token-set (some-> (cfo/get-tokens-lib library-data)
                                (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
@@ -1024,7 +1024,7 @@
   [changes id new-name]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
-        prev-token-set (some-> (get library-data :tokens-lib)
+        prev-token-set (some-> (cfo/get-tokens-lib library-data)
                                (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
@@ -1038,7 +1038,7 @@
 (defn set-token-theme [changes id theme]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-theme (some-> (get library-data :tokens-lib)
+        prev-theme (some-> (cfo/get-tokens-lib library-data)
                            (ctob/get-theme id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-theme
