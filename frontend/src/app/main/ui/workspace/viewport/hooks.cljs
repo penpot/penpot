@@ -127,7 +127,7 @@
          (reset! cursor new-cursor))))))
 
 (defn setup-keyboard
-  [alt* mod* space* z* shift*]
+  [alt* mod* space* z* shift* ctrl*]
   (let [kbd-zoom-s
         (mf/with-memo []
           (->> ms/keyboard
@@ -167,6 +167,7 @@
                         ;; for the release of the z key
                         (when-not ^boolean value
                           (reset! z* false))))
+    (hooks/use-stream ms/keyboard-ctrl (partial reset! ctrl*))
     (hooks/use-stream kbd-zoom-s
                       (fn [kevent]
                         (dom/prevent-default kevent)

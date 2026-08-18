@@ -717,10 +717,13 @@
               (->> position
                    ;; FIXME: performance throttle
                    (rx/throttle 20)
+                   (rx/with-latest-from ms/mouse-position-ctrl)
                    (rx/switch-map
-                    (fn [pos]
-                      (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
-                           (rx/map #(array pos %)))))))]
+                    (fn [[pos ctrl?]]
+                      (if ctrl?
+                        (rx/of (array pos (gpt/point 0 0)))
+                        (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
+                             (rx/map #(array pos %))))))))]
          (if (empty? shapes)
            (rx/of (finish-transform))
            ;; Per-gesture caches: `shapes`/`objects`/`libraries` are
