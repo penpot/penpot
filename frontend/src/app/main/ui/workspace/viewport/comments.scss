@@ -4,15 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
-@use "ds/z-index.scss" as *;
-
 .workspace-comments-container {
-  width: 100%;
-  height: 100%;
+  inline-size: 100%;
+  block-size: 100%;
   grid-column: 1 / span 2;
   grid-row: 1 / span 2;
-  z-index: $z-index-300;
   pointer-events: none;
   overflow: hidden;
   user-select: text;
