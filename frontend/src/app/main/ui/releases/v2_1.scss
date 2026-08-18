@@ -4,72 +4,108 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
-  @extend %modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
 }
 
 .modal-container {
   display: grid;
-  grid-template-columns: deprecated.$s-324 1fr;
-  height: deprecated.$s-500;
-  width: deprecated.$s-888;
-  border-radius: deprecated.$br-8;
-  background-color: var(--modal-background-color);
-  border: deprecated.$s-2 solid var(--modal-border-color);
+  grid-template-columns: px2rem(324) 1fr;
+  block-size: $sz-500;
+  inline-size: px2rem(888);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
 }
 
 .start-image {
-  width: deprecated.$s-324;
-  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
+  inline-size: px2rem(324);
+  border-radius: $br-8 0 0 $br-8;
 }
 
 .modal-content {
-  padding: deprecated.$s-40;
+  padding: $sz-40;
   display: grid;
-  grid-template-rows: auto 1fr deprecated.$s-32;
-  gap: deprecated.$s-24;
+  grid-template-rows: auto 1fr $sz-32;
+  gap: var(--sp-xxl);
 }
 
 .modal-header {
   display: grid;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
+}
+
+.link {
+  color: var(--color-accent-primary);
 }
 
 .version-tag {
-  @include deprecated.flex-center;
-  @include deprecated.headline-small-typography;
+  @include use-typography("headline-small");
 
-  height: deprecated.$s-32;
-  width: deprecated.$s-96;
-  background-color: var(--communication-tag-background-color);
-  color: var(--communication-tag-foreground-color);
-  border-radius: deprecated.$br-8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: $sz-96;
+  background-color: var(--color-foreground-primary);
+  color: var(--color-background-tertiary);
+  border-radius: $br-8;
 }
 
 .modal-title {
-  @include deprecated.headline-large-typography;
+  @include use-typography("headline-large");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .features-block {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-16;
-  width: deprecated.$s-440;
+  gap: var(--sp-l);
+  inline-size: px2rem(440);
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.feature-title {
+  @include use-typography("body-large");
+
+  color: var(--color-foreground-primary);
 }
 
 .feature-content {
-  @include deprecated.body-medium-typography;
+  @include use-typography("body-medium");
 
   margin: 0;
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
+}
+
+.feature-list {
+  @include use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  list-style: disc;
+  display: grid;
+  gap: var(--sp-s);
 }
 
 .navigation {
-  width: 100%;
+  inline-size: 100%;
   display: grid;
   grid-template-areas: "bullets button";
 }

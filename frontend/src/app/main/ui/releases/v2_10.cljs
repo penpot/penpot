@@ -112,7 +112,8 @@
            "And one more thing…Tune into our product showcase to see future plans and help us shape Penpot. Come for the insights, stay for the community…"]
 
           [:p {:class (stl/css :feature-content)}
-           [:a {:href "https://penpot.app/penpotfest"
+           [:a {:class (stl/css :link)
+                :href "https://penpot.app/penpotfest"
                 :target "_blank"}
             "Get your tickets"]
            " now to join us 8-10 October, in Madrid!"]]
@@ -192,4 +193,3 @@
                        :on-click finish
                        :variant "primary"}
            "Let's go"]]]]]])))
-

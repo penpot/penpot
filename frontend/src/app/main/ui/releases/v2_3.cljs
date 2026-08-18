@@ -103,7 +103,10 @@
           [:p {:class (stl/css :feature-content)}
            "Penpot plugins are quite easy to install."]
           [:p {:class (stl/css :feature-content)}
-           "Be sure to keep an eye on our evolving " [:a {:href "https://penpot.app/penpothub" :target "_blank"} "Penpot Hub"] " to pick the ones that are best suited to enhance your workflow."]
+           "Be sure to keep an eye on our evolving "
+           [:a {:class (stl/css :link)
+                :href "https://penpot.app/penpothub"
+                :target "_blank"} "Penpot Hub"] " to pick the ones that are best suited to enhance your workflow."]
 
           [:p {:class (stl/css :feature-content)}
            "This is just the beginning of a myriad of possibilities. Let’s build this community together ❤️."]]
@@ -119,4 +122,3 @@
                        :on-click finish
                        :variant "primary"}
            "Let's go"]]]]]])))
-

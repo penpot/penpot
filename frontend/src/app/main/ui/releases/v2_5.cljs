@@ -183,4 +183,3 @@
                        :on-click finish
                        :variant "primary"}
            "Let's go"]]]]]])))
-
