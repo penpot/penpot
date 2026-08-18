@@ -149,7 +149,7 @@
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (let [deletion-delay (if (= "tempfile" bucket)
+      (let [deletion-delay (if (= sto/tempfile-bucket bucket)
                              (ct/duration {:hours 2})
                              (cf/get-deletion-delay))]
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
@@ -165,7 +165,7 @@
     "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? bucket objects)
     "profile"               (process-objects! conn has-profile-refs? bucket objects)
     "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
-    "tempfile"              (process-objects! conn (constantly false) bucket objects)
+    sto/tempfile-bucket      (process-objects! conn (constantly false) sto/tempfile-bucket objects)
     "organization"          (process-objects! conn (constantly false) bucket objects)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference

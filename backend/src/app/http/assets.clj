@@ -91,7 +91,7 @@
 
 (defn- authenticated?
   "Check if the request has an authenticated profile, either via session
-    or access token."
+   or access token."
   [request]
   (or (some? (::session/profile-id request))
       (some? (::actoken/profile-id request))))
@@ -127,7 +127,7 @@
            (not (authenticated? request)))
       {::yres/status 401}
 
-      (and (= (-> obj meta :bucket) "tempfile")
+      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
            (not (tempfile-owner-match? obj request)))
       {::yres/status 404}
 
