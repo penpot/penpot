@@ -47,6 +47,7 @@
    [app.plugins.local-storage :as local-storage]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.system-events :as se]
    [app.plugins.user :as user]
@@ -242,15 +243,18 @@
 
     :getCurrentUser
     (fn []
-      (user/current-user-proxy plugin-id (:session-id @st/state)))
+      (when (r/check-permission plugin-id "user:read")
+        (user/current-user-proxy plugin-id (:session-id @st/state))))
 
     :getActiveUsers
     (fn []
-      (apply array
-             (->> (:workspace-presence @st/state)
-                  (vals)
-                  (remove #(= (:id %) (:session-id @st/state)))
-                  (map #(user/active-user-proxy plugin-id (:id %))))))
+      (if (r/check-permission plugin-id "user:read")
+        (apply array
+               (->> (:workspace-presence @st/state)
+                    (vals)
+                    (remove #(= (:id %) (:session-id @st/state)))
+                    (map #(user/active-user-proxy plugin-id (:id %)))))
+        (array)))
 
     :uploadMediaUrl
     (fn  [name url]
