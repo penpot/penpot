@@ -89,18 +89,17 @@
   (let [bucket (-> obj meta :bucket)]
     (not (contains? public-buckets bucket))))
 
-(defn- authenticated?
-  "Check if the request has an authenticated profile, either via session
-   or access token."
-  [request]
-  (or (some? (::session/profile-id request))
-      (some? (::actoken/profile-id request))))
-
 (defn- request-profile-id
   "Extract the authenticated profile-id from the request."
   [request]
   (or (::session/profile-id request)
       (::actoken/profile-id request)))
+
+(defn- authenticated?
+  "Check if the request has an authenticated profile, either via session
+   or access token."
+  [request]
+  (some? (request-profile-id request)))
 
 (defn- tempfile-owner-match?
   "Check if the request's profile-id matches the tempfile's stored owner.
