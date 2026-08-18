@@ -122,6 +122,10 @@
 
 ;; --- Update Profile
 
+(defn profile-update-params
+  [profile]
+  (d/without-nils (select-keys profile [:fullname :lang :theme])))
+
 (defn persist-profile
   [& {:as opts}]
   (ptk/reify ::persist-profile
@@ -130,7 +134,7 @@
       (let [on-success (:on-success opts identity)
             on-error   (:on-error opts rx/throw)
             profile    (:profile state)
-            params     (select-keys profile [:fullname :lang :theme])]
+            params     (profile-update-params profile)]
         (->> (rp/cmd! :update-profile params)
              (rx/tap on-success)
              (rx/map set-profile)
@@ -143,7 +147,7 @@
   props"
   [profile]
 
-  (let [profile (check-profile profile)]
+  (let [profile (check-profile (d/without-nils profile))]
     (ptk/reify ::update-profile
       ptk/WatchEvent
       (watch [_ state _]

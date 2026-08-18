@@ -166,8 +166,12 @@
   ;; the same row/object.
   (let [profile (get-profile conn profile-id ::db/for-update true)
         fullname (d/normalize-string fullname)
-        lang     (d/normalize-string lang)
-        theme    (d/normalize-string theme)
+        lang     (if (contains? params :lang)
+                   (d/normalize-string lang)
+                   (:lang profile))
+        theme    (if (contains? params :theme)
+                   (d/normalize-string theme)
+                   (:theme profile))
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)
