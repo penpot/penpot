@@ -6,6 +6,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 - RPC, DB helpers, workers, cron: `mem:backend/rpc-db-worker-subtleties`
 - HTTP sessions, config, storage, media, file data persistence: `mem:backend/http-storage-filedata-subtleties`
+- Embedded Ladybug graph experiment, projection, incremental sync, console, and risks: `mem:backend/graph-experiment`
 - Auth flows, permission model, teams, projects, invitations, comments, webhooks, audit: `mem:backend/auth-permissions-product-domains`
 - Services, task-queue/Pub-Sub topology constraints -> `mem:prod-infra/core`.
 
@@ -107,4 +108,3 @@ IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory. J
 * **Isolated run:** `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace.
 * **Regression run:** `clojure -M:dev:test` to ensure no regressions in related functional areas.
 * **Principles:** Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
-
