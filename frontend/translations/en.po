@@ -453,9 +453,13 @@ msgstr "Delete team"
 msgid "dashboard.deleted.empty-state-description"
 msgstr "Your trash is empty. Deleted files and projects will appear here."
 
-#: src/app/main/ui/dashboard/grid.cljs:247
+#: src/app/main/ui/dashboard/grid.cljs:252
 msgid "dashboard.deleted.will-be-deleted-at"
 msgstr "Will be deleted %s"
+
+#: src/app/main/ui/dashboard/grid.cljs:256
+msgid "dashboard.grid.last-modified-at"
+msgstr "Last modified %s"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:732
 msgid "dashboard.download-binary-file"

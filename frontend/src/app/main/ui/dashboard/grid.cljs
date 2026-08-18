@@ -239,12 +239,18 @@
 (mf/defc grid-item-metadata*
   {::mf/private true}
   [{:keys [file layout]}]
-  (let [time (ct/timeago (or (:will-be-deleted-at file)
-                             (:modified-at file)))]
-    [:span {:class (stl/css-case :grid-item-date (= layout :grid)
-                                 :list-item-date (= layout :list))
-            :title (tr "dashboard.deleted.will-be-deleted-at" time)}
-     time]))
+  (let [deleted-at (:will-be-deleted-at file)
+        date-class (stl/css-case :grid-item-date (= layout :grid)
+                                 :list-item-date (= layout :list))]
+    (if deleted-at
+      (let [time (ct/timeago deleted-at)]
+        [:span {:class date-class
+                :title (tr "dashboard.deleted.will-be-deleted-at" time)}
+         time])
+      (let [time (ct/timeago (:modified-at file))]
+        [:span {:class date-class
+                :title (tr "dashboard.grid.last-modified-at" time)}
+         time]))))
 
 (defn create-counter-element
   [_element file-count]

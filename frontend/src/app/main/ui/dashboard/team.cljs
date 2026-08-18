@@ -233,6 +233,9 @@
                    (= :email-domain-is-not-allowed code))
               (st/emit! (ntf/error (tr "errors.email-domain-not-allowed"))
                         (modal/hide))
+              (and (= :validation type)
+                   (= :insufficient-permissions code))
+              (st/emit! (modal/show :no-permission-modal {:type :invite-members}))
 
               :else
               (st/emit! (ntf/error (tr "errors.generic"))
