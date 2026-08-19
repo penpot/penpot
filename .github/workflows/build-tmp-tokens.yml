@@ -1,0 +1,20 @@
+name: _TMP TOKENS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '46 5-20 * * 1-5'
+
+jobs:
+  build-bundle:
+    uses: ./.github/workflows/build-bundle.yml
+    secrets: inherit
+    with:
+      gh_ref: "hiru-tokens-in-libs"
+
+  build-docker:
+    needs: build-bundle
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: "hiru-tokens-in-libs"
