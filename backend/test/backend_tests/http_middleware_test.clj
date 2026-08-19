@@ -377,7 +377,7 @@
     (t/is (= 500 (::yres/status response)))
     (t/is (= :server-error (:type body)))
     (t/is (= :unexpected (:code body)))
-    (t/is (= "boom" (:hint body)))))
+    (t/is (nil? (:hint body)))))
 
 (t/deftest parse-request-non-runtime-throwable
   ;; When a non-RuntimeException Throwable is raised (e.g. an
@@ -397,4 +397,4 @@
     (t/is (= 500 (::yres/status response)))
     (t/is (= :server-error (:type body)))
     (t/is (= :io-exception (:code body)))
-    (t/is (= "network gone" (:hint body)))))
+    (t/is (nil? (:hint body)))))

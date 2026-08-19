@@ -162,8 +162,7 @@
       {::yres/status 500
        ::yres/body (-> data
                        (assoc :type :server-error)
-                       (update :code #(or % :unhandled))
-                       (assoc :hint (ex-message error)))})))
+                       (update :code #(or % :unhandled)))})))
 
 (defmethod handle-error :default
   [error request parent-cause]
@@ -189,21 +188,17 @@
         (= state "57014")
         {::yres/status 504
          ::yres/body {:type :server-error
-                      :code :statement-timeout
-                      :hint (ex-message error)}}
+                      :code :statement-timeout}}
 
         (= state "25P03")
         {::yres/status 504
          ::yres/body {:type :server-error
-                      :code :idle-in-transaction-timeout
-                      :hint (ex-message error)}}
+                      :code :idle-in-transaction-timeout}}
 
         :else
         {::yres/status 500
          ::yres/body {:type :server-error
-                      :code :unexpected
-                      :hint (ex-message error)
-                      :state state}}))))
+                      :code :database-error}}))))
 
 (defmethod handle-exception :default
   [error request parent-cause]
@@ -216,8 +211,7 @@
         (l/error :hint "unexpected error" :cause cause)
         {::yres/status 500
          ::yres/body {:type :server-error
-                      :code :unexpected
-                      :hint (ex-message error)}})
+                      :code :unexpected}})
 
       :else
       (binding [l/*context* (request->context request)]
@@ -225,8 +219,7 @@
         {::yres/status 500
          ::yres/body (-> edata
                          (assoc :type :server-error)
-                         (update :code #(or % :unhandled))
-                         (assoc :hint (ex-message error)))}))))
+                         (update :code #(or % :unhandled)))}))))
 
 (defmethod handle-exception java.io.IOException
   [cause request _]
@@ -234,9 +227,7 @@
     (l/wrn :hint "io exception" :cause cause)
     {::yres/status 500
      ::yres/body {:type :server-error
-                  :code :io-exception
-                  :hint (ex-message cause)
-                  :path (:path request)}}))
+                  :code :io-exception}}))
 
 (defmethod handle-exception java.util.concurrent.CompletionException
   [cause request _]
