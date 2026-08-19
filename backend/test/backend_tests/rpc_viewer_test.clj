@@ -188,4 +188,20 @@
         (t/is (= link-a-id (:id (first share-links))))
 
         ;; Should NOT see Link B's token
-        (t/is (not (some #(= link-b-id (:id %)) share-links)))))))
+        (t/is (not (some #(= link-b-id (:id %)) share-links)))))
+
+    (t/testing "team member still sees all share-links"
+      (let [out (th/command! {::th/type :get-view-only-bundle
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)})
+            err (:error out)
+            result (:result out)
+            share-links (:share-links result)]
+
+        ;; Should not error
+        (t/is (nil? err))
+
+        ;; Team member should see both share-links
+        (t/is (= 2 (count share-links)))
+        (t/is (some #(= link-a-id (:id %)) share-links))
+        (t/is (some #(= link-b-id (:id %)) share-links))))))
