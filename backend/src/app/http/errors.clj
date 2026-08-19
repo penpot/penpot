@@ -38,7 +38,7 @@
   "Remove fields that leak internal implementation details from error
   response data. Full context is preserved in server-side logs."
   [data]
-  (dissoc data :hint :state :path :context))
+  (dissoc data :state :path :context))
 
 (defmulti handle-error
   (fn [cause _ _]
@@ -211,19 +211,19 @@
         {::yres/status 504
          ::yres/body {:type :server-error
                       :code :statement-timeout
-                      :message (pgsql-state->message state)}}
+                      :hint (pgsql-state->message state)}}
 
         (= state "25P03")
         {::yres/status 504
          ::yres/body {:type :server-error
                       :code :idle-in-transaction-timeout
-                      :message (pgsql-state->message state)}}
+                      :hint (pgsql-state->message state)}}
 
         :else
         {::yres/status 500
          ::yres/body {:type :server-error
                       :code :database-error
-                      :message (pgsql-state->message state)}}))))
+                      :hint (pgsql-state->message state)}}))))
 
 (defmethod handle-exception :default
   [error request parent-cause]
