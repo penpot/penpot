@@ -2471,6 +2471,7 @@
 (t/deftest share-link-deletion-idor
   (let [owner   (th/create-profile* 1 {:is-active true})
         editor  (th/create-profile* 2 {:is-active true})
+        admin   (th/create-profile* 3 {:is-active true})
         proj-id (:default-project-id owner)
         team-id (:default-team-id owner)
 
@@ -2482,6 +2483,11 @@
         _       (th/create-team-role* {:team-id team-id
                                        :profile-id (:id editor)
                                        :role :editor})
+
+        ;; Invite admin to the team with admin permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id admin)
+                                       :role :admin})
 
         ;; Owner creates a share-link
         slink   (th/command! {::th/type :create-share-link
@@ -2525,3 +2531,66 @@
                                   :file-id (:id file)})
               share-links (:share-links (:result check))]
           (t/is (some #(= slink2-id (:id %)) share-links)))))))
+
+(t/deftest share-link-deletion-escape-hatches
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        admin   (th/create-profile* 3 {:is-active true})
+        proj-id (:default-project-id owner)
+        team-id (:default-team-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        ;; Invite editor to the team with edit permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id editor)
+                                       :role :editor})
+
+        ;; Invite admin to the team with admin permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id admin)
+                                       :role :admin})]
+
+    (t/testing "editor CAN delete their own share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id editor)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "admin CAN delete editor's share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id admin)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "owner CAN delete editor's share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id owner)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))))

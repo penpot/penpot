@@ -69,11 +69,12 @@
   (let [slink (db/get-by-id conn :share-link id)]
     (files/check-edition-permissions! conn profile-id (:file-id slink))
 
-    ;; Verify caller owns this specific share-link, OR has admin access
+    ;; Verify caller owns this specific share-link, OR has admin access.
+    ;; Note: :is-admin already includes :is-owner (see bfc/get-file-permissions),
+    ;; so we only need to check :is-admin here.
     (let [perms (bfc/get-file-permissions conn profile-id (:file-id slink))]
       (when-not (or (= (:owner-id slink) profile-id)
-                    (:is-admin perms)
-                    (:is-owner perms))
+                    (:is-admin perms))
         (ex/raise :type :authorization
                   :code :not-share-link-owner
                   :hint "You can only delete share-links you created")))
