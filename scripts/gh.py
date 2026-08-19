@@ -5,8 +5,9 @@ gh.py — Multi-purpose CLI helper for penpot/penpot GitHub operations.
 Uses GitHub GraphQL and REST APIs via the authenticated ``gh`` CLI.
 
 Subcommands:
-  issues   List issues in a milestone (or unassigned with milestone=none)
-  prs      Fetch details for one or more PRs (by number or milestone)
+  issues      List issues in a milestone (or unassigned with milestone=none)
+  prs         Fetch details for one or more PRs (by number or milestone)
+  advisories  List or inspect GitHub security advisories
 
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
@@ -23,6 +24,9 @@ Usage:
   cat prs.txt | python3 scripts/gh.py prs --stdin
   python3 scripts/gh.py prs --milestone "2.16.0"            (default: state=merged)
   python3 scripts/gh.py prs --milestone "2.16.0" --state all
+  python3 scripts/gh.py advisories                          (list all advisories)
+  python3 scripts/gh.py advisories --severity critical      (filter by severity)
+  python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -61,6 +65,16 @@ def run_gh_graphql(query: str, variables: dict) -> Any:
             print(f"GraphQL error: {err.get('message')}", file=sys.stderr)
         sys.exit(1)
     return body["data"]
+
+
+def run_gh_rest(path: str) -> Any:
+    """Run a REST API call via ``gh api``."""
+    cmd = ["gh", "api", path]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"gh error: {result.stderr}", file=sys.stderr)
+        sys.exit(1)
+    return json.loads(result.stdout)
 
 
 # ─────────────────────────────────────────────
@@ -582,6 +596,93 @@ def cmd_prs(args: argparse.Namespace) -> None:
 
 
 # ─────────────────────────────────────────────
+#  Subcommand: advisories
+# ─────────────────────────────────────────────
+
+
+def fetch_advisories() -> list[dict]:
+    """Fetch all security advisories for the repository via REST API."""
+    return run_gh_rest(f"repos/{REPO}/security-advisories")
+
+
+def fetch_advisory(ghsa_id: str) -> dict:
+    """Fetch a single security advisory by GHSA ID."""
+    return run_gh_rest(f"repos/{REPO}/security-advisories/{ghsa_id}")
+
+
+def format_advisory_summary(adv: dict) -> dict:
+    """Extract a summary view of an advisory."""
+    return {
+        "ghsa_id": adv["ghsa_id"],
+        "cve_id": adv.get("cve_id"),
+        "severity": adv.get("severity"),
+        "cvss_score": (adv.get("cvss") or {}).get("score"),
+        "state": adv.get("state"),
+        "summary": adv.get("summary"),
+        "cwes": [c["cwe_id"] for c in adv.get("cwes", [])],
+        "published_at": adv.get("published_at"),
+        "closed_at": adv.get("closed_at"),
+        "url": adv.get("html_url"),
+    }
+
+
+def format_advisory_detail(adv: dict) -> dict:
+    """Extract full detail view of an advisory."""
+    summary = format_advisory_summary(adv)
+    summary["description"] = adv.get("description")
+    summary["vulnerabilities"] = [
+        {
+            "package": v.get("package", {}).get("name"),
+            "vulnerable_version_range": v.get("vulnerable_version_range"),
+            "patched_versions": v.get("patched_versions"),
+        }
+        for v in adv.get("vulnerabilities", [])
+    ]
+    summary["credits"] = [
+        {"login": c.get("user", {}).get("login"), "type": c.get("type")}
+        for c in adv.get("credits_detailed", [])
+    ]
+    summary["created_at"] = adv.get("created_at")
+    summary["updated_at"] = adv.get("updated_at")
+    summary["withdrawn_at"] = adv.get("withdrawn_at")
+    return summary
+
+
+def cmd_advisories(args: argparse.Namespace) -> None:
+    """Handle the ``advisories`` subcommand."""
+
+    # ── Single advisory detail ──────────────────────────────
+    if args.ghsa_id:
+        ghsa_id = args.ghsa_id.upper()
+        if not ghsa_id.startswith("GHSA-"):
+            ghsa_id = f"GHSA-{ghsa_id}"
+        print(f"Fetching advisory {ghsa_id}...", file=sys.stderr)
+        adv = fetch_advisory(ghsa_id)
+        print(json.dumps(format_advisory_detail(adv), indent=2))
+        return
+
+    # ── List all advisories ─────────────────────────────────
+    print("Fetching security advisories...", file=sys.stderr)
+    advisories = fetch_advisories()
+    print(f"Fetched {len(advisories)} advisories", file=sys.stderr)
+
+    results = [format_advisory_summary(adv) for adv in advisories]
+
+    # Apply filters
+    if args.severity:
+        sev = args.severity.lower()
+        results = [r for r in results if (r.get("severity") or "").lower() == sev]
+        print(f"After severity filter ({sev}): {len(results)} advisories", file=sys.stderr)
+
+    if args.state:
+        st = args.state.lower()
+        results = [r for r in results if (r.get("state") or "").lower() == st]
+        print(f"After state filter ({st}): {len(results)} advisories", file=sys.stderr)
+
+    print(json.dumps(results, indent=2))
+
+
+# ─────────────────────────────────────────────
 #  CLI entrypoint
 # ─────────────────────────────────────────────
 
@@ -644,6 +745,22 @@ def main() -> None:
         help="PR state filter when using --milestone (default: merged)"
     )
     p_prs.set_defaults(func=cmd_prs)
+
+    # --- advisories ---
+    p_adv = sub.add_parser("advisories", help="List or inspect GitHub security advisories")
+    p_adv.add_argument(
+        "ghsa_id", nargs="?",
+        help="GHSA ID to fetch (e.g. 'GHSA-xvj6-fh9w-gjw7'); omit to list all"
+    )
+    p_adv.add_argument(
+        "--severity", choices=["critical", "high", "medium", "low"],
+        help="Filter by severity level"
+    )
+    p_adv.add_argument(
+        "--state", choices=["triage", "draft", "published", "closed", "withdrawn"],
+        help="Filter by advisory state"
+    )
+    p_adv.set_defaults(func=cmd_advisories)
 
     args = parser.parse_args()
     args.func(args)
