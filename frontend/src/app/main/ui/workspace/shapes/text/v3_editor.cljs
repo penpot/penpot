@@ -13,6 +13,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -542,6 +543,9 @@
     (mf/use-effect
      (mf/deps contenteditable-ref)
      (fn []
+       ;; Group the whole editing session (edits, reflow resizes, finalize) into a single
+       ;; undo entry. Nested transactions (e.g. style shortcuts) are ref-counted and fold in.
+       (st/emit! (dwu/start-undo-transaction shape-id :timeout nil))
        (when-let [node (mf/ref-val contenteditable-ref)]
          ;; Focus and select all text on mount (this will trigger on-focus)
          (.focus node)
@@ -552,6 +556,7 @@
        ;; it was not being reliable (timing issues, Firefox issues…)
        (fn []
          (on-blur)
+         (st/emit! (dwu/commit-undo-transaction shape-id))
          (text-editor/text-editor-dispose)
          (wasm.api/request-render-preserving-target "text-editor-dispose"))))
 
