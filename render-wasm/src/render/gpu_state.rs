@@ -22,7 +22,7 @@ impl GpuState {
 
         // We tweak some options to enhance performance.
         let mut context_options = ContextOptions::default();
-        // context_options.reduce_ops_task_splitting = Enable::Yes;
+        context_options.reduce_ops_task_splitting = Enable::No;
         context_options.skip_gl_error_checks = Enable::Yes;
         // context_options.runtime_program_cache_size = 1024;
         // context_options.allow_multiple_glyph_cache_textures = Enable::Yes;
