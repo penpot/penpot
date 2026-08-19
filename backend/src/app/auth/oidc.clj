@@ -845,7 +845,7 @@
          cfg request (some-> (session/get-session request) :profile-id)
          (:organization-id state) "organization-sso-auth-failed"
          :failure-reason (organization-sso-oauth-failure-reason error))))
-    (catch Throwable _ nil)))
+    (catch Exception _ nil)))
 
 (defn- non-blank-uri
   [value]
