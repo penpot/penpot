@@ -7,6 +7,8 @@
 (ns app.rpc.commands.files-share
   "Share link related rpc mutation methods."
   (:require
+   [app.binfile.common :as bfc]
+   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -66,5 +68,15 @@
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
   (let [slink (db/get-by-id conn :share-link id)]
     (files/check-edition-permissions! conn profile-id (:file-id slink))
+
+    ;; Verify caller owns this specific share-link, OR has admin access
+    (let [perms (bfc/get-file-permissions conn profile-id (:file-id slink))]
+      (when-not (or (= (:owner-id slink) profile-id)
+                    (:is-admin perms)
+                    (:is-owner perms))
+        (ex/raise :type :authorization
+                  :code :not-share-link-owner
+                  :hint "You can only delete share-links you created")))
+
     (db/delete! conn :share-link {:id id})
     nil))
