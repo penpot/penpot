@@ -268,6 +268,21 @@
   applies (some of them ignore some attributes)"
   [shapes objects attr-group]
   (let [attrs (group->attrs attr-group)
+
+        type->editable-attrs
+        (memoize (fn [type]
+                   (if-let [editable? (get editable-attrs type)]
+                     (filterv editable? attrs)
+                     [])))
+
+        type->nil-values
+        (memoize (fn [type] (into {} (map (fn [attr] [attr nil])) (type->editable-attrs type))))
+
+        type->token-attrs
+        (memoize (fn [type]
+                   (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct))
+                         (type->editable-attrs type))))
+
         merge-attrs
         (fn [v1 v2]
           (cond
@@ -289,24 +304,31 @@
               (= existing new-val)     acc
               :else                    (assoc acc t-attr :multiple))))
 
-        merge-shape-attr
-        (fn [acc applied-tokens shape-attr]
-          "Merges all token attributes derived from a single shape attribute
-           into the accumulator map using `merge-attr`."
-          (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
-            (reduce #(merge-attr %1 applied-tokens %2) acc token-attrs)))
+        ;; Merging an empty `applied-tokens` into an accumulator that a previous
+        ;; empty merge already produced is a fixed point, so long runs of
+        ;; token-less shapes of the same type only pay for the first one.
+        stable-token-acc (volatile! nil)
 
         merge-token-values
-        (fn [acc shape-attrs applied-tokens]
-          "Merges token values across all shape attributes.
-           For each shape attribute, its corresponding token attributes are merged
-           into the accumulator."
-          (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs))
+        (fn [acc token-attrs applied-tokens]
+          "Merges token values across all token attributes derived from the shape's
+           editable attributes."
+          (let [no-tokens? (empty? applied-tokens)
+                stable     (deref stable-token-acc)]
+            (if (and no-tokens?
+                     (some? stable)
+                     (identical? (nth stable 0) token-attrs)
+                     (identical? (nth stable 1) acc))
+              acc
+              (let [result (reduce #(merge-attr %1 applied-tokens %2) acc token-attrs)]
+                (when no-tokens?
+                  (vreset! stable-token-acc [token-attrs result]))
+                result))))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
-                editable-attrs (filter (get editable-attrs (:type shape)) attrs)]
+                editable-attrs (type->editable-attrs type)]
             (case read-mode
               :ignore
               [ids values]
@@ -315,14 +337,14 @@
               (let [;; Get the editable attrs from the shape, ensuring that all attributes
                     ;; are present, with value nil if they are not present in the shape.
                     shape-values (merge
-                                  (into {} (map #(vector % nil)) editable-attrs)
+                                  (type->nil-values type)
                                   (cond
                                     (= attr-group :measure) (select-measure-keys shape)
                                     :else (select-keys shape editable-attrs)))
                     shape-values (cond-> shape-values
                                    (= attr-group :layer)
                                    (update :hidden #(if (nil? %) false %)))
-                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
+                    new-token-acc (merge-token-values token-acc (type->token-attrs type) applied-tokens)]
                 [(conj ids id)
                  (merge-attrs values shape-values)
                  new-token-acc])
@@ -338,7 +360,7 @@
                         (merge-attrs shape-attrs)
                         (merge-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
+                    new-token-acc (merge-token-values token-acc (type->token-attrs type) applied-tokens)]
                 [(conj ids id)
                  new-values
                  new-token-acc])

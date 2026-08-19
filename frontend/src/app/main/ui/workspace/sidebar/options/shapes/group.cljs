@@ -93,20 +93,38 @@
         [constraint-ids constraint-values]
         (get-attrs shapes objects :constraint)
 
-        [fill-ids fill-values fill-tokens]
-        (get-attrs shapes objects :fill)
-
         [shadow-ids]
         (get-attrs shapes objects :shadow)
 
         [blur-ids blur-values]
         (get-attrs shapes objects :blur)
 
+        transform
+        (mf/deref refs/current-transform)
+
+        ;; A transform cannot change the descendants read here.
+        descendant-attrs-ref
+        (mf/use-ref nil)
+
+        descendant-attrs
+        (let [cached (mf/ref-val descendant-attrs-ref)]
+          (if (and (some? transform) (some? cached))
+            cached
+            (let [attrs {:fill   (get-attrs shapes objects :fill)
+                         :stroke (get-attrs shapes objects :stroke)
+                         :text   (get-attrs shapes objects :text)
+                         :colors (vals objects)}]
+              (mf/set-ref-val! descendant-attrs-ref attrs)
+              attrs)))
+
+        [fill-ids fill-values fill-tokens]
+        (get descendant-attrs :fill)
+
         [stroke-ids stroke-values stroke-tokens]
-        (get-attrs shapes objects :stroke)
+        (get descendant-attrs :stroke)
 
         [text-ids text-values text-tokens]
-        (get-attrs shapes objects :text)
+        (get descendant-attrs :text)
 
         [layout-item-ids layout-item-values]
         (get-attrs shapes objects :layout-item)]
@@ -164,7 +182,7 @@
 
      [:> color-selection-menu*
       {:type type
-       :shapes (vals objects)
+       :shapes (get descendant-attrs :colors)
        :file-id file-id
        :libraries libraries}]
 
