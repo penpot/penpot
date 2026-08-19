@@ -117,7 +117,7 @@
   [file-id paths]
   (p/let [prefix (str/concat "penpot.pdfunite." file-id ".")
           path   (sh/tempfile :prefix prefix :suffix ".pdf")]
-    (sh/run-cmd! (str "pdfunite " (str/join " " paths) " " path))
+    (apply sh/run-cmd! "pdfunite" (conj (vec paths) path))
     path))
 
 (defn- move-file
