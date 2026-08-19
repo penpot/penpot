@@ -35,8 +35,11 @@
     "build:app": "clojure -M:dev:shadow-cljs release main",
     "build:wasm": "../render-wasm/build export",
     "build": "pnpm run clear:shadow-cache && pnpm run build:app",
-    "fmt": "cljfmt fix --parallel=true src/",
-    "check-fmt": "cljfmt check --parallel=true src/",
-    "lint": "clj-kondo --parallel --lint src/"
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
+    "lint:clj": "clj-kondo --parallel --lint src/ test/",
+    "build:test": "clojure -M:dev:shadow-cljs compile test",
+    "test": "pnpm run build:test && node target/tests/test.js",
+    "test:quiet": "node ./scripts/test-quiet.js"
   }
 }
