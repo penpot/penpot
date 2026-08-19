@@ -55,7 +55,7 @@
   (t/testing "Proves execFile does NOT execute injected commands (no RCE)"
     (t/async done
       (let [marker    "/tmp/penpot-exporter-rce-test"
-            malicious "#000000$(touch /tmp/pwned)"
+            malicious (str "#000000$(touch " marker ")")
             cmd       "echo"
             args      #js [malicious]]
         (when (fs/existsSync marker)

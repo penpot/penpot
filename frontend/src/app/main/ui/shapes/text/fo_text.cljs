@@ -70,16 +70,6 @@
         (recur (cc/next-rgb current-rgb))
         current-hex))))
 
-(def ^:private hex-color-rx
-  #"^#(?:[0-9a-fA-F]{3}){1,2}$")
-
-(defn- valid-hex-color?
-  "Validates that a string is a valid hex color (#RGB or #RRGGBB).
-   Prevents injection of malicious values into data-colors attribute."
-  [color]
-  (and (string? color)
-       (some? (re-matches hex-color-rx color))))
-
 (defn- fill->color
   "Given a content node returns the information about that node fill color"
   [{:keys [fill-color fill-opacity fill-color-gradient]}]
@@ -90,7 +80,7 @@
      :gradient fill-color-gradient}
 
     (and (string? fill-color)
-         (valid-hex-color? fill-color)
+         (cc/hex-color-string? fill-color)
          (some? fill-opacity)
          (not= fill-opacity 1))
     {:type :transparent
@@ -98,7 +88,7 @@
      :opacity fill-opacity}
 
     (and (string? fill-color)
-         (valid-hex-color? fill-color))
+         (cc/hex-color-string? fill-color))
     {:type :solid
      :hex fill-color
      :map-to fill-color}

@@ -12,6 +12,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.types.color :as ctc]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.renderer.svg-gradient :as svg-gradient]
@@ -122,16 +123,6 @@
       (str/replace svg-content internal-uri public-uri)
       svg-content)))
 
-(def ^:private hex-color-rx
-  #"^#(?:[0-9a-fA-F]{3}){1,2}$")
-
-(defn- valid-hex-color?
-  "Validates that a string is a valid hex color (#RGB or #RRGGBB).
-   Prevents shell injection via malicious color values."
-  [color]
-  (and (string? color)
-       (some? (re-matches hex-color-rx color))))
-
 (defn render
   [{:keys [page-id file-id share-id objects token scale type]} on-object]
   (letfn [(convert-to-ppm [pngpath]
@@ -147,7 +138,7 @@
                   (p/then (constantly svgpath)))))
 
           (generate-color-layer [ppmpath color]
-            (when-not (valid-hex-color? color)
+            (when-not (ctc/hex-color-string? color)
               (ex/raise :type :validation
                         :code :invalid-color
                         :hint (str "invalid hex color: " color)))
