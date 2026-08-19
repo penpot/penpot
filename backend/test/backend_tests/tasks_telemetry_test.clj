@@ -710,6 +710,19 @@
     (t/is (not (contains? (:props result) :route)))
     (t/is (not (contains? (:props result) :label)))))
 
+(t/deftest test-filter-telemetry-props-organization-sso-failure-keeps-reason
+  (let [ftp             (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        organization-id (uuid/next)
+        result          (ftp {:source "backend"
+                              :name "organization-sso-auth-failed"
+                              :type "action"
+                              :props {:organization-id organization-id
+                                      :failure-reason "access-denied"
+                                      :unsafe-label "should-be-stripped"}})]
+    (t/is (= {:organization-id organization-id
+              :failure-reason "access-denied"}
+             (:props result)))))
+
 (t/deftest test-filter-telemetry-props-navigate-keeps-route-and-ids
   ;; Frontend navigate events keep specific routing keys: :route,
   ;; :file-id, :team-id, :page-id.  These ids are strings because
