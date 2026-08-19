@@ -34,6 +34,12 @@
         (assoc :request/auth-data (dissoc auth :token))
         (assoc :frontend/version (or (yreq/get-header request "x-frontend-version") "unknown")))))
 
+(defn- strip-internal-fields
+  "Remove fields that leak internal implementation details from error
+  response data. Full context is preserved in server-side logs."
+  [data]
+  (dissoc data :hint :state :path :context))
+
 (defmulti handle-error
   (fn [cause _ _]
     (-> cause ex-data :type)))
@@ -136,6 +142,7 @@
           (l/error :hint "assertion error" :cause cause)
           {::yres/status 500
            ::yres/body   (-> data
+                             (strip-internal-fields)
                              (assoc :type :server-error)
                              (assoc :code :assertion))})))))
 
@@ -161,6 +168,7 @@
       (l/error :hint "internal error" :cause cause)
       {::yres/status 500
        ::yres/body (-> data
+                       (strip-internal-fields)
                        (assoc :type :server-error)
                        (update :code #(or % :unhandled)))})))
 
@@ -177,6 +185,20 @@
       (handle-exception (:handling edata) request error)
       (handle-exception error request parent-cause))))
 
+(defn- pgsql-state->message
+  "Map PostgreSQL SQLSTATE codes to safe, client-facing messages.
+  Returns a user-friendly string that conveys the nature of the error
+  without exposing table names, constraint names, or other internals."
+  [state]
+  (case state
+    "23505" "A conflicting entry already exists"
+    "23503" "The referenced item does not exist"
+    "23502" "A required field is missing"
+    "23514" "The value violates a data integrity constraint"
+    "57014" "The operation took too long and was cancelled"
+    "25P03" "The transaction was idle too long and was cancelled"
+    "A database error occurred"))
+
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request parent-cause]
   (let [state (.getSQLState ^java.sql.SQLException error)
@@ -188,17 +210,20 @@
         (= state "57014")
         {::yres/status 504
          ::yres/body {:type :server-error
-                      :code :statement-timeout}}
+                      :code :statement-timeout
+                      :message (pgsql-state->message state)}}
 
         (= state "25P03")
         {::yres/status 504
          ::yres/body {:type :server-error
-                      :code :idle-in-transaction-timeout}}
+                      :code :idle-in-transaction-timeout
+                      :message (pgsql-state->message state)}}
 
         :else
         {::yres/status 500
          ::yres/body {:type :server-error
-                      :code :database-error}}))))
+                      :code :database-error
+                      :message (pgsql-state->message state)}}))))
 
 (defmethod handle-exception :default
   [error request parent-cause]
@@ -218,6 +243,7 @@
         (l/error :hint "unhandled error" :cause cause)
         {::yres/status 500
          ::yres/body (-> edata
+                         (strip-internal-fields)
                          (assoc :type :server-error)
                          (update :code #(or % :unhandled)))}))))
 

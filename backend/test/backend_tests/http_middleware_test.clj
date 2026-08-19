@@ -6,10 +6,12 @@
 
 (ns backend-tests.http-middleware-test
   (:require
+   [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token]
+   [app.http.errors :as http-errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.main :as-alias main]
@@ -398,3 +400,42 @@
     (t/is (= :server-error (:type body)))
     (t/is (= :io-exception (:code body)))
     (t/is (nil? (:hint body)))))
+
+(t/deftest internal-error-strips-internal-fields
+  ;; When an :internal error is raised with :hint, :state, :path,
+  ;; and :context, the response body must not include those fields.
+  (let [cause    (ex-info "internal error"
+                          {:type :internal
+                           :code :test-error
+                           :hint "secret database detail"
+                           :state "XX000"
+                           :path "/data/penpot/storage"
+                           :context {:backend :s3 :bucket "prod"}})
+        response (http-errors/handle cause {})
+        body     (::yres/body response)]
+    (t/is (= 500 (::yres/status response)))
+    (t/is (= :server-error (:type body)))
+    (t/is (= :test-error (:code body)))
+    (t/is (nil? (:hint body)))
+    (t/is (nil? (:state body)))
+    (t/is (nil? (:path body)))
+    (t/is (nil? (:context body)))))
+
+(t/deftest unhandled-exinfo-strips-internal-fields
+  ;; When an ex-info with an unregistered :type (dispatches through
+  ;; handle-exception :default :else) carries :hint and other
+  ;; internal fields, the response body must not include them.
+  (let [cause    (ex-info "something broke"
+                          {:type :unregistered-type
+                           :code :custom-code
+                           :hint "internal detail"
+                           :state "internal-state"
+                           :path "/internal/path"})
+        response (http-errors/handle cause {})
+        body     (::yres/body response)]
+    (t/is (= 500 (::yres/status response)))
+    (t/is (= :server-error (:type body)))
+    (t/is (= :custom-code (:code body)))
+    (t/is (nil? (:hint body)))
+    (t/is (nil? (:state body)))
+    (t/is (nil? (:path body)))))
