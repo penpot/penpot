@@ -31,4 +31,12 @@
      :pseudo-names true
      :pretty-print true
      :anon-fn-naming-policy :off
-     :source-map-detail-level :all}}}}}
+     :source-map-detail-level :all}}}
+
+   :test
+   {:target :esm
+    :output-dir "target/tests"
+    :runtime :node
+    :js-options {:js-provider :import}
+    :modules
+    {:test {:init-fn exporter-tests.runner/-main}}}}}

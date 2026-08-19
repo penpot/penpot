@@ -38,7 +38,7 @@
                 :webp (p/let [png-path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix ".png")]
                         ;; playwright only supports jpg and png, we need to convert it afterwards
                         (bw/screenshot node {:omit-background? true :type :png :path png-path})
-                        (sh/run-cmd! (str "convert " png-path " -quality 100 WEBP:" path))))
+                        (sh/run-cmd! "convert" png-path "-quality" "100" (str "WEBP:" path))))
               (on-object (assoc object :path path))))
 
           (render [uri page]
