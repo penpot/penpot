@@ -11,12 +11,14 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [exporter-tests.renderer-svg-test]
+   [exporter-tests.shell-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
 
 (def test-namespaces
-  ['exporter-tests.renderer-svg-test])
+  ['exporter-tests.renderer-svg-test
+   'exporter-tests.shell-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

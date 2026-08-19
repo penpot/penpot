@@ -10,6 +10,7 @@
    ["xml-js" :as xml]
    [app.browser :as bw]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -121,24 +122,38 @@
       (str/replace svg-content internal-uri public-uri)
       svg-content)))
 
+(def ^:private hex-color-rx
+  #"^#(?:[0-9a-fA-F]{3}){1,2}$")
+
+(defn- valid-hex-color?
+  "Validates that a string is a valid hex color (#RGB or #RRGGBB).
+   Prevents shell injection via malicious color values."
+  [color]
+  (and (string? color)
+       (some? (re-matches hex-color-rx color))))
+
 (defn render
   [{:keys [page-id file-id share-id objects token scale type]} on-object]
   (letfn [(convert-to-ppm [pngpath]
             (let [ppmpath (str/concat pngpath "origin.ppm")]
               (l/trace :fn :convert-to-ppm :path ppmpath)
-              (-> (sh/run-cmd! (str "convert " pngpath " " ppmpath))
+              (-> (sh/run-cmd! "convert" pngpath ppmpath)
                   (p/then (constantly ppmpath)))))
 
           (trace-color-mask [pbmpath]
             (l/trace :fn :trace-color-mask :pbmpath pbmpath)
             (let [svgpath (str/concat pbmpath ".svg")]
-              (-> (sh/run-cmd! (str "potrace --flat -b svg " pbmpath " -o " svgpath))
+              (-> (sh/run-cmd! "potrace" "--flat" "-b" "svg" pbmpath "-o" svgpath)
                   (p/then (constantly svgpath)))))
 
           (generate-color-layer [ppmpath color]
+            (when-not (valid-hex-color? color)
+              (ex/raise :type :validation
+                        :code :invalid-color
+                        :hint (str "invalid hex color: " color)))
             (l/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
             (let [pbmpath (str/concat ppmpath ".mask-" (subs color 1) ".pbm")]
-              (-> (sh/run-cmd! (str/format "ppmcolormask \"%s\" %s" color ppmpath))
+              (-> (sh/run-cmd! "ppmcolormask" color ppmpath)
                   (p/then (fn [stdout]
                             (-> (sh/write-file! pbmpath stdout)
                                 (p/then (constantly pbmpath)))))
