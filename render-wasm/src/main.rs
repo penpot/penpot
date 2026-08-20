@@ -57,7 +57,7 @@ pub extern "C" fn set_viewport_interest_area_threshold(
     viewport_interest_area_threshold: i32,
 ) -> Result<()> {
     let render_state = get_render_state();
-    render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold);
+    render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold)?;
     Ok(())
 }
 

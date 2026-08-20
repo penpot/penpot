@@ -258,6 +258,35 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 
+/// Physical atlas cell size so `needed_slots` fit in a square `atlas_px`
+/// texture. Never larger than `TILE_SIZE` (tiles are stored 1:1 when they
+/// fit). Smaller cells mean more slots, scaled down on blit into the atlas.
+pub fn tile_atlas_slot_size(needed_slots: usize, atlas_px: i32) -> i32 {
+    const MIN_SLOT: i32 = 64;
+    let needed = needed_slots.max(1);
+    let side = (needed as f64).sqrt().ceil() as i32;
+    let side = side.max(1);
+    (atlas_px / side).clamp(MIN_SLOT, TILE_SIZE as i32)
+}
+
+/// Inset (texels) applied when sampling a packed atlas slot with Linear
+/// filtering, so upsample kernels do not bleed into the neighboring cell.
+pub const TILE_ATLAS_SAMPLE_INSET: f32 = 1.0;
+
+/// Source size inside a packed slot after the Linear-filter inset.
+pub fn tile_atlas_compose_src_size(slot_size: i32) -> f32 {
+    if slot_size < TILE_SIZE as i32 {
+        (slot_size as f32 - 2.0 * TILE_ATLAS_SAMPLE_INSET).max(1.0)
+    } else {
+        slot_size as f32
+    }
+}
+
+/// `draw_atlas` scale so the destination sprite stays `TILE_SIZE` after inset.
+pub fn tile_atlas_compose_scale(slot_size: i32) -> f32 {
+    TILE_SIZE / tile_atlas_compose_src_size(slot_size)
+}
+
 // This structure is useful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
     grid: HashMap<Tile, HashSet<Uuid>>,
@@ -402,5 +431,38 @@ impl PendingTiles {
 
     pub fn pop(&mut self) -> Option<Tile> {
         self.list.pop()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn atlas_slot_is_full_size_when_tiles_fit() {
+        assert_eq!(tile_atlas_slot_size(64, 4096), 512);
+        assert_eq!(tile_atlas_slot_size(1, 4096), 512);
+    }
+
+    #[test]
+    fn atlas_slot_shrinks_to_pack_interest_tiles() {
+        // 150 slots → 13×13 grid, 4096/13 = 315.
+        assert_eq!(tile_atlas_slot_size(150, 4096), 315);
+        let side = 4096 / 315;
+        assert!(side * side >= 150);
+    }
+
+    #[test]
+    fn atlas_compose_scale_is_one_at_full_slot() {
+        assert_eq!(tile_atlas_compose_scale(512), 1.0);
+    }
+
+    #[test]
+    fn atlas_compose_scale_keeps_dest_tile_size_when_packed() {
+        let slot = 315;
+        let scale = tile_atlas_compose_scale(slot);
+        let src = tile_atlas_compose_src_size(slot);
+        assert!((scale * src - TILE_SIZE).abs() < 1e-4);
+        assert!(src < slot as f32);
     }
 }

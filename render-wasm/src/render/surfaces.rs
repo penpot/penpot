@@ -503,8 +503,7 @@ impl Surfaces {
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
 
-        // 512, why not?
-        let tiles = TileTextureCache::new(tile_atlas.width(), 512);
+        let tiles = TileTextureCache::new(tile_atlas.width(), tile_atlas.height());
         let atlas = DocAtlas::try_new()?;
         Ok(Self {
             target,
@@ -536,12 +535,34 @@ impl Surfaces {
         })
     }
 
+    /// Pack `needed_slots` into the existing 4096 atlas by shrinking the
+    /// physical cell size. No-op when the layout already fits.
+    pub fn ensure_tile_atlas_layout(&mut self, needed_slots: usize) {
+        let atlas_px = self.tile_atlas.width().min(self.tile_atlas.height());
+        let slot = tiles::tile_atlas_slot_size(needed_slots, atlas_px);
+        if slot == self.tiles.slot_size() {
+            return;
+        }
+        self.tiles
+            .repack(self.tile_atlas.width(), self.tile_atlas.height(), slot);
+        self.tile_atlas.canvas().clear(skia::Color::TRANSPARENT);
+        self.tile_atlas_image = None;
+    }
+
     pub fn set_dpr(&mut self, dpr: f32) {
         self.dpr = dpr;
     }
 
     pub fn clear_tiles(&mut self) {
         self.tiles.clear();
+    }
+
+    fn tile_atlas_sampling(&self) -> skia::SamplingOptions {
+        if self.tiles.slot_size() < TILE_SIZE {
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None)
+        } else {
+            self.atlas_sampling_options
+        }
     }
 
     pub fn draw_tile_atlas_to_backbuffer(
@@ -558,6 +579,7 @@ impl Surfaces {
         let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
             return;
         };
+        let sampling = self.tile_atlas_sampling();
         let canvas = self.backbuffer.canvas();
         canvas.clear(background);
         canvas.draw_atlas(
@@ -566,7 +588,7 @@ impl Surfaces {
             &self.tiles.textures,
             None,
             skia::BlendMode::SrcOver,
-            self.atlas_sampling_options,
+            sampling,
             None,
             None,
         );
@@ -643,6 +665,7 @@ impl Surfaces {
         let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
             return;
         };
+        let sampling = self.tile_atlas_sampling();
 
         let canvas = self.backbuffer.canvas();
         canvas.save();
@@ -654,7 +677,7 @@ impl Surfaces {
             &batch.textures,
             None,
             skia::BlendMode::SrcOver,
-            self.atlas_sampling_options,
+            sampling,
             None,
             None,
         );
@@ -1515,21 +1538,24 @@ pub struct TileAtlasTextureProvider {
 }
 
 impl TileAtlasTextureProvider {
-    pub fn new(texture_size: i32, tile_size: i32) -> Self {
-        let side = texture_size / tile_size;
-        let length = side * side;
-        let mut rects = Vec::with_capacity(length as usize);
-        for i in 0..length {
-            let left = (i % side) as f32 * tile_size as f32;
-            let top = (i / side) as f32 * tile_size as f32;
-            let right = left + tile_size as f32;
-            let bottom = top + tile_size as f32;
-            rects.push(Rect::new(left, top, right, bottom));
+    pub fn new(texture_width: i32, texture_height: i32, tile_size: i32) -> Self {
+        let cols = texture_width / tile_size;
+        let rows = texture_height / tile_size;
+        let length = (cols * rows) as usize;
+        let mut rects = Vec::with_capacity(length);
+        for row in 0..rows {
+            for col in 0..cols {
+                let left = col as f32 * tile_size as f32;
+                let top = row as f32 * tile_size as f32;
+                let right = left + tile_size as f32;
+                let bottom = top + tile_size as f32;
+                rects.push(Rect::new(left, top, right, bottom));
+            }
         }
         Self {
             index: 0,
-            length: length as usize,
-            in_use: vec![false; length as usize],
+            length,
+            in_use: vec![false; length],
             rects,
         }
     }
@@ -1563,6 +1589,7 @@ impl TileAtlasTextureProvider {
 
 pub struct TileTextureCache {
     tile_size: f32,
+    slot_size: i32,
     is_updated: bool,
     provider: TileAtlasTextureProvider,
     transforms: Vec<skia::RSXform>,
@@ -1583,16 +1610,51 @@ impl AtlasDrawBatch {
 }
 
 impl TileTextureCache {
-    pub fn new(texture_size: i32, capacity: usize) -> Self {
+    pub fn new(texture_width: i32, texture_height: i32) -> Self {
+        let capacity = ((texture_width / TILE_SIZE) * (texture_height / TILE_SIZE)) as usize;
         Self {
             tile_size: tiles::TILE_SIZE,
+            slot_size: TILE_SIZE,
             is_updated: false,
-            provider: TileAtlasTextureProvider::new(texture_size, TILE_SIZE),
+            provider: TileAtlasTextureProvider::new(texture_width, texture_height, TILE_SIZE),
             transforms: Vec::with_capacity(capacity),
             textures: Vec::with_capacity(capacity),
             grid: HashMap::with_capacity(capacity),
             removed: HashSet::with_capacity(capacity),
         }
+    }
+
+    pub fn slot_size(&self) -> i32 {
+        self.slot_size
+    }
+
+    fn dest_scale(&self) -> f32 {
+        tiles::tile_atlas_compose_scale(self.slot_size)
+    }
+
+    fn compose_src_rect(&self, rect: Rect) -> Rect {
+        if self.slot_size < TILE_SIZE {
+            let inset = tiles::TILE_ATLAS_SAMPLE_INSET;
+            Rect::new(
+                rect.left + inset,
+                rect.top + inset,
+                rect.right - inset,
+                rect.bottom - inset,
+            )
+        } else {
+            rect
+        }
+    }
+
+    pub fn repack(&mut self, texture_width: i32, texture_height: i32, slot_size: i32) {
+        let capacity = ((texture_width / slot_size) * (texture_height / slot_size)) as usize;
+        self.slot_size = slot_size;
+        self.is_updated = true;
+        self.provider = TileAtlasTextureProvider::new(texture_width, texture_height, slot_size);
+        self.transforms = Vec::with_capacity(capacity);
+        self.textures = Vec::with_capacity(capacity);
+        self.grid = HashMap::with_capacity(capacity);
+        self.removed = HashSet::with_capacity(capacity);
     }
 
     fn gc(&mut self) {
@@ -1634,10 +1696,11 @@ impl TileTextureCache {
     }
 
     pub fn update(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
+        let dest_scale = self.dest_scale();
         if self.transforms.len() != tile_viewbox.visible_rect.len() as usize {
             self.transforms.resize(
                 tile_viewbox.visible_rect.len() as usize,
-                skia::RSXform::new(1.0, 0.0, Point::default()),
+                skia::RSXform::new(dest_scale, 0.0, Point::default()),
             );
         }
 
@@ -1666,15 +1729,17 @@ impl TileTextureCache {
                     continue;
                 }
 
-                self.transforms[index].tx = x as f32 * self.tile_size - offset.x;
-                self.transforms[index].ty = y as f32 * self.tile_size - offset.y;
-
-                self.textures[index].set_ltrb(
-                    tile_ref.rect.left,
-                    tile_ref.rect.top,
-                    tile_ref.rect.right,
-                    tile_ref.rect.bottom,
+                self.transforms[index] = skia::RSXform::new(
+                    dest_scale,
+                    0.0,
+                    (
+                        (x as f32 * self.tile_size - offset.x).round(),
+                        (y as f32 * self.tile_size - offset.y).round(),
+                    ),
                 );
+
+                let src = self.compose_src_rect(tile_ref.rect);
+                self.textures[index].set_ltrb(src.left, src.top, src.right, src.bottom);
 
                 index += 1;
             }
@@ -1713,12 +1778,13 @@ impl TileTextureCache {
                     continue;
                 }
 
-                let scos = doc_rect.width() * s / self.tile_size;
-                let tx = (doc_rect.left + viewbox.pan.x) * s;
-                let ty = (doc_rect.top + viewbox.pan.y) * s;
+                let src = self.compose_src_rect(tile_ref.rect);
+                let scos = doc_rect.width() * s / src.width();
+                let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
+                let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
 
                 transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
-                textures.push(tile_ref.rect);
+                textures.push(src);
             }
         }
 
@@ -1737,12 +1803,13 @@ impl TileTextureCache {
                 continue;
             }
 
-            let tx = (doc_rect.left + viewbox.pan.x) * s;
-            let ty = (doc_rect.top + viewbox.pan.y) * s;
-            let scos = doc_rect.width() * s / self.tile_size;
+            let src = self.compose_src_rect(tile_ref.rect);
+            let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
+            let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
+            let scos = doc_rect.width() * s / src.width();
 
             transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
-            textures.push(tile_ref.rect);
+            textures.push(src);
         }
 
         AtlasDrawBatch {
@@ -1769,7 +1836,10 @@ impl TileTextureCache {
         let Some(tile_ref) = self.provider.allocate() else {
             panic!("Tile texture allocation failed {}:{}", tile.0, tile.1);
         };
+        self.insert(tile, tile_ref)
+    }
 
+    fn insert(&mut self, tile: &Tile, tile_ref: TileAtlasTextureRef) -> TileAtlasTextureRef {
         self.grid.insert(*tile, tile_ref.clone());
 
         if self.removed.contains(tile) {
@@ -1777,7 +1847,7 @@ impl TileTextureCache {
         }
 
         self.is_updated = true;
-        tile_ref.clone()
+        tile_ref
     }
 
     pub fn get(&mut self, tile: Tile) -> Option<&TileAtlasTextureRef> {
