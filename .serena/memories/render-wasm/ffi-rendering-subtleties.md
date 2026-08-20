@@ -25,3 +25,5 @@
 - Plain viewport fast mode (`options.is_viewport_interaction()`) renders from cache and does not flush target output inside `process_animation_frame`; interactive transforms do flush.
 - Zoom changes rebuild the tile index while preserving cached tile textures. Avoid replacing that path with shallow rebuilds if blur/shadow cache preservation matters.
 - Pending tile priority is intentionally reversed by pop order; check the queue construction before changing tile scheduling.
+- Frames with a fill may use `render_frame_container_drop_shadow` (direct rrect +
+  blur saveLayer on `DropShadows`) when `uses_direct_container_drop_shadow` is true.
