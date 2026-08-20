@@ -7,6 +7,10 @@ use skia_safe::{self as skia, ISize};
 
 const MIN_MAX_TEXTURE_SIZE: i32 = 512;
 const MAX_MAX_TEXTURE_SIZE: i32 = 4096;
+/// Cap for the canvas framebuffer / backbuffer (not the tile atlas).
+/// Larger than a typical viewport at DPR 2 but below sizes that would exceed
+/// GPU limits when CSS dimensions are very large.
+pub const MAX_SURFACE_SIZE: i32 = 8192;
 
 #[derive(Debug, Clone)]
 pub struct GpuState {
@@ -55,6 +59,33 @@ impl GpuState {
         self.context
             .max_texture_size()
             .clamp(MIN_MAX_TEXTURE_SIZE, MAX_MAX_TEXTURE_SIZE)
+    }
+
+    pub fn max_surface_size(&self) -> i32 {
+        self.context
+            .max_texture_size()
+            .clamp(MIN_MAX_TEXTURE_SIZE, MAX_SURFACE_SIZE)
+    }
+
+    /// Actual default-framebuffer size after the canvas backing store is set.
+    /// Browsers may allocate a smaller `drawingBuffer` than `canvas.width`;
+    /// wrapping Skia at the requested size then shifts content (GL origin is
+    /// bottom-left). Native builds have no canvas; return `None`.
+    pub fn drawing_buffer_size(&self) -> Option<(i32, i32)> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let w = crate::run_script_int!(
+                "(typeof GLctx!=='undefined'&&GLctx)?GLctx.drawingBufferWidth:0"
+            );
+            let h = crate::run_script_int!(
+                "(typeof GLctx!=='undefined'&&GLctx)?GLctx.drawingBufferHeight:0"
+            );
+            if w > 0 && h > 0 {
+                return Some((w, h));
+            }
+        }
+        let _ = self;
+        None
     }
 
     fn delete_gl_texture(&mut self, texture_id: gl::types::GLuint) -> bool {

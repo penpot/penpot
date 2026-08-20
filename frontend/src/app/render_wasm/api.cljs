@@ -2177,15 +2177,31 @@
   (when (wasm/live?)
     (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr)))
 
+(def ^:private max-surface-size
+  ;; Must match `gpu_state::MAX_SURFACE_SIZE`.
+  8192)
+
+(defn- clamp-physical-size
+  "Clamp physical pixel dimensions before assigning `canvas.width/height`.
+  Rust `resize` applies the same cap and syncs the effective DPR from the
+  real drawing buffer."
+  [w h]
+  (let [w     (mth/max 1 w)
+        h     (mth/max 1 h)
+        scale (mth/min 1 (/ max-surface-size w) (/ max-surface-size h))]
+    [(mth/max 1 (mth/floor (* scale w)))
+     (mth/max 1 (mth/floor (* scale h)))]))
+
 (defn resize-offscreen-canvas!
   "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
   update the WASM render surfaces accordingly (via `_resize_viewbox`). The
   design state (shape pool) is preserved so `set-objects` is not needed again."
   [canvas new-physical-w new-physical-h]
   (when (wasm/live?)
-    (let [dpr (get-dpr)]
-      (set! (.-width canvas) new-physical-w)
-      (set! (.-height canvas) new-physical-h)
+    (let [dpr (get-dpr)
+          [pw ph] (clamp-physical-size new-physical-w new-physical-h)]
+      (set! (.-width canvas) pw)
+      (set! (.-height canvas) ph)
       (set-render-options! dpr)
       (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))))
 
@@ -2220,9 +2236,14 @@
    (resize-canvas! canvas (get-dpr)))
   ([canvas new-dpr]
    (when (wasm/live?)
-     (let [[css-w css-h] (canvas-css-size canvas new-dpr)]
-       (set! (.-width ^js canvas) (* new-dpr css-w))
-       (set! (.-height ^js canvas) (* new-dpr css-h))
+     (let [[css-w css-h] (canvas-css-size canvas new-dpr)
+           css-w         (mth/max 1 css-w)
+           css-h         (mth/max 1 css-h)
+           [phys-w phys-h] (clamp-physical-size
+                            (mth/floor (* css-w new-dpr))
+                            (mth/floor (* css-h new-dpr)))]
+       (set! (.-width ^js canvas) phys-w)
+       (set! (.-height ^js canvas) phys-h)
        (set-render-options! new-dpr)
        (resize-viewbox css-w css-h)))))
 
