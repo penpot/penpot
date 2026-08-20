@@ -5771,6 +5771,16 @@
     },
     "~:id": "~u7b2da435-6186-815a-8007-0daa95d2f26d",
     "~:options": { "~:components-v2": true, "~:base-font-size": "16px" },
+    "~:tokens-status": {
+        "~#penpot/tokens-status": {
+            "~:active-theme-ids": {
+                "~#set": []
+            },
+            "~:active-set-ids": {
+                "~#set": ["~u5403f14e-eb02-80be-8007-0494f09cefca"]
+            }
+        }
+    },
     "~:tokens-lib": {
       "~#penpot/tokens-lib": {
         "~:sets": {

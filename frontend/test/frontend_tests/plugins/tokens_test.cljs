@@ -173,7 +173,8 @@
 (t/deftest shape-apply-token-accepts-font-families
   (t/async
     done
-    (let [set-id    (cthi/new-id! :token-set)
+    (let [theme-id  (cthi/new-id! :token-theme)
+          set-id    (cthi/new-id! :token-set)
           token-id  (cthi/new-id! :font-family-token)
           file      (-> (cthf/sample-file :file1 :page-label :page1)
                         (ctho/add-text :text1 "Hello World!")
@@ -186,13 +187,14 @@
                               (ctob/add-theme
                                (ctob/make-token-theme :name "theme"
                                                       :sets #{"fonts"}))
-                              (ctob/set-active-themes #{"/theme"})
                               (ctob/add-token
                                set-id
                                (ctob/make-token :id token-id
                                                 :name "font.primary"
                                                 :type :font-family
-                                                :value ["Inter"])))))
+                                                :value ["Inter"]))))
+                        (ctht/update-tokens-status
+                          #(ctos/set-tokens-status % #{theme-id} #{set-id})))
           store     (ths/setup-store file)
           _         (set! st/state store)
           _         (set! st/stream (ptk/input-stream store))
@@ -307,7 +309,7 @@
 (t/deftest token-set-duplicate-returns-the-duplicated-set
   (let [file-id (cthi/new-id! :file)
         set-id  (cthi/new-id! :set)
-        dup-id  (cthi/new-id! :dup)
+        dup-id  (cthi/new-id! :dup)]
     (with-redefs [u/locate-tokens-lib (constantly nil)
                   r/check-permission (constantly true)
                   u/check-editable-tokens (constantly nil)
