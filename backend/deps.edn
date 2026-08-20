@@ -69,7 +69,11 @@
 
   com.ladybugdb/lbug {:mvn/version "0.19.1"}
   ;; Required by Arrow RootAllocator (lbug only pulls arrow-memory-core).
-  org.apache.arrow/arrow-memory-netty {:mvn/version "18.2.0"}}
+  org.apache.arrow/arrow-memory-netty {:mvn/version "18.2.0"}
+
+  ;; graph-overlay: datascript index over the document, replacing the Cypher
+  ;; projection for per-file queries. See docs.local/graph roadmap.
+  datascript/datascript {:mvn/version "1.8.1"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases

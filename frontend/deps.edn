@@ -9,6 +9,9 @@
   metosin/reitit-core {:mvn/version "0.10.1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
+  ;; graph-overlay: datascript index in the derived-index worker.
+  datascript/datascript {:mvn/version "1.8.1"}
+
   funcool/tubax
   {:git/tag "v2025.11.28"
    :git/sha "2d9a986"
