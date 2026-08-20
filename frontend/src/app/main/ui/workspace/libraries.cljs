@@ -684,7 +684,9 @@
          [:> empty-state* {:icon i/library
                            :text (tr "workspace.libraries.no-libraries-need-sync")}]]
         [:*
-         [:div {:class (stl/css :section-title)} (tr "workspace.libraries.library-updates")]
+         [:> title-bar* {:collapsable false
+                         :title       (tr "workspace.libraries.library-updates")
+                         :class       (stl/css :title-spacing-lib)}]
 
          [:div {:class (stl/css :section-list)}
           (for [[{:keys [id name] :as library}
