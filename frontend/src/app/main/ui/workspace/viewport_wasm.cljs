@@ -709,7 +709,8 @@
                        :global/cursor-resize-ew-0 (= @guide-hover-axis* :x)
                        :global/cursor-resize-ns-0 (= @guide-hover-axis* :y)
                        :viewport-controls true))
-       :style {:touch-action "none"}
+       :style {:touch-action "none"
+               :pointer-events (if page-transition? "none" "auto")}
        :fill "none"
        :on-click         on-click
        :on-context-menu  on-context-menu
