@@ -32,7 +32,7 @@ jobs:
   # ── 1. Resolve the build key and check the whole set at once ───────────
   prepare:
     name: Prepare
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: 15
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
@@ -107,7 +107,7 @@ jobs:
   # ── 2. One build per image, in parallel, only when needed ──────────────
   build:
     name: Build ${{ matrix.image }}
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: 60
     needs: prepare
     if: needs.prepare.outputs.exists == 'false'
@@ -220,7 +220,7 @@ jobs:
   # the S3 marker guarantees the branch tags were already moved.
   promote:
     name: Promote image set
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: 10
     needs: [prepare, build]
 
@@ -267,7 +267,7 @@ jobs:
   # ── 4. Single failure notification for the whole workflow ─────────────
   notify:
     name: Notify failure
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: 5
     needs: [prepare, build, promote]
     if: failure()

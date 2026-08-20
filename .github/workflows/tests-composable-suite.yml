@@ -38,7 +38,7 @@ jobs:
   composable-test-suite:
     if: ${{ !github.event.pull_request.draft }}
     name: "Run composable test suite (mocked backend)"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:

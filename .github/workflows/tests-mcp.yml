@@ -28,7 +28,7 @@ jobs:
   test-mcp:
     if: ${{ !github.event.pull_request.draft }}
     name: "Test MCP"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container: penpotapp/devenv:latest
 
     steps:

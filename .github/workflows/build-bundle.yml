@@ -25,7 +25,7 @@ jobs:
   # ── 1. Decide whether there is anything to build ───────────────────────
   check:
     name: Check current bundle
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 10
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
@@ -75,7 +75,7 @@ jobs:
   # ── 2. Build and upload, only when needed ──────────────────────────────
   build:
     name: Build and Upload Penpot Bundle
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 90
     needs: check
     if: needs.check.outputs.exists == 'false'
@@ -116,7 +116,7 @@ jobs:
   # ── 3. Single failure notification for the whole workflow ─────────────
   notify:
     name: Notify failure
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 5
     needs: [check, build]
     if: failure()
