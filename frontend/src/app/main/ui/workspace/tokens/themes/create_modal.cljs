@@ -67,7 +67,7 @@
 
 (mf/defc themes-overview
   [{:keys [change-view]}]
-  (let [active-theme-paths (mf/deref refs/workspace-active-theme-paths)
+  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         themes-groups (mf/deref refs/workspace-token-theme-tree-no-hidden)
 
         create-theme
@@ -96,7 +96,7 @@
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
           (for [[_ {:keys [id name] :as theme}] themes
                 :let [theme-path (ctob/get-theme-path theme)
-                      selected? (some? (get active-theme-paths theme-path))
+                      selected? (some? (get active-theme-ids (ctob/get-id theme)))
                       delete-theme
                       (fn [e]
                         (dom/prevent-default e)
@@ -325,9 +325,10 @@
 
         on-toggle-token-set
         (mf/use-fn
-         (mf/deps current-theme)
-         (fn [set-name]
-           (swap! current-theme* #(ctob/toggle-set % set-name))))
+         (mf/deps current-theme tokens-lib)
+         (fn [set-id]
+           (let [set (ctob/get-set tokens-lib set-id)]
+             (swap! current-theme* #(ctob/toggle-set % (ctob/get-name set))))))
 
         on-toggle-token-set-group
         (mf/use-fn

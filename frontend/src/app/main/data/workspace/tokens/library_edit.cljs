@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clo]
    [app.common.path-names :as cpn]
@@ -415,9 +416,11 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            status  (cfo/make-tokens-status-from-lib lib)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/set-tokens-lib lib))]
+                        (pcb/set-tokens-lib lib)
+                        (pcb/set-tokens-status status))]
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 

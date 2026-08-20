@@ -315,6 +315,7 @@ test("User adds a library and its automatically selected in the color palette", 
   // Now the get-file call should return a library
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
   await workspacePage.openLibrariesModal();
+  await workspacePage.librariesModal.getByRole("tab", { name: "Libraries" }).click();
   await workspacePage.clickLibrary("Testing library 1");
   await workspacePage.closeLibrariesModal();
 
