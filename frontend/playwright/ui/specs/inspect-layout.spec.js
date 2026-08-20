@@ -152,6 +152,7 @@ test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", as
   await workspacePage.clickAssets();
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
   await workspacePage.openLibrariesModal();
+  await workspacePage.librariesModal.getByRole("tab", { name: "Libraries" }).click();
   await workspacePage.clickLibrary("Testing library 1");
   await workspacePage.closeLibrariesModal();
 

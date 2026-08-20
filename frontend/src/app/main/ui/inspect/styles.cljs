@@ -113,7 +113,7 @@
 
         tokens-lib         (mf/deref refs/tokens-lib)
         tokens-status      (mf/deref refs/tokens-status)
-        active-themes      (mf/deref refs/workspace-active-theme-paths)
+        active-themes      (mf/deref refs/workspace-active-theme-ids)
         active-sets        (mf/with-memo [tokens-status tokens-lib]
                              (when (and tokens-status tokens-lib)
                                (cfo/get-active-sets tokens-status tokens-lib)))

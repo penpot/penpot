@@ -674,7 +674,7 @@
              ;; requested. Enabling only adds the set name to the hidden theme,
              ;; so it does not depend on the create event having propagated yet.
              (when active?
-               (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) true)))
+               (st/emit! (dwtl/set-enabled-token-set (ctob/get-id set) true)))
              ;; Pass the set name as `initial-name` so the proxy can resolve
              ;; it immediately, before the async `st/emit!` above propagates
              ;; the new set into `@st/state`.
