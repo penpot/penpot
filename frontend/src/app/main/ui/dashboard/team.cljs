@@ -39,6 +39,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -139,11 +140,26 @@
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
       (when (and (or invitations-section? members-section?) (not-empty invitations))
-        [:> button* {:variant "secondary"
-                     :on-click on-invite-member
-                     :disabled (not can-invite?)
-                     :data-testid "invite-member"}
-         (tr "dashboard.invite-profile")])]]))
+        (let [organization          (:organization team)
+              owners-only-invites?  (and (contains? cfg/flags :admin-console)
+                                         organization
+                                         (= (get-in organization [:permissions :send-invitations]) "owners"))
+              title-text            (if owners-only-invites?
+                                      (tr "dashboard.invite-profile-disabled.owners-only" (:name organization))
+                                      (tr "dashboard.invite-profile-disabled"))
+              invite-button         (mf/html
+                                     [:> button* {:class (stl/css :invite-button)
+                                                  :variant "secondary"
+                                                  :on-click on-invite-member
+                                                  :disabled (not can-invite?)
+                                                  :data-testid "invite-member"}
+                                      (tr "dashboard.invite-profile")])]
+          (if can-invite?
+            invite-button
+            [:> tooltip* {:content title-text
+                          :id "invite-member-disabled-tooltip"
+                          :tab-index 0}
+             invite-button])))]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS MODAL

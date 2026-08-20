@@ -1062,6 +1062,10 @@
   }
 }
 
+.invite-button:disabled {
+  --button-disabled-bg-color: var(--color-background-tertiary);
+}
+
 a {
   color: var(--modal-link-foreground-color);
 }
