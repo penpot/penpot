@@ -1109,15 +1109,20 @@ impl RenderState {
         }
 
         let fast_mode = self.options.is_fast_mode();
+        // During pan/zoom (fast mode) tiles are rendered without shadows/blur.
+        // Do not write them into the doc/tile atlases: render_from_cache overlays
+        // HQ tile textures on the scaled doc-atlas backdrop, and shadowless tiles
+        // would leave permanent holes until the post-gesture full render.
+        if fast_mode {
+            return Ok(());
+        }
         // Decide *now* (at the first real cache blit) whether we need to clear Cache.
         // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
         // while still preventing stale pixels from surviving across full-quality renders.
-        if !fast_mode && !self.cache_cleared_this_render {
+        if !self.cache_cleared_this_render {
             self.surfaces.clear_cache(self.background_color);
             self.cache_cleared_this_render = true;
         }
-        // In fast mode the viewport is moving (pan/zoom) so Cache surface
-        // positions would be wrong — only save to the tile HashMap.
         let tile_rect = self.get_current_aligned_tile_bounds()?;
 
         let current_tile = *self
@@ -1133,7 +1138,7 @@ impl RenderState {
             &self.tile_viewbox,
             &current_tile,
             &tile_rect,
-            fast_mode,
+            false,
             self.render_area,
         );
 
@@ -4198,8 +4203,9 @@ impl RenderState {
     }
 
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
-    /// This does NOT invalidate the tile texture cache — cached tile images
-    /// survive so that fast-mode renders during pan still show shadows/blur.
+    /// This does NOT invalidate the tile texture cache — existing HQ tiles
+    /// survive across pan so `render_from_cache` keeps showing shadows/blur
+    /// until the post-gesture full render replaces them.
     pub fn rebuild_tile_index(&mut self, tree: ShapesPoolRef) {
         let zoom_changed = self.zoom_changed();
         performance::begin_measure!("rebuild_tile_index");
