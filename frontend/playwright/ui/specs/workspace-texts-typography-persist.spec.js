@@ -25,7 +25,7 @@ import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 // ---------------------------------------------------------------------------
 
 const FILE_A = {
-  id: "1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+  id: "c7ce0794-0992-8105-8004-38f280443849",
   pageId: "1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
   // "Text with typography asset one" carries a ref to in-file typography whose
   // font-family is "IM Fell French Canon SC" (multiselection-typography.json).

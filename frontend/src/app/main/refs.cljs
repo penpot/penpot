@@ -506,7 +506,7 @@
 (def workspace-token-sets-tree
   (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
 
-(def workspace-active-theme-paths
+(def workspace-active-theme-ids
   (l/derived (d/nilf ctos/get-active-theme-ids) tokens-status))
 
 (def workspace-all-tokens-map
@@ -520,9 +520,6 @@
      (when status
        (cfo/sets-at-path-all-active? status @(l/derived identity tokens-lib) group-path)))
    tokens-status))
-
-(def workspace-active-theme-paths-no-hidden
-  workspace-active-theme-paths)
 
 ;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens
