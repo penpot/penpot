@@ -71,10 +71,17 @@
 (mf/defc login-form*
   [{:keys [params handle-redirect on-success-callback on-recovery-request origin] :as props}]
   (let [initial (mf/with-memo [params] params)
-        error   (mf/use-state false)
+
         form    (fm/use-form :schema schema:login-form
                              :initial initial)
+
+        error   (mf/use-state false)
+
+        show-password-field* (mf/use-state #(not (contains? cf/flags :login-with-custom-sso)))
+        show-password-field? (deref show-password-field*)
+
         callback-url (:callback-url params)
+
         on-error
         (fn [cause]
           (let [cause (ex-data cause)]
@@ -102,12 +109,6 @@
               :else
               (reset! error (tr "errors.generic")))))
 
-        show-password-field*
-        (mf/use-state #(not (contains? cf/flags :login-with-custom-sso)))
-
-        show-password-field?
-        (deref show-password-field*)
-
         on-success
         (fn [data]
           (when (fn? on-success-callback)
@@ -130,7 +131,8 @@
                  (->> (rp/cmd! :get-sso-provider {:email (:email params)})
                       (rx/map :id)
                       (rx/catch (fn [cause]
-                                  (log/error :hint "error on retrieving sso provider" :cause cause)
+                                  (log/error :hint "error on retrieving sso provider"
+                                             :cause cause)
                                   (rx/of nil)))
                       (rx/subs! (fn [sso-provider-id]
                                   (if sso-provider-id
@@ -139,7 +141,7 @@
                                     (reset! show-password-field* true))))))))))
 
         on-submit-ldap
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps form)
          (fn [event]
            (dom/prevent-default event)
@@ -168,91 +170,102 @@
         {:level :error} message])
 
      [:& fm/form {:on-submit on-submit
-                  :class (stl/css :login-form)
+                  :class (stl/css :form)
                   :form form}
 
-      [:div {:class (stl/css :fields-row)}
-       [:& fm/input
-        {:name :email
-         :type "email"
-         :label (tr "auth.work-email")
-         :class (stl/css :form-field)}]]
+      [:div {:class (stl/css :form-row)}
+       [:& fm/input {:name :email
+                     :type "email"
+                     :label (tr "auth.work-email")
+                     :class (stl/css :form-field)}]]
 
       (when show-password-field?
-        [:div {:class (stl/css :fields-row)}
-         [:& fm/input
-          {:type "password"
-           :name :password
-           :auto-focus? true
-           :label (tr "auth.password")
-           :class (stl/css :form-field)}]])
+        [:div {:class (stl/css :form-row)}
+         [:& fm/input {:type "password"
+                       :name :password
+                       :auto-focus? true
+                       :label (tr "auth.password")
+                       :class (stl/css :form-field)}]])
 
       (when (and (not= origin :viewer)
                  (or (contains? cf/flags :login)
                      (contains? cf/flags :login-with-password)))
-        [:div {:class (stl/css :fields-row :forgot-password)}
+        [:div {:class (stl/css :form-row :forgot-password-row)}
          [:> lk/link* {:action on-recovery-request
-                       :class (stl/css :forgot-pass-link)
+                       :class (stl/css :forgot-password-link)
                        :data-testid "forgot-password"}
           (tr "auth.forgot-password")]])
 
-      [:div {:class (stl/css :buttons-stack)}
+      [:div {:class (stl/css :form-submit-buttons)}
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
-         [:> fm/submit-button*
-          {:label (tr "labels.continue")
-           :data-testid "login-submit"
-           :class (stl/css :login-button)}])
+         [:> fm/submit-button* {:label (tr "labels.continue")
+                                :data-testid "login-submit"
+                                :class (stl/css :form-submit-btn)}])
 
        (when (contains? cf/flags :login-with-ldap)
-         [:> fm/submit-button*
-          {:label (tr "auth.login-with-ldap-submit")
-           :class (stl/css :login-ldap-button)
-           :on-click on-submit-ldap}])]]]))
+         [:> fm/submit-button* {:label (tr "auth.login-with-ldap-submit")
+                                :class (stl/css :form-submit-btn)
+                                :on-click on-submit-ldap}])]]]))
 
 (defn raw-icon
   [id]
   (mf/html
    [:> raw-svg* {:id id :class (stl/css :sso-icon)}]))
 
-(mf/defc login-sso-buttons*
+(mf/defc sso-buttons*
   [{:keys [params] :as props}]
-  (let [login-with-google (mf/use-fn (mf/deps params) #(login-with-sso "google" params))
-        login-with-github (mf/use-fn (mf/deps params) #(login-with-sso "github" params))
-        login-with-gitlab (mf/use-fn (mf/deps params) #(login-with-sso "gitlab" params))
-        login-with-oidc   (mf/use-fn (mf/deps params) #(login-with-sso "oidc" params))]
+  (let [login-with-google
+        (mf/use-fn
+         (mf/deps params)
+         #(login-with-sso "google" params))
 
-    [:div {:class (stl/css :auth-buttons)}
+        login-with-github
+        (mf/use-fn
+         (mf/deps params)
+         #(login-with-sso "github" params))
+
+        login-with-gitlab
+        (mf/use-fn
+         (mf/deps params)
+         #(login-with-sso "gitlab" params))
+
+        login-with-oidc
+        (mf/use-fn
+         (mf/deps params)
+         #(login-with-sso "oidc" params))]
+
+    [:div {:class (stl/css :sso-row)}
      (when (contains? cf/flags :login-with-google)
        [:> bl/button-link* {:on-click login-with-google
                             :icon (raw-icon raw-icons/brand-google)
                             :label (tr "auth.login-with-google-submit")
-                            :class (stl/css :login-btn :btn-google-auth)}])
+                            :class (stl/css :sso-btn)}])
 
      (when (contains? cf/flags :login-with-github)
        [:> bl/button-link* {:on-click login-with-github
                             :icon (raw-icon raw-icons/brand-github)
                             :label (tr "auth.login-with-github-submit")
-                            :class (stl/css :login-btn :btn-github-auth)}])
+                            :class (stl/css :sso-btn)}])
 
      (when (contains? cf/flags :login-with-gitlab)
        [:> bl/button-link* {:on-click login-with-gitlab
                             :icon (raw-icon raw-icons/brand-gitlab)
                             :label (tr "auth.login-with-gitlab-submit")
-                            :class (stl/css :login-btn :btn-gitlab-auth)}])
+                            :class (stl/css :sso-btn)}])
 
      (when (contains? cf/flags :login-with-oidc)
        [:> bl/button-link* {:on-click login-with-oidc
                             :icon (raw-icon raw-icons/brand-openid)
                             :label (or (not-empty cf/oidc-name) (tr "auth.login-with-oidc-submit"))
-                            :class (stl/css :login-btn :btn-oidc-auth)}])]))
+                            :class (stl/css :sso-btn)}])]))
 
 (mf/defc login-dialog*
   [{:keys [params] :as props}]
   [:*
    (when show-sso-login-buttons?
      [:*
-      [:> login-sso-buttons* {:params params}]
+      [:> sso-buttons* {:params params}]
 
       (when (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password)
@@ -270,11 +283,11 @@
         (mf/use-fn
          #(st/emit! (rt/nav :auth-register params)))]
 
-    [:div {:class (stl/css :auth-form-wrapper)}
-     [:h1 {:class (stl/css :auth-title)
+    [:div {:class (stl/css :wrapper)}
+     [:h1 {:class (stl/css :title)
            :data-testid "login-title"} (tr "auth.login-account-title")]
 
-     [:p {:class (stl/css :auth-tagline)}
+     [:p {:class (stl/css :tagline)}
       (tr "auth.login-tagline")]
 
      (when (contains? cf/flags :demo-warning)
@@ -286,7 +299,7 @@
 
      [:div {:class (stl/css :links)}
       (when (contains? cf/flags :registration)
-        [:div {:class (stl/css :register)}
+        [:div {:class (stl/css :register-row)}
          [:span {:class (stl/css :register-text)}
           (tr "auth.register") " "]
          [:> lk/link* {:action go-register
