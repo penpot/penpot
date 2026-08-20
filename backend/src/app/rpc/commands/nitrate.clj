@@ -698,10 +698,19 @@
         (if authorized
           {:authorized true :reason :sso-satisfied}
           (if (oidc/organization-sso-discovery-uri sso)
-            {:authorized false
-             :redirect-uri (oidc/build-organization-sso-auth-redirect-uri cfg sso
-                                                                          :dest-url url
-                                                                          :organization-id organization-id)}
+            (try
+              (let [redirect-uri (oidc/build-organization-sso-auth-redirect-uri
+                                  cfg sso
+                                  :dest-url url
+                                  :organization-id organization-id)
+                    organization-id (or organization-id (:organization-id sso))]
+                (oidc/submit-organization-sso-auth-started-event
+                 cfg request profile-id organization-id)
+                {:authorized false :redirect-uri redirect-uri})
+              (catch Throwable cause
+                (oidc/submit-organization-sso-auth-failed-event
+                 cfg request profile-id (or organization-id (:organization-id sso)) cause)
+                (throw cause)))
             {:authorized false
              :redirect-uri nil}))))
     {:authorized true :reason :sso-satisfied}))

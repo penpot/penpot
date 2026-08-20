@@ -272,8 +272,13 @@
   (clone-file-media-object cfg params))
 
 (defn clone-file-media-object
-  [{:keys [::db/conn]} {:keys [id file-id is-local]}]
+  [{:keys [::db/conn] :as cfg} {:keys [id file-id is-local] :as params}]
   (let [mobj (db/get-by-id conn :file-media-object id)]
+    (when-not mobj
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "source media object not found"))
+    (files/check-read-permissions! conn (::rpc/profile-id params) (:file-id mobj))
     (db/insert! conn :file-media-object
                 {:id (uuid/next)
                  :file-id file-id
@@ -289,7 +294,7 @@
 
 (def ^:private schema:create-upload-session
   [:map {:title "create-upload-session"}
-   [:total-chunks ::sm/int]])
+   [:total-chunks [::sm/int {:min 1}]]])
 
 (def ^:private schema:create-upload-session-result
   [:map {:title "create-upload-session-result"}
@@ -402,9 +407,10 @@
 
   Raises a :validation/:missing-chunks error when the number of stored
   chunks does not match `:total-chunks` recorded in the session row.
+  Raises :not-found when the session does not belong to `profile-id`.
   Deletes the session row from `upload_session` on success."
-  [{:keys [::db/conn] :as cfg} session-id]
-  (let [session (db/get conn :upload-session {:id session-id})
+  [{:keys [::db/conn] :as cfg} profile-id session-id]
+  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id})
         chunks  (get-upload-chunks conn session-id)]
 
     (when (not= (count chunks) (:total-chunks session))
@@ -447,7 +453,7 @@
 
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
-                (let [content (assemble-chunks cfg session-id)
+                (let [content (assemble-chunks cfg profile-id session-id)
                       content (-> content
                                   (assoc :filename (str "upload:" name))
                                   (assoc :mtype mtype)

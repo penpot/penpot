@@ -4407,14 +4407,17 @@ msgid "nitrate.modal-success.title"
 msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer-before"
-msgstr "Need a code? Download your "
+msgid "nitrate.code-activation.footer-title"
+msgstr "Need a code?"
 
-msgid "nitrate.code-activation.footer-link"
-msgstr "activation code request"
+msgid "nitrate.code-activation.footer-download"
+msgstr "Download request"
 
 msgid "nitrate.code-activation.footer-after"
-msgstr " and contact us:"
+msgstr "Send the file to"
+
+msgid "nitrate.code-activation.footer-before"
+msgstr "and we will send you your code."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"

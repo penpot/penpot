@@ -42,7 +42,6 @@
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -58,6 +57,7 @@
    [app.plugins.format :as format]
    [app.plugins.grid :as grid]
    [app.plugins.parser :as parser]
+   [app.plugins.reflow :as wrfp]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.shadows :as shadows]
@@ -1057,15 +1057,11 @@
 
            :waitForLayoutUpdate
            (fn [timeout]
-             ;; Always a promise, so a bad argument travels as a rejection.
-             (if (u/valid-timeout? timeout)
-               ;; Resolves once the reflow work of this shape's subtree has
-               ;; settled: it can be marked on the shape or on its descendants.
-               (let [objects (u/locate-objects file-id page-id)]
-                 (wrf/wait-for-layout-update (cfh/get-children-ids-with-self objects id) timeout))
-               (js/Promise.
-                (fn [_ reject]
-                  (u/reject-not-valid reject :waitForLayoutUpdate timeout)))))
+             ;; Wait for layout work that can affect this shape.
+             (let [objects (u/locate-objects file-id page-id)]
+               (wrfp/wait-for-layout-update
+                (wrfp/shape-wait-ids objects file-id id)
+                timeout)))
 
            ;; Plugin data
            :getPluginData

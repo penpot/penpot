@@ -18,6 +18,7 @@
    [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.object :as obj]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -222,8 +223,10 @@
 (defmulti ^:private load-font :backend)
 
 (defmethod load-font :default
-  [{:keys [backend] :as font}]
-  (log/wrn :msg "no implementation found for" :backend backend))
+  [{:keys [backend ::on-failed] :as font}]
+  (log/wrn :msg "no implementation found for" :backend backend)
+  (when (fn? on-failed)
+    (on-failed (ex-info "unsupported font backend" {:backend backend}))))
 
 (defmethod load-font :builtin
   [{:keys [id ::on-loaded] :as font}]
@@ -247,23 +250,30 @@
   [css]
   (cfnt/gstatic->proxy-url css (u/join cf/public-uri "internal/gfonts/font")))
 
-(defn- fetch-gfont-css
+(defn- request-gfont-css
   [url]
   (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
-       (rx/map :body)
-       (rx/catch (fn [err]
-                   (log/wrn :hint "cannot find the font" :cause err)
+       (rx/map :body)))
+
+(defn- fetch-gfont-css
+  [url]
+  (->> (request-gfont-css url)
+       (rx/catch (fn [cause]
+                   ;; Keep CSS streams alive when a font cannot load.
+                   (log/wrn :hint "cannot find the font" :cause cause)
                    (rx/empty)))))
 
 (defmethod load-font :google
-  [{:keys [id ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded ::on-failed] :as font}]
   (when (globals/browser?)
     (log/dbg :hint "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
-      (->> (fetch-gfont-css url)
+      ;; Keep raw errors so the loader can use its fallback.
+      (->> (request-gfont-css url)
            (rx/map process-gfont-css)
            (rx/tap #(on-loaded id))
-           (rx/subs! (partial add-font-css! id)))
+           (rx/subs! (partial add-font-css! id)
+                     #(when (fn? on-failed) (on-failed %))))
       nil)))
 
 ;; --- LOADER: CUSTOM
@@ -336,15 +346,30 @@
 
          ;; First caller, we create the promise and then wait
          :else
-         (let [on-load (fn [resolve]
-                         (swap! loaded conj font-id)
-                         (swap! loading dissoc font-id)
-                         (resolve font-id))
+         (let [settle! (fn [resolve loaded?]
+                         ;; Defer cleanup until a synchronous load is cached.
+                         (tm/schedule
+                          #(do
+                             (when loaded?
+                               (swap! loaded conj font-id))
+                             (swap! loading dissoc font-id)
+                             (resolve font-id))))
+
+               on-load (fn [resolve]
+                         (settle! resolve true))
+
+               on-failed
+               (fn [resolve cause]
+                 (log/wrn :hint "font load failed; using fallback"
+                          :font-id font-id
+                          :cause cause)
+                 (settle! resolve false))
 
                load-p (-> (p/create
                            (fn [resolve _]
                              (-> font
                                  (assoc ::on-loaded (partial on-load resolve))
+                                 (assoc ::on-failed (partial on-failed resolve))
                                  (load-font))))
                           ;; We need to wait for the font to be loaded
                           (p/then (partial p/delay 120)))]

@@ -771,6 +771,82 @@
 ;; ORG SSO HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- organization-sso-oauth-failure-reason
+  [error]
+  (case (d/name error)
+    "access_denied" "access-denied"
+    ("temporarily_unavailable" "server_error") "provider-unavailable"
+    ("invalid_request" "unauthorized_client" "invalid_scope") "invalid-configuration"
+    "provider-error"))
+
+(defn- organization-sso-exception-failure-reason
+  [cause]
+  (let [data   (ex-data cause)
+        status (or (:response-status data)
+                   (:response-status-code data)
+                   (:http-status data))
+        network-error?
+        (loop [current cause]
+          (cond
+            (nil? current)
+            false
+
+            (or (instance? java.net.ConnectException current)
+                (instance? java.net.UnknownHostException current)
+                (instance? java.net.http.HttpTimeoutException current)
+                (instance? javax.net.ssl.SSLException current))
+            true
+
+            (identical? current (ex-cause current))
+            false
+
+            :else
+            (recur (ex-cause current))))]
+    (if (or network-error?
+            (and (number? status) (<= 500 status 599)))
+      "provider-unavailable"
+      (case (:code data)
+        :unable-to-fetch-access-token "token-exchange-failed"
+        :unable-to-retrieve-user-info "user-info-failed"
+        :incomplete-user-info "incomplete-user-info"
+        :invalid-sso-config "invalid-configuration"
+        :unable-to-fetch-sso-jwks "provider-unavailable"
+        :unable-to-auth "access-denied"
+        "unexpected-error"))))
+
+(defn- submit-organization-sso-auth-event
+  [cfg request profile-id organization-id name & {:keys [failure-reason]}]
+  (audit/submit cfg {:type "action"
+                     :name name
+                     :profile-id profile-id
+                     :ip-addr (inet/parse-request request)
+                     :props (d/without-nils
+                             {:organization-id organization-id
+                              :failure-reason failure-reason})
+                     :context (audit/prepare-context-from-request request)}))
+
+(defn submit-organization-sso-auth-started-event
+  [cfg request profile-id organization-id]
+  (submit-organization-sso-auth-event
+   cfg request profile-id organization-id "organization-sso-auth-started"))
+
+(defn submit-organization-sso-auth-failed-event
+  [cfg request profile-id organization-id cause]
+  (submit-organization-sso-auth-event
+   cfg request profile-id organization-id "organization-sso-auth-failed"
+   :failure-reason (organization-sso-exception-failure-reason cause)))
+
+(defn- submit-organization-sso-oauth-failed-event
+  [cfg request state-token error]
+  (try
+    (let [state (tokens/verify cfg {:token state-token :iss "oidc"})]
+      (when (:dest-url state)
+        (submit-organization-sso-auth-event
+         cfg request (some-> (session/get-session request) :profile-id)
+         (:organization-id state) "organization-sso-auth-failed"
+         :failure-reason (organization-sso-oauth-failure-reason error))))
+    (catch Exception _ nil)))
+
 (defn- non-blank-uri
   [value]
   (when-not (str/blank? value) value))
@@ -910,6 +986,8 @@
           (let [props (-> (or (:props session) {})
                           (update :sso assoc organization-id exp))]
             (session/update-session (::session/manager cfg) (assoc session :props props))))
+        (submit-organization-sso-auth-event
+         cfg request (:profile-id session) organization-id "organization-sso-auth-succeeded")
         (redirect-response dest-url))
       (catch Throwable cause
         (let [{:keys [code]} (ex-data cause)]
@@ -922,6 +1000,9 @@
               (l/err :hint "unexpected error on organization sso callback"
                      :organization-id (:organization-id state)
                      :cause cause))))
+        (submit-organization-sso-auth-failed-event
+         cfg request (some-> (session/get-session request) :profile-id)
+         (:organization-id state) cause)
         (let [organization-id   (:organization-id state)
               organization-name (:name (nitrate/call cfg :get-organization-summary {:organization-id organization-id}))]
           (redirect-with-organization-sso-error
@@ -932,7 +1013,9 @@
 (defn- callback-handler
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
-    (redirect-with-error "unable-to-auth" error)
+    (do
+      (submit-organization-sso-oauth-failed-event cfg request (:state params) error)
+      (redirect-with-error "unable-to-auth" error))
     (try
       (let [code     (get params :code)
             state    (get params :state)

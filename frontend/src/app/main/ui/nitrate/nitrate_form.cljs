@@ -102,9 +102,9 @@
               (tr "nitrate.form.cancel-anytime")]]]
 
            [:p {:class (stl/css :modal-text-medium)}
-            (tr "nitrate.form.subscribe-with-code") " " [:a {:class (stl/css :link)
-                                                             :on-click on-activate-click}
-                                                         (tr "nitrate.form.enter-code")]]
+            [:a {:class (stl/css :link)
+                 :on-click on-activate-click}
+             (tr "nitrate.form.subscribe-with-code")]]
 
            [:p {:class (stl/css :modal-text-medium)}
             [:a {:class (stl/css :link)

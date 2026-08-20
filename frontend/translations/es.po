@@ -4278,14 +4278,17 @@ msgid "nitrate.modal-success.title"
 msgstr "¡Bienvenido a Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer-before"
-msgstr "¿Necesitas un código? Descarga tu "
+msgid "nitrate.code-activation.footer-title"
+msgstr "¿Necesitas un código?"
 
-msgid "nitrate.code-activation.footer-link"
-msgstr "solicitud de código de activación"
+msgid "nitrate.code-activation.footer-download"
+msgstr " Descargar solicitud"
 
 msgid "nitrate.code-activation.footer-after"
-msgstr " y contáctanos:"
+msgstr "Mánda el fichero a"
+
+msgid "nitrate.code-activation.footer-before"
+msgstr "y te enviaremos tu código."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"

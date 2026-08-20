@@ -118,10 +118,10 @@
   "Assembles each chunked-upload session in `uploads` (a `{mtype →
   session-id}` map) into a temp file, validates the media type and
   size of every entry, and returns a `{mtype → path}` data map."
-  [cfg {:keys [uploads] :as params}]
+  [cfg {:keys [::rpc/profile-id uploads] :as params}]
   (let [data (reduce-kv
               (fn [acc mtype session-id]
-                (let [assembled (assemble-chunks cfg session-id)]
+                (let [assembled (assemble-chunks cfg profile-id session-id)]
                   (-> {:mtype mtype :size (:size assembled)}
                       (media.v/validate-media-type! cm/font-types)
                       (media.v/validate-font-size!))

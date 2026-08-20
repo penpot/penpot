@@ -23,7 +23,7 @@
     "image/svg+xml"})
 
 (def tempfile-types
-  (conj image-types "application/pdf"))
+  (conj image-types "application/pdf" "application/zip"))
 
 (defn format->extension
   [format]

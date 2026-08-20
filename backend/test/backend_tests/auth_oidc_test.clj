@@ -385,6 +385,9 @@
 (def ^:private test-profile-id
   #uuid "11111111-1111-1111-1111-111111111111")
 
+(def ^:private test-organization-id
+  #uuid "22222222-2222-2222-2222-222222222222")
+
 (def ^:private test-profile
   {:id test-profile-id
    :is-active true
@@ -518,6 +521,59 @@
               loc    (redirect-location result)]
           (t/is (= 302 (::yres/status result)))
           (t/is (.contains loc "error=unable-to-auth")))))))
+
+(t/deftest organization-sso-callback-success-emits-succeeded
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/#/workspace"
+                                       :organization-id test-organization-id})
+        request (default-request cfg :state state)
+        events  (atom [])]
+    (with-redefs [app.nitrate/call                  (constantly {:active true})
+                  app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                  app.auth.oidc/get-info            (constantly {})
+                  app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
+      (let [result (#'oidc/callback-handler cfg request)]
+        (t/is (= "https://penpot.example.com/#/workspace" (redirect-location result)))
+        (t/is (= ["organization-sso-auth-succeeded"] (mapv :name @events)))
+        (t/is (= test-organization-id (get-in (first @events) [:props :organization-id])))))))
+
+(t/deftest organization-sso-callback-error-emits-failed
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/#/workspace"
+                                       :organization-id test-organization-id})
+        request (default-request cfg :state state)
+        events  (atom [])]
+    (with-redefs [app.nitrate/call                  (fn [_cfg method _params]
+                                                      (case method
+                                                        :get-organization-sso {:active true}
+                                                        :get-organization-summary {:name "Organization"}))
+                  app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                  app.auth.oidc/get-info            (fn [& _]
+                                                      (ex/raise :type :internal
+                                                                :code :unable-to-retrieve-user-info))
+                  app.loggers.audit/submit          (fn [_cfg event] (swap! events conj event))]
+      (#'oidc/callback-handler cfg request)
+      (t/is (= ["organization-sso-auth-failed"] (mapv :name @events)))
+      (t/is (= {:organization-id test-organization-id
+                :failure-reason "user-info-failed"}
+               (:props (first @events)))))))
+
+(t/deftest organization-sso-oauth-error-emits-failed-without-changing-redirect
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:dest-url "https://penpot.example.com/#/workspace"
+                                       :organization-id test-organization-id})
+        request (assoc-in (default-request cfg :state state) [:params :error] "access_denied")
+        events  (atom [])]
+    (binding [cf/config {:public-uri "http://localhost:3449"}]
+      (with-redefs [app.loggers.audit/submit (fn [_cfg event] (swap! events conj event))]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "error=unable-to-auth"))
+          (t/is (.contains loc "hint=access_denied"))
+          (t/is (= ["organization-sso-auth-failed"] (mapv :name @events)))
+          (t/is (= {:organization-id test-organization-id
+                    :failure-reason "access-denied"}
+                   (:props (first @events)))))))))
 
 (t/deftest prepare-organization-sso-provider-does-not-skip-ssrf-check
   (t/testing "organization SSO provider must use SSRF protection"

@@ -24,33 +24,11 @@
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.reflow.signals :as wrfs]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
-
-;; If anything a translation can mutate is added here, drop the
-;; `(when-not translation? …)` guard in `update-shapes` below.
-(def ^:private update-layout-attr? #{:hidden})
-
-;; Text attrs whose change makes the DOM text pipeline re-measure the shape.
-(def ^:private text-reflow-attr? #{:content :grow-type})
-
-(defn- reflow-attr?
-  [attr]
-  (or (update-layout-attr? attr) (text-reflow-attr? attr)))
-
-(defn- async-text-reflow?
-  "Whether `shape` enters an asynchronous text geometry pipeline. The HTML
-  renderer measures every changed text; WASM only resizes auto-sized texts.
-  A grow-type transition is included because `shape` is the value before the
-  update and may still be fixed."
-  [state shape changed]
-  (and (cfh/text-shape? shape)
-       (or (not (features/active-feature? state "render-wasm/v1"))
-           (not= :fixed (:grow-type shape))
-           (contains? changed :grow-type))))
 
 (defn- add-undo-group
   [changes state]
@@ -82,15 +60,35 @@
     (update [_ state]
       (assoc state ::update-shapes-buffer false))))
 
+(defn- get-buffered-text-reflow-event
+  [state page-id ids]
+  (when (= page-id (get state :current-page-id))
+    ;; Analyze accumulated objects through the same path as immediate updates.
+    (let [objects         (dsh/lookup-page-objects state page-id)
+          changed-objects (-> (get-in state [::update-shapes-buffer-changes page-id])
+                              (pcb/lookup-objects))
+          {:keys [text-ids]}
+          (wrfs/reflow-ids state page-id objects changed-objects ids nil)]
+      (when text-ids
+        (ptk/data-event :text/reflow {:ids text-ids :page-id page-id})))))
+
 (defn update-shapes-buffer-commit
   []
   (ptk/reify ::update-shapes-buffer-commit
     ptk/WatchEvent
     (watch [_ state _]
-      (->> (get state ::update-shapes-buffer-changes)
-           (vals)
-           (map dch/commit-changes)
-           (rx/from)))))
+      (let [text-reflow-events
+            (->> (get state ::update-shapes-buffer-text-candidates)
+                 (keep (fn [[page-id ids]]
+                         (get-buffered-text-reflow-event state page-id ids))))
+
+            commits
+            (->> (get state ::update-shapes-buffer-changes)
+                 (vals)
+                 (map dch/commit-changes))]
+        ;; Open bridges before commits start rendering.
+        (rx/concat (rx/from text-reflow-events)
+                   (rx/from commits))))))
 
 ;; Looks for the objects data in the state, if there is an "in progress"
 ;; update-shapes-buffer will return the objeccts inside the current changes
@@ -111,7 +109,8 @@
    (update-shapes-buffer ids update-fn nil))
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr
+            translation?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -126,9 +125,14 @@
            (assoc state ::update-shapes-buffer-event cur-event)
 
            (let [page-id (or page-id (get state :current-page-id))
-                 objects   (dsh/lookup-page-objects state page-id)]
-             (-> state
+                 objects (lookup-changed-objects state page-id)
+                 text-ids
+                 (into #{}
+                       (filter #(cfh/text-shape? objects %))
+                       ids)
+                 state
                  (update-in
+                  state
                   [::update-shapes-buffer-changes page-id]
                   (fn [changes]
                     (-> (or changes
@@ -148,7 +152,15 @@
                           :ignore-touched ignore-touched
                           :with-objects? with-objects?})
                         (cond-> reg-objects? (pcb/resize-parents ids))
-                        (pcb/set-translation? translation?))))))))
+                        (pcb/set-translation? translation?))))]
+             ;; Check buffered text candidates when the buffer is committed.
+             (if (or (empty? text-ids)
+                     (not (wrfs/text-reflow-candidate? state props)))
+               state
+               (update-in state
+                          [::update-shapes-buffer-text-candidates page-id]
+                          (fnil into #{})
+                          text-ids)))))
 
        ptk/WatchEvent
        (watch [_ state stream]
@@ -165,6 +177,7 @@
 
               (rx/of #(dissoc %
                               ::update-shapes-buffer-changes
+                              ::update-shapes-buffer-text-candidates
                               ::update-shapes-buffer-event))))
            (rx/empty)))))))
 
@@ -174,14 +187,12 @@
   ([ids update-fn
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?
-            update-layout?]
+            ignore-touched undo-group with-objects? changed-sub-attr translation?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
           ignore-touched false
-          with-objects? false
-          update-layout? true}}]
+          with-objects? false}}]
 
    (assert (every? uuid? ids) "expect a coll of uuid for `ids`")
    (assert (fn? update-fn) "the `update-fn` should be a valid function")
@@ -196,49 +207,6 @@
          (let [page-id   (or page-id (get state :current-page-id))
                objects   (dsh/lookup-page-objects state page-id)
                ids       (into [] (filter some?) ids)
-
-               ;; Pairs of [shape changed-attrs] for the shapes whose change
-               ;; matters to a reflow, feeding both id sets below.
-               xf-reflow
-               (comp
-                (map (d/getf objects))
-                (keep (fn [shape]
-                        (let [changed (pcb/changed-attrs shape objects update-fn
-                                                         {:attrs attrs :with-objects? with-objects?})]
-                          (when (some reflow-attr? changed)
-                            [shape changed])))))
-
-               ;; `changed-attrs` runs `update-fn` in full for every shape, which
-               ;; can be expensive (e.g. `update-bool-shape` recalculates the whole
-               ;; boolean path in WASM). Skip the pass entirely when we can prove it
-               ;; cannot match: when the caller declares `attrs`, `changed-attrs`
-               ;; filters its result to that set, so if no reflow attr is present
-               ;; the check is always empty.
-               reflow-changes
-               (when-not (or translation?
-                             (not update-layout?)
-                             (and (some? attrs)
-                                  (not (some reflow-attr? attrs))))
-                 (into [] xf-reflow ids))
-
-               update-layout-ids
-               (->> reflow-changes
-                    (into [] (comp (filter (fn [[_ changed]] (some update-layout-attr? changed)))
-                                   (map (comp :id first))))
-                    (not-empty))
-
-               ;; Text shapes the DOM pipeline has to re-measure, narrowed to what
-               ;; it actually measures: the active page, never the edited shape.
-               text-reflow-ids
-               (when (= page-id (get state :current-page-id))
-                 (let [edition (dm/get-in state [:workspace-local :edition])]
-                   (->> reflow-changes
-                        (into [] (comp (filter (fn [[shape changed]]
-                                                 (and (async-text-reflow? state shape changed)
-                                                      (some text-reflow-attr? changed))))
-                                       (map (comp :id first))
-                                       (remove #(= % edition))))
-                        (not-empty))))
 
                changes
                (-> (pcb/empty-changes it page-id)
@@ -257,6 +225,12 @@
                      (pcb/set-undo-group undo-group))
                    (pcb/set-translation? translation?))
 
+               changed-objects
+               (pcb/lookup-objects changes)
+
+               {:keys [layout-ids text-ids]}
+               (wrfs/reflow-ids state page-id objects changed-objects ids props)
+
                changes
                (add-undo-group changes state)]
 
@@ -264,8 +238,8 @@
             ;; Announces the texts still to be re-measured, so a reflow wait
             ;; covers the render that measures them. Goes before the commit,
             ;; which is what triggers that render.
-            (if text-reflow-ids
-              (rx/of (ptk/data-event :text/reflow {:ids text-reflow-ids :page-id page-id}))
+            (if text-ids
+              (rx/of (ptk/data-event :text/reflow {:ids text-ids :page-id page-id}))
               (rx/empty))
 
             (if (seq (:redo-changes changes))
@@ -274,8 +248,8 @@
               (rx/empty))
 
             ;; Update layouts for properties marked
-            (if update-layout-ids
-              (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
+            (if layout-ids
+              (rx/of (ptk/data-event :layout/update {:ids layout-ids}))
               (rx/empty)))))))))
 
 (defn add-shape
@@ -321,7 +295,7 @@
           (rx/of (dwu/start-undo-transaction undo-id)
                  ;; A new text has no geometry until the pipeline measures it,
                  ;; so it raises the same signal an edit does.
-                 (when (async-text-reflow? state shape nil)
+                 (when (wrfs/new-text-reflow? state shape)
                    (ptk/data-event :text/reflow {:ids [(:id shape)] :page-id page-id}))
                  (dch/commit-changes changes)
                  (when-not no-update-layout?

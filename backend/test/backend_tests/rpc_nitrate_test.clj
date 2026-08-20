@@ -148,6 +148,8 @@
         team            (th/create-team* 1 {:profile-id (:id team-owner)})
         organization-id (uuid/random)
         redirect-uri    "https://idp.example.com/authorize"
+        redirect-options (atom nil)
+        started-event   (atom nil)
         params          (with-meta
                           {::th/type :check-nitrate-sso
                            ::rpc/profile-id (:id team-owner)
@@ -161,12 +163,50 @@
                      organization-id
                      (:id team-owner))
                     oidc/build-organization-sso-auth-redirect-uri
-                    (constantly redirect-uri)]
+                    (fn [_cfg _sso & options]
+                      (reset! redirect-options (apply hash-map options))
+                      redirect-uri)
+                    oidc/submit-organization-sso-auth-started-event
+                    (fn [_cfg _request profile-id received-organization-id]
+                      (reset! started-event {:profile-id profile-id
+                                             :organization-id received-organization-id}))]
         (let [out (th/command! params)]
           (t/is (th/success? out))
           (t/is (= {:authorized false
                     :redirect-uri redirect-uri}
-                   (:result out))))))))
+                   (:result out)))
+          (t/is (= #{:dest-url :organization-id} (set (keys @redirect-options))))
+          (t/is (= "https://penpot.example.com/#/workspace" (str (:dest-url @redirect-options))))
+          (t/is (nil? (:organization-id @redirect-options)))
+          (t/is (= {:profile-id (:id team-owner)
+                    :organization-id organization-id}
+                   @started-event)))))))
+
+(t/deftest check-nitrate-sso-reports-redirect-failure
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        organization-id (uuid/random)
+        cause           (ex-info "provider unavailable" {:response-status-code 503})
+        reported        (atom nil)
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id profile)
+                           :organization-id organization-id
+                           :url "https://penpot.example.com/#/workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock organization-id)
+                    oidc/build-organization-sso-auth-redirect-uri (fn [& _] (throw cause))
+                    oidc/submit-organization-sso-auth-failed-event
+                    (fn [_cfg _request profile-id received-organization-id received-cause]
+                      (reset! reported {:profile-id profile-id
+                                        :organization-id received-organization-id
+                                        :cause received-cause}))]
+        (let [out (th/command! params)]
+          (t/is (not (th/success? out)))
+          (t/is (= {:profile-id (:id profile)
+                    :organization-id organization-id
+                    :cause cause}
+                   @reported)))))))
 
 (t/deftest check-nitrate-sso-keeps-gate-for-non-member-organization-owner
   (let [team-owner      (th/create-profile* 1 {:is-active true})

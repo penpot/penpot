@@ -34,6 +34,13 @@ Skipping this step is the #1 cause of incorrect or incomplete work.
 
 ---
 
+## Auto-triggers
+
+- **Security advisory URL pasted** — When the user pastes a URL matching
+  `github.com/penpot/penpot/security/advisories/GHSA-*`, extract the GHSA ID
+  from the URL and run `python3 scripts/gh.py advisories <GHSA-ID>` to fetch
+  full advisory details before proceeding.
+
 ## Writing Rules
 
 Use the `ste` skill when the user explicitly requests STE, `/ste`, or ASD-STE100.
@@ -119,4 +126,5 @@ precision while maintaining a strong focus on maintainability and performance.
 - `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
 - `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
 - `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `scripts/ci --help`.
+- `scripts/gh.py` — Multi-purpose GitHub CLI helper. Subcommands: `issues` (list issues in a milestone), `prs` (fetch PR details), `advisories` (list/inspect security advisories). See `python3 scripts/gh.py --help`.
 
