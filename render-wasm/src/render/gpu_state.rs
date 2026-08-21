@@ -30,7 +30,7 @@ impl GpuState {
         context_options.skip_gl_error_checks = Enable::Yes;
         // context_options.runtime_program_cache_size = 1024;
         // context_options.allow_multiple_glyph_cache_textures = Enable::Yes;
-        // context_options.allow_path_mask_caching = false;
+        context_options.allow_path_mask_caching = true;
 
         let context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
             Error::CriticalError("Failed to create GL context".to_string()),

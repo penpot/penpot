@@ -126,7 +126,24 @@ pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
         let is_partial = flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8;
         if flags & RenderFlag::SyncTiles as u8 != 0 {
             render_state.preserve_target_during_render = true;
+            // Pan/zoom pause: the viewbox is stable, so render at full quality
+            // and let the tiles reach the atlas. Fast-mode tiles are dropped by
+            // `apply_render_to_final_canvas`. `set_view_start` re-arms fast mode
+            // if the gesture resumes.
+            if render_state.options.is_fast_mode() {
+                render_state.options.set_fast_mode(false);
+                render_state.tile_viewbox.update(&render_state.viewbox);
+                render_state.rebuild_tile_index(&state.shapes);
+            }
         }
+
+        // Gesture in progress with no pause: the viewbox is moving and
+        // `render_from_cache` owns the screen. Stop the progressive loop rather
+        // than rasterizing tiles that would be dropped.
+        if render_state.options.is_fast_mode() && !render_state.options.is_interactive_transform() {
+            return Ok(FrameType::Full);
+        }
+
         let frame_type = if is_partial && !render_state.preserve_target_during_render {
             state
                 .continue_render_loop(timestamp)

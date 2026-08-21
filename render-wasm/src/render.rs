@@ -656,6 +656,11 @@ impl RenderState {
         Self::blur_from_variance(total)
     }
 
+    fn subtract_blur_values(total: Option<Blur>, applied: Option<Blur>) -> Option<Blur> {
+        let remaining = Self::blur_variance(total) - Self::blur_variance(applied);
+        Self::blur_from_variance(remaining.max(0.))
+    }
+
     fn frame_clip_layer_blur(shape: &Shape) -> Option<Blur> {
         shape.frame_clip_layer_blur()
     }
@@ -2339,10 +2344,6 @@ impl RenderState {
         let preserve_target = self.preserve_target_during_render;
         self.preserve_target_during_render = false;
 
-        if preserve_target && self.options.is_fast_mode() {
-            self.rebuild_tile_index(tree);
-        }
-
         if self.options.is_interactive_transform() {
             // Keep `Target` as the previous frame and overwrite only the tiles
             // that changed. This avoids clearing + redrawing an atlas backdrop
@@ -3039,6 +3040,8 @@ impl RenderState {
         shadow: &Shadow,
         scale: f32,
         inherited_layer_blur: Option<Blur>,
+        layer_applied_blur: Option<Blur>,
+        layer_owns_shadow_blur: bool,
         node_render_state: &NodeRenderState,
         target_surface: SurfaceId,
     ) -> Result<()> {
@@ -3071,19 +3074,29 @@ impl RenderState {
                     nested_clip_bounds,
                     scale,
                     inherited_layer_blur,
+                    layer_applied_blur,
+                    layer_owns_shadow_blur,
                     target_surface,
                 )?;
             } else {
+                let text_extrect = shadow_shape.extrect(tree, scale);
+                let layer_bounds = shadow
+                    .get_drop_shadow_filter()
+                    .map(|filter| filter.compute_fast_bounds(text_extrect))
+                    .unwrap_or(text_extrect);
                 let paint = skia::Paint::default();
-                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                let layer_rec = skia::canvas::SaveLayerRec::default()
+                    .bounds(&layer_bounds)
+                    .paint(&paint);
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)
                     .save_layer(&layer_rec);
 
                 let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
                 transformed_shadow.to_mut().color = skia::Color::BLACK;
-                transformed_shadow.to_mut().blur = transformed_shadow.blur;
-                transformed_shadow.to_mut().spread = transformed_shadow.spread;
+                if layer_owns_shadow_blur {
+                    transformed_shadow.to_mut().blur = 0.0;
+                }
 
                 let mut new_shadow_paint = skia::Paint::default();
                 new_shadow_paint.set_image_filter(transformed_shadow.get_drop_shadow_filter());
@@ -3124,6 +3137,8 @@ impl RenderState {
         clip_bounds: Option<ClipStack>,
         scale: f32,
         extra_layer_blur: Option<Blur>,
+        layer_applied_blur: Option<Blur>,
+        layer_owns_shadow_blur: bool,
         target_surface: SurfaceId,
     ) -> Result<()> {
         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
@@ -3131,8 +3146,10 @@ impl RenderState {
         transformed_shadow.to_mut().color = skia::Color::BLACK;
 
         let mut plain_shape = Cow::Borrowed(shape);
-        let combined_blur =
-            Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur);
+        let combined_blur = Self::subtract_blur_values(
+            Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur),
+            layer_applied_blur,
+        );
         let blur_filter = combined_blur.and_then(|blur| {
             let sigma = blur.sigma();
             skia::image_filters::blur((sigma, sigma), None, None, None)
@@ -3186,8 +3203,11 @@ impl RenderState {
             return Ok(());
         }
 
-        // blur=0 at high zoom: draw directly on DropShadows with geometric spread (no filter).
-        if scale > 1.0 && shadow.blur <= 0.0 {
+        if layer_owns_shadow_blur {
+            transformed_shadow.to_mut().blur = 0.0;
+        }
+
+        if combined_blur.is_none() && transformed_shadow.blur <= 0.0 {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
             drop_canvas.save();
             //drop_canvas.scale((scale, scale));
@@ -3227,7 +3247,9 @@ impl RenderState {
         }
         shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&bounds)
+            .paint(&shadow_paint);
 
         // Low zoom path: use blur filter but apply offset and spread geometrically
         if use_low_zoom_path {
@@ -3321,11 +3343,11 @@ impl RenderState {
         )?;
 
         if let Some((mut surface, filter_scale)) = filter_result {
-            let cached = shadows::CachedDropShadowFilter::new(
-                bounds,
-                filter_scale,
-                surface.image_snapshot(),
-            );
+            let Some(image) = shadows::snapshot_filter_region(&mut surface, &bounds, filter_scale)
+            else {
+                return Ok(());
+            };
+            let cached = shadows::CachedDropShadowFilter::new(bounds, filter_scale, image);
             shadows::blit_cached_drop_shadow_filter(
                 &mut self.surfaces,
                 &cached,
@@ -3379,8 +3401,36 @@ impl RenderState {
                 continue;
             }
             rendered_any = true;
-            let paint = skia::Paint::default();
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            let layer_bounds = shadow
+                .get_drop_shadow_filter()
+                .map(|filter| filter.compute_fast_bounds(*element_extrect))
+                .unwrap_or(*element_extrect);
+
+            let layer_blur = Self::combine_blur_values(
+                inherited_layer_blur,
+                Some(Blur::new(BlurType::LayerBlur, false, shadow.blur)),
+            );
+            let layer_sigma = layer_blur.map_or(0., |blur| blur.sigma());
+            let layer_owns_blur = !use_direct_container_shadow
+                && layer_sigma * 3.0 * scale <= self.surfaces.margins().width as f32;
+            let layer_applied_blur = if layer_owns_blur {
+                inherited_layer_blur
+            } else {
+                None
+            };
+
+            let mut paint = skia::Paint::default();
+            if layer_owns_blur && layer_sigma > 0. {
+                paint.set_image_filter(skia::image_filters::blur(
+                    (layer_sigma, layer_sigma),
+                    None,
+                    None,
+                    None,
+                ));
+            }
+            let layer_rec = skia::canvas::SaveLayerRec::default()
+                .bounds(&layer_bounds)
+                .paint(&paint);
             self.surfaces
                 .canvas(SurfaceId::DropShadows)
                 .save_layer(&layer_rec);
@@ -3402,6 +3452,8 @@ impl RenderState {
                     clip_bounds.clone(),
                     scale,
                     None,
+                    layer_applied_blur,
+                    layer_owns_blur,
                     target_surface,
                 )?;
                 if !element.container_fill_covers_shadow_descendants(tree, scale) {
@@ -3411,6 +3463,8 @@ impl RenderState {
                         shadow,
                         scale,
                         inherited_layer_blur,
+                        layer_applied_blur,
+                        layer_owns_blur,
                         node_render_state,
                         target_surface,
                     )?;

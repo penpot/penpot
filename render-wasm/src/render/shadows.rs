@@ -142,14 +142,30 @@ fn spread_inset(spread: f32) -> Option<f32> {
     Some(-spread).filter(|&s| s > 0.0)
 }
 
+fn blur_layer_filter(blur: f32, sigma_scale: f32) -> Option<skia::ImageFilter> {
+    if blur <= 0.0 {
+        return None;
+    }
+    let sigma = radius_to_sigma(blur) * sigma_scale;
+    skia::image_filters::blur((sigma, sigma), None, None, None)
+}
+
 fn blur_layer_paint(blur: f32, sigma_scale: f32) -> skia::Paint {
     let mut paint = skia::Paint::default();
-    if blur > 0.0 {
-        let sigma = radius_to_sigma(blur) * sigma_scale;
-        paint.set_image_filter(skia::image_filters::blur((sigma, sigma), None, None, None));
-    }
+    paint.set_image_filter(blur_layer_filter(blur, sigma_scale));
     paint.set_blend_mode(skia::BlendMode::SrcOver);
     paint
+}
+
+fn frame_shadow_layer_bounds(frame: &Shape, shadow: &Shadow, sigma_scale: f32) -> Rect {
+    let mut rect = frame.selrect;
+    if shadow.spread > 0.0 {
+        rect.outset((shadow.spread, shadow.spread));
+    }
+    match blur_layer_filter(shadow.blur, sigma_scale) {
+        Some(filter) => filter.compute_fast_bounds(rect),
+        None => rect,
+    }
 }
 
 fn draw_frame_shadow_rect(
@@ -222,6 +238,15 @@ fn blur_downscale_for_frame_shadow(
     }
 }
 
+pub(crate) fn snapshot_filter_region(
+    surface: &mut skia::Surface,
+    bounds: &Rect,
+    filter_scale: f32,
+) -> Option<skia::Image> {
+    let region = filters::filter_region(bounds, filter_scale, surface.width(), surface.height());
+    surface.image_snapshot_with_bounds(region)
+}
+
 pub(crate) fn blit_cached_drop_shadow_filter(
     surfaces: &mut super::Surfaces,
     cached: &CachedDropShadowFilter,
@@ -259,13 +284,16 @@ fn render_inline_frame_shadow(
 ) -> Result<()> {
     let antialias = frame_shadow_antialias(state, frame, scale);
     let layer_paint = blur_layer_paint(shadow.blur, 1.0);
+    let layer_bounds = frame_shadow_layer_bounds(frame, shadow, 1.0);
     let draw_matrix = frame_shadow_draw_matrix(frame, shadow);
 
     {
         let drop_canvas = state.surfaces.canvas(SurfaceId::DropShadows);
         drop_canvas.save();
         drop_canvas.concat(&draw_matrix);
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&layer_paint);
         drop_canvas.save_layer(&layer_rec);
     }
 
@@ -315,7 +343,10 @@ fn render_cached_filter_frame_shadow(
         state.options.blur_downscale_threshold,
     );
     let layer_paint = blur_layer_paint(shadow.blur, blur_downscale);
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+    let layer_bounds = frame_shadow_layer_bounds(frame, shadow, blur_downscale);
+    let layer_rec = skia::canvas::SaveLayerRec::default()
+        .bounds(&layer_bounds)
+        .paint(&layer_paint);
 
     let shadow_draw_matrix = frame_shadow_draw_matrix(frame, shadow);
     let filter_result = filters::render_into_filter_surface(
@@ -340,10 +371,13 @@ fn render_cached_filter_frame_shadow(
     )?;
 
     if let Some((mut surface, filter_scale)) = filter_result {
+        let Some(image) = snapshot_filter_region(&mut surface, &bounds, filter_scale) else {
+            return Ok(());
+        };
         let cached = CachedDropShadowFilter {
             bounds,
             filter_scale,
-            image: surface.image_snapshot(),
+            image,
         };
         blit_cached_drop_shadow_filter(&mut state.surfaces, &cached, None);
         state.drop_shadow_filter_cache.store(key, cached);

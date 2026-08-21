@@ -26,6 +26,17 @@ pub fn compose_filters(
     }
 }
 
+pub fn filter_region(bounds: &Rect, scale: f32, max_width: i32, max_height: i32) -> skia::IRect {
+    const PAD: i32 = 4;
+    let width = ((bounds.width() * scale).ceil() as i32)
+        .saturating_add(PAD)
+        .clamp(1, max_width);
+    let height = ((bounds.height() * scale).ceil() as i32)
+        .saturating_add(PAD)
+        .clamp(1, max_height);
+    skia::IRect::from_xywh(0, 0, width, height)
+}
+
 /// Renders filtered content offscreen and composites it back into the target surface.
 ///
 /// This helper is meant for shapes that rely on blur/filters that should be evaluated
@@ -45,6 +56,7 @@ where
     if let Some((mut surface, scale)) =
         render_into_filter_surface(render_state, bounds, 1.0, draw_fn)?
     {
+        let region = Rect::from(filter_region(&bounds, scale, surface.width(), surface.height()));
         let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
 
         // If we scaled down, we need to scale the source rect and adjust the destination
@@ -52,11 +64,13 @@ where
             canvas.save();
             canvas.scale((1.0 / scale, 1.0 / scale));
             canvas.translate((bounds.left * scale, bounds.top * scale));
+            canvas.clip_rect(region, None, false);
             surface.draw(canvas, (0.0, 0.0), get_resources().sampling_options, None);
             canvas.restore();
         } else {
             canvas.save();
             canvas.translate((bounds.left, bounds.top));
+            canvas.clip_rect(region, None, false);
             surface.draw(canvas, (0.0, 0.0), get_resources().sampling_options, None);
             canvas.restore();
         }
@@ -118,10 +132,12 @@ where
     // Combine overflow-fit scale with caller-requested extra downscale
     let scale = (fit_scale * extra_downscale).max(MIN_COMBINED_SCALE);
 
+    let region = filter_region(&bounds, scale, filter_width, filter_height);
     {
         let canvas = render_state.surfaces.canvas(filter_id);
-        canvas.clear(skia::Color::TRANSPARENT);
         canvas.save();
+        canvas.clip_irect(region, None);
+        canvas.clear(skia::Color::TRANSPARENT);
         // Apply scale first, then translate
         canvas.scale((scale, scale));
         canvas.translate((-bounds.left, -bounds.top));
