@@ -802,7 +802,7 @@
           :in $ % ?name
           :where
           [?tok :token/name ?name]
-          (uses-token ?s ?tok)
+          (uses-token ?s ?tok ?a)
           [?s :shape/container ?c]
           [?c :container/id ?cid]
           [?s :shape/id ?id]]]
