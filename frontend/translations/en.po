@@ -10355,6 +10355,3 @@ msgstr "Try again"
 
 msgid "dashboard.invite-profile-disabled"
 msgstr "You don't have permission to invite people to this team"
-
-msgid "dashboard.invite-profile-disabled.owners-only"
-msgstr "Only team owners can invite within %s"
