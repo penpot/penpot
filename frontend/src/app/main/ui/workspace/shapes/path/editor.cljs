@@ -119,19 +119,15 @@
             (uwvv/capture-pointer event)
             (dom/stop-propagation event)
             (dom/prevent-default event)
-            ;; Preview nodes store their split params as metadata.
-            ;; FIXME: revisit this, using meta here breaks equality checks
-            (if (and is-new (some? (meta position)))
-              (st/emit! (drp/create-node-at-position (meta position)))
-              (let [is-shift (kbd/shift? event)
-                    is-alt   (kbd/alt? event)
-                    is-mod   (kbd/mod? event)]
-                (cond
-                  is-move
-                  (st/emit! (drp/start-move-path-point index is-shift is-alt is-mod))
+            (let [is-shift (kbd/shift? event)
+                  is-alt   (kbd/alt? event)
+                  is-mod   (kbd/mod? event)]
+              (cond
+                is-move
+                (st/emit! (drp/start-move-path-point index is-shift is-alt is-mod))
 
-                  is-draw
-                  (st/emit! (drp/on-draw-node-pointer-down index position is-alt is-mod)))))))]
+                is-draw
+                (st/emit! (drp/on-draw-node-pointer-down index position is-alt is-mod))))))]
 
     [:g.path-point
      [:circle.path-point

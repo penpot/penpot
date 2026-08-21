@@ -68,7 +68,7 @@
         y-step (/ (:y delta) (:y paste-offset))]
     (when (and (not (neg? x-step))
                (mth/close? x-step y-step)
-               (mth/close? x-step (mth/floor x-step)))
+               (mth/close? x-step (mth/round x-step)))
       (long (mth/round x-step)))))
 
 (defn available-offset-step

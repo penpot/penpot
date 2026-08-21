@@ -237,3 +237,21 @@
           step     (path.clipboard/available-offset-step existing pasted)]
       ;; Should detect collision at step 1 and return step 0 as available
       (t/is (= 0 step)))))
+
+(t/deftest collision-step-with-coordinates-slightly-below-integer
+  (t/testing "collision-step detects collision when coordinates drift slightly below integer boundary"
+    (let [pasted    (gpt/point 10.0 10.0)
+          existing  (gpt/point 19.999 19.999)
+          step      (path.clipboard/collision-step pasted existing)]
+      ;; x-step = 0.9999, y-step = 0.9999
+      ;; With round-based check, these should be detected as collision at step 1
+      (t/is (some? step))
+      (t/is (= 1 step)))))
+
+(t/deftest available-offset-step-with-coordinates-slightly-below-integer
+  (t/testing "available-offset-step detects collision with sub-integer coordinate drift"
+    (let [existing #{(gpt/point 19.999 19.999)}
+          pasted   #{(gpt/point 10.0 10.0)}
+          step     (path.clipboard/available-offset-step existing pasted)]
+      ;; Should detect collision at step 1 and return step 0 as available
+      (t/is (= 0 step)))))

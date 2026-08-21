@@ -1514,6 +1514,35 @@
     (t/is (= (gpt/point 10.0 0.0)
              (path.helpers/segment->point (nth result 1))))))
 
+(t/deftest segment-align-content-coincident-nodes
+  (t/testing "align-content groups coincident nodes with sub-epsilon coordinate differences"
+    (let [content (path/content
+                   [{:command :move-to :params {:x 0.0 :y 0.0}}
+                    {:command :line-to :params {:x 10.0001 :y 2.0}}
+                    {:command :line-to :params {:x 10.0 :y 20.0}}])
+          pts     (fn [c] (mapv (comp (juxt :x :y) :params) (vec c)))]
+      ;; Nodes at ~10.0 should be grouped together for alignment
+      (t/is (= [[0.0 0.0] [0.0 2.0] [0.0 20.0]]
+               (pts (path/align-content content #{0 1 2} :hleft)))))))
+
+(t/deftest segment-flip-content-coincident-nodes
+  (t/testing "flip-content handles coincident nodes with sub-epsilon coordinate differences"
+    (let [content (path/content
+                   [{:command :move-to :params {:x 0.0 :y 0.0}}
+                    {:command :line-to :params {:x 10.0001 :y 0.0}}
+                    {:command :line-to :params {:x 10.0 :y 10.0}}])
+          pts     (fn [c] (mapv (comp (juxt :x :y) :params) (vec c)))
+          result  (path/flip-content content #{0 1 2} :horizontal)]
+      ;; All nodes should flip across the horizontal center.
+      ;; Floating-point imprecision from the 10.0001 input is expected.
+      (let [[[x0 y0] [x1 y1] [x2 y2]] (pts result)]
+        (t/is (mth/close? 10.0 x0 0.001))
+        (t/is (mth/close? 0.0 y0 0.001))
+        (t/is (mth/close? 0.0 x1 0.001))
+        (t/is (mth/close? 0.0 y1 0.001))
+        (t/is (mth/close? 0.0 x2 0.001))
+        (t/is (mth/close? 10.0 y2 0.001))))))
+
 (t/deftest segment-set-handler-points
   (let [content (path/content
                  [{:command :move-to :params {:x 0.0 :y 0.0}}

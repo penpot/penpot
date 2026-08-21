@@ -40,7 +40,7 @@
           (comp
            (filter (fn [[_ segment]]
                      (and (not= :close-path (:command segment))
-                          (contains? points (helpers/segment->point segment)))))
+                          (some #(gpt/close? % (helpers/segment->point segment)) points))))
            (map first))
           (d/enumerate content))))
 
@@ -198,7 +198,7 @@
             deltas (into {}
                          (comp
                           (map-indexed
-                           (fn [k {:keys [point indices]}]
+                           (fn [k {:keys [indices]}]
                              (let [target (+ lo (* k step))]
                                (map (fn [i]
                                       (let [node-point (get index->point i)
