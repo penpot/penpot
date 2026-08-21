@@ -11,12 +11,173 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.tokens :as tht]
+   [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+;; Tokens Source
+
+(t/deftest generate-set-tokens-source-test
+  (t/testing "setting a library as tokens source copies its tokens status"
+    (let [set-id (uuid/next)
+          theme-id (uuid/next)
+          token-id (uuid/next)
+          library-file (tht/sample-file-with-tokens
+                        :file-id :library
+                        :lib-fn #(-> %
+                                     (ctob/add-set (ctob/make-token-set :id set-id
+                                                                        :name "core"))
+                                     (ctob/add-token set-id (ctob/make-token {:id token-id
+                                                                              :name "color.red"
+                                                                              :value "#ff0000"
+                                                                              :type :color}))
+                                     (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                            :name "light"
+                                                                            :group "main"
+                                                                            :sets #{"core"})))
+                        :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+          file (thf/sample-file :file1)
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (ctf/file-data file))
+                      (clt/generate-set-tokens-source library-file))
+          redo (thf/apply-changes file changes)
+          undo (thf/apply-undo-changes redo changes)
+          library-tokens-status (tht/get-tokens-status library-file)
+          redo-tokens-source (tht/get-tokens-source redo)
+          redo-tokens-status (tht/get-tokens-status redo)
+          undo-tokens-source (tht/get-tokens-source undo)
+          undo-tokens-status (tht/get-tokens-status undo)]
+
+      ;; Redo: source and status copied from library
+      (t/is (= (:id library-file) redo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids library-tokens-status)
+               (ctos/get-active-theme-ids redo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids library-tokens-status)
+               (ctos/get-active-set-ids redo-tokens-status)))
+
+      ;; Undo: source and status restored to the original empty state
+      (t/is (nil? undo-tokens-source))
+      (t/is (= #{} (ctos/get-active-theme-ids undo-tokens-status)))
+      (t/is (= #{} (ctos/get-active-set-ids undo-tokens-status)))))
+
+  (t/testing "any previous tokens status is replaced by the library's tokens status"
+    (let [set-id (uuid/next)
+          theme-id (uuid/next)
+          token-id (uuid/next)
+          other-set-id (uuid/next)
+          library-file (tht/sample-file-with-tokens
+                        :file-id :library
+                        :lib-fn #(-> %
+                                     (ctob/add-set (ctob/make-token-set :id set-id
+                                                                        :name "core"))
+                                     (ctob/add-token set-id (ctob/make-token {:id token-id
+                                                                              :name "color.red"
+                                                                              :value "#ff0000"
+                                                                              :type :color}))
+                                     (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                            :name "light"
+                                                                            :group "main"
+                                                                            :sets #{"core"})))
+                        :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+          file (tht/sample-file-with-tokens
+                :file-id :file1
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id other-set-id
+                                                                :name "other")))
+                :status-fn #(ctos/set-tokens-status % #{} #{other-set-id}))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (ctf/file-data file))
+                      (clt/generate-set-tokens-source library-file))
+          redo (thf/apply-changes file changes)
+          undo (thf/apply-undo-changes redo changes)
+          file-tokens-status (tht/get-tokens-status file)
+          library-tokens-status (tht/get-tokens-status library-file)
+          redo-tokens-source (tht/get-tokens-source redo)
+          redo-tokens-status (tht/get-tokens-status redo)
+          undo-tokens-source (tht/get-tokens-source undo)
+          undo-tokens-status (tht/get-tokens-status undo)]
+
+      ;; Redo: source and status copied from library, replacing the previous status
+      (t/is (= (:id library-file) redo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids library-tokens-status)
+               (ctos/get-active-theme-ids redo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids library-tokens-status)
+               (ctos/get-active-set-ids redo-tokens-status)))
+
+      ;; Undo: source and status restored to the original state
+      (t/is (nil? undo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids file-tokens-status)
+               (ctos/get-active-theme-ids undo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids file-tokens-status)
+               (ctos/get-active-set-ids undo-tokens-status)))))
+
+  (t/testing "if the library is nil, the tokens source is cleared and the tokens status is reset to empty"
+    (let [set-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :file-id :file1
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id
+                                                                :name "one set")))
+                :status-fn #(ctos/set-tokens-status % #{} #{set-id}))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (ctf/file-data file))
+                      (clt/generate-set-tokens-source nil))
+          redo (thf/apply-changes file changes)
+          undo (thf/apply-undo-changes redo changes)
+          file-tokens-status (tht/get-tokens-status file)
+          redo-tokens-source (tht/get-tokens-source redo)
+          redo-tokens-status (tht/get-tokens-status redo)
+          undo-tokens-source (tht/get-tokens-source undo)
+          undo-tokens-status (tht/get-tokens-status undo)]
+
+      ;; Redo: source and status copied from library, replacing the previous status
+      (t/is (= nil redo-tokens-source))
+      (t/is (= #{} (ctos/get-active-theme-ids redo-tokens-status)))
+      (t/is (= #{} (ctos/get-active-set-ids redo-tokens-status)))
+
+      ;; Undo: source and status restored to the original state
+      (t/is (nil? undo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids file-tokens-status)
+               (ctos/get-active-theme-ids undo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids file-tokens-status)
+               (ctos/get-active-set-ids undo-tokens-status)))))
+
+  (t/testing "if the library is the same file, the source is set to self and the status is the same one"
+    (let [set-id (uuid/next)
+          file (tht/sample-file-with-tokens
+                :file-id :file1
+                :lib-fn #(-> %
+                             (ctob/add-set (ctob/make-token-set :id set-id
+                                                                :name "one set")))
+                :status-fn #(ctos/set-tokens-status % #{} #{set-id}))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (ctf/file-data file))
+                      (clt/generate-set-tokens-source file))
+          redo (thf/apply-changes file changes)
+          undo (thf/apply-undo-changes redo changes)
+          file-tokens-status (tht/get-tokens-status file)
+          redo-tokens-source (tht/get-tokens-source redo)
+          redo-tokens-status (tht/get-tokens-status redo)
+          undo-tokens-source (tht/get-tokens-source undo)
+          undo-tokens-status (tht/get-tokens-status undo)]
+
+      ;; Redo: source and status copied from library, replacing the previous status
+      (t/is (= (:id file) redo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids file-tokens-status)
+               (ctos/get-active-theme-ids redo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids file-tokens-status)
+               (ctos/get-active-set-ids redo-tokens-status)))
+
+      ;; Undo: source and status restored to the original state
+      (t/is (nil? undo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids file-tokens-status)
+               (ctos/get-active-theme-ids undo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids file-tokens-status)
+               (ctos/get-active-set-ids undo-tokens-status))))))
 
 ;; Tokens lib
 
@@ -284,7 +445,7 @@
                              (ctob/add-set (ctob/make-token-set :id set-c-id :name "other/set-c"))))
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-delete-token-set-group tokens-lib ["group"]))
 
           redo (thf/apply-changes file changes)
@@ -308,7 +469,7 @@
                              (ctob/add-set (ctob/make-token-set :id set-b-id :name "group/set-b"))))
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-delete-token-set-group tokens-lib ["group"]))
 
           redo (thf/apply-changes file changes)
@@ -327,7 +488,7 @@
                 :lib-fn #(ctob/add-set % (ctob/make-token-set :name "other/set-a")))
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-delete-token-set-group tokens-lib ["nonexistent"]))]
       (t/is (= [] (:redo-changes changes))))))
 
@@ -340,7 +501,7 @@
                                                                     :name "foo"
                                                                     :group "main"))))
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-theme theme-id nil))
 
           redo (thf/apply-changes file changes)
@@ -359,7 +520,7 @@
                                        :group "main")
           file (tht/sample-file-with-tokens)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-theme theme-id theme))
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -380,7 +541,7 @@
                 :lib-fn #(ctob/add-theme % prev-theme))
           new-theme-name "foo1"
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-theme theme-id (ctob/rename prev-theme new-theme-name)))
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -406,7 +567,7 @@
                              (ctob/add-set token-set)))
           theme' (assoc theme :sets #{set-name})
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-theme theme-id theme'))
           changed-file (-> file
                            (thf/apply-changes changes)
@@ -430,7 +591,7 @@
                                                                       :value "red"
                                                                       :type :color}))))
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token set-id token-id nil))
 
           redo (thf/apply-changes file changes)
@@ -451,7 +612,7 @@
                 :lib-fn #(-> % (ctob/add-set (ctob/make-token-set :id set-id
                                                                   :name set-name))))
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token set-id (:id token) token))
 
           redo (thf/apply-changes file changes)
@@ -477,7 +638,7 @@
                                                                 :name set-name))
                              (ctob/add-token set-id prev-token)))
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token set-id (:id prev-token) token))
 
           redo (thf/apply-changes file changes)
@@ -495,7 +656,7 @@
           file (tht/sample-file-with-tokens
                 :lib-fn #(ctob/add-set % (ctob/make-token-set :id set-id :name set-name)))
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-set set-id nil))
 
           redo (thf/apply-changes file changes)
@@ -512,7 +673,7 @@
           token-set (ctob/make-token-set :id set-id :name set-name)
           file (tht/sample-file-with-tokens)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-set set-id token-set))
 
           redo (thf/apply-changes file changes)
@@ -532,7 +693,7 @@
           new-set-name "foo1"
 
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (pcb/set-token-set set-id (ctob/rename token-set new-set-name)))
 
           redo (thf/apply-changes file changes)
@@ -563,7 +724,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-activate-theme tokens-status tokens-lib theme-id))
           file' (thf/apply-changes file changes)
           tokens-status' (tht/get-tokens-status file')
@@ -587,7 +748,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-activate-theme tokens-status tokens-lib theme-id))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -604,7 +765,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-deactivate-theme tokens-status tokens-lib theme-id))
           file' (thf/apply-changes file changes)
           tokens-status' (tht/get-tokens-status file')
@@ -626,7 +787,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-deactivate-theme tokens-status tokens-lib theme-id))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -642,7 +803,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-set-theme-status tokens-status tokens-lib theme-id true))
           file' (thf/apply-changes file changes)
           tokens-status' (tht/get-tokens-status file')
@@ -663,7 +824,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-set-theme-status tokens-status tokens-lib theme-id false))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -680,7 +841,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-toggle-theme tokens-status tokens-lib theme-id))
           file' (thf/apply-changes file changes)
           tokens-status' (tht/get-tokens-status file')
@@ -701,7 +862,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-toggle-theme tokens-status tokens-lib (uuid/next)))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -720,7 +881,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-set-enabled-token-set tokens-status tokens-lib set-id true))
 
           redo (thf/apply-changes file changes)
@@ -742,7 +903,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-set-enabled-token-set tokens-status tokens-lib set-id true))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -761,7 +922,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-toggle-token-set tokens-status tokens-lib set-id))
 
           redo (thf/apply-changes file changes)
@@ -788,7 +949,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-toggle-token-set tokens-status tokens-lib (uuid/next)))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -809,7 +970,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo" "bar"]))
 
           redo (thf/apply-changes file changes)
@@ -843,7 +1004,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo" "nonexistent"]))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
@@ -858,7 +1019,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-sync-tokens-status-with-lib tokens-status tokens-lib))
           file' (thf/apply-changes file changes)
           tokens-status' (tht/get-tokens-status file')
@@ -884,7 +1045,7 @@
           tokens-status (tht/get-tokens-status file)
           tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
-                      (pcb/with-library-data (:data file))
+                      (pcb/with-library-data (ctf/file-data file))
                       (clt/generate-sync-tokens-status-with-lib tokens-status tokens-lib))]
       (t/is (= [] (:redo-changes changes)))
       (t/is (= [] (:undo-changes changes))))))
