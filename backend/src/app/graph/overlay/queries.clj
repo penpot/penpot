@@ -114,11 +114,13 @@
       [?s :shape/container ?c]
       [?c :container/kind :page]]]
 
-   ;; UsesToken over the folded encoding; the closed vocabulary is
-   ;; embedded as data so the rule stays engine-portable
-   [(vector '(uses-token ?s ?tok)
-            '[?s ?a ?n]
-            [(list 'contains? overlay/token-attrs '?a)]
+   ;; UsesToken over the folded encoding, the vocabulary's one
+   ;; three-place relation: ?attr carries the applying property's folded
+   ;; attribute. The closed vocabulary is embedded as data so the rule
+   ;; stays engine-portable.
+   [(vector '(uses-token ?s ?tok ?attr)
+            '[?s ?attr ?n]
+            [(list 'contains? overlay/token-attrs '?attr)]
             '[?tok :token/name ?n])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -314,37 +316,25 @@
          [?s :shape/id ?id]]
        db typography-id))
 
-(defn- applied-props
-  "The applied-token properties under which `eid` carries `token-name`,
-  recovered from the folded attributes of the entity."
-  [db eid token-name]
-  (let [e (d/entity db eid)]
-    (into []
-          (keep (fn [attr]
-                  (when (= token-name (get e attr))
-                    (overlay/token-attr->prop attr))))
-          overlay/token-attrs)))
-
 (defn shapes-using-token
   "Applied-token uses of the token named `token-name`, as
   [container-id shape-id property] triples (the LinkAppliedTokens
-  question). The relation comes from the `uses-token` rule; the property
-  is recovered from the folded attributes per matched shape."
+  question). The whole answer comes from the three-place `uses-token`
+  rule; the property is the third rule variable, translated back from
+  the folded attribute."
   [db token-name]
-  (let [pairs (d/q '[:find ?cid ?id ?s
-                     :in $ % ?name
-                     :where
-                     [?tok :token/name ?name]
-                     (uses-token ?s ?tok)
-                     [?s :shape/container ?c]
-                     [?c :container/id ?cid]
-                     [?s :shape/id ?id]]
-                   db rules token-name)]
-    (into #{}
-          (mapcat (fn [[cid id eid]]
-                    (map (fn [prop] [cid id prop])
-                         (applied-props db eid token-name))))
-          pairs)))
+  (into #{}
+        (map (fn [[cid id attr]]
+               [cid id (overlay/token-attr->prop attr)]))
+        (d/q '[:find ?cid ?id ?attr
+               :in $ % ?name
+               :where
+               [?tok :token/name ?name]
+               (uses-token ?s ?tok ?attr)
+               [?s :shape/container ?c]
+               [?c :container/id ?cid]
+               [?s :shape/id ?id]]
+             db rules token-name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; inventory and parity

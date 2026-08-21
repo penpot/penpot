@@ -92,7 +92,7 @@
       (t/is (= #{"Child A" "Child B"} (set (map first rows)))))
     (let [{:keys [rows]} (console/run-query
                           db
-                          "[:find ?name :in $ % :where (uses-token ?s ?tok) [?tok :token/name ?name]]")]
+                          "[:find ?name :in $ % :where (uses-token ?s ?tok ?a) [?tok :token/name ?name]]")]
       (t/is (empty? rows)))))
 
 (t/deftest the-old-rule-name-is-rejected
