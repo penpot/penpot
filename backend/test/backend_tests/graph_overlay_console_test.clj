@@ -78,9 +78,39 @@
               #(console/run-query (fixture-db) "[:find ?v :where"))]
     (t/is (= :graph-query-invalid (:code data)))))
 
+(t/deftest shared-rule-invocations-pass-the-gate
+  ;; The gate's allowlist derives from `queries/rules`
+  ;; (`app.graph.overlay.console/check-query!`), so rule renames pass
+  ;; automatically: the default query proves `instance-of`, and these
+  ;; hold the door open for `descendant-of` (with rows) and `uses-token`
+  ;; (the fixture defines no tokens, so the gate acceptance is the
+  ;; point).
+  (let [db (fixture-db)]
+    (let [{:keys [rows]} (console/run-query
+                          db
+                          "[:find ?n :in $ % :where [?p :shape/name \"Main\"] (descendant-of ?d ?p) [?d :shape/name ?n]]")]
+      (t/is (= #{"Child A" "Child B"} (set (map first rows)))))
+    (let [{:keys [rows]} (console/run-query
+                          db
+                          "[:find ?name :in $ % :where (uses-token ?s ?tok) [?tok :token/name ?name]]")]
+      (t/is (empty? rows)))))
+
+(t/deftest the-old-rule-name-is-rejected
+  ;; The vocabulary is closed: `is-instance-of` is gone, renamed
+  ;; `instance-of`, and the old name must not pass the gate — the
+  ;; allowlist derives from the rule set, not from a hardcoded list.
+  (let [data (thrown-data
+              #(console/run-query
+                (fixture-db)
+                "[:find ?s :in $ % :where (is-instance-of ?s ?c)]"))]
+    (t/is (= :graph-query-not-read-only (:code data)))
+    (t/is (str/includes? (:hint data) "is-instance-of")
+          "the error must name the old rule")))
+
 (t/deftest the-default-query-runs-through-the-console
-  ;; The shipped default invokes the shared `is-instance-of` rule with
-  ;; `%`; a rule invocation must pass the gate and return rows.
+  ;; The shipped default invokes the shared `instance-of` rule (renamed
+  ;; from `is-instance-of` by the retrofit) with `%`; a rule invocation
+  ;; must pass the gate and return rows.
   (let [{:keys [columns rows truncated? row-count]}
         (console/run-query (fixture-db) debug/default-query)]
     (t/is (= ["component" "instance" "page" "filter_src_id" "filter_tgt_id"]
