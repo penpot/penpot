@@ -368,27 +368,115 @@
         now      (ct/now)
 
         object1  (sto/put-object! storage {::sto/content content1
-                                           ::sto/touched-at (ct/plus now {:minutes 1})
+                                           ::sto/touched-at (ct/plus now {:hours 1})
                                            :bucket "tempfile"
                                            :content-type "text/plain"})]
 
-
+    ;; not eligible while the touched-at is in the future
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 0 (:delete res)))))
 
-
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 3}))]
+    ;; still not eligible: touched-at (now+1h) is beyond the threshold
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 2}))]
       (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+    ;; eligible: marked for deletion immediately, without any extra delay
+    (let [clock (ct/plus now {:hours 3})]
+      (binding [ct/*clock* (ct/fixed-clock clock)]
+        (let [res (th/run-task! :storage-gc-touched {})]
+          (t/is (= 0 (:freeze res)))
+          (t/is (= 1 (:delete res)))))
+
+      (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
+        (t/is (ct/is-before-or-equal? (:deleted-at row) (ct/plus clock {:seconds 1})))))
+
+    ;; removed on the next deleted gc run
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 4}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 1 (:deleted res)))))))
+
+(t/deftest touched-gc-task-skip-delay
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content1")
+        now     (ct/now)
+
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/touched-at now
+                                          :bucket "tempfile"
+                                          :content-type "text/plain"})]
+
+    ;; too recent: not processed without skip-delay
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+    ;; processed immediately with skip-delay
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 1 (:delete res)))))
 
+    ;; and marked for deletion without any additional delay
+    (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
+      (t/is (ct/is-before-or-equal? (:deleted-at row) (ct/plus now {:seconds 1}))))))
 
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 1}))]
-      (let [res (th/run-task! :storage-gc-deleted {})]
-        (t/is (= 0 (:deleted res)))))
+(t/deftest storage-gc-deleted-immediate
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content1")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
 
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 2}))]
-      (let [res (th/run-task! :storage-gc-deleted {})]
-        (t/is (= 0 (:deleted res)))))))
+    ;; mark as deleted right now
+    (th/db-exec! ["update storage_object set deleted_at = ?" (ct/now)])
+
+    ;; the deleted gc removes it on the next run
+    (let [res (th/run-task! :storage-gc-deleted {})]
+      (t/is (= 1 (:deleted res))))))
+
+(t/deftest objects-gc-task-skip-delay
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        prof    (th/create-profile* 1)
+        proj    (th/create-project* 1 {:profile-id (:id prof)
+                                       :team-id (:default-team-id prof)})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:default-project-id prof)
+                                    :is-shared false})
+        mfile   {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}
+        params  {::th/type :upload-file-media-object
+                 ::rpc/profile-id (:id prof)
+                 :file-id (:id file)
+                 :is-local true
+                 :name "testfile"
+                 :content mfile}
+        out1    (th/command! params)
+        out2    (th/command! params)]
+
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    (let [result-1 (:result out1)
+          result-2 (:result out2)]
+
+      ;; mark as deleted but in the future (not yet eligible)
+      (th/db-update! :file-media-object
+                     {:deleted-at (ct/in-future {:days 1})}
+                     {:id (:id result-1)})
+
+      ;; without skip-delay the future deleted row is not processed
+      (let [res (th/run-task! :objects-gc {})]
+        (t/is (= 0 (:processed res))))
+
+      ;; with skip-delay it is processed immediately
+      (let [res (th/run-task! :objects-gc {:skip-delay true})]
+        (t/is (= 1 (:processed res)))))))
