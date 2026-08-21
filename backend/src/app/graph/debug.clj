@@ -5,22 +5,30 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.graph.debug
-  "In-memory Ladybug sessions for the debug graph console."
+  "In-memory overlay sessions for the debug graph console.
+
+  A session is a datascript overlay of one file
+  (`app.graph.overlay`), maintained from the msgbus file-change feed by
+  `app.graph.overlay.sync` and queried in Datalog through
+  `app.graph.overlay.console`. The Ladybug engine no longer appears on
+  this path: it keeps the batch-export tier (`app.graph.ingest`), where
+  columnar output is the point. The overlay is immutable data in an atom,
+  so readers never lock and the sync loop is the only writer."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.time :as ct]
-   [app.graph.ingest :as graph.ingest]
-   [app.graph.ladybug :as ladybug]
-   [app.graph.schema.nodes :as nodes]
-   [app.graph.sync :as graph.sync]
+   [app.db :as db]
+   [app.graph.overlay :as overlay]
+   [app.graph.overlay.console :as console]
+   [app.graph.overlay.queries :as queries]
+   [app.graph.overlay.sync :as overlay.sync]
    [app.msgbus :as mbus]
-   [clojure.java.io :as io]
+   [app.srepl.helpers :as h]
    [clojure.string :as str]
-   [promesa.exec.csp :as sp])
-  (:import
-   com.ladybugdb.Connection
-   com.ladybugdb.Database))
+   [datascript.core :as d]
+   [promesa.exec.csp :as sp]))
 
 (set! *warn-on-reflection* true)
 
@@ -28,15 +36,20 @@
   "Default console query, written to be self-explanatory in the textarea.
   The `filter_*` columns carry node ids for the graph-view result filter;
   the results table hides them (see `hide-filter-columns` and the
-  template's `renderQueryOutput`)."
-  (str "MATCH (s)-[r]->(t)\n"
-       "// WHERE some condition\n"
-       "RETURN label(s) AS src, s.name,\n"
-       "       label(r) AS rel,\n"
-       "       t.name, label(t) AS tgt,\n"
-       "\n"
-       "// filter_* columns omitted from table; these needed for graph view\n"
-       "s.id AS filter_src_id, t.id AS filter_tgt_id;"))
+  template's `renderQueryOutput`). `$` is bound to the overlay and `%` to
+  the shared rule set of `app.graph.overlay.queries`."
+  (str "[:find ?component ?instance ?page\n"
+       "       ?filter_src_id ?filter_tgt_id\n"
+       " :in $ %\n"
+       " :where\n"
+       " (is-instance-of ?s ?c)\n"
+       " [?c :component/name ?component]\n"
+       " [?s :shape/name ?instance]\n"
+       " [?s :shape/container ?pc]\n"
+       " [?pc :container/name ?page]\n"
+       " ;; filter_* columns omitted from the table; they drive the graph view\n"
+       " [(identity ?s) ?filter_src_id]\n"
+       " [(identity ?c) ?filter_tgt_id]]"))
 
 (defonce ^:private sessions
   (atom {}))
@@ -46,23 +59,11 @@
   (str profile-id))
 
 (defn- destroy-session!
-  [{:keys [conn db sync-ch msgbus]}]
+  [{:keys [sync-ch msgbus]}]
   (when sync-ch
     (sp/close! sync-ch)
     (when msgbus
-      (mbus/purge! msgbus [sync-ch])))
-  (when conn
-    (ex/ignoring (.close ^Connection conn)))
-  (when db
-    (ex/ignoring (.close ^Database db))))
-
-(defn- slim-ingest-meta
-  "Drop full projection rows from session meta.
-
-  `build-index` needs `:nodes`/`:edges` once; keeping them in the session
-  duplicates the entire graph on the JVM heap for every Load."
-  [meta]
-  (update meta :projection #(select-keys % [:stats])))
+      (mbus/purge! msgbus [sync-ch]))))
 
 (defn- format-cell
   [value]
@@ -81,32 +82,27 @@
    :row-count (count rows)})
 
 (defn- apply-file-change!
-  [conn profile-id {:keys [changes revn file-id]}]
+  [profile-id {:keys [changes revn file-id]}]
   (try
-    (some-> (get @sessions (session-key profile-id))
-            (as-> current
-                  (when (= file-id (:file-id current))
-                    (let [lock   (:lock current)
-                          result (locking lock
-                                   (graph.sync/apply-changes!
-                                    conn (:index current) changes revn))
-                          sync-at (ct/now)]
-                      (swap! sessions assoc-in [(session-key profile-id) :index]
-                             (:index result))
-                      (swap! sessions update-in [(session-key profile-id) :meta]
-                             (fn [meta]
-                               (cond-> (-> meta
-                                           (update :sync dissoc :error)
-                                           (assoc-in [:sync :last-at] sync-at)
-                                           (assoc-in [:sync :last-applied] (:applied result))
-                                           (assoc-in [:sync :last-skipped] (:skipped result)))
-                                 (seq (:applied result))
-                                 (assoc :revn (:revn result)))))
-                      (when (seq (:skipped result))
-                        (l/dbg :hint "graph sync skipped changes"
-                               :file-id (str file-id)
-                               :revn revn
-                               :skipped (:skipped result)))))))
+    (when-let [current (get @sessions (session-key profile-id))]
+      (when (= file-id (:file-id current))
+        (let [result  (overlay.sync/apply-changes @(:db-atom current) changes)
+              sync-at (ct/now)]
+          (reset! (:db-atom current) (:db result))
+          (swap! sessions update-in [(session-key profile-id) :meta]
+                 (fn [meta]
+                   (cond-> (-> meta
+                               (update :sync dissoc :error)
+                               (assoc-in [:sync :last-at] sync-at)
+                               (assoc-in [:sync :last-applied] (:applied result))
+                               (assoc-in [:sync :last-skipped] (:skipped result)))
+                     (seq (:applied result))
+                     (assoc :graph-revn (long revn)))))
+          (when (seq (:skipped result))
+            (l/dbg :hint "graph sync skipped changes"
+                   :file-id (str file-id)
+                   :revn revn
+                   :skipped (:skipped result))))))
     (catch Throwable cause
       (l/wrn :hint "graph sync failed"
              :file-id (str file-id)
@@ -115,17 +111,16 @@
              (ex-message cause)))))
 
 (defn- start-sync-loop!
-  [{:keys [conn profile-id file-id] :as session}]
+  [{:keys [profile-id file-id] :as session}]
   (if-let [msgbus (:msgbus session)]
     (let [sync-ch (sp/chan :buf (sp/dropping-buffer 64))]
       (mbus/sub! msgbus :topic file-id :chan sync-ch)
       ;; Recur ONLY while the channel is open. A bare `(recur)` after
-      ;; `take!` returns nil would spin forever and pin this Connection
-      ;; (and its Ladybug Database native memory) across every Load.
+      ;; `take!` returns nil would spin forever across every Load.
       (sp/go-loop []
         (when-let [message (sp/take! sync-ch)]
           (when (= :file-change (:type message))
-            (apply-file-change! conn profile-id message))
+            (apply-file-change! profile-id message))
           (recur)))
       (assoc session :sync-ch sync-ch))
     session))
@@ -133,11 +128,11 @@
 (defn session-info
   "Return a public view of the current session for `profile-id`, if any."
   [profile-id]
-  (when-let [{:keys [file-id meta loaded-at index]} (get @sessions (session-key profile-id))]
+  (when-let [{:keys [file-id meta loaded-at]} (get @sessions (session-key profile-id))]
     {:file-id        file-id
      :name           (:name meta)
      :revn           (:revn meta)
-     :graph-revn     (:revn index)
+     :graph-revn     (:graph-revn meta)
      :schema-version (:schema-version meta)
      :projection     (:projection meta)
      :sync           (:sync meta)
@@ -147,216 +142,180 @@
   "Return incremental sync status for the active session."
   [profile-id]
   (when-let [session (get @sessions (session-key profile-id))]
-    (let [{:keys [file-id meta index loaded-at]} session]
+    (let [{:keys [file-id meta loaded-at]} session]
       {:file-id    file-id
        :revn       (:revn meta)
-       :graph-revn (:revn index)
+       :graph-revn (:graph-revn meta)
        :sync       (:sync meta)
        :loaded-at  (ct/format-inst loaded-at :iso)})))
 
 (defn unload-session!
-  "Close and discard the in-memory graph for `profile-id`."
+  "Discard the in-memory overlay for `profile-id`."
   [profile-id]
   (when-let [session (get @sessions (session-key profile-id))]
     (destroy-session! session))
   (swap! sessions dissoc (session-key profile-id)))
 
+(defn- fetch-file!
+  [system file-id]
+  (let [file-id (h/parse-uuid file-id)
+        file    (db/run! system #(bfc/get-file % file-id :realize? true))]
+    (when-not file
+      (ex/raise :type :not-found
+                :code :file-not-found
+                :hint "file not found"
+                :file-id (str file-id)))
+    (when-not (:data file)
+      (ex/raise :type :internal
+                :code :file-without-data
+                :hint "file has no data blob"
+                :file-id (str file-id)))
+    [file-id file]))
+
 (defn load-session!
-  "Ingest `file-id` into a new in-memory Ladybug database for `profile-id`."
+  "Build the overlay of `file-id` for `profile-id`."
   [cfg profile-id file-id]
   (unload-session! profile-id)
-  (let [^Database db (Database.)
-        ^Connection conn (Connection. db)
-        msgbus     (::mbus/msgbus cfg)]
-    (.setQueryTimeout conn 0)
-    (ladybug/ensure-extensions! conn)
-    (try
-      (let [meta  (graph.ingest/ingest-on-connection! cfg conn file-id
-                                                      :db-path ":memory:"
-                                                      :skip-stats? true
-                                                      :skip-validation? true)
-            index (graph.sync/build-index file-id (:revn meta) (:projection meta))
-            ;; Discard projection rows after indexing — they are only needed
-            ;; to seed the sync index and would otherwise leak heap on each Load.
-            meta  (slim-ingest-meta meta)
-            session
-            ;; :lock serializes access to the shared Connection between the
-            ;; msgbus sync loop (writes) and HTTP handlers (reads); the Java
-            ;; binding gives no thread-safety guarantee for one Connection.
-            (-> {:db db
-                 :conn conn
-                 :lock (Object.)
-                 :file-id file-id
-                 :meta meta
-                 :index index
-                 :msgbus msgbus
-                 :profile-id profile-id
-                 :loaded-at (ct/now)}
-                start-sync-loop!)]
-        (swap! sessions assoc (session-key profile-id) session)
-        meta)
-      (catch Throwable cause
-        (destroy-session! {:conn conn :db db :msgbus msgbus})
-        (throw cause)))))
+  (let [msgbus         (::mbus/msgbus cfg)
+        [file-id file] (fetch-file! cfg file-id)
+        started        (System/nanoTime)
+        db             (overlay/build (:data file) file)
+        build-ms       (/ (- (System/nanoTime) started) 1e6)
+        stats          (assoc (queries/stats db)
+                              :edges (queries/edge-counts db)
+                              :build-ms (long build-ms))
+        meta           {:name           (:name file)
+                        :revn           (:revn file)
+                        :graph-revn     (:revn file)
+                        :schema-version overlay/schema-version
+                        :projection     {:stats stats}}
+        session        (-> {:db-atom    (atom db)
+                            :file-id    file-id
+                            :meta       meta
+                            :msgbus     msgbus
+                            :profile-id profile-id
+                            :loaded-at  (ct/now)}
+                           start-sync-loop!)]
+    (swap! sessions assoc (session-key profile-id) session)
+    meta))
+
+(defn session-db
+  "The current overlay value for `profile-id`, or nil."
+  [profile-id]
+  (some-> (get @sessions (session-key profile-id)) :db-atom deref))
 
 (defn query-session!
-  "Run a read-only `statement` against the in-memory graph for `profile-id`.
+  "Run a Datalog `statement` against the overlay for `profile-id`.
 
-  The statement is bound against the live schema before it runs, so a query
-  naming a table or a property that does not exist reports the binder's own
-  message and executes nothing. The engine's read/write analysis then decides
-  whether it may run at all: the console is an inspection surface, and a
-  session graph is rebuilt from the file by Reload, so a mutation from here
-  would produce a graph no rebuild reproduces."
+  Read-only by construction — `d/q` cannot transact — and gated against
+  function smuggling by `app.graph.overlay.console/check-query!`."
   [profile-id statement]
-  (when (str/blank? statement)
+  (when (or (nil? statement) (= "" statement))
     (ex/raise :type :validation
               :code :missing-query
-              :hint "cypher query is required"))
-  (if-let [{:keys [conn lock]} (get @sessions (session-key profile-id))]
-    (locking lock
-      (let [{:keys [ok? error read-only?]} (ladybug/validate-on-connection! conn statement)]
-        (when-not ok?
-          (ex/raise :type :validation
-                    :code :graph-query-invalid
-                    :hint error))
-        (when-not read-only?
-          (ex/raise :type :validation
-                    :code :graph-query-not-read-only
-                    :hint "the graph console runs read-only queries"))
-        (-> (ladybug/query-on-connection! conn statement)
-            format-query-result)))
+              :hint "datalog query is required"))
+  (if-let [db (session-db profile-id)]
+    (-> (console/run-query db statement)
+        format-query-result)
     (ex/raise :type :not-found
               :code :graph-session-not-loaded
               :hint "load a file graph before running queries")))
 
-(def ^:private export-max-rows
-  "Row cap for graph-view export queries; far above expected per-file node
-  and edge counts. `:truncated` in the export signals when it was hit."
-  100000)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; graph-view export
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- export-nodes
-  [conn]
-  (reduce
-   (fn [acc {:keys [table]}]
-     (let [stmt (str "MATCH (n:" (nodes/match-label table)
-                     ") RETURN n.id AS id, n.name AS name;")
-           {:keys [rows truncated?]}
-           (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
-       (-> acc
-           (update :nodes into
-                   (map (fn [[id label]]
-                          {:id (str id) :label (str label) :table table}))
-                   rows)
-           (update :truncated? #(or % truncated?)))))
-   {:nodes [] :truncated? false}
-   nodes/node-types))
+(defn- entity-node
+  "Node payload for the G6 view. Node ids are datascript eids, which keeps
+  two shapes sharing one uuid in different containers distinct — the
+  Cypher export merged them."
+  [db eid]
+  (let [e (d/entity db eid)]
+    (cond
+      (:document/id e)
+      {:id (str eid) :label (or (:document/name e) (str (:document/id e))) :table "Document"}
 
-(defn rel-tables
-  "Every relationship table in the open database, with whether it carries a
-  `position` property.
+      (:component/id e)
+      {:id (str eid) :label (or (:component/name e) (str (:component/id e))) :table "Component"}
 
-  Read from the catalog rather than listed here, so a newly ported transform's
-  rel table appears in the graph view without the console being told about it."
-  [conn]
-  (for [[table] (:rows (ladybug/query-on-connection!
-                        conn "CALL show_tables() WHERE type = 'REL' RETURN name;"
-                        :max-rows 1000))
-        :let [props (->> (ladybug/query-on-connection!
-                          conn (str "CALL table_info('" table "') RETURN *;")
-                          :max-rows 1000)
-                         :rows
-                         (into #{} (map (comp str second))))]]
-    {:table table :position? (contains? props "position")}))
+      (:container/id e)
+      {:id (str eid) :label (or (:container/name e) (str (:container/id e))) :table "Page"}
 
-(defn- export-edges
-  [conn]
-  (reduce
-   (fn [acc {:keys [table position?]}]
-     (let [stmt (str "MATCH (a)-[r:`" table "`]->(b) "
-                     "RETURN a.id AS source, b.id AS target, "
-                     (if position? "r.position" "NULL") " AS position, "
-                     "'" table "' AS rel;")
-           {:keys [rows truncated?]}
-           (ladybug/query-on-connection! conn stmt :max-rows export-max-rows)]
-       (-> acc
-           (update :edges into
-                   (map (fn [[source target position rel]]
-                          (cond-> {:source (str source)
-                                   :target (str target)
-                                   :rel    (str rel)}
-                            (some? position) (assoc :position position))))
-                   rows)
-           (update :truncated? #(or % truncated?)))))
-   {:edges [] :truncated? false}
-   (rel-tables conn)))
+      (:shape/id e)
+      {:id    (str eid)
+       :label (or (:shape/name e) (str (:shape/id e)))
+       :table (get overlay/shape-type->table (:shape/type e) "Shape")}
 
-(defn- bm-usage-bytes
-  "Buffer-manager memory in use by this session's in-memory database
-  (`CALL bm_info()` → [mem_limit mem_usage]); nil if the call fails."
-  [conn]
-  (ex/ignoring
-   (-> (ladybug/query-on-connection! conn "CALL bm_info() RETURN *;" :max-rows 1)
-       :rows first second)))
+      (:color/id e)
+      {:id (str eid) :label (or (:color/name e) (str (:color/id e))) :table "Color"}
+
+      (:typography/id e)
+      {:id (str eid) :label (or (:typography/name e) (str (:typography/id e))) :table "Typography"}
+
+      (:token-set/id e)
+      {:id (str eid) :label (or (:token-set/name e) (str (:token-set/id e))) :table "TokenSet"}
+
+      (:token/id e)
+      {:id (str eid) :label (:token/name e) :table "Token"})))
+
+(defn- ref-edges
+  [db attr rel]
+  (map (fn [dtm] {:source (str (:e dtm)) :target (str (:v dtm)) :rel rel})
+       (d/datoms db :avet attr)))
+
+(defn- rule-edges
+  [db rule rel]
+  (map (fn [[s t]] {:source (str s) :target (str t) :rel rel})
+       (d/q (into [] (concat '[:find ?s ?t :in $ % :where] [(list rule '?s '?t)]))
+            db queries/rules)))
+
+(defn- token-use-edges
+  [db]
+  (keep (fn [dtm]
+          (let [e (d/entity db (:e dtm))]
+            (when-let [token (:token-use/token e)]
+              {:source (str (:db/id (:token-use/shape e)))
+               :target (str (:db/id token))
+               :rel    "UsesToken"})))
+        (d/datoms db :avet :token-use/shape)))
 
 (defn export-graph-data!
-  "Export the node/edge inventory of the in-memory graph for `profile-id`
-  as plain data for the debug graph view. Returns nil when no session is
-  loaded. Queries the Ladybug database (not the sync index) so the view
-  reflects actual DB state, including drift."
+  "Export the node/edge inventory of the overlay for `profile-id` as plain
+  data for the debug graph view. Returns nil when no session is loaded."
   [profile-id]
-  (when-let [{:keys [conn lock file-id index]} (get @sessions (session-key profile-id))]
-    (locking lock
-      (let [{:keys [nodes] nodes-truncated? :truncated?} (export-nodes conn)
-            {:keys [edges] edges-truncated? :truncated?} (export-edges conn)]
-        {:file-id   (str file-id)
-         :revn      (:revn index)
-         :truncated (boolean (or nodes-truncated? edges-truncated?))
-         :bm-bytes  (bm-usage-bytes conn)
-         :nodes     nodes
-         :edges     edges}))))
-
-(defn- delete-tree!
-  [^java.io.File file]
-  (when (.exists file)
-    (doseq [f (reverse (file-seq file))]
-      (.delete ^java.io.File f))))
-
-(defn export-session-database!
-  "Materialize the in-memory session graph of `profile-id` as a `.lbug` file.
-
-  The console's graph is in-memory and live-synced, so it can differ from a
-  fresh projection of the same file — which is exactly when someone wants to
-  take it away and query it elsewhere. There is no \"save this database\"
-  primitive, so the transfer goes through Ladybug's `EXPORT DATABASE` (Parquet
-  per table) into a fresh on-disk database via `IMPORT DATABASE`.
-
-  Note the round trip drops table comments. Nothing in the graph is addressed
-  by a table comment: every table is resolved by name, so the loss costs
-  nothing.
-
-  Returns the path of the written database, or nil when no session is loaded.
-  The caller owns the file and must delete it once streamed."
-  [profile-id]
-  (when-let [{:keys [conn lock file-id]} (get @sessions (session-key profile-id))]
-    (let [stamp       (System/nanoTime)
-          staging     (io/file (System/getProperty "java.io.tmpdir")
-                               (str "penpot-graph-session-" file-id "-" stamp))
-          db-path     (str (io/file (System/getProperty "java.io.tmpdir")
-                                    (str file-id "-session-" stamp ".lbug")))]
-      (try
-        (locking lock
-          (ladybug/exec-on-connection!
-           conn [(str "EXPORT DATABASE '" (.getAbsolutePath staging)
-                      "' (format='parquet');")]))
-        (ladybug/with-connection! db-path
-          (fn [target]
-            (ladybug/exec-on-connection!
-             target [(str "IMPORT DATABASE '" (.getAbsolutePath staging) "';")
-                     "CHECKPOINT;"])))
-        db-path
-        (finally
-          (delete-tree! staging))))))
+  (when-let [{:keys [db-atom file-id meta]} (get @sessions (session-key profile-id))]
+    (let [db    @db-atom
+          eids  (into (sorted-set)
+                      (mapcat #(map :e (d/datoms db :avet %)))
+                      [:document/id :container/id :component/id :shape/id
+                       :color/id :typography/id :token-set/id :token/id])
+          nodes (into [] (keep #(entity-node db %)) eids)
+          edges (-> []
+                    (into (ref-edges db :shape/parent "IsChildOf"))
+                    (into (ref-edges db :container/document "IsChildOf"))
+                    (into (ref-edges db :component/document "IsChildOf"))
+                    (into (ref-edges db :color/document "IsChildOf"))
+                    (into (ref-edges db :typography/document "IsChildOf"))
+                    (into (ref-edges db :token-set/document "IsChildOf"))
+                    (into (ref-edges db :token/set "IsChildOf"))
+                    (into (rule-edges db 'is-instance-of "IsInstanceOf"))
+                    (into (rule-edges db 'refers-to "RefersTo"))
+                    (into (rule-edges db 'fills-swap-slot "FillsSwapSlot"))
+                    (into (ref-edges db :shape/fill-color "UsesColor"))
+                    (into (ref-edges db :shape/stroke-color "UsesColor"))
+                    (into (ref-edges db :shape/text-color "UsesColor"))
+                    (into (ref-edges db :shape/uses-typography "UsesTypography"))
+                    (into (token-use-edges db)))
+          ;; component containers appear in both the component and the
+          ;; container eid sweeps; the sorted set already deduplicates,
+          ;; and `entity-node` classifies them as Component.
+          edges (into [] (distinct) edges)]
+      {:file-id   (str file-id)
+       :revn      (:graph-revn meta)
+       :truncated false
+       :datoms    (count db)
+       :nodes     nodes
+       :edges     edges})))
 
 (defn- hide-filter-columns
   "Drop `filter_*` columns from a query result before HTML table render;

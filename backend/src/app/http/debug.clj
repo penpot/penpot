@@ -389,10 +389,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; `app.graph.*` resolves at call time, never at the top of this namespace.
-;; `app.graph.ladybug` imports `com.ladybugdb.*`, so requiring it links the
-;; Ladybug native library into the JVM, and this namespace loads on every
-;; backend boot. The routes below are registered only under the `:graph` flag,
-;; so with the flag off nothing resolves and no native code loads.
+;; `app.graph.debug` (the console session tier) is a pure datascript overlay
+;; and no longer touches Ladybug, but `app.graph.ingest` still projects
+;; through `app.graph.ladybug`, which imports `com.ladybugdb.*` and links the
+;; native library into the JVM; this namespace loads on every backend boot.
+;; The routes below are registered only under the `:graph` flag, so with the
+;; flag off nothing resolves and no native code loads.
 
 (defn- graph-export-file
   "Path of a freshly projected graph for `file-id`."
@@ -407,59 +409,38 @@
                 :db-path db-path))
     db-path))
 
-(defn- graph-export-session
-  "Path of a snapshot of the caller's live in-memory graph for `file-id`."
-  [profile-id file-id]
-  (let [session-info             (requiring-resolve 'app.graph.debug/session-info)
-        export-session-database! (requiring-resolve 'app.graph.debug/export-session-database!)
-        info                     (session-info profile-id)]
-    (when-not info
-      (ex/raise :type :not-found
-                :code :graph-session-not-loaded
-                :hint "no in-memory graph is loaded; load one first, or use source=file"))
-    (when-not (= file-id (:file-id info))
-      (ex/raise :type :validation
-                :code :graph-session-file-mismatch
-                :hint "the loaded session holds a different file"
-                :requested (str file-id)
-                :loaded (str (:file-id info))))
-    (export-session-database! profile-id)))
-
 (defn graph-export-handler
-  "Stream a Ladybug `.lbug` database for a file.
+  "Stream a Ladybug `.lbug` database for a file, projected afresh from the
+  database by `app.graph.ingest/ingest-file!` — the reproducible artifact.
 
-  `source=file` (default) projects the file afresh from the database — the
-  reproducible artifact. `source=session` snapshots the caller's live
-  in-memory console graph instead, which live-sync may have moved away from a
-  fresh projection; taking that away to query it elsewhere is the whole point
-  of asking for it. Synchronous on each request."
-  [cfg {:keys [params] :as request}]
+  `source=session` is retired: a console session is a datascript overlay
+  with no database file to stream, so it raises
+  `:graph-session-export-retired`. Synchronous on each request."
+  [cfg {:keys [params]}]
   (let [file-id (some-> params :file-id parse-uuid)
         source  (or (some-> params :source str/lower) "file")]
     (when-not file-id
       (ex/raise :type :validation
                 :code :missing-arguments
                 :hint "missing file-id"))
+    (when (= "session" source)
+      (ex/raise :type :validation
+                :code :graph-session-export-retired
+                :hint "the overlay session has no database file; use source=file for a fresh projection"))
     (when-not (contains? #{"file" "session"} source)
       (ex/raise :type :validation
                 :code :invalid-arguments
                 :hint "source must be 'file' or 'session'"
                 :source source))
 
-    (let [session? (= "session" source)
-          db-path  (if session?
-                     (graph-export-session (::session/profile-id request) file-id)
-                     (graph-export-file cfg file-id))]
+    (let [db-path (graph-export-file cfg file-id)]
       {::yres/status  200
-       ;; A session export is a temp file this request owns; deleting it on
-       ;; close would race the streaming body, so it is left for the OS temp
-       ;; sweep. A file export is the canonical per-file database and is meant
+       ;; The file export is the canonical per-file database and is meant
        ;; to persist.
        ::yres/body    (io/input-stream db-path)
        ::yres/headers {"content-type" "application/octet-stream"
                        "content-disposition"
-                       (str "attachment; filename=" file-id
-                            (when session? "-session") ".lbug")}})))
+                       (str "attachment; filename=" file-id ".lbug")}})))
 
 (defn- graph-console-response
   [data]

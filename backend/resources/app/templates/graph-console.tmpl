@@ -23,8 +23,8 @@ Graph Console
     <fieldset>
       <legend>Load graph from Penpot</legend>
       <desc>
-        Click file or paste UUID to load Penpot file into an in-memory
-        Ladybug database. Loading a new file replaces the previous one.
+        Click file or paste UUID to load a Penpot file into an in-memory
+        datascript overlay. Loading a new file replaces the previous one.
       </desc>
       <div id="graph-files-tree" style="font-size: 13px; margin-bottom: 6px;">Loading&hellip;</div>
       <form id="graph-load-form" method="post" action="/dbg/actions/graph-load">
@@ -34,7 +34,7 @@ Graph Console
                  value="{% if session %}{{session.file-id}}{% endif %}" />
           {% if session %}
           <input type="submit" value="Reload"
-                 title="Re-ingests the file in the box from scratch — the recovery fallback when live sync drifted or skipped changes. Paste a different UUID to switch files." />
+                 title="Rebuilds the session for the file in the box from scratch — the recovery fallback when live sync drifted or skipped changes. Paste a different UUID to switch files." />
           <input type="submit" value="Unload" form="graph-unload-form"
                  title="Drop the in-memory session and free its memory" />
           {% else %}
@@ -55,10 +55,10 @@ Graph Console
           File: <span id="graph-file-crumbs"></span><b><a id="graph-penpot-link"
                       data-file-id="{{session.file-id}}"
                       target="_blank">{{session.name}}</a></b>
-          <span id="graph-bm" style="color: #666;"
-                title="resident memory of the session's in-memory DB (buffer manager)"></span><br />
-          <span title="The file's revision when it was ingested vs the revision of the last live change applied to the graph. They start equal; a graph value behind the workspace means missed changes — use Reload.">
-            Revisions: ingested at <b>{{session.revn}}</b> · graph now
+          <span id="graph-datoms" style="color: #666;"
+                title="indexed datoms in the session's in-memory overlay"></span><br />
+          <span title="The file's revision when the session was loaded vs the revision of the last live change applied to the graph. They start equal; a graph value behind the workspace means missed changes — use Reload.">
+            Revisions: loaded at <b>{{session.revn}}</b> · graph now
             <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b>
           </span><br />
           Graph size: <b id="graph-size">…</b><br />
@@ -88,8 +88,8 @@ Graph Console
     </fieldset>
 
     <fieldset>
-      <legend>Query graph, read-only (<a href="https://docs.ladybugdb.com/cypher/"
-                                         target="_blank">LadybugDB Cypher</a>)</legend>
+      <legend>Query graph, read-only (<a href="https://github.com/tonsky/datascript"
+                                         target="_blank">datascript Datalog</a>)</legend>
       <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
         <div class="row">
           <textarea name="query" rows="8" style="width:100%; font-family: monospace;"
@@ -171,7 +171,7 @@ Graph Console
           </label>
         </legend>
         <desc>
-          Live view of the in-memory Ladybug graph (AntV G6). Double-click
+          Live view of the in-memory overlay graph (AntV G6). Double-click
           folds containers when folding is on.
         </desc>
         <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
@@ -691,9 +691,9 @@ Graph Console
 
   function toG6Data(data, collapsedIds, withCombos, presetPositions, diffFold) {
     const nodes = data.nodes || [];
-    const edges = (data.edges || [])
-      .slice()
-      .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    // The datascript export carries no edge position; hierarchy comes
+    // from IsChildOf, so the export's edge order is fine as-is.
+    const edges = data.edges || [];
     // Hierarchy (tree ranking, combo derivation, fold-ability) comes from
     // IsChildOf only — still a tree by construction. Other rels
     // (IsInstanceOf, …) are overlay edges drawn between positioned nodes.
@@ -779,7 +779,7 @@ Graph Console
     });
     const g6edges = edges.map(function (e) {
       return { source: e.source, target: e.target,
-               data: { position: e.position, rel: e.rel || "IsChildOf" } };
+               data: { rel: e.rel || "IsChildOf" } };
     });
     return { nodes: g6nodes, edges: g6edges, combos: combos };
   }
@@ -1040,8 +1040,9 @@ Graph Console
   }
 
   // Query filter: induced subgraph of the already-exported graph, selected
-  // by node ids found in the last Cypher result. No reconstruction from the
-  // query result is needed — ids are enough to slice the cached export.
+  // by node ids found in the last query result. No reconstruction from the
+  // query result is needed — the filter_* column values are eids, enough to
+  // slice the cached export.
   function filteredGraphData() {
     if (!graphFilterIds && !hiddenTables.size) return lastGraphData;
     const keep = {};
@@ -1058,14 +1059,21 @@ Graph Console
              revn: lastGraphData.revn, truncated: lastGraphData.truncated };
   }
 
-  const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
-
+  // Node ids in results are datascript eids: decimal strings that match the
+  // export's node ids. Only filter_* columns carry them (convention; see the
+  // default query and `renderQueryOutput`).
   function idsInResult(result) {
     const ids = new Set();
+    const filterIdx = [];
+    (result.columns || []).forEach(function (col, i) {
+      if (/^filter_/.test(col)) filterIdx.push(i);
+    });
     (result.rows || []).forEach(function (row) {
-      row.forEach(function (cell) {
-        const found = String(cell).match(UUID_RE);
-        if (found) found.forEach(function (m) { ids.add(m.toLowerCase()); });
+      filterIdx.forEach(function (i) {
+        const cell = row[i];
+        if (cell == null || cell === "") return;
+        const s = String(cell);
+        if (/^\d+$/.test(s)) ids.add(s);
       });
     });
     return ids;
@@ -1159,13 +1167,11 @@ Graph Console
         // Session-fieldset size line stays live even through skipped
         // repaints (unlike the status line under the canvas); hover
         // shows per-table counts.
-        // bm-bytes = the session DB's buffer-manager usage (CALL
-        // bm_info()), i.e. actual resident memory; shown next to the
-        // file name. Floor-dominated: the wide slice-3 schema costs
-        // ~115 MiB before any data.
-        const bmEl = document.getElementById("graph-bm");
-        if (bmEl && data["bm-bytes"]) {
-          bmEl.textContent = "(" + (data["bm-bytes"] / 1048576).toFixed(1) + " MiB)";
+        // datoms = the overlay's indexed datom count; shown next to the
+        // file name.
+        const datomsEl = document.getElementById("graph-datoms");
+        if (datomsEl && data.datoms != null) {
+          datomsEl.textContent = "datoms: " + data.datoms;
         }
         const sizeEl = document.getElementById("graph-size");
         if (sizeEl) {
@@ -1199,10 +1205,10 @@ Graph Console
   }
 
   // --- node inspector --------------------------------------------------
-  // Click a node → its full attribute row from the graph DB, rendered in
-  // a panel under the canvas. Panel over tooltip: the projected tables
-  // carry ~80 columns — too much for a tooltip, and the panel persists
-  // for side-by-side reading without obstructing the graph.
+  // Click a node → its datoms from the overlay, rendered in a panel under
+  // the canvas. Panel over tooltip: one datom row per indexed attribute,
+  // and the panel persists for side-by-side reading without obstructing
+  // the graph.
   function runConsoleQuery(query) {
     const formData = new FormData();
     formData.append("query", query);
@@ -1218,17 +1224,17 @@ Graph Console
   function showNodeInspector(id) {
     const panel = document.getElementById("graph-node-inspector");
     if (!panel || !g6graph) return;
+    const eid = String(id);
+    // The id is interpolated into a Datalog data pattern — accept only
+    // what our own export produces (datascript eids, decimal strings).
+    if (!/^\d+$/.test(eid)) return;
     let datum = null;
-    try { datum = g6graph.getNodeData(id); } catch (_err) { return; }
-    const table = datum && datum.data && datum.data.table;
+    try { datum = g6graph.getNodeData(eid); } catch (_err) { return; }
+    const table = (datum && datum.data && datum.data.table) || "";
     const label = (datum && datum.data && datum.data.label) || "";
-    // Both values are interpolated into Cypher — accept only what our own
-    // export produces (bare table names, UUID ids).
-    if (!table || !/^[A-Za-z]+$/.test(table)) return;
-    if (!/^[0-9a-f-]{36}$/i.test(id)) return;
     panel.style.display = "block";
-    panel.textContent = "loading " + id + "…";
-    runConsoleQuery("MATCH (n:`" + table + "` {id: uuid('" + id + "')}) RETURN n.*;")
+    panel.textContent = "loading " + eid + "…";
+    runConsoleQuery("[:find ?a ?v :where [" + eid + " ?a ?v]]")
       .then(function (data) {
         if (data.error) {
           panel.textContent = "inspector error: " + data.error;
@@ -1239,33 +1245,32 @@ Graph Console
         let html = '<div style="display: flex; justify-content: space-between;">'
           + "<b>" + escapeHtml(table) + " " + escapeHtml(label) + "</b>"
           + '<button type="button" id="graph-inspector-close">close</button></div>'
-          + '<div style="color: #666;">' + escapeHtml(id) + "</div>";
+          + '<div style="color: #666;">' + escapeHtml(eid) + "</div>";
         if (!rows.length) {
           html += "<div>not in the graph DB (removed?)</div>";
         } else {
-          const columns = result.columns || [];
           let hidden = 0;
-          // Two-column flow; JSON-like values fold behind the same
+          // One datom row per pair; JSON-like values fold behind the same
           // disclosure triangle the file tree uses.
           html += '<div style="column-count: 2; column-gap: 16px; margin-top: 4px;">';
-          columns.forEach(function (col, i) {
-            const val = rows[0][i];
-            // Ladybug's value->clj fallback renders SQL nulls as "NULL".
+          rows.forEach(function (row) {
+            const key = row[0];
+            const val = row[1];
+            // The console's format-cell renders nil as "NULL".
             if (val === null || val === undefined || val === "" || val === "NULL") {
               hidden += 1;
               return;
             }
-            const key = escapeHtml(col.replace(/^n\./, ""));
             const sval = String(val);
             // Fold structured values ({…}) and walls of text (long arrays
             // like migrations) behind a disclosure triangle.
             if (sval.indexOf("{") !== -1 || sval.length > 120) {
               html += '<details style="break-inside: avoid;">'
-                + '<summary style="cursor: pointer;"><code>' + key + '</code></summary>'
+                + '<summary style="cursor: pointer;"><code>' + escapeHtml(key) + '</code></summary>'
                 + '<pre style="white-space: pre-wrap; word-break: break-all; margin: 2px 0 4px 1.2em;">'
                 + escapeHtml(sval) + "</pre></details>";
             } else {
-              html += '<div style="break-inside: avoid;"><code>' + key
+              html += '<div style="break-inside: avoid;"><code>' + escapeHtml(key)
                 + '</code>: <code>' + escapeHtml(sval) + "</code></div>";
             }
           });
@@ -1532,8 +1537,8 @@ Graph Console
     html += "</tbody></table></div></fieldset>";
     output.innerHTML = html;
 
-    // Offer to view the result as an induced subgraph: any UUID appearing
-    // in any result cell selects that node in the loaded graph. The query
+    // Offer to view the result as an induced subgraph: filter_* columns
+    // carry eids, which select those nodes in the loaded graph. The query
     // goes with the ids, so the view can re-run it and follow the graph.
     const ids = idsInResult(result);
     if (ids.size) {
