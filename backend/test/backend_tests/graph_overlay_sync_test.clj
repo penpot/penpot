@@ -29,6 +29,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.graph.overlay :as overlay]
+   [app.graph.overlay.queries :as queries]
    [app.graph.overlay.sync :as sync]
    [clojure.set :as set]
    [clojure.test :as t]
@@ -97,8 +98,10 @@
   an editing session would emit them, and every indexed attribute at least
   once: topology (add, reparent, delete a subtree), the `:mod-obj` set ops
   with their asset refs (`app.graph.overlay.sync/set-op-tx`), a touched
-  swap slot on a shape inside a copy (`ctk/get-swap-slot`), and the whole
-  component lifecycle from add to purge."
+  swap slot on a shape inside a copy (`ctk/get-swap-slot`), a copy
+  child's `:shape-ref` repointed at another main shape (the resolved
+  `:shape/refers-to` must follow), and the whole component lifecycle from
+  add to purge."
   [{:type :add-obj :page-id page-id :id frame-id
     :parent-id uuid/zero :frame-id uuid/zero
     :obj (shape frame-id :frame {:name "Board" :width 400 :height 300})}
@@ -141,7 +144,7 @@
                   :val [(assoc (ths/sample-fill-color :fill-color "#ABCDEF" :fill-opacity 1)
                                :fill-color-ref-id color-id)]}]}
 
-   ;; an applied token: one token-use entity (shape, property, token)
+   ;; an applied token: one folded application (shape, property, name)
    {:type :mod-obj :page-id page-id :id rect2-id
     :operations [{:type :set :attr :applied-tokens
                   :val {:fill "brand.primary"}
@@ -197,13 +200,17 @@
                  {:type :set :attr :main-instance :val false}]}
 
    ;; a copy of the component on the same page: `shape-ref` marks the
-   ;; homologue, which is what makes `ctk/in-component-copy?` true
+   ;; homologue, which is what makes `ctk/in-component-copy?` true. The
+   ;; copy root carries `:component-file` like `ctn/make-component-instance`
+   ;; sets it (the local library id), which is what lets
+   ;; `ctf/find-ref-shape` resolve it at build time.
    {:type :add-obj :page-id page-id :id copy-root-id
     :parent-id uuid/zero :frame-id uuid/zero
     :obj (shape copy-root-id :frame {:name "Copy" :parent-id uuid/zero :frame-id uuid/zero
                                      :width 200 :height 200
                                      :shape-ref comp-root-id
                                      :component-id comp-id
+                                     :component-file file-id
                                      :component-root true})}
 
    {:type :add-obj :page-id page-id :id copy-child-id
@@ -212,6 +219,12 @@
                                      :frame-id copy-root-id :width 60 :height 40
                                      :shape-ref comp-child-id
                                      :component-id comp-id})}
+
+   ;; repoint a copy child at a different main shape: the resolved
+   ;; reference must follow on both paths (`:shape/refers-to` re-resolves
+   ;; through `ctf/find-ref-shape`'s sync mirror)
+   {:type :mod-obj :page-id page-id :id copy-child-id
+    :operations [{:type :set :attr :shape-ref :val comp-root-id}]}
 
    ;; a swap slot on a shape inside the copy: only the slot is indexed,
    ;; and only because `ctk/get-swap-slot` extracts it
@@ -245,8 +258,9 @@
 (defn- entity-key
   "The document key of one entity: `[:document id]`, `[:container id]`,
   `[:component id]`, `[:shape container-id shape-id]`, `[:color id]`,
-  `[:typography id]`, `[:token-set id]`, `[:token id]`, or
-  `[:token-use shape-key token-id prop]`."
+  `[:typography id]`, `[:token-set id]`, or `[:token id]`. Token-use
+  entities are gone: the folded encoding stores applied tokens as shape
+  attributes."
   [db eid]
   (let [ent (d/entity db eid)]
     (cond
@@ -274,15 +288,7 @@
       [:token-set (:token-set/id ent)]
 
       (some? (:token/id ent))
-      [:token (:token/id ent)]
-
-      (some? (:token-use/shape ent))
-      (let [s (:token-use/shape ent)
-            t (:token-use/token ent)]
-        [:token-use
-         [:shape (:container/id (:shape/container s)) (:shape/id s)]
-         (:token/id t)
-         (:token-use/prop ent)]))))
+      [:token (:token/id ent)])))
 
 (defn- ref-key
   [keymap ref]
@@ -323,17 +329,25 @@
      :container/document (ref-key keymap (:container/document ent))}
 
     (some? (:shape/id ent))
-    {:shape/type            (:shape/type ent)
-     :shape/name            (:shape/name ent)
-     :shape/component-id    (:shape/component-id ent)
-     :shape/component-file  (:shape/component-file ent)
-     :shape/shape-ref       (:shape/shape-ref ent)
-     :shape/swap-slot       (:shape/swap-slot ent)
-     :shape/parent          (ref-key keymap (:shape/parent ent))
-     :shape/fill-color      (ref-keys keymap (:shape/fill-color ent))
-     :shape/stroke-color    (ref-keys keymap (:shape/stroke-color ent))
-     :shape/text-color      (ref-keys keymap (:shape/text-color ent))
-     :shape/uses-typography (ref-keys keymap (:shape/uses-typography ent))}
+    (merge {:shape/type            (:shape/type ent)
+            :shape/name            (:shape/name ent)
+            :shape/component-id    (:shape/component-id ent)
+            :shape/component-file  (:shape/component-file ent)
+            :shape/shape-ref       (:shape/shape-ref ent)
+            :shape/refers-to       (ref-key keymap (:shape/refers-to ent))
+            :shape/swap-slot       (:shape/swap-slot ent)
+            :shape/parent          (ref-key keymap (:shape/parent ent))
+            :shape/fill-color      (ref-keys keymap (:shape/fill-color ent))
+            :shape/stroke-color    (ref-keys keymap (:shape/stroke-color ent))
+            :shape/text-color      (ref-keys keymap (:shape/text-color ent))
+            :shape/uses-typography (ref-keys keymap (:shape/uses-typography ent))}
+           ;; folded token attributes: plain strings, presence-checked
+           (into {} (map (fn [a] [a (get ent a)])) overlay/token-attrs))
+    ;; Euler intervals deliberately excluded: the builder and the sync
+    ;; renumber draw them from different DFS orders, so the values are
+    ;; not comparable — interval containment is the invariant, pinned by
+    ;; the-intervals-agree-after-the-full-replay (presence is checked
+    ;; there)
 
     (some? (:color/id ent))
     {:color/id       (:color/id ent)
@@ -354,11 +368,7 @@
     {:token/id   (:token/id ent)
      :token/name (:token/name ent)
      :token/type (:token/type ent)
-     :token/set  (ref-key keymap (:token/set ent))}
-
-    ;; a token-use entity: shape, token and property all live in the key
-    :else {}))
-
+     :token/set  (ref-key keymap (:token/set ent))}))
 (defn- normal-form
   "The overlay as entity-id-independent data: a set of
   [entity-key attr-map] pairs."
@@ -424,14 +434,19 @@
 (t/deftest soft-delete-keeps-the-component-container-copy
   ;; `ctf/delete-component` without `skip-undelete?` stores the
   ;; main-instance subtree on the component (`ctf/load-component-objects`);
-  ;; the overlay mirrors it as a component container, on both paths.
+  ;; the overlay mirrors it as a component container, on both paths. The
+  ;; copies' builder-resolved references must move with it: after
+  ;; normalisation the synced and rebuilt forms agree on
+  ;; `:shape/refers-to`, and both point at the snapshot copies.
   (let [first-del (first (keep-indexed
                           (fn [i ch] (when (= :del-component (:type ch)) i))
                           changes))
         prefix    (subvec changes 0 (inc first-del))
         data0     (base-data)
         result    (sync/apply-changes (overlay/build data0) prefix)
-        rebuilt   (overlay/build (cp/process-changes data0 prefix false))]
+        rebuilt   (overlay/build (cp/process-changes data0 prefix false))
+        synced-m  (into {} (normal-form (:db result)))
+        rebuilt-m (into {} (normal-form rebuilt))]
     (doseq [form [(normal-form (:db result)) (normal-form rebuilt)]]
       (let [keys (into #{} (map first) form)]
         (t/is (contains? keys [:shape comp-id comp-root-id])
@@ -449,14 +464,25 @@
                            :container/id                 comp-id
                            :container/kind               :component
                            :container/name               nil
-                           :container/document           [:document file-id]}]))))))
+                           :container/document           [:document file-id]}]))))
+
+    ;; the copies' `:shape/refers-to` equals the rebuild's, pointing at
+    ;; the snapshot copies (the repointed copy child resolves to the
+    ;; root copy, its :shape-ref was set to comp-root-id)
+    (t/is (= (get-in rebuilt-m [[:shape page-id copy-root-id] :shape/refers-to])
+             (get-in synced-m [[:shape page-id copy-root-id] :shape/refers-to])))
+    (t/is (= [:shape comp-id comp-root-id]
+             (get-in synced-m [[:shape page-id copy-root-id] :shape/refers-to])))
+    (t/is (= [:shape comp-id comp-root-id]
+             (get-in synced-m [[:shape page-id copy-child-id] :shape/refers-to])))))
 
 (t/deftest the-diff-catches-an-injected-sync-bug
   ;; The round trip is only worth running if it fails when sync is wrong.
   ;; Drop the reparenting :mov-objects from the list the overlay sees,
   ;; keep it in the list the document sees, and the moved shape's entity
   ;; key must appear in the difference: the check is locatable, not just
-  ;; boolean.
+  ;; boolean. Euler intervals are out of the normal form, so it is the
+  ;; parent ref (the moved shape's `:shape/parent` key) that names it.
   (let [data0     (base-data)
         data1     (cp/process-changes data0 changes false)
         crippled  (remove #(and (= :mov-objects (:type %))
@@ -469,3 +495,48 @@
         moved     (into #{} (map first) diff)]
     (t/is (contains? moved [:shape page-id text-id])
           "a sync that skips a reparent must name the moved shape's key")))
+
+(t/deftest the-intervals-agree-after-the-full-replay
+  ;; The Euler-tour invariants hold on the synced db, not only on the
+  ;; built one. The sync path renumbers a container from beyond the
+  ;; global maximum with a different DFS order than the builder
+  ;; (`app.graph.overlay.sync/renumber-container-tx`), so interval
+  ;; values are not comparable between the two paths — containment is.
+  ;; Here: every shape of every container carries an interval, the
+  ;; interval form answers the recursive walk exactly, and intervals are
+  ;; disjoint-or-nested file-wide (a partial overlap is the signature of
+  ;; a per-container counter).
+  (let [db         (-> (base-data) (overlay/build) (sync/apply-changes changes) :db)
+        containers (d/q '[:find [?c ...] :where [?c :container/id _]] db)]
+
+    ;; presence: every shape of every container carries a fresh interval
+    (doseq [seid (d/q '[:find [?s ...] :where [?s :shape/container _]] db)]
+      (let [e (d/entity db seid)]
+        (t/is (and (some? (:shape/enter e)) (some? (:shape/exit e)))
+              (str "shape " (pr-str (:shape/id e)) " lost its interval"))))
+
+    ;; containment: the interval form answers the recursive walk, per
+    ;; container, per shape
+    (doseq [ceid containers
+            :let [cid (:container/id (d/entity db ceid))]
+            seid (d/q '[:find [?s ...] :in $ ?c
+                        :where [?s :shape/container ?c]]
+                      db ceid)
+            :let [sid (:shape/id (d/entity db seid))]]
+      (t/is (= (queries/descendant-ids db cid sid)
+               (queries/descendant-ids-walk db cid sid))
+            (str "interval vs walk in container " cid " shape " sid)))
+
+    ;; the global-counter claim across all containers
+    (let [enters    (into {} (map (juxt :e :v)) (d/datoms db :avet :shape/enter))
+          exits     (into {} (map (juxt :e :v)) (d/datoms db :avet :shape/exit))
+          intervals (mapv (fn [[eid enter]] [enter (get exits eid)]) enters)
+          ok?       (fn [[e0 e1] [f0 f1]]
+                      (or (<= e1 f0) (<= f1 e0)
+                          (and (< e0 f0) (< f1 e1))
+                          (and (< f0 e0) (< e1 f1))))]
+      (doseq [i (range (count intervals))
+              j (range (inc i) (count intervals))]
+        (t/is (ok? (nth intervals i) (nth intervals j))
+              (str "intervals " (pr-str (nth intervals i)) " and "
+                   (pr-str (nth intervals j)) " partially overlap"))))))

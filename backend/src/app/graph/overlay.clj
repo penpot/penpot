@@ -24,17 +24,54 @@
   parent links are datascript entity references, so topology is interned
   by construction.
 
+  Three results of the 2026-08-20 study are structural here
+  (docs.local/graph/20260820-report-graph-overlay-datascript.md):
+
+  - **Subtle helpers run in the builder, never in a query.**
+    `ctf/find-ref-shape` is called once per copy shape at build time and
+    its answer becomes the plain `:shape/refers-to` reference; a query
+    never touches the helper. Unresolvable references (libraries not
+    loaded) simply produce no edge.
+  - **Containment carries a second form**: one global Euler-tour
+    numbering, one DFS per container drawing from a single global
+    counter, so `inside subtree X` is two interval comparisons. The
+    counter is global because per-container counters overlap numerically
+    and silently match other pages.
+  - **Token applications fold the property into the attribute name**:
+    `{:token/fill \"layerTwo.background\"}` on the shape itself, over the
+    closed vocabulary of `app.common.types.token/all-keys`. The
+    `uses-token` rule in `app.graph.overlay.queries` hides the encoding,
+    so the choice stays reversible.
+
   The namespace is deliberately JVM-free (no imports, no interop): the
   same code moves to the browser worker as a `.cljc` rename when the
   mirror experiment lands, which is the point of choosing datascript."
   (:require
-   [app.common.types.text :as txt]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
+   [app.common.types.text :as txt]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [datascript.core :as d]))
 
 (def schema-version
-  "penpot-graph-overlay-1")
+  "penpot-graph-overlay-2")
+
+(def token-attr
+  "The overlay attribute carrying one applied-token property:
+  `:fill` -> `:token/fill`."
+  (into {} (map (fn [k] [k (keyword "token" (name k))])) cto/all-keys))
+
+(def token-attrs
+  "The closed folded-token vocabulary, one attribute per applied-token
+  property of `app.common.types.token/all-keys`."
+  (into #{} (vals token-attr)))
+
+(defn token-attr->prop
+  "`:token/fill` -> `:fill`."
+  [attr]
+  (keyword (name attr)))
 
 (def schema
   "Only identity, type, topology, and the attributes a standing query has
@@ -45,7 +82,8 @@
   rather than as one union, because the sync path receives `:set` ops one
   attribute at a time and must be able to rebuild each contribution
   independently. The `uses-color` rule in `app.graph.overlay.queries`
-  reunites them."
+  reunites them. Folded token attributes (`:token/fill`, ...) are plain
+  string values and need no declaration."
   {;; document
    :document/id        {:db/unique :db.unique/identity}
    ;; containers: pages, and components that carry their own :objects
@@ -60,6 +98,11 @@
    :shape/component-file {:db/index true}
    :shape/shape-ref    {:db/index true}
    :shape/swap-slot    {:db/index true}
+   ;; the builder-resolved reference edge: ctf/find-ref-shape's answer
+   :shape/refers-to    {:db/valueType :db.type/ref}
+   ;; global Euler-tour containment intervals
+   :shape/enter        {:db/index true}
+   :shape/exit         {:db/index true}
    ;; asset links (the beadpot ledger's asset link transforms)
    :shape/fill-color   {:db/valueType :db.type/ref
                         :db/cardinality :db.cardinality/many}
@@ -81,11 +124,7 @@
    :token-set/document {:db/valueType :db.type/ref}
    :token/id           {:db/unique :db.unique/identity}
    :token/name         {:db/index true}
-   :token/set          {:db/valueType :db.type/ref}
-   ;; applied tokens: one entity per (shape, property, token), because an
-   ;; edge with a payload needs a relation entity in a triple store
-   :token-use/shape    {:db/valueType :db.type/ref}
-   :token-use/token    {:db/valueType :db.type/ref}})
+   :token/set          {:db/valueType :db.type/ref}})
 
 (def shape-type->table
   "The Ladybug projection's node table names, kept for parity counting and
@@ -152,14 +191,7 @@
   (into #{} (keep :typography-ref-id) (some-> content txt/node-seq)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; entity construction
-;;
-;; `asset-ctx` abstracts over build and sync: `:colors`, `:typographies`
-;; map locally defined asset ids to entity references (string tempids at
-;; build time, resolved eids at sync time), and `:tokens-by-name` maps a
-;; token name to the references of every token carrying it. Only
-;; resolvable references become edges, mirroring beadpot's `node_exists`
-;; guard.
+;; Euler-tour numbering
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- resolvable-parent?
@@ -169,8 +201,64 @@
          (not= parent-id (:id shape))
          (contains? objects parent-id))))
 
+(defn euler-numbering
+  "Euler-tour intervals for one container's `:objects`, drawn from the
+  global `counter`: a DFS from the container roots in stored child order,
+  then a degenerate interval for any shape the tree cannot reach, so the
+  whole map stays indexed. Returns [{shape-id [enter exit]} counter'].
+
+  The counter is global across containers on purpose: per-container
+  counters produce numerically overlapping ranges, and an interval query
+  would silently match shapes of other pages."
+  [objects counter]
+  (let [roots (into []
+                    (comp (filter #(not (resolvable-parent? objects %)))
+                          (map :id))
+                    (vals objects))]
+    (loop [events  (into [] (map (fn [id] [:enter id])) roots)
+           counter (long counter)
+           acc     (transient {})]
+      (if-let [[kind id] (peek events)]
+        (let [events (pop events)]
+          (case kind
+            :enter
+            (let [children (into []
+                                 (filter #(contains? objects %))
+                                 (get-in objects [id :shapes]))]
+              (recur (-> events
+                         (conj [:exit id])
+                         (into (map (fn [c] [:enter c])) (rseq children)))
+                     (inc counter)
+                     (assoc! acc id [counter nil])))
+
+            :exit
+            (recur events
+                   (inc counter)
+                   (assoc! acc id (assoc (get acc id) 1 counter)))))
+        (let [walked (persistent! acc)
+              ;; degenerate intervals for orphans the tree cannot reach
+              [walked counter]
+              (reduce (fn [[m c] id]
+                        (if (contains? m id)
+                          [m c]
+                          [(assoc m id [c (inc c)]) (+ c 2)]))
+                      [walked counter]
+                      (keys objects))]
+          [walked counter])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; entity construction
+;;
+;; `build-ctx` carries the resolution state of one build: `:colors` and
+;; `:typographies` map locally defined asset ids to entity references
+;; (string tempids at build time, resolved eids on the sync path);
+;; `:resolve-ref` answers a shape's `:shape-ref` with the reference of
+;; the shape `ctf/find-ref-shape` names, or nil; `:numbering` maps a
+;; shape id to its Euler interval within the current container.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn shape-asset-attrs
-  "The asset-edge attributes of one shape, resolved through `asset-ctx`."
+  "The asset-edge attributes of one shape, resolved through the ctx."
   [shape {:keys [colors typographies]}]
   (let [ref-vals (fn [m ids] (into [] (keep m) ids))
         fills    (ref-vals colors (fill-color-ref-ids (:fills shape)))
@@ -184,11 +272,25 @@
       (seq text)    (assoc :shape/text-color text)
       (seq typs)    (assoc :shape/uses-typography typs))))
 
+(defn shape-token-attrs
+  "The folded applied-token attributes of one shape: one datom per applied
+  property, value the applied token name, attribute from the closed
+  vocabulary. Unresolvable names are stored too; the `uses-token` rule
+  joins on `:token/name`, so they surface only when the token exists."
+  [applied-tokens]
+  (reduce-kv (fn [acc k v]
+               (if-let [attr (token-attr k)]
+                 (assoc acc attr v)
+                 acc))
+             {}
+             (or applied-tokens {})))
+
 (defn shape-attrs
   "The plain indexed attributes of one shape (no identity, no topology)."
   [shape]
   (let [swap-slot (ctk/get-swap-slot shape)]
-    (cond-> {:shape/type (:type shape)}
+    (cond-> (merge {:shape/type (:type shape)}
+                   (shape-token-attrs (:applied-tokens shape)))
       (some? (:name shape))           (assoc :shape/name (:name shape))
       (some? (:component-id shape))   (assoc :shape/component-id (:component-id shape))
       (some? (:component-file shape)) (assoc :shape/component-file (:component-file shape))
@@ -204,44 +306,31 @@
   self-referential, which covers the page root frame (its `:parent-id` is
   itself) and the root copy of a component container (its parent lives on
   a page)."
-  [container-ref container-id objects shape asset-ctx]
-  (merge {:db/id           (shape-tempid container-id (:id shape))
-          :shape/id        (:id shape)
-          :shape/container container-ref
-          :shape/parent    (if (resolvable-parent? objects shape)
-                             (shape-tempid container-id (:parent-id shape))
-                             container-ref)}
-         (shape-attrs shape)
-         (shape-asset-attrs shape asset-ctx)))
-
-(defn token-use-entities
-  "One (shape, property, token) entity per applied token that resolves.
-
-  Token names are unique within a set but not across sets, so one applied
-  name may match several tokens; every match links, exactly as beadpot's
-  name join does (`beadpot.graph.transform.tokens/LinkAppliedTokens`)."
-  [shape-ref applied-tokens tokens-by-name]
-  (for [[prop token-name] applied-tokens
-        token-ref (get tokens-by-name token-name)]
-    {:token-use/shape shape-ref
-     :token-use/token token-ref
-     :token-use/prop  prop}))
+  [container-ref container-id objects shape {:keys [resolve-ref numbering] :as ctx}]
+  (let [[enter exit] (get numbering (:id shape))
+        ref          (when resolve-ref (resolve-ref shape))]
+    (merge (cond-> {:db/id           (shape-tempid container-id (:id shape))
+                    :shape/id        (:id shape)
+                    :shape/container container-ref
+                    :shape/parent    (if (resolvable-parent? objects shape)
+                                       (shape-tempid container-id (:parent-id shape))
+                                       container-ref)}
+             (some? enter) (assoc :shape/enter enter :shape/exit exit)
+             (some? ref)   (assoc :shape/refers-to ref))
+           (shape-attrs shape)
+           (shape-asset-attrs shape ctx))))
 
 (defn container-entities
-  "Entities for every shape of one container's `:objects` map, plus the
-  applied-token relation entities.
+  "Entities for every shape of one container's `:objects` map.
 
   The whole map is indexed, not the tree walk from the root: a shape the
   tree cannot reach is a document defect the index should expose to
   queries rather than hide (the Ladybug projection walks and drops such
   shapes with a warning; this is a recorded divergence)."
-  [container-ref container-id objects asset-ctx]
+  [container-ref container-id objects ctx]
   (into []
-        (mapcat (fn [shape]
-                  (cons (shape-entity container-ref container-id objects shape asset-ctx)
-                        (token-use-entities (shape-tempid container-id (:id shape))
-                                            (:applied-tokens shape)
-                                            (:tokens-by-name asset-ctx)))))
+        (map (fn [shape]
+               (shape-entity container-ref container-id objects shape ctx)))
         (vals objects)))
 
 (defn component-entity
@@ -262,7 +351,7 @@
   "The component record entity, plus a container over its own `:objects`
   when it carries one (deleted components keep the main-instance subtree,
   `app.common.types.file/load-component-objects`)."
-  [component asset-ctx]
+  [component ctx]
   (let [objects (:objects component)]
     (cond-> [(component-entity component)]
       (seq objects)
@@ -271,17 +360,17 @@
                  :container/kind     :component
                  :container/document doc-tempid})
           (into (container-entities (container-tempid (:id component))
-                                    (:id component) objects asset-ctx))))))
+                                    (:id component) objects ctx))))))
 
 (defn- page-tx
-  [page asset-ctx]
+  [page ctx]
   (into [(cond-> {:db/id              (container-tempid (:id page))
                   :container/id       (:id page)
                   :container/kind     :page
                   :container/document doc-tempid}
            (some? (:name page)) (assoc :container/name (:name page)))]
         (container-entities (container-tempid (:id page))
-                            (:id page) (:objects page) asset-ctx)))
+                            (:id page) (:objects page) ctx)))
 
 (defn- tokens-tx
   "Token set and token entities from the file's tokens lib.
@@ -305,51 +394,82 @@
                              :token/set  (token-set-tempid set-id)})))))
         (some-> tokens-lib ctob/get-sets)))
 
-(defn- build-tokens-by-name
-  "Token name -> tempids of every token carrying that name."
-  [tokens-lib]
-  (reduce (fn [acc set*]
-            (reduce-kv (fn [acc _ token]
-                         (update acc (:name token) (fnil conj [])
-                                 (token-tempid (:id token))))
-                       acc
-                       (ctob/get-tokens- set*)))
-          {}
-          (some-> tokens-lib ctob/get-sets)))
+(defn- ref-resolver
+  "The build-time `:resolve-ref`: `ctf/find-ref-shape` once per copy
+  shape, against one ctn container, its answer minted as the target's
+  build tempid. The subtle helper runs here, in the builder, never in a
+  query; its fostered-children and swap fallbacks stay its own."
+  [data file-id ctn-container]
+  (let [file {:id file-id :data data}]
+    (fn [shape]
+      (when (:shape-ref shape)
+        (when-let [ref (ctf/find-ref-shape file ctn-container {} shape
+                                           :include-deleted? true
+                                           :with-context? true)]
+          (when-let [target-container-id (:id (:container (meta ref)))]
+            (shape-tempid target-container-id (:id ref))))))))
 
-(defn- build-asset-ctx
+(defn- build-asset-maps
   [data]
-  {:colors         (into {} (map (fn [[id _]] [id (color-tempid id)]))
-                         (:colors data))
-   :typographies   (into {} (map (fn [[id _]] [id (typography-tempid id)]))
-                         (:typographies data))
-   :tokens-by-name (build-tokens-by-name (:tokens-lib data))})
+  {:colors       (into {} (map (fn [[id _]] [id (color-tempid id)]))
+                       (:colors data))
+   :typographies (into {} (map (fn [[id _]] [id (typography-tempid id)]))
+                       (:typographies data))})
 
 (defn build-tx
   "The full transaction that projects file `data` into an empty overlay.
 
-  `file` supplies `:id` and `:name` when `data` does not carry them."
+  `file` supplies `:id` and `:name` when `data` does not carry them. The
+  Euler counter threads globally across containers, components first,
+  pages after, so every interval in the file is disjoint."
   [data file]
   (let [doc-id (or (:id data) (:id file))
-        ctx    (build-asset-ctx data)]
-    (-> [(cond-> {:db/id doc-tempid :document/id doc-id}
-           (some? (:name file)) (assoc :document/name (:name file)))]
-        (into (map (fn [[id color]]
-                     (cond-> {:db/id (color-tempid id)
-                              :color/id id
-                              :color/document doc-tempid}
-                       (some? (:name color)) (assoc :color/name (:name color)))))
-              (:colors data))
-        (into (map (fn [[id typ]]
-                     (cond-> {:db/id (typography-tempid id)
-                              :typography/id id
-                              :typography/document doc-tempid}
-                       (some? (:name typ)) (assoc :typography/name (:name typ)))))
-              (:typographies data))
-        (into (tokens-tx (:tokens-lib data)))
-        (into (mapcat #(component-tx (val %) ctx)) (:components data))
-        (into (mapcat #(page-tx (get-in data [:pages-index %]) ctx))
-              (filter #(get-in data [:pages-index %]) (:pages data))))))
+        assets (build-asset-maps data)
+        head   (-> [(cond-> {:db/id doc-tempid :document/id doc-id}
+                      (some? (:name file)) (assoc :document/name (:name file)))]
+                   (into (map (fn [[id color]]
+                                (cond-> {:db/id (color-tempid id)
+                                         :color/id id
+                                         :color/document doc-tempid}
+                                  (some? (:name color)) (assoc :color/name (:name color)))))
+                         (:colors data))
+                   (into (map (fn [[id typ]]
+                                (cond-> {:db/id (typography-tempid id)
+                                         :typography/id id
+                                         :typography/document doc-tempid}
+                                  (some? (:name typ)) (assoc :typography/name (:name typ)))))
+                         (:typographies data))
+                   (into (tokens-tx (:tokens-lib data))))
+        [tx _counter]
+        (as-> [head 0] state
+          (reduce (fn [[tx counter] component]
+                    (let [objects (:objects component)
+                          [numbering counter]
+                          (if (seq objects)
+                            (euler-numbering objects counter)
+                            [{} counter])
+                          ctx (assoc assets
+                                     :numbering numbering
+                                     :resolve-ref
+                                     (ref-resolver data doc-id
+                                                   (ctn/make-container component :component)))]
+                      [(into tx (component-tx component ctx)) counter]))
+                  state
+                  (vals (:components data)))
+          (reduce (fn [[tx counter] page-id]
+                    (if-let [page (get-in data [:pages-index page-id])]
+                      (let [[numbering counter]
+                            (euler-numbering (:objects page) counter)
+                            ctx (assoc assets
+                                       :numbering numbering
+                                       :resolve-ref
+                                       (ref-resolver data doc-id
+                                                     (ctn/make-container page :page)))]
+                        [(into tx (page-tx page ctx)) counter])
+                      [tx counter]))
+                  state
+                  (:pages data)))]
+    tx))
 
 (defn build
   "Project file `data` into a fresh overlay. Pure: returns a datascript

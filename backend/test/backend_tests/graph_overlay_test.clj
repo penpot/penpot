@@ -30,6 +30,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
@@ -37,6 +38,7 @@
    [app.graph.overlay :as overlay]
    [app.graph.overlay.queries :as queries]
    [clojure.test :as t]
+   [datascript.built-ins :as bi]
    [datascript.core :as d]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -84,17 +86,44 @@
       (assoc :content (refs-content "Typography sample" typography-id color-id)
              :position-data nil)))
 
+(defn- oracle-containers
+  "The builder's resolution containers, one per page plus one per
+  component that carries its own `:objects` snapshot, as [ctn-container
+  container-id] pairs (`app.graph.overlay/ref-resolver`)."
+  [data]
+  (concat (map (fn [[id page]] [(ctn/make-container page :page) id])
+               (:pages-index data))
+          (keep (fn [[cid component]]
+                  (when (seq (:objects component))
+                    [(ctn/make-container component :component) cid]))
+                (:components data))))
+
 (defn- document-containers
   "Every [container-id objects] pair the overlay indexes: the pages, plus
   the `:objects` snapshot a deleted component carries
   (`app.common.types.file/load-component-objects`)."
   [data]
-  (concat (map (fn [page] [(:id page) (:objects page)])
-               (vals (:pages-index data)))
-          (keep (fn [[cid component]]
-                  (when (seq (:objects component))
-                    [cid (:objects component)]))
-                (:components data))))
+  (map (fn [[container cid]] [cid (:objects container)])
+       (oracle-containers data)))
+
+(defn- oracle-refs
+  "`ctf/find-ref-shape`'s answer for every copy shape, as
+  [src-container src-id tgt-container tgt-id]: the oracle behind the
+  builder-resolved `:shape/refers-to` (`:include-deleted? true`,
+  `:with-context? true`)."
+  [data]
+  (let [file {:id (:id data) :data data}]
+    (into #{}
+          (for [[container cid] (oracle-containers data)
+                shape (vals (:objects container))
+                :when (:shape-ref shape)
+                :let [ref (ctf/find-ref-shape file container {} shape
+                                              :include-deleted? true
+                                              :with-context? true)]
+                :when (some? ref)]
+            [cid (:id shape)
+             (:id (:container (meta ref)))
+             (:id ref)]))))
 
 (defn- semantic-fixture
   "One rich file exercising every indexed attribute:
@@ -267,16 +296,21 @@
 
     ;; the inventory the rest of the suite leans on, pinned once:
     ;; 22 page shapes + 2 root frames + 2 snapshot shapes = 26 shape
-    ;; entities; 2 pages + the deleted component's snapshot = 3 containers
-    (t/is (= {:documents    1
-              :containers   3
-              :shapes       26
-              :components   5
-              :colors       3
-              :typographies 2
-              :token-sets   2
-              :tokens       4
-              :token-uses   4}
+    ;; entities; 2 pages + the deleted component's snapshot = 3
+    ;; containers; 5 folded token applications (the 4 resolvable uses
+    ;; plus the ghost name, which the encoding stores); 6 copy shapes
+    ;; carrying a shape-ref, all 6 resolved by the builder
+    (t/is (= {:documents     1
+              :containers    3
+              :shapes        26
+              :components    5
+              :colors        3
+              :typographies  2
+              :token-sets    2
+              :tokens        4
+              :token-uses    5
+              :refs-resolved 6
+              :refs-carried  6}
              (dissoc (queries/stats db) :datoms)))))
 
 (t/deftest components-are-children-of-the-document
@@ -292,47 +326,28 @@
     (t/is (= (count (:components data)) (count attached)))
     (t/is (every? #(= doc-eid (second %)) attached))))
 
-(t/deftest refers-to-pairs-match-shape-refs
+(t/deftest refers-to-pairs-match-find-ref-shape
   ;; beadpot:tests/graph/transform/test_components.py::test_refers_to_edges_match_shape_refs
-  ;; One RefersTo per resolvable shape-ref, each pointing at the referenced
-  ;; shape. Oracle: `ctk/is-main-of?` on the page objects. The rule itself
-  ;; is unscoped; the page scoping here mirrors the Ladybug projection,
-  ;; which materialises page shapes only.
+  ;; One RefersTo per copy shape the helper resolves, each pointing at the
+  ;; shape `ctf/find-ref-shape` names. Oracle: `ctf/find-ref-shape` with
+  ;; `:include-deleted? true` and `:with-context? true`, per copy shape,
+  ;; per container. The builder-resolution retrofit replaced the id-join
+  ;; encoding (`:shape/shape-ref` joined on `:shape/id`) with the helper's
+  ;; answer materialised at build time; the consumer texts (`queries/refers-to-pairs`
+  ;; and the `refers-to` rule) did not move.
   (let [{:keys [data db]} (semantic-fixture)
-        pages    (vals (:pages-index data))
-        pairs    (d/q '[:find ?sid ?tid
-                        :in $ %
-                        :where
-                        (on-page ?s)
-                        (refers-to ?s ?t)
-                        (on-page ?t)
-                        [?s :shape/id ?sid]
-                        [?t :shape/id ?tid]]
-                      db queries/rules)
-        shapes   (mapcat #(vals (:objects %)) pages)
-        refs     (filter :shape-ref shapes)
-        on-page? (fn [id] (some #(contains? (:objects %) id) pages))]
+        pairs (set (queries/refers-to-pairs db))]
 
-    ;; every on-page shape with a resolvable :shape-ref has an outgoing pair
-    (t/is (= (set (map :id (filter #(on-page? (:shape-ref %)) refs)))
-             (set (map first pairs))))
-
-    ;; every pair is a main link in the oracle's reading, and the target id
-    ;; equals the source's :shape-ref
-    (doseq [[sid tid] pairs]
-      (let [objects (some (fn [p] (when (contains? (:objects p) sid) (:objects p)))
-                          pages)
-            source  (get objects sid)
-            target  (get objects tid)]
-        (t/is (some? source))
-        (t/is (ctk/is-main-of? target source))))
+    ;; every pair is the helper's answer: target container and id from
+    ;; the context the helper attaches
+    (t/is (= (oracle-refs data) pairs))
 
     ;; all six copy shapes on the fixture resolve
     (t/is (= 6 (count pairs)))))
 
 (t/deftest instance-heads-link-only-to-live-components
   ;; beadpot:tests/graph/transform/test_components.py::test_all_instance_heads_linked_to_their_component
-  ;; Oracle: `ctk/instance-of?`. The is-instance-of rule scoped to page
+  ;; Oracle: `ctk/instance-of?`. The `instance-of` rule scoped to page
   ;; shapes must equal a scan of the predicate over the live component
   ;; records. The deleted component contributes nothing, even though its
   ;; orphaned main root still passes the raw predicate.
@@ -342,7 +357,7 @@
                                :in $ %
                                :where
                                (on-page ?s)
-                               (is-instance-of ?s ?c)
+                               (instance-of ?s ?c)
                                [?c :component/id ?cid]
                                [?s :shape/id ?sid]]
                              db queries/rules))
@@ -360,7 +375,7 @@
     (t/is (empty? (d/q '[:find [?sid ...]
                          :in $ % ?cid
                          :where
-                         (is-instance-of ?s ?c)
+                         (instance-of ?s ?c)
                          [?c :component/id ?cid]
                          [?s :shape/id ?sid]]
                        db queries/rules deleted-id)))
@@ -413,18 +428,27 @@
 (t/deftest instances-of-matches-an-instance-of-scan
   ;; beadpot:tests/graph/transform/test_components.py::test_all_instance_heads_linked_to_their_component
   ;; (the exhaustive complement: the query against the scan)
-  ;; Oracle: `ctk/instance-of?` over every page's objects. The query is the
-  ;; raw index lookup: it does not check whether the component record is
-  ;; live, which is the is-instance-of rule's business, so the scan runs
-  ;; over every component record, deleted ones included.
+  ;; Oracle: `ctk/instance-of?` over every page's objects. The standing
+  ;; query traverses the `instance-of` rule, whose live-component guard
+  ;; is the rule's business, so the scan runs over the live component
+  ;; records only; the deleted component's orphaned main root is pinned
+  ;; below to answer nothing.
   (let [{:keys [data db]} (semantic-fixture)]
-    (doseq [component (vals (:components data))]
+    (doseq [component (ctkl/components-seq data)]
       (let [expected (set (for [[pid page] (:pages-index data)
                                 [sid shape] (:objects page)
                                 :when (ctk/instance-of? shape (:id data) (:id component))]
                             [pid sid]))]
         (t/is (= expected (set (queries/instances-of db (:id component) (:id data))))
-              (str "instances of " (:name component)))))))
+              (str "instances of " (:name component)))))
+
+    ;; the deleted component: the rule's live guard answers nothing,
+    ;; while the raw predicate still sees the orphaned main root
+    (let [deleted-id (thi/id :comp-2)]
+      (t/is (empty? (queries/instances-of db deleted-id (:id data))))
+      (let [main-root (get-in data [:pages-index (thi/id :main-page)
+                                    :objects (thi/id :comp-2-root)])]
+        (t/is (ctk/instance-of? main-root (:id data) deleted-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; descendants and identity
@@ -438,7 +462,7 @@
   ;; must resolve through `queries/shape-eid`. The overlay does NOT
   ;; denormalize component-id downward (beadpot and Ladybug do): the
   ;; [?a :shape/component-id _] datom must equal `ctk/instance-head?`
-  ;; exactly, or the is-instance-of rule stops answering `ctk/instance-of?`.
+  ;; exactly, or the `instance-of` rule stops answering `ctk/instance-of?`.
   ;; Oracle: `cfh/get-children-ids` and `ctk/instance-head?`.
   (let [{:keys [data db]} (semantic-fixture)
         page1-id (thi/id :main-page)
@@ -486,6 +510,46 @@
               (str "component-id denormalization on " sid))
         (when (:component-id shape)
           (t/is (= (:component-id shape) (:shape/component-id entity))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Euler-tour numbering
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest euler-intervals-equal-the-walk-and-are-globally-disjoint-or-nested
+  ;; No beadpot counterpart. The Euler-tour retrofit's two invariants:
+  ;; (1) the interval form answers the recursive form, and both equal
+  ;; `cfh/get-children-ids` (the oracle) for every frame of every
+  ;; container; (2) one global counter numbers every container
+  ;; (`app.graph.overlay/euler-numbering` threads it file-wide), so
+  ;; [enter exit] intervals across the whole file are pairwise
+  ;; disjoint-or-nested — a partial overlap is the signature of the
+  ;; per-container-counter bug the 20260820 report guards against.
+  (let [{:keys [data db]} (semantic-fixture)]
+    (doseq [[cid objects] (document-containers data)
+            shape (vals objects)
+            :when (= :frame (:type shape))]
+      (let [sid      (:id shape)
+            expected (set (cfh/get-children-ids objects sid))]
+        (t/is (= expected (queries/descendant-ids db cid sid))
+              (str "interval descendants of " sid))
+        (t/is (= expected (queries/descendant-ids-walk db cid sid))
+              (str "walk descendants of " sid))))
+
+    ;; the global-counter claim: every [enter exit] pair across all
+    ;; containers is disjoint or properly nested, never partially
+    ;; overlapping
+    (let [enters    (into {} (map (juxt :e :v)) (d/datoms db :avet :shape/enter))
+          exits     (into {} (map (juxt :e :v)) (d/datoms db :avet :shape/exit))
+          intervals (mapv (fn [[eid enter]] [enter (get exits eid)]) enters)
+          ok?       (fn [[e0 e1] [f0 f1]]
+                      (or (<= e1 f0) (<= f1 e0)
+                          (and (< e0 f0) (< f1 e1))
+                          (and (< f0 e0) (< e1 f1))))]
+      (doseq [i (range (count intervals))
+              j (range (inc i) (count intervals))]
+        (t/is (ok? (nth intervals i) (nth intervals j))
+              (str "intervals " (pr-str (nth intervals i)) " and "
+                   (pr-str (nth intervals j)) " partially overlap"))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; swap slots
@@ -573,9 +637,10 @@
   ;; plus ::test_shared_token_has_multiple_incoming_edges and
   ;; ::test_same_token_two_attributes_yields_two_edges
   ;; Oracle: a scan of every container's :applied-tokens, restricted to
-  ;; names the lib defines; the overlay's token-use entities must equal it.
-  ;; beadpot's enum-key parsing test is a document-format concern that
-  ;; Clojure keywords make moot.
+  ;; names the lib defines. The consumer texts are unchanged; underneath,
+  ;; the token-use entities are gone and the `uses-token` rule reads the
+  ;; folded token attributes instead. beadpot's enum-key parsing test is a
+  ;; document-format concern that Clojure keywords make moot.
   (let [{:keys [data db]} (semantic-fixture)
         lib-names (into #{} (map :name) (ctob/get-all-tokens (:tokens-lib data)))
         expected  (set (for [[cid objects] (document-containers data)
@@ -586,7 +651,10 @@
         actual    (set (mapcat #(queries/shapes-using-token db %) lib-names))]
 
     (t/is (= expected actual))
-    (t/is (= 4 (:token-uses (queries/stats db))))
+
+    ;; 5 folded applications on the fixture: the 4 resolvable uses the
+    ;; rule surfaces, plus the ghost name the encoding still stores
+    (t/is (= 5 (:token-uses (queries/stats db))))
 
     ;; a token applied by two shapes has two uses
     (let [shared (queries/shapes-using-token db "color.fill")]
@@ -599,8 +667,16 @@
       (t/is (= 1 (count (set (map second two-attrs)))))
       (t/is (= #{:width :height} (set (map #(nth % 2) two-attrs)))))
 
-    ;; a name the lib never defines produces no edge
-    (t/is (empty? (queries/shapes-using-token db "ghost.token")))))
+    ;; a name the lib never defines produces no edge...
+    (t/is (empty? (queries/shapes-using-token db "ghost.token")))
+
+    ;; ...but the folded encoding stores it: the datom is present, the
+    ;; rule hides it (its join on :token/name finds no entity)
+    (let [ghost-eid (queries/shape-eid db (queries/container-eid db (thi/id :main-page))
+                                       (thi/id :ghost-rect))]
+      (t/is (= "ghost.token" (:token/fill (d/entity db ghost-eid))))
+      (t/is (= [[:token/fill "ghost.token"]]
+               (map (juxt :a :v) (d/datoms db :eavt ghost-eid :token/fill)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; colors and typographies
@@ -661,6 +737,96 @@
     (t/is (empty? (queries/shapes-using-typography db (thi/id :typo-ghost))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; the R1 invariance pin
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private control-symbols
+  "Clause heads that structure a query rather than call a function, the
+  console gate's own list (`app.graph.overlay.console`)."
+  '#{not not-join or or-join and pull})
+
+(def ^:private rule-names
+  (into #{} (map (comp first first)) queries/rules))
+
+(def ^:private allowed-query-symbols
+  "The closed call vocabulary: the shared rules, datascript's built-in
+  query fns and aggregates, and the control forms — exactly the set the
+  console gate admits."
+  (-> #{}
+      (into (keys bi/query-fns))
+      (into (keys bi/aggregates))
+      (into control-symbols)
+      (into rule-names)))
+
+(defn- query-call-symbols
+  "Every symbol in call position: heads of list clauses (rule
+  invocations, predicates, control forms). Mirrors the console gate's
+  walk over the query form."
+  [form]
+  (cond
+    (seq? form)
+    (into (if (symbol? (first form)) [(first form)] [])
+          (mapcat query-call-symbols)
+          (rest form))
+
+    (coll? form)
+    (into [] (mapcat query-call-symbols) form)
+
+    :else []))
+
+(t/deftest consumer-query-texts-invoke-only-shared-rules
+  ;; The R1 invariance claim. The 20260820 report verified the same
+  ;; consumer query texts across the pre-retrofit and post-retrofit
+  ;; encodings (docs.local/graph/20260820-report-graph-overlay-datascript.md);
+  ;; this test holds two of them — instances inside a subtree, shapes
+  ;; using a token — written once, runs them against the current
+  ;; encoding, and pins that their call positions name only shared rules
+  ;; and datascript built-ins. A text that cannot see an encoding cannot
+  ;; break when the encoding changes.
+  (let [{:keys [data db]} (semantic-fixture)
+        lib-names (into #{} (map :name) (ctob/get-all-tokens (:tokens-lib data)))
+        instances-in-subtree
+        '[:find ?pid ?id
+          :in $ % ?cid ?sid
+          :where
+          [?c :container/id ?cid]
+          [?s :shape/container ?c]
+          [?s :shape/id ?sid]
+          (descendant-of ?i ?s)
+          (instance-of ?i ?comp)
+          [?i :shape/container ?pc]
+          [?pc :container/id ?pid]
+          [?i :shape/id ?id]]
+        shapes-using-token
+        '[:find ?cid ?id
+          :in $ % ?name
+          :where
+          [?tok :token/name ?name]
+          (uses-token ?s ?tok)
+          [?s :shape/container ?c]
+          [?c :container/id ?cid]
+          [?s :shape/id ?id]]]
+
+    ;; the texts answer on the current encoding: instances inside
+    ;; comp-c's root are exactly the nested comp-a head
+    (t/is (= #{[(thi/id :main-page) (thi/id :nested-a)]}
+             (set (d/q instances-in-subtree db queries/rules
+                       (thi/id :main-page) (thi/id :comp-c-root)))))
+
+    ;; and every token text's answer equals the standing fn's
+    (doseq [name lib-names]
+      (t/is (= (set (map #(subvec % 0 2) (queries/shapes-using-token db name)))
+               (set (d/q shapes-using-token db queries/rules name)))
+            (str "token query text on " name)))
+
+    ;; the texts only reference rule names: every list-clause head is a
+    ;; shared rule or a datascript built-in, nothing else
+    (doseq [q [instances-in-subtree shapes-using-token]]
+      (doseq [sym (query-call-symbols q)]
+        (t/is (contains? allowed-query-symbols sym)
+              (str "call symbol " sym " in " (pr-str q)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; parity counting
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -669,13 +835,20 @@
   ;; so the parity fn itself is pinned: page shapes minus root frames,
   ;; pages, and live components. 22 page shapes + 2 pages + 4 live
   ;; components = 28 IsChildOf; 8 on-page instance heads against live
-  ;; components; 6 on-page resolvable shape-refs; 1 on-page swap slot.
+  ;; components; 1 on-page swap slot. `:refers-to` now counts the
+  ;; builder-resolved page->page references (the `refers-to` rule scoped
+  ;; to page shapes on both sides), not id-join pairs: the derivation
+  ;; below reads `ctf/find-ref-shape`'s answer per copy shape and keeps
+  ;; the page->page ones. On this fixture every copy resolves to a live
+  ;; main on a page, so the count is still 6 — the encoding changed, the
+  ;; number did not.
   (let [{:keys [data db]} (semantic-fixture)
         pages       (vals (:pages-index data))
         page-shapes (remove #(= uuid/zero (:id %))
                             (mapcat #(vals (:objects %)) pages))
         live-comps  (ctkl/components-seq data)
-        on-page?    (fn [id] (some #(contains? (:objects %) id) pages))
+        shape-on-page? (fn [id] (some #(contains? (:objects %) id) pages))
+        page-container? (fn [cid] (contains? (:pages-index data) cid))
         live-head?  (fn [shape]
                       (some (fn [component]
                               (ctk/instance-of? shape (:id data) (:id component)))
@@ -684,11 +857,11 @@
                                          (count pages)
                                          (count live-comps))
                      :is-instance-of  (count (filter live-head? page-shapes))
-                     :refers-to       (count (filter #(and (:shape-ref %)
-                                                           (on-page? (:shape-ref %)))
-                                                     page-shapes))
+                     :refers-to       (count (filter (fn [[_scid _sid tcid _tid]]
+                                                       (page-container? tcid))
+                                                     (oracle-refs data)))
                      :fills-swap-slot (count (filter #(let [slot (ctk/get-swap-slot %)]
-                                                        (and slot (on-page? slot)))
+                                                        (and slot (shape-on-page? slot)))
                                                      page-shapes))}]
 
     (t/is (= derived (queries/ladybug-parity-counts db)))

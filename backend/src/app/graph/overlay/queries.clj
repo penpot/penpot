@@ -5,89 +5,121 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.graph.overlay.queries
-  "The standing question set over the overlay, plus the rule set the
-  console shares.
+  "The relation vocabulary and the standing question set over the overlay.
+
+  **The relation vocabulary is a rule set, not raw clauses**
+  (docs.local/graph/20260820-report-graph-overlay-datascript.md).
+  `child-of`, `descendant-of`, `instance-of`, `refers-to`,
+  `fills-swap-slot` and `uses-token` are named once here, implemented per
+  engine and per encoding, and every consumer query and every backported
+  beadpot assertion is written against the rules only. The encodings can
+  change under a rule without a consumer noticing: `refers-to` reads a
+  builder-resolved reference today and read an id join before,
+  `uses-token` reads folded token attributes today and read relation
+  entities before, and the consumer texts did not move.
+
+  Rule signatures are subject first: `(child-of ?c ?p)` reads \"?c is a
+  child of ?p\", `(descendant-of ?d ?a)` reads \"?d is a descendant of
+  ?a\".
 
   Division of labour, stated once and applied throughout: **when the
   caller holds the document, Penpot's helper is the query.** The upward
   walk (`ctn/get-parent-heads` over `cfh/get-parents-with-self`) runs
-  about 1 500 times faster than the datalog formulation because the
-  document already encodes it as a pointer chain
-  (docs.local/graph/20260819-report-graph-overlay-datascript.md). The
-  functions here exist for the reverse and cross-container questions the
-  document cannot answer without a full scan, and for callers that hold
-  only the index. Where a function mirrors a helper, its docstring names
-  that helper, and the semantic suite pins the equality; the helper stays
-  the oracle and is never reimplemented here."
+  about three orders of magnitude faster than any datalog formulation
+  because the document already encodes it as a pointer chain, and even
+  the interval form of containment loses to `cfh/get-children-ids` by an
+  order of magnitude (14.89 ms against 1.09 ms on an 808-child frame).
+  The functions here exist for the reverse and cross-container questions
+  the document cannot answer without a full scan, and for callers that
+  hold only the index. Where a function mirrors a helper, its docstring
+  names that helper, and the semantic suite pins the equality; the helper
+  stays the oracle and is never reimplemented here."
   (:require
    [app.common.uuid :as uuid]
+   [app.graph.overlay :as overlay]
    [datascript.core :as d]))
 
 (def rules
-  "The shared rule set. Edge kinds that the Ladybug projection
-  materialized as relationship tables are rules here: they derive from
-  indexed attributes at query time, so they can never drift from the
-  attributes they restate.
+  "The relation vocabulary, plus the helper fragments the standing set
+  composes (`anc-or-self`, `uses-color`, `on-page`).
 
-  The predicates the rules restate live in `app.common.types.component`
-  and stay authoritative: `instance-head?` is `(some? (:component-id
-  shape))`, which is exactly the `[?s :shape/component-id _]` clause;
-  `is-instance-of` requires `component-file` as the head marker just as
-  `ctk/instance-of?` does; `fills-swap-slot` reads the swap slot that
-  `ctk/get-swap-slot` extracted at build time."
-  '[;; ancestors, self included: cfh/get-parents-with-self as a rule
-    [(anc-or-self ?s ?a)
-     [(identity ?s) ?a]]
-    [(anc-or-self ?s ?a)
-     [?s :shape/parent ?p]
-     (anc-or-self ?p ?a)]
+  `descendant-of` is implemented over the global Euler-tour intervals the
+  builder assigns: two comparisons instead of a recursive walk (14.89 ms
+  against 93.98 ms on an 808-child frame). `descendant-of-walk` keeps the
+  recursive form: it is the invariant check for the numbering and the
+  slow side of that measurement, never a consumer surface.
 
-    ;; strict descendants: cfh/get-children-ids as a rule
-    [(desc ?a ?d)
-     [?d :shape/parent ?a]]
-    [(desc ?a ?d)
-     [?x :shape/parent ?a]
-     (desc ?x ?d)]
+  `uses-token` hides the folded token encoding: an attribute-variable
+  clause over the closed vocabulary of `app.common.types.token/all-keys`,
+  joined to the token entity by name, so the encoding stays reversible
+  behind the rule."
+  (into
+   '[;; containment, one edge
+     [(child-of ?c ?p)
+      [?c :shape/parent ?p]]
 
-    ;; IsInstanceOf: ctk/instance-of? against a live component record
-    [(is-instance-of ?s ?c)
-     [?s :shape/type :frame]
-     [?s :shape/component-id ?cid]
-     [?s :shape/component-file _]
-     [?c :component/id ?cid]
-     (not [?c :component/deleted true])]
+     ;; containment, transitive: the Euler-tour interval form
+     [(descendant-of ?d ?a)
+      [?a :shape/enter ?e0]
+      [?a :shape/exit ?e1]
+      [?d :shape/enter ?de]
+      [(< ?e0 ?de)]
+      [(< ?de ?e1)]]
 
-    ;; RefersTo: is-main-of? read backwards — the instance shape points
-    ;; at its homologue by :shape-ref, joined on the target's id
-    [(refers-to ?s ?t)
-     [?s :shape/shape-ref ?r]
-     [?t :shape/id ?r]]
+     ;; containment, transitive: the recursive form, kept as the
+     ;; numbering's invariant check and the measured slow side
+     [(descendant-of-walk ?d ?a)
+      (child-of ?d ?a)]
+     [(descendant-of-walk ?d ?a)
+      (child-of ?d ?x)
+      (descendant-of-walk ?x ?a)]
 
-    ;; FillsSwapSlot: the swapped-in shape names the replaced slot
-    [(fills-swap-slot ?s ?t)
-     [?s :shape/swap-slot ?slot]
-     [?t :shape/id ?slot]
-     [?s :shape/id ?sid]
-     [(not= ?sid ?slot)]]
+     ;; ancestors, self included: cfh/get-parents-with-self as a rule
+     [(anc-or-self ?s ?a)
+      [(identity ?s) ?a]]
+     [(anc-or-self ?s ?a)
+      [?s :shape/parent ?p]
+      (anc-or-self ?p ?a)]
 
-    ;; UsesColor: the per-source attributes reunited
-    [(uses-color ?s ?col)
-     [?s :shape/fill-color ?col]]
-    [(uses-color ?s ?col)
-     [?s :shape/stroke-color ?col]]
-    [(uses-color ?s ?col)
-     [?s :shape/text-color ?col]]
+     ;; IsInstanceOf: ctk/instance-of? against a live component record
+     [(instance-of ?s ?c)
+      [?s :shape/type :frame]
+      [?s :shape/component-id ?cid]
+      [?s :shape/component-file _]
+      [?c :component/id ?cid]
+      (not [?c :component/deleted true])]
 
-    ;; UsesToken: the relation entity flattened to an edge
-    [(uses-token ?s ?t)
-     [?u :token-use/shape ?s]
-     [?u :token-use/token ?t]]
+     ;; RefersTo: the reference ctf/find-ref-shape resolved at build time
+     [(refers-to ?s ?t)
+      [?s :shape/refers-to ?t]]
 
-    ;; scope helper: shapes living on a page (component containers hold
-    ;; bookkeeping copies, ctf/load-component-objects)
-    [(on-page ?s)
-     [?s :shape/container ?c]
-     [?c :container/kind :page]]])
+     ;; FillsSwapSlot: the swapped-in shape names the replaced slot
+     [(fills-swap-slot ?s ?t)
+      [?s :shape/swap-slot ?slot]
+      [?t :shape/id ?slot]
+      [?s :shape/id ?sid]
+      [(not= ?sid ?slot)]]
+
+     ;; UsesColor: the per-source attributes reunited
+     [(uses-color ?s ?col)
+      [?s :shape/fill-color ?col]]
+     [(uses-color ?s ?col)
+      [?s :shape/stroke-color ?col]]
+     [(uses-color ?s ?col)
+      [?s :shape/text-color ?col]]
+
+     ;; scope helper: shapes living on a page (component containers hold
+     ;; bookkeeping copies, ctf/load-component-objects)
+     [(on-page ?s)
+      [?s :shape/container ?c]
+      [?c :container/kind :page]]]
+
+   ;; UsesToken over the folded encoding; the closed vocabulary is
+   ;; embedded as data so the rule stays engine-portable
+   [(vector '(uses-token ?s ?tok)
+            '[?s ?a ?n]
+            [(list 'contains? overlay/token-attrs '?a)]
+            '[?tok :token/name ?n])]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; entity resolution
@@ -115,7 +147,7 @@
   (mapv :e (d/datoms db :avet :shape/id shape-id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; the standing question set
+;; the standing question set — every relation traversal via the rules
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- entity-depth
@@ -152,20 +184,21 @@
   [page-id shape-id] pairs.
 
   The document-side equivalent is a full scan of every page's `:objects`
-  filtered by `ctk/instance-of?`; the overlay answers it from two AVET
-  lookups. Scoped to page containers because component records hold their
-  own copies of shapes."
+  filtered by `ctk/instance-of?`; the overlay answers it from the
+  `instance-of` rule plus one attribute constraint. Scoped to page
+  containers because component records hold their own copies of shapes."
   [db component-id file-id]
   (d/q '[:find ?pid ?id
-         :in $ ?cid ?fid
+         :in $ % ?cid ?fid
          :where
-         [?e :shape/component-id ?cid]
+         [?comp :component/id ?cid]
+         (instance-of ?e ?comp)
          [?e :shape/component-file ?fid]
+         (on-page ?e)
          [?e :shape/container ?c]
-         [?c :container/kind :page]
          [?c :container/id ?pid]
          [?e :shape/id ?id]]
-       db component-id file-id))
+       db rules component-id file-id))
 
 (defn descendant-ids
   "Descendant shape ids of (container, shape), self excluded: the overlay
@@ -178,7 +211,21 @@
               [?c :container/id ?cid]
               [?s :shape/container ?c]
               [?s :shape/id ?sid]
-              (desc ?s ?d)
+              (descendant-of ?d ?s)
+              [?d :shape/id ?id]]
+            db rules container-id shape-id)))
+
+(defn descendant-ids-walk
+  "The recursive-rule form of `descendant-ids`: the numbering invariant's
+  slow side, kept for the A/B measurement, never a consumer surface."
+  [db container-id shape-id]
+  (set (d/q '[:find [?id ...]
+              :in $ % ?cid ?sid
+              :where
+              [?c :container/id ?cid]
+              [?s :shape/container ?c]
+              [?s :shape/id ?sid]
+              (descendant-of-walk ?d ?s)
               [?d :shape/id ?id]]
             db rules container-id shape-id)))
 
@@ -193,7 +240,7 @@
               [?c :container/id ?cid]
               [?s :shape/container ?c]
               [?s :shape/id ?sid]
-              (desc ?s ?d)
+              (descendant-of ?d ?s)
               [?d :shape/type ?type]
               [?d :shape/id ?id]]
             db rules container-id shape-id type)))
@@ -216,13 +263,28 @@
   (`ctk/instance-head?` over the whole document)."
   [db]
   (d/q '[:find ?pid ?id
+         :in $ %
          :where
          [?s :shape/component-id _]
+         (on-page ?s)
          [?s :shape/container ?c]
-         [?c :container/kind :page]
          [?c :container/id ?pid]
          [?s :shape/id ?id]]
-       db))
+       db rules))
+
+(defn refers-to-pairs
+  "Resolved reference pairs [[src-container src-id tgt-container tgt-id]]
+  from the `refers-to` rule (builder-resolved `ctf/find-ref-shape`)."
+  [db]
+  (d/q '[:find ?scid ?sid ?tcid ?tid
+         :in $ %
+         :where
+         (refers-to ?s ?t)
+         [?s :shape/container ?sc] [?sc :container/id ?scid]
+         [?s :shape/id ?sid]
+         [?t :shape/container ?tc] [?tc :container/id ?tcid]
+         [?t :shape/id ?tid]]
+       db rules))
 
 (defn shapes-using-color
   "Shapes referencing library color `color-id`, as [container-id shape-id]
@@ -252,22 +314,37 @@
          [?s :shape/id ?id]]
        db typography-id))
 
+(defn- applied-props
+  "The applied-token properties under which `eid` carries `token-name`,
+  recovered from the folded attributes of the entity."
+  [db eid token-name]
+  (let [e (d/entity db eid)]
+    (into []
+          (keep (fn [attr]
+                  (when (= token-name (get e attr))
+                    (overlay/token-attr->prop attr))))
+          overlay/token-attrs)))
+
 (defn shapes-using-token
   "Applied-token uses of the token named `token-name`, as
   [container-id shape-id property] triples (the LinkAppliedTokens
-  question)."
+  question). The relation comes from the `uses-token` rule; the property
+  is recovered from the folded attributes per matched shape."
   [db token-name]
-  (d/q '[:find ?cid ?id ?prop
-         :in $ ?name
-         :where
-         [?t :token/name ?name]
-         [?u :token-use/token ?t]
-         [?u :token-use/prop ?prop]
-         [?u :token-use/shape ?s]
-         [?s :shape/container ?c]
-         [?c :container/id ?cid]
-         [?s :shape/id ?id]]
-       db token-name))
+  (let [pairs (d/q '[:find ?cid ?id ?s
+                     :in $ % ?name
+                     :where
+                     [?tok :token/name ?name]
+                     (uses-token ?s ?tok)
+                     [?s :shape/container ?c]
+                     [?c :container/id ?cid]
+                     [?s :shape/id ?id]]
+                   db rules token-name)]
+    (into #{}
+          (mapcat (fn [[cid id eid]]
+                    (map (fn [prop] [cid id prop])
+                         (applied-props db eid token-name))))
+          pairs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; inventory and parity
@@ -276,6 +353,11 @@
 (defn- attr-count
   [db attr]
   (count (d/datoms db :avet attr)))
+
+(defn token-application-count
+  "Datoms across the folded token attributes."
+  [db]
+  (transduce (map #(count (d/datoms db :aevt %))) + 0 overlay/token-attrs))
 
 (defn stats
   "Entity and edge inventory of the overlay."
@@ -289,7 +371,9 @@
    :typographies (attr-count db :typography/id)
    :token-sets   (attr-count db :token-set/id)
    :tokens       (attr-count db :token/id)
-   :token-uses   (attr-count db :token-use/shape)})
+   :token-uses   (token-application-count db)
+   :refs-resolved (attr-count db :shape/refers-to)
+   :refs-carried  (attr-count db :shape/shape-ref)})
 
 (defn edge-counts
   "Count of every edge kind under the overlay's own conventions (all
@@ -299,17 +383,16 @@
   {:is-child-of     (+ (attr-count db :shape/parent)
                        (attr-count db :container/document)
                        (attr-count db :component/document))
-   :is-instance-of  (count (d/q '[:find ?s ?c :in $ % :where (is-instance-of ?s ?c)]
+   :is-instance-of  (count (d/q '[:find ?s ?c :in $ % :where (instance-of ?s ?c)]
                                 db rules))
-   :refers-to       (count (d/q '[:find ?s ?t :in $ % :where (refers-to ?s ?t)]
-                                db rules))
+   :refers-to       (attr-count db :shape/refers-to)
    :fills-swap-slot (count (d/q '[:find ?s ?t :in $ % :where (fills-swap-slot ?s ?t)]
                                 db rules))
    :uses-color      (+ (attr-count db :shape/fill-color)
                        (attr-count db :shape/stroke-color)
                        (attr-count db :shape/text-color))
    :uses-typography (attr-count db :shape/uses-typography)
-   :uses-token      (attr-count db :token-use/shape)})
+   :uses-token      (token-application-count db)})
 
 (defn ladybug-parity-counts
   "Edge counts under the Ladybug projection's own conventions, for the
@@ -317,19 +400,20 @@
   an overlay extension), root frames excluded (the projection skips
   them), live components only.
 
-  A count that disagrees with the projection's relation table is a
-  finding to explain in writing, never to average away: the two likely
-  causes are a porting bug here and a projection limitation there, and
-  they demand opposite responses."
+  `refers-to` diverges by construction since the builder-resolution
+  retrofit: the projection's RefersTo is an id join over page shapes,
+  the overlay's is `ctf/find-ref-shape`'s answer, and the two differ
+  exactly where the id join is ambiguous or the helper's fallbacks
+  apply. The difference is a semantics upgrade, recorded rather than
+  reconciled."
   [db]
   (let [zero      uuid/zero
         page-shapes (d/q '[:find [?s ...]
-                           :in $ ?zero
+                           :in $ % ?zero
                            :where
-                           [?s :shape/container ?c]
-                           [?c :container/kind :page]
+                           (on-page ?s)
                            (not [?s :shape/id ?zero])]
-                         db zero)
+                         db rules zero)
         pages     (count (d/q '[:find [?c ...]
                                 :where [?c :container/kind :page]]
                               db))
@@ -343,7 +427,7 @@
                                    :in $ %
                                    :where
                                    (on-page ?s)
-                                   (is-instance-of ?s ?c)]
+                                   (instance-of ?s ?c)]
                                  db rules))
      :refers-to      (count (d/q '[:find ?s ?t
                                    :in $ %
