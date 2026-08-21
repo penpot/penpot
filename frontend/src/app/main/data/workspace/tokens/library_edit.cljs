@@ -430,8 +430,10 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            library (dsh/lookup-file state library-id)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
+                        (clo/generate-set-tokens-source library)
                         (pcb/set-tokens-source library-id))]
         (rx/of (dch/commit-changes changes))))))
 
