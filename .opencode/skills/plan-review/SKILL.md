@@ -87,7 +87,7 @@ Can an implementer actually execute this?
 
 ### 6. Proposed Code Quality *(when the plan includes implementation details)*
 
-If the plan proposes code shapes, function signatures, data structures, or API designs, evaluate those proposals against `code-review-and-quality` criteria:
+If the plan proposes code shapes, function signatures, data structures, or API designs, evaluate those proposals against `code-review` criteria:
 
 - **Correctness:** Do the proposed types/signatures handle edge cases (null, empty, boundaries)?
 - **Readability:** Are proposed names descriptive and consistent with project conventions?
@@ -215,7 +215,7 @@ Check that the plan can actually confirm it worked:
 If the plan includes code snippets, types, or API designs:
 
 ```
-- Load code-review-and-quality skill for criteria
+- Load code-review skill for criteria
 - Check proposed signatures for edge cases
 - Verify naming follows project conventions
 - Confirm abstractions follow existing patterns
@@ -310,6 +310,6 @@ If the plan includes code snippets, types, or API designs:
 ## See Also
 
 - For producing plans, use the `planner` skill
-- For reviewing implemented code, use `code-review-and-quality` — also the criteria source for axis 6
+- For reviewing implemented code, use `code-review` — also the criteria source for axis 6
 - For security-specific concerns, see `security-and-hardening`
 - For testing strategy guidance, see `testing`
