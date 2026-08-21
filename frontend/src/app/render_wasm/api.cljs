@@ -83,6 +83,7 @@
 ;; `penpot:wasm:tiles-complete`.
 ;;
 ;; - `page-transition?`: true while the overlay should be considered active.
+;;   Pan/zoom into WASM is frozen until `tiles-complete` (atlas still empty).
 ;; - `transition-image*`: image shown by the UI overlay (usually an `ImageBitmap`
 ;;   snapshot of the WebGL canvas; on initial load it may be a tiny SVG data-url
 ;;   string derived from the page background color).
@@ -92,6 +93,8 @@
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
 (defonce context-loss-overlay? (atom false))
+;; Skipped set-view-box during transition; flushed when the overlay ends.
+(defonce ^:private viewport-dirty-during-transition? (atom false))
 ;; When true (initial load) the overlay clips out the ruler strips so the live
 ;; rulers show through. False (page switch / context loss) keeps the snapshot's
 ;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
@@ -114,6 +117,8 @@
   []
   (wasm/ready?))
 
+(declare sync-workspace-local-viewport!)
+
 
 (defn set-transition-image-from-background!
   "Sets `transition-image*` to a data URL representing a solid background color."
@@ -128,6 +133,7 @@
 (defn begin-page-transition!
   []
   (reset! page-transition? true)
+  (reset! viewport-dirty-during-transition? false)
   (swap! transition-epoch* inc))
 
 (defn end-page-transition!
@@ -136,7 +142,11 @@
   (when-let [prev @transition-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
-  (reset! transition-image* nil))
+  (reset! transition-image* nil)
+  ;; Keyboard/wheel may have moved workspace-local while WASM was frozen.
+  (when (and (initialized?) @viewport-dirty-during-transition?)
+    (reset! viewport-dirty-during-transition? false)
+    (sync-workspace-local-viewport! @st/state)))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -1383,7 +1393,9 @@
 
 (defn view-interaction-start!
   []
-  (when (and (initialized?) (not @view-interaction-active?))
+  (when (and (initialized?)
+             (not @page-transition?)
+             (not @view-interaction-active?))
     (h/call wasm/internal-module "_set_view_start")
     (reset! view-interaction-active? true)))
 
@@ -1463,25 +1475,29 @@
 
 (defn set-view-box
   [zoom vbox]
-  (when (initialized?)
-    (perf/begin-measure "set-view-box")
-    (view-interaction-start!)
-    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-    (perf/end-measure "set-view-box")
+  ;; Frozen during page transition: tile atlas is empty/incomplete and
+  ;; render_from_cache would present a blank workspace.
+  (if @page-transition?
+    (reset! viewport-dirty-during-transition? true)
+    (when (initialized?)
+      (perf/begin-measure "set-view-box")
+      (view-interaction-start!)
+      (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+      (perf/end-measure "set-view-box")
 
-    (perf/begin-measure "render-from-cache")
-    (h/call wasm/internal-module "_render_from_cache" 0)
-    ;; Keep the text-editor caret/selection glued to the shapes while the view
-    ;; changes. `_render_from_cache` re-composites shapes + UI at the new viewbox
-    ;; but omits the editor overlay, so without this the selection would vanish for
-    ;; the whole pan/zoom gesture and only flash back when the debounced full
-    ;; render lands — the blink seen when zooming in/out over a selection at high
-    ;; zoom (gh-10709). `_text_editor_render_overlay` draws straight onto the
-    ;; freshly composited Target (no Backbuffer re-compose) and no-ops when no
-    ;; editor is active.
-    (render-text-editor-overlay-if-active!)
-    (render-finish)
-    (perf/end-measure "render-from-cache")))
+      (perf/begin-measure "render-from-cache")
+      (h/call wasm/internal-module "_render_from_cache" 0)
+      ;; Keep the text-editor caret/selection glued to the shapes while the view
+      ;; changes. `_render_from_cache` re-composites shapes + UI at the new viewbox
+      ;; but omits the editor overlay, so without this the selection would vanish for
+      ;; the whole pan/zoom gesture and only flash back when the debounced full
+      ;; render lands — the blink seen when zooming in/out over a selection at high
+      ;; zoom (gh-10709). `_text_editor_render_overlay` draws straight onto the
+      ;; freshly composited Target (no Backbuffer re-compose) and no-ops when no
+      ;; editor is active.
+      (render-text-editor-overlay-if-active!)
+      (render-finish)
+      (perf/end-measure "render-from-cache"))))
 
 (defn sync-workspace-local-viewport!
   "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
