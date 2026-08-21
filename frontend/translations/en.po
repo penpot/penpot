@@ -10352,3 +10352,9 @@ msgstr "Sign-in with your organization's identity provider didn't complete. The 
 
 msgid "labels.sso-error.retry"
 msgstr "Try again"
+
+msgid "dashboard.invite-profile-disabled"
+msgstr "You don't have permission to invite people to this team"
+
+msgid "dashboard.invite-profile-disabled.owners-only"
+msgstr "Only team owners can invite within %s"
