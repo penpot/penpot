@@ -16,6 +16,28 @@ test("isDevEnvEnabled returns true when PENPOT_MCP_DEVENV is 'true'", () => {
     assert.equal(PenpotMcpServer.isDevEnvEnabled({ PENPOT_MCP_DEVENV: "true" }), true);
 });
 
+// ── Pure function tests: isReplEnabled ──────────────────────────
+
+test("isReplEnabled returns false when neither env var is set", () => {
+    assert.equal(PenpotMcpServer.isReplEnabled({}), false);
+});
+
+test("isReplEnabled returns true when PENPOT_MCP_DEVENV is 'true' (fallback)", () => {
+    assert.equal(PenpotMcpServer.isReplEnabled({ PENPOT_MCP_DEVENV: "true" }), true);
+});
+
+test("isReplEnabled returns true when PENPOT_MCP_REPL_ENABLE is 'true'", () => {
+    assert.equal(PenpotMcpServer.isReplEnabled({ PENPOT_MCP_REPL_ENABLE: "true" }), true);
+});
+
+test("isReplEnabled returns false when PENPOT_MCP_REPL_ENABLE is 'false' even if DEVENV is true", () => {
+    assert.equal(PenpotMcpServer.isReplEnabled({ PENPOT_MCP_REPL_ENABLE: "false", PENPOT_MCP_DEVENV: "true" }), false);
+});
+
+test("isReplEnabled returns true when PENPOT_MCP_REPL_ENABLE is 'true' regardless of DEVENV", () => {
+    assert.equal(PenpotMcpServer.isReplEnabled({ PENPOT_MCP_REPL_ENABLE: "true" }), true);
+});
+
 // ── Integration tests: constructor gating ──────────────────────
 //
 // Each test uses unique ports to avoid conflicts when tests run
@@ -54,6 +76,40 @@ test("constructor creates ReplServer when PENPOT_MCP_DEVENV is 'true'", async ()
     } finally {
         await server?.stop();
         restoreEnv(prev, prevPorts);
+    }
+});
+
+test("constructor creates ReplServer when PENPOT_MCP_REPL_ENABLE is 'true' without DEVENV", async () => {
+    const prevDevEnv = process.env.PENPOT_MCP_DEVENV;
+    const prevReplEnable = process.env.PENPOT_MCP_REPL_ENABLE;
+    const prevPorts = setUniqueEnv();
+    delete process.env.PENPOT_MCP_DEVENV;
+    process.env.PENPOT_MCP_REPL_ENABLE = "true";
+    let server: PenpotMcpServer | undefined;
+    try {
+        server = new PenpotMcpServer(false);
+        assert.equal(server.hasReplServer(), true);
+    } finally {
+        await server?.stop();
+        restoreEnv(prevDevEnv, prevPorts);
+        restoreOrDelete("PENPOT_MCP_REPL_ENABLE", prevReplEnable);
+    }
+});
+
+test("constructor does not create ReplServer when PENPOT_MCP_REPL_ENABLE is 'false' even with DEVENV", async () => {
+    const prevDevEnv = process.env.PENPOT_MCP_DEVENV;
+    const prevReplEnable = process.env.PENPOT_MCP_REPL_ENABLE;
+    const prevPorts = setUniqueEnv();
+    process.env.PENPOT_MCP_DEVENV = "true";
+    process.env.PENPOT_MCP_REPL_ENABLE = "false";
+    let server: PenpotMcpServer | undefined;
+    try {
+        server = new PenpotMcpServer(false);
+        assert.equal(server.hasReplServer(), false);
+    } finally {
+        await server?.stop();
+        restoreEnv(prevDevEnv, prevPorts);
+        restoreOrDelete("PENPOT_MCP_REPL_ENABLE", prevReplEnable);
     }
 });
 
