@@ -160,6 +160,17 @@
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
+  :ab-bench
+  {:target :node-script
+   :output-to "target/ab-bench.js"
+   :output-dir "target/ab-bench/"
+   :main bench.core/-main
+
+   :compiler-options
+   {:optimizations :simple
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}
+
   :bench
   {:target :node-script
    :output-to "target/bench.js"
