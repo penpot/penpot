@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
    [app.common.types.path.helpers :as helpers]
    [app.common.types.path.impl :as impl]))
 
@@ -177,32 +178,36 @@
 (defn distribute-content
   "Distributes three or more selected positions along `axis`."
   [content indices axis]
-  (let [content     (vec content)
-        indices     (set indices)
-        entries     (selected-node-entries content indices)
-        horizontal? (= axis :horizontal)
-        coord       (fn [p] (if horizontal? (:x p) (:y p)))
-        groups      (->> entries
-                         (group-by (fn [[_ p]] [(:x p) (:y p)]))
-                         (mapv (fn [[_ es]]
-                                 {:point   (second (first es))
-                                  :indices (mapv first es)})))]
+  (let [content      (vec content)
+        indices      (set indices)
+        entries      (selected-node-entries content indices)
+        index->point (into {} entries)
+        horizontal?  (= axis :horizontal)
+        coord        (fn [p] (if horizontal? (:x p) (:y p)))
+        groups       (->> entries
+                          (group-by (fn [[_ p]] [(mth/round (:x p) 0.1) (mth/round (:y p) 0.1)]))
+                          (mapv (fn [[_ es]]
+                                  {:point   (second (first es))
+                                   :indices (mapv first es)})))
+        sorted       (sort-by (comp coord :point) groups)]
     (if (< (count groups) 3)
       (impl/from-plain content)
-      (let [sorted (sort-by (comp coord :point) groups)
-            lo     (coord (:point (first sorted)))
+      (let [lo     (coord (:point (first sorted)))
             hi     (coord (:point (last sorted)))
             step   (/ (- hi lo) (dec (count sorted)))
             deltas (into {}
                          (comp
                           (map-indexed
                            (fn [k {:keys [point indices]}]
-                             (let [target (+ lo (* k step))
-                                   d      (- target (coord point))
-                                   dp     (if horizontal?
-                                            (gpt/point d 0)
-                                            (gpt/point 0 d))]
-                               (map (fn [i] [i dp]) indices))))
+                             (let [target (+ lo (* k step))]
+                               (map (fn [i]
+                                      (let [node-point (get index->point i)
+                                            d          (- target (coord node-point))
+                                            dp         (if horizontal?
+                                                         (gpt/point d 0)
+                                                         (gpt/point 0 d))]
+                                        [i dp]))
+                                    indices))))
                           cat)
                          sorted)]
         (impl/from-plain (translate-nodes content indices deltas))))))

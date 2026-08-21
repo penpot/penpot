@@ -867,20 +867,26 @@
 
 (declare stop-path-edit)
 
-(defn- resolve-edit-fills
+(defn resolve-edit-fills
   "Resolves the fills inherited by the editing copy.
   Frames stop group fill inheritance."
   [shape objects]
   (let [own (svg-fills/resolve-shape-fills shape)]
     (if (seq own)
       own
-      (loop [parent-id (:parent-id shape)]
-        (let [parent (get objects parent-id)]
-          (cond
-            (nil? parent)             []
-            (cfh/group-shape? parent) (svg-fills/resolve-shape-fills parent)
-            (cfh/frame-shape? parent) []
-            :else                     (recur (:parent-id parent))))))))
+      (loop [parent-id (:parent-id shape)
+             visited   #{}]
+        (cond
+          (nil? parent-id)          []
+          (visited parent-id)       []
+          :else
+          (let [parent (get objects parent-id)]
+            (cond
+              (nil? parent)             []
+              (cfh/group-shape? parent) (svg-fills/resolve-shape-fills parent)
+              (cfh/frame-shape? parent) []
+              :else                     (recur (:parent-id parent)
+                                               (conj visited parent-id)))))))))
 
 (defn start-path-edit
   [id]

@@ -202,3 +202,38 @@
        store done events
        (fn [new-state]
          (t/is (empty? (page-paths new-state))))))))
+
+(t/deftest collision-step-with-exact-coordinates
+  (t/testing "collision-step detects collision with exact coordinates"
+    (let [pasted    (gpt/point 10.0 10.0)
+          existing  (gpt/point 20.0 20.0)
+          step      (path.clipboard/collision-step pasted existing)]
+      ;; Should detect collision at step 1
+      (t/is (some? step))
+      (t/is (= 1 step)))))
+
+(t/deftest collision-step-with-floating-point-coordinates
+  (t/testing "collision-step detects collision with floating-point rounding differences"
+    (let [pasted    (gpt/point 10.0 10.0)
+          existing  (gpt/point 20.001 20.002)
+          step      (path.clipboard/collision-step pasted existing)]
+      ;; x-step = 1.0001, y-step = 1.0002
+      ;; With tolerance, these should be considered equal
+      (t/is (some? step))
+      (t/is (= 1 step)))))
+
+(t/deftest available-offset-step-with-exact-coordinates
+  (t/testing "available-offset-step finds first available step with exact coordinates"
+    (let [existing #{(gpt/point 20.0 20.0)}
+          pasted   #{(gpt/point 10.0 10.0)}
+          step     (path.clipboard/available-offset-step existing pasted)]
+      ;; Should find step 0 (no collision at step 0)
+      (t/is (= 0 step)))))
+
+(t/deftest available-offset-step-with-floating-point-coordinates
+  (t/testing "available-offset-step finds first available step with floating-point rounding differences"
+    (let [existing #{(gpt/point 20.0001 20.0002)}
+          pasted   #{(gpt/point 10.0001 10.0002)}
+          step     (path.clipboard/available-offset-step existing pasted)]
+      ;; Should detect collision at step 1 and return step 0 as available
+      (t/is (= 0 step)))))

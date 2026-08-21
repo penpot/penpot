@@ -946,7 +946,7 @@
         (let [cmd   (nth content i)
               nxt   (nth content (inc i) nil)
               at-p? (and (not= :close-path (:command cmd))
-                         (= point (helpers/segment->point cmd)))]
+                         (gpt/close? point (helpers/segment->point cmd)))]
           (cond
             ;; Offset a subpath start.
             (and at-p? (= :move-to (:command cmd)))

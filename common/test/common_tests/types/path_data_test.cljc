@@ -1564,6 +1564,18 @@
     (t/is (= (pts content)
              (pts (path/distribute-content content #{1 2 3} :horizontal))))))
 
+(t/deftest segment-distribute-content-with-floating-point-coordinates
+  (t/testing "distribute-content groups nodes with floating-point rounding differences"
+    (let [content (path/content
+                   [{:command :move-to :params {:x 0.0 :y 0.0}}
+                    {:command :line-to :params {:x 3.0001 :y 7.0}}
+                    {:command :line-to :params {:x 3.0002 :y 7.0}}
+                    {:command :line-to :params {:x 10.0 :y 0.0}}])
+          pts     (fn [c] (mapv (comp (juxt :x :y) :params) (vec c)))]
+      ;; Nodes at ~3.0 should be grouped together
+      (t/is (= [[0.0 0.0] [5.0 7.0] [5.0 7.0] [10.0 0.0]]
+               (pts (path/distribute-content content #{0 1 2 3} :horizontal)))))))
+
 (t/deftest helpers-curve-arc-length-t
   (let [arc-len (fn [curve a b]
                   (->> (range 1001)
@@ -1864,6 +1876,18 @@
         result  (path.segment/separate-nodes content #{pt})]
     ;; separate-nodes should return a collection (vector or seq)
     (t/is (coll? result))))
+
+(t/deftest segment-separate-nodes-with-floating-point-coordinates
+  (t/testing "separate-nodes finds nodes with floating-point rounding differences"
+    (let [content (path/content
+                   [{:command :move-to :params {:x 0.0 :y 0.0}}
+                    {:command :line-to :params {:x 10.0001 :y 0.0}}
+                    {:command :line-to :params {:x 20.0 :y 0.0}}])
+          pt      (gpt/point 10.0002 0.0)
+          result  (path.segment/separate-nodes content #{pt})]
+      ;; Should still find and separate the node
+      (t/is (coll? result))
+      (t/is (> (count result) (count content))))))
 
 (t/deftest segment-make-corner-point
   (let [content (path/content sample-content-2)

@@ -60,18 +60,18 @@
 
 (def ^:private paste-offset (gpt/point 10 10))
 
-(defn- collision-step
+(defn collision-step
   "Returns the non-negative paste-offset step that makes two nodes coincide."
   [pasted existing]
   (let [delta  (gpt/subtract existing pasted)
         x-step (/ (:x delta) (:x paste-offset))
         y-step (/ (:y delta) (:y paste-offset))]
     (when (and (not (neg? x-step))
-               (= x-step y-step)
-               (= x-step (mth/floor x-step)))
-      (long x-step))))
+               (mth/close? x-step y-step)
+               (mth/close? x-step (mth/floor x-step)))
+      (long (mth/round x-step)))))
 
-(defn- available-offset-step
+(defn available-offset-step
   "Returns the first paste-offset step with no node collisions."
   [existing pasted]
   (let [blocked
