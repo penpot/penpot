@@ -453,10 +453,22 @@
         [fitem & items]  (str/split path separator)]
     (into [(keyword (:type provider) (str/kebab fitem))] (map keyword) items)))
 
+(defn- build-public-uri
+  "Join a relative path onto the configured public URI, preserving any
+  subpath. Uses `u/ensure-path-slash` + `u/join` to match the pattern
+  used throughout the backend and frontend.
+  `path` must not start with `/` — a leading slash would be treated as
+  absolute by `u/join`, silently dropping the configured subpath."
+  [path]
+  {:pre [(not (str/starts-with? path "/"))]}
+  (-> (cf/get :public-uri)
+      (u/uri)
+      (u/ensure-path-slash)
+      (u/join path)))
+
 (defn- build-redirect-uri
   []
-  (let [public (u/uri (cf/get :public-uri))]
-    (str (assoc public :path "/api/auth/oidc/callback"))))
+  (str (build-public-uri "api/auth/oidc/callback")))
 
 (defn build-auth-redirect-uri
   [provider token]
