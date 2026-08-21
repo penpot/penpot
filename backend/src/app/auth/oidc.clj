@@ -408,10 +408,15 @@
         [fitem & items]  (str/split path separator)]
     (into [(keyword (:type provider) (str/kebab fitem))] (map keyword) items)))
 
+(defn- public-uri-with-path
+  [path]
+  (let [public    (u/uri (cf/get :public-uri))
+        base-path (str/replace (or (:path public) "") #"/+$" "")]
+    (assoc public :path (str base-path path))))
+
 (defn- build-redirect-uri
   []
-  (let [public (u/uri (cf/get :public-uri))]
-    (str (assoc public :path "/api/auth/oidc/callback"))))
+  (str (public-uri-with-path "/api/auth/oidc/callback")))
 
 (defn build-auth-redirect-uri
   [provider token]
@@ -642,8 +647,7 @@
   ([error hint]
    (let [params {:error error :hint hint}
          params (d/without-nils params)
-         uri    (-> (u/uri (cf/get :public-uri))
-                    (assoc :path "/#/auth/login")
+         uri    (-> (public-uri-with-path "/#/auth/login")
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
@@ -668,15 +672,13 @@
         params (d/without-nils params)]
 
     (redirect-response
-     (-> (u/uri (cf/get :public-uri))
-         (assoc :path "/#/auth/register/validate")
+     (-> (public-uri-with-path "/#/auth/register/validate")
          (assoc :query (u/map->query-string params))))))
 
 (defn- redirect-to-verify-token
   [token]
   (let [params {:token token}
-        uri    (-> (u/uri (cf/get :public-uri))
-                   (assoc :path "/#/auth/verify-token")
+        uri    (-> (public-uri-with-path "/#/auth/verify-token")
                    (assoc :query (u/map->query-string params)))]
 
     (redirect-response uri)))
