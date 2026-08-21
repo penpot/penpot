@@ -42,7 +42,7 @@
        "       ?filter_src_id ?filter_tgt_id\n"
        " :in $ %\n"
        " :where\n"
-       " (is-instance-of ?s ?c)\n"
+       " (instance-of ?s ?c)\n"
        " [?c :component/name ?component]\n"
        " [?s :shape/name ?instance]\n"
        " [?s :shape/container ?pc]\n"
@@ -270,14 +270,16 @@
             db queries/rules)))
 
 (defn- token-use-edges
+  "UsesToken edges from the folded token attributes, joined to token
+  entities by name (one edge per matching token when names repeat across
+  sets, the same join the `uses-token` rule performs)."
   [db]
-  (keep (fn [dtm]
-          (let [e (d/entity db (:e dtm))]
-            (when-let [token (:token-use/token e)]
-              {:source (str (:db/id (:token-use/shape e)))
-               :target (str (:db/id token))
-               :rel    "UsesToken"})))
-        (d/datoms db :avet :token-use/shape)))
+  (for [attr  overlay/token-attrs
+        dtm   (d/datoms db :aevt attr)
+        token (map :e (d/datoms db :avet :token/name (:v dtm)))]
+    {:source (str (:e dtm))
+     :target (str token)
+     :rel    "UsesToken"}))
 
 (defn export-graph-data!
   "Export the node/edge inventory of the overlay for `profile-id` as plain
@@ -298,7 +300,7 @@
                     (into (ref-edges db :typography/document "IsChildOf"))
                     (into (ref-edges db :token-set/document "IsChildOf"))
                     (into (ref-edges db :token/set "IsChildOf"))
-                    (into (rule-edges db 'is-instance-of "IsInstanceOf"))
+                    (into (rule-edges db 'instance-of "IsInstanceOf"))
                     (into (rule-edges db 'refers-to "RefersTo"))
                     (into (rule-edges db 'fills-swap-slot "FillsSwapSlot"))
                     (into (ref-edges db :shape/fill-color "UsesColor"))
