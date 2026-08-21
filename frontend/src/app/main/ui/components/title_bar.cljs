@@ -12,7 +12,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc title-bar*
-  [{:keys [class collapsable collapsed title children
+  [{:keys [class collapsable collapsed title children summary
            btn-icon btn-title add-icon-gap
            title-class on-collapsed on-btn-click] :rest props}]
   (let [props (mf/spread-props props {:class (stl/css :icon-text-btn)
@@ -26,7 +26,25 @@
            [:> icon* {:icon-id icon-id
                       :size "s"
                       :class (stl/css :icon)}]
-           [:div {:class (stl/css :title)} title]])]
+           [:div {:class (stl/css :title)} title]
+           ;; Compact inline representation of the section content; only
+           ;; rendered while collapsed, where the content is not visible.
+           ;; It is a purely visual hint (the content itself is reachable
+           ;; by expanding the section), so it is hidden from assistive
+           ;; technologies to keep the button label clean.
+           (when (and ^boolean collapsed (some? summary))
+             [:div {:class (stl/css :title-summary)
+                    :aria-hidden true
+                    :title (when (string? summary) summary)}
+              (cond
+                (number? summary)
+                [:span {:class (stl/css :title-summary-counter)} summary]
+
+                (string? summary)
+                [:span {:class (stl/css :title-summary-text)} summary]
+
+                :else
+                summary)])])]
 
        [:div {:class [(stl/css-case :title-only true
                                     :title-only-icon-gap add-icon-gap)
