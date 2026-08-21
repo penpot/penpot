@@ -15,6 +15,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as feat]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet-list*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -100,6 +101,14 @@
           (and (not multiple?)
                (< (count fills) types.fills/MAX-FILLS))
           (not ^boolean multiple?))
+
+        summary
+        (if multiple?
+          (tr "settings.multiple")
+          (when (seq fills)
+            (mf/html
+             [:> color-bullet-list*
+              {:colors (mapv (comp :color meta) fills)}])))
 
         label
         (case type
@@ -203,6 +212,7 @@
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        label
+                      :summary      summary
                       :class        (stl/css-case :fill-title-bar (not has-fills?))}
 
        (when (not (= :multiple fills))
