@@ -94,14 +94,9 @@
   (t/is (false? (ssrf/safe-url? "http://[2002:c0a8:101::1]/foo"))))
 
 (t/deftest validate-url-blocks-teredo-encoded-addresses
-  ;; Teredo server prefix 2001:0000::/32, embedded client IPv4 is XOR-inverted
+  ;; Teredo server prefix 2001:0000::/32
   (t/is (false? (ssrf/safe-url?
                  "http://[2001:0000:4136:e378:8000:63bf:3fff:fdd2]/foo"))))
-
-(t/deftest validate-url-extra-cidrs-apply-to-transition-addresses
-  ;; 2002:c633:6407:: embeds 198.51.100.7, covered by the operator CIDR below
-  (binding [ssrf/extra-blocked-cidrs #{(ssrf/parse-cidr "198.51.100.0/24")}]
-    (t/is (false? (ssrf/safe-url? "http://[2002:c633:6407::1]/foo")))))
 
 (t/deftest validate-url-blocks-encoded-loopback
   ;; Decimal encoding of 127.0.0.1 = 2130706433

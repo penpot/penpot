@@ -10,7 +10,7 @@
    The blocklist covers the standard JVM InetAddress classifications plus
    explicit ranges: IPv6 ULA, IPv4-mapped loopback, cloud metadata,
    operator-supplied CIDRs and the IPv6 transition mechanisms NAT64, 6to4
-   and Teredo (whose embedded IPv4 is also re-checked)."
+   and Teredo."
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -141,21 +141,6 @@
       (and (= b0 0x20) (= b1 0x01) (= b2 0x00) (= b3 0x00)) :teredo
       :else nil)))
 
-(defn- transition-embedded-ipv4
-  "Extract the IPv4 address embedded in an IPv6 transition mechanism address,
-   as a 4-byte array. Returns nil when the address is not a transition address.
-   Teredo embeds the client IPv4 XOR-inverted in the last 4 bytes."
-  ^bytes [^bytes bs]
-  (when (= (alength bs) 16)
-    (case (transition-prefix bs)
-      :nat64  (byte-array [(aget bs 12) (aget bs 13) (aget bs 14) (aget bs 15)])
-      :6to4   (byte-array [(aget bs 2) (aget bs 3) (aget bs 4) (aget bs 5)])
-      :teredo (byte-array [(bit-xor (bit-and (aget bs 12) 0xFF) 0xFF)
-                           (bit-xor (bit-and (aget bs 13) 0xFF) 0xFF)
-                           (bit-xor (bit-and (aget bs 14) 0xFF) 0xFF)
-                           (bit-xor (bit-and (aget bs 15) 0xFF) 0xFF)])
-      nil)))
-
 (defn- blocked-address?
   "Check if an InetAddress should be blocked. Returns true if blocked."
   [^InetAddress addr]
@@ -175,18 +160,15 @@
    ;; Cloud metadata IPs (exact match)
    (contains? cloud-metadata-ips (.getHostAddress addr))
 
-   ;; Extra blocked CIDRs (IPv4 only)
+   ;; Extra blocked CIDRs (IPv4 only) and IPv6 transition mechanisms
    (let [bs (.getAddress addr)]
      (if (= (alength bs) 4)
        (or (some #(in-cidr4? bs %) extra-blocked-ranges)
            (some #(in-cidr4? bs %) extra-blocked-cidrs))
-       ;; IPv6 transition mechanisms (NAT64/6to4/Teredo): the range is blocked
-       ;; outright and any embedded IPv4 is re-checked against this blocklist.
-       (boolean
-        (when (= (alength bs) 16)
-          (or (transition-prefix bs)
-              (when-let [embedded (transition-embedded-ipv4 bs)]
-                (blocked-address? (InetAddress/getByAddress embedded))))))))))
+       ;; IPv6 transition mechanisms (NAT64/6to4/Teredo): the range is
+       ;; rejected outright.
+       (boolean (when (= (alength bs) 16)
+                  (transition-prefix bs)))))))
 
 (defn resolve-host
   "Resolve a hostname to all InetAddress objects. Wraps InetAddress/getAllByName
@@ -205,8 +187,8 @@
       (loopback, link-local, site-local, multicast, any-local,
       cloud-metadata 169.254.169.254, IPv6 ULA fc00::/7, IPv6 transition
       mechanisms NAT64 64:ff9b::/96, 6to4 2002::/16 and Teredo
-      2001:0000::/32 — including any IPv4 embedded in them —,
-      IPv4-mapped IPv6 of any blocked IPv4, plus operator-supplied CIDRs).
+      2001:0000::/32, IPv4-mapped IPv6 of any blocked IPv4,
+      plus operator-supplied CIDRs).
    When the host is an IP literal (decimal/octal/hex/IPv6) it is
    normalized via `com.google.common.net.InetAddresses` before the
    check.
