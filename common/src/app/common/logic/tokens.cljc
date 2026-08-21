@@ -9,7 +9,24 @@
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.types.file :as ctf]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]))
+
+;; Tokens source
+
+(defn generate-set-tokens-source
+  "Create changes for setting the tokens source of a file to `library`,
+   copying the library's tokens status. If the library is nil, the tokens source
+   is removed and the tokens status is cleared."
+  [changes library]
+  (let [library-id (:id library)
+        library-tokens-status (if library
+                                (-> library ctf/file-data cfo/get-tokens-status)
+                                (ctos/make-tokens-status))]
+    (-> changes
+        (pcb/set-tokens-source library-id)
+        (pcb/set-tokens-status library-tokens-status))))
 
 ;; Tokens lib
 
@@ -190,3 +207,4 @@
   (if tokens-lib
     (update-tokens-status changes tokens-status cfo/sync-tokens-status-with-lib tokens-lib)
     changes))
+

@@ -18,6 +18,10 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]))
 
+(defn get-tokens-source
+  [file]
+  (-> file (ctf/file-data) (cfo/get-tokens-source)))
+
 (defn get-tokens-lib
   [file]
   (-> file (ctf/file-data) (cfo/get-tokens-lib)))

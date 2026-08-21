@@ -462,6 +462,13 @@
     :always
     (update :tokens-status #(or % (ctos/make-tokens-status)))))
 
+(defn ensure-tokens-status
+  "Ensure file-data has a :tokens-status, creating it empty if necessary."
+  [file-data]
+  (cond-> file-data
+    (nil? (:tokens-status file-data))
+    (update :tokens-status #(or % (ctos/make-tokens-status)))))
+
 (defn get-tokens-source
   "Return the current value of :tokens-source attribute."
   [file-data]
@@ -476,7 +483,9 @@
 (defn set-tokens-source
   [file-data tokens-source]
   (assert (or (nil? tokens-source) (uuid? tokens-source)) "expected nil or valid uuid")
-  (assoc file-data :tokens-source tokens-source))
+  (if (nil? tokens-source)
+    (dissoc file-data :tokens-source)
+    (assoc file-data :tokens-source tokens-source)))
 
 (defn effective-tokens-source?
   "Returns true if the given id is the current tokens source of the file-data."

@@ -1052,9 +1052,10 @@
 (defn set-tokens-status
   ([changes tokens-status]
    (assert-library! changes)
-   (assert (ctos/tokens-status? tokens-status))
-   (let [theme-ids (ctos/get-active-theme-ids tokens-status)
-         set-ids (ctos/get-active-set-ids tokens-status)
+   (assert (or (ctos/tokens-status? tokens-status)
+               (nil? tokens-status)))
+   (let [theme-ids (if tokens-status (ctos/get-active-theme-ids tokens-status) #{})
+         set-ids (if tokens-status (ctos/get-active-set-ids tokens-status) #{})
          library-data (::library-data (meta changes))
          prev-tokens-status (cfo/get-tokens-status library-data)
          prev-theme-ids (if prev-tokens-status (ctos/get-active-theme-ids prev-tokens-status) #{})
