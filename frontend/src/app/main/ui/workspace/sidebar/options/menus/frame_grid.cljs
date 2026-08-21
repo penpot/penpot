@@ -314,6 +314,11 @@
         open?               (deref state*)
         has-frame-grids?    (or (= :multiple grids) (some? (seq grids)))
 
+        summary             (when has-frame-grids?
+                              (if (= :multiple grids)
+                                (tr "settings.multiple")
+                                (count grids)))
+
         toggle-content      (mf/use-fn #(swap! state* not))
 
         default-grids       (mf/deref lens:default-grids)
@@ -331,7 +336,8 @@
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
-                      :title        (tr "workspace.options.guides.title")}
+                      :title        (tr "workspace.options.guides.title")
+                      :summary      summary}
 
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.guides.add-guide")
