@@ -82,6 +82,19 @@
   border: $b-2 solid var(--color-accent-primary);
 }
 
+.color-bullet-list {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--sp-xs);
+}
+
+.color-bullet-list-more {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
 .color-text {
   @include two-line-text-ellipsis;
   @include use-typography("body-small");

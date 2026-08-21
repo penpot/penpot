@@ -7,6 +7,8 @@
 (ns app.main.ui.components.color-bullet
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.config :as cfg]
    [app.util.color :as uc]
@@ -110,6 +112,22 @@
                    :style {:background (uc/color->background (assoc color :opacity 1))}}]
             [:div {:class (stl/css :color-bullet-right)
                    :style {:background (uc/color->background color)}}]])]))))
+
+(mf/defc color-bullet-list*
+  "Compact row of mini color bullets with an overflow counter. Used as
+  an inline summary of colors (e.g. on collapsed sidebar sections)."
+  [{:keys [colors max-colors]}]
+  (let [max-colors (d/nilv max-colors 3)
+        visible    (take max-colors colors)
+        remaining  (- (count colors) (count visible))]
+    [:div {:class (stl/css :color-bullet-list)}
+     (for [[index color] (d/enumerate visible)]
+       [:> color-bullet* {:key (dm/str "color-" index)
+                          :color color
+                          :mini true}])
+     (when (pos? remaining)
+       [:span {:class (stl/css :color-bullet-list-more)}
+        (dm/str "+" remaining)])]))
 
 (mf/defc color-name*
   [{:keys [color size on-click on-double-click origin]}]
