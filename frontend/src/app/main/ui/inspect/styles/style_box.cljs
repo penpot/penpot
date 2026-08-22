@@ -41,7 +41,7 @@
       nil)))
 
 (mf/defc style-box*
-  [{:keys [panel shorthand children]}]
+  [{:keys [panel shorthand children summary]}]
   (let [expanded* (mf/use-state true)
         expanded (deref expanded*)
 
@@ -68,7 +68,29 @@
        [:> icon* {:icon-id (if expanded "arrow-down" "arrow")
                   :class (stl/css :disclosure-icon)
                   :size "s"}]]
-      [:span {:class (stl/css :panel-title)} title]
+      ;; `.panel-title` used to carry `flex: 1` directly; moved to this
+      ;; wrapper so the title itself hugs its text and the summary sits
+      ;; right next to it (matching the design sidebar's `title-wrapper`,
+      ;; where the button — not the title alone — is the flexible element).
+      [:div {:class (stl/css :title-group)}
+       [:span {:class (stl/css :panel-title)} title]
+       ;; Compact inline representation of the panel content; only rendered
+       ;; while collapsed, mirroring the summary slot on the design
+       ;; sidebar's `title-bar*`. Purely a visual hint, so it stays out of
+       ;; the accessibility tree.
+       (when (and (not expanded) (some? summary))
+         [:div {:class (stl/css :title-summary)
+                :aria-hidden true
+                :title (when (string? summary) summary)}
+          (cond
+            (number? summary)
+            [:span {:class (stl/css :title-summary-counter)} summary]
+
+            (string? summary)
+            [:span {:class (stl/css :title-summary-text)} summary]
+
+            :else
+            summary)])]
       (when shorthand
         [:> icon-button* {:variant "ghost"
                           :tooltip-placement "top-left"
