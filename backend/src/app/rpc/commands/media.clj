@@ -393,6 +393,7 @@
      FROM storage_object
     WHERE (metadata->>'~:upload-id') = ?::text
       AND deleted_at IS NULL
+      AND status = 'valid'
     ORDER BY (metadata->>'~:chunk-index')::integer ASC")
 
 (defn- get-upload-chunks

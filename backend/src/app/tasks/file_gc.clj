@@ -251,12 +251,9 @@
     (try
       (-> cfg
           (assoc ::db/rollback (:rollback? props))
-          (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
-                        (let [cfg        (-> cfg
-                                             (update ::sto/storage sto/configure conn)
-                                             (assoc ::timestamp (ct/now)))
-                              processed? (process-file! cfg props)]
-
+          (assoc ::timestamp (ct/now))
+          (db/tx-run! (fn [cfg]
+                        (let [processed? (process-file! cfg props)]
                           (when (and processed? (contains? cf/flags :tiered-file-data-storage))
                             (wrk/submit! (-> cfg
                                              (assoc ::wrk/task :offload-file-data)

@@ -326,8 +326,11 @@
     (let [file (d/update-when row :metadata fdata/decode-metadata)
           vern (rand-int Integer/MAX_VALUE)
 
+          ;; We reuse the main connection here for storage operations
+          ;; becaue the main operations are touching and we need them
+          ;; to be atomic with the current transaction
           storage
-          (sto/resolve cfg {::db/reuse-conn true})
+          (sto/resolve cfg ::db/reuse-conn true)
 
           snapshot
           (get-snapshot cfg file-id snapshot-id)]

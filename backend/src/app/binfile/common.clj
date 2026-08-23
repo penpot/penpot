@@ -27,7 +27,6 @@
    [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.worker :as-alias wrk]
@@ -653,27 +652,6 @@
   (let [conn (db/get-connection cfg)]
     (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
-
-(defn invalidate-thumbnails
-  [cfg file-id]
-  (let [storage (sto/resolve cfg)
-
-        sql-1
-        (str "update file_tagged_object_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")
-
-        sql-2
-        (str "update file_thumbnail "
-             "   set deleted_at = now() "
-             " where file_id=? returning media_id")]
-
-    (run! #(sto/touch-object! storage %)
-          (sequence
-           (keep :media-id)
-           (concat
-            (db/exec! cfg [sql-1 file-id])
-            (db/exec! cfg [sql-2 file-id]))))))
 
 (defn process-file
   [cfg {:keys [id] :as file}]

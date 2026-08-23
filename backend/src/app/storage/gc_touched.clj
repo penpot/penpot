@@ -182,6 +182,7 @@
      FROM storage_object AS so
     WHERE so.touched_at IS NOT NULL
       AND so.touched_at <= ?
+      AND so.status = 'valid'
     ORDER BY touched_at ASC
       FOR UPDATE
      SKIP LOCKED

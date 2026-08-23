@@ -19,7 +19,17 @@
    [app.db :as db]
    [app.storage :as sto]
    [app.storage.impl :as impl]
+   [clojure.set :as set]
    [integrant.core :as ig]))
+
+(def ^:private max-attempts
+  "Maximum number of deletion attempts before giving up and accepting
+  the orphan blob."
+  7)
+
+(def ^:private chunk-size
+  "Number of rows to process per transaction."
+  25)
 
 (def ^:private sql:lock-sobjects
   "SELECT id FROM storage_object
@@ -47,66 +57,103 @@
     (-> (db/exec-one! conn [sql:delete-sobjects ids])
         (db/get-update-count))))
 
-(defn- delete-in-bulk!
+(def ^:private sql:increment-attempts-and-defer
+  "UPDATE storage_object
+   SET deletion_attempts = deletion_attempts + 1,
+       deleted_at = NOW() + INTERVAL '1 day'
+   WHERE id = ANY(?::uuid[])")
+
+(defn- increment-attempts-and-defer!
+  [conn ids]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:increment-attempts-and-defer ids])))
+
+(def ^:private sql:delete-give-up
+  "DELETE FROM storage_object
+   WHERE id = ANY(?::uuid[])
+     AND deletion_attempts >= ?")
+
+(defn- delete-give-up!
+  [conn ids]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:delete-give-up ids max-attempts])))
+
+(defn- process-chunk!
   [cfg backend-id ids]
-  ;; We run the deletion on a separate transaction. This is
-  ;; because if some exception is raised inside procesing
-  ;; one chunk, it does not affects the rest of the chunks.
-  (try
-    (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::sto/storage]}]
-                  (when-let [ids (lock-ids conn ids)]
-                    (let [total (delete-sobjects! conn ids)]
-                      (-> (impl/resolve-backend storage backend-id)
-                          (impl/del-objects-in-bulk ids))
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (when-let [locked-ids (lock-ids conn ids)]
+                  ;; Attempt blob deletion (catch Throwable — if it throws, treat all as failed)
+                  (let [fail-ids (try
+                                   (-> (impl/resolve-backend (::sto/storage cfg) backend-id)
+                                       (impl/del-objects-in-bulk locked-ids))
+                                   (catch Throwable _
+                                     (do
+                                       (l/err :hint "error on physical deletion, will retry"
+                                              :ids locked-ids)
+                                       locked-ids)))
+                        ok-ids   (set/difference locked-ids fail-ids)]
 
-                      (doseq [id ids]
-                        (l/dbg :hint "permanently delete storage object"
-                               :id (str id)
-                               :backend (name backend-id)))
-                      total))))
-    (catch Throwable cause
-      (l/err :hint "unexpected error on bulk deletion"
-             :ids ids
-             :cause cause))))
+                    ;; Log successful deletions
+                    (doseq [id ok-ids]
+                      (l/dbg :hint "permanently delete storage object"
+                             :id (str id)
+                             :backend (name backend-id)))
 
+                    ;; Delete successful rows
+                    (when (seq ok-ids)
+                      (delete-sobjects! conn ok-ids))
+
+                    ;; For failed rows: increment attempts, push deleted_at to future
+                    (when (seq fail-ids)
+                      (increment-attempts-and-defer! conn fail-ids)
+                      ;; Give up if attempts >= max-attempts
+                      (let [given-up (delete-give-up! conn fail-ids)]
+                        (when (pos? (db/get-update-count given-up))
+                          (l/wrn :hint "giving up on orphan blob after max attempts"
+                                 :ids fail-ids
+                                 :max-attempts max-attempts))))
+
+                    (count ok-ids))))))
 
 (defn- group-by-backend
   [items]
   (d/group-by (comp keyword :backend) :id #{} items))
 
-(def ^:private sql:get-deleted-sobjects
-  "SELECT s.*
-     FROM storage_object AS s
-    WHERE s.deleted_at IS NOT NULL
-      AND s.deleted_at <= ?
-    ORDER BY s.deleted_at ASC")
+(def ^:private sql:get-deleted-chunk
+  "SELECT id, backend
+     FROM storage_object
+    WHERE deleted_at IS NOT NULL
+      AND deleted_at <= ?
+      AND status = 'valid'
+    ORDER BY deleted_at ASC
+    LIMIT ?")
 
-(defn- get-buckets
-  [conn]
-  (let [now (ct/now)]
-    (sequence
-     (comp (partition-all 25)
-           (mapcat group-by-backend))
-     (db/cursor conn [sql:get-deleted-sobjects now]))))
+(defn- get-deleted-chunk
+  [cfg size]
+  (db/exec! cfg [sql:get-deleted-chunk (ct/now) size]))
 
 (defn- clean-deleted!
-  [{:keys [::db/conn] :as cfg}]
-  (reduce (fn [total [backend-id ids]]
-            (let [deleted (delete-in-bulk! cfg backend-id ids)]
-              (+ total (or deleted 0))))
-          0
-          (get-buckets conn)))
+  [cfg]
+  (loop [total 0]
+    (let [chunk (get-deleted-chunk cfg chunk-size)]
+      (if (seq chunk)
+        (let [by-backend (group-by-backend chunk)
+              deleted    (reduce-kv (fn [acc backend-id ids]
+                                      (+ acc (process-chunk! cfg backend-id ids)))
+                                    0
+                                    by-backend)]
+          (recur (+ total deleted)))
+        total))))
 
 (defmethod ig/assert-key ::handler
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
-  (assert (db/pool? (::db/pool params)) "expect valid storage"))
+  (assert (db/pool? (::db/pool params)) "expect valid db pool"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [_]
-    (db/tx-run! cfg (fn [cfg]
-                      (let [total (clean-deleted! cfg)]
-                        (l/inf :hint "task finished" :total total)
-                        {:deleted total})))))
+    (let [total (clean-deleted! cfg)]
+      (l/inf :hint "task finished" :total total)
+      {:deleted total})))
