@@ -87,7 +87,7 @@
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
    [:plugin-data {:optional true} schema:plugin-data]
-   [:tokens-source {:optional true} ::sm/uuid]                ;; The tokens-lib may be in this file or in an external library
+   [:tokens-source {:optional true} ::sm/uuid]                ;; Forward-compat: UUID of external library containing tokens-lib (full support in follow-up PR)
    [:tokens-lib {:optional true} ctob/schema:tokens-lib]
    [:tokens-status {:optional true} ctos/schema:tokens-status]])
 
