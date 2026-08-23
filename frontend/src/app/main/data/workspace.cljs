@@ -17,12 +17,14 @@
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -266,6 +268,59 @@
               (rx/map (fn [_] (mcp/init))))
          (rx/empty))))))
 
+(defn- compute-shape-stats
+  "Compute shape statistics in a single pass over pages-index.
+   Returns {:num-shapes N :max-shapes-per-page M}"
+  [pages-index]
+  (reduce-kv
+   (fn [acc _page-id page]
+     (let [n (count (:objects page))]
+       (-> acc
+           (update :num-shapes + n)
+           (update :max-shapes-per-page max n))))
+   {:num-shapes 0
+    :max-shapes-per-page 0}
+   pages-index))
+
+(defn compute-file-stats
+  "Compute file statistics. Returns a map of stats without event keys."
+  [state file-id]
+  (let [file         (dsh/lookup-file state file-id)
+        file-data    (:data file)
+        libraries    (refs/select-libraries (:files state) file-id)
+        pages-index  (:pages-index file-data)
+        {:keys [num-shapes max-shapes-per-page]} (compute-shape-stats pages-index)
+        n-pages      (count (:pages file-data))
+        n-components (reduce-kv (fn [n _ c] (if (:deleted c) n (inc n)))
+                                0 (:components file-data))
+        n-linked-libs (dec (count libraries))
+        tokens-lib   (:tokens-lib file-data)
+        n-tokens     (if (some? tokens-lib)
+                       (count (ctob/get-all-tokens tokens-lib))
+                       0)]
+    {:num-pages n-pages
+     :num-shapes num-shapes
+     :avg-shapes-per-page (if (pos? n-pages)
+                            (mth/round (/ num-shapes n-pages))
+                            0)
+     :max-shapes-per-page max-shapes-per-page
+     :num-components n-components
+     :num-linked-libraries (max 0 n-linked-libs)
+     :is-library (:is-shared file)
+     :num-tokens n-tokens}))
+
+(defn- emit-workspace-file-stats
+  [file-id team-id]
+  (ptk/reify ::emit-workspace-file-stats
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [stats (compute-file-stats state file-id)]
+        (rx/of (ev/event (assoc stats
+                                ::ev/name "open-workspace-file"
+                                ::ev/origin "workspace"
+                                :file-id file-id
+                                :team-id team-id)))))))
+
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
   (ptk/reify ::bundle-fetched
@@ -420,6 +475,12 @@
                     (rx/filter (ptk/type? ::dps/persistence-notification))
                     (rx/take 1)
                     (rx/map dwc/set-workspace-visited))
+
+               ;; Emit audit event with file statistics once all libraries are resolved
+               (->> stream
+                    (rx/filter (ptk/type? ::all-libraries-resolved))
+                    (rx/take 1)
+                    (rx/map #(emit-workspace-file-stats file-id team-id)))
 
                (when-let [component-id (some-> rparams :component-id uuid/parse)]
                  (->> stream

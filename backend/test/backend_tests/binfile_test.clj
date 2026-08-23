@@ -221,6 +221,29 @@
     (t/is (str/starts-with? (str uri)
                             "https://example.com/penpot/assets/by-id/"))))
 
+(t/deftest import-binfile-v3-persists-manifest-metadata
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    (let [result   (-> th/*system*
+                       (assoc ::bfc/project-id (:default-project-id profile))
+                       (assoc ::bfc/profile-id (:id profile))
+                       (assoc ::bfc/input output)
+                       (v3/import-files!))
+          imported (bfc/get-file th/*system* (first result))]
+
+      (t/is (= (count result) 1))
+      (t/is (some? (get-in imported [:metadata :generated-by])))
+      (t/is (= "penpot" (get-in imported [:metadata :referer]))))))
+
 (t/deftest read-obj-rejects-oversized-buffer
   ;; N1-07: read-obj! must reject objects exceeding max-object-size
   ;; before attempting to allocate the buffer

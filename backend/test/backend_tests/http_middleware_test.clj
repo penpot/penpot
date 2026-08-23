@@ -6,10 +6,12 @@
 
 (ns backend-tests.http-middleware-test
   (:require
+   [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token]
+   [app.http.errors :as http-errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.main :as-alias main]
@@ -300,7 +302,7 @@
     (t/is (instance? clojure.lang.ExceptionInfo ex))
     (t/is (= :validation (-> ex ex-data :type)))
     (t/is (= :malformed-json (-> ex ex-data :code)))
-    (t/is (string? (-> ex ex-data :hint)))))
+    (t/is (= "invalid JSON in request body" (-> ex ex-data :hint)))))
 
 (t/deftest parse-request-request-too-big-exception
   ;; When RequestTooBigException is raised (e.g. the request body
@@ -319,7 +321,7 @@
     (t/is (instance? clojure.lang.ExceptionInfo ex))
     (t/is (= :validation (-> ex ex-data :type)))
     (t/is (= :request-body-too-large (-> ex ex-data :code)))
-    (t/is (string? (-> ex ex-data :hint)))))
+    (t/is (= "request body exceeds size limit" (-> ex ex-data :hint)))))
 
 (t/deftest parse-request-eof-exception
   ;; When java.io.EOFException is raised (e.g. the body stream
@@ -337,7 +339,7 @@
     (t/is (instance? clojure.lang.ExceptionInfo ex))
     (t/is (= :validation (-> ex ex-data :type)))
     (t/is (= :malformed-json (-> ex ex-data :code)))
-    (t/is (string? (-> ex ex-data :hint)))))
+    (t/is (= "unexpected end of request body" (-> ex ex-data :hint)))))
 
 (t/deftest parse-request-runtime-exception-with-cause
   ;; When a RuntimeException with a non-nil ex-cause is raised,
@@ -377,7 +379,7 @@
     (t/is (= 500 (::yres/status response)))
     (t/is (= :server-error (:type body)))
     (t/is (= :unexpected (:code body)))
-    (t/is (= "boom" (:hint body)))))
+    (t/is (nil? (:hint body)))))
 
 (t/deftest parse-request-non-runtime-throwable
   ;; When a non-RuntimeException Throwable is raised (e.g. an
@@ -397,4 +399,45 @@
     (t/is (= 500 (::yres/status response)))
     (t/is (= :server-error (:type body)))
     (t/is (= :io-exception (:code body)))
-    (t/is (= "network gone" (:hint body)))))
+    (t/is (nil? (:hint body)))))
+
+(t/deftest internal-error-strips-sensitive-fields
+  ;; When an :internal error is raised with :state, :path, and
+  ;; :context, those fields must not appear in the response body.
+  ;; :hint is part of the error protocol and is preserved.
+  (let [cause    (ex-info "internal error"
+                          {:type :internal
+                           :code :test-error
+                           :hint "safe user-facing hint"
+                           :state "XX000"
+                           :path "/data/penpot/storage"
+                           :context {:backend :s3 :bucket "prod"}})
+        response (http-errors/handle cause {})
+        body     (::yres/body response)]
+    (t/is (= 500 (::yres/status response)))
+    (t/is (= :server-error (:type body)))
+    (t/is (= :test-error (:code body)))
+    (t/is (= "safe user-facing hint" (:hint body)))
+    (t/is (nil? (:state body)))
+    (t/is (nil? (:path body)))
+    (t/is (nil? (:context body)))))
+
+(t/deftest unhandled-exinfo-strips-sensitive-fields
+  ;; When an ex-info with an unregistered :type (dispatches through
+  ;; handle-exception :default :else) carries :state and :path,
+  ;; those fields must not appear in the response body.
+  ;; :hint is part of the error protocol and is preserved.
+  (let [cause    (ex-info "something broke"
+                          {:type :unregistered-type
+                           :code :custom-code
+                           :hint "safe user-facing hint"
+                           :state "internal-state"
+                           :path "/internal/path"})
+        response (http-errors/handle cause {})
+        body     (::yres/body response)]
+    (t/is (= 500 (::yres/status response)))
+    (t/is (= :server-error (:type body)))
+    (t/is (= :custom-code (:code body)))
+    (t/is (= "safe user-facing hint" (:hint body)))
+    (t/is (nil? (:state body)))
+    (t/is (nil? (:path body)))))
