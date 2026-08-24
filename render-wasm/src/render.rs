@@ -383,6 +383,8 @@ pub(crate) struct RenderState {
     /// Frame id passed as `base_object` for viewer renders; always traversed.
     pub viewer_render_root: Option<Uuid>,
     pub touched_ids: HashSet<Uuid>,
+    /// Pre-edit extrects for old∪new tile eviction (captured on first touch).
+    touched_prev_extrects: HashMap<Uuid, Rect>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
@@ -603,6 +605,7 @@ impl RenderState {
             include_filter: None,
             viewer_render_root: None,
             touched_ids: HashSet::default(),
+            touched_prev_extrects: HashMap::default(),
             ignore_nested_blurs: false,
             preview_mode: false,
             export_context: None,
@@ -1148,6 +1151,8 @@ impl RenderState {
             &tile_rect,
             false,
             self.render_area,
+            self.get_scale(),
+            self.viewbox.area,
         );
 
         Ok(())
@@ -2406,7 +2411,7 @@ impl RenderState {
         performance::begin_measure!("tile_cache");
         let only_visible = self.options.is_interactive_transform();
         self.pending_tiles
-            .update(&self.tile_viewbox, &self.surfaces, only_visible);
+            .update(&self.tile_viewbox, &self.surfaces, scale, only_visible);
         performance::end_measure!("tile_cache");
 
         performance::end_timed_log!("tile_cache_update", _tile_start);
@@ -2498,11 +2503,21 @@ impl RenderState {
             && !self.viewport_presented;
 
         if should_compose {
-            self.surfaces.draw_tile_atlas_to_backbuffer(
-                &self.viewbox,
-                &self.tile_viewbox,
-                self.background_color,
-            );
+            // Fast mode skips the tile atlas; use the same doc-atlas + scale
+            // overlays as render_from_cache instead of composing empty slots.
+            if self.options.is_fast_mode() {
+                self.surfaces.draw_combined_atlas_to_backbuffer(
+                    &self.viewbox,
+                    &self.tile_viewbox,
+                    self.background_color,
+                );
+            } else {
+                self.surfaces.draw_tile_atlas_to_backbuffer(
+                    &self.viewbox,
+                    &self.tile_viewbox,
+                    self.background_color,
+                );
+            }
         }
 
         match frame_type {
@@ -3923,7 +3938,10 @@ impl RenderState {
                 // is not cached because everything will be handled from draw_atlas.
                 // Viewer masked passes (include_filter) must not reuse cached tiles from
                 // a previous pass; otherwise pass-1 pixels can leak into pass 2.
-                if self.viewer_masked_pass() || !self.surfaces.has_cached_tile_surface(current_tile)
+                if self.viewer_masked_pass()
+                    || !self
+                        .surfaces
+                        .has_cached_tile_surface(current_tile, self.get_scale())
                 {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self
@@ -3968,7 +3986,9 @@ impl RenderState {
                         }
                     }
                 } else if self.tiles.is_empty_at(current_tile) {
-                    self.surfaces.remove_cached_tile_surface(current_tile);
+                    // Keep other-scale entries for mid-zoom overlays.
+                    self.surfaces
+                        .remove_cached_tile_surface_at(current_tile, self.get_scale());
                 }
             }
 
@@ -3989,6 +4009,7 @@ impl RenderState {
                 self.drop_shadows_ops_warmed = false;
 
                 let viewer_masked_pass = self.viewer_masked_pass();
+                let current_scale = self.get_scale();
 
                 let Some(ids) = self.tiles.get_shapes_at(next_tile) else {
                     // If the tile is empty we do not need to render it.
@@ -3996,7 +4017,11 @@ impl RenderState {
                 };
 
                 // Never skip based on cached surfaces during viewer masked passes.
-                if !viewer_masked_pass && self.surfaces.has_cached_tile_surface(next_tile) {
+                if !viewer_masked_pass
+                    && self
+                        .surfaces
+                        .has_cached_tile_surface(next_tile, current_scale)
+                {
                     // If the tile is cached, then we do not need to
                     // render it.
                     continue;
@@ -4333,9 +4358,8 @@ impl RenderState {
     pub fn rebuild_touched_tiles(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_touched_tiles");
 
-        let mut all_tiles = HashSet::<tiles::Tile>::new();
-
         let ids = std::mem::take(&mut self.touched_ids);
+        let prev_extrects = std::mem::take(&mut self.touched_prev_extrects);
         // Pan release sets `preserve_target` in `set_view_end`; don't reset it
         // here when no shapes changed, or the next render clears the canvas.
         if !ids.is_empty() {
@@ -4345,14 +4369,13 @@ impl RenderState {
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
                 if shape_id != &Uuid::nil() {
-                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                    self.invalidate_shape_and_update_tiles(
+                        shape,
+                        tree,
+                        prev_extrects.get(shape_id).copied(),
+                    );
                 }
             }
-        }
-
-        // Update the changed tiles
-        for tile in all_tiles {
-            self.remove_cached_tile(tile);
         }
 
         performance::end_measure!("rebuild_touched_tiles");
@@ -4372,17 +4395,48 @@ impl RenderState {
         tree: ShapesPoolMutRef<'_>,
     ) -> Result<()> {
         performance::begin_measure!("invalidate_and_update_tiles");
-        let mut all_tiles = HashSet::<tiles::Tile>::new();
         for shape_id in shape_ids {
             if let Some(shape) = tree.get(shape_id) {
-                all_tiles.extend(self.update_shape_tiles(shape, tree));
+                self.invalidate_shape_and_update_tiles(shape, tree, None);
             }
-        }
-        for tile in all_tiles {
-            self.remove_cached_tile(tile);
         }
         performance::end_measure!("invalidate_and_update_tiles");
         Ok(())
+    }
+
+    /// old∪new∪indexed document coverage used to evict cached tiles after edits.
+    fn dirty_doc_rect_for_shape(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+        prev_extrect: Option<skia::Rect>,
+    ) -> skia::Rect {
+        let scale = self.get_scale();
+        let new_extrect = self.get_cached_extrect(shape, tree, 1.0);
+        let prev_extrect = prev_extrect.or_else(|| {
+            tree.get_modifier(&shape.id)
+                .and_then(|_| tree.get_raw(&shape.id).map(|raw| raw.extrect(tree, 1.0)))
+        });
+        let indexed = self
+            .tiles
+            .get_tiles_of(shape.id)
+            .into_iter()
+            .flatten()
+            .fold(skia::Rect::new_empty(), |acc, tile| {
+                tiles::join_nonempty(acc, tiles::get_tile_rect(*tile, scale))
+            });
+        tiles::union_edit_dirty_rect(prev_extrect, new_extrect, indexed)
+    }
+
+    fn invalidate_shape_and_update_tiles(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+        prev_extrect: Option<skia::Rect>,
+    ) {
+        let dirty = self.dirty_doc_rect_for_shape(shape, tree, prev_extrect);
+        let _ = self.update_shape_tiles(shape, tree);
+        self.surfaces.invalidate_cached_tiles_intersecting(dirty);
     }
 
     /// Rebuilds tiles for shapes with modifiers and processes their ancestors
@@ -4423,12 +4477,21 @@ impl RenderState {
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {
-        self.touched_ids.insert(uuid);
+        self.mark_touched_with_prev(uuid, None);
+    }
+
+    pub fn mark_touched_with_prev(&mut self, uuid: Uuid, prev_extrect: Option<Rect>) {
+        if self.touched_ids.insert(uuid) {
+            if let Some(rect) = prev_extrect.filter(|r| !r.is_empty()) {
+                self.touched_prev_extrects.insert(uuid, rect);
+            }
+        }
     }
 
     #[allow(dead_code)]
     pub fn clean_touched(&mut self) {
         self.touched_ids.clear();
+        self.touched_prev_extrects.clear();
     }
 
     pub fn get_cached_extrect(&mut self, shape: &Shape, tree: ShapesPoolRef, scale: f32) -> Rect {
