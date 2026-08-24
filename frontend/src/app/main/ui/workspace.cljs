@@ -229,12 +229,8 @@
       (st/emit! (dps/initialize-persistence)
                 (dpl/update-plugins-permissions-peek)))
 
-    ;; FLAG :font-preview — prefetch the preview sprite markup on workspace mount
-    ;; (kept in memory, not the DOM) so the typography selector renders previews on
-    ;; open with no network wait. Remove the flag check to drop the feature.
     (mf/with-effect []
-      (when (contains? cf/flags :font-preview)
-        (fonts/prefetch-preview-sprite!)))
+      (fonts/prefetch-preview-sprite))
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]

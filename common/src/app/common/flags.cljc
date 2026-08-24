@@ -100,6 +100,7 @@
     :backend-svgo
     ;; If enabled, it makes the Google Fonts available.
     :google-fonts-provider
+
     ;; Only for development.
     :nrepl-server
     ;; Interactive repl. Only for development.
