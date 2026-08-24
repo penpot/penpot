@@ -850,16 +850,16 @@
                               ::resize-text-debounce-event)))))
           (rx/empty))))))
 
-(defn save-font
+(defn save-default-font
   [data]
-  (ptk/reify ::save-font
+  (ptk/reify ::save-default-font
     ptk/UpdateEvent
     (update [_ state]
-      (let [multiple? (->> data vals (d/seek #(= % :multiple)))]
+      (let [multiple? (->> data vals (d/seek #(= % :multiple)))
+            font      (dissoc data :typography-ref-id :typography-ref-file)]
         (cond-> state
           (not multiple?)
-          (assoc-in [:workspace-global :default-font]
-                    (dissoc data :typography-ref-id :typography-ref-file)))))))
+          (update :workspace-global assoc :default-font font))))))
 
 (defn apply-text-modifier
   [shape text-modifier]

@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dps]
