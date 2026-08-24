@@ -61,13 +61,18 @@
             ;; Delete old teams from state
             state    (update state :teams #(select-keys % team-ids))]
         (reduce (fn [state {:keys [id organization-id] :as team}]
-                  (let [team-updated (cond-> (merge (dm/get-in state [:teams id]) team)
-                                       (not organization-id) (dissoc :organization-id
-                                                                     :organization-name
-                                                                     :organization-slug
-                                                                     :organization-owner-id
-                                                                     :organization-avatar-bg-url
-                                                                     :organization-permissions))]
+                  (let [team-merged  (merge (dm/get-in state [:teams id]) team)
+                        has-org?     (or (some? organization-id) (some? (:organization team)))
+                        team-updated (if has-org?
+                                       team-merged
+                                       (dissoc team-merged
+                                               :organization
+                                               :organization-id
+                                               :organization-name
+                                               :organization-slug
+                                               :organization-owner-id
+                                               :organization-avatar-bg-url
+                                               :organization-permissions))]
                     (update state :teams assoc id team-updated)))
                 state
                 teams)))))
