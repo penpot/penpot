@@ -10000,6 +10000,3 @@ msgstr "Intentar de nuevo"
 
 msgid "dashboard.invite-profile-disabled"
 msgstr "No tienes permiso para invitar a personas a este equipo"
-
-msgid "dashboard.invite-profile-disabled.owners-only"
-msgstr "Solo los propietarios del equipo pueden invitar dentro de %s"
