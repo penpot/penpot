@@ -3,6 +3,7 @@ import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-token-lib-sync"]);
 });
 
 test("User adds a library and its automatically selected in the color palette", async ({
