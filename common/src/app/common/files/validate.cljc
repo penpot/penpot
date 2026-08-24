@@ -73,7 +73,8 @@
     :variant-main-bad-name
     :variant-main-bad-variant-name
     :variant-component-bad-name
-    :variant-component-bad-id})
+    :variant-component-bad-id
+    :missing-tokens-status})
 
 (def ^:private schema:error
   [:map {:title "ValidationError"}
@@ -816,6 +817,17 @@
               (transient [])
               objects)))
 
+(defn check-tokens
+  "Check tokens in the file. The internal structure should be correct because
+   of the schemas and protocol functions. But we need to check for the case that
+   the tokens-status is missing due to a migration or import bug."
+  [{:keys [data] :as file}]
+  (when (and (some? (:tokens-lib data))
+             (nil? (:tokens-status data)))
+    (report-error :missing-tokens-status
+                  "Tokens library is present but tokens-status is missing"
+                  nil file nil)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API: VALIDATION FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -852,6 +864,8 @@
          (check-component component file))
        nil
        (:components data))
+
+      (check-tokens file)
 
       (-> *errors* deref not-empty))))
 
