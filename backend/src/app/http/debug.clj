@@ -13,6 +13,9 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cfc]
+   [app.common.files.repair :as cfr]
+   [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.time :as ct]
@@ -28,6 +31,7 @@
    [app.rpc.commands.teams :as teams]
    [app.setup :as-alias setup]
    [app.setup.clock :as clock]
+   [app.srepl.helpers :as h]
    [app.srepl.main :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
@@ -130,7 +134,7 @@
                   :hint "invalid button"))
 
       (ex/raise :type :not-found
-                :code :enpty-data
+                :code :empty-data
                 :hint "empty response"))))
 
 (defn- is-file-exists?
@@ -485,6 +489,89 @@
          ::yres/headers {"location" "/dbg"}}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; VALIDATE / REPAIR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- validate-file
+  [cfg {:keys [params] :as request}]
+  (let [file-id  (some-> params :file-id parse-uuid)]
+
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments))
+
+    (db/tx-run! (assoc cfg ::db/rollback true)
+                (fn [cfg]
+                  (let [file (bfc/get-file cfg file-id)
+                        libs (bfc/get-resolved-file-libraries cfg file-id)]
+                    (if file
+                      (let [errors (cfv/validate-file file libs)]
+                        {::yres/status  200
+                         ::yres/headers {"content-type" "text/plain"}
+                         ::yres/body    (if (empty? errors)
+                                          "NO VALIDATION ERRORS FOUND"
+                                          (pp/pprint-str errors))})
+                      (ex/raise :type :not-found
+                                :code :empty-data
+                                :hint "empty response")))))))
+
+(defn- repair-file
+  [cfg {:keys [params] :as request}]
+  (let [file-id        (some-> params :file-id parse-uuid)
+        skip-snapshot? (contains? params :skip-snapshot)
+        profile-id     (:app.http.session/profile-id request)]
+
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments))
+
+    (let [output (StringBuilder.)
+
+          repair-file
+          (fn [file libs _]
+            (let [errors (cfv/validate-file file libs)]
+              (.append output (if (empty? errors)
+                                "NO VALIDATION ERRORS FOUND\n"
+                                (str "VALIDATION ERRORS FOUND:\n"
+                                     (pp/pprint-str errors) "\n")))
+              (if (empty? errors)
+                file
+                (let [changes (cfr/repair-file file libs errors)]
+                  (-> file
+                      (update :revn inc)
+                      (update :data cfc/process-changes changes))))))]
+
+      (add-watch l/log-record ::repair-watcher
+                 (fn [_ _ _ record]
+                   (when (= "app.common.files.repair" (::l/logger record))
+                     (let [props (::l/props record)
+                           hint (get props :hint "")
+                           args (dissoc props :hint)
+                           message (str hint " "
+                                        (when-not (empty? args)
+                                          args)
+                                        "\n")]
+                       (.append output message)))))
+      (try
+        (db/tx-run! cfg
+                    h/process-file!
+                    file-id
+                    repair-file
+                    {::h/with-libraries? true
+                     ::h/validate? false
+                     ::h/profile-id profile-id
+                     ::h/snapshot-label (when-not skip-snapshot? "repair")})
+
+        (.append output "\nREPAIR FINISHED")
+
+        {::yres/status  200
+         ::yres/headers {"content-type" "text/plain"}
+         ::yres/body    (.toString output)}
+
+        (finally
+          (remove-watch l/log-record ::repair-watcher))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -578,5 +665,7 @@
       {:handler (partial handle-team-features cfg)}]
      ["/file-export" {:handler (partial export-handler cfg)}]
      ["/file-import" {:handler (partial import-handler cfg)}]
-     ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
+     ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]
+     ["/file-validate" {:handler (partial validate-file cfg)}]
+     ["/file-repair" {:handler (partial repair-file cfg)}]]]])
 
