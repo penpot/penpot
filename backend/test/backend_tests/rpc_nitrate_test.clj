@@ -1168,11 +1168,67 @@
              @set-team-params))
 
     (let [emails (->> @sent (map :to) set)]
-      (t/is (= 2 (count @sent)))
-      (t/is (= #{"member302@example.com" "external301@example.com"} emails))
+      (t/is (= 1 (count @sent)))
+      (t/is (= #{"member302@example.com"} emails))
       (doseq [email-params @sent]
         (t/is (= organization-name (:organization-name email-params)))
         (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+
+(t/deftest add-team-to-organization-deletes-external-invitations-for-unregistered-users
+  (let [owner      (th/create-profile* 305 {:is-active true
+                                            :fullname "Owner"
+                                            :email "owner305@example.com"})
+        member     (th/create-profile* 306 {:is-active true
+                                            :fullname "Member"
+                                            :email "member306@example.com"})
+        team       (th/create-team* 305 {:profile-id (:id owner)})
+        _          (th/create-team-role* {:team-id (:id team)
+                                          :profile-id (:id member)
+                                          :role :editor})
+        organization-id     (uuid/random)
+        organization-summary {:id organization-id
+                              :name "Test Org"
+                              :owner-id (:id owner)
+                              :teams []}
+        organization-perms  {:owner-id (:id owner)
+                             :permissions {:create-teams "any"
+                                           :move-teams "always"
+                                           :new-team-members "members"}}]
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "unregistered@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "unregistered2@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call (add-team-to-organization-nitrate-mock
+                                {:organization-id organization-id
+                                 :organization-summary organization-summary
+                                 :organization-perms organization-perms
+                                 :owner-id (:id owner)
+                                 :team-id (:id team)
+                                 :sso-active? false})
+                  teams/initialize-user-in-organization (fn [& _] nil)]
+      (let [out (th/command! {::th/type :add-team-to-organization
+                              ::rpc/profile-id (:id owner)
+                              :team-id (:id team)
+                              :organization-id organization-id})]
+        (t/is (th/success? out))))
+
+    (let [remaining (th/db-query :team-invitation {:team-id (:id team)})]
+      (t/is (empty? remaining) "Both external invitations should be deleted"))))
 
 (t/deftest create-team-in-organization-passes-association-to-nitrate
   (let [organization-id (uuid/random)

@@ -458,13 +458,14 @@
       (let [emails (map :email (noh/get-team-invitation-emails conn team-id))]
         (if (empty? emails)
           {:allows-anybody false :external-emails []}
-          (let [emails-array    (db/create-array conn "text" (vec emails))
-                profiles        (db/exec! conn [sql:get-profiles-by-emails emails-array])
+          (let [emails-array             (db/create-array conn "text" (vec emails))
+                profiles                 (db/exec! conn [sql:get-profiles-by-emails emails-array])
                 organization-member-ids  (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
-                external-emails (->> profiles
-                                     (remove #(contains? organization-member-ids (:id %)))
-                                     (map :email)
-                                     (vec))]
+                member-emails            (->> profiles
+                                              (filter #(contains? organization-member-ids (:id %)))
+                                              (map :email)
+                                              (into #{}))
+                external-emails          (into [] (remove member-emails emails))]
             {:allows-anybody false :external-emails external-emails}))))))
 
 (def ^:private schema:add-team-to-organization
