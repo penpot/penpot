@@ -245,6 +245,10 @@
   [cfg {:keys [::rpc/profile-id file-id fragment-id share-id]}]
   (db/run! cfg (fn [cfg]
                  (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)]
+                   (when (= :share-link (:type perms))
+                     (ex/raise :type :not-found
+                               :code :object-not-found
+                               :hint "object not found"))
                    (check-read-permissions! perms)
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
@@ -392,6 +396,14 @@
   (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)
         file  (bfc/get-file cfg file-id :read-only? true)
 
+        resolved-page-id (or page-id (-> file :data :pages first))
+
+        _ (when (and (= :share-link (:type perms))
+                     (not (contains? (:pages perms) resolved-page-id)))
+            (ex/raise :type :not-found
+                      :code :object-not-found
+                      :hint "object not found"))
+
         proj  (db/get conn :project {:id (:project-id file)})
 
         team  (-> (db/get conn :team {:id (:team-id proj)})
@@ -402,8 +414,7 @@
                   (cfeat/check-file-features! (:features file)))
 
         page  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-                (let [page-id (or page-id (-> file :data :pages first))
-                      page    (dm/get-in file [:data :pages-index page-id])]
+                (let [page (dm/get-in file [:data :pages-index resolved-page-id])]
                   (if (pmap/pointer-map? page)
                     (deref page)
                     page)))]

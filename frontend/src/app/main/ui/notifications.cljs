@@ -35,6 +35,7 @@
         [:> toast*
          {:level (or (:level notification) :info)
           :type (:type notification)
+          :is-html (:is-html notification)
           :detail (:detail notification)
           :on-close on-close}
          content]
@@ -57,5 +58,6 @@
         [:> toast*
          {:level (or (:level notification) :info)
           :type (:type notification)
+          :is-html (:is-html notification)
           :detail (:detail notification)
           :on-close on-close} content]))))

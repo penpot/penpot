@@ -122,8 +122,6 @@
              "sales@penpot.app"]]
            [:div  {:class (stl/css :activation-code)}
             [:p {:class (stl/css :modal-text-large)}
-             (tr "nitrate.form.subscribe-with-code")]
-            [:p {:class (stl/css :modal-text-large)}
              [:a {:class (stl/css :link)
                   :on-click on-activate-click}
-              (tr "nitrate.form.enter-code")]]]])]]]]))
+              (tr "nitrate.form.subscribe-with-code")]]]])]]]]))
