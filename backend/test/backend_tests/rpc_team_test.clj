@@ -357,6 +357,28 @@
           (t/is (= (:id profile2) (:member-id claims))))))))
 
 
+(t/deftest get-team-invitation-token-requires-edition-permissions
+  (let [profile1 (th/create-profile* 1 {:is-active true})
+        profile2 (th/create-profile* 2 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile1)})
+        pool     (:app.db/pool th/*system*)]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id profile2)
+                           :role :viewer})
+    (db/insert! pool :team-invitation
+                {:team-id (:id team)
+                 :email-to "victim@example.com"
+                 :role "editor"
+                 :valid-until (ct/in-future "48h")})
+    (let [data {::th/type :get-team-invitation-token
+                ::rpc/profile-id (:id profile2)
+                :team-id (:id team)
+                :email "victim@example.com"}
+          out (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (= :not-found (-> out :error ex-data :type))))))
+
+
 (t/deftest accept-invitation-tokens
   (let [profile1 (th/create-profile* 1 {:is-active true})
         profile2 (th/create-profile* 2 {:is-active true})
@@ -366,14 +388,7 @@
 
         pool     (:app.db/pool th/*system*)]
 
-    (let [token (tokens/generate th/*system*
-                                 {:iss :team-invitation
-                                  :exp (ct/in-future "1h")
-                                  :profile-id (:id profile1)
-                                  :role :editor
-                                  :team-id (:id team)
-                                  :member-email (:email profile2)
-                                  :member-id (:id profile2)})]
+    (let [token (tokens/generate th/*system*)]
 
       (t/testing "Verify token as anonymous user"
         (db/insert! pool :team-invitation
