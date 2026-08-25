@@ -238,12 +238,9 @@
   the last open dropdown closes. The cached node and `:ids` stay, so reopening
   re-attaches without a refetch or re-parse."
   [node]
-  (let [refs (max 0 (dec (:refs @preview-sprite)))]
-    (if (pos? refs)
-      (swap! preview-sprite assoc :refs refs)
-      (do
-        (dom/remove! node)
-        (swap! preview-sprite assoc :refs 0)))))
+  (let [new-state (swap! preview-sprite update :refs #(max 0 (dec %)))]
+    (when (zero? (:refs new-state))
+      (dom/remove! node))))
 
 (defn- add-font-css!
   "Creates a style element and attaches it to the dom."
