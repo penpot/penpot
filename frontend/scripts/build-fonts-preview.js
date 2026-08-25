@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 // Builds one SVG sprite previewing every catalog (built-in + Google) font name,
 // outlined in its own typeface, so the picker loads it once instead of one
