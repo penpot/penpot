@@ -45,24 +45,24 @@ declare -A TEST_CMD=(
 
 declare -A FMT_CHECK_CMD=(
   [frontend]="pnpm run check-fmt:clj && pnpm run check-fmt:js && pnpm run check-fmt:scss"
-  [backend]="pnpm run check-fmt"
+  [backend]="pnpm run check-fmt:clj"
   [common]="pnpm run check-fmt:clj && pnpm run check-fmt:js"
   [render-wasm]="cargo fmt --check"
   [exporter]="pnpm run check-fmt:clj"
   [mcp]="pnpm run fmt:check"
   [plugins]="pnpm run format:check"
-  [library]="pnpm run check-fmt"
+  [library]="pnpm run check-fmt:clj"
 )
 
 declare -A FMT_FIX_CMD=(
   [frontend]="pnpm run fmt:clj && pnpm run fmt:js && pnpm run fmt:scss"
-  [backend]="pnpm run fmt"
+  [backend]="pnpm run fmt:clj"
   [common]="pnpm run fmt:clj && pnpm run fmt:js"
   [render-wasm]="cargo fmt"
   [exporter]="pnpm run fmt:clj"
   [mcp]="pnpm run fmt"
   [plugins]="pnpm run format"
-  [library]="pnpm run fmt"
+  [library]="pnpm run fmt:clj"
 )
 
 declare -A PAREN_REPAIR_CMD=(
