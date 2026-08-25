@@ -388,7 +388,14 @@
 
         pool     (:app.db/pool th/*system*)]
 
-    (let [token (tokens/generate th/*system*)]
+    (let [token (tokens/generate th/*system*
+                                 {:iss :team-invitation
+                                  :exp (ct/in-future "1h")
+                                  :profile-id (:id profile1)
+                                  :role :editor
+                                  :team-id (:id team)
+                                  :member-email (:email profile2)
+                                  :member-id (:id profile2)})]
 
       (t/testing "Verify token as anonymous user"
         (db/insert! pool :team-invitation
