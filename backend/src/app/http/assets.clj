@@ -7,7 +7,6 @@
 (ns app.http.assets
   "Assets related handlers."
   (:require
-   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
@@ -15,6 +14,7 @@
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
+   [app.rpc.permissions :as perms]
    [app.storage :as sto]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
@@ -40,6 +40,12 @@
   (or (some-> path-params :id d/parse-uuid)
       (ex/raise :type :not-found
                 :hint "object not found")))
+
+(defn- get-share-id
+  "Extract and validate the optional `share-id` query param. Returns a UUID
+  or `nil` for missing/malformed values."
+  [{:keys [query-params]}]
+  (some-> query-params :share-id d/parse-uuid))
 
 (defn- get-file-media-object
   [pool id]
@@ -133,7 +139,8 @@
       (let [file-id    (:file-id mobj)
             profile-id (or (::session/profile-id request)
                            (::actoken/profile-id request))
-            perms      (bfc/get-file-permissions pool profile-id file-id)]
+            share-id   (get-share-id request)
+            perms      (perms/get-file-read-permissions pool profile-id file-id share-id)]
         (if-not (:can-read perms)
           {::yres/status 404}
           (let [sobj (sto/get-object storage (kf mobj))]
