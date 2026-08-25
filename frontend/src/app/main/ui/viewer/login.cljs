@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.logging :as log]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
@@ -84,13 +85,14 @@
                  :class (stl/css :recovery-link)
                  :data-value "recovery-request"}
              (tr "auth.forgot-password")]]
-           [:div {:class (stl/css :register)}
-            [:span {:class (stl/css :register-text)}
-             (tr "auth.register") " "]
-            [:a {:on-click set-section
-                 :class (stl/css :register-link)
-                 :data-value "register"}
-             (tr "auth.register-submit")]]]]
+           (when (contains? cf/flags :registration)
+             [:div {:class (stl/css :register)}
+              [:span {:class (stl/css :register-text)}
+               (tr "auth.register") " "]
+              [:a {:on-click set-section
+                   :class (stl/css :register-link)
+                   :data-value "register"}
+               (tr "auth.register-submit")]])]]
 
          :register
          [:div {:class (stl/css :form-container)}
