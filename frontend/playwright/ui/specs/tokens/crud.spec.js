@@ -569,7 +569,7 @@ test.describe("Tokens - creation", () => {
     });
     await selectDropdown.click();
 
-    const fontOption = tokensUpdateCreateModal.getByText("ABeeZee");
+    const fontOption = tokensUpdateCreateModal.getByRole('img', { name: 'ABeeZee' })
     await expect(fontOption).toBeVisible();
 
     await fontOption.click();
@@ -583,7 +583,7 @@ test.describe("Tokens - creation", () => {
       name: "Search font",
     });
     await searchField.fill("alme");
-    const fontOption2 = tokensUpdateCreateModal.getByText("Almendra Display");
+    const fontOption2 = tokensUpdateCreateModal.getByRole('img', {name: "Almendra Display"});
     await expect(fontOption2).toBeVisible();
     await fontOption2.click();
 
@@ -1521,7 +1521,7 @@ test.describe("Tokens - creation", () => {
     });
     await selectDropdown.click();
 
-    const fontOption = tokensUpdateCreateModal.getByText("ABeeZee");
+    const fontOption = tokensUpdateCreateModal.getByRole("img", {name: "ABeeZee"});
     await expect(fontOption).toBeVisible();
 
     await fontOption.click();
@@ -1536,7 +1536,7 @@ test.describe("Tokens - creation", () => {
       name: "Search font",
     });
     await searchField.fill("alme");
-    const fontOption2 = tokensUpdateCreateModal.getByText("Almendra Display");
+    const fontOption2 = tokensUpdateCreateModal.getByRole("img", {name: "Almendra Display"});
     await expect(fontOption2).toBeVisible();
     await fontOption2.click();
     await expect(

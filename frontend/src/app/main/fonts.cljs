@@ -177,7 +177,7 @@
                (nil? (dom/query doc "parsererror")))
       root)))
 
-(defn prefetch-preview-sprite
+(defn prefetch-preview-sprite!
   "Fetch the font-preview sprite markup, pre-parse it on idle, and cache the
   parsed DOM node with the font ids it covers. Idempotent: fetches only when
   nothing is cached yet (`:idle`) or a previous attempt failed (`:error`); no-op
@@ -218,11 +218,11 @@
             (log/wrn :hint "cannot load font preview sprite" :cause cause)
             (reset-preview-sprite-error!))))))
 
-(defn attach-preview-sprite
+(defn attach-preview-sprite!
   "Append the pre-parsed sprite node into the DOM (hidden) so rows can reference
   its glyph groups via `<use>`. Returns the node (pass it to
-  `detach-preview-sprite` on close), or nil if not ready. Parsing and id
-  collection happen once during `prefetch-preview-sprite`, so this is just a
+  `detach-preview-sprite!` on close), or nil if not ready. Parsing and id
+  collection happen once during `prefetch-preview-sprite!`, so this is just a
   cheap appendChild. Multiple dropdowns may share the node; each attach
   increments `:refs` so the node is only detached when the last one closes."
   []
@@ -233,8 +233,8 @@
       (swap! preview-sprite update :refs inc)
       node)))
 
-(defn detach-preview-sprite
-  "Remove the sprite node injected by `attach-preview-sprite` from the DOM when
+(defn detach-preview-sprite!
+  "Remove the sprite node injected by `attach-preview-sprite!` from the DOM when
   the last open dropdown closes. The cached node and `:ids` stay, so reopening
   re-attaches without a refetch or re-parse."
   [node]

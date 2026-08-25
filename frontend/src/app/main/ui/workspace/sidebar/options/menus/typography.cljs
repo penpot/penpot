@@ -254,11 +254,11 @@
         (let [node*  (volatile! nil)
               task   (tm/schedule
                       (fn []
-                        (vreset! node* (fonts/attach-preview-sprite))))]
+                        (vreset! node* (fonts/attach-preview-sprite!))))]
           (fn []
             (tm/dispose! task)
             (when-some [n @node*]
-              (fonts/detach-preview-sprite n))))))
+              (fonts/detach-preview-sprite! n))))))
 
     (mf/with-effect [@selected]
       (let [node  (mf/ref-val flist)

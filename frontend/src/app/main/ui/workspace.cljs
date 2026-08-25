@@ -229,7 +229,7 @@
                 (dpl/update-plugins-permissions-peek)))
 
     (mf/with-effect []
-      (fonts/prefetch-preview-sprite))
+      (fonts/prefetch-preview-sprite!))
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
@@ -297,4 +297,3 @@
 
     (when (uuid? file-id)
       [:> workspace* props])))
-
