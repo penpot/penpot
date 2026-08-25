@@ -352,6 +352,8 @@ pub struct PendingTiles {
     pub visible_uncached: Vec<Tile>,
     pub interest_cached: Vec<Tile>,
     pub interest_uncached: Vec<Tile>,
+    /// Interest-ring tiles deferred until after the viewport has been presented.
+    deferred_interest: Vec<Tile>,
 }
 
 impl PendingTiles {
@@ -364,14 +366,16 @@ impl PendingTiles {
             visible_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            deferred_interest: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
         }
     }
 
     pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
         self.list.clear();
+        self.deferred_interest.clear();
 
         // During interactive transform, skip the interest-area ring
-        // entirely — the user is dragging, every rAF is on the critical
+        // entirely: the user is dragging, every rAF is on the critical
         // path, and pre-rendering tiles outside the viewport is wasted
         // work that just gets evicted on the next pointer move. The ring
         // is repopulated naturally on gesture end / on idle rAFs.
@@ -423,10 +427,28 @@ impl PendingTiles {
             }
         }
 
-        self.list.extend(self.interest_uncached.iter());
-        self.list.extend(self.interest_cached.iter());
-        self.list.extend(self.visible_uncached.iter());
-        self.list.extend(self.visible_cached.iter());
+        // Visible tiles first. Interest-ring work is deferred so we can present
+        // as soon as the viewport is ready (see `promote_deferred_interest`).
+        // Interactive/`only_visible` already excludes the ring from `tile_rect`.
+        if only_visible {
+            self.list.extend(self.visible_uncached.iter());
+            self.list.extend(self.visible_cached.iter());
+        } else {
+            self.deferred_interest.extend(self.interest_uncached.iter());
+            self.deferred_interest.extend(self.interest_cached.iter());
+            self.list.extend(self.visible_uncached.iter());
+            self.list.extend(self.visible_cached.iter());
+        }
+    }
+
+    /// Move deferred interest-ring tiles onto the pending list.
+    /// Returns true when there is interest work left to do.
+    pub fn promote_deferred_interest(&mut self) -> bool {
+        if self.deferred_interest.is_empty() {
+            return false;
+        }
+        self.list.append(&mut self.deferred_interest);
+        true
     }
 
     pub fn pop(&mut self) -> Option<Tile> {
