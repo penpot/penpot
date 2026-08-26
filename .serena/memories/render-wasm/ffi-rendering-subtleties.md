@@ -26,7 +26,9 @@
 - During interactive transform, modifier tile invalidation is deferred to `render()` once per rAF. Outside interactive transform, `set_modifiers` rebuilds modifier tiles immediately.
 - `set_modifiers_end` disables fast/interactive state and cancels pending async render; the caller must request the final full-quality render.
 - Plain viewport fast mode (`options.is_viewport_interaction()`) renders from cache and does not flush target output inside `process_animation_frame`; interactive transforms do flush.
-- Zoom changes rebuild the tile index while preserving cached tile textures. Avoid replacing that path with shallow rebuilds if blur/shadow cache preservation matters.
+- Zoom settle wipes the tile texture cache in `set_view_end`. Mid-zoom overlays
+  key tiles by scale; shape edits must `invalidate_cached_tiles_intersecting`
+  the old∪new extrect so those overlays do not keep pre-edit pixels.
 - Pending tile priority is intentionally reversed by pop order; check the queue construction before changing tile scheduling.
 - Frames with a fill may use `render_frame_container_drop_shadow` (direct rrect +
   blur saveLayer on `DropShadows`) when `uses_direct_container_drop_shadow` is true.
