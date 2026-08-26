@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
+      ref_slug: ${{ steps.vars.outputs.ref_slug }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
       exists: ${{ steps.check.outputs.exists }}
 
@@ -41,9 +42,16 @@ jobs:
 
       - name: Extract some useful variables
         id: vars
+        env:
+          GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
-          echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+          # A git ref accepts characters that an S3 key and a Docker tag do not.
+          REF_SLUG=$(printf '%s' "$GH_REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-100)
+          {
+            echo "gh_ref=$GH_REF"
+            echo "ref_slug=$REF_SLUG"
+            echo "bundle_version=$(git describe --tags --always)"
+          } >> "$GITHUB_OUTPUT"
 
       # The uploaded zip carries its version as S3 metadata. If the
       # existing object was already built from this same commit, the
@@ -57,7 +65,7 @@ jobs:
         run: |
           EXISTING_VERSION=$(aws s3api head-object \
             --bucket ${{ secrets.S3_BUCKET }} \
-            --key "penpot-${{ steps.vars.outputs.gh_ref }}.zip" \
+            --key "penpot-${{ steps.vars.outputs.ref_slug }}.zip" \
             --query 'Metadata."bundle-version"' \
             --output text 2>/dev/null || echo "none")
 
@@ -110,7 +118,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           aws s3 cp zips/penpot.zip \
-            s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.check.outputs.gh_ref }}.zip \
+            s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.check.outputs.ref_slug }}.zip \
             --metadata bundle-version=${{ needs.check.outputs.bundle_version }}
 
   # ── 3. Single failure notification for the whole workflow ─────────────
