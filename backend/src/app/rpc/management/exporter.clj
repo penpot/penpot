@@ -43,7 +43,7 @@
                  ::sto/touched-at (ct/in-future {:minutes 10})
                  :profile-id profile-id
                  :content-type (:mtype content)
-                 :bucket "tempfile"}
+                 :bucket sto/tempfile-bucket}
         object (sto/put-object! storage content)]
     {:id (:id object)
      :uri (-> (cf/get :public-uri)

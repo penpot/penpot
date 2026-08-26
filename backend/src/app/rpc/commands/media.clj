@@ -379,7 +379,7 @@
                       ::sto/deduplicate? false
                       ::sto/touch        true
                       :content-type      (:mtype content)
-                      :bucket            "tempfile"
+                      :bucket            sto/tempfile-bucket
                       :upload-id         (str session-id)
                       :chunk-index       index}))
 
