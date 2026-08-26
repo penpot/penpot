@@ -743,15 +743,14 @@ pub extern "C" fn is_image_cached(
 }
 
 /// Evicts least-recently-used images until the store retains at most
-/// `max_mb` megabytes of image data. Called by the headless exporter between
+/// `max_bytes` bytes of image data. Called by the headless exporter between
 /// requests — never mid-render, so an image can't disappear under a running
 /// export; evicted images are re-provisioned by later requests that need
 /// them. Returns the number of evicted images.
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn evict_images_to_budget(max_mb: u32) -> Result<u32> {
-    let max_bytes = (max_mb as usize) * 1024 * 1024;
-    let evicted = get_resources().images.evict_to_budget(max_bytes);
+pub extern "C" fn evict_images_to_budget(max_bytes: u32) -> Result<u32> {
+    let evicted = get_resources().images.evict_to_budget(max_bytes as usize);
     Ok(evicted as u32)
 }
 

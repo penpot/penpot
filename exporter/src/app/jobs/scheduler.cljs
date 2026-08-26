@@ -8,33 +8,48 @@
   "Admission control for export jobs.
 
   Limits concurrent jobs and rejects work rather than allowing an unbounded backlog.
-  Queue order is FIFO, except jobs whose profile is already at its cap are skipped."
+  Queue order is FIFO, except jobs whose profile is already at its cap are skipped,
+  as are headless jobs once every render worker is busy."
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.config :as cf]
    [app.jobs :as jobs]
    [app.jobs.utils :as job.utils]
+   [app.wasm.pool :as pool]
    [promesa.core :as p]))
 
 (l/set-level! :debug)
 
 (defonce ^:private state
-  (atom {:running {}   ;; job-id -> profile-id
+  (atom {:running {}   ;; job-id -> {:profile-id :headless?}
          :queue []}))  ;; vector of {:job :resolve :reject}
 
 (defn- max-concurrent [] (cf/get :exporter-max-concurrent-jobs 4))
 (defn- max-per-profile [] (cf/get :exporter-max-jobs-per-profile 2))
 (defn- max-queued [] (cf/get :exporter-queue-max 64))
 
+(defn- headless?
+  [job]
+  (= "wasm" (:backend job)))
+
 (defn- running-for
   [{:keys [running]} profile-id]
-  (count (filter #(= profile-id %) (vals running))))
+  (count (filter #(= profile-id (:profile-id %)) (vals running))))
+
+(defn- running-headless
+  [{:keys [running]}]
+  (count (filter :headless? (vals running))))
 
 (defn- eligible?
-  [state profile-id]
+  [state job]
   (and (< (count (:running state)) (max-concurrent))
-       (< (running-for state profile-id) (max-per-profile))))
+       (< (running-for state (:profile-id job)) (max-per-profile))
+       ;; A headless job holds one render worker for its whole run, so admitting
+       ;; more of them than there are workers would only move the wait inside
+       ;; the pool, with the job already reporting itself as running.
+       (or (not (headless? job))
+           (< (running-headless state) (pool/capacity)))))
 
 (declare ^:private pump!)
 
@@ -47,7 +62,8 @@
 
 (defn- execute!
   [{:keys [id profile-id] :as job}]
-  (swap! state update :running assoc (str id) profile-id)
+  (swap! state update :running assoc (str id) {:profile-id profile-id
+                                               :headless? (headless? job)})
   (if (jobs/cancelled? id)
     (do (finish! id)
         (p/resolved job))
@@ -81,7 +97,7 @@
   (let [queue (:queue state)
         idx   (->> (map-indexed vector queue)
                    (some (fn [[idx entry]]
-                           (when (eligible? state (-> entry :job :profile-id))
+                           (when (eligible? state (:job entry))
                              idx))))]
     (when idx
       [(assoc state :queue (into (subvec queue 0 idx) (subvec queue (inc idx))))
@@ -111,7 +127,7 @@
         pending  (p/create (fn [resolve reject]
                              (vreset! resolve* resolve)
                              (vreset! reject* reject)))]
-    (if (eligible? @state (:profile-id job))
+    (if (eligible? @state job)
       (-> (execute! job)
           (p/then @resolve*)
           (p/catch @reject*))

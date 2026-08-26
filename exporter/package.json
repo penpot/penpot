@@ -39,7 +39,7 @@
     "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
     "lint:clj": "clj-kondo --parallel --lint src/ test/",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
-    "test": "pnpm run build:test && node target/tests/test.js",
+    "test": "pnpm run build:test && PENPOT_SECRET_KEY=${PENPOT_SECRET_KEY:-test-secret-key} node target/tests/test.js",
     "test:quiet": "node ./scripts/test-quiet.js"
   }
 }
