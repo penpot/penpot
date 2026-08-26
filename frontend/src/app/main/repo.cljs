@@ -276,6 +276,28 @@
   (let [default {:wait false :blob? false}]
     (send-export (merge default params))))
 
+(defmethod cmd! :create-export-job
+  [_ params]
+  (->> (http/send! {:method :post
+                    :uri (u/join cf/public-uri "api/export/jobs")
+                    :body (http/transit-data params)
+                    :headers {"x-external-session-id" (cf/external-session-id)
+                              "x-event-origin" (::ev/origin (meta params))}
+                    :credentials "include"
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(defmethod cmd! :cancel-export-job
+  [_ {:keys [job-id]}]
+  (->> (http/send! {:method :delete
+                    :uri (u/join cf/public-uri "api/export/jobs/" (str job-id))
+                    :headers {"x-external-session-id" (cf/external-session-id)}
+                    :credentials "include"
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
 (defn- multipart-upload
   [id params]
   (->> (http/send! {:method :post

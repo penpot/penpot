@@ -218,11 +218,25 @@
         theme             (or (:theme profile) theme/default)
         is-default-theme? (= theme/default theme)
         error?            (:error state)
+        ;; The exporter is at capacity: worth its own wording, so the user
+        ;; knows retrying later is the thing to do.
+        busy?             (= :queue-full (:error-code state))
         healthy?          (:healthy? state)
         detail-visible?   (:detail-visible state)
         widget-visible?   (:widget-visible state)
         progress          (:progress state)
         items             (:exports state)
+        job-id            (:job-id state)
+        status            (:status state)
+        queued?           (and (some? job-id) (= "queued" status))
+        cancelling?       (and (some? job-id) (= "cancelling" status))
+        cancelled?        (and (some? job-id) (= "cancelled" status))
+        ;; Only the wasm backend can actually stop: a browser render holds its
+        ;; pool slot until playwright gives up.
+        cancellable?      (and (some? job-id)
+                               (= "wasm" (:backend state))
+                               (:in-progress state)
+                               (not cancelling?))
         total             (or (:total state) (count items))
         complete?         (= progress total)
         circ              (* 2 Math/PI 12)
@@ -236,6 +250,8 @@
         color
         (cond
           error?         clr/new-danger
+          (or cancelling?
+              cancelled?) clr/new-warning
           healthy?       (if is-default-theme?
                            clr/new-primary
                            clr/new-primary-light)
@@ -248,10 +264,19 @@
 
         title
         (cond
+          busy?          (tr "workspace.options.exporting-busy")
           error?         (tr "workspace.options.exporting-object-error")
+          cancelling?    (tr "workspace.options.exporting-cancelling")
+          cancelled?     (tr "workspace.options.exporting-cancelled")
+          queued?        (tr "workspace.options.exporting-queued")
           complete?      (tr "workspace.options.exporting-complete")
           healthy?       (tr "workspace.options.exporting-object")
           (not healthy?) (tr "workspace.options.exporting-object-slow"))
+
+        cancel-export
+        (mf/use-fn
+         (fn []
+           (st/emit! (de/cancel-export))))
 
         retry-last-operation
         (mf/use-fn
@@ -294,11 +319,25 @@
 
         [:div {:class (stl/css :export-progress-title)}
          [:div {:class (stl/css :title-text)} title]
-         (if error?
+         (cond
+           error?
            [:button {:class (stl/css :retry-btn)
                      :on-click retry-last-operation}
             (tr "workspace.options.retry")]
 
+           cancellable?
+           [:*
+            [:button {:class (stl/css :retry-btn)
+                      :on-click cancel-export}
+             (tr "workspace.options.cancel-export")]
+            [:span {:class (stl/css :progress)}
+             (dm/str progress " / " total)]]
+
+           ;; A counter for work that is being abandoned says nothing useful.
+           (or cancelling? cancelled?)
+           nil
+
+           :else
            [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 

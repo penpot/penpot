@@ -7702,9 +7702,29 @@ msgstr "Remove export"
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
 
+#: src/app/main/ui/exports/assets.cljs:325
+msgid "workspace.options.cancel-export"
+msgstr "Cancel"
+
 #: src/app/main/ui/exports/assets.cljs:252
 msgid "workspace.options.exporting-complete"
 msgstr "Export complete"
+
+#: src/app/main/ui/exports/assets.cljs:259
+msgid "workspace.options.exporting-cancelled"
+msgstr "Export cancelled"
+
+#: src/app/main/ui/exports/assets.cljs:258
+msgid "workspace.options.exporting-cancelling"
+msgstr "Cancelling..."
+
+#: src/app/main/ui/exports/assets.cljs:261
+msgid "workspace.options.exporting-queued"
+msgstr "Waiting..."
+
+#: src/app/main/ui/exports/assets.cljs:256
+msgid "workspace.options.exporting-busy"
+msgstr "Export service is busy, please try again later"
 
 #: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:253, src/app/main/ui/inspect/exports.cljs:216, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.exporting-object"
