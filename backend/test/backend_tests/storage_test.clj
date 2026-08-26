@@ -492,7 +492,7 @@
       (let [res (th/run-task! :objects-gc {:skip-delay true})]
         (t/is (= 1 (:processed res)))))))
 
-(t/deftest put-object-write-failure-leaves-no-row
+(t/deftest put-object-write-failure-leaves-pending-row
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         ;; Point the fs backend at a path that is actually a file so the
@@ -695,6 +695,25 @@
     (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?"
                                 (:id object)])]
       (t/is (= 1 (:count row))))))
+
+(t/deftest gc-deleted-gives-up-after-max-attempts
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
+
+    (th/db-update! :storage-object {:deleted-at (ct/in-past {:minutes 1})
+                                    :deletion_attempts 6}
+                   {:id (:id object)})
+
+    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
+                        :return (fn [_ ids] (set ids))}]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 0 (:deleted res)))))
+
+    (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" (:id object)])]
+      (t/is (= 0 (:count row))))))
 
 (t/deftest dedup-reuses-existing-blob-with-touch
   (let [storage (-> (:app.storage/storage th/*system*)

@@ -67,9 +67,9 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - The lookup matches hash, bucket, backend, and `deleted_at IS NULL`.
 - The lookup only considers rows with `status='valid'`; pending rows are invisible.
 - A hit whose blob is missing is repaired in place: the same row/id is kept,
-  the row is flagged `::blob-missing?`, and `put-object!` rewrites the blob
-  under that id. This heals all existing references to the object. If the
-  rewrite fails, the row is left live and valid for a later retry.
+  and `put-object!` rewrites the blob under that id. This heals all existing
+  references to the object. If the rewrite fails, the row is left live and
+  valid for a later retry.
 - The lookup does not include file ID, profile ID, team ID, or organization ID.
 - Objects can therefore share content across users and files within one bucket.
 - Deleted objects are not reused.

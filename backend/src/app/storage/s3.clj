@@ -217,7 +217,11 @@
                       ids)
         result  (try
                   (p/await! (del-object-in-bulk backend ids))
-                  (catch Throwable _ ::network-error))]
+                  (catch Throwable cause
+                    (l/err :hint "error on s3 bulk deletion"
+                           :ids ids
+                           :cause cause)
+                    ::network-error))]
     (cond
       (= ::network-error result) (set ids)
       (map? result)              (into #{} (map (fn [{:keys [key]}]
