@@ -558,10 +558,8 @@
          (mf/deps disabled is-open is-multiple? ref min max nillable default is-token-applied?)
          (fn [event]
            (when-not (or disabled is-open is-multiple?  is-token-applied?)
-             (let [node (mf/ref-val ref)
-                   is-focused (and (some? node) (dom/active? node))
-                   has-token (some? (deref token-applied-name*))]
-               (when-not (or is-focused has-token)
+             (let [has-token (some? (deref token-applied-name*))]
+               (when-not has-token
                  (let [client-x  (.-clientX event)
                        parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        start-val (or parsed default 0)]
@@ -610,7 +608,8 @@
                  (mf/set-ref-val! drag-state* :idle)
                  (dom/release-pointer event)
                  (when-let [node (mf/ref-val ref)]
-                   (dom/focus! node)))
+                   (dom/focus! node)
+                   (dom/select-text! node)))
                (when (= state :dragging)
                  (mf/set-ref-val! drag-state* :idle)
                  (dom/release-pointer event)
