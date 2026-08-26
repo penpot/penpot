@@ -1000,7 +1000,7 @@
 
           changes
           (cond-> changes
-            (ctsl/grid-layout? shape-inst)
+            (ctsl/grid-layout? shape-main)
             (update-grid-copy-attrs
              (:id shape-inst)
              shape-main
@@ -2477,9 +2477,15 @@
                ;; Take cells from main and remap the shapes to assign it to the copy
                copy-cells (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
                main-cells (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)]
+
+           ;; When the copy hasn't overridden its grid cells, take the main's
+           ;; cells wholesale (positions + assignments + new/removed cells).
+           ;; Otherwise preserve the copy's overrides cell by cell.
            (-> shape-copy
                (assoc :layout-grid-cells
-                      (ctsl/merge-cells main-cells copy-cells omit-touched?))
+                      (if (ctk/touched-group? shape-copy :layout-grid-cells)
+                        (ctsl/merge-cells main-cells copy-cells omit-touched?)
+                        main-cells))
                (ctsl/assign-cells objects))))
        {:ignore-touched true :with-objects? true})))
 
