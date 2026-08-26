@@ -69,6 +69,7 @@
     [:vector
      [:tuple ::sm/uuid ::sm/uuid]]]
 
+   ;; TODO: rename to :links
    [:external-libraries {:optional true}
     [:vector
      [:map
@@ -225,14 +226,12 @@
     (.flush writer))
   (.closeEntry output))
 
+
 (defn- get-file
-  [{:keys [::bfc/embed-assets ::bfc/include-libraries] :as cfg} file-id]
+  [{:keys [::bfc/export-type] :as cfg} file-id]
 
-  (when (and include-libraries embed-assets)
-    (throw (IllegalArgumentException.
-            "the `include-libraries` and `embed-assets` are mutally excluding options")))
-
-  (let [detach? (and (not embed-assets) (not include-libraries))]
+  (let [detach? (= export-type :detach-libraries)
+        embed?  (= export-type :merge-libraries)]
     (db/tx-run! cfg (fn [cfg]
                       (cond-> (bfc/get-file cfg file-id
                                             {:realize? true
@@ -242,7 +241,7 @@
                         (-> (ctf/detach-external-references file-id)
                             (dissoc :libraries))
 
-                        embed-assets
+                        embed?
                         (update :data #(bfc/embed-assets cfg % file-id))
 
                         :always
@@ -379,20 +378,19 @@
         (write-entry! output path encoded-tokens)))))
 
 (defn- export-files
-  [{:keys [::bfc/ids ::bfc/include-libraries ::output] :as cfg}]
+  [{:keys [::bfc/ids ::bfc/export-type ::output] :as cfg}]
 
   (let [original-ids ids
-        ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
-        rels (if include-libraries
+        ids  (into ids (when (= export-type :include-libraries) (bfc/get-libraries cfg ids)))
+        rels (if (= export-type :include-libraries)
                (->> (bfc/get-files-rels cfg ids)
                     (mapv (juxt :file-id :library-file-id)))
                [])
 
         ;; Compute external libraries: referenced by original files but
-        ;; not included in the export set. Only relevant when libraries
-        ;; are NOT bundled in the export.
+        ;; not included in the export set. Only relevant for :link-later.
         external-libs
-        (when-not include-libraries
+        (when (= export-type :link-later)
           (let [original-rels (bfc/get-files-rels cfg original-ids)
                 lib-ids       (into #{} (map :library-file-id) original-rels)]
             (when (seq lib-ids)
@@ -420,14 +418,14 @@
 
     ;; Write manifest file
     (let [files  (:files @bfc/*state*)
-      params (cond-> {:type "penpot/export-files"
-                      :version 1
-                      :generated-by (str "penpot/" (:full cf/version))
-                      :referer "penpot"
-                      :files (vec (vals files))
-                      :relations rels}
-               (seq external-libs)
-               (assoc :external-libraries external-libs))]
+          params (cond-> {:type "penpot/export-files"
+                          :version 1
+                          :generated-by (str "penpot/" (:full cf/version))
+                          :referer "penpot"
+                          :files (vec (vals files))
+                          :relations rels}
+                   (seq external-libs)
+                   (assoc :external-libraries external-libs))]
       (write-entry! output "manifest.json" params))))
 
 ;; --- IMPORT IMPL
@@ -926,15 +924,39 @@
                                              :pending []})]
                           (update file key conj entry)))))
 
+(defn- compute-link-decisions
+  "Returns a map of {old-lib-id -> {:library-id ... :library ...}} for external
+  libraries that should be auto-linked (single candidate AND importer has edit
+  permission). Libraries with zero or multiple candidates, or where the importer
+  lacks permission, are excluded — their refs should remain dangling."
+  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/profile-id] :as cfg}]
+  (reduce
+   (fn [acc ext-lib]
+     (let [slug (:slug ext-lib)]
+       (if (nil? slug)
+         acc
+         (let [matching (into [] (bfc/find-shared-files-by-slug cfg team-id slug))]
+           (if (not= 1 (count matching))
+             acc
+             (let [library (first matching)
+                   perms (bfc/get-file-permissions conn profile-id (:id library))]
+               (if (:can-edit perms)
+                 (assoc acc (:id ext-lib) {:library-id (:id library)
+                                           :library library})
+                 acc)))))))
+   {}
+   (:external-libraries manifest)))
+
 (defn- resolve-and-link-libraries
   "For each external library in the manifest, resolve candidates by slug.
-  Auto-links single matches (creating DB rows) and builds a file-grouped
-  resolution map keyed by imported file-id (new UUID)."
+   Auto-links single matches (creating DB rows) and builds a file-grouped
+   resolution map keyed by imported file-id (new UUID)."
 
-  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/timestamp ::bfc/profile-id] :as cfg} files-info]
+  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/timestamp] :as cfg} files-info]
   (assert (uuid? team-id) "team-id should be provided")
 
-  (let [file-ids (keys files-info)]
+  (let [file-ids (keys files-info)
+        decisions (compute-link-decisions cfg)]
 
     (reduce
      (fn [acc ext-lib]
@@ -943,57 +965,48 @@
        (assert (contains? ext-lib :used-by) "expected `:used-by` on ext-lib")
        (assert (contains? ext-lib :slug) "expected `:slug` on ext-lib")
 
-       (let [matching-libraries (-> (into [] (bfc/find-shared-files-by-slug cfg team-id (:slug ext-lib)))
-                                    (not-empty))
-             used-by            (into #{} (map bfc/lookup-index) (:used-by ext-lib))]
-
+       (let [used-by (into #{} (map bfc/lookup-index) (:used-by ext-lib))]
          (cond
-           ;; No candidates → skip this library
-           (nil? matching-libraries)
+           ;; No slug → skip
+           (nil? (:slug ext-lib))
            acc
 
-           ;; Single candidate → auto-link if importer has edit permission
-           (= 1 (count matching-libraries))
-           (let [library    (first matching-libraries)
-                 library-id (get library :id)
-                 perms      (bfc/get-file-permissions conn profile-id library-id)]
+           ;; Has decision → auto-link (single match + can-edit)
+           (contains? decisions (:id ext-lib))
+           (let [{:keys [library-id]} (get decisions (:id ext-lib))
+                 used-by (filter used-by file-ids)]
+             (doseq [file-id used-by]
+               (let [rel-params {:file-id file-id :library-file-id library-id}]
+                 (db/insert! conn :file-library-rel rel-params
+                             {::db/on-conflict-do-nothing? true})
+                 (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+             (let [entry {:id (:id ext-lib)
+                          :name (:name ext-lib)
+                          :linked-to library-id}]
+               (reduce (fn [acc file-id]
+                         (add-to-file acc file-id (get files-info file-id) :done entry))
+                       acc used-by)))
 
-             (if (not (:can-edit perms))
-               ;; no edit permission → skip
-               acc
-
-               (let [used-by (filter used-by file-ids)]
-                 ;; Create DB links for the files that used this library
-                 (doseq [file-id used-by]
-                   (let [rel-params {:file-id file-id :library-file-id library-id}]
-                     (db/insert! conn :file-library-rel rel-params
-                                 {::db/on-conflict-do-nothing? true})
-                     (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
-
-                 (let [entry {:id (:id ext-lib)
-                              :name (:name ext-lib)
-                              :linked-to library-id}]
-                   (reduce (fn [acc file-id]
-                             (add-to-file acc file-id (get files-info file-id) :done entry))
-                           acc used-by)))))
-
-           ;; Multiple candidates → needs user resolution
+           ;; Has candidates but no decision → multi-match or no permission → pending
            :else
-           (let [candidates (mapv (fn [lib]
-                                    (let [project-id (:project-id lib)
-                                          project (bfc/get-project cfg project-id)
-                                          project-name (:name project)]
-                                      {:id (:id lib)
-                                       :name (:name lib)
-                                       :project-id project-id
-                                       :project-name project-name}))
-                                  matching-libraries)
-                 entry {:id (:id ext-lib)
-                        :name (:name ext-lib)
-                        :candidates candidates}]
-             (reduce (fn [acc file-id]
-                       (add-to-file acc file-id (get files-info file-id) :pending entry))
-                     acc used-by)))))
+           (let [matching-libraries (into [] (bfc/find-shared-files-by-slug cfg team-id (:slug ext-lib)))]
+             (if (empty? matching-libraries)
+               acc
+               (let [candidates (mapv (fn [lib]
+                                        (let [project-id (:project-id lib)
+                                              project (bfc/get-project cfg project-id)
+                                              project-name (:name project)]
+                                          {:id (:id lib)
+                                           :name (:name lib)
+                                           :project-id project-id
+                                           :project-name project-name}))
+                                      matching-libraries)
+                     entry {:id (:id ext-lib)
+                            :name (:name ext-lib)
+                            :candidates candidates}]
+                 (reduce (fn [acc file-id]
+                           (add-to-file acc file-id (get files-info file-id) :pending entry))
+                         acc used-by)))))))
 
      {}
      (:external-libraries manifest))))
@@ -1006,6 +1019,17 @@
 
   (import-storage-objects cfg)
 
+  ;; Pre-resolve external libraries and add their id mappings to the index
+  ;; BEFORE importing files. This allows relink-refs (inside process-file)
+  ;; to correctly remap :component-file references to the destination library.
+  ;; Only remap when a link will actually be created (single match + can-edit).
+  (let [decisions (compute-link-decisions cfg)]
+    (doseq [[old-lib-id {:keys [library-id]}] decisions]
+      (l/trc :hint "pre-resolving external library"
+             :old-id (str old-lib-id)
+             :new-id (str library-id))
+      (vswap! bfc/*state* update :index assoc old-lib-id library-id)))
+
   (let [files    (get manifest :files)
         file-ids (reduce (fn [result file]
                            (let [name' (get file :name)
@@ -1015,9 +1039,9 @@
                          files)
         ;; Build map of file-id to file-name for resolution
         files-info (into {} (map (fn [file-id manifest-file]
-                                  [file-id (:name manifest-file)])
-                                file-ids
-                                files))]
+                                   [file-id (:name manifest-file)])
+                                 file-ids
+                                 files))]
 
     (import-file-relations cfg)
 
@@ -1102,12 +1126,11 @@
   "Do the exportation of a specified file in custom penpot binary
   format. There are some options available for customize the output:
 
-  `::bfc/include-libraries`: additionally to the specified file, all the
-  linked libraries also will be included (including transitive
-  dependencies).
-
-  `::bfc/embed-assets`: instead of including the libraries, embed in the
-  same file library all assets used from external libraries."
+  `::bfc/export-type`: determines how linked libraries are handled.
+  Valid values: `:include-libraries` (include linked libraries),
+  `:merge-libraries` (embed library assets in the file),
+  `:detach-libraries` (treat assets as basic objects),
+  `:link-later` (preserve component metadata for relinking on import)."
 
   [{:keys [::bfc/ids] :as cfg} output]
 

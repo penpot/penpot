@@ -47,7 +47,7 @@
   [files]
   (let [files (mapv (fn [file] (assoc file :loading true)) files)]
     {:status :prepare
-     :selected :all
+     :selected :include-libraries
      :files files}))
 
 (mf/defc export-entry*
@@ -120,6 +120,7 @@
            (let [type (-> (dom/get-target event)
                           (dom/get-data "type")
                           (keyword))]
+             (prn "AAA" selected type)
              (swap! state* assoc :selected type))))]
 
     (mf/with-effect [has-libs?]
@@ -153,14 +154,14 @@
              [:label {:for (str "export-" type)
                       :class (stl/css :export-option-label)}
               ;; Execution time translation strings:
-              ;;   (tr "files-export-modal.options.all.title")
-              ;;   (tr "files-export-modal.options.all.message")
+              ;;   (tr "files-export-modal.options.include-libraries.title")
+              ;;   (tr "files-export-modal.options.include-libraries.message")
 
-              ;;   (tr "files-export-modal.options.merge.title")
-              ;;   (tr "files-export-modal.options.merge.message")
+              ;;   (tr "files-export-modal.options.merge-libraries.title")
+              ;;   (tr "files-export-modal.options.merge-libraries.message")
 
-              ;;   (tr "files-export-modal.options.detach.title")
-              ;;   (tr "files-export-modal.options.detach.message")
+              ;;   (tr "files-export-modal.options.detach-libraries.title")
+              ;;   (tr "files-export-modal.options.detach-libraries.message")
 
               ;;   (tr "files-export-modal.options.link-later.title")
               ;;   (tr "files-export-modal.options.link-later.message")
