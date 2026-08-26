@@ -12,7 +12,8 @@
     - exception->error-data       – pure transformer
     - on-error re-entrancy guard  – prevents recursive invocations
     - flash schedules async emit  – ntf/show is not emitted synchronously
-    - organization SSO recovery   – expired SSO sessions go back to the provider"
+    - organization SSO recovery   – expired SSO sessions go back to the provider
+    - invalid-sso-config handler  – requires :organization-id to promote to :sso-error"
   (:require
    [app.main.errors :as errors]
    [app.main.repo :as rp]
@@ -351,3 +352,47 @@
              (t/is (nil? @assigned*))
              (done'))))
         done))))
+
+;; ---------------------------------------------------------------------------
+;; :validation / :invalid-sso-config
+;;
+;; The SSO error page needs an organization-id to retry meaningfully. Promote
+;; to :sso-error only when that id is present; otherwise keep :validation so
+;; we do not surface a broken SSO dialog for a future code path that omits it.
+;; ---------------------------------------------------------------------------
+
+(defn- capture-async-exception
+  "Invoke `ptk/handle-error` while capturing the error map passed to
+  `rt/assign-exception` via `st/async-emit!`.
+
+  `st/async-emit!` is variadic (`[& params]`); the mock must be too,
+  otherwise CLJS looks up `IFn$_invoke$arity$variadic` and throws."
+  [error]
+  (let [captured (atom nil)]
+    (with-redefs [st/async-emit!      (fn [& events]
+                                        (reset! captured (first events)))
+                  rt/assign-exception (fn [err] err)]
+      (ptk/handle-error error)
+      @captured)))
+
+(t/deftest invalid-sso-config-with-organization-id-promotes-to-sso-error
+  (t/testing "invalid-sso-config with :organization-id is shown as :sso-error"
+    (let [org-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          assigned (capture-async-exception
+                    {:type :validation
+                     :code :invalid-sso-config
+                     :organization-id org-id
+                     :hint "missing issuer"})]
+      (t/is (= :sso-error (:type assigned)))
+      (t/is (= org-id (:organization-id assigned)))
+      (t/is (= :invalid-sso-config (:code assigned))))))
+
+(t/deftest invalid-sso-config-without-organization-id-keeps-validation
+  (t/testing "invalid-sso-config without :organization-id must not become :sso-error"
+    (let [assigned (capture-async-exception
+                    {:type :validation
+                     :code :invalid-sso-config
+                     :hint "missing issuer"})]
+      (t/is (= :validation (:type assigned)))
+      (t/is (nil? (:organization-id assigned)))
+      (t/is (= :invalid-sso-config (:code assigned))))))

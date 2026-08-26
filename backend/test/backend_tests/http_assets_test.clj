@@ -37,11 +37,16 @@
   (assoc storage ::sto/backend :fs))
 
 (defn- create-storage-object!
-  "Create a storage object with the given bucket and content."
-  [storage bucket content]
-  (sto/put-object! storage {::sto/content (sto/content content)
-                            :bucket bucket
-                            :content-type "text/plain"}))
+  "Create a storage object with the given bucket and content.
+   Optional opts map can include :profile-id to set the owner."
+  ([storage bucket content]
+   (create-storage-object! storage bucket content {}))
+  ([storage bucket content {:keys [profile-id]}]
+   (sto/put-object! storage (cond-> {::sto/content (sto/content content)
+                                     :bucket bucket
+                                     :content-type "text/plain"}
+                              (some? profile-id)
+                              (assoc :profile-id profile-id)))))
 
 (defn- make-handler-cfg
   "Build a minimal cfg map for the assets handlers."
@@ -752,3 +757,70 @@
                   ::session/profile-id (:id profile)}
         response (assets/objects-handler cfg request)]
     (t/is (= 404 (::yres/status response)))))
+
+;; ----------------------------------------------------------------
+;; Tests: objects-handler — tempfile bucket ownership (T9-F-10)
+;; ----------------------------------------------------------------
+
+(t/deftest objects-handler-tempfile-owner-can-access
+  ;; Owner of a tempfile should be able to access it via session auth.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        object   (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::session/profile-id (:id owner)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-non-owner-gets-404
+  ;; Non-owner accessing a tempfile should get 404 (not 403, to avoid leaking existence).
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        owner     (th/create-profile* 1)
+        stranger  (th/create-profile* 2)
+        object    (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request   {:path-params {:id (str (:id object))}
+                   ::session/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-access-token-owner-can-access
+  ;; Owner of a tempfile should be able to access it via access token auth.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        object   (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::actoken/profile-id (:id owner)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-access-token-non-owner-gets-404
+  ;; Non-owner accessing a tempfile via access token should get 404.
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        owner     (th/create-profile* 1)
+        stranger  (th/create-profile* 2)
+        object    (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request   {:path-params {:id (str (:id object))}
+                   ::actoken/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-no-stored-profile-id-serves
+  ;; Legacy tempfile objects without stored profile-id should be accessible
+  ;; to any authenticated user (backward compatibility).
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        stranger  (th/create-profile* 1)
+        object    (create-storage-object! storage "tempfile" "legacy temp data")
+        request   {:path-params {:id (str (:id object))}
+                   ::session/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))

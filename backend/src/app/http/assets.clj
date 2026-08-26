@@ -103,17 +103,32 @@
   (let [bucket (-> obj meta :bucket)]
     (not (contains? public-buckets bucket))))
 
+(defn- request-profile-id
+  "Extract the authenticated profile-id from the request."
+  [request]
+  (or (::session/profile-id request)
+      (::actoken/profile-id request)))
+
 (defn- authenticated?
   "Check if the request has an authenticated profile, either via session
    or access token."
   [request]
-  (or (some? (::session/profile-id request))
-      (some? (::actoken/profile-id request))))
+  (some? (request-profile-id request)))
+
+(defn- tempfile-owner-match?
+  "Check if the request's profile-id matches the tempfile's stored owner.
+   Returns true if no profile-id was stored (legacy objects)."
+  [obj request]
+  (let [stored-profile-id (:profile-id (meta obj))
+        request-profile-id (request-profile-id request)]
+    (or (nil? stored-profile-id)
+        (= stored-profile-id request-profile-id))))
 
 (defn objects-handler
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
-   via session cookie or access token."
+   via session cookie or access token.
+   For tempfile bucket, also requires ownership (profile-id match)."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
@@ -124,6 +139,10 @@
       (and (requires-auth? obj)
            (not (authenticated? request)))
       {::yres/status 401}
+
+      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
+           (not (tempfile-owner-match? obj request)))
+      {::yres/status 404}
 
       :else
       (serve-object cfg obj))))

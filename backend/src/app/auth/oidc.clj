@@ -42,31 +42,52 @@
 ;; OIDC PROVIDER (GENERIC)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- raise-invalid-sso-config
+  "Raise a controlled validation error for OIDC provider configuration failures."
+  [& {:keys [hint cause] :as params}]
+  (throw (ex-info (or hint "invalid-sso-config")
+                  (-> params
+                      (dissoc :cause)
+                      (assoc :type :validation
+                             :code :invalid-sso-config))
+                  cause)))
+
 (defn- discover-oidc-config
   [cfg {:keys [base-uri skip-ssrf-check?] :as provider}]
-  (let [uri (u/join base-uri ".well-known/openid-configuration")
-        rsp (http/req cfg {:method :get :uri (dm/str uri)} {:skip-ssrf-check? skip-ssrf-check?})]
+  (let [uri (u/join base-uri ".well-known/openid-configuration")]
+    (try
+      (let [rsp (http/req cfg {:method :get :uri (dm/str uri)} {:skip-ssrf-check? skip-ssrf-check?})]
+        (if (= 200 (:status rsp))
+          (let [data       (-> rsp :body json/decode)
+                token-uri  (get data :token_endpoint)
+                auth-uri   (get data :authorization_endpoint)
+                user-uri   (get data :userinfo_endpoint)
+                jwks-uri   (get data :jwks_uri)
+                logout-uri (get data :end_session_endpoint)]
 
-    (if (= 200 (:status rsp))
-      (let [data       (-> rsp :body json/decode)
-            token-uri  (get data :token_endpoint)
-            auth-uri   (get data :authorization_endpoint)
-            user-uri   (get data :userinfo_endpoint)
-            jwks-uri   (get data :jwks_uri)
-            logout-uri (get data :end_session_endpoint)]
+            (-> provider
+                (assoc :token-uri token-uri)
+                (assoc :auth-uri  auth-uri)
+                (assoc :user-uri  user-uri)
+                (assoc :jwks-uri jwks-uri)
+                (assoc :logout-uri logout-uri)))
 
-        (-> provider
-            (assoc :token-uri token-uri)
-            (assoc :auth-uri  auth-uri)
-            (assoc :user-uri  user-uri)
-            (assoc :jwks-uri jwks-uri)
-            (assoc :logout-uri logout-uri)))
-
-      (ex/raise :type ::internal
-                :code :invalid-sso-config
-                :hint "unable to discover OIDC configuration"
-                :discover-uri uri
-                :response-status-code (:status rsp)))))
+          (raise-invalid-sso-config
+           :hint "unable to discover OIDC configuration"
+           :discover-uri uri
+           :response-status-code (:status rsp))))
+      (catch Throwable cause
+        ;; Controlled raises above are ExceptionInfo and would otherwise be
+        ;; re-wrapped by this catch, dropping fields like :response-status-code.
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw cause)
+          ;; Wrap SSRF blocks, DNS failures, TLS errors, etc. — from the caller's
+          ;; perspective these are all "bad/unreachable issuer URL".
+          (raise-invalid-sso-config
+           :hint "unable to discover OIDC configuration"
+           :discover-uri uri
+           :cause cause))))))
 
 (def ^:private default-oidc-scopes
   #{"openid" "profile" "email"})
@@ -107,16 +128,29 @@
 
 (defn- fetch-oidc-jwks
   [cfg jwks-uri {:keys [skip-ssrf-check?]}]
-  (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri} {:skip-ssrf-check? skip-ssrf-check?})]
-    (if (= 200 status)
-      (-> body json/decode :keys process-oidc-jwks)
-      (ex/raise :type ::internal
-                :code :unable-to-fetch-sso-jwks
-                :hint "unable to retrieve JWKs (unexpected response status code)"
-                :response-status-code status))))
+  (try
+    (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri} {:skip-ssrf-check? skip-ssrf-check?})]
+      (if (= 200 status)
+        (-> body json/decode :keys process-oidc-jwks)
+        (raise-invalid-sso-config
+         :hint "unable to retrieve JWKs (unexpected response status code)"
+         :jwks-uri jwks-uri
+         :response-status-code status)))
+    (catch Throwable cause
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unable to retrieve JWKs"
+         :jwks-uri jwks-uri
+         :cause cause)))))
 
 (defn- populate-jwks
-  "Fetch and Add (if possible) JWK's to the OIDC provider"
+  "Fetch and add JWKs to the OIDC provider.
+
+  When `:strict-jwks?` is set (organization SSO), failures raise a controlled
+  validation error. Otherwise JWKS is best-effort: log and continue without keys
+  so global OIDC/GitLab providers can still initialize if JWKS is temporarily down."
   [cfg provider]
   (try
     (if-let [jwks (when-let [jwks-uri (:jwks-uri provider)]
@@ -124,20 +158,28 @@
       (assoc provider :jwks jwks)
       provider)
     (catch Throwable cause
-      (l/warn :hint "unable to fetch JWKs for the OIDC provider"
-              :provider (str (:id provider))
-              :cause cause)
-      provider)))
+      (if (:strict-jwks? provider)
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw cause)
+          (raise-invalid-sso-config
+           :hint "unable to retrieve JWKs"
+           :provider (:id provider)
+           :cause cause))
+        (do
+          (l/warn :hint "unable to fetch JWKs for the OIDC provider"
+                  :provider (str (:id provider))
+                  :cause cause)
+          provider)))))
 
 (defn- prepare-oidc-provider
   [cfg params]
   (when-not (and (string? (:base-uri params))
                  (string? (:client-id params))
                  (string? (:client-secret params)))
-    (ex/raise :type ::internal
-              :code :invalid-sso-config
-              :hint "missing params for provider initialization"
-              :provider (:id params)))
+    (raise-invalid-sso-config
+     :hint "missing params for provider initialization"
+     :provider (:id params)))
 
   (try
     (if (and (string? (:token-uri params))
@@ -150,11 +192,13 @@
         (with-meta provider {::discovered true})))
 
     (catch Throwable cause
-      (ex/raise :type ::internal
-                :type :invalid-sso-config
-                :hint "unexpected exception on configuring provider"
-                :provider (:id params)
-                :cause cause))))
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unexpected exception on configuring provider"
+         :provider (:id params)
+         :cause cause)))))
 
 (defmethod ig/assert-key ::providers/generic
   [_ params]
@@ -322,10 +366,9 @@
   [cfg params]
   (when-not (and (string? (:client-id params))
                  (string? (:client-secret params)))
-    (ex/raise :type ::internal
-              :code :invalid-sso-config
-              :hint "missing params for provider initialization"
-              :provider (:id params)))
+    (raise-invalid-sso-config
+     :hint "missing params for provider initialization"
+     :provider (:id params)))
 
   (try
     (let [provider (populate-jwks cfg params)]
@@ -336,11 +379,13 @@
              :client-secret (d/obfuscate-string (:client-secret provider)))
       provider)
     (catch Throwable cause
-      (ex/raise :type ::internal
-                :type :invalid-sso-config
-                :hint "unexpected exception on configuring provider"
-                :provider (:id params)
-                :cause cause))))
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unexpected exception on configuring provider"
+         :provider (:id params)
+         :cause cause)))))
 
 (defmethod ig/init-key ::providers/gitlab
   [_ cfg]
@@ -867,7 +912,10 @@
                           :base-uri         (some-> (non-blank-uri issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           default-oidc-scopes}))
+                          :scopes           default-oidc-scopes
+                          ;; Organization SSO is configured by customers; discovery
+                          ;; and JWKS failures must surface as controlled errors.
+                          :strict-jwks?     true}))
 
 (defn build-organization-sso-auth-redirect-uri
   "Build the OIDC authorization redirect URI for an organization SSO config.
@@ -877,16 +925,24 @@
         issuer          (organization-sso-discovery-uri sso)
         dest-url        (or dest-url (str (cf/get :public-uri)))]
     (when-not issuer
-      (ex/raise :type :validation
-                :code :invalid-sso-config
-                :hint "missing issuer"))
-    (let [oidc-provider (or provider (prepare-organization-sso-provider cfg sso))
-          state-token   (tokens/generate cfg {:iss             "oidc"
-                                              :dest-url        dest-url
-                                              :organization-id organization-id
-                                              :issuer          issuer
-                                              :exp             (ct/in-future "4h")})]
-      (build-auth-redirect-uri oidc-provider state-token))))
+      (raise-invalid-sso-config
+       :hint "missing issuer"
+       :organization-id organization-id))
+    (try
+      (let [oidc-provider (or provider (prepare-organization-sso-provider cfg sso))
+            state-token   (tokens/generate cfg {:iss             "oidc"
+                                                :dest-url        dest-url
+                                                :organization-id organization-id
+                                                :issuer          issuer
+                                                :exp             (ct/in-future "4h")})]
+        (build-auth-redirect-uri oidc-provider state-token))
+      (catch Throwable cause
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw (ex-info (ex-message cause)
+                          (assoc (ex-data cause) :organization-id organization-id)
+                          (ex-cause cause)))
+          (throw cause))))))
 
 (def ^:private probe-auth-code "penpot-sso-config-probe")
 

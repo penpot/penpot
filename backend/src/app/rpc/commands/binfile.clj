@@ -60,7 +60,7 @@
                                     {::sto/content data
                                      ::sto/touched-at (ct/in-future {:minutes 60})
                                      :content-type "application/zip"
-                                     :bucket "tempfile"})]
+                                     :bucket sto/tempfile-bucket})]
 
         (-> (cf/get :public-uri)
             (u/ensure-path-slash)
