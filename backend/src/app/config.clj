@@ -194,6 +194,7 @@
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
     [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
     [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
+    [:quotes-media-storage-bytes-per-team {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
