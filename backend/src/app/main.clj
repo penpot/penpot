@@ -283,6 +283,7 @@
 
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
+    ::rds/pool        (ig/ref ::rds/pool)
     ::session/manager (ig/ref ::session/manager)
     ::sto/storage     (ig/ref ::sto/storage)
     ::setup/props     (ig/ref ::setup/props)}
