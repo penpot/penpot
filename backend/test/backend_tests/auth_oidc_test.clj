@@ -608,6 +608,25 @@
         (t/is (= :validation (:type (ex-data e))))
         (t/is (= :invalid-sso-config (:code (ex-data e))))))))
 
+(t/deftest prepare-organization-sso-provider-raises-on-discovery-non-200
+  (t/testing "non-200 OIDC discovery responses become controlled validation errors"
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :return {:status 404 :body "not found"}}]
+      (let [e (try
+                (#'oidc/prepare-organization-sso-provider
+                 {}
+                 {:client-id "test-client"
+                  :client-secret "test-secret"
+                  :issuer "https://idp.example.com"})
+                (catch Throwable t t))
+            data (ex-data e)]
+        (t/is (ex/error? e))
+        (t/is (= :validation (:type data)))
+        (t/is (= :invalid-sso-config (:code data)))
+        (t/is (= 404 (:response-status-code data)))
+        (t/is (= "unable to discover OIDC configuration" (ex-message e)))
+        (t/is (str/includes? (str (:discover-uri data)) "openid-configuration"))))))
+
 (t/deftest prepare-organization-sso-provider-raises-on-ssrf-blocked-issuer
   (t/testing "SSRF/DNS failures for the issuer URL become invalid-sso-config, not ssrf-blocked-target"
     (with-mocks [http-mock {:target 'app.http.client/req
@@ -648,6 +667,45 @@
           (t/is (ex/error? e))
           (t/is (= :validation (:type (ex-data e))))
           (t/is (= :invalid-sso-config (:code (ex-data e)))))))))
+
+(t/deftest populate-jwks-strict-wraps-non-invalid-sso-config-errors
+  (t/testing "strict JWKS path wraps unrelated structured errors instead of rethrowing them"
+    (with-mocks [fetch-mock {:target 'app.auth.oidc/fetch-oidc-jwks
+                             :side-effect (fn [& _]
+                                            (ex/raise :type :validation
+                                                      :code :ssrf-blocked-target
+                                                      :hint "uri host could not be resolved"))}]
+      (let [e (try
+                (#'oidc/populate-jwks
+                 {}
+                 {:id "oidc"
+                  :jwks-uri "https://idp.example.com/jwks"
+                  :strict-jwks? true})
+                (catch Throwable t t))]
+        (t/is (ex/error? e))
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :invalid-sso-config (:code (ex-data e))))
+        (t/is (= :ssrf-blocked-target (:code (ex-data (ex-cause e)))))))))
+
+(t/deftest populate-jwks-strict-rethrows-invalid-sso-config
+  (t/testing "strict JWKS path rethrows an already-controlled invalid-sso-config"
+    (with-mocks [fetch-mock {:target 'app.auth.oidc/fetch-oidc-jwks
+                             :side-effect (fn [& _]
+                                            (ex/raise :type :validation
+                                                      :code :invalid-sso-config
+                                                      :hint "unable to retrieve JWKs"
+                                                      :jwks-uri "https://idp.example.com/jwks"))}]
+      (let [e (try
+                (#'oidc/populate-jwks
+                 {}
+                 {:id "oidc"
+                  :jwks-uri "https://idp.example.com/jwks"
+                  :strict-jwks? true})
+                (catch Throwable t t))]
+        (t/is (ex/error? e))
+        (t/is (= :invalid-sso-config (:code (ex-data e))))
+        (t/is (= "unable to retrieve JWKs" (ex-message e)))
+        (t/is (= "https://idp.example.com/jwks" (:jwks-uri (ex-data e))))))))
 
 (t/deftest build-organization-sso-auth-redirect-uri-raises-on-unreachable-provider
   (t/testing "check-nitrate-sso path surfaces a controlled error when the issuer is unreachable"

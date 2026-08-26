@@ -390,7 +390,10 @@
                   :timeout 3000})))
 
     (= code :invalid-sso-config)
-    (st/async-emit! (rt/assign-exception (assoc error :type :sso-error)))
+    ;; SSO error page needs :organization-id to retry
+    (if (:organization-id error)
+      (st/async-emit! (rt/assign-exception (assoc error :type :sso-error)))
+      (st/async-emit! (rt/assign-exception error)))
 
     :else
     (st/async-emit! (rt/assign-exception error))))

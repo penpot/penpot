@@ -77,12 +77,17 @@
            :discover-uri uri
            :response-status-code (:status rsp))))
       (catch Throwable cause
-        ;; Wrap SSRF blocks, DNS failures, TLS errors, etc. — from the caller's
-        ;; perspective these are all "bad/unreachable issuer URL".
-        (raise-invalid-sso-config
-         :hint "unable to discover OIDC configuration"
-         :discover-uri uri
-         :cause cause)))))
+        ;; Controlled raises above are ExceptionInfo and would otherwise be
+        ;; re-wrapped by this catch, dropping fields like :response-status-code.
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
+          (throw cause)
+          ;; Wrap SSRF blocks, DNS failures, TLS errors, etc. — from the caller's
+          ;; perspective these are all "bad/unreachable issuer URL".
+          (raise-invalid-sso-config
+           :hint "unable to discover OIDC configuration"
+           :discover-uri uri
+           :cause cause))))))
 
 (def ^:private default-oidc-scopes
   #{"openid" "profile" "email"})
@@ -132,10 +137,13 @@
          :jwks-uri jwks-uri
          :response-status-code status)))
     (catch Throwable cause
-      (raise-invalid-sso-config
-       :hint "unable to retrieve JWKs"
-       :jwks-uri jwks-uri
-       :cause cause))))
+      (if (and (ex/error? cause)
+               (= :invalid-sso-config (:code (ex-data cause))))
+        (throw cause)
+        (raise-invalid-sso-config
+         :hint "unable to retrieve JWKs"
+         :jwks-uri jwks-uri
+         :cause cause)))))
 
 (defn- populate-jwks
   "Fetch and add JWKs to the OIDC provider.
@@ -151,7 +159,8 @@
       provider)
     (catch Throwable cause
       (if (:strict-jwks? provider)
-        (if (ex/error? cause)
+        (if (and (ex/error? cause)
+                 (= :invalid-sso-config (:code (ex-data cause))))
           (throw cause)
           (raise-invalid-sso-config
            :hint "unable to retrieve JWKs"
