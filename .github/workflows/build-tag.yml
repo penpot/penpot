@@ -6,6 +6,12 @@ on:
     tags:
       - '*'
 
+# Keyed by ref and never cancelling: pushing 2.17.2 shortly after 2.17.2-RC1
+# must not abort the release already in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   build-bundle:
     uses: ./.github/workflows/build-bundle.yml
