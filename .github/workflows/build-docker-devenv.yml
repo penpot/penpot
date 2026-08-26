@@ -6,7 +6,7 @@ on:
 jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
 
     steps:
       - name: Set common environment variables

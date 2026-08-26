@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.shapes.text.viewport-texts-html
   (:require
@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
+   [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.text :as txt]
@@ -96,9 +97,12 @@
                        (st/emit! (dwt/resize-text id width height)))))
 
                  (st/emit! (dwt/clean-text-modifier id))))
-       ;; Swallowed so a text whose position data cannot be computed still
-       ;; settles and still reports its measurement as finished.
-       (p/catch (fn [_] nil))))
+       ;; Always clear the task and log measurement errors.
+       (p/catch (fn [cause]
+                  (log/error :hint "Could not measure text shape"
+                             :shape-id id
+                             :cause cause)
+                  nil))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]

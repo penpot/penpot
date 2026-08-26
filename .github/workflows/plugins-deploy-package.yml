@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     steps:
       - name: Checkout
         uses: actions/checkout@v6

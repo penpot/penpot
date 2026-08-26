@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.viewport-wasm
   (:require-macros [app.main.style :as stl])
@@ -709,7 +709,8 @@
                        :global/cursor-resize-ew-0 (= @guide-hover-axis* :x)
                        :global/cursor-resize-ns-0 (= @guide-hover-axis* :y)
                        :viewport-controls true))
-       :style {:touch-action "none"}
+       :style {:touch-action "none"
+               :pointer-events (if page-transition? "none" "auto")}
        :fill "none"
        :on-click         on-click
        :on-context-menu  on-context-menu

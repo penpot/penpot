@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require-macros [app.main.style :as stl])
@@ -374,7 +374,7 @@
          (fn [value attr]
            (if (or (string? value) (number? value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (udw/update-dimensions ids attr value))
+                       (udw/update-dimensions-coalesced ids attr value))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
@@ -408,7 +408,7 @@
            (if (or (string? value) (number? value))
              (let [value (fixed-decimal-value value)]
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/increase-rotation ids value)))
+               (st/emit! (udw/increase-rotation-coalesced ids value)))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{:rotation}

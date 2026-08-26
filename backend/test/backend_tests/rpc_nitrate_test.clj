@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-nitrate-test
   (:require
@@ -15,15 +15,17 @@
    [app.db :as-alias db]
    [app.email :as eml]
    [app.http :as-alias http]
+   [app.http.errors :as http-errors]
    [app.nitrate :as nitrate]
-   [app.rpc :as-alias rpc]
+   [app.rpc :as rpc]
    [app.rpc.commands.nitrate]
    [app.rpc.commands.teams :as teams]
    [app.rpc.helpers :as rph]
    [backend-tests.helpers :as th]
    [buddy.core.codecs :as bc]
    [clojure.test :as t]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [yetti.response :as-alias yres]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -87,6 +89,31 @@
 
       nil)))
 
+(defn- unauthorized-sso-mock
+  "Creates a mock for nitrate/sso-session-authorized? that reports an active
+  SSO the session does not satisfy. Pass nil to leave the organization out of
+  the nitrate payload."
+  [organization-id]
+  (fn [_cfg _organization-id _team-id _request]
+    {:authorized false
+     :sso (cond-> {:active true
+                   :issuer "https://idp.example.com"}
+            (some? organization-id)
+            (assoc :organization-id organization-id))}))
+
+(defn- sso-gate-error
+  "Builds the SSO gate around a handler that must never be reached, and
+  returns the exception it raises for `params`."
+  [mdata params cfg]
+  (let [handler (fn [_cfg _params] ::handler-called)
+        wrapped (binding [cf/flags (conj cf/flags :admin-console)]
+                  (#'rpc/wrap-nitrate-sso nil handler mdata))]
+    (try
+      (wrapped cfg (with-meta params {::http/request {}}))
+      nil
+      (catch Throwable cause
+        cause))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,13 +139,17 @@
                     (constantly "https://idp.example.com/authorize")]
         (let [out (th/command! params)]
           (t/is (th/success? out))
-          (t/is (= {:authorized true} (:result out))))))))
+          ;; The reason tells the client this is a permission problem, not a
+          ;; usable SSO session.
+          (t/is (= {:authorized true :reason :no-team-access} (:result out))))))))
 
 (t/deftest check-nitrate-sso-keeps-gate-for-team-member
   (let [team-owner      (th/create-profile* 1 {:is-active true})
         team            (th/create-team* 1 {:profile-id (:id team-owner)})
         organization-id (uuid/random)
         redirect-uri    "https://idp.example.com/authorize"
+        redirect-options (atom nil)
+        started-event   (atom nil)
         params          (with-meta
                           {::th/type :check-nitrate-sso
                            ::rpc/profile-id (:id team-owner)
@@ -132,12 +163,50 @@
                      organization-id
                      (:id team-owner))
                     oidc/build-organization-sso-auth-redirect-uri
-                    (constantly redirect-uri)]
+                    (fn [_cfg _sso & options]
+                      (reset! redirect-options (apply hash-map options))
+                      redirect-uri)
+                    oidc/submit-organization-sso-auth-started-event
+                    (fn [_cfg _request profile-id received-organization-id]
+                      (reset! started-event {:profile-id profile-id
+                                             :organization-id received-organization-id}))]
         (let [out (th/command! params)]
           (t/is (th/success? out))
           (t/is (= {:authorized false
                     :redirect-uri redirect-uri}
-                   (:result out))))))))
+                   (:result out)))
+          (t/is (= #{:dest-url :organization-id} (set (keys @redirect-options))))
+          (t/is (= "https://penpot.example.com/#/workspace" (str (:dest-url @redirect-options))))
+          (t/is (nil? (:organization-id @redirect-options)))
+          (t/is (= {:profile-id (:id team-owner)
+                    :organization-id organization-id}
+                   @started-event)))))))
+
+(t/deftest check-nitrate-sso-reports-redirect-failure
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        organization-id (uuid/random)
+        cause           (ex-info "provider unavailable" {:response-status-code 503})
+        reported        (atom nil)
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id profile)
+                           :organization-id organization-id
+                           :url "https://penpot.example.com/#/workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock organization-id)
+                    oidc/build-organization-sso-auth-redirect-uri (fn [& _] (throw cause))
+                    oidc/submit-organization-sso-auth-failed-event
+                    (fn [_cfg _request profile-id received-organization-id received-cause]
+                      (reset! reported {:profile-id profile-id
+                                        :organization-id received-organization-id
+                                        :cause received-cause}))]
+        (let [out (th/command! params)]
+          (t/is (not (th/success? out)))
+          (t/is (= {:profile-id (:id profile)
+                    :organization-id organization-id
+                    :cause cause}
+                   @reported)))))))
 
 (t/deftest check-nitrate-sso-keeps-gate-for-non-member-organization-owner
   (let [team-owner      (th/create-profile* 1 {:is-active true})
@@ -168,6 +237,91 @@
           (t/is (= {:authorized false
                     :redirect-uri redirect-uri}
                    (:result out))))))))
+
+(t/deftest check-nitrate-sso-reports-a-satisfied-gate-for-a-valid-session
+  (let [team-owner      (th/create-profile* 1 {:is-active true})
+        team            (th/create-team* 1 {:profile-id (:id team-owner)})
+        organization-id (uuid/random)
+        params          (with-meta
+                          {::th/type :check-nitrate-sso
+                           ::rpc/profile-id (:id team-owner)
+                           :team-id (:id team)
+                           :url "https://penpot.example.com/#/workspace"}
+                          {::http/request {}})]
+    (binding [cf/flags (conj cf/flags :admin-console)]
+      (with-redefs [nitrate/sso-session-authorized?
+                    (fn [_cfg _organization-id _team-id _request]
+                      {:authorized true
+                       :sso {:active true
+                             :issuer "https://idp.example.com"
+                             :organization-id organization-id}})]
+        (let [out (th/command! params)]
+          (t/is (th/success? out))
+          (t/is (= {:authorized true :reason :sso-satisfied} (:result out))))))))
+
+(t/deftest nitrate-sso-required-error-resolves-the-team-from-the-file
+  (t/testing "the workspace path, where the file id arrives as :id, still reports the team"
+    (let [profile         (th/create-profile* 1 {:is-active true})
+          file            (th/create-file* 1 {:profile-id (:id profile)
+                                              :project-id (:default-project-id profile)})
+          organization-id (uuid/random)]
+      (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock organization-id)]
+        (let [data (ex-data (sso-gate-error {::rpc/id-type :file}
+                                            {::rpc/profile-id (:id profile)
+                                             :id (:id file)}
+                                            th/*system*))]
+          (t/is (= :authentication (:type data)))
+          (t/is (= :nitrate-sso-required (:code data)))
+          (t/is (= organization-id (:organization-id data)))
+          (t/is (= (:default-team-id profile) (:team-id data))))))))
+
+(t/deftest nitrate-sso-required-error-keeps-the-team-known-by-the-request
+  (t/testing "an explicit team-id is not dropped by an explicit organization-id"
+    (let [profile-id      (uuid/random)
+          team-id         (uuid/random)
+          organization-id (uuid/random)]
+      ;; The nitrate payload carries no organization-id here, so the one from
+      ;; the request params is the only one left to report.
+      (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock nil)]
+        (let [data (ex-data (sso-gate-error {}
+                                            {::rpc/profile-id profile-id
+                                             :team-id team-id
+                                             :organization-id organization-id}
+                                            {}))]
+          (t/is (= organization-id (:organization-id data)))
+          (t/is (= team-id (:team-id data))))))))
+
+(t/deftest nitrate-sso-required-error-resolves-the-team-with-a-known-organization
+  (t/testing "knowing the organization does not stop the team lookup"
+    (let [profile         (th/create-profile* 1 {:is-active true})
+          file            (th/create-file* 1 {:profile-id (:id profile)
+                                              :project-id (:default-project-id profile)})
+          organization-id (uuid/random)]
+      (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock nil)]
+        (let [data (ex-data (sso-gate-error {}
+                                            {::rpc/profile-id (:id profile)
+                                             :organization-id organization-id
+                                             :file-id (:id file)}
+                                            th/*system*))]
+          (t/is (= organization-id (:organization-id data)))
+          (t/is (= (:default-team-id profile) (:team-id data))))))))
+
+(t/deftest nitrate-sso-required-error-reaches-the-client-in-the-401-body
+  (t/testing "the ids survive the http error response, not only the exception"
+    (let [profile-id      (uuid/random)
+          team-id         (uuid/random)
+          organization-id (uuid/random)]
+      (with-redefs [nitrate/sso-session-authorized? (unauthorized-sso-mock organization-id)]
+        (let [cause    (sso-gate-error {}
+                                       {::rpc/profile-id profile-id
+                                        :team-id team-id}
+                                       {})
+              response (http-errors/handle cause {})
+              body     (::yres/body response)]
+          (t/is (= 401 (::yres/status response)))
+          (t/is (= :nitrate-sso-required (:code body)))
+          (t/is (= organization-id (:organization-id body)))
+          (t/is (= team-id (:team-id body))))))))
 
 (t/deftest leave-organization-happy-path-no-extra-teams
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
@@ -1014,11 +1168,67 @@
              @set-team-params))
 
     (let [emails (->> @sent (map :to) set)]
-      (t/is (= 2 (count @sent)))
-      (t/is (= #{"member302@example.com" "external301@example.com"} emails))
+      (t/is (= 1 (count @sent)))
+      (t/is (= #{"member302@example.com"} emails))
       (doseq [email-params @sent]
         (t/is (= organization-name (:organization-name email-params)))
         (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+
+(t/deftest add-team-to-organization-deletes-external-invitations-for-unregistered-users
+  (let [owner      (th/create-profile* 305 {:is-active true
+                                            :fullname "Owner"
+                                            :email "owner305@example.com"})
+        member     (th/create-profile* 306 {:is-active true
+                                            :fullname "Member"
+                                            :email "member306@example.com"})
+        team       (th/create-team* 305 {:profile-id (:id owner)})
+        _          (th/create-team-role* {:team-id (:id team)
+                                          :profile-id (:id member)
+                                          :role :editor})
+        organization-id     (uuid/random)
+        organization-summary {:id organization-id
+                              :name "Test Org"
+                              :owner-id (:id owner)
+                              :teams []}
+        organization-perms  {:owner-id (:id owner)
+                             :permissions {:create-teams "any"
+                                           :move-teams "always"
+                                           :new-team-members "members"}}]
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "unregistered@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "unregistered2@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call (add-team-to-organization-nitrate-mock
+                                {:organization-id organization-id
+                                 :organization-summary organization-summary
+                                 :organization-perms organization-perms
+                                 :owner-id (:id owner)
+                                 :team-id (:id team)
+                                 :sso-active? false})
+                  teams/initialize-user-in-organization (fn [& _] nil)]
+      (let [out (th/command! {::th/type :add-team-to-organization
+                              ::rpc/profile-id (:id owner)
+                              :team-id (:id team)
+                              :organization-id organization-id})]
+        (t/is (th/success? out))))
+
+    (let [remaining (th/db-query :team-invitation {:team-id (:id team)})]
+      (t/is (empty? remaining) "Both external invitations should be deleted"))))
 
 (t/deftest create-team-in-organization-passes-association-to-nitrate
   (let [organization-id (uuid/random)

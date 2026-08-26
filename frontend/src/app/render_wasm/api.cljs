@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.render-wasm.api
   "A WASM based render API"
@@ -83,6 +83,7 @@
 ;; `penpot:wasm:tiles-complete`.
 ;;
 ;; - `page-transition?`: true while the overlay should be considered active.
+;;   Pan/zoom into WASM is frozen until `tiles-complete` (atlas still empty).
 ;; - `transition-image*`: image shown by the UI overlay (usually an `ImageBitmap`
 ;;   snapshot of the WebGL canvas; on initial load it may be a tiny SVG data-url
 ;;   string derived from the page background color).
@@ -92,6 +93,8 @@
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
 (defonce context-loss-overlay? (atom false))
+;; Skipped set-view-box during transition; flushed when the overlay ends.
+(defonce ^:private viewport-dirty-during-transition? (atom false))
 ;; When true (initial load) the overlay clips out the ruler strips so the live
 ;; rulers show through. False (page switch / context loss) keeps the snapshot's
 ;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
@@ -114,6 +117,8 @@
   []
   (wasm/ready?))
 
+(declare sync-workspace-local-viewport!)
+
 
 (defn set-transition-image-from-background!
   "Sets `transition-image*` to a data URL representing a solid background color."
@@ -128,6 +133,7 @@
 (defn begin-page-transition!
   []
   (reset! page-transition? true)
+  (reset! viewport-dirty-during-transition? false)
   (swap! transition-epoch* inc))
 
 (defn end-page-transition!
@@ -136,7 +142,11 @@
   (when-let [prev @transition-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
-  (reset! transition-image* nil))
+  (reset! transition-image* nil)
+  ;; Keyboard/wheel may have moved workspace-local while WASM was frozen.
+  (when (and (initialized?) @viewport-dirty-during-transition?)
+    (reset! viewport-dirty-during-transition? false)
+    (sync-workspace-local-viewport! @st/state)))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -379,6 +389,19 @@
 (def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
 (def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
 (def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+(def ^:const FRAME_TYPE_VIEWPORT_READY 3) ;; Viewport presented; interest tiles may still be pending.
+
+(defn- needs-more-render-frames?
+  "True when WASM still has progressive tile work (visible or interest ring)."
+  []
+  (or (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+      (= wasm/internal-frame-type FRAME_TYPE_VIEWPORT_READY)))
+
+(defn- frame-presented-target?
+  "True when this frame recomposited Target (full or early viewport present)."
+  []
+  (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL))
+
 (def ^:const RENDER-FLAG-SYNC-TILES 4) ;; Rebuild tile index without ending fast mode (pan/zoom pause).
 
 (defn- internal-render
@@ -388,7 +411,7 @@
    (internal-render timestamp wasm/internal-frame-type))
   ([timestamp flags]
    (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp flags))
-   (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+   (when (needs-more-render-frames?)
      (request-render "frame-type-partial"))))
 
 (defn- build-reload-payload
@@ -485,13 +508,13 @@
       (when (is-text-editor-wasm-enabled @st/state)
         (text-editor/text-editor-update-blink timestamp)
         ;; Only repaint the overlay when this frame recomposited Target (a full
-        ;; frame). A partial frame is flushed but not presented — Target still
-        ;; shows the last presented frame with the overlay already on it — so
-        ;; repainting the translucent selection over it stacks another layer
-        ;; every progressive frame: it darkens, then snaps back when the final
-        ;; frame presents from the clean Backbuffer (the blink at the end of a
-        ;; zoom over a selection, gh-10709).
-        (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+        ;; frame or early viewport present). A partial frame is flushed but not
+        ;; presented - Target still shows the last presented frame with the
+        ;; overlay already on it - so repainting the translucent selection over
+        ;; it stacks another layer every progressive frame: it darkens, then
+        ;; snaps back when the final frame presents from the clean Backbuffer
+        ;; (the blink at the end of a zoom over a selection, gh-10709).
+        (when (frame-presented-target?)
           (text-editor/text-editor-render-overlay))
         ;; Drain editor events. Only content/layout changes need a full shape
         ;; re-render; selection/style changes are already reflected by the
@@ -600,11 +623,30 @@
 (defonce shapes-loading? (atom false))
 (defonce deferred-render? (atom false))
 
+;; Each `request-render` captures this number. `stop-progressive-render!`
+;; increments it so already-scheduled rAFs become no-ops.
+;;
+;; Why: ViewportReady asks for another frame for the interest ring. If the
+;; page changes before that frame runs, `_init` leaves an empty shapes pool
+;; and `_render` panics ("Root shape not found"). Cancel alone is not enough
+;; when the current `_render` itself schedules the next rAF after we cancelled.
+(defonce ^:private render-seq* (atom 0))
+
 (defn render-pending?
   "True while a render has been scheduled but not yet completed — including the
    frames of an in-progress progressive render."
   []
   @pending-render)
+
+(defn- stop-progressive-render!
+  "Cancel the pending tile-pass rAF and invalidate any follow-ups it may schedule."
+  []
+  (swap! render-seq* inc)
+  (when-let [frame-id wasm/internal-frame-id]
+    (timers/cancel-af! frame-id)
+    (set! wasm/internal-frame-id nil))
+  (reset! pending-render false)
+  (set! wasm/internal-frame-type FRAME_TYPE_NONE))
 
 (defn- register-deferred-render!
   []
@@ -619,19 +661,21 @@
       (register-deferred-render!)
       (when-not @pending-render
         (reset! pending-render true)
-        (let [frame-id
-              (timers/raf
-               (fn [ts]
-                 (reset! pending-render false)
-                 (set! wasm/internal-frame-id nil)
-                 (try
-                   (render ts)
-                   (catch :default e
-                     ;; A failed render (e.g. a WASM panic) must not strand an
-                     ;; active page-transition. Force ending of it so the
-                     ;; workspace is shown without a blur.
-                     (end-page-transition!)
-                     (throw e)))))]
+        (let [seq-n    @render-seq*
+              frame-id (timers/raf
+                        (fn [ts]
+                          ;; Dropped if `stop-progressive-render!` ran since we scheduled.
+                          (when (= seq-n @render-seq*)
+                            (reset! pending-render false)
+                            (set! wasm/internal-frame-id nil)
+                            (try
+                              (render ts)
+                              (catch :default e
+                                ;; A failed render (e.g. a WASM panic) must not strand an
+                                ;; active page-transition. Force ending of it so the
+                                ;; workspace is shown without a blur.
+                                (end-page-transition!)
+                                (throw e))))))]
           (set! wasm/internal-frame-id frame-id))))))
 
 (defn request-render-preserving-target
@@ -654,12 +698,8 @@
 (defn- begin-shapes-loading!
   []
   (reset! shapes-loading? true)
-  (let [frame-id wasm/internal-frame-id
-        was-pending @pending-render]
-    (when frame-id
-      (js/cancelAnimationFrame frame-id)
-      (set! wasm/internal-frame-id nil))
-    (reset! pending-render false)
+  (let [was-pending @pending-render]
+    (stop-progressive-render!)
     (reset! deferred-render? was-pending)))
 
 (defn- end-shapes-loading!
@@ -1383,7 +1423,9 @@
 
 (defn view-interaction-start!
   []
-  (when (and (initialized?) (not @view-interaction-active?))
+  (when (and (initialized?)
+             (not @page-transition?)
+             (not @view-interaction-active?))
     (h/call wasm/internal-module "_set_view_start")
     (reset! view-interaction-active? true)))
 
@@ -1413,14 +1455,14 @@
 
 (defn- render-text-editor-overlay-after-frame!
   "Repaint the overlay after a direct `internal-render`, but only when that
-   render recomposited Target (a full frame). A partial frame is only flushed —
-   Target keeps the last presented frame with the overlay already on it — so
-   repainting the translucent selection then stacks another layer and it visibly
-   darkens across the progressive frames before snapping back on the final
-   present (the blink at the end of a zoom over a selection, gh-10709). The
-   final full frame's own repaint keeps the overlay in place."
+   render recomposited Target (a full frame or early viewport present). A partial
+   frame is only flushed - Target keeps the last presented frame with the overlay
+   already on it - so repainting the translucent selection then stacks another
+   layer and it visibly darkens across the progressive frames before snapping
+   back on the final present (the blink at the end of a zoom over a selection,
+   gh-10709). The final full frame's own repaint keeps the overlay in place."
   []
-  (when (not= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+  (when (frame-presented-target?)
     (render-text-editor-overlay-if-active!)))
 
 (defn finalize-view-interaction!
@@ -1463,25 +1505,29 @@
 
 (defn set-view-box
   [zoom vbox]
-  (when (initialized?)
-    (perf/begin-measure "set-view-box")
-    (view-interaction-start!)
-    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-    (perf/end-measure "set-view-box")
+  ;; Frozen during page transition: tile atlas is empty/incomplete and
+  ;; render_from_cache would present a blank workspace.
+  (if @page-transition?
+    (reset! viewport-dirty-during-transition? true)
+    (when (initialized?)
+      (perf/begin-measure "set-view-box")
+      (view-interaction-start!)
+      (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+      (perf/end-measure "set-view-box")
 
-    (perf/begin-measure "render-from-cache")
-    (h/call wasm/internal-module "_render_from_cache" 0)
-    ;; Keep the text-editor caret/selection glued to the shapes while the view
-    ;; changes. `_render_from_cache` re-composites shapes + UI at the new viewbox
-    ;; but omits the editor overlay, so without this the selection would vanish for
-    ;; the whole pan/zoom gesture and only flash back when the debounced full
-    ;; render lands — the blink seen when zooming in/out over a selection at high
-    ;; zoom (gh-10709). `_text_editor_render_overlay` draws straight onto the
-    ;; freshly composited Target (no Backbuffer re-compose) and no-ops when no
-    ;; editor is active.
-    (render-text-editor-overlay-if-active!)
-    (render-finish)
-    (perf/end-measure "render-from-cache")))
+      (perf/begin-measure "render-from-cache")
+      (h/call wasm/internal-module "_render_from_cache" 0)
+      ;; Keep the text-editor caret/selection glued to the shapes while the view
+      ;; changes. `_render_from_cache` re-composites shapes + UI at the new viewbox
+      ;; but omits the editor overlay, so without this the selection would vanish for
+      ;; the whole pan/zoom gesture and only flash back when the debounced full
+      ;; render lands — the blink seen when zooming in/out over a selection at high
+      ;; zoom (gh-10709). `_text_editor_render_overlay` draws straight onto the
+      ;; freshly composited Target (no Backbuffer re-compose) and no-ops when no
+      ;; editor is active.
+      (render-text-editor-overlay-if-active!)
+      (render-finish)
+      (perf/end-measure "render-from-cache"))))
 
 (defn sync-workspace-local-viewport!
   "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
@@ -2080,6 +2126,8 @@
     (let [rgba (when background (sr-clr/hex->u32argb background background-opacity))
           total-shapes (count (vals base-objects))]
 
+      ;; Stop Partial/ViewportReady follow-ups before we clear the shapes pool.
+      (stop-progressive-render!)
       (when rgba (h/call wasm/internal-module "_set_canvas_background" rgba))
       (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
       (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
@@ -2177,15 +2225,31 @@
   (when (wasm/live?)
     (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr)))
 
+(def ^:private max-surface-size
+  ;; Must match `gpu_state::MAX_SURFACE_SIZE`.
+  8192)
+
+(defn- clamp-physical-size
+  "Clamp physical pixel dimensions before assigning `canvas.width/height`.
+  Rust `resize` applies the same cap and syncs the effective DPR from the
+  real drawing buffer."
+  [w h]
+  (let [w     (mth/max 1 w)
+        h     (mth/max 1 h)
+        scale (mth/min 1 (/ max-surface-size w) (/ max-surface-size h))]
+    [(mth/max 1 (mth/floor (* scale w)))
+     (mth/max 1 (mth/floor (* scale h)))]))
+
 (defn resize-offscreen-canvas!
   "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
   update the WASM render surfaces accordingly (via `_resize_viewbox`). The
   design state (shape pool) is preserved so `set-objects` is not needed again."
   [canvas new-physical-w new-physical-h]
   (when (wasm/live?)
-    (let [dpr (get-dpr)]
-      (set! (.-width canvas) new-physical-w)
-      (set! (.-height canvas) new-physical-h)
+    (let [dpr (get-dpr)
+          [pw ph] (clamp-physical-size new-physical-w new-physical-h)]
+      (set! (.-width canvas) pw)
+      (set! (.-height canvas) ph)
       (set-render-options! dpr)
       (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))))
 
@@ -2220,9 +2284,14 @@
    (resize-canvas! canvas (get-dpr)))
   ([canvas new-dpr]
    (when (wasm/live?)
-     (let [[css-w css-h] (canvas-css-size canvas new-dpr)]
-       (set! (.-width ^js canvas) (* new-dpr css-w))
-       (set! (.-height ^js canvas) (* new-dpr css-h))
+     (let [[css-w css-h] (canvas-css-size canvas new-dpr)
+           css-w         (mth/max 1 css-w)
+           css-h         (mth/max 1 css-h)
+           [phys-w phys-h] (clamp-physical-size
+                            (mth/floor (* css-w new-dpr))
+                            (mth/floor (* css-h new-dpr)))]
+       (set! (.-width ^js canvas) phys-w)
+       (set! (.-height ^js canvas) phys-h)
        (set-render-options! new-dpr)
        (resize-viewbox css-w css-h)))))
 
@@ -2341,12 +2410,9 @@
 
      (set! wasm/context-initialized? false)
 
-     ;; Cancel any pending animation frame to prevent race conditions.
-     (when wasm/internal-frame-id
-       (timers/cancel-af! wasm/internal-frame-id))
+     (stop-progressive-render!)
 
-     ;; Reset render flags to prevent new renders from being scheduled.
-     (reset! pending-render false)
+     ;; Reset remaining render flags so teardown cannot schedule work.
      (reset! shapes-loading? false)
      (reset! deferred-render? false)
      (reset! view-interaction-active? false)

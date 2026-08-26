@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.18.1-debian13-dev
+FROM dhi.io/node:24.19.0-debian13-dev
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.management.nitrate
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
@@ -12,6 +12,7 @@
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.organization :as cto]
@@ -136,6 +137,7 @@
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
+  (media.v/validate-media-type! content cm/image-types)
   (when previous-id
     (sto/touch-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))

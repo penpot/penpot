@@ -453,9 +453,13 @@ msgstr "Delete team"
 msgid "dashboard.deleted.empty-state-description"
 msgstr "Your trash is empty. Deleted files and projects will appear here."
 
-#: src/app/main/ui/dashboard/grid.cljs:247
+#: src/app/main/ui/dashboard/grid.cljs:252
 msgid "dashboard.deleted.will-be-deleted-at"
 msgstr "Will be deleted %s"
+
+#: src/app/main/ui/dashboard/grid.cljs:256
+msgid "dashboard.grid.last-modified-at"
+msgstr "Last modified %s"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:732
 msgid "dashboard.download-binary-file"
@@ -4403,14 +4407,17 @@ msgid "nitrate.modal-success.title"
 msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer-before"
-msgstr "Need a code? Download your "
+msgid "nitrate.code-activation.footer-title"
+msgstr "Need a code?"
 
-msgid "nitrate.code-activation.footer-link"
-msgstr "activation code request"
+msgid "nitrate.code-activation.footer-download"
+msgstr "Download request"
 
 msgid "nitrate.code-activation.footer-after"
-msgstr " and contact us:"
+msgstr "Send the file to"
+
+msgid "nitrate.code-activation.footer-before"
+msgstr "and we will send you your code."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -10345,3 +10352,6 @@ msgstr "Sign-in with your organization's identity provider didn't complete. The 
 
 msgid "labels.sso-error.retry"
 msgstr "Try again"
+
+msgid "dashboard.invite-profile-disabled"
+msgstr "You don't have permission to invite people to this team"

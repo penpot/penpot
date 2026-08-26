@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.shapes.text.v3-editor
   "Contenteditable DOM element for WASM text editor input"
@@ -11,13 +11,17 @@
    [app.common.data.macros :as dm]
    [app.common.types.text :as txt]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -264,8 +268,13 @@
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
              (when (text-editor/text-editor-has-selection?)
-               (let [text (text-editor/text-editor-export-selection)]
-                 (.setData (.-clipboardData event) "text/plain" text))))))
+               (let [text (or (text-editor/text-editor-export-selection) "")
+                     html (clipboard/plain-text->html text)
+                     data (.-clipboardData event)]
+                 ;; text/html matters on Windows: many apps prefer CF_HTML, and
+                 ;; without it they can pick up the empty contenteditable `<br>`.
+                 (.setData data "text/plain" text)
+                 (.setData data "text/html" html))))))
 
         on-cut
         (mf/use-fn
@@ -273,9 +282,12 @@
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
              (when (text-editor/text-editor-has-selection?)
-               (let [text (text-editor/text-editor-export-selection)]
-                 (.setData (.-clipboardData event) "text/plain" (or text ""))
-                 (when (and text (seq text))
+               (let [text (or (text-editor/text-editor-export-selection) "")
+                     html (clipboard/plain-text->html text)
+                     data (.-clipboardData event)]
+                 (.setData data "text/plain" text)
+                 (.setData data "text/html" html)
+                 (when (seq text)
                    (text-editor/text-editor-delete-backward)
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render-preserving-target "text-cut"))))
@@ -294,12 +306,7 @@
                          (and ctrl? (= (str/lower key) "a")))
                  (text-editor/clear-pending-caret-styles!))
                (cond
-                 ;; Escape: finalize and stop
-                 (= key "Escape")
-                 (do
-                   (dom/prevent-default event)
-                   (when-let [node (mf/ref-val contenteditable-ref)]
-                     (.blur node)))
+                 ;; NOTE: Escape is handled in a document key-up listener (see effect below).
 
                  ;; Ctrl+A: select all (key is "a" or "A" depending on platform)
                  (and ctrl? (= (str/lower key) "a"))
@@ -516,6 +523,18 @@
                    "--editor-container-height" (dm/str height "px")
                    "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")}]
 
+    ;; Exit on Escape via a document key-up listener (like v2). On key-down the trailing
+    ;; key-up is read as a non-editing Escape and deselects the shape.
+    (mf/use-effect
+     (mf/deps)
+     (fn []
+       (let [on-key-up (fn [event]
+                         (when (kbd/esc? event)
+                           (dom/stop-propagation event)
+                           (st/emit! (dw/clear-edition-mode))))]
+         (.addEventListener js/document "keyup" on-key-up)
+         #(.removeEventListener js/document "keyup" on-key-up))))
+
     ;; Register the native `beforeinput` listener. React's synthetic
     ;; `onBeforeInput` does not expose `getTargetRanges()`, even with
     ;; nativeEvent (it's fully synthetic, composed of other two events).
@@ -533,6 +552,9 @@
     (mf/use-effect
      (mf/deps contenteditable-ref)
      (fn []
+       ;; Group the whole editing session (edits, reflow resizes, finalize) into a single
+       ;; undo entry. Nested transactions (e.g. style shortcuts) are ref-counted and fold in.
+       (st/emit! (dwu/start-undo-transaction shape-id :timeout nil))
        (when-let [node (mf/ref-val contenteditable-ref)]
          ;; Focus and select all text on mount (this will trigger on-focus)
          (.focus node)
@@ -543,6 +565,7 @@
        ;; it was not being reliable (timing issues, Firefox issues…)
        (fn []
          (on-blur)
+         (st/emit! (dwu/commit-undo-transaction shape-id))
          (text-editor/text-editor-dispose)
          (wasm.api/request-render-preserving-target "text-editor-dispose"))))
 

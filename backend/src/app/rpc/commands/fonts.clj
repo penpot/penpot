@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.fonts
   (:require
@@ -118,10 +118,10 @@
   "Assembles each chunked-upload session in `uploads` (a `{mtype →
   session-id}` map) into a temp file, validates the media type and
   size of every entry, and returns a `{mtype → path}` data map."
-  [cfg {:keys [uploads] :as params}]
+  [cfg {:keys [::rpc/profile-id uploads] :as params}]
   (let [data (reduce-kv
               (fn [acc mtype session-id]
-                (let [assembled (assemble-chunks cfg session-id)]
+                (let [assembled (assemble-chunks cfg profile-id session-id)]
                   (-> {:mtype mtype :size (:size assembled)}
                       (media.v/validate-media-type! cm/font-types)
                       (media.v/validate-font-size!))
@@ -353,7 +353,7 @@
                  ::sto/touched-at (ct/in-future {:minutes 30})
                  :profile-id profile-id
                  :content-type mtype
-                 :bucket "tempfile"}]
+                 :bucket sto/tempfile-bucket}]
 
     (sto/put-object! storage content)))
 

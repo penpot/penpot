@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.storage.s3
   "S3 Storage backend implementation."
@@ -346,13 +346,21 @@
   (ct/duration {:minutes 10}))
 
 (defn- get-object-url
-  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
+  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]}
+   {:keys [max-age content-disposition] :or {max-age default-max-age}}]
   (assert (ct/duration? max-age) "expected valid duration instance")
 
-  (let [gor  (.. (GetObjectRequest/builder)
+  ;; The content-disposition option is signed into the presigned url, so the
+  ;; object store sets that header on the response the client fetches after
+  ;; following the redirect. It is only set when asked for, so urls for
+  ;; objects served inline stay byte identical to before.
+  (let [gorb (.. (GetObjectRequest/builder)
                  (bucket bucket)
-                 (key (dm/str prefix (impl/id->path id)))
-                 (build))
+                 (key (dm/str prefix (impl/id->path id))))
+        gorb (cond-> gorb
+               (some? content-disposition)
+               (.responseContentDisposition ^String content-disposition))
+        gor  (.build gorb)
         gopr (.. (GetObjectPresignRequest/builder)
                  (signatureDuration ^Duration max-age)
                  (getObjectRequest ^GetObjectRequest gor)

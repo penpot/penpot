@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.loggers.audit
   "Services related to the user activity (audit log)."
@@ -35,6 +35,16 @@
 
 (def ^:private filter-auth-events
   #{"login-with-oidc" "login-with-password" "register-profile" "update-profile"})
+
+(def ^:private organization-sso-failure-reasons
+  #{"access-denied"
+    "provider-unavailable"
+    "invalid-configuration"
+    "provider-error"
+    "token-exchange-failed"
+    "user-info-failed"
+    "incomplete-user-info"
+    "unexpected-error"})
 
 (def ^:private safe-backend-context-keys
   #{:version
@@ -297,6 +307,14 @@
 (defn filter-telemetry-props
   [{:keys [source name props type] :as params}]
   (cond
+    (and (= source "backend")
+         (= name "organization-sso-auth-failed"))
+    (let [props' (into {} xf:filter-telemetry-props props)
+          props' (cond-> props'
+                   (contains? organization-sso-failure-reasons (:failure-reason props))
+                   (assoc :failure-reason (:failure-reason props)))]
+      (assoc params :props props'))
+
     (or (and (= source "frontend")
              (= type "identify"))
         (and (= source "backend")

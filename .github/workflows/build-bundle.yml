@@ -17,15 +17,19 @@ on:
         required: true
         default: 'develop'
 
+# Literal group name: under `workflow_call`, `github.workflow` resolves to the
+# caller's workflow, which put this workflow and the other reusable one called
+# by the same caller into a single shared group, and left a manual dispatch of
+# the same ref in a group of its own, free to race on the same artifacts.
 concurrency:
-  group: ${{ github.workflow }}-${{ inputs.gh_ref }}
+  group: build-bundle-${{ inputs.gh_ref }}
   cancel-in-progress: true
 
 jobs:
   # ── 1. Decide whether there is anything to build ───────────────────────
   check:
     name: Check current bundle
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 10
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
@@ -75,7 +79,7 @@ jobs:
   # ── 2. Build and upload, only when needed ──────────────────────────────
   build:
     name: Build and Upload Penpot Bundle
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 90
     needs: check
     if: needs.check.outputs.exists == 'false'
@@ -116,7 +120,7 @@ jobs:
   # ── 3. Single failure notification for the whole workflow ─────────────
   notify:
     name: Notify failure
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 5
     needs: [check, build]
     if: failure()

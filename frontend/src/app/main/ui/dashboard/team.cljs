@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.dashboard.team
   (:require-macros [app.main.style :as stl])
@@ -39,6 +39,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -139,11 +140,19 @@
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
       (when (and (or invitations-section? members-section?) (not-empty invitations))
-        [:> button* {:variant "secondary"
-                     :on-click on-invite-member
-                     :disabled (not can-invite?)
-                     :data-testid "invite-member"}
-         (tr "dashboard.invite-profile")])]]))
+        (let [invite-button (mf/html
+                             [:> button* {:class (stl/css :invite-button)
+                                          :variant "secondary"
+                                          :on-click on-invite-member
+                                          :disabled (not can-invite?)
+                                          :data-testid "invite-member"}
+                              (tr "dashboard.invite-profile")])]
+          (if can-invite?
+            invite-button
+            [:> tooltip* {:content (tr "dashboard.invite-profile-disabled")
+                          :id "invite-member-disabled-tooltip"
+                          :tab-index 0}
+             invite-button])))]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS MODAL
@@ -233,6 +242,9 @@
                    (= :email-domain-is-not-allowed code))
               (st/emit! (ntf/error (tr "errors.email-domain-not-allowed"))
                         (modal/hide))
+              (and (= :validation type)
+                   (= :insufficient-permissions code))
+              (st/emit! (modal/show :no-permission-modal {:type :invite-members}))
 
               :else
               (st/emit! (ntf/error (tr "errors.generic"))

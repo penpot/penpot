@@ -61,7 +61,7 @@ jobs:
   build-integration:
     if: ${{ !github.event.pull_request.draft }}
     name: "Build Integration Bundle"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: 30
     container:
       image: penpotapp/devenv:latest
@@ -101,7 +101,7 @@ jobs:
   test-integration:
     if: ${{ !github.event.pull_request.draft }}
     name: "Integration Tests (${{ matrix.shard }})"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: ${{ github.base_ref == 'staging' && 60 || 25 }}
 
     needs: build-integration
@@ -187,7 +187,7 @@ jobs:
   merge-reports:
     if: ${{ always() && !github.event.pull_request.draft && needs.test-integration.result != 'skipped' }}
     name: "Merge Integration Reports"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     timeout-minutes: 15
 
     needs: test-integration

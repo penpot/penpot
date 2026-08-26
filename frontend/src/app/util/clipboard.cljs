@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.clipboard
   (:require
@@ -21,6 +21,18 @@
 (def ^:private default-options
   #js {:decodeTransit t/decode-str
        :allowHTMLPaste false})
+
+(defn plain-text->html
+  "Build a minimal text/html clipboard payload from plain text.
+
+  Windows apps often prefer CF_HTML over CF_UNICODETEXT; writing only
+  text/plain from a contenteditable copy handler can leave them with the
+  editor surface's empty/`<br>` fallback (a lone newline)."
+  [text]
+  (let [escaped (-> (or text "")
+                    (dom/escape-html)
+                    (str/replace "\n" "<br>"))]
+    (str "<meta charset=\"utf-8\">" escaped)))
 
 (defn- from-data-transfer
   "Get clipboard stream from DataTransfer instance"

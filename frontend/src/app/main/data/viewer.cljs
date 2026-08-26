@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.viewer
   (:require
@@ -95,14 +95,21 @@
       ;; browser just focus the opened tab instead of creating new
       ;; tab.
       (let [name (str "viewer-" file-id)]
-        (unchecked-set ug/global "name" name)))))
+        (unchecked-set ug/global "name" name))
+      ;; Make every `cf/resolve-file-media` call (inspector, code panel,
+      ;; image previews, ...) share-link aware for the lifetime of this
+      ;; viewer. Cleared by `finalize` below.
+      (cf/set-current-share-id! share-id))))
 
 (defn finalize
   [_]
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :viewer))))
+      (dissoc state :viewer))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (cf/set-current-share-id! nil))))
 
 ;; --- Data Fetching
 

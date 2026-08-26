@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.renderer.bitmap
   "A bitmap renderer."
@@ -38,7 +38,7 @@
                 :webp (p/let [png-path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix ".png")]
                         ;; playwright only supports jpg and png, we need to convert it afterwards
                         (bw/screenshot node {:omit-background? true :type :png :path png-path})
-                        (sh/run-cmd! (str "convert " png-path " -quality 100 WEBP:" path))))
+                        (sh/run-cmd! "convert" png-path "-quality" "100" (str "WEBP:" path))))
               (on-object (assoc object :path path))))
 
           (render [uri page]

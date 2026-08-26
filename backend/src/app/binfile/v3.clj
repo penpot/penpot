@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.binfile.v3
   "A ZIP based binary file exportation"
@@ -392,7 +392,7 @@
           params {:type "penpot/export-files"
                   :version 1
                   :generated-by (str "penpot/" (:full cf/version))
-                  :refer "penpot"
+                  :referer "penpot"
                   :files (vec (vals files))
                   :relations rels}]
       (write-entry! output "manifest.json" params))))
@@ -734,7 +734,7 @@
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::db/conn ::bfc/project-id] :as cfg} {file-id :id file-name :name}]
+  [{:keys [::db/conn ::bfc/project-id ::manifest] :as cfg} {file-id :id file-name :name}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg file-id)
         media      (read-file-media cfg file-id)
@@ -801,8 +801,10 @@
                    (assoc :data data)
                    (assoc :name file-name)
                    (assoc :project-id project-id)
+                   (assoc :metadata (d/without-nils
+                                     {:generated-by (get manifest :generated-by)
+                                      :referer (or (get manifest :referer) (get manifest :refer))}))
                    (dissoc :options))
-
           file  (bfc/process-file cfg file)
           file  (ctf/check-file file)]
 

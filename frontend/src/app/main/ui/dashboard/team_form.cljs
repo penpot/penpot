@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.dashboard.team-form
   (:require-macros [app.main.style :as stl])
@@ -152,6 +152,8 @@
                                         (tr "dashboard.no-permission-create-team.message" organization-name)]
                           :delete-team [(tr "dashboard.delete-team")
                                         (tr "dashboard.no-permission-delete-team.message" organization-name)]
+                          :invite-members [(tr "modals.invite-team-member.title")
+                                           (tr "dashboard.invitations.no-permission")]
                           :no-organizations-create [(tr "dashboard.select-organization-modal.title")
                                                     (tr "dashboard.no-organization-allows-create-team.message")]
                           :no-organizations-change [(tr "dashboard.change-organization-modal.title")

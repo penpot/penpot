@@ -183,13 +183,15 @@ fn calculate_cursor_rect(
                 if !rects.is_empty() {
                     let r = &rects[0].rect;
                     (r.right(), r.top(), r.width(), r.height())
-                } else {
+                } else if let Some(line) = laid_out_para.get_line_metrics().last() {
                     (
-                        laid_out_para.longest_line(),
+                        line.left as f32 + line.width as f32,
                         0.0,
                         1.0,
                         laid_out_para.height(),
                     )
+                } else {
+                    (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else {
                 let utf16_pos = para.char_offset_to_utf16(char_pos);

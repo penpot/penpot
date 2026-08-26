@@ -1843,6 +1843,99 @@ impl Shape {
             .any(|s| s.render_kind(is_open) == StrokeKind::Inner)
     }
 
+    /// When true, the frame drop shadow can use the direct geometry path
+    /// (`render_direct_frame_drop_shadow`) instead of filter surfaces and
+    /// descendant silhouettes.
+    ///
+    /// Requires at least one fill; fill opacity/type does not matter because the fast
+    /// path shadows the frame geometry as a solid mask.
+    ///
+    /// The fast path draws fill geometry only. On the slow path, visible strokes also
+    /// contribute to the shadow silhouette, so frames with outer/center strokes can
+    /// look slightly narrower here. We keep them eligible anyway for performance.
+    pub fn uses_direct_container_drop_shadow(&self, tree: ShapesPoolRef, scale: f32) -> bool {
+        if !matches!(self.shape_type, Type::Frame(_)) {
+            return false;
+        }
+        if !self.has_fills() {
+            return false;
+        }
+        if self.blend_mode() != BlendMode::default() {
+            return false;
+        }
+        if self.blur.is_some() || self.background_blur.is_some() {
+            return false;
+        }
+        if self.has_frame_clip_layer_blur() {
+            return false;
+        }
+
+        if self.clip_content {
+            return !self.descendants_have_drop_shadows(tree);
+        }
+
+        self.descendants_contained_for_frame_shadow(tree, scale, self.selrect())
+    }
+
+    /// When true, the container's own fill shadow mask is enough and descendant
+    /// silhouettes can be skipped (same geometry assumption as the direct path).
+    pub fn container_fill_covers_shadow_descendants(
+        &self,
+        tree: ShapesPoolRef,
+        scale: f32,
+    ) -> bool {
+        self.has_fills() && self.descendants_contained_for_frame_shadow(tree, scale, self.selrect())
+    }
+
+    fn descendants_have_drop_shadows(&self, tree: ShapesPoolRef) -> bool {
+        for child_id in self.children_ids_iter(false) {
+            let Some(child) = tree.get(child_id) else {
+                continue;
+            };
+            if child.hidden {
+                continue;
+            }
+            if child.drop_shadows_visible().next().is_some() {
+                return true;
+            }
+            if child.is_recursive() && child.descendants_have_drop_shadows(tree) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn descendants_contained_for_frame_shadow(
+        &self,
+        tree: ShapesPoolRef,
+        scale: f32,
+        bounds: math::Rect,
+    ) -> bool {
+        if self.descendants_have_drop_shadows(tree) {
+            return false;
+        }
+
+        const MARGIN: f32 = 0.5;
+        for child_id in self.children_ids_iter(false) {
+            let Some(child) = tree.get(child_id) else {
+                continue;
+            };
+            if child.hidden {
+                continue;
+            }
+            let child_extrect = child.extrect(tree, scale);
+            if !rect_contains_with_margin(bounds, child_extrect, MARGIN) {
+                return false;
+            }
+            if child.is_recursive()
+                && !child.descendants_contained_for_frame_shadow(tree, scale, bounds)
+            {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
         let drop_shadows: Vec<&Shadow> = self.drop_shadows_visible().collect();
 
@@ -1870,6 +1963,14 @@ impl Shape {
             })
             .collect()
     }
+}
+
+#[inline]
+fn rect_contains_with_margin(outer: math::Rect, inner: math::Rect, margin: f32) -> bool {
+    inner.left >= outer.left - margin
+        && inner.top >= outer.top - margin
+        && inner.right <= outer.right + margin
+        && inner.bottom <= outer.bottom + margin
 }
 
 #[cfg(test)]
@@ -2011,5 +2112,156 @@ mod tests {
         assert_eq!(extrect.top, 0.0);
         assert_eq!(extrect.right, 50.0);
         assert_eq!(extrect.bottom, 50.0);
+    }
+
+    fn frame_with_fill_and_child(fill: Fill, opacity: f32) -> (ShapesPool, Uuid) {
+        let mut pool = ShapesPool::new();
+        pool.initialize(2);
+
+        let frame_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        {
+            let frame = pool.add_shape(frame_id);
+            frame.set_shape_type(Type::Frame(Frame::default()));
+            frame.set_selrect(0.0, 0.0, 200.0, 100.0);
+            frame.add_fill(fill);
+            frame.opacity = opacity;
+            frame.children = vec![child_id];
+        }
+
+        {
+            let child = pool.add_shape(child_id);
+            child.set_shape_type(Type::Rect(Rect::default()));
+            child.set_selrect(10.0, 10.0, 180.0, 80.0);
+            child.set_parent(frame_id);
+        }
+
+        (pool, frame_id)
+    }
+
+    #[test]
+    fn frame_with_any_fill_uses_direct_container_drop_shadow() {
+        for (fill, opacity) in [
+            (Fill::Solid(SolidColor(skia::Color::WHITE)), 1.0),
+            (
+                Fill::Solid(SolidColor(skia::Color::from_argb(128, 255, 255, 255))),
+                0.5,
+            ),
+        ] {
+            let (pool, frame_id) = frame_with_fill_and_child(fill, opacity);
+            let frame = pool.get(&frame_id).expect("frame");
+            assert!(frame.uses_direct_container_drop_shadow(&pool, 1.0));
+        }
+    }
+
+    #[test]
+    fn clipped_frame_with_child_drop_shadow_rejects_direct_path() {
+        let (mut pool, frame_id) =
+            frame_with_fill_and_child(Fill::Solid(SolidColor(skia::Color::WHITE)), 1.0);
+        let child_id = pool.get(&frame_id).expect("frame").children[0];
+
+        {
+            let child = pool.get_mut(&child_id).expect("child");
+            child.add_shadow(Shadow::new(
+                skia::Color::BLACK,
+                4.0,
+                0.0,
+                (0.0, 4.0),
+                ShadowStyle::Drop,
+                false,
+            ));
+        }
+
+        let frame = pool.get(&frame_id).expect("frame");
+        assert!(!frame.uses_direct_container_drop_shadow(&pool, 1.0));
+    }
+
+    #[test]
+    fn clipped_frame_ignores_outside_child_extrect_for_direct_path() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(2);
+
+        let frame_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        {
+            let frame = pool.add_shape(frame_id);
+            frame.set_shape_type(Type::Frame(Frame::default()));
+            frame.set_selrect(0.0, 0.0, 200.0, 100.0);
+            frame.add_fill(Fill::Solid(SolidColor(skia::Color::WHITE)));
+            frame.set_clip(true);
+            frame.children = vec![child_id];
+        }
+
+        {
+            let child = pool.add_shape(child_id);
+            child.set_shape_type(Type::Rect(Rect::default()));
+            child.set_selrect(-50.0, -50.0, 250.0, 150.0);
+            child.set_parent(frame_id);
+        }
+
+        let frame = pool.get(&frame_id).expect("frame");
+        assert!(frame.uses_direct_container_drop_shadow(&pool, 1.0));
+    }
+
+    #[test]
+    fn overflow_frame_with_outside_child_rejects_direct_path() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(2);
+
+        let frame_id = Uuid::new_v4();
+        let child_id = Uuid::new_v4();
+
+        {
+            let frame = pool.add_shape(frame_id);
+            frame.set_shape_type(Type::Frame(Frame::default()));
+            frame.set_selrect(0.0, 0.0, 200.0, 100.0);
+            frame.add_fill(Fill::Solid(SolidColor(skia::Color::WHITE)));
+            frame.set_clip(false);
+            frame.children = vec![child_id];
+        }
+
+        {
+            let child = pool.add_shape(child_id);
+            child.set_shape_type(Type::Rect(Rect::default()));
+            child.set_selrect(-50.0, -50.0, 250.0, 150.0);
+            child.set_parent(frame_id);
+        }
+
+        let frame = pool.get(&frame_id).expect("frame");
+        assert!(!frame.uses_direct_container_drop_shadow(&pool, 1.0));
+        assert!(!frame.container_fill_covers_shadow_descendants(&pool, 1.0));
+    }
+
+    #[test]
+    fn frame_with_contained_child_covers_shadow_descendants() {
+        let (pool, frame_id) =
+            frame_with_fill_and_child(Fill::Solid(SolidColor(skia::Color::WHITE)), 1.0);
+        let frame = pool.get(&frame_id).expect("frame");
+        assert!(frame.container_fill_covers_shadow_descendants(&pool, 1.0));
+    }
+
+    #[test]
+    fn rotated_frame_with_contained_child_uses_direct_container_drop_shadow() {
+        let (mut pool, frame_id) =
+            frame_with_fill_and_child(Fill::Solid(SolidColor(skia::Color::WHITE)), 1.0);
+
+        {
+            let frame = pool.get_mut(&frame_id).expect("frame");
+            // 45° rotation around the shape center (100, 50).
+            let angle = std::f32::consts::FRAC_PI_4;
+            frame.set_transform(
+                angle.cos(),
+                angle.sin(),
+                -angle.sin(),
+                angle.cos(),
+                0.0,
+                0.0,
+            );
+        }
+
+        let frame = pool.get(&frame_id).expect("frame");
+        assert!(frame.uses_direct_container_drop_shadow(&pool, 1.0));
     }
 }

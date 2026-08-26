@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.mcp
   (:require
@@ -14,6 +14,7 @@
    [app.main.broadcast :as mbc]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
+   [app.main.data.workspace :as-alias dw]
    [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.util.timers :as ts]
@@ -132,7 +133,7 @@
                           (assoc :host (str (u/join cf/public-uri "plugins/mcp/"))))
 
             stopper-s (rx/merge
-                       (rx/filter (ptk/type? :app.main.data.workspace/finalize-workspace) stream)
+                       (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
                        (rx/filter (ptk/type? ::stop-mcp-plugin) stream))
 
             extension #js {:getToken (constantly token)
@@ -202,7 +203,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper-s  (rx/merge
-                        (rx/filter (ptk/type? :app.main.data.workspace/finalize-workspace) stream)
+                        (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
                         (rx/filter (ptk/type? ::init) stream))
 
             session-id (get state :session-id)

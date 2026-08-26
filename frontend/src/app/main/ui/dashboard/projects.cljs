@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
@@ -109,6 +109,10 @@
         team-id    (get team :id)
 
         file-count (or (:count project) 0)
+
+        loading?   (and (pos? (:count project))
+                        (empty? files))
+
         is-draft?  (:is-default project)
         empty?     (and (not can-edit)
                         (= 0 file-count))
@@ -292,7 +296,7 @@
 
         [:> line-grid* {:project project
                         :team team
-                        :files files
+                        :files (if loading? nil files)
                         :create-fn create-file
                         :can-edit can-edit
                         :limit limit
@@ -313,7 +317,7 @@
   (l/derived :recent-files st/state))
 
 (mf/defc projects-section*
-  [{:keys [team projects profile]}]
+  [{:keys [team projects profile layout on-layout-change]}]
 
   (let [team-id         (get team :id)
 
@@ -333,14 +337,6 @@
         default-team?   (:is-default team)
 
         show-deleted?   (:can-edit permisions)
-
-        layout*         (hooks/use-persisted-state lt/layout-key lt/default-layout)
-        layout          (deref layout*)
-
-        on-layout-change
-        (mf/use-fn
-         (fn [value]
-           (reset! layout* (keyword value))))
 
         projects
         (mf/with-memo [projects]

@@ -2,12 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.assets
   "Assets related handlers."
   (:require
-   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
@@ -15,6 +14,7 @@
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
+   [app.rpc.permissions :as perms]
    [app.storage :as sto]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
@@ -41,6 +41,12 @@
       (ex/raise :type :not-found
                 :hint "object not found")))
 
+(defn- get-share-id
+  "Extract and validate the optional `share-id` query param. Returns a UUID
+  or `nil` for missing/malformed values."
+  [{:keys [query-params]}]
+  (some-> query-params :share-id d/parse-uuid))
+
 (defn- get-file-media-object
   [pool id]
   (db/get* pool :file-media-object {:id id} {::db/remove-deleted false}))
@@ -49,12 +55,24 @@
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]
   (let [sig-max-age (or signature-max-age default-signature-max-age)
         cch-max-age (or cache-max-age default-cache-max-age)
-        {:keys [host port] :as url} (sto/get-object-url storage obj {:max-age sig-max-age})]
+        bucket  (-> obj meta :bucket)
+        public? (contains? public-buckets bucket)
+        ;; The disposition is also signed into the presigned url: this
+        ;; response is a redirect, so the header below applies to the
+        ;; redirect itself and not to the bytes the client then fetches
+        ;; from the object store.
+        {:keys [host port] :as url} (sto/get-object-url storage obj
+                                                        (cond-> {:max-age sig-max-age}
+                                                          (not public?)
+                                                          (assoc :content-disposition "attachment")))
+        headers (cond-> {"location" (str url)
+                         "x-host"   (cond-> host port (str ":" port))
+                         "x-mtype"  (-> obj meta :content-type)
+                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                  (not public?)
+                  (assoc "content-disposition" "attachment"))]
     {::yres/status  307
-     ::yres/headers {"location" (str url)
-                     "x-host"   (cond-> host port (str ":" port))
-                     "x-mtype"  (-> obj meta :content-type)
-                     "cache-control" (str "max-age=" (inst-ms cch-max-age))}}))
+     ::yres/headers headers}))
 
 (defn- serve-object-from-fs
   [{:keys [::path ::cache-max-age]} obj]
@@ -62,9 +80,12 @@
         purl    (u/join (u/uri path)
                         (sto/object->relative-path obj))
         mdata   (meta obj)
-        headers {"x-accel-redirect" (:path purl)
-                 "content-type" (:content-type mdata)
-                 "cache-control" (str "max-age=" (inst-ms cch-max-age))}]
+        bucket  (:bucket mdata)
+        headers (cond-> {"x-accel-redirect" (:path purl)
+                         "content-type" (:content-type mdata)
+                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                  (not (contains? public-buckets bucket))
+                  (assoc "content-disposition" "attachment"))]
     {::yres/status 204
      ::yres/headers headers}))
 
@@ -82,17 +103,32 @@
   (let [bucket (-> obj meta :bucket)]
     (not (contains? public-buckets bucket))))
 
+(defn- request-profile-id
+  "Extract the authenticated profile-id from the request."
+  [request]
+  (or (::session/profile-id request)
+      (::actoken/profile-id request)))
+
 (defn- authenticated?
   "Check if the request has an authenticated profile, either via session
    or access token."
   [request]
-  (or (some? (::session/profile-id request))
-      (some? (::actoken/profile-id request))))
+  (some? (request-profile-id request)))
+
+(defn- tempfile-owner-match?
+  "Check if the request's profile-id matches the tempfile's stored owner.
+   Returns true if no profile-id was stored (legacy objects)."
+  [obj request]
+  (let [stored-profile-id (:profile-id (meta obj))
+        request-profile-id (request-profile-id request)]
+    (or (nil? stored-profile-id)
+        (= stored-profile-id request-profile-id))))
 
 (defn objects-handler
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
-   via session cookie or access token."
+   via session cookie or access token.
+   For tempfile bucket, also requires ownership (profile-id match)."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
@@ -103,6 +139,10 @@
       (and (requires-auth? obj)
            (not (authenticated? request)))
       {::yres/status 401}
+
+      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
+           (not (tempfile-owner-match? obj request)))
+      {::yres/status 404}
 
       :else
       (serve-object cfg obj))))
@@ -118,7 +158,8 @@
       (let [file-id    (:file-id mobj)
             profile-id (or (::session/profile-id request)
                            (::actoken/profile-id request))
-            perms      (bfc/get-file-permissions pool profile-id file-id)]
+            share-id   (get-share-id request)
+            perms      (perms/get-file-read-permissions pool profile-id file-id share-id)]
         (if-not (:can-read perms)
           {::yres/status 404}
           (let [sobj (sto/get-object storage (kf mobj))]

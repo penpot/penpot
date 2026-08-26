@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.handlers.export-frames
   (:require
@@ -117,7 +117,7 @@
   [file-id paths]
   (p/let [prefix (str/concat "penpot.pdfunite." file-id ".")
           path   (sh/tempfile :prefix prefix :suffix ".pdf")]
-    (sh/run-cmd! (str "pdfunite " (str/join " " paths) " " path))
+    (apply sh/run-cmd! "pdfunite" (conj (vec paths) path))
     path))
 
 (defn- move-file

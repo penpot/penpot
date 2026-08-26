@@ -11,6 +11,7 @@
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.store-test]
    [frontend-tests.data.uploads-test]
@@ -27,6 +28,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.errors-test]
+   [frontend-tests.fonts-test]
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
    [frontend-tests.logic.components-and-tokens]
@@ -35,6 +37,8 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
    [frontend-tests.logic.pasting-in-containers-test]
+   [frontend-tests.logic.sidebar-transform-coalescing-test]
+   [frontend-tests.logic.update-position-test]
    [frontend-tests.main-errors-test]
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
@@ -105,6 +109,7 @@
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
@@ -122,6 +127,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.errors-test
+   'frontend-tests.fonts-test
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.comp-remove-swap-slots-test
    'frontend-tests.logic.components-and-tokens
@@ -131,6 +137,8 @@
    'frontend-tests.logic.nudge-selected-shapes-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.main-errors-test
+   'frontend-tests.logic.sidebar-transform-coalescing-test
+   'frontend-tests.logic.update-position-test
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.file-test

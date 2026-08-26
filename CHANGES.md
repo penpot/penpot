@@ -24,16 +24,31 @@
 - Improve team invitations modal in the dashboard [#10484](https://github.com/penpot/penpot/issues/10484) (PR: [#10459](https://github.com/penpot/penpot/pull/10459))
 
 
-## 2.17.1 (Unreleased)
+## 2.17.1
 
 ### :bug: Bugs fixed
 
+- Fix overrides lost after switching component variant [#10588](https://github.com/penpot/penpot/issues/10588) (PR: [#10619](https://github.com/penpot/penpot/pull/10619))
 - Fix malformed get-font-variants request when team-id is missing from dashboard URL [#10644](https://github.com/penpot/penpot/issues/10644) (PR: [#10645](https://github.com/penpot/penpot/pull/10645))
 - Fix malformed get-profiles-for-file-comments request when file-id is missing from workspace URL [#10652](https://github.com/penpot/penpot/issues/10652) (PR: [#10655](https://github.com/penpot/penpot/pull/10655))
-- Fix workspace crash when holding an arrow key on a selection due to excessive re-renders [#10726](https://github.com/penpot/penpot/issues/10726) (PR: [#10736](https://github.com/penpot/penpot/pull/10736))
-- Fix asset download failing with S3 auth conflict when using access token [#10776](https://github.com/penpot/penpot/issues/10776) (PR: [#10777](https://github.com/penpot/penpot/pull/10777))
 - Fix internal error when dragging inner layout with Boolean operations [#10647](https://github.com/penpot/penpot/issues/10647) (PR: [#10778](https://github.com/penpot/penpot/pull/10778))
+- Fix frontend throwing raw TypeError on undefined .getData receivers across import, paste, drag, and text editor paths [#10709](https://github.com/penpot/penpot/issues/10709) (PR: [#10718](https://github.com/penpot/penpot/pull/10718))
+- Fix workspace crash with 'can't access dead object' in Firefox when navigating between pages [#10719](https://github.com/penpot/penpot/issues/10719) (PR: [#10721](https://github.com/penpot/penpot/pull/10721))
+- Fix workspace crash when holding an arrow key on a selection due to excessive re-renders [#10726](https://github.com/penpot/penpot/issues/10726) (PR: [#10736](https://github.com/penpot/penpot/pull/10736))
+- Fix dashboard sidebar throwing removeChild NotFoundError during rapid keyboard navigation [#10714](https://github.com/penpot/penpot/issues/10714) (PR: [#10715](https://github.com/penpot/penpot/pull/10715))
+- Fix asset download failing with S3 auth conflict when using access token [#10776](https://github.com/penpot/penpot/issues/10776) (PR: [#10777](https://github.com/penpot/penpot/pull/10777))
+- Fix import worker crashing when importing non-Penpot zip files [#10781](https://github.com/penpot/penpot/issues/10781) (PR: [#10782](https://github.com/penpot/penpot/pull/10782))
 - Fix viewer crash with WASM panic when opening URL with page-id [#10800](https://github.com/penpot/penpot/issues/10800) (PR: [#10805](https://github.com/penpot/penpot/pull/10805))
+- Fix backend returning 500 when JSON request body has unrecognized escape sequence [#10804](https://github.com/penpot/penpot/issues/10804) (PR: [#10808](https://github.com/penpot/penpot/pull/10808))
+- Fix color picker eyedropper crashing when viewport is unmounted during pointer move [#10811](https://github.com/penpot/penpot/issues/10811) (PR: [#10812](https://github.com/penpot/penpot/pull/10812))
+- Fix flex layout crash when dragging shapes with missing bounds [#10843](https://github.com/penpot/penpot/issues/10843) (PR: [#10845](https://github.com/penpot/penpot/pull/10845))
+- Fix export failing when shape has blank layer name [#10849](https://github.com/penpot/penpot/issues/10849) (PR: [#10852](https://github.com/penpot/penpot/pull/10852))
+- Fix area selection (marquee) being aborted by select-shapes interrupt [#10872](https://github.com/penpot/penpot/issues/10872) (PR: [#10870](https://github.com/penpot/penpot/pull/10870))
+- Fix gradient editor sending invalid stop offset when clicking outside gradient line [#10879](https://github.com/penpot/penpot/issues/10879) (PR: [#10881](https://github.com/penpot/penpot/pull/10881))
+- Fix audit event validation failing when error reports contain string profile-id and missing token context [#10897](https://github.com/penpot/penpot/issues/10897) (PR: [#10898](https://github.com/penpot/penpot/pull/10898))
+- Fix MCP tool call timeout being too low for some operations [#10953](https://github.com/penpot/penpot/issues/10953) (PR: [#10967](https://github.com/penpot/penpot/pull/10967))
+- Fix MCP requests running into timeouts after leaving a file in Penpot [#10958](https://github.com/penpot/penpot/issues/10958) (PR: [#10967](https://github.com/penpot/penpot/pull/10967))
+- Fix duplicate WebSocket MCP connection attempts deregistering the original connection's routing entries [#10961](https://github.com/penpot/penpot/issues/10961) (PR: [#10967](https://github.com/penpot/penpot/pull/10967))
 
 ## 2.17.0
 

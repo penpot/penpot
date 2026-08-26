@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-profile-test
   (:require
@@ -124,6 +124,17 @@
           (t/is (= "Full Name" (:fullname result)))
           (t/is (= "en" (:lang result)))
           (t/is (= "dark" (:theme result))))))
+
+    (t/testing "update profile preserves omitted optional fields"
+      (let [data {::th/type :update-profile
+                  ::rpc/profile-id (:id profile)
+                  :fullname "Updated Name"}
+            out  (th/command! data)]
+
+        (t/is (nil? (:error out)))
+        (t/is (= "Updated Name" (get-in out [:result :fullname])))
+        (t/is (= "en" (get-in out [:result :lang])))
+        (t/is (= "dark" (get-in out [:result :theme])))))
 
     (t/testing "update photo"
       (let [data {::th/type :update-profile-photo

@@ -352,19 +352,30 @@
                      (rx/empty)))))))))))
 
 
+(defn check-organization-sso
+  "Asks the backend whether the organization SSO gate can be satisfied for
+  `dest-url`, returning an observable of the raw `:check-nitrate-sso`
+  result: `:authorized` with a `:reason` of `:sso-satisfied` or
+  `:no-team-access`, or `:authorized false` with a `:redirect-uri` (nil
+  when SSO is required but the provider is unusable). Failures are not
+  caught, so a network blip stays a network error for the caller to
+  handle instead of masquerading as an answer."
+  [{:keys [team-id organization-id dest-url]}]
+  (rp/cmd! :check-nitrate-sso (d/without-nils {:team-id team-id
+                                               :organization-id organization-id
+                                               :url dest-url})))
+
 (defn retry-organization-sso
   "Retries the organization SSO login flow after a failed attempt, reusing
   the same check-nitrate-sso RPC used elsewhere to move the user through
   the organization's identity provider. Passing `team-id` enables the
   backend's non-member short-circuit. Falls back to navigating straight
   to `dest-url` when no fresh SSO redirect is needed or available."
-  [{:keys [team-id organization-id dest-url]}]
+  [{:keys [dest-url] :as params}]
   (ptk/reify ::retry-organization-sso
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :check-nitrate-sso (d/without-nils {:team-id team-id
-                                                        :organization-id organization-id
-                                                        :url dest-url}))
+      (->> (check-organization-sso params)
            (rx/map (fn [{:keys [redirect-uri]}]
                      (rt/nav-raw :uri (or redirect-uri dest-url))))
            (rx/catch (fn [_]

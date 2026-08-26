@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.profile
   (:require
@@ -166,8 +166,12 @@
   ;; the same row/object.
   (let [profile (get-profile conn profile-id ::db/for-update true)
         fullname (d/normalize-string fullname)
-        lang     (d/normalize-string lang)
-        theme    (d/normalize-string theme)
+        lang     (if (contains? params :lang)
+                   (d/normalize-string lang)
+                   (:lang profile))
+        theme    (if (contains? params :theme)
+                   (d/normalize-string theme)
+                   (:theme profile))
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)

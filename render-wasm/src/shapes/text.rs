@@ -707,16 +707,35 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(use_shadow, false, None)
+    }
+
+    /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
+    /// Used as a clip mask for inner stroke rendering.
+    pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(None, true, None)
+    }
+
+    fn paragraph_builders(
+        &self,
+        use_shadow: Option<bool>,
+        opaque: bool,
+        align_override: Option<skia::textlayout::TextAlign>,
+    ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
 
         for paragraph in self.paragraphs() {
-            let paragraph_style = paragraph.paragraph_to_style();
+            let mut paragraph_style = paragraph.paragraph_to_style();
+            if let Some(align) = align_override {
+                paragraph_style.set_text_align(align);
+            }
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
+                let remove_alpha =
+                    opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
                 let text_style = span.to_style(
                     &self.bounds(),
                     fallback_fonts,
@@ -739,65 +758,40 @@ impl TextContent {
         paragraph_group
     }
 
-    /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
-    /// Used as a clip mask for inner stroke rendering.
-    pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
-        let fonts = get_font_collection();
-        let fallback_fonts = get_fallback_fonts();
-        let mut paragraph_group = Vec::new();
-
-        for paragraph in self.paragraphs() {
-            let paragraph_style = paragraph.paragraph_to_style();
-            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-            let mut has_text = false;
-            for span in paragraph.children() {
-                let text_style = span.to_style(
-                    &self.bounds(),
-                    fallback_fonts,
-                    true, // always opaque
-                    paragraph.line_height(),
-                );
-                let text: String = span.apply_text_transform();
-                if !text.is_empty() {
-                    has_text = true;
-                }
-                builder.push_style(&text_style);
-                add_text_with_tabs(&mut builder, &text, span.font_size);
-            }
-            if !has_text {
-                builder.add_text(" ");
-            }
-            paragraph_group.push(vec![builder]);
-        }
-
-        paragraph_group
-    }
-
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
+        let mut measure_builders =
+            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left));
 
         let normalized_line_height =
-            calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
+            calculate_normalized_line_height(&mut measure_builders, f32::MAX);
 
-        let paragraphs =
-            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+        let measure_paragraphs =
+            build_paragraphs_from_paragraph_builders(&mut measure_builders, f32::MAX);
 
-        let (width, height) =
-            paragraphs
-                .iter()
-                .flatten()
-                .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
-                    (
-                        f32::max(paragraph.longest_line(), auto_width),
-                        auto_height + paragraph.height(),
-                    )
-                });
+        let width = measure_paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0_f32, |auto_width, paragraph| {
+                f32::max(paragraph.longest_line(), auto_width)
+            })
+            .ceil();
+
+        // Re-layout at that width with the real alignment.
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0_f32, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
 
         let size = TextContentSize::new_with_normalized_line_height(
-            width.ceil(),
+            width,
             height.ceil(),
-            width.ceil(),
+            width,
             normalized_line_height,
         );
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
@@ -891,14 +885,22 @@ impl TextContent {
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
         self.layout.cached_extrect.set(None);
+        // Bump the content version so update_layout can't early-return: auto-width
+        // shapes always match their container and clearing the cache above doesn't
+        // flip needs_update(), so a late font resolution would otherwise be skipped.
+        self.content_version = self.content_version.wrapping_add(1);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        // Auto-width ignores selrect width so get-text-dimensions can reuse the cached layout.
+        let layout_matches_container = self.grow_type() == GrowType::AutoWidth
+            || self
+                .layout_width
+                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
-            && self
-                .layout_width
-                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON)
+            && layout_matches_container
         {
             return self.size;
         }
