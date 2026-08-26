@@ -13,7 +13,7 @@ and helpers, consult:
   builders, production-path change helpers
 - `mem:frontend/testing` — CLJS unit tests, Playwright E2E integration tests,
   live browser verification via nREPL
-- Backend — JVM `clojure.test` under `backend/test/`; see `mem:backend/core`
+- `mem:backend/testing` — JVM `clojure.test` under `backend/test/`
 
 ## When to Use
 
