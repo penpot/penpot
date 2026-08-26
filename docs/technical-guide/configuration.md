@@ -433,6 +433,60 @@ PENPOT_FLAGS: [...] enable-air-gapped-conf
 When Penpot starts, it will leave out the Nginx configuration related to external requests. This means that,
 with this flag enabled, the Penpot configuration will disable as well the libraries and templates dashboard and the use of Google fonts.
 
+## Security headers
+
+The frontend container always emits `X-Content-Type-Options`, `Referrer-Policy`,
+`Permissions-Policy` and `X-Frame-Options`. Two additional headers are configurable.
+
+### Content Security Policy
+
+Penpot ships a Content Security Policy in **report-only** mode by default. In this mode
+browsers report violations to the developer console but do not block anything, which makes
+it safe to enable everywhere while the policy is being tuned.
+
+```bash
+PENPOT_CSP_MODE: report-only    # report-only (default) | enforce | disabled
+```
+
+The default policy is same-origin except for what the application genuinely requires:
+`'wasm-unsafe-eval'` for the render engine, `'unsafe-inline'` styles for the inline style
+attributes emitted by the UI, and `blob:`/`data:` for thumbnails, exports and fonts. The
+external Google Fonts and GitHub templates endpoints do not need entries of their own
+because they are reverse proxied by the frontend container.
+
+Two known sources of violations remain, and both are the reason `enforce` is not yet the
+default:
+
+- The `index.html` inline `<script type="module">` and `<script type="importmap">` blocks
+  are not covered by the policy yet.
+- Deployments with plugins enabled report `eval` and remote fetch violations, because the
+  plugin sandbox evaluates third-party code and loads it from arbitrary hosts.
+
+Set your own policy with `PENPOT_CSP_POLICY` if you need to relax or tighten it, for
+example to allow plugins:
+
+```bash
+PENPOT_CSP_POLICY: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https: blob: data:; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self' https:; manifest-src 'self'"
+```
+
+<p class="advice">
+  Because of the above, <code class="language-bash">enforce</code> requires a policy of your
+  own. Enforcing the default policy will prevent the application from loading.
+</p>
+
+### HTTP Strict Transport Security
+
+HSTS is enabled automatically when `PENPOT_PUBLIC_URI` uses the `https` scheme, and
+disabled otherwise. Override the header value directly to customise it, or set it to an
+empty value to disable it:
+
+```bash
+PENPOT_HSTS_VALUE: "max-age=63072000; includeSubDomains; preload"
+```
+
+Note that `includeSubDomains` and `preload` affect every host under your domain and are
+hard to roll back, so they are not enabled by default.
+
 ## High availability
 
 The mechanisms for installing Penpot in HA depend largely on how each infrastructure is managed.
