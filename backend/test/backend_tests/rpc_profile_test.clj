@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.email :as eml]
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
    [app.nitrate :as nitrate]
@@ -1164,26 +1165,29 @@
 
 
 (t/deftest update-profile-password
-  (let [profile (th/create-profile* 1)
-        data  {::th/type :update-profile-password
-               ::rpc/profile-id (:id profile)
-               :old-password "Test123!"
-               :password "Foobar12!"}
-        out   (th/command! data)]
-    (t/is (nil? (:error out)))
-    (t/is (nil? (:result out)))))
+  (with-mocks [_ {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          data  {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "Test123!"
+                 :password "Foobar12!"}
+          out   (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))))
 
 
 (t/deftest update-profile-password-bad-old-password
-  (let [profile (th/create-profile* 1)
-        data  {::th/type :update-profile-password
-               ::rpc/profile-id (:id profile)
-               :old-password "badpassword"
-               :password "Foobar12!"}
-        {:keys [result error] :as out} (th/command! data)]
-    (t/is (th/ex-info? error))
-    (t/is (th/ex-of-type? error :validation))
-    (t/is (th/ex-of-code? error :old-password-not-match))))
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          data  {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "badpassword"
+                 :password "Foobar12!"}
+          {:keys [result error] :as out} (th/command! data)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :old-password-not-match))
+      (t/is (= 0 (:call-count @mock))))))
 
 
 (t/deftest update-profile-password-email-as-password
@@ -1365,7 +1369,11 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
-      (t/is (= 1 (:call-count @mock))))))
+      (t/is (= 1 (:call-count @mock)))
+      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+        (t/is (= eml/password-changed factory))
+        (t/is (= (:email profile) to))
+        (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest update-profile-password-sends-notification-for-first-password
@@ -1377,4 +1385,27 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
-      (t/is (= 1 (:call-count @mock))))))
+      (t/is (= 1 (:call-count @mock)))
+      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+        (t/is (= eml/password-changed factory))
+        (t/is (= (:email profile) to))
+        (t/is (= (:fullname profile) name))))))
+
+
+(t/deftest recover-profile-sends-notification
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          token   (tokens/generate th/*system*
+                                   {:iss :password-recovery
+                                    :exp (ct/in-future "15m")
+                                    :profile-id (:id profile)})
+          data    {::th/type :recover-profile
+                   :token token
+                   :password "Foobar12!"}
+          out     (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (= 1 (:call-count @mock)))
+      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+        (t/is (= eml/password-changed factory))
+        (t/is (= (:email profile) to))
+        (t/is (= (:fullname profile) name))))))
