@@ -48,6 +48,7 @@ export PENPOT_FLAGS="\
        enable-user-feedback \
        disable-secure-session-cookies \
        enable-smtp \
+       enable-account-lockout \
        enable-prepl-server \
        enable-urepl-server \
        enable-nrepl-server \

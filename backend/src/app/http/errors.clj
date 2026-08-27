@@ -71,9 +71,12 @@
 
 (defmethod handle-error :rate-limit
   [err _ _]
-  (let [headers (-> err ex-data ::http/headers)]
+  (let [data (ex-data err)]
     {::yres/status 429
-     ::yres/headers headers}))
+     ::yres/body {:type :rate-limit
+                  :code (:code data)
+                  :hint (:hint data)
+                  :ttl (:ttl data)}}))
 
 (defmethod handle-error :concurrency-limit
   [err _ _]

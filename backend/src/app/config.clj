@@ -69,6 +69,9 @@
    :profile-bounce-max-age (ct/duration {:days 7})
    :profile-bounce-threshold 10
 
+   :login-lockout-max-attempts 5
+   :login-lockout-window (ct/duration "15m")
+
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
@@ -150,6 +153,9 @@
 
     [:media-processing-service-uri {:optional true} ::sm/uri]
     [:media-processing-service-timeout {:optional true} ::sm/int]
+
+    [:login-lockout-max-attempts {:optional true} ::sm/int]
+    [:login-lockout-window {:optional true} ::ct/duration]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]

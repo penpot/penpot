@@ -98,6 +98,8 @@
     :exporter-svgo
     ;; TODO: deprecate this flag and consolidate the code
     :backend-svgo
+    ;; Enables account lockout after repeated failed login attempts.
+    :account-lockout
     ;; If enabled, it makes the Google Fonts available.
     :google-fonts-provider
     ;; Only for development.
