@@ -28,7 +28,8 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.text :as txt]
-   [app.common.types.tokens-lib :refer [schema:tokens-lib]]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -86,7 +87,9 @@
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
    [:plugin-data {:optional true} schema:plugin-data]
-   [:tokens-lib {:optional true} schema:tokens-lib]])
+   [:tokens-source {:optional true} ::sm/uuid]                ;; Forward-compat: UUID of external library containing tokens-lib (full support in follow-up PR)
+   [:tokens-lib {:optional true} ctob/schema:tokens-lib]
+   [:tokens-status {:optional true} ctos/schema:tokens-status]])
 
 (def schema:file-metadata
   [:map {:title "Metadata"}
@@ -316,6 +319,7 @@
        (update-objects-tree container f)))))
 
 ;; Asset helpers
+
 (defn find-component-file
   [file libraries component-file]
   (if (and (some? file) (= component-file (:id file)))
