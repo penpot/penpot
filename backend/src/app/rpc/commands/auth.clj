@@ -197,10 +197,15 @@
 
     (passwords/validate-password password)
 
-    (let [profile (some-> (validate-token token)
-                          (update-password conn))]
+    (let [profile (some->> (validate-token token)
+                           (update-password conn))]
       (when profile
-        (login-lockout/clear-attempts! cfg (:id profile))))
+        (login-lockout/clear-attempts! cfg (:id profile))
+        (eml/send! {::eml/conn conn
+                    ::eml/factory eml/password-changed
+                    :public-uri (cf/get :public-uri)
+                    :to (:email profile)
+                    :name (:fullname profile)})))
 
     nil))
 
