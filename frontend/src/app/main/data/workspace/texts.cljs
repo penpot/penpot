@@ -174,7 +174,12 @@
          (rx/mapcat (fn [_]
                       (rx/from (fonts/ensure-loaded! font-id font-variant-id))))
          (rx/take-until (text-work-stopper stream))
-         (rx/ignore)
+         (rx/mapcat (fn [_]
+                      (st/emit! (dwsh/update-shapes
+                                 ids
+                                 #(dissoc % :position-data)
+                                 {:save-undo? false}))
+                      (rx/empty)))
          (wrf/with-pending :font ids))))
 
 ;; -- Content helpers
