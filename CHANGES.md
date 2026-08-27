@@ -5,6 +5,8 @@
 ### :bug: Bugs fixed
 
 - Fix linear gradients in SVG text exports being emitted as radial gradients [#5972](https://github.com/penpot/penpot/issues/5972) (PR: [#11272](https://github.com/penpot/penpot/pull/11272))
+- Fix typography token becoming detached when editing text content [#11362](https://github.com/penpot/penpot/issues/11362) (PR: [#11366](https://github.com/penpot/penpot/pull/11366))
+- Fix command injection in SVG exporter via legacy fill-color (https://github.com/penpot/penpot/security/advisories/GHSA-4f36-m4hj-cv86)
 
 ## 2.17.1
 
