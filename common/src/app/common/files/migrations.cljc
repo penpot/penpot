@@ -1989,9 +1989,7 @@
   (letfn [(update-object [object]
             (cond-> object
               (cfh/svg-raw-shape? object)
-              (d/update-when :shapes #(if (vector? %)
-                                        (mapv uuid/coerce %)
-                                        %))))
+              (d/update-when :shapes #(mapv uuid/coerce %))))
 
           (update-container [container]
             (d/update-when container :objects d/update-vals update-object))]
