@@ -866,6 +866,13 @@
   [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
   (events/tap :progress {:section :storage-objects})
 
+  ;; IMPORTANT: we strongly do not reuse the main connection that can
+  ;; run inside a transaction because the storage upload process can
+  ;; fail in the middle of uploading and leave garbage on the underlying
+  ;; backend, if we participate in the main transaction and it aborts
+  ;; we will lose all registry of the pending to reconcile blobs
+  ;; what the storage subsystem registers in other parallel
+  ;; transaction
   (let [storage (sto/resolve cfg)
         entries (keep (match-storage-entry-fn) entries)]
 
@@ -1051,6 +1058,27 @@
       {:file-ids   file-ids
        :resolution resolution})))
 
+(defn- invalidate-thumbnails
+  [cfg file-id]
+  (let [storage (sto/resolve cfg ::db/reuse-conn true)
+
+        sql-1
+        (str "update file_tagged_object_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")
+
+        sql-2
+        (str "update file_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")]
+
+    (run! #(sto/touch-object! storage %)
+          (sequence
+           (keep :media-id)
+           (concat
+            (db/exec! cfg [sql-1 file-id])
+            (db/exec! cfg [sql-2 file-id]))))))
+
 (defn- import-file-and-overwrite*
   [{:keys [::manifest ::bfc/file-id] :as cfg}]
 
@@ -1074,7 +1102,7 @@
       (import-storage-objects cfg)
       (import-file cfg file)
 
-      (bfc/invalidate-thumbnails cfg file-id)
+      (invalidate-thumbnails cfg file-id)
       (bfm/apply-pending-migrations! cfg)
 
       {:file-ids   [file-id]

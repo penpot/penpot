@@ -23,7 +23,6 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.time :as ct]
-   [app.config :as cf]
    [app.db :as db]
    [app.storage :as sto]
    [app.storage.impl :as impl]
@@ -108,10 +107,9 @@
     WHERE id = ANY(?::uuid[])")
 
 (defn- mark-delete-in-bulk!
-  [conn deletion-delay ids]
-  (let [ids (db/create-array conn "uuid" ids)
-        now (ct/plus (ct/now) deletion-delay)]
-    (db/exec-one! conn [sql:mark-delete-in-bulk now ids])))
+  [conn ids]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:mark-delete-in-bulk (ct/now) ids])))
 
 ;; NOTE: A getter that retrieves the key which will be used for group
 ;; ids; previously we have no value, then we introduced the
@@ -149,11 +147,9 @@
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (let [deletion-delay (if (= sto/tempfile-bucket bucket)
-                             (ct/duration {:hours 2})
-                             (cf/get-deletion-delay))]
+      (do
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
-        (some->> (seq to-delete) (mark-delete-in-bulk! conn deletion-delay))
+        (some->> (seq to-delete) (mark-delete-in-bulk! conn))
         [(count to-freeze) (count to-delete)]))))
 
 (defn- process-bucket!
@@ -186,6 +182,7 @@
      FROM storage_object AS so
     WHERE so.touched_at IS NOT NULL
       AND so.touched_at <= ?
+      AND so.status = 'valid'
     ORDER BY touched_at ASC
       FOR UPDATE
      SKIP LOCKED
@@ -221,7 +218,9 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::min-age] :as cfg}]
-  (fn [_]
-    (let [threshold (ct/minus (ct/now) min-age)]
+  (fn [{:keys [props]}]
+    (let [threshold (if (:skip-delay props)
+                      (ct/now)
+                      (ct/minus (ct/now) min-age))]
       (process-touched! (assoc cfg ::timestamp threshold)))))
 

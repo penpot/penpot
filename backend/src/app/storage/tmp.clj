@@ -80,11 +80,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tempfile*
-  [& {:keys [suffix prefix]
+  [& {:keys [suffix prefix dir]
       :or {prefix "penpot."
-           suffix ".tmp"}}]
+           suffix ".tmp"
+           dir default-tmp-dir}}]
   (let [attrs (fs/make-permissions "rw-r--r--")
-        path  (fs/join default-tmp-dir (str prefix (uuid/next) suffix))]
+        path  (fs/join dir (str prefix (uuid/next) suffix))]
     (Files/createFile path attrs)))
 
 (defn tempfile

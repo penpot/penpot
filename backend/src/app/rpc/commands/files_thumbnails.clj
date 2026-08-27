@@ -299,30 +299,32 @@
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
 (defn- delete-file-object-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} file-id object-id]
+  [{:keys [::db/conn] :as cfg} file-id object-id]
   (when-let [{:keys [media-id tag]} (db/get* conn :file-tagged-object-thumbnail
                                              {:file-id file-id
                                               :object-id object-id}
                                              {::sql/for-update true})]
-    (sto/touch-object! storage media-id)
-    (db/update! conn :file-tagged-object-thumbnail
-                {:deleted-at (ct/now)}
-                {:file-id file-id
-                 :object-id object-id
-                 :tag tag})))
+    (let [storage (sto/resolve cfg ::db/reuse-conn true)]
+      (sto/touch-object! storage media-id)
+      (db/update! conn :file-tagged-object-thumbnail
+                  {:deleted-at (ct/now)}
+                  {:file-id file-id
+                   :object-id object-id
+                   :tag tag}))))
 
 (defn- delete-file-object-thumbnails!
   "Soft-deletes multiple object thumbnails in a single UPDATE statement
    with RETURNING, then touches all returned media objects."
-  [{:keys [::db/conn ::sto/storage]} object-ids]
-  (let [ids  (db/create-array conn "text" (seq object-ids))
-        sql  (str/concat
-              "UPDATE file_tagged_object_thumbnail"
-              " SET deleted_at = now()"
-              " WHERE object_id = ANY(?)"
-              "   AND deleted_at IS NULL"
-              " RETURNING media_id")
-        rows (db/exec! conn [sql ids])]
+  [{:keys [::db/conn] :as cfg} object-ids]
+  (let [storage (sto/resolve cfg ::db/reuse-conn true)
+        ids     (db/create-array conn "text" (seq object-ids))
+        sql      (str/concat
+                  "UPDATE file_tagged_object_thumbnail"
+                  " SET deleted_at = now()"
+                  " WHERE object_id = ANY(?)"
+                  "   AND deleted_at IS NULL"
+                  " RETURNING media_id")
+        rows    (db/exec! conn [sql ids])]
     (doseq [{:keys [media-id]} rows]
       (sto/touch-object! storage media-id))))
 
@@ -342,10 +344,8 @@
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id file-id object-id]}]
   (files/check-edition-permissions! cfg profile-id file-id)
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (-> cfg
-                        (update ::sto/storage sto/configure conn)
-                        (delete-file-object-thumbnail! file-id object-id))
+  (db/tx-run! cfg (fn [cfg]
+                    (delete-file-object-thumbnail! cfg file-id object-id)
                     nil)))
 
 (sv/defmethod ::delete-file-object-thumbnails
@@ -366,11 +366,7 @@
                      (doseq [file-id file-ids]
                        (files/check-edition-permissions! conn profile-id file-id))))
       ;; Delete all matching thumbnails in one transaction
-      (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                        (-> cfg
-                            (update ::sto/storage sto/configure conn)
-                            (delete-file-object-thumbnails! object-ids))
-                        nil)))))
+      (db/tx-run! cfg delete-file-object-thumbnails! object-ids))))
 
 ;; --- MUTATION COMMAND: create-file-thumbnail
 
