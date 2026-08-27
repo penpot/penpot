@@ -388,20 +388,7 @@ $font-preview-box-height: 28px;
   &.selected {
     color: var(--color-foreground-primary);
   }
-}
 
-.font-item-label {
-  @include t.use-typography("body-small");
-  @include text-ellipsis;
-
-  flex-grow: 1;
-  min-inline-size: 0;
-}
-
-// --- FLAG :font-preview row styling. Only applied when font-item* adds the
-// .font-item-preview-on modifier; remove this whole block with the flag so rows
-// render exactly as before.
-.font-item-preview-on {
   // Center & clip so a previewed font's own metrics never grow/overflow the row.
   align-items: center;
   overflow: hidden;
@@ -412,6 +399,14 @@ $font-preview-box-height: 28px;
 
     line-height: 1.2;
   }
+}
+
+.font-item-label {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  flex-grow: 1;
+  min-inline-size: 0;
 }
 
 // `currentColor` makes the glyph fill follow the row text color (theme + selected).
