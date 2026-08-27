@@ -1004,10 +1004,10 @@
        (when (or description-key info-message-key)
          [:div {:class (stl/css :modal-select-organization-info)}
           (when description-key
-            [:div {:class (stl/css :modal-select-organization-description)}
+            [:div
              (tr description-key)])
           (when info-message-key
-            [:div {:class (stl/css :modal-select-organization-info-message)}
+            [:div
              (tr info-message-key)])])
        [:div {:class (stl/css :modal-select-organization-content)}
         (tr choose-key)]
