@@ -345,7 +345,7 @@
     (p/let [params {:file-id file-id
                     :page-id page-id
                     :share-id share-id
-                    :render-embed true
+                    :embed true
                     :object-id (mapv :id objects)
                     :route "objects"}
             uri    (-> (cf/get-internal-uri)

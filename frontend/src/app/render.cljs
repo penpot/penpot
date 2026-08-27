@@ -126,7 +126,7 @@
                :skip-children skip-children}]]))))))
 
 (defn- fetch-objects-bundle
-  [& {:keys [file-id page-id share-id object-id] :as options}]
+  [& {:keys [file-id page-id share-id object-id embed?] :as options}]
   (ptk/reify ::fetch-objects-bundle
     ptk/WatchEvent
     (watch [_ state _]
@@ -146,10 +146,16 @@
              (rx/map (fn [objects]
                        (render/adapt-objects-for-shape objects object-id)))
              (rx/merge-map (fn [objects]
-                             (rx/concat
-                              (->> (render/populate-images-cache objects)
-                                   (rx/ignore))
-                              (rx/of #(assoc % :objects objects))))))))))
+                             (if-not embed?
+                               (rx/of #(assoc % :objects objects))
+
+                               ;; Populate the images cache before rendering so
+                               ;; data-uri substitutions are instantly available
+                               ;; on the first paint.
+                               (rx/concat
+                                (->> (render/populate-images-cache objects)
+                                     (rx/ignore))
+                                (rx/of #(assoc % :objects objects)))))))))))
 
 (def ^:private schema:render-objects
   [:map {:title "render-objets"}
@@ -157,7 +163,6 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
    [:embed {:optional true} :boolean]
-   [:render-embed {:optional true} :boolean]
    [:skip-children {:optional true} :boolean]
    [:object-id
     [:or [::sm/set ::sm/uuid] ::sm/uuid]]])
@@ -173,10 +178,13 @@
 (defn- render-objects
   [params]
   (try
-    (let [{:keys [file-id page-id embed render-embed share-id object-id skip-children wasm scale] :as params}
-          (coerce-render-objects-params params)
-          embed (if (some? render-embed) render-embed embed)]
-      (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
+    (let [{:keys [file-id page-id embed share-id object-id skip-children wasm scale] :as params}
+          (coerce-render-objects-params params)]
+      (st/emit! (fetch-objects-bundle :file-id file-id
+                                      :page-id page-id
+                                      :share-id share-id
+                                      :object-id object-id
+                                      :embed? embed))
       (if (uuid? object-id)
         (mf/html
          [:& object-svg
