@@ -963,7 +963,11 @@
 .modal-select-organization-info {
   @include t.use-typography("body-medium");
 
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
   color: var(--color-foreground-secondary);
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-select-organization-title {
