@@ -70,6 +70,9 @@
    :profile-bounce-max-age (ct/duration {:days 7})
    :profile-bounce-threshold 10
 
+   :login-lockout-max-attempts 5
+   :login-lockout-window (ct/duration "15m")
+
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
@@ -160,6 +163,9 @@
     ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
     [:binfile-import-max-object-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
+
+    [:login-lockout-max-attempts {:optional true} ::sm/int]
+    [:login-lockout-window {:optional true} ::ct/duration]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]

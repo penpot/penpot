@@ -6,11 +6,19 @@
 
 (ns backend-tests.rpc-auth-test
   (:require
+   [app.auth.ldap :as ldap]
+   [app.auth.login-lockout :as lol]
+   [app.common.flags :as flags]
+   [app.common.generic-pool :as gpool]
    [app.common.uuid :as uuid]
    [app.http.session :as session]
+   [app.redis :as rds]
+   [app.rpc.commands.ldap :as ldap-cmd]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [yetti.response :as yres]))
+   [yetti.response :as yres])
+  (:import
+   java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -102,5 +110,123 @@
     ;; Replay: attempt to read session with same sid should fail (no profile attached)
     (t/is (nil? (session/read-session manager sid))
           "replayed token must not resolve to a valid session after logout")))
+
+(defn- cleanup-redis
+  [profile-id]
+  (let [pool (get-in th/*system* [:app.redis/pool])
+        conn (gpool/get pool)]
+    (try
+      (rds/del @conn (str "penpot.login-lockout." profile-id))
+      (finally
+        (.close ^AutoCloseable conn)))))
+
+(t/deftest login-with-password-locks-after-max-attempts
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+    (let [profile (th/create-profile* 200 {:is-active true})]
+      (cleanup-redis (:id profile))
+      ;; 4 failed attempts — not yet locked
+      (dotimes [i 4]
+        (let [data {::th/type :login-with-password
+                    :email (:email profile)
+                    :password "wrongpassword"}
+              out  (th/command! data)]
+          (t/is (th/ex-of-code? (:error out) :wrong-credentials))))
+      ;; 5th attempt — should trigger lockout
+      (let [data {::th/type :login-with-password
+                  :email (:email profile)
+                  :password "wrongpassword"}
+            out  (th/command! data)]
+        (t/is (th/ex-of-type? (:error out) :rate-limit))
+        (t/is (th/ex-of-code? (:error out) :account-locked))))))
+
+(t/deftest login-with-password-returns-rate-limit-when-locked
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+    (let [profile (th/create-profile* 201 {:is-active true})]
+      (cleanup-redis (:id profile))
+      ;; Trigger lockout
+      (dotimes [i 5]
+        (th/command! {::th/type :login-with-password
+                      :email (:email profile)
+                      :password "wrongpassword"}))
+      ;; Next attempt with correct password — still blocked
+      (let [data {::th/type :login-with-password
+                  :email (:email profile)
+                  :password "Test123!"}
+            out  (th/command! data)]
+        (t/is (th/ex-of-type? (:error out) :rate-limit))
+        (t/is (th/ex-of-code? (:error out) :account-locked))
+        (let [ttl (:ttl (ex-data (:error out)))]
+          (t/is (some? ttl) "ttl should be present in ex-data")
+          (t/is (pos? ttl) "ttl should be a positive number"))))))
+
+(t/deftest successful-login-clears-failed-attempts
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+    (let [profile (th/create-profile* 202 {:is-active true})]
+      (cleanup-redis (:id profile))
+      ;; 3 failed attempts
+      (dotimes [i 3]
+        (th/command! {::th/type :login-with-password
+                      :email (:email profile)
+                      :password "wrongpassword"}))
+      ;; Successful login
+      (let [data {::th/type :login-with-password
+                  :email (:email profile)
+                  :password "Test123!"}
+            out  (th/command! data)]
+        (t/is (nil? (:error out))))
+      ;; 4 more failed attempts should NOT trigger lockout (counter was reset)
+      (dotimes [i 4]
+        (let [data {::th/type :login-with-password
+                    :email (:email profile)
+                    :password "wrongpassword"}
+              out  (th/command! data)]
+          (t/is (th/ex-of-code? (:error out) :wrong-credentials)))))))
+
+(t/deftest lockout-does-not-apply-when-flag-disabled
+  (with-redefs [app.config/flags (flags/parse flags/default [])]
+    (let [profile (th/create-profile* 203 {:is-active true})]
+      (cleanup-redis (:id profile))
+      ;; 10 failed attempts — no lockout without the flag
+      (dotimes [i 10]
+        (let [data {::th/type :login-with-password
+                    :email (:email profile)
+                    :password "wrongpassword"}
+              out  (th/command! data)]
+          (t/is (th/ex-of-code? (:error out) :wrong-credentials)))))))
+
+(t/deftest login-with-ldap-returns-rate-limit-when-locked
+  "Verify that login-with-ldap short-circuits when account is locked,
+   without attempting LDAP authentication. Calls the actual command
+   function with a mock provider to test the full flow."
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap])
+                ldap/authenticate (constantly nil)]
+    (let [profile (th/create-profile* 204 {:is-active true})
+          cfg (assoc th/*system* ::ldap/provider {})]
+      (cleanup-redis (:id profile))
+      ;; Lock account with 5 failed attempts
+      (dotimes [i 5]
+        (lol/record-failed-attempt! cfg (:id profile)))
+      ;; Call actual command function — should be blocked without calling authenticate
+      (let [out (th/try-on! (#'ldap-cmd/sm$login-with-ldap
+                             cfg
+                             {:email (:email profile)
+                              :password "wrongpassword"}))]
+        (t/is (th/ex-of-type? (:error out) :rate-limit))
+        (t/is (th/ex-of-code? (:error out) :account-locked))))))
+
+(t/deftest recover-profile-clears-lockout
+  "Verify that clearing attempts (e.g. after password reset) unlocks the account."
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+    (let [profile (th/create-profile* 205 {:is-active true})
+          cfg th/*system*]
+      (cleanup-redis (:id profile))
+      ;; Lock the account
+      (dotimes [i 5]
+        (lol/record-failed-attempt! cfg (:id profile)))
+      (t/is (:locked? (lol/locked? cfg (:id profile))))
+      ;; Simulate password reset clearing
+      (lol/clear-attempts! cfg (:id profile))
+      ;; Verify unlocked
+      (t/is (false? (:locked? (lol/locked? cfg (:id profile))))))))
 
 

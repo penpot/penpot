@@ -7,6 +7,7 @@
 (ns app.rpc.commands.ldap
   (:require
    [app.auth.ldap :as ldap]
+   [app.auth.login-lockout :as login-lockout]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.db :as db]
@@ -38,42 +39,62 @@
    ::doc/added "1.15"
    ::doc/module :auth
    ::sm/params schema:login-with-ldap}
-  [{:keys [::ldap/provider] :as cfg} params]
+  [{:keys [::ldap/provider ::db/pool] :as cfg} params]
   (when-not provider
     (ex/raise :type :restriction
               :code :ldap-not-initialized
               :hint "ldap auth provider is not initialized"))
 
-  (let [info (ldap/authenticate provider params)]
-    (when-not info
-      (ex/raise :type :validation
-                :code :wrong-credentials))
+  (let [email   (profile/clean-email (:email params))
+        profile (profile/get-profile-by-email pool email)]
 
-    (let [profile (login-or-register cfg info)]
+    (when profile
+      (let [result (login-lockout/locked? cfg (:id profile))]
+        (when (:locked? result)
+          (ex/raise :type :rate-limit
+                    :code :account-locked
+                    :hint "account locked due to too many failed login attempts"
+                    :ttl (:ttl result)))))
 
-      (when (:is-blocked profile)
-        (ex/raise :type :restriction
-                  :code :profile-blocked))
+    (let [info (ldap/authenticate provider params)]
+      (when-not info
+        (let [result (when profile
+                       (login-lockout/record-failed-attempt! cfg (:id profile)))]
+          (if (and result (:locked? result))
+            (ex/raise :type :rate-limit
+                      :code :account-locked
+                      :hint "account locked due to too many failed login attempts"
+                      :ttl (:ttl result))
+            (ex/raise :type :validation
+                      :code :wrong-credentials))))
 
-      (if-let [token (:invitation-token params)]
-        ;; If invitation token comes in params, this is because the
-        ;; user comes from team-invitation process; in this case,
-        ;; regenerate token and send back to the user a new invitation
-        ;; token (and mark current session as logged).
-        (let [claims (tokens/verify cfg {:token token :iss :team-invitation})
-              claims (assoc claims
-                            :member-id  (:id profile)
-                            :member-email (:email profile))
-              token  (tokens/generate cfg claims)]
-          (-> {:invitation-token token}
+      (let [profile (or profile (login-or-register cfg info))]
+
+        (when (:is-blocked profile)
+          (ex/raise :type :restriction
+                    :code :profile-blocked))
+
+        (login-lockout/clear-attempts! cfg (:id profile))
+
+        (if-let [token (:invitation-token params)]
+          ;; If invitation token comes in params, this is because the
+          ;; user comes from team-invitation process; in this case,
+          ;; regenerate token and send back to the user a new invitation
+          ;; token (and mark current session as logged).
+          (let [claims (tokens/verify cfg {:token token :iss :team-invitation})
+                claims (assoc claims
+                              :member-id  (:id profile)
+                              :member-email (:email profile))
+                token  (tokens/generate cfg claims)]
+            (-> {:invitation-token token}
+                (rph/with-transform (session/create-fn cfg profile))
+                (rph/with-meta {::audit/props (:props profile)
+                                ::audit/profile-id (:id profile)})))
+
+          (-> (profile/strip-private-attrs profile)
               (rph/with-transform (session/create-fn cfg profile))
               (rph/with-meta {::audit/props (:props profile)
-                              ::audit/profile-id (:id profile)})))
-
-        (-> (profile/strip-private-attrs profile)
-            (rph/with-transform (session/create-fn cfg profile))
-            (rph/with-meta {::audit/props (:props profile)
-                            ::audit/profile-id (:id profile)}))))))
+                              ::audit/profile-id (:id profile)})))))))
 
 (defn- login-or-register
   [cfg info]
