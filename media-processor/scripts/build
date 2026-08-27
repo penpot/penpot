@@ -1,4 +1,31 @@
 #!/bin/bash
 set -e
 cd "$(dirname "$0")/.."
+
+# package.json pins pnpm via "packageManager", so the first build on a fresh
+# devenv makes corepack fetch it. Without this it asks for confirmation on
+# stdin, which hangs a CI build (and aborts an interactive one); `corepack
+# install` then fetches the pinned version explicitly.
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+corepack install
+
 pnpm run build
+
+# Assemble the release bundle under target/, the way the other modules do.
+# esbuild leaves the runtime dependencies external (sharp, pino, pino-pretty,
+# pino-loki), so the image has to install them on build: ship the manifests
+# next to dist/ plus a setup script for Dockerfile.media-processor to run.
+rm -rf target
+mkdir -p target
+rsync -avr --delete dist/ target/dist/
+cp package.json pnpm-lock.yaml pnpm-workspace.yaml target/
+
+cat <<SETUP | tee target/setup > /dev/null
+#!/usr/bin/env bash
+set -e;
+corepack enable;
+corepack install;
+pnpm install -P;
+SETUP
+
+chmod +x target/setup
