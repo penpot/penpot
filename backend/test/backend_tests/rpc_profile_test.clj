@@ -1353,3 +1353,28 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest update-profile-password-sends-notification
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          data    {::th/type :update-profile-password
+                   ::rpc/profile-id (:id profile)
+                   :old-password "Test123!"
+                   :password "Foobar12!"}
+          out     (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+      (t/is (= 1 (:call-count @mock))))))
+
+
+(t/deftest update-profile-password-sends-notification-for-first-password
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1 {:password "!"})
+          data    {::th/type :update-profile-password
+                   ::rpc/profile-id (:id profile)
+                   :password "Foobar12!"}
+          out     (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+      (t/is (= 1 (:call-count @mock))))))
