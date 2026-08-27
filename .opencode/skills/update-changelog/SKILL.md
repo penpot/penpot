@@ -212,6 +212,37 @@ superseded it:
 
 Replace the reference in the changelog entry with the correct merged PR number.
 
+### 5b. Security advisory (GHSA) entries
+
+Security advisories fixed in a release are documented in the changelog even
+though they are **neither milestone issues nor PRs**. The GHSA ID and its
+description are supplied by the user or the release notes — they never come
+from the milestone fetch in step 2.
+
+**Format** (matches the existing precedent in `CHANGES.md`, e.g. the
+`create-font-variant` arbitrary file read advisory):
+
+```markdown
+- Fix <user-facing description> (https://github.com/penpot/penpot/security/advisories/GHSA-XXXX-XXXX-XXXX)
+```
+
+Rules:
+- Place the entry under `### :bug: Bugs fixed`, with **no issue or PR link** —
+  only the advisory URL.
+- The advisory may be **draft/unpublished** at changelog time (the URL 404s
+  publicly). Do **not** web-fetch or verify the URL, and do **not** drop the
+  entry because of that. Rely on the GHSA ID provided by the user.
+- Derive the description from the supplied advisory title, imperative mood and
+  user-facing (e.g. `Fix command injection in SVG exporter via legacy fill-color`).
+- These entries are **invisible to the automation**: they are not returned by
+  `gh.py issues`, not matched by `--compare` (step 3), not part of the PR
+  cross-reference (step 10), and not scanned by the anomaly-report regexes
+  (step 11, which only match `issues/` and `pull/` links). Add them manually.
+- During pre-flight checks (step 6a) apply only the **backport/duplicate**
+  check: if the same GHSA already appears in an earlier version section, remove
+  it from the current section. Their absence from milestone cross-references
+  is expected, not an anomaly.
+
 ### 6. Read the current CHANGES.md
 
 Read the top of `CHANGES.md` to understand the existing format and find the
@@ -400,6 +431,8 @@ if closed:
 - ✅ Every merged milestone PR is either in the changelog or excluded by label
 - ✅ PR and issue counts are internally consistent
 - ✅ No false-positive PR-to-issue associations
+- ✅ Advisory (GHSA) entries are not milestone PRs — their absence from the
+  cross-reference is intentional (see step 5b)
 
 ## Version section template
 
@@ -410,7 +443,11 @@ if closed:
 
 - <fix description> [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 - <fix description> (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- <fix description> (https://github.com/penpot/penpot/security/advisories/GHSA-XXXX-XXXX-XXXX)
 ```
+
+Advisory (GHSA) entries have no issue or PR link — just the advisory URL. See
+step 5b.
 
 ### 11. Generate anomaly report and save to CHANGES-ISSUES.md
 
@@ -732,6 +769,14 @@ self-contained and clickable in any Markdown viewer.
   Taiga description text or by searching GitHub PRs that reference the Taiga
   URL. Replace the Taiga reference with the GitHub issue link and add the PR
   reference if applicable.
+- **Security advisory (GHSA) entries.** Advisories fixed in the release are
+  listed under `### :bug: Bugs fixed` with the advisory URL and **no issue or
+  PR link**, even though they are not in the milestone. The GHSA ID and
+  description come from the user — do **not** fetch or verify the URL, and do
+  not drop a draft (unpublished) advisory. Precedent:
+  `- Fix arbitrary file read security issue on create-font-variant rpc method
+  (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)`.
+  See step 5b.
 - **Re-fetch before editing.** Milestones can change — always re-fetch issues
   before making edits, don't rely on cached data.
 - **Use `scripts/gh.py`.** Prefer the helper script over raw `gh api` calls for
