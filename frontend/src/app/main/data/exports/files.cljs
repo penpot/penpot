@@ -17,18 +17,21 @@
    [potok.v2.core :as ptk]))
 
 (def valid-types
-  (d/ordered-set :all :merge :detach))
+  (d/ordered-set :include-libraries :merge-libraries :detach-libraries :link-later))
 
 (def valid-formats
-  #{:binfile-v1 :binfile-v3 :legacy-zip})
+  #{:binfile-v1 :binfile-v3})
+
+(def ^:private schema:export-file-param
+  [:map {:title "FileParam"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:project-id ::sm/uuid]
+   [:is-shared ::sm/boolean]
+   #_[:has-libraries ::sm/boolean]])
 
 (def ^:private schema:export-files
-  [:sequential {:title "Files"}
-   [:map {:title "FileParam"}
-    [:id ::sm/uuid]
-    [:name :string]
-    [:project-id ::sm/uuid]
-    [:is-shared ::sm/boolean]]])
+  [:sequential {:title "Files"} schema:export-file-param])
 
 (def check-export-files
   (sm/check-fn schema:export-files))
@@ -57,14 +60,17 @@
                                        :files files}))))))))))
 
 (defn export-files
+  "Start files exportation process"
   [& {:keys [type files]}]
+  (assert (check-export-files files) "expected a sequence of files")
+  (assert (valid-types type) "expected valid export type")
+
   (->> (rx/from files)
        (rx/mapcat
         (fn [file]
           (->> (rp/cmd! ::sse/export-binfile {:file-id (:id file)
                                               :version 3
-                                              :include-libraries (= type :all)
-                                              :embed-assets (= type :merge)})
+                                              :type type})
                (rx/filter sse/end-of-stream?)
                (rx/map sse/get-payload)
                (rx/map (fn [uri]

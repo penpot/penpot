@@ -42,17 +42,24 @@
   schema:export-binfile
   [:map {:title "export-binfile"}
    [:file-id ::sm/uuid]
-   [:include-libraries ::sm/boolean]
-   [:embed-assets ::sm/boolean]])
+   [:type {:optional true} [::sm/one-of #{:include-libraries :merge-libraries :detach-libraries :link-later}]]
+   [:include-libraries {:optional true} ::sm/boolean]
+   [:embed-assets {:optional true} ::sm/boolean]])
 
 (defn- export-binfile
-  [{:keys [::sto/storage] :as cfg} {:keys [file-id include-libraries embed-assets]}]
-  (let [output  (tmp/tempfile*)]
+  [{:keys [::sto/storage] :as cfg} {:keys [type file-id include-libraries embed-assets]}]
+  (let [output (tmp/tempfile*)
+        ;; Convert legacy boolean flags to unified export-type
+        export-type (cond
+                      (some? type) type
+                      (true? include-libraries) :include-libraries
+                      (true? embed-assets) :merge-libraries
+                      :else :detach-libraries)]
+
     (try
       (-> cfg
           (assoc ::bfc/ids #{file-id})
-          (assoc ::bfc/embed-assets embed-assets)
-          (assoc ::bfc/include-libraries include-libraries)
+          (assoc ::bfc/export-type export-type)
           (bf.v3/export-files! output))
 
       (let [data   (sto/content output)
@@ -73,7 +80,8 @@
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
-   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]]
+   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]
+                  ["2.19" "Deprecated `include-libraries` and `embed-assets` params"]]
    ::webhooks/event? true
    ::sm/params schema:export-binfile}
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
@@ -94,6 +102,7 @@
             (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
             (assoc ::bfc/project-id project-id)
             (assoc ::bfc/profile-id profile-id)
+            (assoc ::bfc/team-id (:id team))
             (assoc ::bfc/name name))
 
         input-path (:path file)
