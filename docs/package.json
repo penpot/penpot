@@ -29,7 +29,7 @@
     "@11ty/eleventy-plugin-rss": "^3.0.0",
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
     "@tigersway/eleventy-plugin-ancestry": "^1.0.3",
-    "@types/markdown-it": "14.1.2",
+    "@types/markdown-it": "14.2.0",
     "elasticlunr": "^0.9.5",
     "eleventy-plugin-metagen": "^1.8.4",
     "eleventy-plugin-nesting-toc": "^1.3.0",
@@ -39,5 +39,5 @@
     "markdown-it-anchor": "^9.2.1",
     "markdown-it-plantuml": "^1.4.1"
   },
-  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
+  "packageManager": "pnpm@12.0.0+sha512.9e2e3dc3911995868dc94b8175c217c27e95408fa03b4a22749778f2b34f773b77cdd3b39ede8171b22fcd53be6a35342e9fac9948a68ef58df6488ce89a7e67"
 }
