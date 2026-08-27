@@ -58,9 +58,9 @@
     (p/let [params {:file-id file-id
                     :page-id page-id
                     :share-id share-id
+                    :embed true
                     :object-id (mapv :id objects)
                     :route "objects"
-                    :render-embed true
                     :skip-children skip-children}
             uri    (-> (cf/get-internal-uri)
                        (u/ensure-path-slash)
