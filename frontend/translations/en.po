@@ -3680,6 +3680,51 @@ msgstr "Variant"
 msgid "labels.version-notes"
 msgstr "Version %s notes"
 
+msgid "labels.check-for-updates"
+msgstr "Check for updates"
+
+msgid "labels.checking-for-updates"
+msgstr "Checking for updates..."
+
+msgid "dashboard.check-updates.available-title"
+msgstr "A NEW PENPOT VERSION IS AVAILABLE"
+
+msgid "dashboard.check-updates.available-message"
+msgstr "Newer releases include performance improvements, new capabilities, and fixes that keep your installation current."
+
+msgid "dashboard.check-updates.installed-version"
+msgstr "Installed version"
+
+msgid "dashboard.check-updates.latest-version"
+msgstr "Latest version"
+
+msgid "dashboard.check-updates.highlights-title"
+msgstr "What's new - Highlights"
+
+msgid "dashboard.check-updates.view-changelog"
+msgstr "View full changelog"
+
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "View release notes"
+
+msgid "dashboard.check-updates.unable-title"
+msgstr "UNABLE TO CHECK FOR UPDATES"
+
+msgid "dashboard.check-updates.unable-message"
+msgstr "This installation could not reach the Penpot releases service."
+
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Check your network or instance configuration and try again."
+
+msgid "dashboard.check-updates.try-again"
+msgstr "Try again"
+
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT IS UP TO DATE"
+
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "You're running the latest stable version:"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:298
 msgid "labels.view-only"
 msgstr "View only"
