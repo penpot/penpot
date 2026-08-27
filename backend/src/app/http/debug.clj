@@ -16,6 +16,7 @@
    [app.common.files.changes :as cfc]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.time :as ct]
@@ -37,6 +38,7 @@
    [app.storage.tmp :as tmp]
    [app.util.template :as tmpl]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
    [emoji.core :as emj]
    [integrant.core :as ig]
@@ -61,6 +63,7 @@
      ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
                         (tmpl/render {:version (:full cf/version)
                                       :profile profile
+                                      :graph-enabled (contains? cf/flags :graph)
                                       :current-clock  ct/*clock*
                                       :current-offset (if offset
                                                         (ct/format-duration offset)
@@ -333,6 +336,226 @@
          ::yres/headers {"content-type" "application/octet-stream"
                          "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GRAPH (flag: :graph)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; `app.graph.*` resolves at call time, never at the top of this namespace.
+;; `app.graph.ladybug` imports `com.ladybugdb.*`, so requiring it links the
+;; Ladybug native library into the JVM, and this namespace loads on every
+;; backend boot. The routes below are registered only under the `:graph` flag,
+;; so with the flag off nothing resolves and no native code loads.
+
+(defn- graph-export-file
+  "Path of a freshly projected graph for `file-id`."
+  [cfg file-id]
+  (let [ingest-file!      (requiring-resolve 'app.graph.ingest/ingest-file!)
+        {:keys [db-path]} (ingest-file! cfg file-id :skip-stats? true)]
+    (when-not (fs/exists? db-path)
+      (ex/raise :type :internal
+                :code :graph-file-not-found
+                :hint "graph database file missing after ingest"
+                :file-id (str file-id)
+                :db-path db-path))
+    db-path))
+
+(defn- graph-export-session
+  "Path of a snapshot of the caller's live in-memory graph for `file-id`."
+  [profile-id file-id]
+  (let [session-info             (requiring-resolve 'app.graph.debug/session-info)
+        export-session-database! (requiring-resolve 'app.graph.debug/export-session-database!)
+        info                     (session-info profile-id)]
+    (when-not info
+      (ex/raise :type :not-found
+                :code :graph-session-not-loaded
+                :hint "no in-memory graph is loaded; load one first, or use source=file"))
+    (when-not (= file-id (:file-id info))
+      (ex/raise :type :validation
+                :code :graph-session-file-mismatch
+                :hint "the loaded session holds a different file"
+                :requested (str file-id)
+                :loaded (str (:file-id info))))
+    (export-session-database! profile-id)))
+
+(defn graph-export-handler
+  "Stream a Ladybug `.lbug` database for a file.
+
+  `source=file` (default) projects the file afresh from the database — the
+  reproducible artifact. `source=session` snapshots the caller's live
+  in-memory console graph instead, which live-sync may have moved away from a
+  fresh projection; taking that away to query it elsewhere is the whole point
+  of asking for it. Synchronous on each request."
+  [cfg {:keys [params] :as request}]
+  (let [file-id (some-> params :file-id parse-uuid)
+        source  (or (some-> params :source str/lower) "file")]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments
+                :hint "missing file-id"))
+    (when-not (contains? #{"file" "session"} source)
+      (ex/raise :type :validation
+                :code :invalid-arguments
+                :hint "source must be 'file' or 'session'"
+                :source source))
+
+    (let [session? (= "session" source)
+          db-path  (if session?
+                     (graph-export-session (::session/profile-id request) file-id)
+                     (graph-export-file cfg file-id))]
+      {::yres/status  200
+       ;; A session export is a temp file this request owns; deleting it on
+       ;; close would race the streaming body, so it is left for the OS temp
+       ;; sweep. A file export is the canonical per-file database and is meant
+       ;; to persist.
+       ::yres/body    (io/input-stream db-path)
+       ::yres/headers {"content-type" "application/octet-stream"
+                       "content-disposition"
+                       (str "attachment; filename=" file-id
+                            (when session? "-session") ".lbug")}})))
+
+(defn- graph-console-response
+  [data]
+  {::yres/status  200
+   ::yres/headers {"content-type" "text/html; charset=utf-8"
+                   "x-robots-tag" "noindex"}
+   ::yres/body    (-> (io/resource "app/templates/graph-console.tmpl")
+                      (tmpl/render (assoc data :version (:full cf/version))))})
+
+(defn graph-console-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (let [console-context (requiring-resolve 'app.graph.debug/console-context)]
+    (graph-console-response (console-context profile-id))))
+
+(defn graph-load-handler
+  [cfg {:keys [params ::session/profile-id]}]
+  (let [file-id       (some-> (:file-id params) parse-uuid)
+        load-session! (requiring-resolve 'app.graph.debug/load-session!)]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments
+                :hint "missing file-id"))
+    (load-session! cfg profile-id file-id)
+    {::yres/status  302
+     ::yres/headers {"location" "/dbg/graph"}}))
+
+(defn graph-unload-handler
+  [_cfg {:keys [::session/profile-id]}]
+  ((requiring-resolve 'app.graph.debug/unload-session!) profile-id)
+  {::yres/status  302
+   ::yres/headers {"location" "/dbg/graph"}})
+
+(defn graph-reload-handler
+  "Re-ingest the currently loaded file into the in-memory graph session."
+  [cfg {:keys [::session/profile-id]}]
+  (let [session-info  (requiring-resolve 'app.graph.debug/session-info)
+        load-session! (requiring-resolve 'app.graph.debug/load-session!)]
+    (if-let [file-id (some-> (session-info profile-id) :file-id)]
+      (do
+        (load-session! cfg profile-id file-id)
+        {::yres/status  302
+         ::yres/headers {"location" "/dbg/graph"}})
+      (ex/raise :type :not-found
+                :code :graph-session-not-loaded
+                :hint "load a file graph before reloading"))))
+
+(defn graph-sync-status-handler
+  [_cfg {:keys [::session/profile-id]}]
+  (if-let [status ((requiring-resolve 'app.graph.debug/sync-status) profile-id)]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (t/encode-str status {:type :json-verbose})}
+    {::yres/status  404
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (t/encode-str {:error "no-session"} {:type :json-verbose})}))
+
+(defn graph-data-handler
+  "Export the in-memory session graph as plain JSON (not transit) for the
+  G6 graph view embedded in the console page."
+  [_cfg {:keys [::session/profile-id]}]
+  (if-let [data ((requiring-resolve 'app.graph.debug/export-graph-data!) profile-id)]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (json/encode data)}
+    {::yres/status  404
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (json/encode {:error "no-session"})}))
+
+(def ^:private sql:graph-files
+  "select t.id   as team_id,    t.name as team_name,
+          p.id   as project_id, p.name as project_name,
+          f.id   as file_id,    f.name as file_name
+     from team as t
+     join team_profile_rel as tpr on (tpr.team_id = t.id)
+     join project as p on (p.team_id = t.id)
+     join file as f on (f.project_id = p.id)
+    where tpr.profile_id = ?
+      and t.deleted_at is null
+      and p.deleted_at is null
+      and f.deleted_at is null
+    order by t.name, p.name, f.name
+    limit 500")
+
+(defn- graph-files-tree
+  [rows]
+  (->> (group-by (juxt :team-id :team-name) rows)
+       (mapv (fn [[[team-id team-name] team-rows]]
+               {:id   (str team-id)
+                :name team-name
+                :projects
+                (->> (group-by (juxt :project-id :project-name) team-rows)
+                     (mapv (fn [[[project-id project-name] project-rows]]
+                             {:id    (str project-id)
+                              :name  project-name
+                              :files (mapv (fn [{:keys [file-id file-name]}]
+                                             {:id (str file-id) :name file-name})
+                                           project-rows)}))
+                     (sort-by :name)
+                     (vec))}))
+       (sort-by :name)
+       (vec)))
+
+(defn graph-files-handler
+  "List teams -> projects -> files reachable by the current profile, as
+  plain JSON for the graph console file tree."
+  [{:keys [::db/pool]} {:keys [::session/profile-id]}]
+  (let [rows (db/exec! pool [sql:graph-files profile-id])]
+    {::yres/status  200
+     ::yres/headers {"content-type" "application/json; charset=utf-8"}
+     ::yres/body    (json/encode {:teams (graph-files-tree rows)})}))
+
+(defn- json-request?
+  [request]
+  (some-> request
+          (yreq/get-header "accept")
+          (str/includes? "application/json")))
+
+(defn graph-query-handler
+  [_cfg {:keys [params ::session/profile-id] :as request}]
+  (let [query           (:query params)
+        query-session!  (requiring-resolve 'app.graph.debug/query-session!)
+        console-context (requiring-resolve 'app.graph.debug/console-context)]
+    (try
+      (let [result (query-session! profile-id query)]
+        (if (json-request? request)
+          {::yres/status  200
+           ::yres/headers {"content-type" "application/json; charset=utf-8"}
+           ::yres/body    (t/encode-str {:query         query
+                                         :query-result result}
+                                        {:type :json-verbose})}
+          (graph-console-response (console-context profile-id
+                                                   :query query
+                                                   :query-result result))))
+      (catch Throwable e
+        (let [error (or (:hint (ex-data e)) (ex-message e))]
+          (if (json-request? request)
+            {::yres/status  200
+             ::yres/headers {"content-type" "application/json; charset=utf-8"}
+             ::yres/body    (t/encode-str {:query query :error error}
+                                          {:type :json-verbose})}
+            (graph-console-response (console-context profile-id
+                                                     :query query
+                                                     :error error))))))))
 
 (defn import-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
@@ -626,7 +849,12 @@
   (letfn [(handle-error [cause]
             (when-let [data (ex-data cause)]
               (when (= :validation (:type data))
-                (str "Error: " (or (:hint data) (ex-message cause)) "\n"))))]
+                (let [hint (or (:hint data) (ex-message cause))
+                      explain (ex/explain data)]
+                  (str "Error: " hint
+                       (when (and explain (not (str/includes? hint explain)))
+                         (str "\n" explain))
+                       "\n")))))]
     {:name ::errors
      :compile
      (fn [& _params]
@@ -646,26 +874,51 @@
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (session/manager? (::session/manager params)) "expected a valid session manager"))
 
+(defn- graph-action-routes
+  [cfg]
+  [["/graph-export" {:handler (partial graph-export-handler cfg)}]
+   ["/graph-load" {:handler (partial graph-load-handler cfg)}]
+   ["/graph-query" {:handler (partial graph-query-handler cfg)}]
+   ["/graph-unload" {:handler (partial graph-unload-handler cfg)}]
+   ["/graph-reload" {:handler (partial graph-reload-handler cfg)}]
+   ["/graph-sync-status" {:handler (partial graph-sync-status-handler cfg)}]
+   ["/graph-data" {:handler (partial graph-data-handler cfg)}]
+   ["/graph-files" {:handler (partial graph-files-handler cfg)}]])
+
 (defmethod ig/init-key ::routes
   [_ {:keys [::db/pool] :as cfg}]
-  [["/readyz" {:handler (partial health-handler cfg)}]
-   ["/dbg" {:middleware [[session/authz cfg]
-                         [with-authorization pool]]}
-    ["" {:handler (partial index-handler cfg)}]
-    ["/health" {:handler (partial health-handler cfg)}]
-    ["/changelog" {:handler (partial changelog-handler cfg)}]
-    ["/error/:id" {:handler (partial error-handler cfg)}]
-    ["/error" {:handler (partial error-list-handler cfg)}]
-    ["/actions" {:middleware [[errors]]}
-     ["/set-virtual-clock"
-      {:handler (partial set-virtual-clock cfg)}]
-     ["/resend-email-verification"
-      {:handler (partial resend-email-notification cfg)}]
-     ["/handle-team-features"
-      {:handler (partial handle-team-features cfg)}]
-     ["/file-export" {:handler (partial export-handler cfg)}]
-     ["/file-import" {:handler (partial import-handler cfg)}]
-     ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]
-     ["/file-validate" {:handler (partial validate-file cfg)}]
-     ["/file-repair" {:handler (partial repair-file cfg)}]]]])
+  ;; The graph routes are registered only under the `:graph` flag. Left
+  ;; unregistered they 404, and nothing ever resolves `app.graph.*`. The `/dbg`
+  ;; admin gate is unchanged: it covers the graph routes exactly as before.
+  (let [graph?  (contains? cf/flags :graph)
+        actions (cond-> ["/actions" {:middleware [[errors]]}
+                         ["/set-virtual-clock"
+                          {:handler (partial set-virtual-clock cfg)}]
+                         ["/resend-email-verification"
+                          {:handler (partial resend-email-notification cfg)}]
+                         ["/handle-team-features"
+                          {:handler (partial handle-team-features cfg)}]
+                         ["/file-export" {:handler (partial export-handler cfg)}]
+                         ["/file-import" {:handler (partial import-handler cfg)}]
+                         ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]
+                         ["/file-validate" {:handler (partial validate-file cfg)}]
+                         ["/file-repair" {:handler (partial repair-file cfg)}]]
+                  graph? (into (graph-action-routes cfg)))
+        dbg     (cond-> ["/dbg" {:middleware [[session/authz cfg]
+                                              [with-authorization pool]]}
+                         ["" {:handler (partial index-handler cfg)}]
+                         ["/health" {:handler (partial health-handler cfg)}]
+                         ["/changelog" {:handler (partial changelog-handler cfg)}]
+                         ["/error/:id" {:handler (partial error-handler cfg)}]
+                         ["/error" {:handler (partial error-list-handler cfg)}]
+                         actions]
+                  graph? (conj ["/graph" {:handler (partial graph-console-handler cfg)}]))]
+    (when graph?
+      ;; With the flag on, the Ladybug native library belongs to this process,
+      ;; so load it here. A missing or unusable library then fails the boot
+      ;; instead of the first console request.
+      (require 'app.graph.debug 'app.graph.ingest))
+
+    [["/readyz" {:handler (partial health-handler cfg)}]
+     dbg]))
 

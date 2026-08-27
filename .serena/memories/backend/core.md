@@ -7,6 +7,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 - RPC, DB helpers, workers, cron: `mem:backend/rpc-db-worker-subtleties`
 - Storage abstraction, logical buckets, object lifecycle, deduplication, access, and garbage collection: `mem:backend/storage`.
 - HTTP sessions, config, media processing, and file data persistence: `mem:backend/http-storage-filedata-subtleties`.
+- Embedded Ladybug graph experiment, projection, incremental sync, console, and risks: `mem:backend/graph-experiment`
 - Auth flows, permission model, teams, projects, invitations, comments, webhooks, audit: `mem:backend/auth-permissions-product-domains`
 - Services, task-queue/Pub-Sub topology constraints -> `mem:prod-infra/core`.
 

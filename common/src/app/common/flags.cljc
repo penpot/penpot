@@ -100,6 +100,10 @@
     :backend-svgo
     ;; If enabled, it makes the Google Fonts available.
     :google-fonts-provider
+    ;; Enables the Ladybug graph subsystem: the `/dbg` graph console and its
+    ;; actions. Off by default. With the flag off, `app.graph.*` never loads,
+    ;; so the Ladybug native library never enters the JVM.
+    :graph
     ;; Only for development.
     :nrepl-server
     ;; Interactive repl. Only for development.
