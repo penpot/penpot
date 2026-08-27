@@ -884,10 +884,10 @@
             (cond
               (nil? parent)             []
               (cfh/group-shape? parent) (let [fills (svg-fills/resolve-shape-fills parent)]
-                                         (if (seq fills)
-                                           fills
-                                           (recur (:parent-id parent)
-                                                  (conj visited parent-id))))
+                                          (if (seq fills)
+                                            fills
+                                            (recur (:parent-id parent)
+                                                   (conj visited parent-id))))
               (cfh/frame-shape? parent) []
               :else                     (recur (:parent-id parent)
                                                (conj visited parent-id)))))))))
