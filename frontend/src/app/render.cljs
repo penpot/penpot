@@ -144,8 +144,12 @@
              (rx/observe-on :async)
              (rx/map (comp :objects second))
              (rx/map (fn [objects]
-                       (let [objects (render/adapt-objects-for-shape objects object-id)]
-                         #(assoc % :objects objects)))))))))
+                       (render/adapt-objects-for-shape objects object-id)))
+             (rx/merge-map (fn [objects]
+                             (rx/concat
+                              (->> (render/populate-images-cache objects)
+                                   (rx/ignore))
+                              (rx/of #(assoc % :objects objects))))))))))
 
 (def ^:private schema:render-objects
   [:map {:title "render-objets"}
@@ -153,6 +157,7 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
    [:embed {:optional true} :boolean]
+   [:render-embed {:optional true} :boolean]
    [:skip-children {:optional true} :boolean]
    [:object-id
     [:or [::sm/set ::sm/uuid] ::sm/uuid]]])
@@ -168,8 +173,9 @@
 (defn- render-objects
   [params]
   (try
-    (let [{:keys [file-id page-id embed share-id object-id skip-children wasm scale] :as params}
-          (coerce-render-objects-params params)]
+    (let [{:keys [file-id page-id embed render-embed share-id object-id skip-children wasm scale] :as params}
+          (coerce-render-objects-params params)
+          embed (if (some? render-embed) render-embed embed)]
       (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
       (if (uuid? object-id)
         (mf/html

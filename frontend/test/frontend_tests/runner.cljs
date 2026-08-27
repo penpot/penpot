@@ -62,6 +62,7 @@
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-dimensions-test]
+   [frontend-tests.render-export-images-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
@@ -186,6 +187,7 @@
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.ui.routes-test
    'frontend-tests.render-dimensions-test
+   'frontend-tests.render-export-images-test
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test

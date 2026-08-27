@@ -48,6 +48,7 @@
               (bw/nav! page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
               (bw/wait-for-fonts page)
+              (bw/wait-for-images page)
               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
 
               ;; take the screnshot of requested objects, one by one
@@ -59,6 +60,7 @@
                     :share-id share-id
                     :object-id (mapv :id objects)
                     :route "objects"
+                    :render-embed true
                     :skip-children skip-children
                     :wasm (when is-wasm "true")
                     :scale scale}
