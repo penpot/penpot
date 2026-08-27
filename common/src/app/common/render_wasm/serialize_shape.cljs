@@ -12,43 +12,29 @@
    - the workspace `app.render-wasm.api/set-object` (browser), and
    - the headless exporter `app.wasm.serialize/set-shape!` (Node).
 
-  It applies only the properties that need no host-specific resources or driver:
-  base props, children, blur, background blur, shadows, svg attrs, group mask,
-  bool type, path/bool geometry and text grow type. The parts that DO differ by
-  host are handled by each caller AFTER this runs:
-   - fills / strokes (image bytes are fetched + uploaded differently),
+  Structural attrs (base, children, blur, shadows, masked, bool, grow) go
+  through the enlarged `_set_shapes_batch` upload. Path geometry stays on the
+  chunked path FFI. Host-specific parts remain in each caller AFTER this runs:
+   - fills / strokes image bytes (records may already be in cold-load batch),
    - text content (fonts),
-   - svg-raw markup (browser renders it via React),
-   - layout (grid/flex — workspace only).
+   - svg-raw markup (browser React),
+   - layout (grid/flex — workspace cold-load batches flex+item via upload;
+     incremental edits still use `set-shape-layout` / `set-layout-data`).
 
   The incremental workspace edit path (`set-wasm-attr!`) is unaffected; it keeps
   dispatching per changed key through the same underlying `props` setters."
   (:require
    [app.common.render-wasm.api.props :as props]
-   [app.common.render-wasm.api.shapes :as shapes]))
+   [app.common.render-wasm.api.upload :as upload]))
 
 (defn serialize-shape!
-  "Applies every host-independent WASM property of `shape`. `set-shape-base-props`
-  runs first because it selects the current shape (`use_shape`) the rest mutate."
+  "Applies every host-independent WASM property of `shape`."
   [shape]
   (let [type (get shape :type)]
-    (shapes/set-shape-base-props shape)
-    (props/set-shape-children (get shape :shapes))
-    (props/set-shape-blur (get shape :blur))
-    (props/set-shape-background-blur (get shape :background-blur))
-    (props/set-shape-shadows (get shape :shadow))
+    (upload/set-shape-upload! shape {:include-layout? false})
 
     (when (some? (get shape :svg-attrs))
       (props/set-shape-svg-attrs (get shape :svg-attrs)))
 
-    (when (= type :group)
-      (props/set-masked (boolean (get shape :masked-group))))
-
-    (when (= type :bool)
-      (props/set-shape-bool-type (get shape :bool-type)))
-
     (when (and (contains? #{:path :bool} type) (some? (get shape :content)))
-      (props/set-shape-path-content (get shape :content)))
-
-    (when (= type :text)
-      (props/set-shape-grow-type (get shape :grow-type)))))
+      (props/set-shape-path-content (get shape :content)))))

@@ -376,6 +376,7 @@ fn update_text_layout(shape: &mut Shape, force: bool) {
             text_content.force_next_layout_update();
         }
         text_content.update_layout(shape.selrect);
+        shape.apply_deferred_batch_paint();
         shape.invalidate_extrect();
     }
 }

@@ -17,6 +17,7 @@
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
+   [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.mem :as mem]
    [app.common.render-wasm.mem.heap32 :as mem.h32]
@@ -280,8 +281,6 @@
 
 (defonce ^:private view-interaction-active? (atom false))
 
-;; Time budget (ms) per chunk of shape processing before yielding to browser
-(def ^:private ^:const CHUNK_TIME_BUDGET_MS 8)
 ;; Threshold below which we use synchronous processing (no chunking overhead)
 (def ^:const ASYNC_THRESHOLD 100)
 
@@ -736,6 +735,17 @@
                   (aget buffer 3))]
       (= result 1))))
 
+(defn- write-text-content!
+  "Push every paragraph of `content` to the current WASM text shape."
+  [content]
+  (let [paragraph-set (first (get content :children))
+        paragraphs    (get paragraph-set :children)]
+    (doseq [paragraph paragraphs
+            :let [spans (get paragraph :children)]
+            :when (seq spans)]
+      (let [text (apply str (map :text spans))]
+        (t/write-shape-text spans paragraph text)))))
+
 (defn set-shape-text-content
   "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
   [shape-id content]
@@ -750,10 +760,11 @@
 
     (set-shape-vertical-align (get content :vertical-align))
 
-    (let [fonts         (f/get-content-fonts content)
-          fallback-fonts (fonts-from-text-content content true)
-          all-fonts (concat fonts fallback-fonts)
-          result (f/store-fonts all-fonts)]
+    (let [fonts          (f/get-content-fonts content)
+          fallback-fonts (fonts-from-text-content content false)
+          all-fonts      (concat fonts fallback-fonts)
+          result         (f/store-fonts all-fonts)]
+      (write-text-content! content)
       (f/load-fallback-fonts-for-editor! fallback-fonts)
       (h/call wasm/internal-module "_update_shape_text_layout")
       result)))
@@ -1030,37 +1041,56 @@
           (map #(process-fill-image shape-id % thumbnail?))))))
 
 (defn set-shape-fills
-  [shape-id fills thumbnail?]
-  ;; Record write is shared with the headless exporter; the image fetch below is
-  ;; browser-only (WebGL textures).
-  (when-let [fills (props/write-shape-fills! fills)]
-    (keep (fn [id]
-            (let [buffer        (uuid/get-u32 id)
-                  cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                        (aget buffer 0)
-                                        (aget buffer 1)
-                                        (aget buffer 2)
-                                        (aget buffer 3)
-                                        thumbnail?)]
-              (when (zero? cached-image?)
-                (fetch-image shape-id id thumbnail?))))
-          (types.fills/get-image-ids fills))))
+  "Writes fill records (unless `write?` is false) and returns pending image
+   fetches. When fills were already uploaded in `_set_shapes_batch`, pass
+   `write?` false so only image fetches remain."
+  ([shape-id fills thumbnail?]
+   (set-shape-fills shape-id fills thumbnail? true))
+  ([shape-id fills thumbnail? write?]
+   (let [fills (if write?
+                 (props/write-shape-fills! fills)
+                 (when (seq fills)
+                   (types.fills/coerce fills)))]
+     (when fills
+       (keep (fn [id]
+               (let [buffer        (uuid/get-u32 id)
+                     cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                           (aget buffer 0)
+                                           (aget buffer 1)
+                                           (aget buffer 2)
+                                           (aget buffer 3)
+                                           thumbnail?)]
+                 (when (zero? cached-image?)
+                   (fetch-image shape-id id thumbnail?))))
+             (types.fills/get-image-ids fills))))))
+
+(defn- stroke-image-ids
+  [strokes]
+  (into []
+        (comp (remove :hidden)
+              (keep #(get-in % [:stroke-image :id])))
+        (or strokes [])))
 
 (defn set-shape-strokes
-  [shape-id strokes thumbnail?]
-  ;; Record write is shared with the headless exporter; the image fetch below is
-  ;; browser-only (WebGL textures).
-  (keep (fn [image-id]
-          (let [buffer        (uuid/get-u32 image-id)
-                cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                      (aget buffer 0)
-                                      (aget buffer 1)
-                                      (aget buffer 2)
-                                      (aget buffer 3)
-                                      thumbnail?)]
-            (when (zero? cached-image?)
-              (fetch-image shape-id image-id thumbnail?))))
-        (props/write-shape-strokes! strokes)))
+  "Writes stroke records (unless `write?` is false) and returns pending image
+   fetches for stroke image fills."
+  ([shape-id strokes thumbnail?]
+   (set-shape-strokes shape-id strokes thumbnail? true))
+  ([shape-id strokes thumbnail? write?]
+   (let [image-ids (if write?
+                     (props/write-shape-strokes! strokes)
+                     (stroke-image-ids strokes))]
+     (keep (fn [image-id]
+             (let [buffer        (uuid/get-u32 image-id)
+                   cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                         (aget buffer 0)
+                                         (aget buffer 1)
+                                         (aget buffer 2)
+                                         (aget buffer 3)
+                                         thumbnail?)]
+               (when (zero? cached-image?)
+                 (fetch-image shape-id image-id thumbnail?))))
+           image-ids))))
 
 (defn set-shape-svg-attrs
   [attrs]
@@ -1545,47 +1575,70 @@
   [content]
   (or content (tc/v2-default-text-content)))
 
+(defn- set-object-host-attrs
+  "Host-specific attrs after structural upload (text/svg-raw/grid; optionally
+   fills/strokes). When `skip-layout?` is true, flex+layout-item were already in
+   the batch; only grid tracks/cells are applied here. When
+   `skip-fills-strokes?` is true, fill/stroke records were already in the batch;
+   only image fetches remain.
+
+   Always `use-shape` first: after a multi-shape batch the WASM current shape is
+   the last record in the chunk, not this shape."
+  [shape skip-layout? & {:keys [skip-fills-strokes?] :or {skip-fills-strokes? false}}]
+  (let [id      (dm/get-prop shape :id)
+        type    (dm/get-prop shape :type)
+        fills   (get shape :fills)
+        strokes (if (= type :group) [] (get shape :strokes))
+        content (let [content (get shape :content)]
+                  (if (= type :text)
+                    (ensure-text-content content)
+                    content))
+        write-fills-strokes? (not skip-fills-strokes?)
+        needs-current? (or write-fills-strokes?
+                           (= type :text)
+                           (and (some? content) (= type :svg-raw))
+                           (if skip-layout?
+                             (ctl/grid-layout? shape)
+                             true))]
+
+    (when needs-current?
+      (use-shape id))
+
+    (when (and (some? content) (= type :svg-raw))
+      (set-shape-svg-raw-content (get-static-markup shape)))
+
+    (if skip-layout?
+      (when (ctl/grid-layout? shape)
+        (set-grid-layout shape))
+      (do (set-shape-layout shape)
+          (set-layout-data shape)))
+
+    (let [is-text? (= type :text)
+          text-content-pending (when is-text? (set-shape-text-content id content))
+          pending-thumbnails (into [] (concat
+                                       text-content-pending
+                                       (when is-text? (set-shape-text-images id content true))
+                                       (set-shape-fills id fills true write-fills-strokes?)
+                                       (set-shape-strokes id strokes true write-fills-strokes?)))
+          pending-full (into [] (concat
+                                 (when is-text? (set-shape-text-images id content false))
+                                 (set-shape-fills id fills false write-fills-strokes?)
+                                 (set-shape-strokes id strokes false write-fills-strokes?)))]
+      {:thumbnails pending-thumbnails
+       :full pending-full
+       :font-pending-ids (if (some :callback text-content-pending) [id] [])})))
+
 (defn set-object
   [shape]
   (if-not (and shape (wasm/live?))
     {:thumbnails [] :full [] :font-pending-ids []}
     (do
       (perf/begin-measure "set-object")
-      (let [shape        (svg-filters/apply-svg-derived shape)
-            id           (dm/get-prop shape :id)
-            type         (dm/get-prop shape :type)
-
-            fills        (get shape :fills)
-            strokes      (if (= type :group)
-                           [] (get shape :strokes))
-            content      (let [content (get shape :content)]
-                           (if (= type :text)
-                             (ensure-text-content content)
-                             content))]
-
+      (let [shape (svg-filters/apply-svg-derived shape)]
         (serialize-shape/serialize-shape! shape)
-
-        ;; Browser-only: svg-raw markup (needs React) + workspace layout.
-        (when (and (some? content) (= type :svg-raw))
-          (set-shape-svg-raw-content (get-static-markup shape)))
-        (set-shape-layout shape)
-        (set-layout-data shape)
-        (let [is-text? (= type :text)
-              text-content-pending (when is-text? (set-shape-text-content id content))
-              pending-thumbnails (into [] (concat
-                                           text-content-pending
-                                           (when is-text? (set-shape-text-images id content true))
-                                           (set-shape-fills id fills true)
-                                           (set-shape-strokes id strokes true)))
-              pending-full (into [] (concat
-                                     (when is-text? (set-shape-text-images id content false))
-                                     (set-shape-fills id fills false)
-                                     (set-shape-strokes id strokes false)))]
+        (let [result (set-object-host-attrs shape false)]
           (perf/end-measure "set-object")
-          {:thumbnails pending-thumbnails
-           :full pending-full
-           :font-pending-ids (if (some :callback text-content-pending) [id] [])})))))
-
+          result)))))
 (defn- update-text-layouts
   "Synchronously update text layouts for all shapes and send rect updates
    to the worker index."
@@ -1697,30 +1750,54 @@
              :font-pending-ids (persistent! font-acc)}))]
     (process-pending shapes thumbnails full font-pending-ids noop-fn)))
 
+(def ^:private ^:const BATCH_MAX_SHAPES 512)
+
 (defn- process-shapes-chunk
-  "Process shapes starting at `start-index` until the time budget is exhausted.
+  "Process up to `BATCH_MAX_SHAPES` shapes starting at `start-index`.
+
+   Structural attrs are uploaded in one `_set_shapes_batch` FFI per chunk;
+   host-specific attrs (fills/strokes/text/grid/path) stay per-shape.
+
    Returns {:thumbnails [...] :full [...] :font-pending-ids [...] :next-index n}"
   [shapes start-index thumbnails-acc full-acc font-pending-acc]
-  (let [total    (count shapes)
-        deadline (+ (js/performance.now) CHUNK_TIME_BUDGET_MS)]
-    (loop [index start-index
+  (let [total     (count shapes)
+        end-index (min total (+ start-index BATCH_MAX_SHAPES))
+        chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
+                                   start-index end-index))
+        prepared  (mapv svg-filters/apply-svg-derived chunk)]
+
+    ;; One multi-shape structural upload (base+children+blur+shadows+flex+item+fills+strokes).
+    (when (seq prepared)
+      (upload/flush-shapes-batch! prepared {:include-layout? true
+                                            :include-fills-strokes? true}))
+
+    ;; Path + svg-attrs still need the legacy per-shape path (variable/large).
+    (doseq [shape prepared]
+      (let [id   (dm/get-prop shape :id)
+            type (dm/get-prop shape :type)]
+        (when (or (some? (get shape :svg-attrs))
+                  (and (contains? #{:path :bool} type) (some? (get shape :content))))
+          (use-shape id)
+          (when (some? (get shape :svg-attrs))
+            (props/set-shape-svg-attrs (get shape :svg-attrs)))
+          (when (and (contains? #{:path :bool} type) (some? (get shape :content)))
+            (props/set-shape-path-content (get shape :content))))))
+
+    (loop [xs prepared
            t-acc (transient thumbnails-acc)
            f-acc (transient full-acc)
            fp-acc (transient font-pending-acc)]
-      (if (and (< index total)
-               ;; Check performance.now every 8 shapes to reduce overhead
-               (or (pos? (bit-and (- index start-index) 7))
-                   (<= (js/performance.now) deadline)))
-        (let [shape (nth shapes index)
-              {:keys [thumbnails full font-pending-ids]} (set-object shape)]
-          (recur (inc index)
+      (if-let [shape (first xs)]
+        (let [{:keys [thumbnails full font-pending-ids]}
+              (set-object-host-attrs shape true :skip-fills-strokes? true)]
+          (recur (next xs)
                  (reduce conj! t-acc thumbnails)
                  (reduce conj! f-acc full)
                  (reduce conj! fp-acc font-pending-ids)))
         {:thumbnails (persistent! t-acc)
          :full (persistent! f-acc)
          :font-pending-ids (persistent! fp-acc)
-         :next-index index}))))
+         :next-index end-index}))))
 
 (defn- set-objects-async
   "Asynchronously process shapes in time-budgeted chunks, yielding to the
@@ -1847,32 +1924,50 @@
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
   [shapes render-callback on-shapes-ready]
-  (let [total-shapes (count shapes)
-        {:keys [thumbnails full font-pending-ids]}
-        (loop [index 0 thumbnails-acc (transient []) full-acc (transient []) font-acc (transient [])]
-          (if (< index total-shapes)
-            (let [shape (nth shapes index)
-                  {:keys [thumbnails full font-pending-ids]} (set-object shape)]
-              (recur (inc index)
-                     (reduce conj! thumbnails-acc thumbnails)
-                     (reduce conj! full-acc full)
-                     (reduce conj! font-acc font-pending-ids)))
-            {:thumbnails (persistent! thumbnails-acc)
-             :full (persistent! full-acc)
-             :font-pending-ids (persistent! font-acc)}))]
-    (perf/end-measure "set-objects")
-    (when on-shapes-ready (on-shapes-ready))
-    (when (wasm/live?)
-      ;; Rebuild the tile index so _render knows which shapes
-      ;; map to which tiles after a page switch.
-      (h/call wasm/internal-module "_set_view_end")
-      (reset! view-interaction-active? false)
-      (process-pending shapes thumbnails full font-pending-ids
-                       (fn []
-                         (if render-callback
-                           (render-callback)
-                           (request-render "set-objects-sync-complete"))
-                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
+  (let [prepared (mapv svg-filters/apply-svg-derived shapes)]
+    (when (seq prepared)
+      (upload/flush-shapes-batch! prepared {:include-layout? true
+                                            :include-fills-strokes? true}))
+    (doseq [shape prepared]
+      (let [id   (dm/get-prop shape :id)
+            type (dm/get-prop shape :type)]
+        (when (or (some? (get shape :svg-attrs))
+                  (and (contains? #{:path :bool} type) (some? (get shape :content))))
+          (use-shape id)
+          (when (some? (get shape :svg-attrs))
+            (props/set-shape-svg-attrs (get shape :svg-attrs)))
+          (when (and (contains? #{:path :bool} type) (some? (get shape :content)))
+            (props/set-shape-path-content (get shape :content))))))
+    (let [total-shapes (count prepared)
+          {:keys [thumbnails full font-pending-ids]}
+          (loop [index 0
+                 thumbnails-acc (transient [])
+                 full-acc (transient [])
+                 font-acc (transient [])]
+            (if (< index total-shapes)
+              (let [shape (nth prepared index)
+                    {:keys [thumbnails full font-pending-ids]}
+                    (set-object-host-attrs shape true :skip-fills-strokes? true)]
+                (recur (inc index)
+                       (reduce conj! thumbnails-acc thumbnails)
+                       (reduce conj! full-acc full)
+                       (reduce conj! font-acc font-pending-ids)))
+              {:thumbnails (persistent! thumbnails-acc)
+               :full (persistent! full-acc)
+               :font-pending-ids (persistent! font-acc)}))]
+      (perf/end-measure "set-objects")
+      (when on-shapes-ready (on-shapes-ready))
+      (when (wasm/live?)
+        ;; Rebuild the tile index so _render knows which shapes
+        ;; map to which tiles after a page switch.
+        (h/call wasm/internal-module "_set_view_end")
+        (reset! view-interaction-active? false)
+        (process-pending shapes thumbnails full font-pending-ids
+                         (fn []
+                           (if render-callback
+                             (render-callback)
+                             (request-render "set-objects-sync-complete"))
+                           (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))))
 
 (defn- shapes-in-tree-order
   "Returns shapes sorted in tree order (parents before children).
