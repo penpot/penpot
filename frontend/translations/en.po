@@ -875,8 +875,8 @@ msgid "dashboard.move-to-other-team"
 msgstr "Move to other team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "My Teams"
+msgid "dashboard.other-teams"
+msgstr "Other teams"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1440,8 +1440,8 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
-msgid "dashboard.my-files"
-msgstr "My Files"
+msgid "dashboard.personal-projects"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
