@@ -86,6 +86,7 @@
    [common-tests.types.shape-layout-test]
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
+   [common-tests.types.tokens-status-test]
    [common-tests.undo-stack-test]
    [common-tests.uuid-test]))
 
@@ -164,6 +165,7 @@
    'common-tests.types.shape-layout-test
    'common-tests.types.token-test
    'common-tests.types.tokens-lib-test
+   'common-tests.types.tokens-status-test
    'common-tests.undo-stack-test
    'common-tests.uuid-test])
 

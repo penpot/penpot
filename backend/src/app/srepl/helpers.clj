@@ -153,7 +153,7 @@
 
 (defn process-file!
   [system file-id update-fn
-   & {:keys [::snapshot-label ::validate? ::with-libraries?]
+   & {:keys [::profile-id ::snapshot-label ::validate? ::with-libraries?]
       :or {validate? true} :as opts}]
   (let [file  (bfc/get-file system file-id
                             :lock-for-update? true
@@ -177,8 +177,9 @@
       (when (string? snapshot-label)
         (fsnap/create! system file
                        {:label snapshot-label
+                        :profile-id profile-id
                         :deleted-at (ct/in-future {:days 30})
-                        :created-by "admin"}))
+                        :created-by "system"}))
 
       (let [file' (update file' :revn inc)]
         (bfc/update-file! system file' opts)
