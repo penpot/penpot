@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.17.2
+
+### :bug: Bugs fixed
+
+- Fix linear gradients in SVG text exports being emitted as radial gradients [#5972](https://github.com/penpot/penpot/issues/5972) (PR: [#11272](https://github.com/penpot/penpot/pull/11272))
+
 ## 2.17.1
 
 ### :bug: Bugs fixed
