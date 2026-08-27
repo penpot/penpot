@@ -10,18 +10,50 @@
    [app.common.types.path.shape-to-path :as stp]))
 
 (defn get-path-id
-  "Retrieves the currently editing path id"
+  "Returns the active path id.
+
+  The drawing copy is preferred because it also exists during initial path
+  creation, before workspace edition has an id. The edition id is the fallback
+  while an existing path's drawing copy is being established."
   [state]
-  (or (dm/get-in state [:workspace-local :edition])
-      (dm/get-in state [:workspace-drawing :object :id])))
+  (or (dm/get-in state [:workspace-drawing :object :id])
+      (dm/get-in state [:workspace-local :edition])))
+
+(defn get-selection
+  "Returns the grouped selection for the active path or the supplied path id."
+  ([state]
+   (get-selection state (get-path-id state)))
+  ([state id]
+   (dm/get-in state [:workspace-local :edit-path id :selection])))
+
+(defn current-edit-state
+  ([state]
+   (current-edit-state (dm/get-in state [:workspace-local :edit-path])
+                       (dm/get-in state [:workspace-local :edition])))
+  ([edit-path id]
+   (get edit-path id)))
+
+(defn editing?
+  ([state]
+   (some? (current-edit-state state)))
+  ([edit-path id]
+   (some? (current-edit-state edit-path id))))
+
+(defn drawing?
+  ([state]
+   (let [edition  (dm/get-in state [:workspace-local :edition])
+         edit-path (dm/get-in state [:workspace-local :edit-path])]
+     (and (nil? edition)
+          (some? (get edit-path (get-path-id state))))))
+  ([edit-state edition drawing-tool drawing-object]
+   (or (= :draw (:edit-mode edit-state))
+       (and (nil? edition)
+            (= :path (:type drawing-object))
+            (not= :curve drawing-tool)))))
 
 (defn get-path-location
-  [state & ks]
-  (if-let [edit-id (dm/get-in state [:workspace-local :edition])]
-    (let [page-id  (:current-page-id state)
-          file-id  (:current-file-id state)]
-      (into [:files file-id :data :pages-index page-id :objects edit-id] ks))
-    (into [:workspace-drawing :object] ks)))
+  [_state & ks]
+  (into [:workspace-drawing :object] ks))
 
 (defn get-path
   "Retrieves the location of the path object and additionally can pass

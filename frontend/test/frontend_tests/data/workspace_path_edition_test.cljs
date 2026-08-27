@@ -11,6 +11,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.path.edition :as path.edition]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts :as wsc]
@@ -76,3 +77,31 @@
 (t/deftest test-enter-toggles-path-editing-mode
   (doseq [shape-type [:rect :circle :path :image]]
     (run-scenario shape-type)))
+
+(t/deftest resolve-edit-fills-with-normal-parent-chain
+  (t/testing "resolve-edit-fills resolves fills from parent chain"
+    (let [objects {1 {:type :group :parent-id 2 :fills [{:fill-color "#ff0000"}]}
+                   2 {:type :frame :parent-id nil :fills []}}
+          shape   {:type :path :parent-id 1 :fills []}
+          result  (path.edition/resolve-edit-fills shape objects)]
+      ;; Should inherit fills from group parent
+      (t/is (= [{:fill-color "#ff0000"}] result)))))
+
+(t/deftest resolve-edit-fills-with-circular-parent-chain
+  (t/testing "resolve-edit-fills handles circular parent references gracefully"
+    (let [objects {1 {:type :rect :parent-id 2 :fills []}
+                   2 {:type :rect :parent-id 1 :fills []}}
+          shape   {:type :path :parent-id 1 :fills []}
+          result  (path.edition/resolve-edit-fills shape objects)]
+      ;; Should return empty fills instead of infinite loop
+      (t/is (= [] result)))))
+
+(t/deftest resolve-edit-fills-with-empty-intermediate-group
+  (t/testing "resolve-edit-fills traverses past empty parent groups to find fills from ancestor"
+    (let [objects {1 {:type :group :parent-id 2 :fills []}
+                   2 {:type :group :parent-id 3 :fills [{:fill-color "#00ff00"}]}
+                   3 {:type :frame :parent-id nil :fills []}}
+          shape   {:type :path :parent-id 1 :fills []}
+          result  (path.edition/resolve-edit-fills shape objects)]
+      ;; Should inherit fills from OuterGroup through empty InnerGroup
+      (t/is (= [{:fill-color "#00ff00"}] result)))))
