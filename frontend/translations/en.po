@@ -388,6 +388,9 @@ msgstr ""
 msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
+msgid "dashboard.change-organization-modal.description"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
+
 #: src/app/main/ui/dashboard/deleted.cljs:316
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
@@ -1111,11 +1114,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
-#, unused
 msgid "dashboard.select-organization-modal.permission-info"
-msgstr ""
-"Here you find all your organizations where you are allowed to create or add "
-"teams."
+msgstr "Here you'll find the organizations you are part of where you are allowed to move the team."
+
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr "Here you'll find the organizations you are part of where you are allowed to create or add teams."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
