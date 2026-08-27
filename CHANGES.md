@@ -23,6 +23,13 @@
 - Refactor wasm rulers and UI state [#10116](https://github.com/penpot/penpot/issues/10116) (PR: [#10461](https://github.com/penpot/penpot/pull/10461))
 - Improve team invitations modal in the dashboard [#10484](https://github.com/penpot/penpot/issues/10484) (PR: [#10459](https://github.com/penpot/penpot/pull/10459))
 
+## 2.17.2
+
+### :bug: Bugs fixed
+
+- Fix linear gradients in SVG text exports being emitted as radial gradients [#5972](https://github.com/penpot/penpot/issues/5972) (PR: [#11272](https://github.com/penpot/penpot/pull/11272))
+- Fix typography token becoming detached when editing text content [#11362](https://github.com/penpot/penpot/issues/11362) (PR: [#11366](https://github.com/penpot/penpot/pull/11366))
+- Fix command injection in SVG exporter via legacy fill-color (https://github.com/penpot/penpot/security/advisories/GHSA-4f36-m4hj-cv86)
 
 ## 2.17.1
 
