@@ -178,9 +178,11 @@
                 response)))
 
           (format-response [response request]
-            (case (cnegot/negotiate-format request)
-              :transit (format-response-with-transit response request)
-              :json    (format-response-with-json response request)))
+            (let [format (cnegot/negotiate-format request)]
+              (case format
+                :transit (format-response-with-transit response request)
+                :json    (format-response-with-json response request)
+                (format-response-with-transit response request))))
 
           (process-response [response request]
             (cond-> response
