@@ -1699,6 +1699,7 @@
 (dm/export dwgu/set-hover-guide)
 
 ;; Zoom
+(dm/export dwz/center-on-shape)
 (dm/export dwz/reset-zoom)
 (dm/export dwz/zoom-to-selected-shape)
 (dm/export dwz/start-zooming)

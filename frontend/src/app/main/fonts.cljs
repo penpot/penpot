@@ -221,7 +221,7 @@
     (when (zero? (:refs new-state))
       (dom/remove! node))))
 
-(defn- add-font-css!
+(defn- add-font-css
   "Creates a style element and attaches it to the dom."
   [id css]
   (let [node (dom/create-element "style")]
@@ -284,7 +284,7 @@
       (->> (request-gfont-css url)
            (rx/map process-gfont-css)
            (rx/tap #(on-loaded id))
-           (rx/subs! (partial add-font-css! id)
+           (rx/subs! (partial add-font-css id)
                      #(when (fn? on-failed) (on-failed %))))
       nil)))
 
@@ -324,7 +324,7 @@
   (when (globals/browser?)
     (log/dbg :hint "load-font" :font-id id :backend "custom")
     (let [css (generate-custom-font-css font)]
-      (add-font-css! id css)
+      (add-font-css id css)
       (when (fn? on-loaded)
         (on-loaded)))))
 

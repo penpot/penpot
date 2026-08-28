@@ -244,6 +244,16 @@
         height   (.-clientHeight scroll-node)]
     (/ distance height)))
 
+(defn scroll-to-row
+  [node index]
+  (when (and (some? node) (number? index))
+    (.scrollToRow ^js node index)))
+
+(defn scroll-to-position
+  [node offset]
+  (when (and (some? node) (number? offset))
+    (.scrollToPosition ^js node offset)))
+
 (def get-target-val (comp get-value get-target))
 
 (def get-target-scroll (comp get-scroll-position get-target))

@@ -379,14 +379,14 @@
                  "float letter-spacing is normalised to 2-decimal string")))))))
 
 ;; ---------------------------------------------------------------------------
-;; Tests: save-font must not persist typography refs into the global default font
+;; Tests: save-default-font must not persist typography refs into the global default font
 ;;
 ;; Root cause of #10925: typography assets are file-specific references, but
-;; save-font used to write :typography-ref-id / :typography-ref-file into the
+;; save-default-font used to write :typography-ref-id / :typography-ref-file into the
 ;; session-global [:workspace-global :default-font]. That state survives a file
 ;; switch, and v2-default-text-content bakes it into brand-new text shapes in
 ;; the other file, so they got a non-existent typography asset instead of the
-;; default Penpot font. save-font now strips those two keys.
+;; default Penpot font. save-default-font now strips those two keys.
 ;; ---------------------------------------------------------------------------
 
 (t/deftest save-font-strips-typography-refs-from-default-font
@@ -405,7 +405,7 @@
                  :typography-ref-id (uuid/next)
                  :typography-ref-file (:id file)}]
       (ths/run-store
-       store done [(dwt/save-font attrs)]
+       store done [(dwt/save-default-font attrs)]
        (fn [new-state]
          (let [default-font (get-in new-state [:workspace-global :default-font])]
            (t/is (some? default-font))
@@ -425,7 +425,7 @@
                  :letter-spacing "0"
                  :typography-ref-id (uuid/next)
                  :typography-ref-file (uuid/next)}]
-      (ths/run-store store done [(dwt/save-font attrs)]
+      (ths/run-store store done [(dwt/save-default-font attrs)]
                      (fn [new-state]
                        (let [default-font (get-in new-state [:workspace-global :default-font])]
                          (t/is (= "Open Sans" (:font-family default-font)))

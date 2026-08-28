@@ -388,6 +388,9 @@ msgstr ""
 msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
+msgid "dashboard.change-organization-modal.description"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
+
 #: src/app/main/ui/dashboard/deleted.cljs:316
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
@@ -901,8 +904,8 @@ msgid "dashboard.move-to-other-team"
 msgstr "Move to other team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "My Teams"
+msgid "dashboard.other-teams"
+msgstr "Other teams"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1140,11 +1143,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
-#, unused
 msgid "dashboard.select-organization-modal.permission-info"
-msgstr ""
-"Here you find all your organizations where you are allowed to create or add "
-"teams."
+msgstr "Here you'll find the organizations you are part of where you are allowed to move the team."
+
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr "Here you'll find the organizations you are part of where you are allowed to create or add teams."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1466,8 +1469,8 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
-msgid "dashboard.my-files"
-msgstr "My Files"
+msgid "dashboard.personal-projects"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"

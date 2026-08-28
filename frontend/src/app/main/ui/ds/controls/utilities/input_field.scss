@@ -97,6 +97,7 @@
 
   &::selection {
     background: var(--color-accent-background-select);
+    color: var(--color-static-white);
   }
 
   &::placeholder {

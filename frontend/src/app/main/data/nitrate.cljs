@@ -415,6 +415,7 @@
                                                         is-own? (= profile-id (:owner-id organization))]
                                                     (or (= perm "any") is-own?))) all-organizations)
                       team     (first (filter #(= (:id %) team-id) teams))
+                      current-organization (:organization team)
                       on-confirm (fn [organization-id]
                                    (st/emit! (add-team-to-organization {:team-id team-id
                                                                         :organization-id organization-id})))
@@ -422,11 +423,11 @@
                       (fn [organizations-allowed]
                         (let [has-filtered? (< (count organizations) (count all-organizations))
                               extra-props   (when has-filtered?
-                                              {:info-message-key "dashboard.select-organization-modal.permission-info"})]
+                                              {:info-message-key "dashboard.select-organization-modal.permission-info-add"})]
                           (modal/show :select-organization-modal
                                       (merge {:organizations organizations
                                               :organizations-allowed organizations-allowed
-                                              :current-organization-id (dm/get-in team [:organization :id])
+                                              :current-organization current-organization
                                               :on-confirm on-confirm
                                               :team-id team-id
                                               :title-key "dashboard.select-organization-modal.title"
@@ -509,11 +510,12 @@
                                    :title (tr "dashboard.change-organization-modal.title")})
                                  (modal/show :select-organization-modal
                                              (merge {:organizations           selectable-organizations
-                                                     :organizations-allowed            organizations-allowed
-                                                     :current-organization-id current-organization-id
+                                                     :organizations-allowed   organizations-allowed
+                                                     :current-organization    source-organization
                                                      :on-confirm              on-confirm
                                                      :team-id                 team-id
                                                      :title-key               "dashboard.change-organization-modal.title"
+                                                     :description-key         "dashboard.change-organization-modal.description"
                                                      :choose-key              "dashboard.change-organization-modal.choose"
                                                      :placeholder-key         "dashboard.change-organization-modal.select"
                                                      :accept-key              "dashboard.change-organization-modal.accept"
