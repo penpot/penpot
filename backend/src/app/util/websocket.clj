@@ -26,6 +26,9 @@
 (def max-missed-heartbeats 3)
 (def heartbeat-interval 5000)
 
+(def default-encode-fn #(t/encode-str % {:type :json-verbose}))
+(def default-decode-fn t/decode-str)
+
 (defn- encode-beat
   [n]
   (doto (ByteBuffer/allocate 8)
@@ -64,6 +67,8 @@
   [request & {:keys [::on-rcv-message
                      ::on-snd-message
                      ::on-connect
+                     ::encode-fn
+                     ::decode-fn
                      ::input-buff-size
                      ::output-buff-size
                      ::idle-timeout]
@@ -72,7 +77,9 @@
                    idle-timeout 60000
                    on-connect identity
                    on-snd-message identity-3
-                   on-rcv-message identity-3}
+                   on-rcv-message identity-3
+                   encode-fn default-encode-fn
+                   decode-fn default-decode-fn}
               :as options}]
 
   (assert (fn? on-rcv-message) "'on-rcv-message' should be a function")
@@ -99,7 +106,9 @@
                        (assoc ::output-ch output-ch)
                        (assoc ::close-ch close-ch)
                        (assoc ::remote-addr ip-addr)
-                       (assoc ::user-agent uagent))]
+                       (assoc ::user-agent uagent)
+                       (assoc ::encode-fn encode-fn)
+                       (assoc ::decode-fn decode-fn))]
 
     {:on-open
      (fn on-open [channel]
@@ -143,7 +152,8 @@
 
 (defn- start-io-loop!
   [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch
-           ::channel ::handler ::beats ::on-rcv-message ::on-snd-message]
+           ::channel ::handler ::beats ::on-rcv-message ::on-snd-message
+           ::encode-fn ::decode-fn]
     :as wsp}]
   (try
     (handler wsp {:type :open})
@@ -169,7 +179,7 @@
               (recur i))
 
             (identical? p input-ch)
-            (let [message (t/decode-str msg)
+            (let [message (decode-fn msg)
                   message (on-rcv-message message)
                   {:keys [request-id] :as response} (handler wsp message)]
               (when (map? response)
@@ -181,7 +191,7 @@
 
             (identical? p output-ch)
             (let [message (on-snd-message msg)
-                  message (t/encode-str message {:type :json-verbose})]
+                  message (encode-fn message)]
               (yws/send channel message)
               (recur i))))))
 
