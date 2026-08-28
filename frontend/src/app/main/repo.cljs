@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.transit :as t]
@@ -229,6 +230,7 @@
   [id params options]
   (let [{:keys [response-type
                 stream?
+                response-format
                 form-data?
                 raw-transit?
                 query-params
@@ -251,12 +253,17 @@
         response-type
         (d/nilv response-type :text)
 
+        accept
+        (if (and stream? (= response-format :json))
+          "application/json,text/event-stream,*/*"
+          "application/transit+json,text/event-stream,*/*")
+
         request
         {:method method
          :uri (u/join cf/public-uri "api/main/methods/" nid)
          :credentials "include"
          :headers (assoc (get-backend-headers params)
-                         "accept" "application/transit+json,text/event-stream,*/*"
+                         "accept" accept
                          "x-session-id" (str cf/session-id))
          :body (when (= method :post)
                  (if form-data?
@@ -295,7 +302,9 @@
 
                                 (if response-stream?
                                   (-> (sse/create-stream body)
-                                      (sse/read-stream t/decode-str))
+                                      (sse/read-stream (if (= response-format :json)
+                                                         json/decode
+                                                         t/decode-str)))
 
                                   (->> response
                                        (http/process-response-type response-type)
