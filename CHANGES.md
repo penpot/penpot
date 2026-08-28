@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 2.19.0 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix copying text from Penpot to the clipboard not working on MS Windows [#11303](https://github.com/penpot/penpot/issues/11303) (PR: [#11305](https://github.com/penpot/penpot/pull/11305))
+- Fix performance issue with WebGL render [#11240](https://github.com/penpot/penpot/issues/11240) (PR: [#11259](https://github.com/penpot/penpot/pull/11259))
+- Fix comment bubbles rendering on top of workspace dropdown menus [#10283](https://github.com/penpot/penpot/issues/10283) (PR: [#11201](https://github.com/penpot/penpot/pull/11201))
+- Fix inconsistent Mixed label in blur options and numeric inputs across 24 locales (by @filipsajdak) [#11148](https://github.com/penpot/penpot/issues/11148) (PR: [#11151](https://github.com/penpot/penpot/pull/11151))
+- Fix overlay shifting left when shown with top-center alignment in viewer prototype (by @filipsajdak) [#9048](https://github.com/penpot/penpot/issues/9048) (PR: [#10454](https://github.com/penpot/penpot/pull/10454))
+- Fix internal error when clicking the Copy button on the Access Token page (by @0xTHAC0) [#8496](https://github.com/penpot/penpot/issues/8496) (PR: [#11156](https://github.com/penpot/penpot/pull/11156))
+- Fix `disable-registration` flag not preventing non-users from creating accounts in the share prototypes page (by @0xTHAC0) [#5164](https://github.com/penpot/penpot/issues/5164) (PR: [#11199](https://github.com/penpot/penpot/pull/11199))
+
+### :sparkles: New features & Enhancements
+
+- Make backend storage resilient to interrupted writes, missing files and stalled cleanup [#11344](https://github.com/penpot/penpot/issues/11344) (PR: [#11345](https://github.com/penpot/penpot/pull/11345))
+- Implement RTL support in the text editor v3 [#11262](https://github.com/penpot/penpot/issues/11262)
+- Improve path operations and edition in the path editor [#10889](https://github.com/penpot/penpot/issues/10889) (PR: [#10807](https://github.com/penpot/penpot/pull/10807))
+- Add configurable keyboard shortcuts [#9924](https://github.com/penpot/penpot/issues/9924) (PR: [#10237](https://github.com/penpot/penpot/pull/10237))
+- Add auto-linking of libraries during import based on slugified name [#9263](https://github.com/penpot/penpot/issues/9263) (PR: [#9958](https://github.com/penpot/penpot/pull/9958))
+
 ## 2.18.0 (Unreleased)
 
 ### :bug: Bugs fixed
