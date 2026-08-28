@@ -47,6 +47,7 @@
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -1346,6 +1347,9 @@
                                #(do (apply st/emit! (map (fn [library]
                                                            (sync-file file-id (:id library)))
                                                          libraries-with-changes))
+                                    ;; Launch a local tokens propagation, so that the copies have the token values
+                                    ;; with the local tokens status, not the one coming from the external library.
+                                    (st/emit! (dwtp/propagate-workspace-tokens))
                                     (st/emit! (ntf/hide)))
 
                                do-dismiss
@@ -1398,8 +1402,8 @@
        (launch-component-sync component-id file-id undo-group)))))
 
 (defn watch-component-changes
-  "Watch the state for changes that affect to any main instance. If a change is detected will throw
-  an update-component-sync, so changes are immediately propagated to the component and copies."
+  "Watch the state for changes that affect to any main instance. If a change is detected will call
+   component-changed, so changes are immediately propagated to the component and copies."
   []
   (ptk/reify ::watch-component-changes
     ptk/WatchEvent
