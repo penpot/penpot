@@ -438,7 +438,7 @@
       (when-not (contains? cf/flags :admin-console)
         [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
 
-      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :admin-console) (tr "dashboard.personal-projects") (tr "dashboard.your-penpot"))]
+      [:span {:class (stl/css :team-text)} (tr "dashboard.personal-projects")]
       (when (= default-team-id (:id team))
         tick-icon)]
 
@@ -725,7 +725,7 @@
 
         current-organization (dtm/team->organization team)
 
-        ;; Find the "your-penpot" teams, and transform them in organizations. When
+        ;; Find the "personal-projects" teams, and transform them in organizations. When
         ;; the selected team is directly accessible but not listed in
         ;; membership teams, include only its organization so the organization selector can
         ;; show the current selection without leaking the team into the
