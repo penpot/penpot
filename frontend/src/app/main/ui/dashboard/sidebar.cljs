@@ -371,8 +371,8 @@
       [:span {:class (stl/css :my-teams-icon)}
        [:> raw-svg* {:id penpot-logo-icon-subtle}]]
       [:span {:class (stl/css :team-text)
-              :title (tr "dashboard.my-teams")}
-       (tr "dashboard.my-teams")]
+              :title (tr "dashboard.other-teams")}
+       (tr "dashboard.other-teams")]
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
      (when (seq organizations)
@@ -438,7 +438,7 @@
       (when-not (contains? cf/flags :admin-console)
         [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
 
-      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :admin-console) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
+      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :admin-console) (tr "dashboard.personal-projects") (tr "dashboard.your-penpot"))]
       (when (= default-team-id (:id team))
         tick-icon)]
 
@@ -835,7 +835,7 @@
              [:span {:class (stl/css :my-teams-icon-xxxl)}
               [:> raw-svg* {:id penpot-logo-icon-subtle}]]
              [:span {:class (stl/css :team-text)}
-              (tr "dashboard.my-teams")]]
+              (tr "dashboard.other-teams")]]
             [:*
              [:> organization-avatar* {:organization current-organization :size "xxxl"}]
              [:span {:class (stl/css :team-text)}
@@ -972,7 +972,7 @@
                                      :team-name-no-logo nitrate?)}
           (when-not nitrate?
             [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
-          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.my-files") (tr "dashboard.default-team-name"))]]
+          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.personal-projects") (tr "dashboard.default-team-name"))]]
 
          (and (contains? cf/flags :subscriptions)
               (not is-default?)
