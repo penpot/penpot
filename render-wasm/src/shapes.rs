@@ -960,6 +960,14 @@ impl Shape {
         Bounds::from_rect(&rect)
     }
 
+    pub fn extrect_depends_on_children(&self) -> bool {
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => true,
+            Type::Group(_) | Type::Frame(_) => !self.clip_content,
+            _ => false,
+        }
+    }
+
     fn apply_children_bounds(
         &self,
         bounds: Bounds,
@@ -1124,21 +1132,21 @@ impl Shape {
     }
 
     fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        // Own outsets (strokes, shadows, blur) are local-space, so they expand before the
+        // shape transform. Children extrects are already world-space: join them after it.
         let mut bounds = self.own_extrect_bounds();
-        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
-        bounds = self.apply_children_blur(bounds, shapes_pool);
 
         if !self.transform.is_identity() {
-            // Expand everything in the shape's local axis-aligned space first (strokes,
-            // shadows, blur, children). Only after that do we map the resulting bounds
-            // through the shape transform so rotation/skew is reflected in the final
-            // extrect.
             let mut matrix = self.transform;
             let center = self.center();
             matrix.post_translate(center);
             matrix.pre_translate(-center);
             bounds.transform_mut(&matrix);
         }
+
+        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
+        bounds = self.apply_children_blur(bounds, shapes_pool);
+
         bounds.to_rect()
     }
 

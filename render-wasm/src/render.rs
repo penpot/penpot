@@ -4202,22 +4202,8 @@ impl RenderState {
         result
     }
 
-    /*
-     * Incremental version of update_shape_tiles for pan/zoom operations.
-     * Updates the tile index and returns ONLY tiles that need cache invalidation.
-     *
-     * During pan operations, shapes don't move in world coordinates. The interest
-     * area (viewport) moves, which changes which tiles we track in the index, but
-     * tiles that were already cached don't need re-rendering just because the
-     * viewport moved.
-     *
-     * This function:
-     * 1. Updates the tile index (adds/removes shapes from tiles based on interest area)
-     * 2. Returns empty vec for cache invalidation (pan doesn't change tile content)
-     *
-     * Tile cache invalidation only happens when shapes actually move or change,
-     * which is handled by rebuild_touched_tiles, not during pan/zoom.
-     */
+    /// Diffs the shape's tile set, leaving cached tiles alone. For callers where the
+    /// index moves but painted content does not: pan/zoom.
     pub fn update_shape_tiles_incremental(
         &mut self,
         shape: &Shape,
@@ -4378,22 +4364,15 @@ impl RenderState {
             }
         }
 
+        self.index_dependent_ancestors(&ids, tree);
+
         performance::end_measure!("rebuild_touched_tiles");
     }
 
-    /// Invalidates extended rectangles and updates tiles for a set of shapes
-    ///
-    /// This function takes a set of shape IDs and for each one:
-    /// 1. Invalidates the extrect cache
-    /// 2. Updates the tiles to ensure proper rendering
-    ///
-    /// This is useful when you have a pre-computed set of shape IDs that need to be refreshed,
-    /// regardless of their relationship to other shapes (e.g., ancestors, descendants, or any other collection).
-    pub fn update_tiles_shapes(
-        &mut self,
-        shape_ids: &[Uuid],
-        tree: ShapesPoolMutRef<'_>,
-    ) -> Result<()> {
+    /// Re-indexes a set of shapes and evicts the cached tiles they dirty. Extrect caches
+    /// are not dropped here: `State::touch_shape` and `rebuild_modifier_tiles` invalidate
+    /// them at the source.
+    pub fn update_tiles_shapes(&mut self, shape_ids: &[Uuid], tree: ShapesPoolRef) -> Result<()> {
         performance::begin_measure!("invalidate_and_update_tiles");
         for shape_id in shape_ids {
             if let Some(shape) = tree.get(shape_id) {
@@ -4439,22 +4418,41 @@ impl RenderState {
         self.surfaces.invalidate_cached_tiles_intersecting(dirty);
     }
 
-    /// Rebuilds tiles for shapes with modifiers and processes their ancestors
-    ///
-    /// This function applies transformation modifiers to shapes and updates their tiles.
-    /// Additionally, it processes all ancestors of modified shapes to ensure their
-    /// extended rectangles are properly recalculated and their tiles are updated.
-    /// This is crucial for frames and groups that contain transformed children.
+    fn index_dependent_ancestors(&mut self, ids: &HashSet<Uuid>, tree: ShapesPoolRef) {
+        if ids.is_empty() {
+            return;
+        }
+
+        let mut seen = HashSet::<Uuid>::new();
+
+        for id in ids.iter() {
+            for ancestor_id in tree.dependent_ancestor_ids(id) {
+                if ids.contains(&ancestor_id) || !seen.insert(ancestor_id) {
+                    break;
+                }
+                let Some(shape) = tree.get(&ancestor_id) else {
+                    continue;
+                };
+                // A hidden ancestor paints nothing, but its parent may
+                if shape.hidden() {
+                    continue;
+                }
+                let _ = self.update_shape_tiles_incremental(shape, tree);
+            }
+        }
+    }
+
     pub fn rebuild_modifier_tiles(
         &mut self,
         tree: ShapesPoolMutRef<'_>,
         ids: &[Uuid],
     ) -> Result<()> {
-        // During interactive transform, skip ancestor invalidation: walking up to the
-        // parent frame evicts every tile the frame covers, including dense tiles with
-        // many siblings. Ancestor extrect caches are already invalidated by
-        // `ShapesPool::set_modifiers`; the tile index is reconciled post-gesture by
-        // the committing code path (rebuild_touched_tiles).
+        // `set_modifiers` runs per pointer move, this runs once per rAF, so the ancestor
+        // caches are dropped here. Must precede any read of their tile coverage below.
+        for id in ids {
+            tree.invalidate_ancestors_extrect(id);
+        }
+
         if self.options.is_interactive_transform() {
             self.update_tiles_shapes(ids, tree)?;
         } else {

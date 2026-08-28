@@ -911,7 +911,7 @@ pub extern "C" fn clean_modifiers() -> Result<()> {
         // the same tiles for the active modifier set, so the eviction
         // here is redundant and doubles the per-emission cost.
         if !prev_modifier_ids.is_empty() && !render_state.options.is_interactive_transform() {
-            render_state.update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
+            render_state.update_tiles_shapes(&prev_modifier_ids, &state.shapes)?;
         }
     });
     Ok(())
