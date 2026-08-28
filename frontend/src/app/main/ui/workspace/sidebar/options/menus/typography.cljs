@@ -90,6 +90,85 @@
            (constantly nil)))))
     @loaded?))
 
+;; --- OPTICAL CENTERING OF THE SAMPLE --------------------------------------
+
+;; Fonts with exaggerated vertical metrics (huge ascender/descender, small
+;; caps) render their line box lower within the fixed-height row, so a plain
+;; `align-items: center` leaves the "Ag" sample sitting low. We measure the
+;; font-wide vs glyph-ink bounding boxes once per font and shift the sample by
+;; the computed offset so the visible glyphs are optically centered.
+
+(defonce ^:private sample-offset-cache (atom {}))
+
+(defn- sample-offset-key [family weight style]
+  (dm/str family "|" weight "|" style))
+
+(defn- sample-offset-for
+  "Vertical shift (px) that centers the `Ag` ink within the sample box.
+
+  For a single centered line the shift reduces to the difference between the
+  font-wide and ink bounding boxes:
+  dy = ((ink-ascent - font-ascent) + (font-descent - ink-descent)) / 2."
+  [family weight style]
+  (when-some [{:keys [font-ascent font-descent ink-ascent ink-descent]}
+              (dom/measure-text-metrics family weight style)]
+    (let [dy (/ (+ (- ink-ascent font-ascent)
+                   (- font-descent ink-descent))
+                2)]
+      ;; Round to avoid float noise leaking into the transform string.
+      (/ (js/Math.round (* dy 1000)) 1000))))
+
+(defn- load-sample-offset
+  [font-id family weight style]
+  (let [key (sample-offset-key family weight style)]
+    (if-let [cached (get @sample-offset-cache key)]
+      (p/resolved cached)
+      (-> (fonts/ensure-loaded! font-id)
+          (p/then
+           (fn [_]
+             (let [dy (or (sample-offset-for family weight style) 0)]
+               (swap! sample-offset-cache assoc key dy)
+               dy)))))))
+
+(defn- use-sample-offset
+  "Lazily resolve the optical-centering offset for a typography sample,
+  measuring once per font and caching it. Falls back to 0 when the font isn't
+  available or the metrics can't be measured."
+  [font-id family weight style]
+  (let [offset* (mf/use-state 0)]
+    (mf/use-effect
+     (mf/deps font-id family weight style)
+     (fn []
+       (let [cancelled? (volatile! false)
+             key        (sample-offset-key family weight style)]
+         (if (contains? @sample-offset-cache key)
+           (reset! offset* (get @sample-offset-cache key))
+           (let [task (tm/schedule-on-idle
+                       (fn []
+                         (-> (load-sample-offset font-id family weight style)
+                             (p/then
+                              (fn [offset]
+                                (when-not @cancelled?
+                                  (reset! offset* offset)))))))]
+             (fn []
+               (vreset! cancelled? true)
+               (tm/dispose! task)))))
+       nil))
+    (deref offset*)))
+
+(defn- sample-style
+  "Inline style that applies the typography font and optically centers the
+  sample glyphs within the fixed-height row."
+  [typography offset]
+  (let [base {:font-family (:font-family typography)
+              :font-weight (:font-weight typography)
+              :font-style  (:font-style typography)}]
+    (if (zero? offset)
+      base
+      (assoc base :transform (dm/str "translateY(" offset "px)")))))
+
+;; --- FONT SELECTOR --------------------------------------------------------
+
 (mf/defc font-item-preview*
   "Row content with previews: a vector preview from the shared sprite for catalog
   fonts, or the font's own name lazily loaded for custom fonts the sprite doesn't
@@ -590,6 +669,10 @@
         font-data      (fonts/get-font-data (:font-id typography))
         typography-id  (:id typography)
         show-actions?  (and is-asset? is-editable)
+        offset         (use-sample-offset (:font-id typography)
+                                          (:font-family typography)
+                                          (:font-weight typography)
+                                          (:font-style typography))
 
         on-delete
         (mf/use-fn
@@ -624,10 +707,8 @@
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
-                  :style {:font-family (:font-family typography)
-                          :font-weight (:font-weight typography)
-                          :font-style (:font-style typography)}}
-            (tr "workspace.assets.typography.sample")]
+                  :style (sample-style typography offset)}
+            [:span (tr "workspace.assets.typography.sample")]]
 
            [:input
             {:class (stl/css :adv-typography-name)
@@ -661,11 +742,8 @@
          [:div {:class (stl/css :typography-info-wrapper)}
           [:div {:class (stl/css :typography-name-wrapper)}
            [:div {:class (stl/css :typography-sample)
-
-                  :style {:font-family (:font-family typography)
-                          :font-weight (:font-weight typography)
-                          :font-style (:font-style typography)}}
-            (tr "workspace.assets.typography.sample")]
+                  :style (sample-style typography offset)}
+            [:span (tr "workspace.assets.typography.sample")]]
 
            [:div {:class (stl/css :typography-name)
                   :title (:name typography)}
@@ -712,6 +790,10 @@
         open?                (deref open*)
         font-data            (fonts/get-font-data (:font-id typography))
         name-only?           (= (:name typography) (:name font-data))
+        offset               (use-sample-offset (:font-id typography)
+                                                (:font-family typography)
+                                                (:font-weight typography)
+                                                (:font-style typography))
 
         on-name-blur
         (mf/use-fn
@@ -769,10 +851,8 @@
         [:div {:class (stl/css :font-name-wrapper)}
          [:div
           {:class (stl/css :typography-sample-input)
-           :style {:font-family (:font-family typography)
-                   :font-weight (:font-weight typography)
-                   :font-style (:font-style typography)}}
-          (tr "workspace.assets.typography.sample")]
+           :style (sample-style typography offset)}
+          [:span (tr "workspace.assets.typography.sample")]]
 
          [:input
           {:class (stl/css :adv-typography-name)
@@ -789,10 +869,8 @@
           :on-context-menu on-context-menu}
          [:div
           {:class (stl/css :typography-sample)
-           :style {:font-family (:font-family typography)
-                   :font-weight (:font-weight typography)
-                   :font-style (:font-style typography)}}
-          (tr "workspace.assets.typography.sample")]
+           :style (sample-style typography offset)}
+          [:span (tr "workspace.assets.typography.sample")]]
 
          [:div {:class (stl/css :name-block)
                 :title (if name-only?
