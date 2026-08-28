@@ -16,7 +16,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.text :as ctt]
    [app.common.types.token :as cto]
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]))
 
 (defn get-tokens-source
   [file]
@@ -43,6 +44,19 @@
 (defn update-tokens-status
   [file f]
   (ctf/update-file-data file #(cfo/update-tokens-status % f)))
+
+(defn set-tokens-source
+  [file library]
+  (let [library-id (:id library)
+        library-tokens-status (if library
+                                (-> library ctf/file-data cfo/get-tokens-status)
+                                (ctos/make-tokens-status))]
+    (ctf/update-file-data
+     file
+     (fn [data]
+       (-> data
+           (cfo/set-tokens-source library-id)
+           (cfo/set-tokens-status library-tokens-status))))))
 
 (defn sample-file-with-tokens
   [& {:keys [lib-fn status-fn file-id] :as params

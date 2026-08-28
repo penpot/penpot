@@ -6,9 +6,11 @@
 
 (ns frontend-tests.helpers.state
   (:require
+   [app.common.data :as d]
    [app.common.pprint :refer [pprint]]
    [app.common.schema :as sm]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.tokens :as ctht]
    [app.main.data.workspace.layout :as layout]
    [app.main.features :as features]
    [beicon.v2.core :as rx]
@@ -34,12 +36,21 @@
 
 (defn setup-store
   ([file] (setup-store file nil))
-  ([file {:keys [renderer] :as _opts}]
-   (let [state (-> initial-state
+  ([file {:keys [renderer libraries tokens-source-library] :as _opts
+          :or {libraries [] tokens-source-library nil}}]
+   (let [file (cond-> file
+                (some? tokens-source-library)
+                (ctht/set-tokens-source tokens-source-library))
+         libraries (map #(assoc %
+                                :library-of (:id file)
+                                :is-shared true)
+                        libraries)
+         files (d/index-by :id (cons file libraries))
+         state (-> initial-state
                    (assoc :current-file-id (:id file)
                           :current-page-id (cthf/current-page-id file)
                           :permissions {:can-edit true}
-                          :files {(:id file) file})
+                          :files files)
                    (cond-> (some? renderer)
                      (assoc-in [:profile :props :renderer] renderer)))
          store (ptk/store {:state state :on-error on-error})]
