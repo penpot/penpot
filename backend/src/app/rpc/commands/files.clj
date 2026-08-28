@@ -515,8 +515,11 @@
 (def ^:private file-summary-cache-key-ttl
   (ct/duration {:days 30}))
 
-(def file-summary-cache-key-prefix
-  "penpot.library-summary.")
+(defn file-summary-cache-key
+  "Build the redis cache key for the file library summary. The tenant is
+   included to prevent key collisions between tenants sharing a redis instance"
+  [id]
+  (str "penpot.library-summary." (cf/get :tenant) "." id))
 
 (defn- get-file-with-summary
   "Get a file without data with a summary of its local library content"
@@ -545,7 +548,7 @@
                    (rds/build-set-args {:ex file-summary-cache-key-ttl})))]
 
     (if (contains? cf/flags :redis-cache)
-      (let [cache-key (str file-summary-cache-key-prefix id)]
+      (let [cache-key (file-summary-cache-key id)]
         (or (rds/run! cfg get-from-cache cache-key)
             (let [file (calculate-from-db)]
               (rds/run! cfg persist-to-cache (:library-summary file) cache-key)
