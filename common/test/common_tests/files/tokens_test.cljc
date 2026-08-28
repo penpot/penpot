@@ -574,8 +574,12 @@
 
 (t/deftest test-update-tokens-status
   (t/testing "update when there is no tokens-status has no effect"
-    (let [file (thf/sample-file :file1)
-          file' (cfo/update-tokens-status file #(t/is false "This should not be called"))]
+    (let [file  (thf/sample-file :file1)
+          file' (ctf/update-file-data file
+                                      (fn [data]
+                                        (cfo/update-tokens-status
+                                         data
+                                         #(t/is false "This should not be called"))))]
       (t/is (= file file'))))
 
   (t/testing "update a tokens-status applies the changes correctly"
@@ -595,6 +599,23 @@
       (t/is (= 1 (count (ctos/get-active-theme-ids tokens-status'))))
       (t/is (ctos/theme-active? tokens-status' (thi/id :theme1)))
       (t/is (= 0 (count (ctos/get-active-set-ids tokens-status')))))))
+
+(t/deftest test-set-tokens-status
+  (t/testing "set to empty"
+    (let [file (-> (thf/sample-file :file1)
+                   (assoc :tokens-status (ctos/make-tokens-status)))
+          file' (ctf/update-file-data file #(cfo/set-tokens-status % nil))
+          tokens-status' (tht/get-tokens-status file')]
+      (t/is (nil? tokens-status'))))
+
+  (t/testing "set to a new status"
+    (let [tokens-status1 (ctos/make-tokens-status)
+          tokens-status2 (ctos/make-tokens-status)
+          file (-> (thf/sample-file :file1)
+                   (assoc :tokens-status tokens-status1))
+          file' (ctf/update-file-data file #(cfo/set-tokens-status % tokens-status2))
+          tokens-status' (tht/get-tokens-status file')]
+      (t/is (= tokens-status2 tokens-status')))))
 
 ;; Tokens status with tokens lib
 

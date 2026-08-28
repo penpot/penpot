@@ -534,6 +534,12 @@
   [file-data f & args]
   (d/update-when file-data :tokens-status #(apply f % args)))
 
+(defn set-tokens-status
+  "Replace the tokens-status inside file-data with a new one."
+  [file-data tokens-status]
+  (assert (or (nil? tokens-status) (ctos/tokens-status? tokens-status)) "expected valid tokens-status or nil")
+  (assoc file-data :tokens-status tokens-status))
+
 ;; Tokens status with tokens lib
 
 (defn- calculate-active-sets

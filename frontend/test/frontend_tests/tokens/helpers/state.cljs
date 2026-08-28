@@ -32,9 +32,8 @@
   (ptk/reify ::end+
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data (dsh/lookup-file-data state)
-            tokens-status (cfo/get-tokens-status data)
-            tokens-lib    (cfo/get-tokens-lib data)]
+      (let [tokens-status (dsh/lookup-tokens-status state)
+            tokens-lib    (dsh/lookup-tokens-lib state)]
         (if (and tokens-status tokens-lib)
           (->> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
                (sd/resolve-tokens)
