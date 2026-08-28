@@ -972,7 +972,7 @@
                                      :team-name-no-logo nitrate?)}
           (when-not nitrate?
             [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
-          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.personal-projects") (tr "dashboard.default-team-name"))]]
+          [:span {:class (stl/css :team-text)} (tr "dashboard.personal-projects")]]
 
          (and (contains? cf/flags :subscriptions)
               (not is-default?)

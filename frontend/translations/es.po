@@ -1447,9 +1447,6 @@ msgstr "Tu nombre"
 msgid "dashboard.personal-projects"
 msgstr "Proyectos Personales"
 
-msgid "dashboard.personal-projects"
-msgstr "Proyectos Personales"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
