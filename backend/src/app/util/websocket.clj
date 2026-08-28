@@ -63,7 +63,11 @@
 
   It also accepts some options that allows you parametrize the
   protocol behavior. The options map will be used as-as for the
-  initial data of the `ws` data structure"
+  initial data of the `ws` data structure.
+
+  The returned map has the resolved options attached in its
+  metadata under the `::options` key; it is intended for testing
+  and introspection purposes only."
   [request & {:keys [::on-rcv-message
                      ::on-snd-message
                      ::on-connect
@@ -110,38 +114,40 @@
                        (assoc ::encode-fn encode-fn)
                        (assoc ::decode-fn decode-fn))]
 
-    {:on-open
-     (fn on-open [channel]
-       (l/dbg :fn "on-open" :conn-id (str id))
-       (let [options (-> options
-                         (assoc ::channel channel)
-                         (on-connect))
-             timeout (ct/duration idle-timeout)]
+    (with-meta
+      {:on-open
+       (fn on-open [channel]
+         (l/dbg :fn "on-open" :conn-id (str id))
+         (let [options (-> options
+                           (assoc ::channel channel)
+                           (on-connect))
+               timeout (ct/duration idle-timeout)]
 
-         (yws/set-idle-timeout! channel timeout)
-         (px/submit! :vthread (partial start-io-loop! options))))
+           (yws/set-idle-timeout! channel timeout)
+           (px/submit! :vthread (partial start-io-loop! options))))
 
-     :on-close
-     (fn on-close [_channel code reason]
-       (l/dbg :fn "on-close"
-              :conn-id (str id)
-              :code code
-              :reason reason)
-       (sp/close! close-ch))
+       :on-close
+       (fn on-close [_channel code reason]
+         (l/dbg :fn "on-close"
+                :conn-id (str id)
+                :code code
+                :reason reason)
+         (sp/close! close-ch))
 
-     :on-error
-     (fn on-error [_channel cause]
-       (sp/close! close-ch cause))
+       :on-error
+       (fn on-error [_channel cause]
+         (sp/close! close-ch cause))
 
-     :on-message
-     (fn on-message [_channel message]
-       (when (string? message)
-         (sp/offer! input-ch message)
-         (swap! state assoc ::last-activity-at (ct/now))))
+       :on-message
+       (fn on-message [_channel message]
+         (when (string? message)
+           (sp/offer! input-ch message)
+           (swap! state assoc ::last-activity-at (ct/now))))
 
-     :on-pong
-     (fn on-pong [_channel data]
-       (sp/put! hbeat-ch data))}))
+       :on-pong
+       (fn on-pong [_channel data]
+         (sp/put! hbeat-ch data))}
+      {::options options})))
 
 (defn- handle-ping!
   [{:keys [::id ::beats ::channel] :as wsp} beat-id]

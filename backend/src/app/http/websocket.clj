@@ -314,7 +314,10 @@
             :inc 1)
   message)
 
-(defn- http-handler
+(defn http-handler
+  "The websocket upgrade request handler. Returns the upgrade
+  response containing the websocket listener built with the
+  codecs of the negotiated payload format."
   [cfg {:keys [params ::session/profile-id] :as request}]
   (let [session-id (some-> params :session-id uuid/parse*)
         format     (cnegot/negotiate-format request)]
