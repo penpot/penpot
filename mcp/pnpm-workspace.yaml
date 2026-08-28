@@ -14,9 +14,9 @@ minimumReleaseAgeExclude:
   - hono@4.12.34
 
 packages:
-  - "./packages/common"
-  - "./packages/server"
-  - "./packages/plugin"
+  - "packages/common"
+  - "packages/server"
+  - "packages/plugin"
 
 overrides:
   '@hono/node-server@<2.0.5': ^2.0.5
