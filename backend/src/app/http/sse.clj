@@ -43,7 +43,8 @@
   [format]
   (case format
     :transit #(t/encode-str % {:type :json-verbose})
-    :json    cnegot/json-encode-str))
+    :json    cnegot/json-encode-str
+    #(t/encode-str % {:type :json-verbose})))
 
 ;; ---- PUBLIC API
 
