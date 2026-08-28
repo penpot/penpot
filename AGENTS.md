@@ -40,6 +40,15 @@ Skipping this step is the #1 cause of incorrect or incomplete work.
   `github.com/penpot/penpot/security/advisories/GHSA-*`, extract the GHSA ID
   from the URL and run `python3 scripts/gh.py advisories <GHSA-ID>` to fetch
   full advisory details before proceeding.
+- **Issue or PR mentioned** — When the user mentions a penpot/penpot issue or
+  PR (URL like `github.com/penpot/penpot/issues/<n>` / `.../pull/<n>`, or a
+  bare `#<n>` when context clearly refers to this repo), fetch details via CLI
+  instead of WebFetch:
+  - Issue → `gh issue view <n> --repo penpot/penpot` (add `--comments` when
+    discussion context matters).
+  - Single PR → `gh pr view <n> --repo penpot/penpot`.
+  - Multiple PRs (list, file, or milestone) → `python3 scripts/gh.py prs ...`.
+  Do this before proceeding. Only use WebFetch if the CLI fails.
 
 ## Writing Rules
 
