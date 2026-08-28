@@ -90,66 +90,72 @@
            (constantly nil)))))
     @loaded?))
 
-;; --- OPTICAL CENTERING OF THE SAMPLE --------------------------------------
+;; --- OPTICAL CENTERING OF SAMPLE TEXT --------------------------------------
 
 ;; Fonts with exaggerated vertical metrics (huge ascender/descender, small
-;; caps) render their line box lower within the fixed-height row, so a plain
-;; `align-items: center` leaves the "Ag" sample sitting low. We measure the
-;; font-wide vs glyph-ink bounding boxes once per font and shift the sample by
-;; the computed offset so the visible glyphs are optically centered.
+;; caps) render their line box lower within a fixed-height row, so a plain
+;; `align-items: center` leaves the visible glyphs sitting low. We measure the
+;; font-wide vs glyph-ink bounding boxes once per font/sample and shift the
+;; text by the computed offset so the visible glyphs are optically centered.
+;; The offset is expressed in `em`, which makes it size-independent: the same
+;; measurement corrects both the 16px `Ag` sample and the smaller font-name
+;; labels in the font selector.
 
-(defonce ^:private sample-offset-cache (atom {}))
+(defonce ^:private optical-offset-cache (atom {}))
 
-(defn- sample-offset-key [family weight style]
-  (dm/str family "|" weight "|" style))
+(defn- optical-offset-key [family weight style text]
+  (dm/str family "|" weight "|" style "|" text))
 
-(defn- sample-offset-for
-  "Vertical shift (px) that centers the `Ag` ink within the sample box.
+(defn- optical-offset-em
+  "Vertical shift (in `em` units, i.e. relative to the font size) that centers
+  the ink of `text` within a single line box.
 
-  For a single centered line the shift reduces to the difference between the
-  font-wide and ink bounding boxes:
-  dy = ((ink-ascent - font-ascent) + (font-descent - ink-descent)) / 2."
-  [family weight style]
+  For a centered line the shift reduces to the difference between the font-wide
+  and ink bounding boxes:
+  dy = ((ink-ascent - font-ascent) + (font-descent - ink-descent)) / 2.
+  Measuring at 16px and dividing the pixel shift by it yields the `em` value."
+  [family weight style text]
   (when-some [{:keys [font-ascent font-descent ink-ascent ink-descent]}
-              (dom/measure-text-metrics family weight style)]
+              (dom/measure-text-metrics family weight style text 16)]
     (let [dy (/ (+ (- ink-ascent font-ascent)
                    (- font-descent ink-descent))
-                2)]
+                2)
+          em (/ dy 16)]
       ;; Round to avoid float noise leaking into the transform string.
-      (/ (js/Math.round (* dy 1000)) 1000))))
+      (/ (js/Math.round (* em 10000)) 10000))))
 
-(defn- load-sample-offset
-  [font-id family weight style]
-  (let [key (sample-offset-key family weight style)]
-    (if-let [cached (get @sample-offset-cache key)]
+(defn- load-optical-offset
+  [font-id family weight style text]
+  (let [key (optical-offset-key family weight style text)]
+    (if-let [cached (get @optical-offset-cache key)]
       (p/resolved cached)
       (-> (fonts/ensure-loaded! font-id)
           (p/then
            (fn [_]
-             (let [dy (or (sample-offset-for family weight style) 0)]
-               (swap! sample-offset-cache assoc key dy)
-               dy)))))))
+             (let [em (or (optical-offset-em family weight style text) 0)]
+               (swap! optical-offset-cache assoc key em)
+               em)))))))
 
-(defn- use-sample-offset
-  "Lazily resolve the optical-centering offset for a typography sample,
-  measuring once per font and caching it. Falls back to 0 when the font isn't
-  available or the metrics can't be measured."
-  [font-id family weight style]
+(defn- use-optical-offset
+  "Lazily resolve the optical-centering offset (in `em`) for sample text in a
+  given font, measuring once per font/sample and caching it. Falls back to 0
+  when the font isn't available or the metrics can't be measured."
+  [font-id family weight style text]
   (let [offset* (mf/use-state 0)]
     (mf/use-effect
-     (mf/deps font-id family weight style)
+     (mf/deps font-id family weight style text)
      (fn []
        (let [cancelled? (volatile! false)
-             key        (sample-offset-key family weight style)]
-         (if (contains? @sample-offset-cache key)
-           (reset! offset* (get @sample-offset-cache key))
+             key        (optical-offset-key family weight style text)]
+         (if (contains? @optical-offset-cache key)
+           (reset! offset* (get @optical-offset-cache key))
            (let [task (tm/schedule-on-idle
                        (fn []
-                         (-> (load-sample-offset font-id family weight style)
+                         (-> (load-optical-offset font-id family weight style text)
                              (p/then
-                              (fn [offset]
+                              (fn [em]
                                 (when-not @cancelled?
-                                  (reset! offset* offset)))))))]
+                                  (reset! offset* em)))))))]
              (fn []
                (vreset! cancelled? true)
                (tm/dispose! task)))))
@@ -159,13 +165,13 @@
 (defn- sample-style
   "Inline style that applies the typography font and optically centers the
   sample glyphs within the fixed-height row."
-  [typography offset]
+  [typography em]
   (let [base {:font-family (:font-family typography)
               :font-weight (:font-weight typography)
               :font-style  (:font-style typography)}]
-    (if (zero? offset)
+    (if (zero? em)
       base
-      (assoc base :transform (dm/str "translateY(" offset "px)")))))
+      (assoc base :transform (dm/str "translateY(" em "em)")))))
 
 ;; --- FONT SELECTOR --------------------------------------------------------
 
@@ -189,7 +195,18 @@
         ;; we show the plain name rather than runtime-loading the whole catalog.
         in-sprite? (and attached? (contains? (:ids sprite) font-id))
         fallback?  (and (= :ready (:status sprite)) attached? (not in-sprite?))
-        loaded?    (use-font-lazy-load font-id fallback?)]
+        loaded?    (use-font-lazy-load font-id fallback?)
+
+        ;; Optical centering for the fallback name (custom fonts the sprite
+        ;; doesn't cover): extreme vertical metrics would push the name low in
+        ;; the row, so shift it by the measured offset once the font is known.
+        ;; The label renders at `body-medium` (400/normal), which is the weight
+        ;; and style we measure against.
+        label-offset (use-optical-offset font-id
+                                         (:family font)
+                                         "400"
+                                         "normal"
+                                         (:name font))]
     (if in-sprite?
       ;; `fill: currentColor` (scss) makes the sprite glyph follow the row color.
       [:svg {:class (stl/css :font-item-preview)
@@ -197,8 +214,11 @@
              :aria-label (:name font)}
        [:use {:href (dm/str "#" fonts/preview-sprite-prefix font-id)}]]
       [:span {:class (stl/css :font-item-label)
-              :style (when loaded?
-                       #js {:fontFamily (dm/str "\"" (:family font) "\", sans-serif")})}
+              :style (cond-> {}
+                       loaded?
+                       (assoc :font-family (dm/str "\"" (:family font) "\", sans-serif"))
+                       (not (zero? label-offset))
+                       (assoc :transform (dm/str "translateY(" label-offset "em)")))}
        (:name font)])))
 
 (mf/defc font-item*
@@ -669,10 +689,11 @@
         font-data      (fonts/get-font-data (:font-id typography))
         typography-id  (:id typography)
         show-actions?  (and is-asset? is-editable)
-        offset         (use-sample-offset (:font-id typography)
-                                          (:font-family typography)
-                                          (:font-weight typography)
-                                          (:font-style typography))
+        offset         (use-optical-offset (:font-id typography)
+                                           (:font-family typography)
+                                           (:font-weight typography)
+                                           (:font-style typography)
+                                           "Ag")
 
         on-delete
         (mf/use-fn
@@ -790,10 +811,11 @@
         open?                (deref open*)
         font-data            (fonts/get-font-data (:font-id typography))
         name-only?           (= (:name typography) (:name font-data))
-        offset               (use-sample-offset (:font-id typography)
-                                                (:font-family typography)
-                                                (:font-weight typography)
-                                                (:font-style typography))
+        offset               (use-optical-offset (:font-id typography)
+                                                 (:font-family typography)
+                                                 (:font-weight typography)
+                                                 (:font-style typography)
+                                                 "Ag")
 
         on-name-blur
         (mf/use-fn
