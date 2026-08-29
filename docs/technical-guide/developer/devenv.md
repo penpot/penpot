@@ -338,7 +338,7 @@ cd mcp
 pnpm run bootstrap:multi-user
 ```
 
-This will start the MCP server and the multi-user plugin that will be loaded automaticaly by Penpot.
+This will start the MCP server and the multi-user plugin that will be loaded automatically by Penpot.
 
 There is a NGINX proxy that makes a proxy-pass from outside the docker container so you don't need to remember the ports it's using.
 
