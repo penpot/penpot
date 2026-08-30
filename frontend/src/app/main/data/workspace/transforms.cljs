@@ -149,10 +149,16 @@
 
 ;; -- Resize --------------------------------------------------------
 
+(defn- shape-has-image-fill?
+  [shape]
+  (boolean (or (some :fill-image (:fills shape))
+               (:fill-image shape)
+               (cfh/image-shape? shape))))
+
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout objects [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout objects [point lock? center? bounds-resize? point-snap]]
             (let [selrect  (dm/get-prop shape :selrect)
                   width    (dm/get-prop selrect :width)
                   height   (dm/get-prop selrect :height)
@@ -187,6 +193,10 @@
                   ;; Resize vector
                   scalev (-> (gpt/divide (gpt/add shapev deltav) shapev)
                              (gpt/no-zeros))
+
+                  ;; Prevent non-positive scale to avoid division by zero or flipping to negative size
+                  scalev (gpt/point (max 0.001 (dm/get-prop scalev :x))
+                                    (max 0.001 (dm/get-prop scalev :y)))
 
                   scalev (if ^boolean lock?
                            (let [v (cond
@@ -235,7 +245,55 @@
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   change-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))]
+                  (not (mth/close? (dm/get-prop scalev :y) 1))
+
+                  ;; Calculate independent image bounds resize transform
+                  sx (dm/get-prop scalev :x)
+                  sy (dm/get-prop scalev :y)
+                  w-new (* width sx)
+                  h-new (* height sy)
+
+                  [dx dy] (if ^boolean center?
+                            [(/ (* width (- 1.0 sx)) 2.0)
+                             (/ (* height (- 1.0 sy)) 2.0)]
+                            [(case handler
+                               (:left :bottom-left :top-left) (* width (- 1.0 sx))
+                               0.0)
+                             (case handler
+                               (:top :top-left :top-right) (* height (- 1.0 sy))
+                               0.0)])
+
+                  new-fills
+                  (when (and bounds-resize? (seq (:fills shape)))
+                    (mapv (fn [fill]
+                            (if-let [img-fill (:fill-image fill)]
+                              (let [tf (get img-fill :transform)
+                                    nx0 (get tf :x 0.0)
+                                    ny0 (get tf :y 0.0)
+                                    nw0 (get tf :width 1.0)
+                                    nh0 (get tf :height 1.0)
+                                    nx' (/ (- (* nx0 width) dx) w-new)
+                                    ny' (/ (- (* ny0 height) dy) h-new)
+                                    nw' (/ nw0 sx)
+                                    nh' (/ nh0 sy)]
+                                (assoc-in fill [:fill-image :transform]
+                                          {:x nx' :y ny' :width nw' :height nh'}))
+                              fill))
+                          (:fills shape)))
+
+                  new-fill-image
+                  (when (and bounds-resize? (some? (:fill-image shape)))
+                    (let [img-fill (:fill-image shape)
+                          tf (get img-fill :transform)
+                          nx0 (get tf :x 0.0)
+                          ny0 (get tf :y 0.0)
+                          nw0 (get tf :width 1.0)
+                          nh0 (get tf :height 1.0)
+                          nx' (/ (- (* nx0 width) dx) w-new)
+                          ny' (/ (- (* ny0 height) dy) h-new)
+                          nw' (/ nw0 sx)
+                          nh' (/ nh0 sy)]
+                      (assoc img-fill :transform {:x nx' :y ny' :width nw' :height nh'})))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -258,18 +316,30 @@
                 (and new-grow-type (not= new-grow-type (dm/get-prop shape :grow-type)))
                 (ctm/change-property :grow-type new-grow-type)
 
+                (and bounds-resize? (some? new-fills))
+                (ctm/change-property :fills new-fills)
+
+                (and bounds-resize? (some? new-fill-image))
+                (ctm/change-property :fill-image new-fill-image)
+
                 ^boolean scale-text
                 (ctm/scale-content (dm/get-prop scalev :x)))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
           ;; lock flag that can be activated on element options.
-          (normalize-proportion-lock [[point shift? alt?]]
-            (let [proportion-lock? (:proportion-lock shape)]
+          (normalize-proportion-lock [[point shift? alt? mod?]]
+            (let [has-img? (shape-has-image-fill? shape)
+                  bounds-resize? (and has-img? (boolean mod?))
+                  proportion-lock? (:proportion-lock shape)
+                  lock? (if bounds-resize?
+                          (boolean shift?)
+                          (or ^boolean proportion-lock?
+                              ^boolean shift?))]
               [point
-               (or ^boolean proportion-lock?
-                   ^boolean shift?)
-               alt?]))]
+               lock?
+               alt?
+               bounds-resize?]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -297,10 +367,10 @@
                     resize-events-stream
                     (->> ms/mouse-position
                          (rx/filter some?)
-                         (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                         (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt ms/mouse-position-mod)
                          (rx/map normalize-proportion-lock)
                          (rx/switch-map
-                          (fn [[point _ _ :as current]]
+                          (fn [[point _ _ _ :as current]]
                             (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
                                  (rx/map #(conj current %)))))
                          (rx/map #(resize shape initial-position layout objects %))
