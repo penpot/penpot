@@ -3577,7 +3577,7 @@ msgid "labels.checking-for-updates"
 msgstr "Comprobando actualizaciones..."
 
 msgid "dashboard.check-updates.available-title"
-msgstr "A NEW PENPOT VERSION IS AVAILABLE"
+msgstr "HAY UNA NUEVA VERSIÓN DE PENPOT DISPONIBLE"
 
 msgid "dashboard.check-updates.available-message"
 msgstr "Las versiones más recientes incluyen mejoras de rendimiento, nuevas capacidades y correcciones que mantienen tu instalación al día."
@@ -3598,7 +3598,7 @@ msgid "dashboard.check-updates.view-release-notes"
 msgstr "Ver notas de la versión"
 
 msgid "dashboard.check-updates.unable-title"
-msgstr "UNABLE TO CHECK FOR UPDATES"
+msgstr "NO HA SIDO POSIBLE COMPROBAR LAS ACTUALIZACIONES"
 
 msgid "dashboard.check-updates.unable-message"
 msgstr "Esta instalación no pudo contactar con el servicio de versiones de Penpot."
@@ -3610,7 +3610,7 @@ msgid "dashboard.check-updates.try-again"
 msgstr "Intentar de nuevo"
 
 msgid "dashboard.check-updates.uptodate-title"
-msgstr "PENPOT IS UP TO DATE"
+msgstr "PENPOT ESTÁ ACTUALIZADO"
 
 msgid "dashboard.check-updates.uptodate-message"
 msgstr "Estás usando la última versión estable:"
