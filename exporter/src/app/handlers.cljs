@@ -6,22 +6,44 @@
 
 (ns app.handlers
   (:require
+   [app.auth :as auth]
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
-   [app.handlers.export-frames :as export-frames]
-   [app.handlers.export-shapes :as export-shapes]
+   [app.handlers.export :as export]
    [app.util.transit :as t]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [promesa.core :as p]))
 
 (l/set-level! :debug)
+
+(def ^:private error-codes
+  #{:queue-full})
 
 (defn on-error
   [error exchange]
   (let [{:keys [type code] :as data} (ex-data error)]
     (cond
+      (and (= :validation type)
+           (contains? error-codes code))
+      (let [data {:type :validation
+                  :code code
+                  :hint (ex-message error)}]
+        (l/warn :hint "rejecting export request" :code code)
+        (-> exchange
+            (assoc :response/status 429)
+            (assoc :response/body (t/encode data))
+            (assoc :response/headers {"content-type" "application/transit+json"})))
+
+      (= :authentication type)
+      (let [data {:type :authentication
+                  :code code
+                  :hint (ex-message error)}]
+        (-> exchange
+            (assoc :response/status 401)
+            (assoc :response/body (t/encode data))
+            (assoc :response/headers {"content-type" "application/transit+json"})))
+
       (or (= :validation type)
           (= :assertion type))
       (let [explain (us/pretty-explain data)
@@ -62,27 +84,27 @@
             (assoc :response/body (t/encode (d/without-nils data)))
             (assoc :response/headers {"content-type" "application/transit+json"}))))))
 
-(defmulti command-spec :cmd)
-
-(s/def ::id ::us/string)
-(s/def ::wait ::us/boolean)
-(s/def ::cmd ::us/keyword)
-
-(defmethod command-spec :export-shapes [_] ::export-shapes/params)
-(defmethod command-spec :export-frames [_] ::export-frames/params)
-
-(s/def ::params
-  (s/and (s/keys :req-un [::cmd]
-                 :opt-un [::wait])
-         (s/multi-spec command-spec :cmd)))
-
 (defn handler
-  [{:keys [:request/params] :as exchange}]
-  (let [{:keys [cmd] :as params} (us/conform ::params params)]
+  "The original `POST /api/export` entry point, and the one the browser backend
+  still goes through. The export runs as soon as it is asked for, and the
+  contract is unchanged: `:wait` answers with the finished resource, otherwise
+  with the resource handle while the work runs."
+  [{:keys [:request/params :request/auth-token] :as exchange}]
+  (let [{:keys [cmd wait] :as params} (export/conform-params params)]
     (l/debug :hint "process-request" :cmd cmd)
-    (case cmd
-      :export-shapes (export-shapes/handler exchange params)
-      :export-frames (export-frames/handler exchange params)
-      (ex/raise :type :internal
-                :code :method-not-implemented
-                :hint (str/istr "method ~{cmd} not implemented")))))
+    (->> (auth/resolve-profile-id auth-token)
+         (p/mcat (fn [profile-id]
+                   ;; The session wins when there is one; the body value stays
+                   ;; the fallback so nothing that used to work stops working.
+                   (export/export! auth-token (cond-> params
+                                                (some? profile-id)
+                                                (assoc :profile-id profile-id)))))
+         (p/mcat (fn [{:keys [resource pending]}]
+                   (if wait
+                     (p/fmap (fn [resource]
+                               (assoc exchange :response/body resource))
+                             pending)
+                     (do
+                       (p/merr (constantly nil) pending)
+                       (p/resolved
+                        (assoc exchange :response/body (dissoc resource :path))))))))))

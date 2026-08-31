@@ -26,6 +26,7 @@
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
 (s/def ::is-wasm ::us/boolean)
+(s/def ::job-id ::us/uuid)
 
 (s/def ::object
   (s/keys :req-un [::id ::name ::suffix ::filename]
@@ -36,18 +37,22 @@
 
 (s/def ::render-params
   (s/keys :req-un [::file-id ::page-id ::scale ::token ::type ::objects]
-          :opt-un [::is-wasm]))
+          :opt-un [::is-wasm ::job-id]))
+
+(defn headless?
+  "Whether `params` renders with render-wasm rather than a browser."
+  [{:keys [type is-wasm]}]
+  (and is-wasm (contains? cf/flags :wasm-export) (not= :svg type)))
 
 (defn render
   [{:keys [type is-wasm] :as params} on-object]
   (us/verify ::render-params params)
   (us/verify fn? on-object)
-  (let [wasm-export? (contains? cf/flags :wasm-export)
-        headless?    (and is-wasm wasm-export? (not= :svg type))]
+  (let [headless? (headless? params)]
     (when is-wasm
       (l/info :hint "render"
               :type type
-              :wasm-export wasm-export?
+              :wasm-export (contains? cf/flags :wasm-export)
               :backend (if headless? "wasm" "browser")))
     (if headless?
       (rw/render params on-object)
@@ -57,4 +62,20 @@
         :webp (rb/render params on-object)
         :pdf  (rp/render params on-object)
         :svg  (rs/render params on-object)))))
+
+(defn with-scope
+  "Runs `f`, a fn of a render fn with the same signature as `render`. Exports
+  that render headless share one worker for the whole call instead of acquiring
+  one per render; the browser backend keeps rendering them in parallel."
+  [exports f]
+  (if (some headless? exports)
+    (rw/with-scope (:job-id (first exports))
+      (fn [render-leased]
+        (f (fn [params on-object]
+             (us/verify ::render-params params)
+             (us/verify fn? on-object)
+             (if (headless? params)
+               (render-leased params on-object)
+               (render params on-object))))))
+    (f render)))
 
