@@ -85,8 +85,8 @@
 (mf/defc recovery-page*
   [{:keys [params]}]
   [:div {:class (stl/css :wrapper)}
-   [:h1 {:class (stl/css :title)} "Forgot your password?"]
-   [:div {:class (stl/css :subtitle)} "Please enter your new password"]
+   [:h1 {:class (stl/css :title)} (tr "auth.recovery-request-title")]
+   [:div {:class (stl/css :subtitle)} (tr "auth.recovery-request-subtitle")]
    [:hr {:class (stl/css :separator)}]
    [:> recovery-form* {:params params}]
 
