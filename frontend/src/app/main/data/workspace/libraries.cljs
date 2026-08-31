@@ -840,7 +840,9 @@
          (rx/merge
           (->> (rx/of library-id)
                (rx/delay 5000)
-               (rx/map fetch-library-thumbnails)))
+               (rx/map fetch-library-thumbnails))
+          (when (ch/tokens-lib-changed? changes)
+            (rx/of (dwtp/propagate-workspace-tokens))))
 
          (rx/take-until stopper-s))))))
 
