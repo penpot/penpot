@@ -1,0 +1,10 @@
+# Optional compose overlay, included by manage.sh's instance-compose ONLY
+# when PENPOT_OPENCODE_CONFIG_DIR is set (run-devenv --opencode-config-dir
+# DIR). Bind-mounts a host directory over the container's opencode global
+# config dir (~/.config/opencode) so personal agents/prompts/skills kept in
+# a separate repo are available inside the devenv without committing them
+# here. Without the flag this file is never referenced.
+services:
+  main:
+    volumes:
+      - "${PENPOT_OPENCODE_CONFIG_DIR}:/home/penpot/.config/opencode:z"
