@@ -43,15 +43,25 @@
     (swap! storage/storage dissoc
            nitrate-entry-pending-popup-key)))
 
+(def ^:private offline-connectivity
+  {:licenses false})
+
+(defn- air-gapped?
+  []
+  (contains? cf/flags :air-gapped-conf))
+
 (defn show-nitrate-popup
   ([popup-type] (show-nitrate-popup popup-type {}))
   ([popup-type extra-props]
    (ptk/reify ::show-nitrate-popup
      ptk/WatchEvent
      (watch [_ _ _]
-       (->> (rp/cmd! ::get-nitrate-connectivity {})
-            (rx/map (fn [connectivity]
-                      (modal/show popup-type (merge (or connectivity {}) extra-props)))))))))
+       (if (air-gapped?)
+         (rx/of (modal/show popup-type (merge offline-connectivity extra-props)))
+         (->> (rp/cmd! ::get-nitrate-connectivity {})
+              (rx/map (fn [connectivity]
+                        (modal/show popup-type
+                                    (merge (or connectivity {}) extra-props))))))))))
 
 (defn build-admin-console-url
   ([path]

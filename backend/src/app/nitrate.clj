@@ -245,7 +245,7 @@
                  [:enum
                   "customer_service"
                   "low_quality"
-                  "missing_feature"
+                  "missing_features"
                   "other"
                   "switched_service"
                   "too_complex"
