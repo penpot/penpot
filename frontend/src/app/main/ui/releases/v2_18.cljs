@@ -36,10 +36,10 @@
          [:div {:class (stl/css :features-block)}
 
           [:p  {:class (stl/css :feature-content)}
-           "Say hello to Penpot Enterprise, our new paid plan, shipping alongside the most requested stroke to path functionality and a fresh batch of features and fixes."]
+           "Say hello to Penpot Enterprise, our new paid plan, shipping alongside the most requested stroke-to-path functionality and a fresh batch of features and fixes."]
 
           [:p  {:class (stl/css :feature-content)}
-           "Penpot stays free, unlimited, and open source. Enterprise is for the moment your design work grows and you're ready to govern it with confidence."]
+           "Penpot stays free, unlimited, and open source. Enterprise is meant for organisations that need to govern over people, workflows or content."]
 
           [:p  {:class (stl/css :feature-content)}
            "Let’s dive in!"]]
@@ -66,16 +66,16 @@
 
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "As the people and the work multiply, so does the question every admin faces: who can do what, and where? Enterprise gives you a clear answer."]
+           "As an open source product, Penpot brings the most advanced features to everyone for free."]
 
           [:p {:class (stl/css :feature-content)}
-           "From a single Admin Console, you govern your whole organization in one place, setting the rules once so they apply everywhere the instant you make a change."]]
+           "Penpot Enterprise is a paid layer that overrides, tweaks or restricts how these features can be used at scale."]]
 
          [:div {:class (stl/css :navigation)}
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 6}]
 
           [:> button* {:class (stl/css :next-btn)
                        :on-click next
@@ -107,7 +107,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 6}]
 
           [:> button* {:class (stl/css :next-btn)
                        :on-click next
@@ -139,7 +139,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 6}]
 
           [:> button* {:class (stl/css :next-btn)
                        :on-click next
@@ -147,6 +147,70 @@
            "Continue"]]]]]]
 
      3
+     [:div {:class (stl/css-case :modal-overlay true)}
+      [:div.animated {:class klass}
+       [:div {:class (stl/css :modal-container)}
+        [:img {:src "images/features/2.18-console.jpg"
+               :class (stl/css :start-image)
+               :border "0"
+               :alt "An Admin Panel to rule them all"}]
+
+        [:div {:class (stl/css :modal-content)}
+         [:div {:class (stl/css :modal-header)}
+          [:h1 {:class (stl/css :modal-title)}
+           "Advanced permissions: An Admin Panel to rule them all"]]
+
+         [:div {:class (stl/css :feature)}
+          [:p {:class (stl/css :feature-content)}
+           "A separate Admin Panel allows authorized users to create independent Organisations to which certain rules can be applied."]
+
+          [:p {:class (stl/css :feature-content)}
+           "We are starting with something straightforward; Per-Organisation SSO (choose between multiple identity providers) and advanced permissions (decide who can do what across every team)."]]
+
+         [:div {:class (stl/css :navigation)}
+          [:> c/navigation-bullets*
+           {:slide slide
+            :navigate navigate
+            :total 6}]
+
+          [:> button* {:class (stl/css :next-btn)
+                       :on-click next
+                       :variant "primary"}
+           "Continue"]]]]]]
+
+     4
+     [:div {:class (stl/css-case :modal-overlay true)}
+      [:div.animated {:class klass}
+       [:div {:class (stl/css :modal-container)}
+        [:img {:src "images/features/2.18-billing.jpg"
+               :class (stl/css :start-image)
+               :border "0"
+               :alt "Penpot Enterprise billing"}]
+
+        [:div {:class (stl/css :modal-content)}
+         [:div {:class (stl/css :modal-header)}
+          [:h1 {:class (stl/css :modal-title)}
+           "Advanced permissions: Penpot Enterprise billing"]]
+
+         [:div {:class (stl/css :feature)}
+          [:p {:class (stl/css :feature-content)}
+           "This is equally important. Whether on a monthly or annual subscription, customers using Penpot Enterprise only pay once per identifiable user (email address), regardless of the number of organisations this user is a member of."]
+
+          [:p {:class (stl/css :feature-content)}
+           "Bulk adding or removing users is trivial and we are making sure that you have total transparency and ergonomics around your billing cycle and what it contains."]]
+
+         [:div {:class (stl/css :navigation)}
+          [:> c/navigation-bullets*
+           {:slide slide
+            :navigate navigate
+            :total 6}]
+
+          [:> button* {:class (stl/css :next-btn)
+                       :on-click next
+                       :variant "primary"}
+           "Continue"]]]]]]
+
+     5
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
@@ -180,7 +244,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 6}]
 
           [:> button* {:class (stl/css :next-btn)
                        :on-click finish
