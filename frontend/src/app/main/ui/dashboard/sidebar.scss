@@ -525,6 +525,26 @@
   &:hover {
     color: var(--menu-foreground-color-hover);
   }
+
+  &.checking {
+    color: var(--color-foreground-secondary);
+    pointer-events: none;
+
+    &:hover {
+      color: var(--color-foreground-secondary);
+      background-color: transparent;
+    }
+  }
+}
+
+.checking-icon {
+  flex-shrink: 0;
+  animation: spin-animation 1s infinite linear;
+}
+
+.submenu-separator {
+  border-top: $b-1 solid var(--color-background-quaternary);
+  margin: 0;
 }
 
 .about-penpot {
