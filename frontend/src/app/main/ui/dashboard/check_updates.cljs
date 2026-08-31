@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.check-updates
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.version :as v]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -55,29 +56,6 @@
                  item)))
        vec))
 
-(def ^:private version-triple-re
-  #"^(\d+)\.(\d+)\.(\d+)$")
-
-(defn- version-triple
-  [version]
-  (when-let [[_ major minor patch] (re-matches version-triple-re version)]
-    [(js/parseInt major 10)
-     (js/parseInt minor 10)
-     (js/parseInt patch 10)]))
-
-(defn version-compare
-  "Compare two X.Y.Z versions by major, minor, and patch."
-  [a b]
-  (let [[ma mi pa] (or (version-triple a) [0 0 0])
-        [mb mj pb] (or (version-triple b) [0 0 0])]
-    (or (when (not= ma mb) (- ma mb))
-        (when (not= mi mj) (- mi mj))
-        (- pa pb))))
-
-(defn version-newer?
-  [a b]
-  (pos? (version-compare a b)))
-
 (defn parse-highlights
   "Parse HIGHLIGHTS.md into released version sections with bullet items.
   Skips Unreleased headings. Preserves file order (newest first)."
@@ -102,7 +80,7 @@
   patch). Stops at the installed version or any older section."
   [highlights installed]
   (into []
-        (take-while #(version-newer? (:version %) installed))
+        (take-while #(v/newer? (:version %) installed))
         highlights))
 
 (defn- show-available-dialog
@@ -129,7 +107,7 @@
       (nil? latest)
       (show-unable-dialog)
 
-      (not (version-newer? latest installed))
+      (not (v/newer? latest installed))
       (show-uptodate-dialog installed)
 
       :else

@@ -7,6 +7,7 @@
 (ns app.common.version
   "A version parsing helper."
   (:require
+   [app.common.data :as d]
    [cuerdas.core :as str]))
 
 (def version-re #"^(([A-Za-z]+)\-?)?((\d+)\.(\d+)\.(\d+))(\-?((RC|DEV)(\d+)?))?(\-?(\d+))?(\-?g(\w+))?$")
@@ -48,4 +49,25 @@
        :commit-hash (get result 14)})
 
     :else nil))
+
+(defn- version-components
+  [version]
+  (let [{:keys [major minor patch]} (or (parse version) {})]
+    [(d/parse-integer major 0)
+     (d/parse-integer minor 0)
+     (d/parse-integer patch 0)]))
+
+(defn compare-versions
+  "Compare two X.Y.Z base versions. Returns negative if a < b, zero if
+  equal, positive if a > b."
+  [version-a version-b]
+  (let [[major-a minor-a patch-a] (version-components version-a)
+        [major-b minor-b patch-b] (version-components version-b)]
+    (or (when (not= major-a major-b) (- major-a major-b))
+        (when (not= minor-a minor-b) (- minor-a minor-b))
+        (- patch-a patch-b))))
+
+(defn newer?
+  [version-a version-b]
+  (pos? (compare-versions version-a version-b)))
 

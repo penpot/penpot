@@ -6,6 +6,7 @@
 
 (ns frontend-tests.ui.check-updates-test
   (:require
+   [app.common.version :as v]
    [app.main.ui.dashboard.check-updates :as dcu]
    [cljs.test :as t :include-macros true]))
 
@@ -52,11 +53,11 @@
            (dcu/parse-highlights sample-highlights))))
 
 (t/deftest version-compare
-  (t/is (zero? (dcu/version-compare "2.17.1" "2.17.1")))
-  (t/is (pos? (dcu/version-compare "2.17.2" "2.17.1")))
-  (t/is (neg? (dcu/version-compare "2.17.1" "2.17.2")))
-  (t/is (pos? (dcu/version-compare "3.0.0" "2.99.99")))
-  (t/is (neg? (dcu/version-compare "2.17.2" "2.17.10"))))
+  (t/is (zero? (v/compare-versions "2.17.1" "2.17.1")))
+  (t/is (pos? (v/compare-versions "2.17.2" "2.17.1")))
+  (t/is (neg? (v/compare-versions "2.17.1" "2.17.2")))
+  (t/is (pos? (v/compare-versions "3.0.0" "2.99.99")))
+  (t/is (neg? (v/compare-versions "2.17.2" "2.17.10"))))
 
 (t/deftest highlights-until-installed
   (let [sections (dcu/parse-highlights sample-highlights)]
