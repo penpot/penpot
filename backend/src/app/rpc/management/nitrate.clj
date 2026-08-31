@@ -318,7 +318,7 @@ RETURNING id, deleted_at;")
 
 (defn manage-deleted-organization-teams
   "For a deleted organization, preserve organization teams unchanged and only prefix or
-  delete member Your Penpot teams depending on whether they still contain files."
+  delete member Personal Projects teams depending on whether they still contain files."
   [cfg {:keys [organization-id organization-name teams]}]
   (let [all-team-ids (->> teams
                           (map :id)
@@ -347,13 +347,13 @@ RETURNING id, deleted_at;")
                  teams-to-delete  (->> your-penpot-team-ids (remove teams-with-files) (into []))]
 
              ;; Organization teams move to the fallback organization unchanged. Only imported
-             ;; Your Penpot teams keep the organization prefix when they still have files.
+             ;; Personal Projects teams keep the organization prefix when they still have files.
              (when (seq teams-to-prefix)
                (db/exec! conn [sql:prefix-teams-name-and-unset-default
                                organization-prefix
                                (db/create-array conn "uuid" teams-to-prefix)]))
 
-             ;; Empty imported Your Penpot teams disappear entirely.
+             ;; Empty imported Personal Projects teams disappear entirely.
              (soft-delete-teams! cfg teams-to-delete)
 
              (notifications/notify-organization-deletion cfg organization-id organization-name all-team-ids teams-to-delete)
@@ -362,7 +362,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::notify-organization-deletion
   "For a deleted organization, preserve organization teams and only prefix or delete
-   imported Your Penpot teams before notifying connected users."
+   imported Personal Projects before notifying connected users."
   {::doc/added "2.18"
    ::sm/params schema:notify-organization-deletion
    ::rpc/auth false}
@@ -382,7 +382,7 @@ RETURNING id, deleted_at;")
 
 (sv/defmethod ::notify-user-organizations-deletion
   "For a given user, find all owned organizations and apply the deleted-organization
-   transfer rules to their imported Your Penpot teams."
+   transfer rules to their imported Personal Projects teams."
   {::doc/added "2.18"
    ::sm/params schema:notify-user-organizations-deletion
    ::nitrate/sso false}

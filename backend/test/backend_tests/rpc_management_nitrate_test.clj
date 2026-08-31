@@ -268,7 +268,7 @@
           new-team     (th/db-get :team {:id new-team-id})]
       (t/is (th/success? out))
       (t/is (= 1 (count (set/difference after-teams before-teams))))
-      (t/is (= "Your Penpot" (:name new-team)))
+      (t/is (= "Personal Projects" (:name new-team)))
       (t/is (true? (:is-default new-team))))))
 
 (t/deftest get-managed-profiles-returns-unique-members-for-owned-teams

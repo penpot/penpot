@@ -40,10 +40,27 @@ Skipping this step is the #1 cause of incorrect or incomplete work.
   `github.com/penpot/penpot/security/advisories/GHSA-*`, extract the GHSA ID
   from the URL and run `python3 scripts/gh.py advisories <GHSA-ID>` to fetch
   full advisory details before proceeding.
+- **Issue or PR mentioned** — When the user mentions a penpot/penpot issue or
+  PR (URL like `github.com/penpot/penpot/issues/<n>` / `.../pull/<n>`, or a
+  bare `#<n>` when context clearly refers to this repo), fetch details via CLI
+  instead of WebFetch:
+  - Issue → `gh issue view <n> --repo penpot/penpot` (add `--comments` when
+    discussion context matters).
+  - Single PR → `gh pr view <n> --repo penpot/penpot`.
+  - Multiple PRs (list, file, or milestone) → `python3 scripts/gh.py prs ...`.
+  Do this before proceeding. Only use WebFetch if the CLI fails.
 
 ## Writing Rules
 
-Use the `ste` skill when the user explicitly requests STE, `/ste`, or ASD-STE100.
+Writing rules, from Orwell, 1946. These govern prose: docs, PR text, messages. Never touch code or technical terms; swap in everyday words only where precision survives.
+
+1. Never use a metaphor, simile or other figure of speech which you are used to seeing in print.
+2. Never use a long word where a short one will do.
+3. If it is possible to cut a word out, always cut it out.
+4. Never use the passive where you can use the active.
+5. Never use a foreign phrase, a scientific word or a jargon word if you can think of an everyday English equivalent.
+6. Break any of these rules sooner than say anything outright barbarous.
+Review every prose output against these rules before delivering.
 
 ---
 

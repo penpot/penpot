@@ -7,7 +7,7 @@ export class OnboardingPage extends BaseWebSocketPage {
   }
 
   async fillOnboardingInputsStep1() {
-    await this.page.getByText("Personal").click();
+    await this.page.getByText("Personal", { exact: true }).click();
     await this.page.getByText("Select option").click();
     await this.page.getByText("Product Management").click();
 

@@ -336,7 +336,7 @@
     (doseq [{:keys [id reassign-to]} teams-to-leave]
       (teams/leave-team cfg {:profile-id profile-id :id id :reassign-to reassign-to}))
 
-    ;; Process organization "Your Penpot" team: keep with prefix if needed, otherwise delete.
+    ;; Process organization "Personal Projects" team: keep with prefix if needed, otherwise delete.
     (when default-team-id
       (if keep-default-team?
         (db/exec! conn [sql:prefix-team-name-and-unset-default organization-prefix default-team-id])
