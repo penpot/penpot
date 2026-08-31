@@ -13,6 +13,7 @@ mod shadows;
 pub mod shape_renderer;
 mod strokes;
 mod surfaces;
+pub mod svg;
 pub mod text;
 pub mod text_editor;
 mod ui;

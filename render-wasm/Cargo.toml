@@ -37,6 +37,9 @@ skia-safe = { version = "0.93.1", default-features = false, features = [
 thiserror = "2.0.18"
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 
+[dev-dependencies]
+insta = "1"
+
 [profile.release]
 opt-level = 3
 lto = "fat"
