@@ -4,95 +4,132 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as t;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .tool-window {
-  padding: 0 0 deprecated.$s-24 deprecated.$s-12;
+  padding-inline-start: var(--sp-m);
+  padding-block-end: var(--sp-xxl);
   display: grid;
   grid-auto-rows: max-content;
-  gap: deprecated.$s-4;
-  height: 100%;
+  gap: var(--sp-xs);
+  block-size: 100%;
 }
 
-.file-name {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  flex-grow: 100;
-  height: 100%;
-}
 
 .loading {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  height: deprecated.$s-32;
-  padding-left: calc(deprecated.$s-12 + deprecated.$s-2);
+  block-size: $sz-32;
+  padding-inline-start: calc(var(--sp-m) + var(--sp-xxs));
   color: var(--color-foreground-secondary);
 }
 
 .special-title {
-  @include deprecated.text-ellipsis;
-
-  color: var(--title-foreground-color-hover);
-  margin-left: deprecated.$s-2;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-primary);
+  padding-inline-start: var(--sp-xxs);
   text-align: left;
 }
 
+.special-title-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tokens-source-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: $b-1 solid var(--color-accent-select);
+  border-radius: $br-4;
+  padding: var(--sp-xxs);
+}
+
+.tokens-source-icon {
+  flex-shrink: 0;
+  color: var(--color-accent-tertiary);
+}
+
 .file-link {
-  @extend %button-tertiary;
+  --file-link-background-color: transparent;
+  --file-link-border-color: transparent;
+  --file-link-foreground-color: var(--color-foreground-secondary);
 
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  border-radius: deprecated.$br-8;
+  display: grid;
+  place-content: center;
+  block-size: $sz-32;
+  inline-size: $sz-28;
+  border: $b-2 solid var(--file-link-border-color);
+  border-radius: $br-8;
+  background-color: var(--file-link-background-color);
+  color: var(--file-link-foreground-color);
+  cursor: pointer;
 
-  svg {
-    @extend %button-icon;
+  &:hover {
+    --file-link-background-color: var(--color-background-quaternary);
+    --file-link-border-color: var(--color-background-quaternary);
+    --file-link-foreground-color: var(--color-accent-primary);
+  }
 
-    stroke: var(--icon-foreground);
-    fill: var(--title-foreground-color-hover);
+  &:active {
+    --file-link-background-color: var(--color-background-secondary);
+    --file-link-border-color: transparent;
+    --file-link-foreground-color: var(--color-accent-primary);
+
+    outline: none;
+  }
+
+  &:focus-visible {
+    --file-link-background-color: var(--color-background-tertiary);
+    --file-link-foreground-color: var(--color-foreground-primary);
+
+    outline: none;
+    border: $b-1 solid var(--color-accent-primary);
   }
 }
 
 .library-content {
-  width: 100%;
+  inline-size: 100%;
   display: grid;
   grid-auto-rows: max-content;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }
 
 .asset-title {
-  margin-left: deprecated.$s-28;
+  margin-inline-start: px2rem(28);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
-.no-found-icon {
-  @include deprecated.flex-center;
-
-  background-color: var(--not-found-background-color);
-  border-radius: deprecated.$br-circle;
-  height: deprecated.$s-48;
-  width: deprecated.$s-48;
-
-  svg {
-    @extend %button-icon;
-
-    height: deprecated.$s-24;
-    width: deprecated.$s-24;
-    stroke: var(--not-found-foreground-color);
-  }
+.no-found-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-circle;
+  block-size: $sz-48;
+  inline-size: $sz-48;
+  color: var(--color-foreground-secondary);
 }
 
 .no-found-text {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  color: var(--not-found-foreground-color);
+  color: var(--color-foreground-secondary);
 }
