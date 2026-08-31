@@ -122,6 +122,12 @@
      :source-map true
      :elide-asserts true
      :anon-fn-naming-policy :off
+     ;; datascript's query layer reads a datom's slots by string property
+     ;; name, so property renaming silently returns the wrong slot: see
+     ;; bench.debug, the gate that proves it, and mirror:ds-advanced-corruption.
+     ;; The library ships these externs and declares them in its deps.cljs,
+     ;; which shadow-cljs does not read, so the build names them here.
+     :externs ["datascript/externs.js"]
      :source-map-detail-level :all}}}
 
   ;; FIXME: maybe rename to :components ? (there are nothing storybook
@@ -160,6 +166,10 @@
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
+  ;; The A/B bench pins :simple so the two engines are measured under one
+  ;; compiler configuration; the 2026-08-21 datahike report's V8 table was
+  ;; read that way. Lifting the pin needs :externs ["datascript/externs.js"]
+  ;; here, for the reason bench.debug states, and a fresh table.
   :ab-bench
   {:target :node-script
    :output-to "target/ab-bench.js"
@@ -170,6 +180,32 @@
    {:optimizations :simple
     :output-wrapper false
     :warnings {:fn-deprecated false}}}
+
+  ;; The gate for mirror:ds-advanced-corruption: bench.debug reads one
+  ;; database six ways and exits non-zero on a wrong answer. Its release
+  ;; options mirror :worker's, because the worker is the build the answer is
+  ;; about. To see the corruption, delete the :externs entry below and
+  ;; rebuild: `--config-merge` reaches a build's own keys and never a
+  ;; :release profile's, and externs from several places are concatenated, so
+  ;; no command line can take this one away.
+  :ds-probe
+  {:target :node-script
+   :output-to "target/ds-probe.js"
+   :output-dir "target/ds-probe/"
+   :main bench.debug/-main
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
+     :elide-asserts true
+     :anon-fn-naming-policy :off
+     :externs ["datascript/externs.js"]}}}
 
   :bench
   {:target :node-script
