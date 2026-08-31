@@ -40,6 +40,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
+      ref_slug: ${{ steps.vars.outputs.ref_slug }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
       build_key: ${{ steps.vars.outputs.build_key }}
       exists: ${{ steps.check.outputs.exists }}
@@ -58,11 +59,14 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           GH_REF="${{ inputs.gh_ref || github.ref_name }}"
+          # A git ref accepts characters that an S3 key and a Docker tag do not.
+          REF_SLUG=$(printf '%s' "$GH_REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-100)
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
+          echo "ref_slug=$REF_SLUG" >> $GITHUB_OUTPUT
 
           BUNDLE_VERSION=$(aws s3api head-object \
             --bucket ${{ secrets.S3_BUCKET }} \
-            --key "penpot-$GH_REF.zip" \
+            --key "penpot-$REF_SLUG.zip" \
             --query 'Metadata."bundle-version"' \
             --output text)
           echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
@@ -103,7 +107,7 @@ jobs:
             find "$BUNDLE_CACHE" -type f -mtime +1 -delete || true
             ZIP="$BUNDLE_CACHE/penpot-${{ steps.vars.outputs.build_key }}.zip"
             if [ ! -f "$ZIP" ]; then
-              aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip" "$ZIP.$$.tmp"
+              aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.ref_slug }}.zip" "$ZIP.$$.tmp"
               mv "$ZIP.$$.tmp" "$ZIP"
             fi
           fi
@@ -177,7 +181,7 @@ jobs:
           if [ ! -f "$ZIP" ]; then
             echo "Bundle not found in host cache; falling back to S3."
             mkdir -p "$BUNDLE_CACHE"
-            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.prepare.outputs.gh_ref }}.zip" "$ZIP.$$.tmp"
+            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.prepare.outputs.ref_slug }}.zip" "$ZIP.$$.tmp"
             mv "$ZIP.$$.tmp" "$ZIP"
           fi
           # Extract only the bundle this job needs.
@@ -248,7 +252,7 @@ jobs:
           set -e
           for image in $ALL_IMAGES; do
             docker buildx imagetools create \
-              -t "${{ secrets.DOCKER_REGISTRY }}/$image:${{ needs.prepare.outputs.gh_ref }}" \
+              -t "${{ secrets.DOCKER_REGISTRY }}/$image:${{ needs.prepare.outputs.ref_slug }}" \
               "${{ secrets.DOCKER_REGISTRY }}/$image:build-${{ needs.prepare.outputs.build_key }}"
           done
 
@@ -265,7 +269,7 @@ jobs:
           {
             echo "### ✅ Image set promoted"
             echo ""
-            echo "All \`:${{ needs.prepare.outputs.gh_ref }}\` tags now point to \`build-${{ needs.prepare.outputs.build_key }}\`."
+            echo "All \`:${{ needs.prepare.outputs.ref_slug }}\` tags now point to \`build-${{ needs.prepare.outputs.build_key }}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 4. Single failure notification for the whole workflow ─────────────
