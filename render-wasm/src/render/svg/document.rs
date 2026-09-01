@@ -81,7 +81,8 @@ impl SvgLayerCanvas {
         }
         let prefix = format!("f{}_", self.frag_no);
         self.frag_no += 1;
-        self.out.push_str(&remap_ids(inner, &prefix));
+        self.out
+            .push_str(&sanitize_skia_svg_fragment(&remap_ids(inner, &prefix)));
     }
 
     pub(super) fn open_group(&mut self, attrs: &str) {
@@ -119,7 +120,7 @@ impl SvgLayerCanvas {
         let inner = extract_inner_svg(&doc);
         let prefix = format!("f{}_", self.frag_no);
         self.frag_no += 1;
-        let geometry = remap_ids(inner, &prefix);
+        let geometry = sanitize_skia_svg_fragment(&remap_ids(inner, &prefix));
         self.defs.push_str(&format!(
             "<clipPath id=\"{id}\" clipPathUnits=\"userSpaceOnUse\">{geometry}</clipPath>"
         ));
@@ -235,4 +236,51 @@ fn remap_ids(body: &str, prefix: &str) -> String {
         out = out.replace(&format!("=\"#{id}\""), &format!("=\"#{new_id}\""));
     }
     out
+}
+
+/// Skia's SVG backend appends a trailing comma to list-valued `<text>` attrs
+/// (`x`, `y`, `dx`, `dy`). Firefox rejects the malformed list and drops the
+/// glyph positioning (text vanishes or mis-renders).
+fn sanitize_skia_svg_fragment(body: &str) -> String {
+    const LIST_ATTRS: [&str; 4] = ["x=\"", "y=\"", "dx=\"", "dy=\""];
+    let mut out = body.to_string();
+
+    for attr in LIST_ATTRS {
+        let mut search_from = 0;
+        while let Some(rel) = out[search_from..].find(attr) {
+            let value_start = search_from + rel + attr.len();
+            let Some(end_rel) = out[value_start..].find('"') else {
+                break;
+            };
+            let value_end = value_start + end_rel;
+            let trimmed_len = out[value_start..value_end]
+                .trim_end()
+                .trim_end_matches(',')
+                .len();
+            if trimmed_len != value_end - value_start {
+                let trimmed = out[value_start..value_start + trimmed_len].to_string();
+                out.replace_range(value_start..value_end, &trimmed);
+                search_from = value_start + trimmed_len + 1;
+            } else {
+                search_from = value_end + 1;
+            }
+        }
+    }
+
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sanitize_skia_svg_fragment;
+
+    #[test]
+    fn strips_trailing_comma_from_text_position_lists() {
+        let input = r#"<text x="1119, 1374.8594, 1584.332, " y="402, ">asd</text>"#;
+        let out = sanitize_skia_svg_fragment(input);
+        assert!(out.contains(r#"x="1119, 1374.8594, 1584.332""#));
+        assert!(out.contains(r#"y="402""#));
+        assert!(!out.contains("1584.332, \""));
+        assert!(!out.contains("402, \""));
+    }
 }
