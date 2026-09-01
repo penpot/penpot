@@ -322,7 +322,7 @@
 (defn- invalidate-caches!
   [cfg {:keys [id] :as file}]
   (rds/run! cfg (fn [{:keys [::rds/conn]}]
-                  (let [key (str files/file-summary-cache-key-prefix id)]
+                  (let [key (files/file-summary-cache-key id)]
                     (rds/del conn key)))))
 
 (defn- attach-snapshot
