@@ -1203,7 +1203,6 @@
   [changes]
   (::page-id (meta changes)))
 
-
 (defn set-text-content
   [changes id content prev-content]
   (assert-page-id! changes)
@@ -1224,3 +1223,12 @@
     (-> changes
         (update :redo-changes conj redo-change)
         (update :undo-changes conj undo-change))))
+
+;; Validate Shapes
+
+(defn validate-shapes
+  [changes page-id shape-ids context]
+  (update changes :redo-changes conj {:type :validate-shapes
+                                      :page-id page-id
+                                      :shape-ids (vec shape-ids)
+                                      :context context}))
