@@ -70,18 +70,17 @@
              (st/emit! (du/request-profile-recovery params)))))]
 
     [:& fm/form {:on-submit on-submit
-                 :class (stl/css :recovery-request-form)
+                 :class (stl/css :form)
                  :form form}
-     [:div {:class (stl/css :fields-row)}
+     [:div {:class (stl/css :form-row)}
       [:& fm/input {:name :email
                     :label (tr "auth.work-email")
                     :type "text"
                     :class (stl/css :form-field)}]]
 
-     [:> fm/submit-button*
-      {:label (tr "auth.recovery-request-submit")
-       :data-testid "recovery-resquest-submit"
-       :class (stl/css :recover-btn)}]]))
+     [:> fm/submit-button* {:label (tr "auth.recovery-request-submit")
+                            :data-testid "recovery-resquest-submit"
+                            :class (stl/css :form-submit-btn)}]]))
 
 
 ;; --- Recovery Request Page
@@ -90,14 +89,14 @@
   [{:keys [params on-success-callback go-back-callback]}]
   (let [default-go-back #(st/emit! (rt/nav :auth-login))
         go-back (or go-back-callback default-go-back)]
-    [:div {:class (stl/css :auth-form-wrapper)}
-     [:h1 {:class (stl/css :auth-title)} (tr "auth.recovery-request-title")]
-     [:div {:class (stl/css :auth-subtitle)} (tr "auth.recovery-request-subtitle")]
+    [:div {:class (stl/css :wrapper)}
+     [:h1 {:class (stl/css :title)} (tr "auth.recovery-request-title")]
+     [:div {:class (stl/css :subtitle)} (tr "auth.recovery-request-subtitle")]
      [:hr {:class (stl/css :separator)}]
 
      [:> recovery-form* {:params params :on-success-callback on-success-callback}]
      [:hr {:class (stl/css :separator)}]
-     [:div {:class (stl/css :go-back)}
+     [:div {:class (stl/css :go-back-row)}
       [:> lk/link* {:action go-back
                     :class (stl/css :go-back-link)
                     :data-testid "go-back-link"}
@@ -106,11 +105,10 @@
 
 (mf/defc recovery-sent-page*
   [{:keys [email]}]
-  [:div {:class (stl/css :auth-form-wrapper :register-success)}
-   [:div {:class (stl/css :auth-title-wrapper)}
-    [:h2 {:class (stl/css :auth-title)}
+  [:div {:class (stl/css :wrapper :register-success)}
+   [:div {:class (stl/css :title-wrapper)}
+    [:h2 {:class (stl/css :title)}
      (tr "auth.check-email")]
     [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery")]]
-   [:div {:class (stl/css :notification-text-email)} email]
+   [:div {:class (stl/css :notification-email)} email]
    [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery-check")]])
-

@@ -839,7 +839,8 @@
     (mf/with-effect [handle-unmount] handle-unmount)
 
     [:div {:class [class (stl/css-case :input-wrapper true
-                                       :resizable (not is-token-applied?))]
+                                       :resizable (and (not is-token-applied?)
+                                                       (not disabled)))]
            :ref wrapper-ref
            :on-pointer-down on-scrub-pointer-down
            :on-pointer-move on-scrub-pointer-move
