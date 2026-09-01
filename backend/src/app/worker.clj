@@ -14,7 +14,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.jobs :as jobs]
    [app.metrics :as mtx]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
@@ -148,23 +147,11 @@
     id))
 
 (defn invoke!
-  "Execute a job handler in-process (no row, no dispatch): decodes the
-  params with the job-def decoder and invokes the handler. Uses the
-  `::jobs/defs` registry when available; falls back to the legacy
-  `::wrk/registry` task execution until the full consumer switch.
-  Returns the handler result."
+  "Execute a task handler in-process using the legacy registry (no row,
+  no dispatch). This is the interim path used by srepl helpers until the
+  consumer switch; the new jobs path lives in `app.jobs/invoke!`."
   [{:keys [::task ::params ::registry] :as cfg}]
-  (if (contains? cfg ::jobs/defs)
-    (let [defs    (::jobs/defs cfg)
-          name    (::jobs/name cfg)
-          params' (::jobs/params cfg)
-          job-id  (::jobs/job-id cfg)
-          job-def (jobs/get-job-def defs name)
-          decoded (jobs/decode-params job-def params')]
-      (binding [jobs/*job-id* job-id]
-        ((::jobs/handler job-def) decoded)))
-    (do
-      (assert (contains? cfg ::registry)
-              "missing worker registry on `cfg`")
-      (let [task-fn (get-task registry task)]
-        (task-fn {:props params})))))
+  (assert (contains? cfg ::registry)
+          "missing worker registry on `cfg`")
+  (let [task-fn (get-task registry task)]
+    (task-fn {:props params})))

@@ -16,21 +16,29 @@
   Two execution modes are provided:
   - `submit!` (durable): validates + JSON-encodes params and inserts a row
     into the `job` table; the dispatcher/runner machinery does the rest.
-  - `request!` (ephemeral): implemented in app.jobs.request.
+  - `request!` (ephemeral): synchronous request/response over the redis
+    queues with a reply-key and a dedicated, unbounded connection pool;
+    external workers answer with `reply!`.
 
   Params payloads are stored as plain JSON (not transit) in the `props` jsonb
   column and decoded back to typed Clojure values using the job-def decoder."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.generic-pool :as gpool]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.metrics :as-alias mtx]
+   [app.redis :as rds]
    [cuerdas.core :as str]
-   [integrant.core :as ig]))
+   [integrant.core :as ig])
+  (:import
+   java.lang.AutoCloseable))
 
 (set! *warn-on-reflection* true)
 
@@ -309,5 +317,150 @@
                    (fn [{:keys [::db/conn]}]
                      (let [now (ct/now)]
                        (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id
-                                           (db/create-array conn "text" ["new" "scheduled" "running" "retry"])])))))
-     nil)))
+                                           (db/create-array conn "text" ["new" "scheduled" "running" "retry"])]))))
+       nil))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REQUEST (ephemeral request/response, no row, no dispatcher)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private request-command-timeout-margin (ct/duration {:seconds 30}))
+(def ^:private reply-expire-seconds 60)
+
+(def reply-key-prefix "penpot.worker.reply")
+
+(defn get-request-pool
+  [cfg]
+  (or (::request-pool cfg)
+      (ex/raise :type :assertion
+                :code :missing-request-pool
+                :hint "missing ::jobs/request-pool on provided cfg")))
+
+(defmethod ig/expand-key ::request-pool
+  [k v]
+  {k (-> (d/without-nils v)
+         (assoc ::command-timeout
+                (ct/plus (cf/get-jobs-request-timeout)
+                         request-command-timeout-margin)))})
+
+(def ^:private schema:request-pool
+  [:map
+   [::command-timeout ::ct/duration]
+   ::rds/client
+   ::mtx/metrics])
+
+(defmethod ig/assert-key ::request-pool
+  [_ cfg]
+  (sm/check schema:request-pool cfg))
+
+(defmethod ig/init-key ::request-pool
+  [_ {::rds/keys [client] ::mtx/keys [metrics] ::keys [command-timeout]}]
+  ;; pool without a max size: gpool/get creates a connection when no
+  ;; idle one is available and never blocks; the in-flight concurrency
+  ;; is bounded upstream by the RPC concurrency limits. Connections are
+  ;; created with a command timeout above the per-call request timeout;
+  ;; the dispose-fn restores it on return to the pool.
+  (rds/pool {::rds/client client
+             ::mtx/metrics metrics}
+            {:timeout command-timeout}))
+
+(def ^:private schema:request-options
+  [:map {:title "request-options"}
+   [::queue [:or ::sm/text :keyword]]
+   [::cmd [:or ::sm/text :keyword]]
+   [::params any?]
+   [::timeout {:optional true} [:or ::sm/int ::ct/duration]]])
+
+(def check-request-options!
+  (sm/check-fn schema:request-options))
+
+(defn reply!
+  "Respond to an ephemeral request: push the JSON response to the
+  reply-key and set a short TTL as a safety net for late replies (a
+  reply pushed after the caller timeout would otherwise live forever).
+  Response shape: `{:ok ...}` or `{:error {...}}`. Accepts a connectable
+  cfg (a redis pool under ::rds/pool)."
+  [cfg reply-key response]
+  (rds/run! cfg
+            (fn [{:keys [::rds/conn]}]
+              (rds/rpush conn reply-key [(json/encode response)])
+              (rds/expire conn reply-key reply-expire-seconds))))
+
+(defn request!
+  "Ephemeral request/response (no job row, no dispatcher): pushes a JSON
+  payload [request-id, reply-key, cmd, params] to the target queue and
+  blocks on the reply-key with a per-call timeout (defaults to
+  :jobs-request-timeout; a per-call override must stay below the pooled
+  connection command timeout, which is raised for the duration of the
+  call and restored by the pool dispose-fn on return).
+
+  On success returns the decoded `:ok` payload; an `:error` reply
+  propagates as an exception; on timeout raises `:request-timeout` and
+  the reply-key is deleted (in finally, also on error). The connection
+  is always returned to the pool."
+  [cfg
+   {:keys [::queue ::cmd ::params ::timeout] :as options}]
+
+  (check-request-options! options)
+
+  (let [pool       (get-request-pool cfg)
+        tenant     (cf/get :tenant)
+        timeout    (or timeout (cf/get-jobs-request-timeout))
+        request-id (uuid/next)
+        reply-key  (str/ffmt "%:%:%" reply-key-prefix tenant request-id)
+        queue-key  (str/ffmt "penpot.worker.queue:%:%" tenant (d/name queue))
+        payload    (json/encode [(str request-id)
+                                 reply-key
+                                 (d/name cmd)
+                                 params])]
+
+    (with-open [^AutoCloseable pooled (gpool/get pool)]
+      (let [conn @pooled]
+        (try
+          ;; raise the connection command timeout above the per-call
+          ;; blpop timeout; the pool dispose-fn restores the default on
+          ;; return.
+          (rds/set-timeout conn (ct/plus timeout request-command-timeout-margin))
+
+          (rds/rpush conn queue-key [payload])
+
+          (let [[_ reply] (rds/blpop conn [reply-key] timeout)]
+            (if (nil? reply)
+              (ex/raise :type :timeout
+                        :code :request-timeout
+                        :hint "timeout waiting for the job reply"
+                        :queue queue
+                        :timeout timeout)
+              (let [response (json/decode reply :key-fn keyword)]
+                (if-let [error (:error response)]
+                  (ex/raise :type :internal
+                            :code (get error :code)
+                            :hint (or (get error :hint) "request failed")
+                            :response response)
+                  (get response :ok)))))
+
+          (finally
+            (rds/del conn reply-key)
+            (rds/reset-timeout conn)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IN-PROCESS INVOCATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn invoke!
+  "Execute a job handler in-process (no row, no dispatch): decodes the
+  params with the job-def decoder and invokes the handler bound to the
+  `*job-id*` dynamic (or the provided ::job-id, which makes the
+  throttled heartbeat/progress writes work against the row). Options:
+
+  {::name    :delete-object
+   ::params  {...}     ;; raw (JSON-shaped) params
+   ::defs    {...}     ;; the ::jobs/defs registry
+   ::job-id  <uuid>}   ;; optional, only when the row already exists
+
+  Returns the handler result."
+  [cfg]
+  (let [job-def (get-job-def (get cfg ::defs) (get cfg ::name))
+        decoded (decode-params job-def (get cfg ::params))]
+    (binding [*job-id* (get cfg ::job-id)]
+      ((::handler job-def) decoded))))

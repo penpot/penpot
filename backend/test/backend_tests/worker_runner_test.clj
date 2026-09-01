@@ -243,9 +243,9 @@
                     :deleted-at "2026-01-01T00:00:00Z"
                     :id (str (uuid/next))}]
     (reset! received [])
-    (let [result (wrk/invoke! (merge (mk-cfg {})
-                                     {::jobs/name   :echo-runner
-                                      ::jobs/params raw-params}))]
+    (let [result (jobs/invoke! (merge (mk-cfg {})
+                                      {::jobs/name   :echo-runner
+                                       ::jobs/params raw-params}))]
       (t/is (= 1 (count @received)))
       (let [params' (first @received)]
         (t/is (keyword? (:object params')))

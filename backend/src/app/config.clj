@@ -74,6 +74,7 @@
 
    :jobs-lease (ct/duration {:minutes 30})
    :jobs-retention (ct/duration {:days 7})
+   :jobs-request-timeout (ct/duration {:minutes 2})
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
@@ -167,6 +168,7 @@
     [:file-clean-delay {:optional true} ::ct/duration]
     [:jobs-lease {:optional true} ::ct/duration]
     [:jobs-retention {:optional true} ::ct/duration]
+    [:jobs-request-timeout {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -390,6 +392,14 @@
   []
   (or (c/get config :jobs-lease)
       (ct/duration {:minutes 30})))
+
+(defn get-jobs-request-timeout
+  "Default timeout for the ephemeral request! calls (waiting for the
+  reply-key blpop); can be overridden per call (must stay below the
+  pooled connection command timeout, which is raised per call)."
+  []
+  (or (c/get config :jobs-request-timeout)
+      (ct/duration {:minutes 2})))
 
 (defn get
   "A configuration getter. Helps code be more testable."
