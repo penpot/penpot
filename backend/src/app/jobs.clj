@@ -235,6 +235,13 @@
 (def ^:private heartbeats (atom {}))
 (def ^:private progresses (atom {}))
 
+(def ^:dynamic *job-id*
+  "Job id of the job being executed on the current thread. The runner
+  binds it around handler invocations; handlers call `heartbeat!`/`progress!`
+  without knowing the id. Nil means no job context (in-process `invoke!`
+  without a row), in which case the throttled writes become no-ops."
+  nil)
+
 (def ^:private sql:persist-progress
   "UPDATE job
       SET progress=?, modified_at=?
@@ -270,31 +277,37 @@
   "Touch `modified_at` on the running job (throttled: does not write when
   the last beat is more recent than ~60s). Handlers call it on every
   iteration without thinking. The job id comes from the `::job-id` key on
-  the cfg (set by the runner) or can be passed explicitly."
+  the cfg, the thread-bound `*job-id*` (set by the runner), or can be
+  passed explicitly. No-op when there is no job context."
   ([cfg]
-   (heartbeat! cfg (get cfg ::job-id)))
+   (let [job-id (or (get cfg ::job-id) *job-id*)]
+     (when (uuid? job-id)
+       (heartbeat! cfg job-id))))
   ([cfg job-id]
-   (assert (uuid? job-id) "expected a valid job-id")
-   (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
-     (db/update! cfg :job
-                 {:modified-at (ct/now)}
-                 {:id job-id}
-                 {::db/return-keys false})
-     nil)))
+   (when (uuid? job-id)
+     (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
+       (db/update! cfg :job
+                   {:modified-at (ct/now)}
+                   {:id job-id}
+                   {::db/return-keys false})
+       nil))))
 
 (defn progress!
   "Persist the `progress` payload and touch `modified_at` (throttled at
   ~250ms; only writes on non-terminal job states). The job id comes from
-  the `::job-id` key on the cfg (set by the runner) or can be passed
-  explicitly."
+  the `::job-id` key on the cfg, the thread-bound `*job-id*` (set by the
+  runner), or can be passed explicitly. No-op when there is no job
+  context."
   ([cfg progress]
-   (progress! cfg (get cfg ::job-id) progress))
+   (let [job-id (or (get cfg ::job-id) *job-id*)]
+     (when (uuid? job-id)
+       (progress! cfg job-id progress))))
   ([cfg job-id progress]
-   (assert (uuid? job-id) "expected a valid job-id")
-   (when (should-write? progresses job-id (ct/now) progress-interval)
-     (db/tx-run! cfg
-                 (fn [{:keys [::db/conn]}]
-                   (let [now (ct/now)]
-                     (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id
-                                         (db/create-array conn "text" ["new" "scheduled" "running" "retry"])]))))
+   (when (uuid? job-id)
+     (when (should-write? progresses job-id (ct/now) progress-interval)
+       (db/tx-run! cfg
+                   (fn [{:keys [::db/conn]}]
+                     (let [now (ct/now)]
+                       (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id
+                                           (db/create-array conn "text" ["new" "scheduled" "running" "retry"])])))))
      nil)))

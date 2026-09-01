@@ -11,10 +11,10 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.util.cron :as cron]
    [app.worker :as wrk]
-   [app.worker.runner :refer [get-error-context]]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -72,7 +72,7 @@
 
         (catch Throwable cause
           (let [elapsed (ct/format-duration (tpoint))]
-            (binding [l/*context* (get-error-context cause task)]
+            (binding [l/*context* (assoc (cf/logging-context) :params task)]
               (l/err :hint "unhandled exception on running task"
                      :id id
                      :elapsed elapsed
