@@ -290,8 +290,11 @@
          duplicated-parent?
          (->> ids-map vals (some #(= % (:parent-id first-shape))))
 
+         grid-parent?
+         (and (ctsl/grid-layout? objects (:parent-id first-shape)) (not duplicated-parent?))
+
          changes
-         (if (and (ctsl/grid-layout? objects (:parent-id first-shape)) (not duplicated-parent?))
+         (if grid-parent?
            (let [target-cell (-> position meta :cell)
 
                  [row column]
@@ -313,7 +316,19 @@
          changes
          (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                  changes
-                 (rest new-shapes))]
+                 (rest new-shapes))
+         
+         ids-to-validate (cond-> [(:id first-shape)]
+                           grid-parent?
+                           (conj (:parent-id first-shape)))
+
+         changes (if (seq ids-to-validate)
+                   (pcb/validate-shapes changes
+                                        (:id page)
+                                        ids-to-validate
+                                        (str "generate-instantiate-component: " component-id
+                                             " under parent-id" (or parent-id " root")))
+                   changes)]
 
      [new-shape changes])))
 
@@ -3123,7 +3138,6 @@
         ;; we calculate a new one because the components will have created new shapes.
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
-
         ;; If there is an alt-duplication we change to root
         ;; For variants so the copy is made as a child of root
         ;; This is because inside a variant-container can't be a copy
@@ -3134,7 +3148,6 @@
                          alt-duplication?
                          (assoc :parent-id uuid/zero :frame-id uuid/zero)))
                      shapes)
-
 
         changes (-> changes
                     (pcb/with-page page)
@@ -3165,7 +3178,20 @@
               (comp
                (filter #(= :add-obj (:type %)))
                (map #(vector (:old-id %) (-> % :obj :id))))
-              (:redo-changes changes))]
+              (:redo-changes changes))
+
+        copied-components
+        (ctn/get-all-instance-roots (:objects page) ids)
+
+        ids-to-validate
+        (map #(get ids-map %) copied-components)
+
+        changes (if (seq ids-to-validate)
+                  (pcb/validate-shapes changes
+                                       (:id page)
+                                       ids-to-validate
+                                       (cond-> (str "generate-duplicate-changes: " ids)))
+                  changes)]
 
     (-> changes
         (generate-duplicate-flows shapes page ids-map)
