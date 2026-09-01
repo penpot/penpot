@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.components-list :as ctkl]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -33,6 +34,12 @@
   [{:keys [filters]}]
   (let [file-id   (mf/use-ctx ctx/current-file-id)
         files     (mf/deref refs/files)
+        current-file-data
+        (mf/deref refs/workspace-data)
+        tokens-source
+        (mf/with-memo [current-file-data]
+          (cfo/get-effective-tokens-source current-file-data))
+
         libraries (mf/with-memo [files file-id]
                     (->> (refs/select-libraries files file-id)
                          (vals)
@@ -46,6 +53,7 @@
        {:key (dm/str (:id file))
         :file file
         :is-local false
+        :is-tokens-source (= (:id file) tokens-source)
         :is-default-open false
         :filters filters}])))
 
@@ -57,11 +65,16 @@
 (mf/defc assets-local-library*
   {::mf/private true}
   [{:keys [filters]}]
-  (let [file (mf/deref ref:local-library)]
+  (let [file (mf/deref ref:local-library)
+
+        is-tokens-source
+        (mf/with-memo [file]
+          (cfo/effective-tokens-source? (:data file) (:id file)))]
     [:> file-library*
      {:file file
       :is-local true
       :is-default-open true
+      :is-tokens-source is-tokens-source
       :filters filters}]))
 
 (defn- toggle-values
