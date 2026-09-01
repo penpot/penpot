@@ -256,22 +256,9 @@
 (def ^:private wasm-export-types #{:jpeg :webp :png :pdf :svg})
 
 (defn- wasm-export-enabled?
-  "WASM export is available when the `wasm-export/v1` feature is active AND
-  render-wasm is active for the current file. When render-wasm is inactive its
-  shape tree isn't loaded, so a client-side WASM render would crash.
-
-  This governs the client-side render only; it says nothing about the exporter."
   [state]
-  (and (features/active-feature? state "wasm-export/v1")
+  (and (contains? cf/flags :wasm-export)
        (features/active-feature? state "render-wasm/v1")))
-
-(defn- wasm-export-available?
-  "Whether the *exporter* renders with render-wasm. Its `enable-wasm-export`
-  flag has to be on too, otherwise the browser backend does the work and the
-  job API would promise capabilities the server does not have."
-  [state]
-  (and (wasm-export-enabled? state)
-       (contains? cf/flags :wasm-export)))
 
 (defn- use-wasm-export?
   "Whether to take the client-side WASM export path for `export`."
@@ -308,7 +295,7 @@
                                                             :profile-id profile-id
                                                             :cmd :export-shapes
                                                             :wait true
-                                                            :is-wasm (wasm-export-available? state)})]
+                                                            :is-wasm (wasm-export-enabled? state)})]
             (rx/concat
              (dwp/force-persist-and-wait 400)
 
@@ -337,7 +324,7 @@
                             :cmd cmd
                             :profile-id profile-id
                             :force-multiple true
-                            :is-wasm (wasm-export-available? state)}
+                            :is-wasm (wasm-export-enabled? state)}
                             (some? name)
                             (assoc :name name))
 
@@ -365,7 +352,7 @@
            ;; locally. With wasm export active the job API is used instead: it
            ;; answers with the exporter's own object count and gives a handle
            ;; to cancel.
-           (->> (if (wasm-export-available? state)
+           (->> (if (wasm-export-enabled? state)
                   (->> (rp/cmd! :create-export-job params)
                        (rx/map (fn [{job-id :id :keys [total] :as job}]
                                  (vreset! resource-id (:resource-id job))
