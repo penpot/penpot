@@ -1,0 +1,106 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
+(ns app.rpc.management.jobs
+  (:require
+   [app.common.schema :as sm]
+   [app.common.time :as ct]
+   [app.jobs :as jobs]
+   [app.rpc :as-alias rpc]
+   [app.rpc.doc :as doc]
+   [app.util.services :as sv]))
+
+;; Generic job management API for external workers (media and future
+;; subsystems). External workers never touch the database: this API is
+;; the ledger. The methods are family-agnostic (they operate on any row
+;; of the `job` table) and use the plain JSON schemas of `app.jobs`.
+;;
+;; Authentication is enforced at the route level (shared-key mandatory,
+;; Bearer optional); no method here needs a profile, hence ::rpc/auth
+;; false.
+
+;; ---- RPC METHOD: CLAIM-JOB
+
+(def ^:private schema:claim-job-params
+  [:map {:title "claim-job-params"}
+   [:job-id ::sm/uuid]
+   [:scheduled-at ::ct/inst]])
+
+(def ^:private schema:claim-job-result
+  [:map {:title "claim-job-result"}
+   [:action [:enum :run :skip]]
+   [:name {:optional true} ::sm/text]
+   [:props {:optional true} :any]])
+
+(sv/defmethod ::claim-job
+  {::doc/added "2.19"
+   ::sm/params schema:claim-job-params
+   ::sm/result schema:claim-job-result
+   ::rpc/auth false}
+  [cfg {:keys [job-id scheduled-at]}]
+  (let [row (jobs/get-job cfg job-id)]
+    (if (and row (pos? (jobs/claim! cfg job-id scheduled-at)))
+      {:action :run
+       :name   (:name row)
+       :props  (:props row)}
+      {:action :skip})))
+
+;; ---- RPC METHOD: REPORT-JOB-PROGRESS
+
+(def ^:private schema:report-job-progress-params
+  [:map {:title "report-job-progress-params"}
+   [:job-id ::sm/uuid]
+   [:progress [:map-of :keyword :any]]])
+
+(def ^:private schema:report-job-progress-result
+  [:map {:title "report-job-progress-result"}])
+
+(sv/defmethod ::report-job-progress
+  {::doc/added "2.19"
+   ::sm/params schema:report-job-progress-params
+   ::sm/result schema:report-job-progress-result
+   ::rpc/auth false}
+  [cfg {:keys [job-id progress]}]
+  (jobs/progress! cfg job-id progress)
+  {})
+
+;; ---- RPC METHOD: COMPLETE-JOB
+
+(def ^:private schema:complete-job-params
+  [:map {:title "complete-job-params"}
+   [:job-id ::sm/uuid]
+   [:result {:optional true} :any]])
+
+(def ^:private schema:complete-job-result
+  [:map {:title "complete-job-result"}])
+
+(sv/defmethod ::complete-job
+  {::doc/added "2.19"
+   ::sm/params schema:complete-job-params
+   ::sm/result schema:complete-job-result
+   ::rpc/auth false}
+  [cfg {:keys [job-id result]}]
+  (jobs/complete! cfg job-id result)
+  {})
+
+;; ---- RPC METHOD: FAIL-JOB
+
+(def ^:private schema:fail-job-params
+  [:map {:title "fail-job-params"}
+   [:job-id ::sm/uuid]
+   [:error [:map-of :keyword :any]]])
+
+(def ^:private schema:fail-job-result
+  [:map {:title "fail-job-result"}])
+
+(sv/defmethod ::fail-job
+  {::doc/added "2.19"
+   ::sm/params schema:fail-job-params
+   ::sm/result schema:fail-job-result
+   ::rpc/auth false}
+  [cfg {:keys [job-id error]}]
+  (jobs/fail! cfg job-id error)
+  {})

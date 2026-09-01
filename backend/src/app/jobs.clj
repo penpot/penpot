@@ -321,6 +321,63 @@
        nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MANAGEMENT API SUPPORT (external workers)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private sql:claim-external-job
+  "UPDATE job
+      SET status='running', started_at=now(), modified_at=now()
+    WHERE id=?
+      AND scheduled_at=?
+      AND status IN ('new','scheduled','retry')")
+
+(def ^:private sql:complete-job
+  "UPDATE job
+      SET status='completed', completed_at=?, modified_at=?, result=?, error=NULL
+    WHERE id=?
+      AND status IN ('running','retry')")
+
+(def ^:private sql:fail-job
+  "UPDATE job
+      SET status='failed', modified_at=?, error=?
+    WHERE id=?
+      AND status IN ('running','retry')")
+
+(defn claim!
+  "Claim a job on behalf of an external worker: only transitions a
+  pending row (new/scheduled/retry) to `running` and requires an exact
+  `scheduled-at` match with the value advertised in the queue payload, so
+  a stale payload (row rescheduled or claimed in the meantime) affects 0
+  rows and must be skipped. Returns the number of affected rows."
+  [cfg job-id scheduled-at]
+  (-> (db/exec-one! (db/get-connectable cfg)
+                    [sql:claim-external-job job-id scheduled-at])
+      (db/get-update-count)))
+
+(defn complete!
+  "Mark a running job as completed with the (JSON-encodable) result.
+  Conditional on the non-terminal running/retry states (first-terminal
+  wins: a row already marked failed/cancelled — e.g. an orphan detected
+  by the dispatcher — is never overwritten). Returns the number of
+  affected rows."
+  ([cfg job-id]
+   (complete! cfg job-id nil))
+  ([cfg job-id result]
+   (-> (db/exec-one! (db/get-connectable cfg)
+                     [sql:complete-job (ct/now) (ct/now)
+                      (when (some? result) (db/json result)) job-id])
+       (db/get-update-count))))
+
+(defn fail!
+  "Mark a running job as failed with the error payload (a JSON object
+  with at least a :code). Conditional on the non-terminal running/retry
+  states (first-terminal wins). Returns the number of affected rows."
+  [cfg job-id error]
+  (-> (db/exec-one! (db/get-connectable cfg)
+                    [sql:fail-job (ct/now) (db/json error) job-id])
+      (db/get-update-count)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REQUEST (ephemeral request/response, no row, no dispatcher)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
