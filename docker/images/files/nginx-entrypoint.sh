@@ -95,12 +95,21 @@ envsubst "\$PENPOT_INTERNAL_RESOLVER" \
 # because the Google Fonts and GitHub templates endpoints are reverse
 # proxied by this very server.
 #
-# It ships in report-only mode: the inline <script type="module"> and
-# <script type="importmap"> blocks of index.html are still reported as
-# violations, and deployments with plugins enabled additionally report
-# eval and remote fetch violations from the SES sandbox. Enforcing mode
-# stays opt-in until both are resolved.
+# The hashes of the inline scripts of index.html are emitted by the frontend
+# build and moved to /etc/nginx at image build time. A bundle predating that
+# change simply yields no hashes, in which case those scripts would be
+# reported (or blocked under enforce) as before.
+#
+# It ships in report-only mode because deployments with plugins enabled still
+# report eval and remote fetch violations from the SES sandbox. Enforcing mode
+# stays opt-in until that is resolved.
 export PENPOT_CSP_MODE=${PENPOT_CSP_MODE:-report-only}
+
+if [ -r /etc/nginx/csp-script-hashes.txt ]; then
+    PENPOT_CSP_SCRIPT_HASHES=" $(tr -d '\n' < /etc/nginx/csp-script-hashes.txt)"
+else
+    PENPOT_CSP_SCRIPT_HASHES=""
+fi
 
 # Remember whether the policy comes from the deployment before the default
 # is applied, so the warning below only fires for the default one.
@@ -110,14 +119,14 @@ else
     PENPOT_CSP_POLICY_IS_CUSTOM="false"
 fi
 
-export PENPOT_CSP_POLICY=${PENPOT_CSP_POLICY:-"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: data:; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self'; manifest-src 'self'"}
+export PENPOT_CSP_POLICY=${PENPOT_CSP_POLICY:-"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'${PENPOT_CSP_SCRIPT_HASHES}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: data:; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self'; manifest-src 'self'"}
 
 case "${PENPOT_CSP_MODE}" in
     enforce)
         export PENPOT_CSP_DIRECTIVE="add_header Content-Security-Policy \"${PENPOT_CSP_POLICY}\" always;"
         if [ "${PENPOT_CSP_POLICY_IS_CUSTOM}" = "false" ]; then
             echo "penpot: WARNING: PENPOT_CSP_MODE=enforce is not supported with the default policy yet." >&2
-            echo "penpot: the inline scripts of index.html are not covered by it, so the application will fail to load." >&2
+            echo "penpot: deployments using plugins will break, because the plugin sandbox requires 'unsafe-eval'." >&2
             echo "penpot: set PENPOT_CSP_POLICY to your own policy, or keep the default report-only mode." >&2
         fi
         ;;

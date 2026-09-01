@@ -454,24 +454,28 @@ attributes emitted by the UI, and `blob:`/`data:` for thumbnails, exports and fo
 external Google Fonts and GitHub templates endpoints do not need entries of their own
 because they are reverse proxied by the frontend container.
 
-Two known sources of violations remain, and both are the reason `enforce` is not yet the
-default:
+The inline scripts of the pages served by the container are covered by sha256 hashes
+generated during the frontend build, so they need no exception of their own.
 
-- The `index.html` inline `<script type="module">` and `<script type="importmap">` blocks
-  are not covered by the policy yet.
-- Deployments with plugins enabled report `eval` and remote fetch violations, because the
-  plugin sandbox evaluates third-party code and loads it from arbitrary hosts.
+One known source of violations remains, and it is the reason `enforce` is not yet the
+default: deployments with plugins enabled report `eval` and remote fetch violations,
+because the plugin sandbox evaluates third-party code and loads it from arbitrary hosts.
 
 Set your own policy with `PENPOT_CSP_POLICY` if you need to relax or tighten it, for
-example to allow plugins:
+example to allow plugins. Note that a custom policy replaces the default one entirely,
+including the generated hashes, so take them from
+`Content-Security-Policy-Report-Only` on a running container and paste them in place of
+`<hashes>`. Note as well that `base-uri`, `form-action` and `frame-ancestors` have no
+fallback to `default-src`, so a shorter policy silently loses them:
 
 ```bash
-PENPOT_CSP_POLICY: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https: blob: data:; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self' https:; manifest-src 'self'"
+PENPOT_CSP_POLICY: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' <hashes>; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https: blob: data:; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self' https:; manifest-src 'self'"
 ```
 
 <p class="advice">
-  Because of the above, <code class="language-bash">enforce</code> requires a policy of your
-  own. Enforcing the default policy will prevent the application from loading.
+  Because of the above, <code class="language-bash">enforce</code> is only usable on
+  deployments that do not use plugins. Enforcing the default policy anywhere else will
+  break them.
 </p>
 
 ### HTTP Strict Transport Security
