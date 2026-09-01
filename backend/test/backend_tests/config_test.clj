@@ -38,3 +38,24 @@
   (t/testing "a leading slash would drop the subpath, so it fails fast"
     (t/is (thrown? AssertionError
                    (cf/join-uri "https://example.com/penpot" "/assets/by-id/123")))))
+
+(t/deftest tenant-allows-only-alphanumeric
+  (t/testing "default and plain alphanumeric tenants validate"
+    (doseq [tenant ["default" "acme42" "my-company"]]
+      (t/is (cf/validate-config (assoc cf/config :tenant tenant)))))
+  (t/testing "LIKE wildcards and separators are rejected"
+    (doseq [tenant ["my_tenant" "a%b" "a:b" "a b" "" "acme.example.com"]]
+      (t/is (not (cf/validate-config (assoc cf/config :tenant tenant)))))))
+
+(t/deftest worker-parallelism-keys
+  (t/testing "schema decodes all runner parallelism keys (env strings to int)"
+    (let [decoded (cf/decode-config {:worker-default-parallelism "4"
+                                     :worker-webhook-parallelism "2"
+                                     :worker-cron-parallelism "3"})]
+      (t/is (= 4 (:worker-default-parallelism decoded)))
+      (t/is (= 2 (:worker-webhook-parallelism decoded)))
+      (t/is (= 3 (:worker-cron-parallelism decoded)))))
+  (t/testing "lookups resolve configured values (unnamespaced keys, as main uses)"
+    (with-redefs [cf/config (assoc cf/config
+                                   :worker-default-parallelism 4)]
+      (t/is (= 4 (cf/get :worker-default-parallelism 1))))))

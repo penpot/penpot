@@ -33,6 +33,11 @@
   "Bucket name for chunked-upload chunks."
   "upload-session")
 
+(def job-resource-bucket
+  "Bucket name for storage objects owned by a job row
+  (`job.resource_id`)."
+  "job-resource")
+
 (def bucket-requirements
   "Canonical buckets and the extra keys each one must carry, so a new
   bucket and its contract live in one place. Listed keys are declared as
@@ -48,6 +53,7 @@
    "organization"          #{:organization-id}
    tempfile-bucket         #{}
    upload-session-bucket   #{}
+   job-resource-bucket     #{}
    "file-data"             #{:file-id :id}
    "file-data-fragment"    #{}
    "file-change"           #{}})

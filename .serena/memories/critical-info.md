@@ -57,7 +57,7 @@ The memory is structured in a way that you can get the critical information abou
 - `scripts/gh.py` — GitHub operations helper: list milestone issues, fetch PR details, compare against CHANGES.md. Requires `gh` CLI. See `mem:scripts/gh`.
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
-- `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module (`frontend backend common render-wasm exporter mcp plugins library`). Logs go to `.ci-logs/`; read the log file on failure. See `mem:scripts/ci`.
+- `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module (`frontend backend common render-wasm exporter mcp plugins library`). Logs go to `.ci-logs/`; read the log file on failure. It is the preferred way to run the backend tests, and it exports `PENPOT_FLAGS` with `enable-backend-asserts`, which is what makes `clojure.core/assert` exist in the compiled test code. See `mem:scripts/ci`.
 
 # Dependency graph
 

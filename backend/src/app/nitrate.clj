@@ -16,7 +16,6 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto
     :refer [schema:nitrate-sso]]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
    [app.http.session :as session]
@@ -31,31 +30,17 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- join-path-segments
-  "Build a single relative path from Nitrate URI segments, normalizing slashes."
-  [segments]
-  (let [path (->> segments (map str) (str/join "/"))]
-    (->> (str/split path #"/")
-         (remove str/blank?)
-         (str/join "/"))))
-
-(defn- join-base-uri
-  "Join path segments to a base URI."
-  [base-uri & segments]
-  (u/join (u/ensure-path-slash base-uri)
-          (join-path-segments segments)))
-
 (defn- generate-nitrate-uri
   "Joins relative path segments to the Nitrate backend URI.
    Segments must not start with `/`"
   [& segments]
-  (apply join-base-uri (cf/get :admin-console-uri) segments))
+  (apply cf/join-uri (cf/get :admin-console-uri) segments))
 
 (defn- generate-public-uri
   "Joins relative path segments to the public backend URI.
    Segments must not start with `/`"
   [& segments]
-  (apply join-base-uri (cf/get :public-uri) segments))
+  (apply cf/get-public-uri segments))
 
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]

@@ -48,6 +48,13 @@
   "Bucket name for chunked-upload chunks."
   stsch/upload-session-bucket)
 
+(def job-resource-bucket
+  "Bucket for storage objects referenced by job.resource_id (the
+  unified jobs substrate): transient artifacts owned by their job row,
+  reclaimed by storage-gc-touched (via the jobs GC touch) once no job
+  row references them anymore."
+  stsch/job-resource-bucket)
+
 (def valid-buckets
   stsch/metadata-buckets)
 
