@@ -166,10 +166,11 @@
    {:test {:init-fn frontend-tests.runner/init
            :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
-  ;; The A/B bench pins :simple so the two engines are measured under one
-  ;; compiler configuration; the 2026-08-21 datahike report's V8 table was
-  ;; read that way. Lifting the pin needs :externs ["datascript/externs.js"]
-  ;; here, for the reason bench.debug states, and a fresh table.
+  ;; The A/B bench runs both engines at :advanced under one compiler
+  ;; configuration, each build naming its own library's externs declaration
+  ;; because shadow-cljs never reads it from the library's deps.cljs. The
+  ;; :simple pin this replaces was forced by that unread declaration, and the
+  ;; 2026-08-21 report's V8 table was read under it.
   :ab-bench
   {:target :node-script
    :output-to "target/ab-bench.js"
@@ -177,9 +178,13 @@
    :main bench.core/-main
 
    :compiler-options
-   {:optimizations :simple
+   {:optimizations :advanced
     :output-wrapper false
-    :warnings {:fn-deprecated false}}}
+    :warnings {:fn-deprecated false}
+    ;; :all, not the default :auto, to match the datahike column: :auto
+    ;; infers externs for this project's own sources and not for a jar.
+    :infer-externs :all
+    :externs ["datascript/externs.js"]}}
 
   ;; The gate for mirror:ds-advanced-corruption: bench.debug reads one
   ;; database six ways and exits non-zero on a wrong answer. Its release
