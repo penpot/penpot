@@ -19,6 +19,7 @@
    [app.db.sql :as-alias sql]
    [app.email :as eml]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
@@ -32,7 +33,6 @@
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
@@ -452,14 +452,14 @@
                 :email (:email profile)
                 :hint "looks like the email has spam complaint reports"))
 
-    (eml/send! {::eml/conn conn
-                ::eml/factory eml/change-email
-                :public-uri (cf/get :public-uri)
-                :to (:email profile)
-                :name (:fullname profile)
-                :pending-email email
-                :token token
-                :extra-data ptoken})
+    (eml/send! cfg {::eml/reuse-conn true
+                    ::eml/factory eml/change-email
+                    :public-uri (cf/get :public-uri)
+                    :to (:email profile)
+                    :name (:fullname profile)
+                    :pending-email email
+                    :token token
+                    :extra-data ptoken})
     nil))
 
 ;; --- MUTATION: Update Profile Props
@@ -534,11 +534,11 @@
                     {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :profile
-                                :deleted-at deleted-at
-                                :id profile-id}})
+    (jobs/submit! cfg
+                  {::jobs/name :delete-object
+                   ::jobs/params {:object :profile
+                                  :deleted-at deleted-at
+                                  :id profile-id}})
 
     ;; Invalidate all sessions for this profile to ensure immediate
     ;; access revocation across all devices

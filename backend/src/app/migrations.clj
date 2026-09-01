@@ -504,8 +504,11 @@
    {:name "0153-add-storage-object-status-and-deletion-attempts"
     :fn (mg/resource "app/migrations/sql/0153-add-storage-object-status-and-deletion-attempts.sql")}
 
-   {:name "0154-add-upload-session-chunk-table"
-    :fn (mg/resource "app/migrations/sql/0154-add-upload-session-chunk-table.sql")}])
+<   {:name "0154-add-upload-session-chunk-table"
+    :fn (mg/resource "app/migrations/sql/0154-add-upload-session-chunk-table.sql")}
+
+   {:name "0154-add-job-table"
+    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
