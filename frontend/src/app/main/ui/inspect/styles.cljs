@@ -113,7 +113,10 @@
 
         tokens-lib         (mf/deref refs/tokens-lib)
         tokens-status      (mf/deref refs/tokens-status)
-        active-themes      (mf/deref refs/workspace-active-theme-ids)
+        active-theme-ids   (mf/deref refs/workspace-active-theme-ids)
+        active-themes      (mf/with-memo [active-theme-ids tokens-lib]
+                             (when tokens-lib
+                               (keep #(some-> (ctob/get-theme tokens-lib %) ctob/get-name) active-theme-ids)))
         active-sets        (mf/with-memo [tokens-status tokens-lib]
                              (when (and tokens-status tokens-lib)
                                (cfo/get-active-sets tokens-status tokens-lib)))
@@ -156,7 +159,7 @@
       (when (or (seq active-themes) (seq active-sets))
         [:li
          [:> style-box* {:panel :token}
-          [:> tokens-panel* {:theme-paths active-themes :set-names (map ctob/get-name active-sets)}]]])
+          [:> tokens-panel* {:theme-names active-themes :set-names (map ctob/get-name active-sets)}]]])
       (for [panel panels]
         [:li {:key (d/name panel)}
          (case panel
