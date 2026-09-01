@@ -499,7 +499,10 @@
     :fn (mg/resource "app/migrations/sql/0152-improve-uuid-defaults-and-drop-extension.sql")}
 
    {:name "0152-rename-version-and-add-indexes-to-server-error-report"
-    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}])
+    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}
+
+   {:name "0154-add-job-table"
+    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
