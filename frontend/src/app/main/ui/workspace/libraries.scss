@@ -97,7 +97,7 @@
 
 %section-list-item-placeholder {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--sp-s);
   border: $b-1 solid var(--color-background-quaternary);
@@ -108,7 +108,7 @@
 .section-list-publish {
   @extend %section-list-item-placeholder;
 
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   border: none;
 }
 
@@ -129,11 +129,12 @@
 .section-list-item-double-icon {
   @extend %section-list-item-placeholder;
 
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
 .item-content {
   height: fit-content;
+  min-width: 0;
 }
 
 .close-btn {
@@ -253,22 +254,11 @@
   @include text-ellipsis;
 
   margin: 0;
-  max-width: px2rem(236);
   color: var(--library-name-foreground-color);
 }
 
 .item-name {
   @extend %item-name;
-}
-
-.item-name-short {
-  max-width: px2rem(206);
-}
-
-.item-name-long {
-  @extend %item-name;
-
-  max-width: px2rem(450);
 }
 
 .item-title {
@@ -308,6 +298,7 @@
 
 .library-actions {
   display: flex;
+  flex-shrink: 0;
   gap: var(--sp-xs);
 }
 

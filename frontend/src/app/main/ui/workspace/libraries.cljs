@@ -370,13 +370,6 @@
                         :tokens/import-from-library {:file-id file-id
                                                      :library-id library-id})))))
 
-        set-as-tokens-source
-        (mf/use-fn
-         (fn [event]
-           (let [library-id (some-> (dom/get-current-target event)
-                                    (dom/get-data "library-id")
-                                    (uuid/parse))]
-             (st/emit! (dwtl/set-tokens-source library-id)))))
 
         on-delete-accept
         (mf/use-fn
@@ -460,8 +453,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css-case :item-name true
-                                         :item-name-short has-tokens?)} name]
+             [:div {:class (stl/css :item-name)} name]
              [:ul {:class (stl/css :item-contents-legacy)}
               (let [summary (get-library-summary data)]
                 [:*
@@ -875,8 +867,7 @@
                     :key (dm/str id)
                     :data-testid "library-item"}
               [:div {:class (stl/css :item-content)}
-               [:div {:class (stl/css-case :item-name true
-                                           :item-name-short has-tokens?)} name]
+               [:div {:class (stl/css :item-name)} name]
                [:ul {:class (stl/css :item-contents)}
                 (let [summary (get-library-summary data)]
                   [:> library-description* {:summary summary :hint-name parent-name}])]]
@@ -1017,7 +1008,7 @@
             [:div {:class (stl/css :section-list-item)
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
-              [:div {:class (stl/css :item-name-long)} name]
+              [:div {:class (stl/css :item-name)} name]
               [:ul {:class (stl/css :item-contents)} (describe-library
                                                       (count components)
                                                       0
