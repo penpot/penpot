@@ -466,6 +466,8 @@ fn render_text_on_canvas(
 ) {
     let layer_bounds = shape.layer_bounds();
 
+    // Layer stack is managed here (blur / shadow / inset). `draw_text` is
+    // self-contained and only opens a layer when stroke-group opacity needs it.
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
@@ -872,8 +874,6 @@ pub fn render_emoji_overlay(
     if blur.is_some() {
         canvas.restore();
     }
-
-    canvas.restore();
 }
 
 fn draw_text(
@@ -883,20 +883,22 @@ fn draw_text(
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
-    let layer_bounds = shape.layer_bounds();
-
+    // Multi-style spans are already encoded in each ParagraphBuilder's
+    // TextStyles; paragraph.paint handles them without an isolation layer.
+    // Only open a save_layer when stroke-group opacity must composite as one.
     if let Some(opacity) = layer_opacity {
+        let layer_bounds = shape.layer_bounds();
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
         let layer_rec = SaveLayerRec::default()
             .bounds(&layer_bounds)
             .paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
+        canvas.restore();
     } else {
-        canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
     }
-
-    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
 }
 
 /// Renders a text stroke masked to the glyph shape.

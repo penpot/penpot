@@ -1443,6 +1443,17 @@ impl RenderState {
         // Stroke-only (fills_none) can go direct: empty fills are a no-op and
         // strokes paint into Current. Large files need mid-walk GPU drains so
         // release builds do not backlog a huge ops buffer in one Partial.
+        //
+        // Plain text (no strokes / effects) also paints into Current: span styles
+        // live in Skia Paragraph TextStyles, so multi-style text is fine.
+        // Text skips the nested_fills guard because fills are on spans, not
+        // shape.fills. Strokes stay layered (masking needs save_layers).
+        let is_direct_geometry = matches!(
+            shape.shape_type,
+            Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
+        ) && !(shape.fills.is_empty() && has_nested_fills);
+        let is_direct_text =
+            matches!(shape.shape_type, Type::Text(_)) && !shape.has_visible_strokes();
         let can_render_directly = apply_to_current_surface
             && offset.is_none()
             && parent_shadows.is_none()
@@ -1453,11 +1464,7 @@ impl RenderState {
             && shape.background_blur.is_none()
             && !has_inherited_blur
             && !shadows_need_layered
-            && matches!(
-                shape.shape_type,
-                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
-            )
-            && !(shape.fills.is_empty() && has_nested_fills)
+            && (is_direct_geometry || is_direct_text)
             && target_surface != SurfaceId::Export;
 
         if can_render_directly {
@@ -1486,21 +1493,50 @@ impl RenderState {
                 });
             }
 
-            fills::render(self, shape, &shape.fills, antialias, target_surface, None)?;
+            if let Type::Text(stored_text_content) = &shape.shape_type {
+                self.tile_atlas_flushed = true;
 
-            // Clipped frames draw strokes in render_shape_exit over children.
-            let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
-            if !skip_strokes {
-                // Pass strokes in natural order; stroke merging handles top-most ordering internally.
-                let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
-                strokes::render(
-                    self,
+                if !text::try_paint_from_layout_cache(
+                    Some(self),
+                    None,
                     shape,
-                    &visible_strokes,
                     Some(target_surface),
-                    antialias,
-                    outset,
-                )?;
+                    text_layout_cache_rotation_only,
+                )? {
+                    let rebound_text_content =
+                        stored_text_content.paint_content_for_selrect(shape.selrect());
+                    let text_content = rebound_text_content.as_ref();
+                    let mut paragraph_builders =
+                        text_content.paragraph_builder_group_from_text(None);
+                    text::render(
+                        Some(self),
+                        None,
+                        shape,
+                        &mut paragraph_builders,
+                        Some(target_surface),
+                        None,
+                        None,
+                        None,
+                        None,
+                    )?;
+                }
+            } else {
+                fills::render(self, shape, &shape.fills, antialias, target_surface, None)?;
+
+                // Clipped frames draw strokes in render_shape_exit over children.
+                let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
+                if !skip_strokes {
+                    // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+                    let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+                    strokes::render(
+                        self,
+                        shape,
+                        &visible_strokes,
+                        Some(target_surface),
+                        antialias,
+                        outset,
+                    )?;
+                }
             }
 
             self.surfaces.apply_mut(target_surface as u32, |s| {
