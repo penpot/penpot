@@ -395,6 +395,15 @@ fn render_text_on_canvas(
     canvas.restore();
 }
 
+/// Paints text fill for vector SVG export. Skips `save_layer` wrappers that
+/// `SkSVGDevice` would drop.
+pub fn paint_text_fill(canvas: &Canvas, shape: &Shape) {
+    let text_content = shape.get_text_content();
+    let text_content = text_content.new_bounds(shape.selrect());
+    let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+    paint_text_with_emoji_overlay(canvas, shape, &mut paragraph_builders, false);
+}
+
 /// Lays out and paints paragraph builders without any layer management.
 fn paint_text(
     canvas: &Canvas,

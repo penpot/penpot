@@ -121,8 +121,28 @@
               (aget shape-id-buffer 3)))))
 
 ;; IMPORTANT: Only TTF fonts can be stored.
+(defn- store-font-url
+  [font-data font-url]
+  (when (and (wasm/live?) (some? font-url) (not (str/blank? font-url)))
+    (let [font-id-buffer (:family-id-buffer font-data)
+          encoder (js/TextEncoder.)
+          encoded (.encode encoder font-url)
+          size (.-byteLength encoded)
+          ptr  (h/call wasm/internal-module "_alloc_bytes" size)
+          heap (gobj/get ^js wasm/internal-module "HEAPU8")
+          mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+      (.set mem encoded)
+      (h/call wasm/internal-module "_store_font_url"
+              (aget font-id-buffer 0)
+              (aget font-id-buffer 1)
+              (aget font-id-buffer 2)
+              (aget font-id-buffer 3)
+              (:weight font-data)
+              (:style font-data))
+      true)))
+
 (defn- store-font-buffer
-  [font-data font-array-buffer emoji? fallback?]
+  [font-data font-array-buffer font-url emoji? fallback?]
   (when (wasm/live?)
     (let [font-id-buffer  (:family-id-buffer font-data)
           size (.-byteLength font-array-buffer)
@@ -140,6 +160,7 @@
               (:style font-data)
               emoji?
               fallback?)
+      (store-font-url font-data font-url)
       (clear-font-storage-failure! font-data)
       ;; Reported after the store call: subscribers react by measuring text.
       (rx/push! font-stored-stream (font-data-key font-data))
@@ -158,7 +179,8 @@
            (fn [request]
              {:font-data font-data
               :emoji? emoji?
-              :fallback? (or fallback? (:fallback? request))}))))
+              :fallback? (or fallback? (:fallback? request))
+              :font-url font-url}))))
 
 (defn- take-font-fetches!
   [font-url]
@@ -176,9 +198,9 @@
       (report-font-storage-failed! font-data))))
 
 (defn- store-font-fetch!
-  [body {:keys [font-data emoji? fallback?]}]
+  [body {:keys [font-data emoji? fallback? font-url]}]
   (try
-    (let [stored? (store-font-buffer font-data body emoji? fallback?)]
+    (let [stored? (store-font-buffer font-data body font-url emoji? fallback?)]
       (when-not stored?
         (report-font-storage-failed! font-data))
       stored?)
@@ -275,6 +297,7 @@
         ;; Deferred so consumers, which subscribe after dispatching the sync
         ;; that lands here, are listening when an already-stored font reports.
         (do
+          (store-font-url font-data uri)
           (clear-font-storage-failure! font-data)
           (tm/schedule #(rx/push! font-stored-stream (font-data-key font-data))))
         (fetch-font font-data uri emoji? fallback?)))

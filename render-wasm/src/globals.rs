@@ -57,6 +57,11 @@ pub(crate) fn has_render_state() -> bool {
 }
 
 #[inline(always)]
+pub(crate) fn has_render_resources() -> bool {
+    unsafe { !RENDER_RESOURCES.is_null() }
+}
+
+#[inline(always)]
 pub(crate) fn get_resources() -> &'static mut RenderResources {
     unsafe {
         debug_assert!(!RENDER_RESOURCES.is_null(), "Render Resources is null");
@@ -113,6 +118,28 @@ macro_rules! with_current_shape {
             $block
         }
     };
+}
+
+/// Scoped override of the global render resources pointer for unit tests.
+#[cfg(test)]
+pub(crate) struct TestRenderResourcesGuard {
+    prev: *mut RenderResources,
+}
+
+#[cfg(test)]
+impl TestRenderResourcesGuard {
+    pub(crate) fn install(resources: &mut RenderResources) -> Self {
+        let prev = unsafe { RENDER_RESOURCES };
+        unsafe { RENDER_RESOURCES = resources as *mut _ };
+        Self { prev }
+    }
+}
+
+#[cfg(test)]
+impl Drop for TestRenderResourcesGuard {
+    fn drop(&mut self) {
+        unsafe { RENDER_RESOURCES = self.prev };
+    }
 }
 
 /// Initializes GPUState.
