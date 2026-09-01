@@ -10151,6 +10151,10 @@ msgstr "The value is not valid"
 msgid "workspace.tokens.connected-library"
 msgstr "connected library"
 
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:102
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "This is the current Tokens source"
+
 #: src/app/main/ui/workspace/tokens/tokens_source.cljs:25
 msgid "workspace.tokens.open-connected-library"
 msgstr "Open connected library"
