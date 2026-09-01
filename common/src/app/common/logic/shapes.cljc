@@ -75,7 +75,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation? extra-context]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -96,7 +96,19 @@
                       (pcb/reorder-grid-children ids))
 
                   (not ignore-touched)
-                  (generate-unapply-tokens objects changed-sub-attr))]
+                  (generate-unapply-tokens objects changed-sub-attr))
+
+        page-id (pcb/get-page-id changes)
+        modified-components (ctn/get-all-instance-roots objects ids)
+
+        changes (if (and page-id (seq modified-components))
+                  (pcb/validate-shapes changes
+                                       page-id
+                                       modified-components
+                                       (cond-> (str "generate-update-shapes: " ids " " attrs)
+                                         (some? extra-context)
+                                         (str " \n  -> from " extra-context)))
+                  changes)]
     changes))
 
 (defn- generate-update-shape-flags
@@ -248,8 +260,8 @@
          page-id (pcb/get-page-id changes)
          page    (or (pcb/get-page changes)
                      (ctpl/get-page data page-id))
-
          ids     (cfh/clean-loops objects ids)
+
          in-component-copy?
          (fn [shape-id]
            ;; Look for shapes that are inside a component copy, but are
@@ -258,7 +270,7 @@
            ;; If we want to specifically allow altering the copies, this is
            ;; a special case, like a component swap, in which case we want
            ;; to delete the old shape
-           (let [shape           (get objects shape-id)]
+           (let [shape (get objects shape-id)]
              (and (ctn/has-any-copy-parent? objects shape)
                   (not allow-altering-copies))))
 
@@ -437,7 +449,19 @@
                                                            (into []
                                                                  (remove #(and (ctsi/has-destination %)
                                                                                (id-to-delete? (:destination %))))
-                                                                 interactions))))))]
+                                                                 interactions))))))
+
+         modified-components (ctn/get-all-instance-roots objects (disj all-parents uuid/zero))
+         ;; There is no need to validate deleted objects. Probably also no need to validate hidden or unmasked objects,
+         ;; but we may think of it
+
+         changes (if (seq modified-components)
+                   (pcb/validate-shapes changes
+                                        page-id
+                                        modified-components
+                                        (str "generate-delete-shapes: " ids))
+                   changes)]
+
      [all-parents changes])))
 
 
