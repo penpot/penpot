@@ -44,8 +44,14 @@ update_oidc_name() {
   fi
 }
 
+update_favicon() {
+  local favicon="${PENPOT_FAVICON:-favicon.png}"
+  find /var/www/app -maxdepth 1 -name "*.html" -o -name "*.svg" 2>/dev/null | xargs -r sed -i "s|__PENPOT_FAVICON__|$favicon|g"
+}
+
 update_flags /var/www/app/js/config.js
 update_oidc_name /var/www/app/js/config.js
+update_favicon
 
 #########################################
 ## Nginx Config
