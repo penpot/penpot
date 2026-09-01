@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-xs);
-  margin: var(--sp-m) var(--sp-m) 0 var(--sp-m);
+  margin: px2rem(6) var(--sp-m) 0 var(--sp-m);
 }
 
 .tool-window-bar-title {
