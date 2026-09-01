@@ -419,9 +419,14 @@ $thumbnail-default-height: px2rem(168);
 }
 
 .library-typography-sample {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   block-size: px2rem(20);
+  line-height: 1;
   margin-inline-end: var(--sp-xs);
   inline-size: px2rem(20);
+  overflow: hidden;
 }
 
 // ─── MISC ──────────────────────────────────────
