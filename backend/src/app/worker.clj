@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.metrics :as mtx]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
@@ -75,6 +76,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SUBMIT API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Handlers that fail with a transient error can throw an exception with
+;; `{:type ::retry}` in ex-data (optionally `:delay` with a duration or
+;; milliseconds, and `:strategy ::noop` to retry without counting the
+;; attempt); the runner will schedule the job for retry (respecting
+;; max-retries) with exponential backoff.
 
 (def ^:private sql:insert-new-task
   "insert into task (id, name, props, queue, label, priority, max_retries, created_at, modified_at, scheduled_at)
@@ -141,9 +148,23 @@
     id))
 
 (defn invoke!
-  [{:keys [::task ::params] :as cfg}]
-  (assert (contains? cfg :app.worker/registry)
-          "missing worker registry on `cfg`")
-  (let [registry (get cfg ::registry)
-        task-fn  (get-task registry task)]
-    (task-fn {:props params})))
+  "Execute a job handler in-process (no row, no dispatch): decodes the
+  params with the job-def decoder and invokes the handler. Uses the
+  `::jobs/defs` registry when available; falls back to the legacy
+  `::wrk/registry` task execution until the full consumer switch.
+  Returns the handler result."
+  [{:keys [::task ::params ::registry] :as cfg}]
+  (if (contains? cfg ::jobs/defs)
+    (let [defs    (::jobs/defs cfg)
+          name    (::jobs/name cfg)
+          params' (::jobs/params cfg)
+          job-id  (::jobs/job-id cfg)
+          job-def (jobs/get-job-def defs name)
+          decoded (jobs/decode-params job-def params')]
+      (binding [jobs/*job-id* job-id]
+        ((::jobs/handler job-def) decoded)))
+    (do
+      (assert (contains? cfg ::registry)
+              "missing worker registry on `cfg`")
+      (let [task-fn (get-task registry task)]
+        (task-fn {:props params})))))

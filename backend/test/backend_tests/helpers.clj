@@ -417,15 +417,25 @@
     order by t.priority desc, t.scheduled_at")
 
 (defn run-pending-tasks!
+  "Execute the pending `task` rows in-process (simulating the worker
+  execution for the legacy task table until the consumer switch).
+  Does not touch the row status; only the handler side effects matter
+  for tests."
   []
-  (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
-                         (let [tasks (->> (db/exec! conn [sql:pending-tasks])
-                                          (map #'app.worker.runner/decode-task-row))]
-                           (doseq [task tasks]
-                             (let [cfg (-> cfg
-                                           (assoc :app.worker.runner/queue (:queue task))
-                                           (assoc :app.worker.runner/id 0))]
-                               (#'app.worker.runner/run-task cfg task)))))))
+  (db/tx-run! *system*
+              (fn [{:keys [::db/conn] :as cfg}]
+                (let [tasks (db/exec! conn [sql:pending-tasks])]
+                  (doseq [task tasks]
+                    (let [task'  (-> task
+                                     (update :props
+                                             (fn [props]
+                                               (cond-> props
+                                                 (db/pgobject? props)
+                                                 db/decode-transit-pgobject))))
+                          task-fn (wrk/get-task (:app.worker/registry *system*)
+                                                (:name task))]
+                      (when task-fn
+                        (task-fn task'))))))))
 
 ;; --- UTILS
 
