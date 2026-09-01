@@ -75,4 +75,26 @@
                (t/is (= (:r1 (:applied-tokens rect-1')) (:name token))))
 
              (t/testing "shape radius got update to the resolved token value."
-               (t/is (= (:r1 rect-1') 12))))))))))
+               (t/is (= (:r1 rect-1') 12)))))))))
+
+  (t/testing "applies token using active set-b when the file's active token set changes"
+    (t/async
+      done
+      (let [library (setup-file-with-tokens)
+            file    (-> (setup-file)
+                        (ctht/set-tokens-source library)
+                        (ctht/update-tokens-status #(ctos/set-tokens-status % #{} #{(cthi/id :set-b)})))
+            store   (ths/setup-store file {:libraries [library]})
+            rect-1  (cths/get-shape file :rect-1)
+            token   (toht/get-token library "borderRadius.sm")
+            events  [(dwta/apply-token {:shape-ids [(:id rect-1)]
+                                        :attributes #{:r1 :r2 :r3 :r4}
+                                        :token token
+                                        :on-update-shape dwta/update-shape-radius})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'   (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)]
+             (t/testing "shape radius uses the value from the active set-b"
+               (t/is (= (:r1 rect-1') 24))))))))))
