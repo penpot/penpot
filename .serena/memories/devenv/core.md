@@ -26,7 +26,7 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 
 ## Worker policy
 
-Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `wrk/submit!` inserts a row into the shared Postgres `task` table and returns; RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
+Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `jobs/submit!` inserts a row into the shared Postgres `job` table and returns (the legacy `task` table stays dormant); RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
 
 Each workspace is independent and can be started/stopped in any order. Shared infra (Postgres, RustFS, etc.) is shut down only when no instances remain running.
 

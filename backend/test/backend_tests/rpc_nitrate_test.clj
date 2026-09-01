@@ -1155,7 +1155,7 @@
                                  :sso-active? true
                                  :set-team-params set-team-params})
                   teams/initialize-user-in-organization (fn [& _] nil)
-                  eml/send! (fn [params] (swap! sent conj params))]
+                  eml/send! (fn [_cfg params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
                               :team-id (:id team)
@@ -1286,7 +1286,7 @@
                                  :team-id (:id team)
                                  :sso-active? false})
                   teams/initialize-user-in-organization (fn [& _] nil)
-                  eml/send! (fn [params] (swap! sent conj params))]
+                  eml/send! (fn [_cfg params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
                               :team-id (:id team)

@@ -188,7 +188,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs!)
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
@@ -355,7 +355,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs!)
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
@@ -391,7 +391,7 @@
       (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs!)
 
     (let [rows (th/db-exec! ["select id,name,deleted_at from team where deleted_at is not null"])]
       (t/is (= 3 (count rows))))
