@@ -216,6 +216,62 @@
     :else
     (get-instance-root objects (get objects (:parent-id shape)))))
 
+(defn get-all-instance-roots
+  "Given a list of shape ids and an objects tree, returns a set with the
+  ids of the instance roots related to each of the shapes (see
+  ctk/instance-root?).
+
+  For each shape, first look up: if the shape itself or any of its
+  ancestors is an instance root, only that root is added. If not, look
+  down the descendants of the shape with a depth-first search: each
+  instance root found is added, and its own subtree is skipped, while
+  the search continues with the other descendants."
+  [objects shape-ids]
+  (let [visited (volatile! #{})
+        result  (volatile! #{})]
+    (letfn [(search-up
+              ;; Returns true if the shape is already covered: it has an
+              ;; instance root at or above it (that is added to the
+              ;; result), or it was visited by a previous search. A shape
+              ;; is marked as visited only after a root has been found at
+              ;; or above it, so a failed search never blocks the
+              ;; downward search of the shapes below.
+              [shape-id]
+              (when-not (contains? @visited shape-id)
+                (let [shape (get objects shape-id)]
+                  (cond
+                    (nil? shape)
+                    false
+
+                    (ctk/instance-root? shape)
+                    (do (vswap! visited conj shape-id)
+                        (vswap! result conj shape-id)
+                        true)
+
+                    (cfh/root? shape)
+                    false
+
+                    :else
+                    (when (search-up (:parent-id shape))
+                      (vswap! visited conj shape-id)
+                      true)))))
+
+            (search-down
+              [shape-id]
+              (when-not (contains? @visited shape-id)
+                (vswap! visited conj shape-id)
+                (let [shape (get objects shape-id)]
+                  (when-not (nil? shape)
+                    (if (ctk/instance-root? shape)
+                      (vswap! result conj shape-id)
+                      (run! search-down (:shapes shape)))))))]
+
+      (doseq [shape-id shape-ids]
+        (when-not (search-up shape-id)
+          (search-down shape-id)))
+
+      @result)))
+
 (defn find-component-main
   "If the shape is a component main instance or is inside one, return that instance.
    Uses an iterative loop with cycle detection to prevent stack overflow on circular
