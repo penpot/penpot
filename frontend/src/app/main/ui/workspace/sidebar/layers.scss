@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-xs);
-  margin: var(--sp-m) var(--sp-m) 0 var(--sp-m);
+  margin: px2rem(6) var(--sp-m) 0 var(--sp-m);
 }
 
 .tool-window-bar-title {
@@ -31,11 +31,10 @@
 }
 
 .tool-window-content {
-  --calculated-height: calc(#{px2rem(136)} + var(--height, #{$sz-200}));
-
   display: flex;
   flex-direction: column;
-  block-size: calc(100vh - var(--calculated-height));
+  flex: 1 1 auto;
+  min-block-size: 0;
   inline-size: calc(var(--left-sidebar-width) + var(--depth) * var(--layer-indentation-size));
   overflow: auto;
   scrollbar-gutter: stable;
@@ -117,6 +116,10 @@
 
 .layers {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-block-size: 0;
 }
 
 .replace-wrapper {

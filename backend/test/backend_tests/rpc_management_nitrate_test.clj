@@ -194,6 +194,15 @@
                 (string? (get version k)))))
     (t/is (= cf/version version))))
 
+(t/deftest get-air-gapped
+  (let [out (th/management-command! {::th/type :get-air-gapped})]
+    (t/is (th/success? out))
+    (t/is (false? (-> out :result :air-gapped))))
+  (binding [cf/flags (conj cf/flags :air-gapped-conf)]
+    (let [out (th/management-command! {::th/type :get-air-gapped})]
+      (t/is (th/success? out))
+      (t/is (true? (-> out :result :air-gapped))))))
+
 (t/deftest get-teams-returns-only-owned-non-default-non-deleted
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile      (th/create-profile* 1 {:is-active true})

@@ -139,6 +139,27 @@ until you set an identity. The values are applied every time
 `run-devenv` brings an instance up (idempotent), so re-running
 with different flags is the way to change the in-container identity.
 
+### Personal opencode config inside the container
+
+`run-devenv --opencode-config-dir DIR` bind-mounts a host directory over the
+container's `~/.config/opencode` (opencode's global config dir). This is how
+you keep personal agents, prompts, and skills in a separate repository and
+use them inside the devenv without committing them here or leaving untracked
+files in the repo:
+
+```bash
+./manage.sh run-devenv --agentic --opencode-config-dir ../penpot-opencode
+```
+
+The path must be an existing directory; `~` is expanded and the value is
+resolved to an absolute path automatically. The mount is applied at container
+creation, so changing it requires stopping and re-running `run-devenv` for
+that instance, and it applies only to instances brought up with the flag —
+other workspaces mount nothing. The directory is shared read-write with the
+container (same UID mapping as the source tree). Opencode's own state
+(sessions, `auth.json`) lives in `~/.local/share/opencode`, which stays in
+the container's data volume regardless of this flag.
+
 ### Shared state and workers
 
 All instances share one Penpot database and one MinIO bucket; users, teams,

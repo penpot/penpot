@@ -150,16 +150,26 @@
 
         on-main-key-down
         (mf/use-fn
+         (mf/deps open)
          (fn [event]
            (cond
-             (kbd/space? event)
+             (and open (kbd/esc? event))
+             (reset! open* false)
+
+             (or (kbd/enter? event) (kbd/space? event))
+             (do
+               (dom/prevent-default event)
+               (if open
+                 (reset! open* false)
+                 (do
+                   (cancel-timer! close-timer*)
+                   (reset! open* true))))
+
+             (kbd/down-arrow? event)
              (do
                (dom/prevent-default event)
                (cancel-timer! close-timer*)
-               (reset! open* true))
-
-             (and open (kbd/esc? event))
-             (reset! open* false))))
+               (reset! open* true)))))
 
         on-flyout-key-down
         (mf/use-fn
@@ -219,7 +229,10 @@
                         :aria-expanded open
                         :has-tooltip false
                         :icon default-icon
-                        :on-click on-select-tool
+                        :on-click (fn [event]
+                                    (cancel-timer! open-timer*)
+                                    (cancel-timer! close-timer*)
+                                    (on-select-tool event))
                         :on-key-down on-main-key-down
                         :data-tool (name default-tool)}]
 

@@ -1328,3 +1328,83 @@
             out  (th/command! data)]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count @mock)))))))
+
+(t/deftest admin-cannot-remove-team-owner
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        admin  (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id admin)
+                           :role :admin})
+
+    (let [out (th/command! {::th/type :delete-team-member
+                            ::rpc/profile-id (:id admin)
+                            :team-id (:id team)
+                            :member-id (:id owner)})]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :cant-remove-owner)))))
+
+(t/deftest owner-can-remove-another-owner
+  (let [owner1 (th/create-profile* 1 {:is-active true})
+        owner2 (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner1)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id owner2)
+                           :role :owner})
+
+    (let [out (th/command! {::th/type :delete-team-member
+                            ::rpc/profile-id (:id owner1)
+                            :team-id (:id team)
+                            :member-id (:id owner2)})]
+      (t/is (th/success? out)))))
+
+(t/deftest owner-can-remove-admin
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        admin  (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id admin)
+                           :role :admin})
+
+    (let [out (th/command! {::th/type :delete-team-member
+                            ::rpc/profile-id (:id owner)
+                            :team-id (:id team)
+                            :member-id (:id admin)})]
+      (t/is (th/success? out)))))
+
+(t/deftest admin-can-remove-admin
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        admin1 (th/create-profile* 2 {:is-active true})
+        admin2 (th/create-profile* 3 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id admin1)
+                           :role :admin})
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id admin2)
+                           :role :admin})
+
+    (let [out (th/command! {::th/type :delete-team-member
+                            ::rpc/profile-id (:id admin1)
+                            :team-id (:id team)
+                            :member-id (:id admin2)})]
+      (t/is (th/success? out)))))
+
+(t/deftest delete-nonexistent-member-returns-not-found
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        fake-id  (uuid/next)]
+
+    (let [out (th/command! {::th/type :delete-team-member
+                            ::rpc/profile-id (:id owner)
+                            :team-id (:id team)
+                            :member-id fake-id})]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :not-found))
+      (t/is (th/ex-of-code? (:error out) :member-does-not-exist)))))

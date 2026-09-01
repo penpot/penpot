@@ -185,7 +185,7 @@
                 :on-click set-section} (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
-           [:> register/terms-register*]]]
+           [:> register/terms-service-privacy-policy*]]]
 
          :register-validate
          [:div {:class (stl/css :form-container)}

@@ -1045,3 +1045,18 @@ RETURNING id, deleted_at;")
                 (update acc :created conj email)))))
         {:created [] :skipped []}
         emails)))))
+
+;; ---- API: get-air-gapped
+
+(def ^:private schema:get-air-gapped-result
+  [:map
+   [:air-gapped ::sm/boolean]])
+
+(sv/defmethod ::get-air-gapped
+  "Returns whether this Penpot instance runs in air-gapped mode."
+  {::doc/added "2.18"
+   ::sm/params [:map]
+   ::sm/result schema:get-air-gapped-result
+   ::rpc/auth false}
+  [_cfg _params]
+  {:air-gapped (contains? cf/flags :air-gapped-conf)})

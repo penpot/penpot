@@ -477,9 +477,15 @@ There are exactly two types:
    release, but the PR is being released elsewhere — the fix may not
    actually ship here.
 2. **PR is in the milestone, but the issue it closes is in a different
-   milestone (or has no milestone).** The PR is being released here, but
-   the issue it fixes is being released in a different version (or never
-   tracked in a milestone) — the changelog pairing is misleading.
+   milestone.** The PR is being released here, but the issue it fixes is
+   being released in a different version — the changelog pairing is
+   misleading.
+
+   **Exception — issue with no milestone is NOT an anomaly.** Milestones
+   are only required for issues tracked in the "Main" project. A milestone
+   PR that closes an issue with no milestone references an issue from
+   another (probably private) project; that is expected and the issue is
+   not part of this changelog. Do not report it.
 
 **Anything else is not an anomaly.** Other discrepancies (exclusion
 labels on in-changelog issues, missing valid issues, unmerged PR
@@ -635,6 +641,10 @@ for pr_num in sorted(changelog_prs):
     if get_pr_milestone(pr_num) != MILESTONE: continue
     for issue_num in pr.get('closing_issues', []):
         issue_ms = get_issue_milestone(issue_num)
+        # No milestone = issue from another (probably private) project —
+        # milestones are only required for the "Main" project. Not an
+        # anomaly, and the issue never belongs in this changelog.
+        if issue_ms is None: continue
         if issue_ms != MILESTONE:
             anomalies_b.append({
                 'pr': pr_num,
@@ -657,7 +667,7 @@ with open(OUTPUT, 'w') as f:
 
     f.write('## Summary\n\n')
     f.write(f'- **Issue in {MILESTONE}, referenced PR in different milestone or no milestone:** {n_a}\n')
-    f.write(f'- **PR in {MILESTONE}, closing issue in different milestone or no milestone:** {n_b}\n')
+    f.write(f'- **PR in {MILESTONE}, closing issue in a different milestone:** {n_b}\n')
     f.write(f'- **Total anomalies:** {n_a + n_b}\n\n')
 
     # --- Anomalies section ---
@@ -686,7 +696,7 @@ with open(OUTPUT, 'w') as f:
                 f.write('\n')
 
         if n_b:
-            f.write(f'\n### PR in {MILESTONE}, closing issue in different milestone or no milestone\n\n')
+            f.write(f'\n### PR in {MILESTONE}, closing issue in a different milestone\n\n')
             by_pr = {}
             for b in anomalies_b:
                 by_pr.setdefault(b['pr'], []).append(b)
@@ -721,8 +731,11 @@ milestone mismatches between issues and their referenced PRs:
 
 1. **Issue in milestone, referenced PR in different milestone or no milestone** —
    the changelog claims a fix here, but the PR is released elsewhere.
-2. **PR in milestone, closing issue in different milestone or no milestone** —
+2. **PR in milestone, closing issue in a different milestone** —
    the PR is released here, but the issue it fixes belongs to another version.
+   (An issue with *no* milestone belongs to another, probably private,
+   project — milestones are only required on the "Main" project — so it is
+   neither an anomaly nor a changelog candidate.)
 
 **Rule violations are not in the report** — they are workflow errors the
 LLM must fix directly in `CHANGES.md` during step 6a (pre-flight checks).
@@ -799,8 +812,11 @@ self-contained and clickable in any Markdown viewer.
 - **Anomaly = milestone mismatch only.** The report contains only milestone
   mismatches: (1) the issue is in this milestone but the referenced PR is
   in a different milestone (or unassigned), and (2) the PR is in this
-  milestone but the issue it closes is in a different milestone (or
-  unassigned). These are anomalies because the changelog pairing is
+  milestone but the issue it closes is in a different milestone. An
+  *unassigned* (milestone-less) issue closed by a milestone PR is **not**
+  an anomaly: milestones are required only for the "Main" project, so such
+  issues come from another (probably private) project and are not changelog
+  candidates. These anomalies are reported because the changelog pairing is
   *misleading* — the human needs to decide whether the milestone or the
   changelog is wrong. All other discrepancies (exclusion labels, missing
   valid issues, unmerged PR references, duplicates, stale milestone

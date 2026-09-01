@@ -4,14 +4,17 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "./common";
 @use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as *;
-@use "./common";
 
-.checkbox-terms-and-privacy,
 .checkbox-newsletter-updates {
+  align-items: flex-start;
+}
+
+.checkbox-terms-and-privacy {
   align-items: flex-start;
 }
 
@@ -19,42 +22,46 @@
   gap: var(--sp-xxl);
 }
 
+.account-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-s);
+  padding: 0;
+}
+
+.account-text {
+  @include use-typography("title-small");
+
+  text-align: right;
+  color: var(--color-foreground-secondary);
+}
+
+.account-link {
+  @include use-typography("title-small");
+
+  text-align: left;
+  background-color: transparent;
+  border: none;
+  display: inline;
+  color: var(--color-accent-primary);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .register-success {
   gap: var(--sp-xxl);
 }
 
-.register-success .auth-title {
+.register-success-title {
   @include use-typography("title-medium");
 
   line-height: 1.2;
+  color: var(--color-foreground-primary);
 }
 
-.notification-text {
-  @include use-typography("body-medium");
-
-  color: var(--color-foreground-secondary);
-}
-
-.notification-text-email {
-  @include use-typography("title-medium");
-
-  line-height: 1.2;
-  color: var(--color-accent-primary);
-  margin-inline: $sz-36;
-}
-
-.logo-btn {
-  block-size: $sz-40;
-}
-
-.logo-container {
-  display: flex;
-  justify-content: flex-start;
-  inline-size: $sz-120;
-  margin-block-end: var(--sp-xxl);
-}
-
-.terms-register {
+.terms {
   @include use-typography("body-small");
 
   display: flex;
@@ -63,15 +70,15 @@
   inline-size: 100%;
 }
 
-.and-text {
-  border-block-end: $b-1 solid transparent;
-  color: var(--color-foreground-secondary);
-}
-
-.auth-link {
+.terms-link {
   color: var(--color-accent-primary);
 
   &:hover {
     text-decoration: underline;
   }
+}
+
+.terms-and {
+  border-block-end: $b-1 solid transparent;
+  color: var(--color-foreground-secondary);
 }

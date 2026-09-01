@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.18.1-debian13-dev AS build
+FROM dhi.io/node:24.20.0-debian13-dev AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV DEBIAN_FRONTEND=noninteractive

@@ -27,6 +27,7 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
+   [backend-tests.storage-test :as stt]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
@@ -1883,3 +1884,86 @@
       (t/is (some? ext-libs)
             "type :link-later should produce external-libraries even with include-libraries=true")
       (t/is (pos? (count ext-libs))))))
+
+(t/deftest import-rejects-too-many-zip-entries
+  ;; import must reject ZIP files exceeding max-zip-entries
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/export-type :detach-libraries))
+     (io/output-stream output))
+
+    ;; Import with max-zip-entries=1 — the exported ZIP has more entries
+    (let [cfg (-> th/*system*
+                  (assoc ::bfc/project-id (:default-project-id profile))
+                  (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/input output)
+                  (assoc ::bfc/import-max-zip-entries 1))
+          out (try
+                (v3/import-files! cfg)
+                :no-error
+                (catch Throwable e
+                  (let [d (or (ex-data e) (some-> (ex-cause e) ex-data))]
+                    d)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :too-many-zip-entries (:code out))))))
+
+(defn- prepare-file-with-media
+  "Creates a file with a media object backed by a real storage object,
+  so that v3 export produces objects/ entries."
+  [profile]
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (stt/configure-storage-backend))
+
+        sobject (sto/put-object! storage {::sto/content (sto/content "media-bytes")
+                                          :content-type "image/svg+xml"
+                                          :bucket "file-media-object"})
+
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        mobj    (th/create-file-media-object* {:file-id (:id file)
+                                               :is-local true
+                                               :media-id (:id sobject)})]
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-media
+       :object mobj}])
+
+    (dissoc file :data)))
+
+(t/deftest import-rejects-oversized-object
+  ;; import must reject storage objects exceeding max-object-size
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-media profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/export-type :detach-libraries))
+     (io/output-stream output))
+
+    ;; Import with max-object-size=1 — the media object will exceed this
+    (let [cfg (-> th/*system*
+                  (assoc ::bfc/project-id (:default-project-id profile))
+                  (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/input output)
+                  (assoc ::bfc/import-max-object-size 1))
+          out (try
+                (v3/import-files! cfg)
+                :no-error
+                (catch Throwable e
+                  (let [d (or (ex-data e) (some-> (ex-cause e) ex-data))]
+                    d)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
