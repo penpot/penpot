@@ -23,6 +23,7 @@ use skia_safe::{
 
 use std::cell::Cell;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use super::FontFamily;
 use crate::math::Point;
@@ -196,7 +197,9 @@ struct CachedExtrect {
 #[derive(Debug)]
 pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
-    pub paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+    /// Shared across shape clones (e.g. modifier transforms) so rotation/pan
+    /// can paint without rebuilding Skia layout. Cleared builders on clone are OK.
+    pub paragraphs: Rc<Vec<Vec<skia::textlayout::Paragraph>>>,
     cached_extrect: Cell<Option<CachedExtrect>>,
 }
 
@@ -210,8 +213,8 @@ impl Clone for TextContentLayout {
     fn clone(&self) -> Self {
         Self {
             paragraph_builders: vec![],
-            paragraphs: vec![],
-            cached_extrect: Cell::new(None),
+            paragraphs: Rc::clone(&self.paragraphs),
+            cached_extrect: Cell::new(self.cached_extrect.get()),
         }
     }
 }
@@ -226,7 +229,7 @@ impl TextContentLayout {
     pub fn new() -> Self {
         Self {
             paragraph_builders: vec![],
-            paragraphs: vec![],
+            paragraphs: Rc::new(Vec::new()),
             cached_extrect: Cell::new(None),
         }
     }
@@ -237,12 +240,18 @@ impl TextContentLayout {
         paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
     ) {
         self.paragraph_builders = paragraph_builders;
-        self.paragraphs = paragraphs;
+        self.paragraphs = Rc::new(paragraphs);
+        self.cached_extrect.set(None);
+    }
+
+    pub fn clear(&mut self) {
+        self.paragraph_builders.clear();
+        self.paragraphs = Rc::new(Vec::new());
         self.cached_extrect.set(None);
     }
 
     pub fn needs_update(&self) -> bool {
-        self.paragraph_builders.is_empty() || self.paragraphs.is_empty()
+        self.paragraphs.is_empty()
     }
 }
 
@@ -471,7 +480,7 @@ impl TextContent {
         let mut has_lines = false;
         let mut y_accum = base_y + vertical_offset;
 
-        for group in paragraphs {
+        for group in paragraphs.iter() {
             if let Some(paragraph) = group.first() {
                 let line_metrics = paragraph.get_line_metrics();
                 for line in &line_metrics {
@@ -1870,5 +1879,22 @@ mod tests {
         assert_eq!(para.char_utf16_len_at(0), 1);
         assert_eq!(para.char_utf16_len_at(1), 2);
         assert_eq!(para.char_utf16_len_at(2), 1);
+    }
+
+    #[test]
+    fn layout_clone_shares_skia_paragraphs() {
+        let mut layout = TextContentLayout::new();
+        layout.paragraphs = Rc::new(vec![vec![]]);
+        let cloned = layout.clone();
+        assert!(Rc::ptr_eq(&layout.paragraphs, &cloned.paragraphs));
+        assert!(cloned.paragraph_builders.is_empty());
+    }
+
+    #[test]
+    fn layout_clear_empties_paragraphs() {
+        let mut layout = TextContentLayout::new();
+        layout.paragraphs = Rc::new(vec![vec![]]);
+        layout.clear();
+        assert!(layout.needs_update());
     }
 }

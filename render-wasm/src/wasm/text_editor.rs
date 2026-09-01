@@ -396,8 +396,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
             get_text_editor_state().selection.set_caret(new_cursor);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
@@ -448,8 +447,7 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
         let cursor = get_text_editor_state().selection.focus;
         text_helpers::insert_text_with_newlines(text_content, &cursor, &text);
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
@@ -517,8 +515,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
             get_text_editor_state().selection.set_caret(new_cursor);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(TextEditorEvent::ContentChanged);
