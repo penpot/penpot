@@ -33,6 +33,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
@@ -48,7 +49,6 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
-   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.exports :as exports]
@@ -1528,7 +1528,7 @@
                  (u/not-valid plugin-id :export value)
 
                  :else
-                 (if (and (features/active-feature? @st/state "wasm-export/v1")
+                 (if (and (contains? cf/flags :wasm-export)
                           (contains? #{:jpeg :webp :png} (:type value :png)))
                    ;; New export with wasm
                    (let [uri (wasm.exports/export-image-uri
