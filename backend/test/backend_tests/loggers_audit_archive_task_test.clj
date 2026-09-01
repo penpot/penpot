@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as-alias http]
+   [app.jobs :as jobs]
    [app.setup :as-alias setup]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -180,7 +181,10 @@
             client         (ig/init-key :app.nitrate/client
                                         {::http/client       (Object.)
                                          ::setup/shared-keys shared-keys})
-            handler        (ig/init-key :app.loggers.audit.archive-task/handler
+            ;; The archive job is a job-def: the handler closes over the
+            ;; cfg it was given at init and takes a nil context, because
+            ;; an in-process invocation has no job row to describe.
+            job-def        (ig/init-key :app.loggers.audit.archive-task/job-def
                                         {::db/pool           (:app.db/pool th/*system*)
                                          ::setup/shared-keys shared-keys
                                          ::http/client       (:app.http.client/client th/*system*)
@@ -203,7 +207,7 @@
                                         :context    (db/tjson {})
                                         :tracked-at (ct/now)
                                         :created-at (ct/now)})]
-            (handler {:props {:uri archive-uri}})
+            ((::jobs/handler job-def) nil {:uri archive-uri})
             (t/is (= 1 (count @nitrate-bodies)))
             (let [body  (json/decode (first @nitrate-bodies) :key-fn json/read-kebab-key)
                   event (first (:events body))]

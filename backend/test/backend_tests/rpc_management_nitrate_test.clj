@@ -14,12 +14,12 @@
    [app.db :as db]
    [app.email :as eml]
    [app.http :as-alias http]
+   [app.jobs :as jobs]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.util.ssrf :as ssrf]
-   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
    [clojure.test :as t]
@@ -53,7 +53,7 @@
 
 (t/deftest create-and-update-organization-invitations-audit-props
   (let [owner-id-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+    (with-mocks [email-mock {:target 'app.email/send :return nil}
                  audit-mock {:target 'app.loggers.audit/submit :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method params]
@@ -102,7 +102,7 @@
 
 (t/deftest invite-to-organization-rejects-non-owner
   (let [organization-summary-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+    (with-mocks [email-mock {:target 'app.email/send :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (when (= method :get-organization-summary)
@@ -130,7 +130,7 @@
         (t/is (not (:called? @email-mock)))))))
 
 (t/deftest invite-to-organization-rejects-unknown-organization
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile         (th/create-profile* 105 {:is-active true})
           organization-id (uuid/random)
@@ -149,7 +149,7 @@
 
 (t/deftest invite-to-organization-uses-authoritative-branding
   (let [organization-summary-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+    (with-mocks [email-mock {:target 'app.email/send :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (when (= method :get-organization-summary)
@@ -175,7 +175,7 @@
                                                                       :logo "https://evil.example/logo.png"
                                                                       :avatar-bg-url "https://evil.example/avatar.svg"
                                                                       :sso-active false}})
-              email-params    (first (:call-args @email-mock))
+              email-params    (second (:call-args @email-mock))
               organization    (:organization email-params)]
           (t/is (th/success? out))
           (t/is (= "Trusted Organization" (:name organization)))
@@ -488,7 +488,7 @@
                                  @organization-summary-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submission ---
-       wrk-mock    {:target 'app.worker/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -587,7 +587,7 @@
                                  :get-owned-organizations @owned-organizations-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submissions ---
-       wrk-mock    {:target 'app.worker/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -1834,8 +1834,8 @@
                                      nil))
                                  nil))}
        ;; --- Email mock: capture sent emails ---
-       email-mock  {:target 'app.email/send!
-                    :return (fn [params] (swap! sent conj params) nil)}]
+       email-mock  {:target 'app.email/send
+                    :return (fn [_cfg params] (swap! sent conj params) nil)}]
 
       ;; --- Setup: create profiles, team, organization-summary ---
       (let [owner       (th/create-profile* 1 {:is-active true :fullname "Owner"})
@@ -1912,7 +1912,7 @@
                 :organization-id (uuid/random)
                 :updated-props false
                 :announce-activation false}]
-    (with-redefs [eml/send! (fn [params] (swap! sent conj params))]
+    (with-redefs [eml/send (fn [_cfg params] (swap! sent conj params))]
       (th/management-command! params))
     (t/is (empty? @sent))))
 
@@ -2099,32 +2099,32 @@
 (t/deftest send-renewal-email-falls-back-to-profile-fullname-when-name-is-nil
   ;; `nil` user-name means "no override": the RPC must look up the
   ;; account owner's real name instead of sending a blank greeting.
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile nil))]
       (t/is (th/success? out))
-      (let [[params] (:call-args @email-mock)]
+      (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "Nitrate User" (:user-name params)))))))
 
 (t/deftest send-renewal-email-keeps-explicit-empty-name
   ;; An explicit "" means the caller deliberately wants no name shown
   ;; and must not be replaced by the profile's fullname.
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile ""))]
       (t/is (th/success? out))
-      (let [[params] (:call-args @email-mock)]
+      (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))
 
 (t/deftest send-renewal-email-treats-blank-name-as-empty
   ;; A blank name is trimmed and follows the same path as "": no name
   ;; is shown and the profile's fullname is not used.
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile "   "))]
       (t/is (th/success? out))
-      (let [[params] (:call-args @email-mock)]
+      (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))

@@ -717,7 +717,7 @@
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
       (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
-                  (th/run-task! "storage-gc-touched" {}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects
@@ -1083,7 +1083,7 @@
           out    (th/command! params)]
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     ;; query the list of files after soft deletion
     (let [data {::th/type :get-project-files
@@ -1528,7 +1528,7 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)}))))
 
     ;; The FileGC task will schedule an inner taskq
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
@@ -2218,6 +2218,9 @@
                          :id (:id library)})
 
           ;; The task swallows absorption errors, so verify the persisted result.
+          ;; Absorption runs inside the job, and the job only gets the
+          ;; components of its own cfg, so this also needs
+          ;; `:app.tasks.delete-object/job-def` to carry `::sto/storage`.
           (let [deleted (db/get* th/*pool* :file {:id (:id library)}
                                  {::db/remove-deleted false})
                 out     (th/command! {::th/type :get-file
@@ -2377,7 +2380,7 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))
 
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs)
 
         ;; get deleted files
         (let [data {::th/type :get-team-deleted-files

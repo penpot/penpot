@@ -8,6 +8,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 LOG_DIR="$PROJECT_ROOT/.ci-logs"
 
+# `clojure.core/assert` is elided at compile time when `*assert*` is false,
+# and `app.config` only sets that var from these flags. Without this the
+# backend suite runs with every assertion compiled out, silently. Appending
+# keeps whatever flags the caller already exported.
+export PENPOT_FLAGS="${PENPOT_FLAGS:+$PENPOT_FLAGS } enable-backend-asserts"
+
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
