@@ -541,7 +541,7 @@
 
     (mf/with-effect [report type cause]
       (when (and (ex/exception? cause)
-                 (not (contains? #{:not-found :authentication} type)))
+                 (not (contains? #{:not-found :authentication :validation} type)))
         (errors/submit-report :event-name "exception-page"
                               :report report
                               :hint (ex/get-hint cause))))
@@ -551,6 +551,14 @@
       [:> not-found* {}]
 
       :authentication
+      [:> not-found* {}]
+
+      ;; A malformed/invalid resource identifier (e.g. a broken file-id
+      ;; in the URL) surfaces as a generic :validation error rather than
+      ;; :not-found. By the time it reaches here it has no more specific
+      ;; handling (see `handle-error :validation`'s fallback in errors.cljs),
+      ;; so treat it the same as "this page doesn't exist".
+      :validation
       [:> not-found* {}]
 
       :bad-gateway
