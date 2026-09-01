@@ -174,7 +174,7 @@
       (mbus/purge! msgbus [ch]))))
 
 (defmethod handle-message :unsubscribe-organization
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id]} {:keys [organization-id] :as params}]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state]} {:keys [organization-id] :as params}]
   (l/trace :fn "handle-message" :event "unsubscribe-organization" :organization-id organization-id :conn-id id)
   (when-let [osub (::organization-subscription @state)]
     (sp/close! (:channel osub))
