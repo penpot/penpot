@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.http-assets-test
   (:require
@@ -13,6 +13,7 @@
    [app.http.access-token :as actoken]
    [app.http.assets :as assets]
    [app.http.session :as session]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token :as access-token]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
@@ -36,11 +37,16 @@
   (assoc storage ::sto/backend :fs))
 
 (defn- create-storage-object!
-  "Create a storage object with the given bucket and content."
-  [storage bucket content]
-  (sto/put-object! storage {::sto/content (sto/content content)
-                            :bucket bucket
-                            :content-type "text/plain"}))
+  "Create a storage object with the given bucket and content.
+   Optional opts map can include :profile-id to set the owner."
+  ([storage bucket content]
+   (create-storage-object! storage bucket content {}))
+  ([storage bucket content {:keys [profile-id]}]
+   (sto/put-object! storage (cond-> {::sto/content (sto/content content)
+                                     :bucket bucket
+                                     :content-type "text/plain"}
+                              (some? profile-id)
+                              (assoc :profile-id profile-id)))))
 
 (defn- make-handler-cfg
   "Build a minimal cfg map for the assets handlers."
@@ -632,6 +638,111 @@
         response (assets/file-objects-handler cfg request)]
     (t/is (= 404 (::yres/status response)))))
 
+;; ----------------------------------------------------------------
+;; Tests: file-objects-handler — share-link authz (issue #11338)
+;; ----------------------------------------------------------------
+
+(t/deftest file-objects-handler-anonymous-with-valid-share-id-succeeds
+  ;; Anonymous request with a valid share-id matching the file must
+  ;; succeed (share-link viewers are unauthenticated by definition).
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        slink    (:result (th/command! {::th/type :create-share-link
+                                        ::rpc/profile-id (:id owner)
+                                        :file-id (:id file)
+                                        :pages #{}
+                                        :who-comment "team"
+                                        :who-inspect "all"}))
+        request  {:path-params {:id (str (:id media-obj))}
+                  :query-params {:share-id (str (:id slink))}}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest file-objects-handler-anonymous-with-share-id-for-other-file-returns-404
+  ;; A share-id from file A must not grant access to assets of file B.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file-a   (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        file-b   (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-a  (create-storage-object! storage "file-media-object" "image A")
+        media-obj-a (th/create-file-media-object* {:file-id (:id file-a)
+                                                   :media-id (:id media-a)})
+        media-b  (create-storage-object! storage "file-media-object" "image B")
+        media-obj-b (th/create-file-media-object* {:file-id (:id file-b)
+                                                   :media-id (:id media-b)})
+        slink    (:result (th/command! {::th/type :create-share-link
+                                        ::rpc/profile-id (:id owner)
+                                        :file-id (:id file-a)
+                                        :pages #{}
+                                        :who-comment "team"
+                                        :who-inspect "all"}))
+        request  {:path-params {:id (str (:id media-obj-b))}
+                  :query-params {:share-id (str (:id slink))}}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest file-objects-handler-anonymous-with-malformed-share-id-returns-404
+  ;; Malformed share-id must not raise; it must short-circuit to 404.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project  (th/create-project* 1 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  :query-params {:share-id "not-a-uuid"}}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest file-thumbnails-handler-anonymous-with-valid-share-id-succeeds
+  ;; Thumbnail endpoint must also honor the share-id query param.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        thumb-storage (create-storage-object! storage "file-object-thumbnail" "thumb data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id thumb-storage)})
+        slink    (:result (th/command! {::th/type :create-share-link
+                                        ::rpc/profile-id (:id owner)
+                                        :file-id (:id file)
+                                        :pages #{}
+                                        :who-comment "team"
+                                        :who-inspect "all"}))
+        request  {:path-params {:id (str (:id media-obj))}
+                  :query-params {:share-id (str (:id slink))}}
+        response (assets/file-thumbnails-handler cfg request)]
+    ;; Falls back to media-id since no thumbnail-id, but still serves
+    (t/is (= 204 (::yres/status response)))))
+
 (t/deftest objects-handler-expired-object
   ;; Expired objects should return 404 (get-object filters them out).
   (let [storage  (-> (:app.storage/storage th/*system*)
@@ -646,3 +757,70 @@
                   ::session/profile-id (:id profile)}
         response (assets/objects-handler cfg request)]
     (t/is (= 404 (::yres/status response)))))
+
+;; ----------------------------------------------------------------
+;; Tests: objects-handler — tempfile bucket ownership (T9-F-10)
+;; ----------------------------------------------------------------
+
+(t/deftest objects-handler-tempfile-owner-can-access
+  ;; Owner of a tempfile should be able to access it via session auth.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        object   (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::session/profile-id (:id owner)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-non-owner-gets-404
+  ;; Non-owner accessing a tempfile should get 404 (not 403, to avoid leaking existence).
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        owner     (th/create-profile* 1)
+        stranger  (th/create-profile* 2)
+        object    (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request   {:path-params {:id (str (:id object))}
+                   ::session/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-access-token-owner-can-access
+  ;; Owner of a tempfile should be able to access it via access token auth.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        object   (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::actoken/profile-id (:id owner)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-access-token-non-owner-gets-404
+  ;; Non-owner accessing a tempfile via access token should get 404.
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        owner     (th/create-profile* 1)
+        stranger  (th/create-profile* 2)
+        object    (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request   {:path-params {:id (str (:id object))}
+                   ::actoken/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-no-stored-profile-id-serves
+  ;; Legacy tempfile objects without stored profile-id should be accessible
+  ;; to any authenticated user (backward compatibility).
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        stranger  (th/create-profile* 1)
+        object    (create-storage-object! storage "tempfile" "legacy temp data")
+        request   {:path-params {:id (str (:id object))}
+                   ::session/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))

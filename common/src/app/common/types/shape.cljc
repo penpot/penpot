@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.shape
   (:require
@@ -624,8 +624,9 @@
   {:type :path
    :name "Path"
    :fills []
+   ;; Paths use centered strokes by default.
    :strokes [{:stroke-style :solid
-              :stroke-alignment :inner
+              :stroke-alignment :center
               :stroke-width 1
               :stroke-color clr/black
               :stroke-opacity 1}]})

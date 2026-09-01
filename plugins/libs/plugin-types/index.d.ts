@@ -1646,19 +1646,24 @@ export interface File extends PluginData {
    * - `'penpot'` will create a *.penpot file with a binary representation of the file
    * - `'zip'` will create a *.zip with the file exported in several SVG files with some JSON metadata
    * @param `libraryExportType` indicates what to do with the linked libraries of the file when
-   * exporting it. Defaults to `all` if not sent.
-   * - `'all'` will include the libraries as external files that will be exported in a single bundle
-   * - `'merge'` will add all the assets into the main file and only one file will be imported
-   * - `'detach'` will unlink all the external assets and no libraries will be imported
+   * exporting it. Defaults to `'include-libraries'` if not sent.
+   * - `'include-libraries'` will include the libraries as external files that will be exported in a single bundle
+   * - `'merge-libraries'` will add all the assets into the main file and only one file will be imported
+   * - `'detach-libraries'` will unlink all the external assets and no libraries will be imported
+   * - `'link-later'` will preserve component metadata so instances can be relinked on import
    *
    * @example
    * ```js
-   * const exportedData = await file.export('penpot', 'all');
+   * const exportedData = await file.export('penpot', 'include-libraries');
    * ```
    */
   export(
     exportType: 'penpot' | 'zip',
-    libraryExportType?: 'all' | 'merge' | 'detach',
+    libraryExportType?:
+      | 'include-libraries'
+      | 'merge-libraries'
+      | 'detach-libraries'
+      | 'link-later',
   ): Promise<Uint8Array>;
 
   /**

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.text
   (:require-macros [app.main.style :as stl])
@@ -412,7 +412,7 @@
                                    (select-keys txt/text-node-attrs))]
              (when (features/active-feature? @st/state "text-editor-wasm/v1")
                (st/emit! (dwt-v3/v3-update-text-editor-styles (first ids) attrs)))
-             (st/emit! (dwt/save-font updated-attrs)
+             (st/emit! (dwt/save-default-font updated-attrs)
                        (dwt/update-all-attrs ids attrs)))))
 
         on-change

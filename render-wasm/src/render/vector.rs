@@ -970,7 +970,10 @@ fn render_leaf(
 /// Single source of truth for leaf content draw order/gating (fills, inner
 /// shadows, strokes), generic over [`ShapeRenderer`]. Drop shadows and layer
 /// blur are excluded — they wrap the content and are sequenced per backend.
-fn render_leaf_content<R: ShapeRenderer + ?Sized>(renderer: &mut R, shape: &Shape) -> Result<()> {
+pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
+    renderer: &mut R,
+    shape: &Shape,
+) -> Result<()> {
     match &shape.shape_type {
         Type::Text(_) => renderer.draw_text(shape)?,
         Type::SVGRaw(_) => renderer.draw_svg(shape)?,
@@ -1212,7 +1215,7 @@ fn transformed_skia_path(shape: &Shape) -> Option<skia::Path> {
 // ---------------------------------------------------------------------------
 
 /// Draws the shape's geometry (rect/rrect/oval/path) with the given paint.
-fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
+pub(super) fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
     match &shape.shape_type {
         Type::Rect(_) | Type::Frame(_) => {
             if let Some(corners) = shape.shape_type.corners() {

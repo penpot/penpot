@@ -743,15 +743,14 @@ pub extern "C" fn is_image_cached(
 }
 
 /// Evicts least-recently-used images until the store retains at most
-/// `max_mb` megabytes of image data. Called by the headless exporter between
+/// `max_bytes` bytes of image data. Called by the headless exporter between
 /// requests — never mid-render, so an image can't disappear under a running
 /// export; evicted images are re-provisioned by later requests that need
 /// them. Returns the number of evicted images.
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn evict_images_to_budget(max_mb: u32) -> Result<u32> {
-    let max_bytes = (max_mb as usize) * 1024 * 1024;
-    let evicted = get_resources().images.evict_to_budget(max_bytes);
+pub extern "C" fn evict_images_to_budget(max_bytes: u32) -> Result<u32> {
+    let evicted = get_resources().images.evict_to_budget(max_bytes as usize);
     Ok(evicted as u32)
 }
 
@@ -911,7 +910,7 @@ pub extern "C" fn clean_modifiers() -> Result<()> {
         // the same tiles for the active modifier set, so the eviction
         // here is redundant and doubles the per-emission cost.
         if !prev_modifier_ids.is_empty() && !render_state.options.is_interactive_transform() {
-            render_state.update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
+            render_state.update_tiles_shapes(&prev_modifier_ids, &state.shapes)?;
         }
     });
     Ok(())
@@ -1028,6 +1027,22 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
 
     with_state!(state, {
         let data = state.render_shape_pdf(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state!(state, {
+        let data = state.render_shape_svg(&id, scale)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());

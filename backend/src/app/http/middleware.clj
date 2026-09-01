@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.middleware
   (:require
@@ -83,18 +83,18 @@
               (instance? IllegalArgumentException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "invalid JSON in request body"
                         :cause cause)
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
                         :code :request-body-too-large
-                        :hint (ex-message cause))
+                        :hint "request body exceeds size limit")
 
               (instance? java.io.EOFException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "unexpected end of request body"
                         :cause cause)
 
               (instance? RuntimeException cause)

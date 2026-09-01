@@ -388,6 +388,9 @@ msgstr ""
 msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
+msgid "dashboard.change-organization-modal.description"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
+
 #: src/app/main/ui/dashboard/deleted.cljs:316
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
@@ -410,7 +413,7 @@ msgstr "Pin this version"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
 msgid "dashboard.default-team-name"
-msgstr "Your Penpot"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/dashboard/deleted.cljs:265
 msgid "dashboard.delete-all-forever-confirmation.description"
@@ -761,6 +764,35 @@ msgstr[1] "%s files have been imported successfully."
 msgid "dashboard.import.import-warning"
 msgstr "Some files containted invalid objects that have been removed."
 
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 library was automatically linked by name."
+msgstr[1] "%s libraries were automatically linked by name."
+
+msgid "dashboard.import.resolve-libraries"
+msgstr "Some libraries couldn't be linked automatically. Select the correct library for each:"
+
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Review the library links before confirming:"
+
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirm library links"
+
+msgid "dashboard.import.review-links"
+msgstr "Review links"
+
+msgid "dashboard.import.summary.auto-linked"
+msgstr "Auto-linked"
+
+msgid "dashboard.import.summary.your-selection"
+msgstr "Your selection"
+
+msgid "dashboard.import.summary.linked"
+msgstr "Linked"
+
+msgid "dashboard.import.summary.no-selection"
+msgstr "No library selected"
+
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
@@ -872,8 +904,8 @@ msgid "dashboard.move-to-other-team"
 msgstr "Move to other team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "My Teams"
+msgid "dashboard.other-teams"
+msgstr "Other teams"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1111,11 +1143,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
-#, unused
 msgid "dashboard.select-organization-modal.permission-info"
-msgstr ""
-"Here you find all your organizations where you are allowed to create or add "
-"teams."
+msgstr "Here you'll find the organizations you are part of where you are allowed to move the team."
+
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr "Here you'll find the organizations you are part of where you are allowed to create or add teams."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1434,11 +1466,8 @@ msgid "dashboard.your-name"
 msgstr "Your name"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Your Penpot"
-
-msgid "dashboard.my-files"
-msgstr "My Files"
+msgid "dashboard.personal-projects"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
@@ -2122,34 +2151,70 @@ msgid "files-download-modal.description-2"
 msgstr "* Might include components, graphics, colors and/or typographies."
 
 #: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.all.message"
 msgstr ""
-"Files with shared libraries will be included in the export, maintaining "
-"their linkage."
+
+#: src/app/main/ui/exports/files.cljs:140
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Files with linked libraries will be included in the export, maintaining "
+"their linkage. "
 
 #: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Export shared libraries"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.all.title"
+msgstr "Export file + libraries"
+
+#: src/app/main/ui/exports/files.cljs:141
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Export file + libraries"
 
 #: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Shared libraries will not be included in the export and no assets will be "
-"added to the library. "
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.detach.message"
+msgstr "Linked library assets won't be included in the file."
+
+#: src/app/main/ui/exports/files.cljs:142
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr "Linked library assets won't be included in the file."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.options.link-later.title"
+msgstr "Link matching libraries on import"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.options.link-later.message"
+msgstr "When imported, you'll be able to link existing libraries with matching names."
 
 #: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Treat shared library assets as basic objects"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.detach.title"
+msgstr "Treat assets as basic objects"
+
+#: src/app/main/ui/exports/files.cljs:143
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Treat assets as basic objects"
 
 #: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.merge.message"
 msgstr ""
-"Your file will be exported with all external assets merged into the file "
+
+#: src/app/main/ui/exports/files.cljs:144
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Your file will be exported with library asset merged into the local "
 "library."
 
 #: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Include shared library assets in file libraries"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.merge.title"
+msgstr "Embed library assets in the file"
+
+#: src/app/main/ui/exports/files.cljs:145
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "Embed library assets in the file"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
@@ -3615,6 +3680,51 @@ msgstr "Variant"
 msgid "labels.version-notes"
 msgstr "Version %s notes"
 
+msgid "labels.check-for-updates"
+msgstr "Check for updates"
+
+msgid "labels.checking-for-updates"
+msgstr "Checking for updates..."
+
+msgid "dashboard.check-updates.available-title"
+msgstr "A NEW PENPOT VERSION IS AVAILABLE"
+
+msgid "dashboard.check-updates.available-message"
+msgstr "Newer releases include performance improvements, new capabilities, and fixes that keep your installation current."
+
+msgid "dashboard.check-updates.installed-version"
+msgstr "Installed version"
+
+msgid "dashboard.check-updates.latest-version"
+msgstr "Latest version"
+
+msgid "dashboard.check-updates.highlights-title"
+msgstr "What's new - Highlights"
+
+msgid "dashboard.check-updates.view-changelog"
+msgstr "View full changelog"
+
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "View release notes"
+
+msgid "dashboard.check-updates.unable-title"
+msgstr "UNABLE TO CHECK FOR UPDATES"
+
+msgid "dashboard.check-updates.unable-message"
+msgstr "This installation could not reach the Penpot releases service."
+
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Check your network or instance configuration and try again."
+
+msgid "dashboard.check-updates.try-again"
+msgstr "Try again"
+
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT IS UP TO DATE"
+
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "You're running the latest stable version:"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:298
 msgid "labels.view-only"
 msgstr "View only"
@@ -4628,7 +4738,7 @@ msgstr "You don't have access to this file."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
 msgid "not-found.no-permission.go-dashboard"
-msgstr "Go to your Penpot"
+msgstr "Go to Personal Projects"
 
 #: src/app/main/ui/static.cljs:289, src/app/main/ui/static.cljs:298
 msgid "not-found.no-permission.if-approves"
@@ -5335,6 +5445,14 @@ msgid "shortcuts.delete-node"
 msgstr "Delete node"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Delete node and segments"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.deselect-all"
+msgstr "Deselect all"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:104
 msgid "shortcuts.detach-component"
 msgstr "Detach component"
 
@@ -7702,9 +7820,29 @@ msgstr "Remove export"
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
 
+#: src/app/main/ui/exports/assets.cljs:325
+msgid "workspace.options.cancel-export"
+msgstr "Cancel"
+
 #: src/app/main/ui/exports/assets.cljs:252
 msgid "workspace.options.exporting-complete"
 msgstr "Export complete"
+
+#: src/app/main/ui/exports/assets.cljs:259
+msgid "workspace.options.exporting-cancelled"
+msgstr "Export cancelled"
+
+#: src/app/main/ui/exports/assets.cljs:258
+msgid "workspace.options.exporting-cancelling"
+msgstr "Cancelling..."
+
+#: src/app/main/ui/exports/assets.cljs:261
+msgid "workspace.options.exporting-queued"
+msgstr "Waiting..."
+
+#: src/app/main/ui/exports/assets.cljs:256
+msgid "workspace.options.exporting-busy"
+msgstr "Export service is busy, please try again later"
 
 #: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:253, src/app/main/ui/inspect/exports.cljs:216, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.exporting-object"
@@ -8792,6 +8930,22 @@ msgstr "To corner (%s)"
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:210
 msgid "workspace.path.actions.make-curve"
 msgstr "To curve (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-type"
+msgstr "Handler behaviour"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Equal"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Aligned"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-independent"
+msgstr "Independent"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:181
 msgid "workspace.path.actions.merge-nodes"
@@ -10355,6 +10509,3 @@ msgstr "Try again"
 
 msgid "dashboard.invite-profile-disabled"
 msgstr "You don't have permission to invite people to this team"
-
-msgid "dashboard.invite-profile-disabled.owners-only"
-msgstr "Only team owners can invite within %s"

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.refs
   "A collection of derived refs."
@@ -221,6 +221,9 @@
 
 (def selected-edition
   (l/derived :edition workspace-local))
+
+(def workspace-edit-path
+  (l/derived :edit-path workspace-local))
 
 (def current-transform
   (l/derived :transform workspace-local))

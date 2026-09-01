@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.zoom
   (:require
@@ -130,6 +130,32 @@
                             (assoc :zoom zoom)
                             (assoc :zoom-inverse (/ 1 zoom))
                             (update :vbox merge srect)))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
+
+(defn center-on-shape
+  "Pan the viewport to center on the shape with the given id without changing zoom."
+  [id]
+  (ptk/reify ::center-on-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (dwvw/render-context-lost? state)
+        state
+        (let [page-id (:current-page-id state)
+              objects (dsh/lookup-page-objects state page-id)
+              shape   (get objects id)
+              srect   (:selrect shape)]
+          (if (nil? srect)
+            state
+            (update state :workspace-local
+                    (fn [{:keys [vbox] :as local}]
+                      (let [cx    (+ (:x srect) (/ (:width srect) 2))
+                            cy    (+ (:y srect) (/ (:height srect) 2))
+                            new-x (- cx (/ (:width vbox) 2))
+                            new-y (- cy (/ (:height vbox) 2))]
+                        (update local :vbox assoc :x new-x :y new-y))))))))
 
     ptk/EffectEvent
     (effect [_ state _]

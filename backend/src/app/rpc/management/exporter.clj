@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.management.exporter
   (:require
@@ -43,7 +43,7 @@
                  ::sto/touched-at (ct/in-future {:minutes 10})
                  :profile-id profile-id
                  :content-type (:mtype content)
-                 :bucket "tempfile"}
+                 :bucket sto/tempfile-bucket}
         object (sto/put-object! storage content)]
     {:id (:id object)
      :uri (-> (cf/get :public-uri)

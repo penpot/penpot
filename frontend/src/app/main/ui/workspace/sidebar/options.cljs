@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options
   (:require-macros [app.main.style :as stl])
@@ -15,6 +15,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.path.state :as path.state]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -105,6 +106,18 @@
         drawing  (mf/deref refs/workspace-drawing)
         edition  (mf/deref refs/selected-edition)
 
+        edit-path
+        (mf/deref refs/workspace-edit-path)
+
+        edit-path-state
+        (path.state/current-edit-state edit-path edition)
+
+        path-editing?
+        (path.state/editing? edit-path edition)
+
+        path-node-count
+        (count (dm/get-in edit-path-state [:selection :nodes]))
+
         files
         (mf/deref refs/files)
 
@@ -152,12 +165,22 @@
 
     [:div {:class (stl/css :element-options :design-options)}
      [:> align-options* {:shapes shapes
-                         :objects objects}]
-     [:> bool-options* {:total-selected total-selected
-                        :shapes shapes
-                        :shapes-with-children shapes-with-children}]
+                         :objects objects
+                         :path-edit? path-editing?
+                         :node-count path-node-count}]
+     (when-not path-editing?
+       [:> bool-options* {:total-selected total-selected
+                          :shapes shapes
+                          :shapes-with-children shapes-with-children}])
 
      (cond
+       ;; Show path-specific options during node editing.
+       path-editing?
+       [:> path/path-edition-options*
+        {:shape (get objects edition)
+         :file-id file-id
+         :page-id page-id}]
+
        (and edit-grid? (d/not-empty? selected-cells))
        [:> grid-cell/options*
         {:shape-id (-> (get objects edition)

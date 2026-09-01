@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.dom
   (:require
@@ -243,6 +243,16 @@
   (let [distance (get-scroll-distance node scroll-node)
         height   (.-clientHeight scroll-node)]
     (/ distance height)))
+
+(defn scroll-to-row
+  [node index]
+  (when (and (some? node) (number? index))
+    (.scrollToRow ^js node index)))
+
+(defn scroll-to-position
+  [node offset]
+  (when (and (some? node) (number? offset))
+    (.scrollToPosition ^js node offset)))
 
 (def get-target-val (comp get-value get-target))
 

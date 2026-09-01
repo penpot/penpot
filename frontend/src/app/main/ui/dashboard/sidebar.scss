@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/typography.scss" as t;
 @use "ds/colors.scss" as *;
@@ -525,6 +525,26 @@
   &:hover {
     color: var(--menu-foreground-color-hover);
   }
+
+  &.checking {
+    color: var(--color-foreground-secondary);
+    pointer-events: none;
+
+    &:hover {
+      color: var(--color-foreground-secondary);
+      background-color: transparent;
+    }
+  }
+}
+
+.checking-icon {
+  flex-shrink: 0;
+  animation: spin-animation 1s infinite linear;
+}
+
+.submenu-separator {
+  border-top: $b-1 solid var(--color-background-quaternary);
+  margin: 0;
 }
 
 .about-penpot {

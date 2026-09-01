@@ -2,12 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.assets
   "Assets related handlers."
   (:require
-   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
@@ -15,6 +14,7 @@
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
+   [app.rpc.permissions :as perms]
    [app.storage :as sto]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
@@ -40,6 +40,12 @@
   (or (some-> path-params :id d/parse-uuid)
       (ex/raise :type :not-found
                 :hint "object not found")))
+
+(defn- get-share-id
+  "Extract and validate the optional `share-id` query param. Returns a UUID
+  or `nil` for missing/malformed values."
+  [{:keys [query-params]}]
+  (some-> query-params :share-id d/parse-uuid))
 
 (defn- get-file-media-object
   [pool id]
@@ -97,17 +103,32 @@
   (let [bucket (-> obj meta :bucket)]
     (not (contains? public-buckets bucket))))
 
+(defn- request-profile-id
+  "Extract the authenticated profile-id from the request."
+  [request]
+  (or (::session/profile-id request)
+      (::actoken/profile-id request)))
+
 (defn- authenticated?
   "Check if the request has an authenticated profile, either via session
    or access token."
   [request]
-  (or (some? (::session/profile-id request))
-      (some? (::actoken/profile-id request))))
+  (some? (request-profile-id request)))
+
+(defn- tempfile-owner-match?
+  "Check if the request's profile-id matches the tempfile's stored owner.
+   Returns true if no profile-id was stored (legacy objects)."
+  [obj request]
+  (let [stored-profile-id (:profile-id (meta obj))
+        request-profile-id (request-profile-id request)]
+    (or (nil? stored-profile-id)
+        (= stored-profile-id request-profile-id))))
 
 (defn objects-handler
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
-   via session cookie or access token."
+   via session cookie or access token.
+   For tempfile bucket, also requires ownership (profile-id match)."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
@@ -118,6 +139,10 @@
       (and (requires-auth? obj)
            (not (authenticated? request)))
       {::yres/status 401}
+
+      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
+           (not (tempfile-owner-match? obj request)))
+      {::yres/status 404}
 
       :else
       (serve-object cfg obj))))
@@ -133,7 +158,8 @@
       (let [file-id    (:file-id mobj)
             profile-id (or (::session/profile-id request)
                            (::actoken/profile-id request))
-            perms      (bfc/get-file-permissions pool profile-id file-id)]
+            share-id   (get-share-id request)
+            perms      (perms/get-file-read-permissions pool profile-id file-id share-id)]
         (if-not (:can-read perms)
           {::yres/status 404}
           (let [sobj (sto/get-object storage (kf mobj))]

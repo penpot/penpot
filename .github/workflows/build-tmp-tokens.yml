@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '46 5-20 * * 1-5'
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build-bundle:
     uses: ./.github/workflows/build-bundle.yml

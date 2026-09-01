@@ -92,6 +92,29 @@ pub enum SurfaceId {
     TileAtlas = 0b100_0000_1000,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TileCacheKey {
+    pub tile: Tile,
+    pub scale_bits: u32,
+}
+
+impl TileCacheKey {
+    pub fn new(tile: Tile, scale: f32) -> Self {
+        Self {
+            tile,
+            scale_bits: scale.to_bits(),
+        }
+    }
+
+    pub fn matches_scale(&self, scale: f32) -> bool {
+        self.scale_bits == scale.to_bits()
+    }
+
+    pub fn scale(&self) -> f32 {
+        f32::from_bits(self.scale_bits)
+    }
+}
+
 pub struct DocAtlas {
     // Persistent 1:1 document-space atlas that gets incrementally updated as tiles render.
     // It grows dynamically to include any rendered document rect.
@@ -105,9 +128,9 @@ pub struct DocAtlas {
     /// Optional document-space bounds (1 unit == 1 doc px @ 100% zoom) used to
     /// clamp atlas writes/clears so the atlas doesn't grow due to outlier tile rects.
     pub doc_bounds: Option<skia::Rect>,
-    /// Tracks the last document-space rect written to the atlas per tile.
-    /// Used to clear old content without clearing the whole (potentially huge) tile rect.
-    pub tile_doc_rects: HashMap<Tile, skia::Rect>,
+    /// Last atlas write per (tile, scale). Scale is part of the key so zoom
+    /// levels do not overwrite each other's placement metadata.
+    pub tile_doc_rects: HashMap<TileCacheKey, skia::Rect>,
 }
 
 impl DocAtlas {
@@ -389,13 +412,17 @@ impl DocAtlas {
         Ok(())
     }
 
-    /// Clears the last atlas region written by `tile` (if any).
+    /// Clears the last atlas region written by `key` (if any).
     ///
     /// This avoids clearing the entire logical tile rect which, at very low
     /// zoom levels, can be enormous in document space and would unnecessarily
     /// grow / rescale the atlas.
-    pub fn clear_tile_in_atlas(&mut self, gpu_state: &mut GpuState, tile: Tile) -> Result<()> {
-        if let Some(doc_rect) = self.tile_doc_rects.remove(&tile) {
+    pub fn clear_tile_in_atlas(
+        &mut self,
+        gpu_state: &mut GpuState,
+        key: TileCacheKey,
+    ) -> Result<()> {
+        if let Some(doc_rect) = self.tile_doc_rects.remove(&key) {
             self.clear_doc_rect_in_atlas(gpu_state, doc_rect)?;
         }
         Ok(())
@@ -1227,6 +1254,7 @@ impl Surfaces {
         canvas.restore();
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_current_tile_into_tile_atlas(
         &mut self,
         tile_viewbox: &TileViewbox,
@@ -1234,6 +1262,8 @@ impl Surfaces {
         tile_rect: &skia::Rect,
         skip_cache_surface: bool,
         tile_doc_rect: skia::Rect,
+        scale: f32,
+        view_doc: skia::Rect,
     ) {
         let gpu_state = get_gpu_state();
         let src = skia::Rect::from(TILE_DRAWABLE_RECT);
@@ -1247,9 +1277,14 @@ impl Surfaces {
             tile_doc_rect,
             sampling,
         );
-        self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
+        let key = TileCacheKey::new(*tile, scale);
+        self.atlas.tile_doc_rects.insert(key, tile_doc_rect);
 
-        let tile_ref = self.tiles.add(tile_viewbox, tile);
+        let mut tile_doc_rects = std::mem::take(&mut self.atlas.tile_doc_rects);
+        let tile_ref = self
+            .tiles
+            .add(tile_viewbox, tile, scale, view_doc, &mut tile_doc_rects);
+        self.atlas.tile_doc_rects = tile_doc_rects;
         let dst = tile_ref.rect;
         let mut current = self.current.clone();
         draw_surface_src_rect_to_dst(&mut current, self.tile_atlas.canvas(), src, dst, sampling);
@@ -1268,8 +1303,8 @@ impl Surfaces {
         }
     }
 
-    pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
-        self.tiles.has(tile)
+    pub fn has_cached_tile_surface(&self, tile: Tile, scale: f32) -> bool {
+        self.tiles.has(tile, scale)
     }
 
     /// Builds a 1:1 workspace-pixel snapshot for `src_doc_bounds` / `src_irect` into
@@ -1326,7 +1361,7 @@ impl Surfaces {
                     (clip_doc.bottom - vb_top) * scale - iy0,
                 );
 
-                if let Some(tile_ref) = self.tiles.get(tile) {
+                if let Some(tile_ref) = self.tiles.get(tile, scale) {
                     let bounds = skia::IRect::from_ltrb(
                         tile_ref.rect.left as i32,
                         tile_ref.rect.top as i32,
@@ -1387,7 +1422,47 @@ impl Surfaces {
         self.tiles.remove(tile);
         // Also clear the corresponding region in the persistent atlas to avoid
         // leaving stale pixels when shapes move/delete.
-        let _ = self.atlas.clear_tile_in_atlas(gpu_state, tile);
+        let keys: Vec<_> = self
+            .atlas
+            .tile_doc_rects
+            .keys()
+            .copied()
+            .filter(|key| key.tile == tile)
+            .collect();
+        for key in keys {
+            let _ = self.atlas.clear_tile_in_atlas(gpu_state, key);
+        }
+    }
+
+    /// Drop one (tile, scale) entry; leave other zoom levels alone.
+    pub fn remove_cached_tile_surface_at(&mut self, tile: Tile, scale: f32) {
+        let gpu_state = get_gpu_state();
+        self.tiles.remove_at(tile, scale);
+        let key = TileCacheKey::new(tile, scale);
+        let _ = self.atlas.clear_tile_in_atlas(gpu_state, key);
+    }
+
+    /// Evict every cached tile whose stored doc rect intersects `doc_rect`.
+    pub fn invalidate_cached_tiles_intersecting(&mut self, doc_rect: skia::Rect) {
+        if doc_rect.is_empty() {
+            return;
+        }
+
+        let keys: Vec<TileCacheKey> = self
+            .atlas
+            .tile_doc_rects
+            .iter()
+            .filter_map(|(key, rect)| {
+                (!rect.is_empty() && rect.intersects(doc_rect)).then_some(*key)
+            })
+            .collect();
+
+        let gpu_state = get_gpu_state();
+        for key in keys {
+            self.tiles.remove_at(key.tile, key.scale());
+            let _ = self.atlas.clear_tile_in_atlas(gpu_state, key);
+        }
+        self.atlas.clear_doc_rect_in_atlas_clipped(doc_rect);
     }
 
     /// Draws the current tile directly to the backbuffer and cache surfaces without
@@ -1594,8 +1669,8 @@ pub struct TileTextureCache {
     provider: TileAtlasTextureProvider,
     transforms: Vec<skia::RSXform>,
     textures: Vec<skia::Rect>,
-    grid: HashMap<Tile, TileAtlasTextureRef>,
-    removed: HashSet<Tile>,
+    grid: HashMap<TileCacheKey, TileAtlasTextureRef>,
+    removed: HashSet<TileCacheKey>,
 }
 
 pub struct AtlasDrawBatch {
@@ -1658,9 +1733,10 @@ impl TileTextureCache {
     }
 
     fn gc(&mut self) {
-        // Make a real remove
-        for tile in self.removed.iter() {
-            if let Some(tile_ref) = self.grid.remove(tile) {
+        // Drain so soft-deleted keys cannot accumulate forever (scale bits make
+        // TileCacheKey rarely repeat across zoom levels).
+        for key in self.removed.drain() {
+            if let Some(tile_ref) = self.grid.remove(&key) {
                 self.provider.deallocate(tile_ref);
             }
         }
@@ -1674,29 +1750,57 @@ impl TileTextureCache {
         self.is_updated = false;
     }
 
-    fn gc_non_visible(&mut self, tile_viewbox: &TileViewbox) {
-        let marked: Vec<_> = self
-            .grid
-            .iter_mut()
-            .filter_map(|(tile, _)| {
-                if !tile_viewbox.is_visible(tile) {
-                    Some(*tile)
-                } else {
-                    None
-                }
-            })
-            .take(TEXTURES_BATCH_DELETE)
-            .collect();
+    fn gc_non_visible(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        scale: f32,
+        view_doc: skia::Rect,
+        tile_doc_rects: &mut HashMap<TileCacheKey, skia::Rect>,
+    ) {
+        // Evict by document coverage, not grid index: other-scale tiles can
+        // still cover the viewport even when their index is outside visible_rect.
+        let mut offscreen = Vec::new();
+        let mut other_scale_onscreen = Vec::new();
 
-        for tile in marked.iter() {
-            if let Some(tile_ref) = self.grid.remove(tile) {
+        for key in self.grid.keys() {
+            if self.removed.contains(key) {
+                continue;
+            }
+            if key.matches_scale(scale) && tile_viewbox.is_visible(&key.tile) {
+                continue;
+            }
+
+            let intersects = tile_doc_rects
+                .get(key)
+                .is_some_and(|doc_rect| !doc_rect.is_empty() && doc_rect.intersects(view_doc));
+
+            if intersects {
+                if !key.matches_scale(scale) {
+                    other_scale_onscreen.push(*key);
+                }
+            } else {
+                offscreen.push(*key);
+            }
+        }
+
+        let mut marked = Vec::with_capacity(TEXTURES_BATCH_DELETE);
+        marked.extend(offscreen.into_iter().take(TEXTURES_BATCH_DELETE));
+        if marked.len() < TEXTURES_BATCH_DELETE {
+            let remaining = TEXTURES_BATCH_DELETE - marked.len();
+            marked.extend(other_scale_onscreen.into_iter().take(remaining));
+        }
+
+        for key in marked.iter() {
+            if let Some(tile_ref) = self.grid.remove(key) {
                 self.provider.deallocate(tile_ref);
             }
+            tile_doc_rects.remove(key);
         }
     }
 
     pub fn update(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
         let dest_scale = self.dest_scale();
+        let scale = viewbox.get_scale();
         if self.transforms.len() != tile_viewbox.visible_rect.len() as usize {
             self.transforms.resize(
                 tile_viewbox.visible_rect.len() as usize,
@@ -1719,13 +1823,13 @@ impl TileTextureCache {
         let mut index = 0;
         for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
             for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
-                let tile = Tile(x, y);
+                let key = TileCacheKey::new(Tile(x, y), scale);
 
-                let Some(tile_ref) = self.grid.get(&tile) else {
+                let Some(tile_ref) = self.grid.get(&key) else {
                     continue;
                 };
 
-                if self.removed.contains(&tile) {
+                if self.removed.contains(&key) {
                     continue;
                 }
 
@@ -1750,7 +1854,7 @@ impl TileTextureCache {
         &self,
         viewbox: &Viewbox,
         tile_viewbox: &TileViewbox,
-        tile_doc_rects: &HashMap<Tile, skia::Rect>,
+        tile_doc_rects: &HashMap<TileCacheKey, skia::Rect>,
     ) -> AtlasDrawBatch {
         let mut transforms = Vec::new();
         let mut textures = Vec::new();
@@ -1760,20 +1864,20 @@ impl TileTextureCache {
 
         for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
             for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
-                let tile = Tile(x, y);
+                let key = TileCacheKey::new(Tile(x, y), s);
 
-                let Some(tile_ref) = self.grid.get(&tile) else {
+                let Some(tile_ref) = self.grid.get(&key) else {
                     continue;
                 };
 
-                if self.removed.contains(&tile) {
+                if self.removed.contains(&key) {
                     continue;
                 }
 
                 let doc_rect = tile_doc_rects
-                    .get(&tile)
+                    .get(&key)
                     .copied()
-                    .unwrap_or_else(|| tiles::get_tile_rect(tile, s));
+                    .unwrap_or_else(|| tiles::get_tile_rect(key.tile, s));
                 if doc_rect.is_empty() || !doc_rect.intersects(view_doc) {
                     continue;
                 }
@@ -1788,17 +1892,22 @@ impl TileTextureCache {
             }
         }
 
-        // Cached tiles from a previous zoom level use indices outside visible_rect;
-        // place them via their stored document rect, not the current grid walk above.
-        for (&tile, tile_ref) in &self.grid {
-            if tile_viewbox.is_visible(&tile) || self.removed.contains(&tile) {
+        // Other-scale / off-grid tiles: place via stored doc rect (not current scale).
+        for (&key, tile_ref) in &self.grid {
+            if self.removed.contains(&key) {
+                continue;
+            }
+            let visible = tile_viewbox.is_visible(&key.tile);
+            if key.matches_scale(s) && visible {
+                continue;
+            }
+            if !key.matches_scale(s) && visible && self.has(key.tile, s) {
                 continue;
             }
 
-            let doc_rect = tile_doc_rects
-                .get(&tile)
-                .copied()
-                .unwrap_or_else(|| tiles::get_tile_rect(tile, s));
+            let Some(doc_rect) = tile_doc_rects.get(&key).copied() else {
+                continue;
+            };
             if doc_rect.is_empty() || !doc_rect.intersects(view_doc) {
                 continue;
             }
@@ -1818,11 +1927,19 @@ impl TileTextureCache {
         }
     }
 
-    pub fn has(&self, tile: Tile) -> bool {
-        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
+    pub fn has(&self, tile: Tile, scale: f32) -> bool {
+        let key = TileCacheKey::new(tile, scale);
+        self.grid.contains_key(&key) && !self.removed.contains(&key)
     }
 
-    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> TileAtlasTextureRef {
+    pub fn add(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        tile: &Tile,
+        scale: f32,
+        view_doc: skia::Rect,
+        tile_doc_rects: &mut HashMap<TileCacheKey, skia::Rect>,
+    ) -> TileAtlasTextureRef {
         // Evict against the real slot count (`provider.length`), not the
         // hardcoded capacity — otherwise the guard never fires and the atlas
         // fills up until `allocate()` has no slot left.
@@ -1830,41 +1947,67 @@ impl TileTextureCache {
 
         if self.grid.len() >= capacity {
             self.gc();
-            self.gc_non_visible(tile_viewbox);
+            self.gc_non_visible(tile_viewbox, scale, view_doc, tile_doc_rects);
         }
 
         let Some(tile_ref) = self.provider.allocate() else {
             panic!("Tile texture allocation failed {}:{}", tile.0, tile.1);
         };
-        self.insert(tile, tile_ref)
+        self.insert(TileCacheKey::new(*tile, scale), tile_ref)
     }
 
-    fn insert(&mut self, tile: &Tile, tile_ref: TileAtlasTextureRef) -> TileAtlasTextureRef {
-        self.grid.insert(*tile, tile_ref.clone());
+    fn insert(&mut self, key: TileCacheKey, tile_ref: TileAtlasTextureRef) -> TileAtlasTextureRef {
+        if let Some(old_ref) = self.grid.insert(key, tile_ref.clone()) {
+            self.provider.deallocate(old_ref);
+        }
 
-        if self.removed.contains(tile) {
-            self.removed.remove(tile);
+        if self.removed.contains(&key) {
+            self.removed.remove(&key);
         }
 
         self.is_updated = true;
         tile_ref
     }
 
-    pub fn get(&mut self, tile: Tile) -> Option<&TileAtlasTextureRef> {
-        if self.removed.contains(&tile) {
+    pub fn get(&mut self, tile: Tile, scale: f32) -> Option<&TileAtlasTextureRef> {
+        let key = TileCacheKey::new(tile, scale);
+        if self.removed.contains(&key) {
             return None;
         }
-        self.grid.get(&tile)
+        self.grid.get(&key)
     }
 
     pub fn remove(&mut self, tile: Tile) {
-        if let Some(tile_ref) = self.grid.get(&tile) {
-            if tile_ref.index < self.textures.len() {
-                self.textures[tile_ref.index].set_empty();
+        let keys: Vec<_> = self
+            .grid
+            .keys()
+            .copied()
+            .filter(|key| key.tile == tile)
+            .collect();
+        if keys.is_empty() {
+            return;
+        }
+        for key in keys {
+            if let Some(tile_ref) = self.grid.get(&key) {
+                if tile_ref.index < self.textures.len() {
+                    self.textures[tile_ref.index].set_empty();
+                }
             }
+            self.removed.insert(key);
         }
         self.is_updated = true;
-        self.removed.insert(tile);
+    }
+
+    pub fn remove_at(&mut self, tile: Tile, scale: f32) {
+        let key = TileCacheKey::new(tile, scale);
+        let Some(tile_ref) = self.grid.get(&key) else {
+            return;
+        };
+        if tile_ref.index < self.textures.len() {
+            self.textures[tile_ref.index].set_empty();
+        }
+        self.removed.insert(key);
+        self.is_updated = true;
     }
 
     pub fn clear(&mut self) {

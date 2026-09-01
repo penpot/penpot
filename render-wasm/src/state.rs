@@ -105,6 +105,10 @@ impl State {
         crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes, scale)
     }
 
+    pub fn render_shape_svg(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
+        crate::render::svg::render_to_svg(get_resources(), id, &self.shapes, scale)
+    }
+
     /// GPU-free counterpart of [`State::render_shape_pixels`]: encodes to
     /// `format` on a CPU raster surface, no GPU/WebGL.
     pub fn render_shape_raster(
@@ -198,22 +202,24 @@ impl State {
             // headless export path has none, so skip it there.
             if has_render_state() {
                 let render_state = get_render_state();
-                // IMPORTANT:
-                // Do NOT use `get_tiles_for_shape` here. That method intersects the shape
-                // tiles with the current interest area, which means we'd only invalidate
-                // the subset currently near the viewport. When the user later pans/zooms
-                // to reveal previously cached tiles, stale pixels could reappear.
-                //
-                // Instead, remove the shape from *all* tiles where it was indexed, and
-                // drop cached tiles for those entries.
+                // Do NOT use `get_tiles_for_shape` (interest-clipped). Evict by
+                // document coverage so cached tiles outside the interest area
+                // cannot keep pixels of the deleted shape.
                 let indexed_tiles: Vec<tiles::Tile> = render_state
                     .tiles
                     .get_tiles_of(shape.id)
                     .map(|t| t.iter().copied().collect())
                     .unwrap_or_default();
-
+                let scale = render_state.get_scale();
+                let dirty = indexed_tiles
+                    .iter()
+                    .fold(shape.extrect(&self.shapes, 1.0), |acc, tile| {
+                        tiles::join_nonempty(acc, tiles::get_tile_rect(*tile, scale))
+                    });
+                render_state
+                    .surfaces
+                    .invalidate_cached_tiles_intersecting(dirty);
                 for tile in indexed_tiles {
-                    render_state.remove_cached_tile(tile);
                     render_state.tiles.remove_shape_at(tile, shape.id);
                 }
             }
@@ -339,20 +345,20 @@ impl State {
     }
 
     pub fn touch_current(&mut self) {
-        // `mark_touched` only drives incremental on-screen tile invalidation;
-        // the headless export path has no render state, so skip it there.
-        if self.loading || !has_render_state() {
-            return;
-        }
         if let Some(current_id) = self.current_id {
-            get_render_state().mark_touched(current_id);
+            self.touch_shape(current_id);
         }
     }
 
     pub fn touch_shape(&mut self, id: Uuid) {
+        self.shapes.invalidate_ancestors_extrect(&id);
         if self.loading || !has_render_state() {
             return;
         }
-        get_render_state().mark_touched(id);
+        let prev = self
+            .shapes
+            .get(&id)
+            .map(|shape| shape.extrect(&self.shapes, 1.0));
+        get_render_state().mark_touched_with_prev(id, prev);
     }
 }

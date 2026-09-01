@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main
   (:require
@@ -37,6 +37,7 @@
    [app.storage.fs :as-alias sto.fs]
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
+   [app.storage.pending-gc :as-alias sto.pending-gc]
    [app.storage.s3 :as-alias sto.s3]
    [app.system :as sys]
    [app.util.cron]
@@ -199,6 +200,10 @@
    ::sto.gc-touched/handler
    {::db/pool (ig/ref ::db/pool)}
 
+   ::sto.pending-gc/handler
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
    ::http.client/client
    {}
 
@@ -283,7 +288,9 @@
 
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
+    ::rds/pool        (ig/ref ::rds/pool)
     ::session/manager (ig/ref ::session/manager)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)
     ::sto/storage     (ig/ref ::sto/storage)
     ::setup/props     (ig/ref ::setup/props)}
 
@@ -386,6 +393,7 @@
      :upload-session-gc  (ig/ref :app.tasks.upload-session-gc/handler)
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
      :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
+     :storage-pending-gc (ig/ref ::sto.pending-gc/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
      :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
@@ -544,6 +552,9 @@
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-touched}
+
+     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+      :task :storage-pending-gc}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :tasks-gc}

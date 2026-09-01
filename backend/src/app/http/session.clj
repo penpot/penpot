@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.session
   (:refer-clojure :exclude [read])
@@ -204,7 +204,7 @@
   [{:keys [::manager]}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request response]
-    (some->> (get request ::id) (delete-session manager))
+    (some->> (get request ::session) :id (delete-session manager))
     (clear-session-cookie response)))
 
 (defn decode-token

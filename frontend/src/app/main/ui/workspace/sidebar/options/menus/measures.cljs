@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require-macros [app.main.style :as stl])
@@ -175,6 +175,29 @@
                      (get n-values :r4))
          (identical? (get o-values :proportion-lock)
                      (get n-values :proportion-lock)))))
+
+(mf/defc node-position-menu*
+  "X and Y inputs for the current path selection."
+  [{:keys [values on-x-change on-y-change]}]
+  ;; Match the shape position input layout.
+  [:section {:class (stl/css :element-set)}
+   [:div {:class (stl/css :position)}
+    [:div {:class (stl/css :x-position)
+           :title (tr "workspace.options.x")}
+     [:span {:class (stl/css :icon-text)} "X"]
+     [:> deprecated-input/numeric-input* {:no-validate true
+                                          :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
+                                          :on-change on-x-change
+                                          :class (stl/css :numeric-input)
+                                          :value (:x values)}]]
+    [:div {:class (stl/css :y-position)
+           :title (tr "workspace.options.y")}
+     [:span {:class (stl/css :icon-text)} "Y"]
+     [:> deprecated-input/numeric-input* {:no-validate true
+                                          :placeholder (if (= :multiple (:y values)) (tr "settings.multiple") "--")
+                                          :on-change on-y-change
+                                          :class (stl/css :numeric-input)
+                                          :value (:y values)}]]]])
 
 (mf/defc measures-menu*
   {::mf/wrap [#(mf/memo' % check-measures-menu-props)]}

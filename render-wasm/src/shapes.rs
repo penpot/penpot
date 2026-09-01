@@ -960,6 +960,14 @@ impl Shape {
         Bounds::from_rect(&rect)
     }
 
+    pub fn extrect_depends_on_children(&self) -> bool {
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => true,
+            Type::Group(_) | Type::Frame(_) => !self.clip_content,
+            _ => false,
+        }
+    }
+
     fn apply_children_bounds(
         &self,
         bounds: Bounds,
@@ -1124,21 +1132,21 @@ impl Shape {
     }
 
     fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        // Own outsets (strokes, shadows, blur) are local-space, so they expand before the
+        // shape transform. Children extrects are already world-space: join them after it.
         let mut bounds = self.own_extrect_bounds();
-        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
-        bounds = self.apply_children_blur(bounds, shapes_pool);
 
         if !self.transform.is_identity() {
-            // Expand everything in the shape's local axis-aligned space first (strokes,
-            // shadows, blur, children). Only after that do we map the resulting bounds
-            // through the shape transform so rotation/skew is reflected in the final
-            // extrect.
             let mut matrix = self.transform;
             let center = self.center();
             matrix.post_translate(center);
             matrix.pre_translate(-center);
             bounds.transform_mut(&matrix);
         }
+
+        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
+        bounds = self.apply_children_blur(bounds, shapes_pool);
+
         bounds.to_rect()
     }
 
@@ -1533,7 +1541,6 @@ impl Shape {
         };
 
         let path_transform = self.to_path_transform();
-        let apply_doc_transform = path_transform.is_some();
 
         for stroke in self.visible_strokes() {
             let Some(stroke_region) = stroke_to_path(
@@ -1546,10 +1553,7 @@ impl Shape {
             ) else {
                 continue;
             };
-            let mut sk = stroke_region.to_skia_path(self.svg_attrs.as_ref());
-            if apply_doc_transform {
-                sk = sk.make_transform(&self.shape_document_transform());
-            }
+            let sk = stroke_region.to_skia_path(self.svg_attrs.as_ref());
             acc = acc.op(&sk, skia::PathOp::Union).unwrap_or(acc);
         }
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.flags
   "Flags parsing algorithm."
@@ -100,6 +100,10 @@
     :backend-svgo
     ;; If enabled, it makes the Google Fonts available.
     :google-fonts-provider
+    ;; Enables the Ladybug graph subsystem: the `/dbg` graph console and its
+    ;; actions. Off by default. With the flag off, `app.graph.*` never loads,
+    ;; so the Ladybug native library never enters the JVM.
+    :graph
     ;; Only for development.
     :nrepl-server
     ;; Interactive repl. Only for development.

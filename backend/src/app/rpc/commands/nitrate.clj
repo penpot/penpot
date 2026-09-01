@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.nitrate
   "Nitrate API for Penpot. Provides nitrate-related endpoints to be called
@@ -336,7 +336,7 @@
     (doseq [{:keys [id reassign-to]} teams-to-leave]
       (teams/leave-team cfg {:profile-id profile-id :id id :reassign-to reassign-to}))
 
-    ;; Process organization "Your Penpot" team: keep with prefix if needed, otherwise delete.
+    ;; Process organization "Personal Projects" team: keep with prefix if needed, otherwise delete.
     (when default-team-id
       (if keep-default-team?
         (db/exec! conn [sql:prefix-team-name-and-unset-default organization-prefix default-team-id])
@@ -458,13 +458,14 @@
       (let [emails (map :email (noh/get-team-invitation-emails conn team-id))]
         (if (empty? emails)
           {:allows-anybody false :external-emails []}
-          (let [emails-array    (db/create-array conn "text" (vec emails))
-                profiles        (db/exec! conn [sql:get-profiles-by-emails emails-array])
+          (let [emails-array             (db/create-array conn "text" (vec emails))
+                profiles                 (db/exec! conn [sql:get-profiles-by-emails emails-array])
                 organization-member-ids  (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
-                external-emails (->> profiles
-                                     (remove #(contains? organization-member-ids (:id %)))
-                                     (map :email)
-                                     (vec))]
+                member-emails            (->> profiles
+                                              (filter #(contains? organization-member-ids (:id %)))
+                                              (map :email)
+                                              (into #{}))
+                external-emails          (into [] (remove member-emails emails))]
             {:allows-anybody false :external-emails external-emails}))))))
 
 (def ^:private schema:add-team-to-organization

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.errors
   "Generic error handling"
@@ -388,6 +388,12 @@
                   :type :toast
                   :level :error
                   :timeout 3000})))
+
+    (= code :invalid-sso-config)
+    ;; SSO error page needs :organization-id to retry
+    (if (:organization-id error)
+      (st/async-emit! (rt/assign-exception (assoc error :type :sso-error)))
+      (st/async-emit! (rt/assign-exception error)))
 
     :else
     (st/async-emit! (rt/assign-exception error))))

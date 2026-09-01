@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.nitrate.nitrate-form
   (:require-macros [app.main.style :as stl])
@@ -122,8 +122,6 @@
              "sales@penpot.app"]]
            [:div  {:class (stl/css :activation-code)}
             [:p {:class (stl/css :modal-text-large)}
-             (tr "nitrate.form.subscribe-with-code")]
-            [:p {:class (stl/css :modal-text-large)}
              [:a {:class (stl/css :link)
                   :on-click on-activate-click}
-              (tr "nitrate.form.enter-code")]]]])]]]]))
+              (tr "nitrate.form.subscribe-with-code")]]]])]]]]))

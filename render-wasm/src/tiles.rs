@@ -352,6 +352,8 @@ pub struct PendingTiles {
     pub visible_uncached: Vec<Tile>,
     pub interest_cached: Vec<Tile>,
     pub interest_uncached: Vec<Tile>,
+    /// Interest-ring tiles deferred until after the viewport has been presented.
+    deferred_interest: Vec<Tile>,
 }
 
 impl PendingTiles {
@@ -364,14 +366,22 @@ impl PendingTiles {
             visible_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            deferred_interest: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
         }
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
+    pub fn update(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        surfaces: &Surfaces,
+        scale: f32,
+        only_visible: bool,
+    ) {
         self.list.clear();
+        self.deferred_interest.clear();
 
         // During interactive transform, skip the interest-area ring
-        // entirely — the user is dragging, every rAF is on the critical
+        // entirely: the user is dragging, every rAF is on the critical
         // path, and pre-rendering tiles outside the viewport is wasted
         // work that just gets evicted on the next pointer move. The ring
         // is repopulated naturally on gesture end / on idle rAFs.
@@ -413,7 +423,7 @@ impl PendingTiles {
         for (_, tile) in self.tile_order.iter() {
             let tile = *tile;
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
-            let is_cached = surfaces.has_cached_tile_surface(tile);
+            let is_cached = surfaces.has_cached_tile_surface(tile, scale);
 
             match (is_visible, is_cached) {
                 (true, true) => self.visible_cached.push(tile),
@@ -423,10 +433,28 @@ impl PendingTiles {
             }
         }
 
-        self.list.extend(self.interest_uncached.iter());
-        self.list.extend(self.interest_cached.iter());
-        self.list.extend(self.visible_uncached.iter());
-        self.list.extend(self.visible_cached.iter());
+        // Visible tiles first. Interest-ring work is deferred so we can present
+        // as soon as the viewport is ready (see `promote_deferred_interest`).
+        // Interactive/`only_visible` already excludes the ring from `tile_rect`.
+        if only_visible {
+            self.list.extend(self.visible_uncached.iter());
+            self.list.extend(self.visible_cached.iter());
+        } else {
+            self.deferred_interest.extend(self.interest_uncached.iter());
+            self.deferred_interest.extend(self.interest_cached.iter());
+            self.list.extend(self.visible_uncached.iter());
+            self.list.extend(self.visible_cached.iter());
+        }
+    }
+
+    /// Move deferred interest-ring tiles onto the pending list.
+    /// Returns true when there is interest work left to do.
+    pub fn promote_deferred_interest(&mut self) -> bool {
+        if self.deferred_interest.is_empty() {
+            return false;
+        }
+        self.list.append(&mut self.deferred_interest);
+        true
     }
 
     pub fn pop(&mut self) -> Option<Tile> {
@@ -434,9 +462,34 @@ impl PendingTiles {
     }
 }
 
+pub fn join_nonempty(mut acc: skia::Rect, rect: skia::Rect) -> skia::Rect {
+    if rect.is_empty() {
+        return acc;
+    }
+    if acc.is_empty() {
+        rect
+    } else {
+        acc.join(rect);
+        acc
+    }
+}
+
+/// old ∪ new ∪ indexed tile coverage for post-edit cache eviction.
+pub fn union_edit_dirty_rect(
+    old: Option<skia::Rect>,
+    new: skia::Rect,
+    indexed: skia::Rect,
+) -> skia::Rect {
+    [old, Some(new), Some(indexed)]
+        .into_iter()
+        .flatten()
+        .fold(skia::Rect::new_empty(), join_nonempty)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use skia_safe as skia;
 
     #[test]
     fn atlas_slot_is_full_size_when_tiles_fit() {
@@ -464,5 +517,23 @@ mod tests {
         let src = tile_atlas_compose_src_size(slot);
         assert!((scale * src - TILE_SIZE).abs() < 1e-4);
         assert!(src < slot as f32);
+    }
+
+    #[test]
+    fn edit_dirty_rect_includes_pre_rotate_extent_outside_current_index() {
+        // Indexed tiles are interest-clipped; old AABB still covers wings.
+        let old = skia::Rect::from_ltrb(-1103.0, 1871.1, 4693.2, 3559.9);
+        let new = skia::Rect::from_ltrb(1445.0, -164.4, 2144.9, 5598.0);
+        let indexed = skia::Rect::from_ltrb(663.1, 1989.4, 2652.6, 3315.7);
+        let left_wing = skia::Rect::from_ltrb(-3926.0, 0.0, 0.0, 3926.0);
+        let right_wing = skia::Rect::from_ltrb(3926.0, 0.0, 7852.0, 3926.0);
+
+        let without_old = union_edit_dirty_rect(None, new, indexed);
+        assert!(!without_old.intersects(left_wing));
+        assert!(!without_old.intersects(right_wing));
+
+        let dirty = union_edit_dirty_rect(Some(old), new, indexed);
+        assert!(dirty.intersects(left_wing));
+        assert!(dirty.intersects(right_wing));
     }
 }

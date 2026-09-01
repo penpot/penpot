@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.file
   (:require
@@ -258,7 +258,13 @@
     (fn [format type]
       (js/Promise.
        (fn [resolve reject]
-         (let [type (or (parser/parse-keyword type) :all)]
+         (let [type (or (parser/parse-keyword type) :all)
+               ;; Backward compatibility: convert old values to new
+               type (case type
+                      :all :include-libraries
+                      :merge :merge-libraries
+                      :detach :detach-libraries
+                      type)]
            (cond
              (and (some? format) (not (contains? #{"penpot" "zip"} format)))
              (u/reject-not-valid reject :format (dm/str "Invalid format: " format))

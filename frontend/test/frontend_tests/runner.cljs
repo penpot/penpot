@@ -28,6 +28,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.errors-test]
+   [frontend-tests.fonts-test]
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
    [frontend-tests.logic.components-and-tokens]
@@ -36,6 +37,11 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
    [frontend-tests.logic.pasting-in-containers-test]
+   [frontend-tests.logic.path-actions-test]
+   [frontend-tests.logic.path-clipboard-test]
+   [frontend-tests.logic.path-helpers-test]
+   [frontend-tests.logic.path-lifecycle-test]
+   [frontend-tests.logic.path-tools-test]
    [frontend-tests.logic.sidebar-transform-coalescing-test]
    [frontend-tests.logic.update-position-test]
    [frontend-tests.main-errors-test]
@@ -69,6 +75,7 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
+   [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.colorpicker-token-set-order-test]
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
@@ -126,6 +133,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.errors-test
+   'frontend-tests.fonts-test
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.comp-remove-swap-slots-test
    'frontend-tests.logic.components-and-tokens
@@ -133,6 +141,11 @@
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
    'frontend-tests.logic.nudge-selected-shapes-test
+   'frontend-tests.logic.path-actions-test
+   'frontend-tests.logic.path-clipboard-test
+   'frontend-tests.logic.path-helpers-test
+   'frontend-tests.logic.path-lifecycle-test
+   'frontend-tests.logic.path-tools-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.main-errors-test
    'frontend-tests.logic.sidebar-transform-coalescing-test
@@ -165,6 +178,7 @@
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.workspace-tokens-remap-test
+   'frontend-tests.ui.check-updates-test
    'frontend-tests.ui.colorpicker-token-set-order-test
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test

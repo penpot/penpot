@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-management-nitrate-test
   (:require
@@ -268,7 +268,7 @@
           new-team     (th/db-get :team {:id new-team-id})]
       (t/is (th/success? out))
       (t/is (= 1 (count (set/difference after-teams before-teams))))
-      (t/is (= "Your Penpot" (:name new-team)))
+      (t/is (= "Personal Projects" (:name new-team)))
       (t/is (true? (:is-default new-team))))))
 
 (t/deftest get-managed-profiles-returns-unique-members-for-owned-teams

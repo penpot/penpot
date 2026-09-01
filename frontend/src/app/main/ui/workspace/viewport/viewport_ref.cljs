@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.viewport.viewport-ref
   (:require
@@ -16,6 +16,11 @@
 
 (defonce viewport-ref (atom nil))
 (defonce viewport-brect (atom nil))
+
+(defn capture-pointer
+  [event]
+  (when-let [viewport @viewport-ref]
+    (.setPointerCapture viewport (.-pointerId event))))
 
 (defn- init-observer
   [node]

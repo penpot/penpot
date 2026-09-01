@@ -65,13 +65,19 @@
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
   software.amazon.awssdk/s3 {:mvn/version "2.50.1"}
-  software.amazon.awssdk/sts {:mvn/version "2.50.1"}}
+  software.amazon.awssdk/sts {:mvn/version "2.50.1"}
+
+  com.ladybugdb/lbug {:mvn/version "0.19.1"}
+  ;; Required by Arrow RootAllocator (lbug only pulls arrow-memory-core).
+  org.apache.arrow/arrow-memory-netty {:mvn/version "18.2.0"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
  {:dev
   {:jvm-opts ["--sun-misc-unsafe-memory-access=allow"
-              "--enable-native-access=ALL-UNNAMED"]
+              "--enable-native-access=ALL-UNNAMED"
+              ;; Arrow jars are on the classpath (unnamed module), not module-path.
+              "--add-opens=java.base/java.nio=ALL-UNNAMED"]
    :extra-deps
    {com.bhauman/rebel-readline {:mvn/version "0.1.11"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}

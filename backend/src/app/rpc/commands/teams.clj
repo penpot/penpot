@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.teams
   (:require
@@ -575,7 +575,7 @@
                      (set/difference cfeat/frontend-only-features)
                      (set/difference cfeat/no-team-inheritable-features))
         params   {:profile-id profile-id
-                  :name "Your Penpot"
+                  :name "Personal Projects"
                   :features features
                   :organization-id organization-id
                   :is-default true}
@@ -829,7 +829,7 @@
                 :code :only-owner-can-delete-team))
 
     ;; Protect the user's personal default team from deletion.
-    ;; Organization-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    ;; Organization-scoped default teams ("Personal Projects") are allowed to be deleted when they have no files.
     (when (and (:is-default team) (not in-organization?))
       (ex/raise :type :validation
                 :code :non-deletable-team

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require-macros [app.main.style :as stl])
@@ -12,7 +12,6 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.types.text :as txt]
-   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
@@ -91,27 +90,26 @@
            (constantly nil)))))
     @loaded?))
 
-;; --- FEATURE: font preview (flag :font-preview) ------------------------------
-;; font-item-preview* and use-font-lazy-load are the whole feature. They are only
-;; rendered/called behind the `:font-preview` flag check in font-item* below, so
-;; their hooks never run when the flag is off. To remove the flag, inline
-;; font-item-preview* into font-item* and drop the plain-name branch.
-
 (mf/defc font-item-preview*
   "Row content with previews: a vector preview from the shared sprite for catalog
   fonts, or the font's own name lazily loaded for custom fonts the sprite doesn't
   cover."
   {::mf/wrap [mf/memo]}
   [{:keys [font]}]
-  (let [font-id    (:id font)
+  (let [font-id    (get font :id)
         sprite     (mf/deref fonts/preview-sprite)
-        in-sprite? (contains? (:ids sprite) font-id)
 
-        ;; Fallback is ONLY for custom fonts: ones the (ready) sprite doesn't
-        ;; cover. If the sprite isn't ready (loading/error) we show the plain name
-        ;; rather than runtime-loading the whole catalog.
-        fallback?  (and (= :ready (:status sprite))
-                        (not in-sprite?))
+        ;; The sprite is only referenceable once it's been attached to the DOM,
+        ;; so the `<use>` glyph is gated on `attached?`. Until then we show the
+        ;; plain name: no blank rows, and no per-font load storm either (see
+        ;; `fallback?` below).
+        attached?  (pos? (:refs sprite))
+
+        ;; Fallback is ONLY for custom fonts: ones the (attached) sprite doesn't
+        ;; cover. If the sprite isn't ready (loading/error) or not yet attached,
+        ;; we show the plain name rather than runtime-loading the whole catalog.
+        in-sprite? (and attached? (contains? (:ids sprite) font-id))
+        fallback?  (and (= :ready (:status sprite)) attached? (not in-sprite?))
         loaded?    (use-font-lazy-load font-id fallback?)]
     (if in-sprite?
       ;; `fill: currentColor` (scss) makes the sprite glyph follow the row color.
@@ -128,29 +126,20 @@
   {::mf/wrap [mf/memo]}
   [{:keys [font is-current on-click style]}]
   (let [item-ref (mf/use-ref)
-        on-click (mf/use-fn (mf/deps font) #(on-click font))
-        ;; FLAG :font-preview — gates the feature markup AND its row styling
-        ;; (.font-item-preview-on in the scss). Remove this and its two uses below.
-        preview? (contains? cf/flags :font-preview)]
+        on-click (mf/use-fn (mf/deps font) #(on-click font))]
 
-    (mf/use-effect
-     (mf/deps is-current)
-     (fn []
-       (when is-current
-         (let [element (mf/ref-val item-ref)]
-           (when-not (dom/is-in-viewport? element)
-             (dom/scroll-into-view! element))))))
+    (mf/with-effect [is-current]
+      (when is-current
+        (let [element (mf/ref-val item-ref)]
+          (when-not (dom/is-in-viewport? element)
+            (dom/scroll-into-view! element)))))
 
     [:div {:class (stl/css :font-wrapper)
            :style style
            :ref item-ref
            :on-click on-click}
-     [:div {:class  (stl/css-case :font-item true
-                                  :font-item-preview-on preview?
-                                  :selected is-current)}
-      (if preview?
-        [:> font-item-preview* {:font font}]
-        [:span {:class (stl/css :font-item-label)} (:name font)])
+     [:div {:class  (stl/css-case :font-item true :selected is-current)}
+      [:> font-item-preview* {:font font}]
       (when is-current
         [:> icon* {:icon-id i/tick
                    :size "s"}])]]))
@@ -255,20 +244,28 @@
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
-    ;; FLAG :font-preview — materialize the preview sprite into the DOM only while
-    ;; the picker is open (markup is prefetched on workspace load), removing it on
-    ;; close so its ~2000 nodes aren't kept around idle. Remove the flag clause to
-    ;; drop the feature.
+    ;; Materialize the preview sprite into the DOM only while the picker is open
+    ;; (markup is prefetched on workspace load), removing it on close so its
+    ;; ~2000 nodes aren't kept around idle. The attachment is deferred so the
+    ;; dropdown can paint first with plain names, then the sprite swaps in on the
+    ;; next tick.
     (mf/with-effect [sprite-status]
-      (when (and (contains? cf/flags :font-preview)
-                 (= :ready sprite-status))
-        (let [node (fonts/attach-preview-sprite!)]
-          #(fonts/detach-preview-sprite! node))))
+      (when (= :ready sprite-status)
+        (let [node*  (volatile! nil)
+              task   (tm/schedule
+                      (fn []
+                        (vreset! node* (fonts/attach-preview-sprite!))))]
+          (fn []
+            (tm/dispose! task)
+            (when-some [n @node*]
+              (fonts/detach-preview-sprite! n))))))
 
     (mf/with-effect [@selected]
-      (when-let [inst (mf/ref-val flist)]
-        (when-let [index (:index @selected)]
-          (.scrollToRow ^js inst index))))
+      (let [node  (mf/ref-val flist)
+            index (:index @selected)]
+        ;; This is nil safe operation, do nothing if node or index are
+        ;; invalid.
+        (dom/scroll-to-row node index)))
 
     (mf/with-effect [@selected]
       (on-select @selected))
@@ -279,11 +276,12 @@
         (st/emit! (dsc/pop-shortcuts :typography))))
 
     (mf/with-effect []
-      (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
-            inst   (mf/ref-val flist)]
+      (let [index (d/index-of-pred fonts #(= (:id %) (:id current-font)))
+            node  (mf/ref-val flist)]
         (tm/schedule
-         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
-            (.scrollToPosition ^js inst offset)))))
+         #(let [offset (.getOffsetForRow ^js node #js {:alignment "center" :index index})]
+            ;; Safe operaton, do nothing if node or offset has invalid values
+            (dom/scroll-to-position node offset)))))
 
     [:div {:class [(stl/css-case :font-selector true
                                  :fonts-on-modal (not full-size?))]}

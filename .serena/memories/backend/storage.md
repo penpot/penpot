@@ -30,10 +30,46 @@
 - `objects-gc` removes deleted domain rows and touches their storage object IDs.
 - Use `::db/reuse-conn true` with `sto/resolve` inside a database transaction.
 
+## Connection Reuse Details
+
+### `app.storage/resolve` patterns:
+
+**1. Pool mode (default)** - `(sto/resolve cfg)`
+- Returns storage abstraction from config
+- Uses whatever database pool is available
+- **Safe to call outside transaction context**
+- Used in: `rpc/commands/media.clj:363`, `rpc/commands/auth.clj:327`, `rpc/commands/profile.clj:362`
+
+**2. Connection reuse mode** - `(sto/resolve cfg ::db/reuse-conn true)`
+- Internally calls `db/get-connection cfg` to obtain connectable
+- Configures storage with the specific connection from config
+- **Must be paired with transaction that owns this connection**
+- Used in: `features/fdata.clj:100`, `rpc/commands/media.clj:425`, `rpc/commands/files_thumbnails.clj:307,319`, `binfile/v3.clj:722`
+
+**3. Explicit configuration** - `(sto/configure storage conn)`
+- Sets `::db/conn` on storage map directly
+- Asserts `db/conn? connection` (storage.clj:349)
+- Used inside `db/tx-run!` blocks where `conn` is already available
+- Used in: `tasks/file_gc.clj:256`, `rpc/commands/files_thumbnails.clj:347,371`
+
+### Key Warning (from function notes):
+
+The improved note in `import-storage-objects` and `handle-persistence` warns:
+**Do not reuse the main database connection for storage operations within a transaction.** The storage upload process can fail mid-operation, leaving orphaned objects on the backend. If the outer transaction aborts, pending storage objects become unreconciliable because the storage subsystem registers its pending state in separate transactions.
+
+### Rule of Thumb for `sto/put-object!`:
+
+Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `impl/put-object`) and does not directly use `::db/conn` or `::db/pool`, **all usage of `put-object!` will never run inside a common transaction** (if configured at all). The storage backend operations are independent of the database transaction boundary.
+
 ## Deduplication
 
 - Deduplication requires `::sto/deduplicate?`, a content hash, and bucket metadata.
 - The lookup matches hash, bucket, backend, and `deleted_at IS NULL`.
+- The lookup only considers rows with `status='valid'`; pending rows are invisible.
+- A hit whose blob is missing is repaired in place: the same row/id is kept,
+  and `put-object!` rewrites the blob under that id. This heals all existing
+  references to the object. If the rewrite fails, the row is left live and
+  valid for a later retry.
 - The lookup does not include file ID, profile ID, team ID, or organization ID.
 - Objects can therefore share content across users and files within one bucket.
 - Deleted objects are not reused.

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.profile
   (:require
@@ -524,7 +524,7 @@
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
     ;; (during delete-owned-organizations) and ::notify-organization-deletion.
     ;; Both preserve organization teams unchanged and only prefix or delete
-    ;; imported "Your Penpot" teams according to whether they still have files.
+    ;; imported "Personal Projects" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
     (when (contains? cf/flags :admin-console)

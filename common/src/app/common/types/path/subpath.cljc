@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.path.subpath
   (:require
@@ -28,13 +28,17 @@
 (defn add-subpath-command
   "Adds a command to the subpath"
   [subpath command]
-  (let [command (if (= :close-path (:command command))
-                  (helpers/make-line-to (:from subpath))
-                  command)
-        p (helpers/segment->point command)]
-    (-> subpath
-        (assoc :to p)
-        (update :data conj command))))
+  (let [close? (= :close-path (:command command))]
+    (if (and close? (pt= (:from subpath) (:to subpath)))
+      ;; Avoid adding a duplicate node at an already closed seam.
+      subpath
+      (let [command (if close?
+                      (helpers/make-line-to (:from subpath))
+                      command)
+            p       (helpers/segment->point command)]
+        (-> subpath
+            (assoc :to p)
+            (update :data conj command))))))
 
 (defn reverse-command
   "Reverses a single command"
@@ -188,6 +192,27 @@
 
 
     (into [] xf-mapcat-data closed-subpaths)))
+
+(defn- close-loop
+  "Adds an explicit close command when a subpath's endpoints meet."
+  [{:keys [from to data] :as subpath}]
+  (let [last-seg (peek data)]
+    (if (or (< (count data) 2)
+            (= :close-path (:command last-seg))
+            (not (pt= from to)))
+      subpath
+      (let [data (cond-> data
+                   (= :line-to (:command last-seg)) (pop))]
+        (assoc subpath
+               :to from
+               :data (conj data {:command :close-path :params {}}))))))
+
+(defn close-loops
+  "Adds close commands to subpaths whose endpoints meet."
+  [content]
+  (->> (get-subpaths content)
+       (mapv close-loop)
+       (into [] xf-mapcat-data)))
 
 ;; FIXME: revisit this fn impl for perfromance
 (defn reverse-content

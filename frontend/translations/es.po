@@ -395,6 +395,9 @@ msgstr ""
 msgid "dashboard.change-organization-modal.title"
 msgstr "Cambiar el equipo de organización"
 
+msgid "dashboard.change-organization-modal.description"
+msgstr "Los proyectos y archivos permanecerán disponibles para los miembros del equipo. El equipo obtendrá la configuración de la nueva organización."
+
 #: src/app/main/ui/dashboard/deleted.cljs:316
 msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
@@ -417,7 +420,7 @@ msgstr "Guardar esta versión"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
 msgid "dashboard.default-team-name"
-msgstr "Tu Penpot"
+msgstr "Proyectos Personales"
 
 #: src/app/main/ui/dashboard/deleted.cljs:265
 msgid "dashboard.delete-all-forever-confirmation.description"
@@ -765,6 +768,35 @@ msgstr[1] "%s ficheros se han importado correctamente."
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 biblioteca fue vinculada automáticamente por nombre."
+msgstr[1] "%s bibliotecas fueron vinculadas automáticamente por nombre."
+
+msgid "dashboard.import.resolve-libraries"
+msgstr "Algunas bibliotecas no pudieron vincularse automáticamente. Selecciona la biblioteca correcta para cada una:"
+
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmar vínculos de biblioteca"
+
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Revisa los vínculos de biblioteca antes de confirmar:"
+
+msgid "dashboard.import.review-links"
+msgstr "Revisar vínculos"
+
+msgid "dashboard.import.summary.auto-linked"
+msgstr "Vinculadas automáticamente"
+
+msgid "dashboard.import.summary.your-selection"
+msgstr "Tu selección"
+
+msgid "dashboard.import.summary.linked"
+msgstr "Vinculada"
+
+msgid "dashboard.import.summary.no-selection"
+msgstr "Ninguna biblioteca seleccionada"
+
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"
@@ -876,8 +908,8 @@ msgid "dashboard.move-to-other-team"
 msgstr "Mover a otro equipo"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "Mis Equipos"
+msgid "dashboard.other-teams"
+msgstr "Otros equipos"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1118,11 +1150,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Las invitaciones pendientes a usuarios externos serán canceladas."
 
-#, unused
 msgid "dashboard.select-organization-modal.permission-info"
-msgstr ""
-"Aquí encontrarás todas las organizaciones en las que tienes permiso para "
-"crear o añadir equipos."
+msgstr "Aquí encontrarás las organizaciones de las que eres parte donde tienes permiso para mover el equipo."
+
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr "Aquí encontrarás las organizaciones de las que eres parte donde tienes permiso para crear o añadir equipos."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1441,11 +1473,8 @@ msgid "dashboard.your-name"
 msgstr "Tu nombre"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Tu Penpot"
-
-msgid "dashboard.my-files"
-msgstr "Mis Archivos"
+msgid "dashboard.personal-projects"
+msgstr "Proyectos Personales"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
@@ -2066,33 +2095,70 @@ msgid "files-download-modal.description-2"
 msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
 
 #: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.all.message"
 msgstr ""
-"Ficheros con librerias compartidas se inclurán en el paquete de exportación "
+
+#: src/app/main/ui/exports/files.cljs:140
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Los ficheros con librerias compartidas se inclurán en el paquete de exportación "
 "y mantendrán los enlaces."
 
 #: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Exportar librerias compartidas"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.all.title"
+msgstr "Exportar archivo + librerías"
+
+#: src/app/main/ui/exports/files.cljs:141
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Exportar archivo + librerías"
 
 #: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.detach.message"
 msgstr ""
-"Las biblioteca compartidas no se incluirán en la exportación y ningún "
-"recurso será incluido en la biblioteca. "
+
+#: src/app/main/ui/exports/files.cljs:142
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr ""
+"Las recursos de las bibliotecas compartidas no se incluirán en la exportación."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.options.link-later.title"
+msgstr "Vincular librerías al importar"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.options.link-later.message"
+msgstr "Al importar, podrás vincular bibliotecas existentes con el mismo nombre."
 
 #: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Usar los recursos como objetos básicos"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.detach.title"
+msgstr "Tratar los recursos como objetos básicos"
+
+#: src/app/main/ui/exports/files.cljs:143
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Tratar los recursos como objetos básicos"
 
 #: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.merge.message"
 msgstr ""
-"Tu fichero será exportado con todos los recursos dentro de la libreria del "
+
+#: src/app/main/ui/exports/files.cljs:144
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Tu fichero será exportado con todos los recursos externos dentro de la libreria del "
 "propio fichero."
 
 #: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
+# DEPRECATED: use the equivalent "-libraries" key
+msgid "files-export-modal.options.merge.title"
+msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
+
+#: src/app/main/ui/exports/files.cljs:145
+msgid "files-export-modal.options.merge-libraries.title"
 msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 #: src/app/main/ui/exports/files.cljs:123
@@ -3504,6 +3570,51 @@ msgstr "Variante"
 msgid "labels.version-notes"
 msgstr "Notas versión %s"
 
+msgid "labels.check-for-updates"
+msgstr "Comprobar actualizaciones"
+
+msgid "labels.checking-for-updates"
+msgstr "Comprobando actualizaciones..."
+
+msgid "dashboard.check-updates.available-title"
+msgstr "HAY UNA NUEVA VERSIÓN DE PENPOT DISPONIBLE"
+
+msgid "dashboard.check-updates.available-message"
+msgstr "Las versiones más recientes incluyen mejoras de rendimiento, nuevas capacidades y correcciones que mantienen tu instalación al día."
+
+msgid "dashboard.check-updates.installed-version"
+msgstr "Versión instalada"
+
+msgid "dashboard.check-updates.latest-version"
+msgstr "Última versión"
+
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Novedades - Destacados"
+
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Ver changelog completo"
+
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Ver notas de la versión"
+
+msgid "dashboard.check-updates.unable-title"
+msgstr "NO HA SIDO POSIBLE COMPROBAR LAS ACTUALIZACIONES"
+
+msgid "dashboard.check-updates.unable-message"
+msgstr "Esta instalación no pudo contactar con el servicio de versiones de Penpot."
+
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Comprueba tu red o la configuración de la instancia e inténtalo de nuevo."
+
+msgid "dashboard.check-updates.try-again"
+msgstr "Intentar de nuevo"
+
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT ESTÁ ACTUALIZADO"
+
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "Estás usando la última versión estable:"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:298
 msgid "labels.view-only"
 msgstr "Solo lectura"
@@ -4500,7 +4611,7 @@ msgstr "No tienes permiso para acceder a este archivo."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
 msgid "not-found.no-permission.go-dashboard"
-msgstr "Ir a tu Penpot"
+msgstr "Ir a tus Proyectos Personales"
 
 #: src/app/main/ui/static.cljs:289, src/app/main/ui/static.cljs:298
 msgid "not-found.no-permission.if-approves"
@@ -5198,6 +5309,13 @@ msgid "shortcuts.delete-node"
 msgstr "Borrar nodo"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Borrar nodo y segmentos"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.deselect-all"
+msgstr "Deseleccionar todo"
+
 msgid "shortcuts.detach-component"
 msgstr "Desvincular componente"
 
@@ -7491,9 +7609,29 @@ msgstr "Eliminar exportación"
 msgid "workspace.options.export.suffix"
 msgstr "Sufijo"
 
+#: src/app/main/ui/exports/assets.cljs:325
+msgid "workspace.options.cancel-export"
+msgstr "Cancelar"
+
 #: src/app/main/ui/exports/assets.cljs:252
 msgid "workspace.options.exporting-complete"
 msgstr "Exportación completa"
+
+#: src/app/main/ui/exports/assets.cljs:259
+msgid "workspace.options.exporting-cancelled"
+msgstr "Exportación cancelada"
+
+#: src/app/main/ui/exports/assets.cljs:258
+msgid "workspace.options.exporting-cancelling"
+msgstr "Cancelando..."
+
+#: src/app/main/ui/exports/assets.cljs:261
+msgid "workspace.options.exporting-queued"
+msgstr "Esperando..."
+
+#: src/app/main/ui/exports/assets.cljs:256
+msgid "workspace.options.exporting-busy"
+msgstr "La cola de exportación está llena, inténtalo de nuevo en unos momentos"
 
 #: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:253, src/app/main/ui/inspect/exports.cljs:216, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.exporting-object"
@@ -9650,6 +9788,22 @@ msgstr "Comentarios (%s)"
 msgid "workspace.toolbar.curve"
 msgstr "Curva (%s)"
 
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-type"
+msgstr "Comportamiento manejador"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Igual"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Alineado"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs
+msgid "workspace.path.actions.handler-independent"
+msgstr "Independiente"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:231
 #, unused
 msgid "workspace.toolbar.debug"
@@ -10000,6 +10154,3 @@ msgstr "Intentar de nuevo"
 
 msgid "dashboard.invite-profile-disabled"
 msgstr "No tienes permiso para invitar a personas a este equipo"
-
-msgid "dashboard.invite-profile-disabled.owners-only"
-msgstr "Solo los propietarios del equipo pueden invitar dentro de %s"

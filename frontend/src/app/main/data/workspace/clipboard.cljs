@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.clipboard
   (:require
@@ -40,6 +40,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.path.clipboard :as path-cp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
@@ -292,8 +293,9 @@
              (rx/mapcat
               (fn [pdata]
                 (case (:type pdata)
-                  :copied-props  (rx/of (paste-transit-props pdata))
-                  :copied-shapes (rx/of (paste-transit-shapes pdata))
+                  :copied-props        (rx/of (paste-transit-props pdata))
+                  :copied-shapes       (rx/of (paste-transit-shapes pdata))
+                  :copied-path-content (rx/of (path-cp/paste-nodes-as-shape (:content pdata)))
                   (rx/empty)))))
 
         :else

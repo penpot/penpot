@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.teams-invitations
   (:require
@@ -603,7 +603,7 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-read-permissions! cfg profile-id team-id)
+  (teams/check-edition-permissions! cfg profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id
