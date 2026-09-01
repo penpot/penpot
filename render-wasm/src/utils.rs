@@ -34,7 +34,11 @@ pub fn get_fallback_fonts() -> &'static HashSet<String> {
 }
 
 pub fn get_font_collection() -> &'static FontCollection {
-    with_state!(state, { state.font_collection() })
+    if crate::globals::has_render_resources() {
+        get_resources().fonts.font_collection()
+    } else {
+        with_state!(state, { state.font_collection() })
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

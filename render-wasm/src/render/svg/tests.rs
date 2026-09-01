@@ -174,3 +174,30 @@ fn exports_an_unclipped_frame_with_overflowing_child() {
     );
     insta::assert_snapshot!(svg);
 }
+
+#[test]
+fn exports_solid_text_with_font_face() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_text(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("@font-face") && svg.contains(TEST_FONT_URL),
+        "missing @font-face for registered font URL: {svg}"
+    );
+    // Fixed-size text exports at the selrect, not tight glyph bounds.
+    assert!(
+        svg.contains("width=\"560\" height=\"240\""),
+        "fixed text should export at selrect size: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
