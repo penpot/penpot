@@ -423,16 +423,7 @@
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents-legacy)}
-          [:> library-description* {:summary summary}]]
-         (when (contains? cf/flags :token-lib-sync)
-           (if (cfo/effective-tokens-source? local-library (:id local-library))
-             [:div (tr "workspace.libraries.tokens-source")]
-             (when (not= (cfo/get-tokens-source local-library) (:id local-library))
-               [:> button* {:variant "secondary"
-                            :type "button"
-                            :data-library-id (dm/str (:id local-library))
-                            :on-click set-as-tokens-source}
-                (tr "workspace.libraries.set-as-tokens-source")])))]
+          [:> library-description* {:summary summary}]]]
 
         (if ^boolean is-shared
           [:> button* {:variant "secondary"
@@ -462,28 +453,17 @@
                    [:div {:class (stl/css :connected-to-wrapper-legacy)}
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
-                    [:span ")"]])])]
-             (when (contains? cf/flags :token-lib-sync)
-               (when (cfo/effective-tokens-source? local-library id)
-                 [:div (tr "workspace.libraries.tokens-source")]))]
+                    [:span ")"]])])]]
 
             [:div {:class (stl/css :library-actions)}
-             (if (contains? cf/flags :token-lib-sync)
-               (when (and (cfo/tokens-provider? (:data library))
-                          (not (cfo/effective-tokens-source? local-library id)))
-                 [:> button* {:variant "secondary"
-                              :type "button"
-                              :data-library-id (dm/str id)
-                              :on-click set-as-tokens-source}
-                  (tr "workspace.libraries.set-as-tokens-source")])
-               (when ^boolean has-tokens?
-                 [:> icon-button*
-                  {:type "button"
-                   :aria-label (tr "workspace.tokens.import-tokens")
-                   :icon i/import-export
-                   :data-library-id (dm/str id)
-                   :variant "secondary"
-                   :on-click import-tokens}]))
+             (when ^boolean has-tokens?
+               [:> icon-button*
+                {:type "button"
+                 :aria-label (tr "workspace.tokens.import-tokens")
+                 :icon i/import-export
+                 :data-library-id (dm/str id)
+                 :variant "secondary"
+                 :on-click import-tokens}])
 
              [:> icon-button* {:type "button"
                                :aria-label (tr "workspace.libraries.unlink-library-btn")
