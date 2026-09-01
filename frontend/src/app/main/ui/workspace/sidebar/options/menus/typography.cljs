@@ -162,16 +162,22 @@
        nil))
     (deref offset*)))
 
-(defn- sample-style
-  "Inline style that applies the typography font and optically centers the
-  sample glyphs within the fixed-height row."
-  [typography em]
-  (let [base {:font-family (:font-family typography)
-              :font-weight (:font-weight typography)
-              :font-style  (:font-style typography)}]
-    (if (zero? em)
-      base
-      (assoc base :transform (dm/str "translateY(" em "em)")))))
+(defn- sample-container-style
+  "Inline style that applies the typography font to the (clipped, fixed-height)
+  sample container."
+  [typography]
+  {:font-family (:font-family typography)
+   :font-weight (:font-weight typography)
+   :font-style  (:font-style typography)})
+
+(defn- sample-text-style
+  "Inline style that optically centers the sample glyphs. Must be applied to
+  the text node itself, not to the clipped container: a transform on an
+  `overflow: hidden` element moves its own clip region along with it, so it
+  would shift the whole box relative to the row instead of the glyphs inside it."
+  [em]
+  (when-not (zero? em)
+    {:transform (dm/str "translateY(" em "em)")}))
 
 ;; --- FONT SELECTOR --------------------------------------------------------
 
@@ -728,8 +734,9 @@
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
-                  :style (sample-style typography offset)}
-            [:span (tr "workspace.assets.typography.sample")]]
+                  :style (sample-container-style typography)}
+            [:span {:style (sample-text-style offset)}
+             (tr "workspace.assets.typography.sample")]]
 
            [:input
             {:class (stl/css :adv-typography-name)
@@ -763,8 +770,9 @@
          [:div {:class (stl/css :typography-info-wrapper)}
           [:div {:class (stl/css :typography-name-wrapper)}
            [:div {:class (stl/css :typography-sample)
-                  :style (sample-style typography offset)}
-            [:span (tr "workspace.assets.typography.sample")]]
+                  :style (sample-container-style typography)}
+            [:span {:style (sample-text-style offset)}
+             (tr "workspace.assets.typography.sample")]]
 
            [:div {:class (stl/css :typography-name)
                   :title (:name typography)}
@@ -873,8 +881,9 @@
         [:div {:class (stl/css :font-name-wrapper)}
          [:div
           {:class (stl/css :typography-sample-input)
-           :style (sample-style typography offset)}
-          [:span (tr "workspace.assets.typography.sample")]]
+           :style (sample-container-style typography)}
+          [:span {:style (sample-text-style offset)}
+           (tr "workspace.assets.typography.sample")]]
 
          [:input
           {:class (stl/css :adv-typography-name)
@@ -891,8 +900,9 @@
           :on-context-menu on-context-menu}
          [:div
           {:class (stl/css :typography-sample)
-           :style (sample-style typography offset)}
-          [:span (tr "workspace.assets.typography.sample")]]
+           :style (sample-container-style typography)}
+          [:span {:style (sample-text-style offset)}
+           (tr "workspace.assets.typography.sample")]]
 
          [:div {:class (stl/css :name-block)
                 :title (if name-only?
