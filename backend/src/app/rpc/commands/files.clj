@@ -95,18 +95,23 @@
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
 
-;; A user has comment permissions if she has read permissions, or
-;; explicit comment permissions through the share-id
+;; A user has comment permissions if:
+;; - For :membership type: they have read permissions OR explicit comment permissions
+;; - For :share-link type: they must have explicit comment permissions (who-comment=all)
+;;   This prevents share-link holders with who-comment=team from bypassing the restriction
 
 (defn check-comment-permissions!
   [cfg profile-id file-id share-id]
-  (let [perms       (perms/get-file-read-permissions cfg profile-id file-id share-id)
-        can-read    (has-read-permissions? perms)
-        can-comment (has-comment-permissions? perms)]
-    (when-not (or can-read can-comment)
+  (let [perms    (perms/get-file-read-permissions cfg profile-id file-id share-id)
+        allowed? (if (= :share-link (:type perms))
+                   (has-comment-permissions? perms)
+                   (or (has-read-permissions? perms)
+                       (has-comment-permissions? perms)))]
+    (when-not allowed?
       (ex/raise :type :not-found
                 :code :object-not-found
-                :hint "not found"))))
+                :hint "not found"))
+    perms))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUERY COMMANDS
