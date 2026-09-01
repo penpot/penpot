@@ -11,7 +11,6 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
    [app.loggers.audit :as audit]
@@ -28,7 +27,7 @@
   (let [type (get report :type)
         text (str "#" type " | " (d/escape-markdown (get report :hint)) "\n"
                   (when id
-                    (str (u/join (cf/get :public-uri) "/dbg/error/" id) " "))
+                    (str (cf/get-public-uri "dbg/error/" id) " "))
 
                   (when-let [pid (:profile-id report)]
                     (if (uuid? pid)

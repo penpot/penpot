@@ -72,6 +72,10 @@
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
+   :jobs-lease (ct/duration {:minutes 30})
+   :jobs-retention (ct/duration {:days 7})
+   :jobs-request-timeout (ct/duration {:minutes 2})
+
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
@@ -163,6 +167,9 @@
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
+    [:jobs-lease {:optional true} ::ct/duration]
+    [:jobs-retention {:optional true} ::ct/duration]
+    [:jobs-request-timeout {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -391,7 +398,7 @@
 (defn get-file-clean-delay
   []
   (or (c/get config :file-clean-delay)
-      (ct/duration {:days 2})))
+       (ct/duration {:days 2})))
 
 (defn join-uri
   "Join path segments onto a base URI, preserving a potential subpath
@@ -408,6 +415,29 @@
   :public-uri. With no segments, returns the normalized base."
   [& segments]
   (apply join-uri (c/get config :public-uri) segments))
+
+(defn get-jobs-lease
+  "Max time a job can run without touching modified_at (heartbeat or
+  progress) before the dispatcher marks it as orphan."
+  []
+  (or (c/get config :jobs-lease)
+       (ct/duration {:minutes 30})))
+
+(defn get-jobs-request-timeout
+  "Default timeout for the ephemeral request! calls (waiting for the
+  reply-key blpop); can be overridden per call (must stay below the
+  pooled connection command timeout, which is raised per call)."
+  []
+  (or (c/get config :jobs-request-timeout)
+      (ct/duration {:minutes 2})))
+
+(defn get-jobs-retention
+  "How long terminal (completed/failed/cancelled) internal job rows are
+  kept before the jobs GC deletes them; parity with the legacy tasks-gc
+  deletion delay."
+  []
+   (or (c/get config :jobs-retention)
+       (ct/duration {:days 7})))
 
 (defn get
   "A configuration getter. Helps code be more testable."

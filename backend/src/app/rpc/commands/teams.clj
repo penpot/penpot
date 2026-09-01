@@ -20,6 +20,7 @@
    [app.db.sql :as sql]
    [app.email :as eml]
    [app.features.logical-deletion :as ldel]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media.validation :as media.v]
@@ -33,7 +34,6 @@
    [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [clojure.set :as set]))
 
 ;; --- Helpers & Specs
@@ -845,11 +845,11 @@
       (when (contains? cf/flags :admin-console)
         (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
 
-      (wrk/submit! {::db/conn conn
-                    ::wrk/task :delete-object
-                    ::wrk/params {:object :team
-                                  :deleted-at (:deleted-at team)
-                                  :id team-id}})
+      (jobs/submit! cfg
+                    {::jobs/name :delete-object
+                     ::jobs/params {:object :team
+                                    :deleted-at (:deleted-at team)
+                                    :id team-id}})
       team)))
 
 (def ^:private schema:delete-team

@@ -416,7 +416,7 @@
 
 (defn send-email-verification!
   ([cfg profile] (send-email-verification! cfg profile nil))
-  ([{:keys [::db/conn] :as cfg} profile invitation-token]
+  ([cfg profile invitation-token]
    (let [vclaims (cond-> {:iss :verify-email
                           :exp (ct/in-future "72h")
                           :profile-id (:id profile)
@@ -434,13 +434,13 @@
                                   {:iss :profile-identity
                                    :profile-id (:id profile)
                                    :exp (ct/in-future {:days 30})})]
-     (eml/send! {::eml/conn conn
-                 ::eml/factory eml/register
-                 :public-uri (cf/get :public-uri)
-                 :to (:email profile)
-                 :name (:fullname profile)
-                 :token vtoken
-                 :extra-data ptoken}))))
+     (eml/send! cfg {::eml/reuse-conn true
+                     ::eml/factory eml/register
+                     :public-uri (cf/get :public-uri)
+                     :to (:email profile)
+                     :name (:fullname profile)
+                     :token vtoken
+                     :extra-data ptoken}))))
 
 (defn register-profile
   [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
@@ -598,18 +598,18 @@
                                           :profile-id id})]
               (assoc profile :token token)))
 
-          (send-email-notification [conn profile]
+          (send-email-notification [profile]
             (let [ptoken (tokens/generate cfg
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (ct/in-future {:days 30})})]
-              (eml/send! {::eml/conn conn
-                          ::eml/factory eml/password-recovery
-                          :public-uri (cf/get :public-uri)
-                          :to (:email profile)
-                          :token (:token profile)
-                          :name (:fullname profile)
-                          :extra-data ptoken})
+              (eml/send! cfg {::eml/reuse-conn true
+                              ::eml/factory eml/password-recovery
+                              :public-uri (cf/get :public-uri)
+                              :to (:email profile)
+                              :token (:token profile)
+                              :name (:fullname profile)
+                              :extra-data ptoken})
               nil))]
 
     (let [profile (->> (profile/clean-email email)
@@ -647,7 +647,7 @@
                       {:id (:id profile)})
           (->> profile
                (create-recovery-token)
-               (send-email-notification conn)))))))
+               (send-email-notification)))))))
 
 (def schema:request-profile-recovery
   [:map {:title "request-profile-recovery"}

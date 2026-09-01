@@ -26,6 +26,7 @@
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
@@ -39,7 +40,6 @@
    [app.system :as sys]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
-   [app.worker :as wrk]
    [clojure.datafy :refer [datafy]]
    [clojure.java.io :as io]
    [clojure.pprint :refer [print-table]]
@@ -56,36 +56,37 @@
 ;; TASKS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn print-tasks
+(defn print-jobs
   []
-  (let [tasks (:app.worker/registry sys/system)]
-    (pp/pprint (keys tasks) :level 200)))
+  (let [jobs (:app.jobs/defs sys/system)]
+    (pp/pprint (into (sorted-set) (keys jobs)))))
 
 (defn run-task!
+  "Execute the job handler in-process (no job row)."
   ([tname]
    (run-task! tname {}))
   ([tname params]
-   (wrk/invoke! (-> sys/system
-                    (assoc ::wrk/task tname)
-                    (assoc ::wrk/params params)))))
+   (jobs/invoke! (-> sys/system
+                     (assoc ::jobs/name tname)
+                     (assoc ::jobs/params params)))))
 
 (defn schedule-task!
+  "Submit a durable job to the queue."
   ([name]
    (schedule-task! name {}))
   ([name params]
-   (wrk/submit! (-> sys/system
-                    (assoc ::wrk/task name)
-                    (assoc ::wrk/params params)))))
+   (jobs/submit! sys/system
+                 {::jobs/name name
+                  ::jobs/params params})))
 
 (defn send-test-email!
   [destination]
   (assert (string? destination) "destination should be provided")
-  (-> sys/system
-      (assoc ::wrk/task :sendmail)
-      (assoc ::wrk/params {:body "test email"
-                           :subject "test email"
-                           :to [destination]})
-      (wrk/invoke!)))
+  (jobs/invoke! (-> sys/system
+                    (assoc ::jobs/name :sendmail)
+                    (assoc ::jobs/params {:body "test email"
+                                          :subject "test email"
+                                          :to [destination]}))))
 
 (defn resend-email-verification-email!
   [email]
@@ -607,11 +608,11 @@
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-file!"}
                    :tracked-at tnow})
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :file
-                                          :deleted-at tnow
-                                          :id file-id})))
+    (jobs/invoke! (-> sys/system
+                      (assoc ::jobs/name :delete-object)
+                      (assoc ::jobs/params {:object :file
+                                            :deleted-at tnow
+                                            :id file-id})))
     :deleted))
 
 (defn restore-file!
@@ -648,11 +649,11 @@
                              :cause "explicit call to delete-project!"}
                    :tracked-at tnow})
 
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :project
-                                          :deleted-at tnow
-                                          :id project-id})))
+    (jobs/invoke! (-> sys/system
+                      (assoc ::jobs/name :delete-object)
+                      (assoc ::jobs/params {:object :project
+                                            :deleted-at tnow
+                                            :id project-id})))
     :deleted))
 
 (defn- restore-project*
@@ -700,11 +701,11 @@
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
 
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :team
-                                          :deleted-at tnow
-                                          :id team-id})))
+    (jobs/invoke! (-> sys/system
+                      (assoc ::jobs/name :delete-object)
+                      (assoc ::jobs/params {:object :team
+                                            :deleted-at tnow
+                                            :id team-id})))
     :deleted))
 
 (defn- restore-team*
@@ -756,11 +757,11 @@
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
 
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :profile
-                                          :deleted-at tnow
-                                          :id profile-id})))
+    (jobs/invoke! (-> sys/system
+                      (assoc ::jobs/name :delete-object)
+                      (assoc ::jobs/params {:object :profile
+                                            :deleted-at tnow
+                                            :id profile-id})))
     :deleted))
 
 (defn restore-profile!
@@ -810,11 +811,11 @@
                                    :props (audit/profile->props profile)
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to delete-profiles-in-bulk!"}})
-                    (wrk/invoke! (-> system
-                                     (assoc ::wrk/task :delete-object)
-                                     (assoc ::wrk/params {:object :profile
-                                                          :deleted-at deleted-at
-                                                          :id (:id profile)})))
+                    (jobs/invoke! (-> system
+                                      (assoc ::jobs/name :delete-object)
+                                      (assoc ::jobs/params {:object :profile
+                                                            :deleted-at deleted-at
+                                                            :id (:id profile)})))
                     (recur (rest emails)
                            (inc deleted)
                            (inc total)))
@@ -842,41 +843,41 @@
   []
   (->> (db/exec! sys/system ["select id, deleted_at from profile where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :profile
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+               (jobs/invoke! (-> sys/system
+                                 (assoc ::jobs/name :delete-object)
+                                 (assoc ::jobs/params {:object :profile
+                                                       :deleted-at deleted-at
+                                                       :id id})))))))
 
 (defn process-deleted-teams-cascade
   []
   (->> (db/exec! sys/system ["select id, deleted_at from team where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :team
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+               (jobs/invoke! (-> sys/system
+                                 (assoc ::jobs/name :delete-object)
+                                 (assoc ::jobs/params {:object :team
+                                                       :deleted-at deleted-at
+                                                       :id id})))))))
 
 (defn process-deleted-projects-cascade
   []
   (->> (db/exec! sys/system ["select id, deleted_at from project where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :project
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+               (jobs/invoke! (-> sys/system
+                                 (assoc ::jobs/name :delete-object)
+                                 (assoc ::jobs/params {:object :project
+                                                       :deleted-at deleted-at
+                                                       :id id})))))))
 
 (defn process-deleted-files-cascade
   []
   (->> (db/exec! sys/system ["select id, deleted_at from file where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :file
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+               (jobs/invoke! (-> sys/system
+                                 (assoc ::jobs/name :delete-object)
+                                 (assoc ::jobs/params {:object :file
+                                                       :deleted-at deleted-at
+                                                       :id id})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SSO
