@@ -370,13 +370,6 @@
                         :tokens/import-from-library {:file-id file-id
                                                      :library-id library-id})))))
 
-        set-as-tokens-source
-        (mf/use-fn
-         (fn [event]
-           (let [library-id (some-> (dom/get-current-target event)
-                                    (dom/get-data "library-id")
-                                    (uuid/parse))]
-             (st/emit! (dwtl/set-tokens-source library-id)))))
 
         on-delete-accept
         (mf/use-fn
@@ -430,16 +423,7 @@
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents-legacy)}
-          [:> library-description* {:summary summary}]]
-         (when (contains? cf/flags :token-lib-sync)
-           (if (cfo/effective-tokens-source? local-library (:id local-library))
-             [:div (tr "workspace.libraries.tokens-source")]
-             (when (not= (cfo/get-tokens-source local-library) (:id local-library))
-               [:> button* {:variant "secondary"
-                            :type "button"
-                            :data-library-id (dm/str (:id local-library))
-                            :on-click set-as-tokens-source}
-                (tr "workspace.libraries.set-as-tokens-source")])))]
+          [:> library-description* {:summary summary}]]]
 
         (if ^boolean is-shared
           [:> button* {:variant "secondary"
@@ -460,8 +444,7 @@
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css-case :item-name true
-                                         :item-name-short has-tokens?)} name]
+             [:div {:class (stl/css :item-name)} name]
              [:ul {:class (stl/css :item-contents-legacy)}
               (let [summary (get-library-summary data)]
                 [:*
@@ -470,28 +453,17 @@
                    [:div {:class (stl/css :connected-to-wrapper-legacy)}
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
-                    [:span ")"]])])]
-             (when (contains? cf/flags :token-lib-sync)
-               (when (cfo/effective-tokens-source? local-library id)
-                 [:div (tr "workspace.libraries.tokens-source")]))]
+                    [:span ")"]])])]]
 
             [:div {:class (stl/css :library-actions)}
-             (if (contains? cf/flags :token-lib-sync)
-               (when (and (cfo/tokens-provider? (:data library))
-                          (not (cfo/effective-tokens-source? local-library id)))
-                 [:> button* {:variant "secondary"
-                              :type "button"
-                              :data-library-id (dm/str id)
-                              :on-click set-as-tokens-source}
-                  (tr "workspace.libraries.set-as-tokens-source")])
-               (when ^boolean has-tokens?
-                 [:> icon-button*
-                  {:type "button"
-                   :aria-label (tr "workspace.tokens.import-tokens")
-                   :icon i/import-export
-                   :data-library-id (dm/str id)
-                   :variant "secondary"
-                   :on-click import-tokens}]))
+             (when ^boolean has-tokens?
+               [:> icon-button*
+                {:type "button"
+                 :aria-label (tr "workspace.tokens.import-tokens")
+                 :icon i/import-export
+                 :data-library-id (dm/str id)
+                 :variant "secondary"
+                 :on-click import-tokens}])
 
              [:> icon-button* {:type "button"
                                :aria-label (tr "workspace.libraries.unlink-library-btn")
@@ -875,8 +847,7 @@
                     :key (dm/str id)
                     :data-testid "library-item"}
               [:div {:class (stl/css :item-content)}
-               [:div {:class (stl/css-case :item-name true
-                                           :item-name-short has-tokens?)} name]
+               [:div {:class (stl/css :item-name)} name]
                [:ul {:class (stl/css :item-contents)}
                 (let [summary (get-library-summary data)]
                   [:> library-description* {:summary summary :hint-name parent-name}])]]
@@ -1017,7 +988,7 @@
             [:div {:class (stl/css :section-list-item)
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
-              [:div {:class (stl/css :item-name-long)} name]
+              [:div {:class (stl/css :item-name)} name]
               [:ul {:class (stl/css :item-contents)} (describe-library
                                                       (count components)
                                                       0
