@@ -32,6 +32,15 @@ COPY ./files/nginx-mime.types /etc/nginx/mime.types
 COPY ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf
 COPY ./files/nginx-entrypoint.sh /entrypoint.sh
 
+# The CSP hashes of the inline scripts of index.html are emitted by the
+# frontend build. Move them out of the document root: nginx must read them,
+# the browser has no reason to.
+RUN if [ -f /var/www/app/csp-script-hashes.txt ]; then \
+        mv /var/www/app/csp-script-hashes.txt /etc/nginx/csp-script-hashes.txt; \
+    else \
+        echo "WARNING: the frontend bundle does not provide csp-script-hashes.txt" >&2; \
+    fi
+
 RUN chown -R 1001:0 /var/cache/nginx; \
     chmod -R g+w /var/cache/nginx; \
     chown -R 1001:0 /etc/nginx; \
