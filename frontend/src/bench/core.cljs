@@ -77,4 +77,6 @@
                       :rev-rows rev-rows :desc-rows desc-rows
                       :heap-mb (fmt (/ (.-heapUsed (js/process.memoryUsage)) 1e6))}))))
 
-(defn -main [& _] (run))
+;; Datahike keeps the node event loop alive after the last reading, so the
+;; bench exits itself rather than hanging until a timeout kills it.
+(defn -main [& _] (run) (js/process.exit 0))
