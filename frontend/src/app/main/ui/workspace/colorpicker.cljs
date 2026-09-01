@@ -30,10 +30,10 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs*]]
    [app.main.ui.workspace.colorpicker.color-tokens :refer [token-section*]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
@@ -476,16 +476,10 @@
 
               (when (some? (:image current-color))
                 [:div {:class (stl/css :checkbox-option)}
-                 [:label {:for "keep-aspect-ratio"
-                          :class (stl/css-case  :global/checked keep-aspect-ratio?)}
-                  [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
-                   (when keep-aspect-ratio?
-                     deprecated-icon/status-tick)]
-                  (tr "media.keep-aspect-ratio")
-                  [:input {:type "checkbox"
-                           :id "keep-aspect-ratio"
-                           :checked keep-aspect-ratio?
-                           :on-change handle-change-keep-aspect-ratio}]]])
+                 [:> checkbox* {:id "keep-aspect-ratio"
+                                :checked keep-aspect-ratio?
+                                :on-change handle-change-keep-aspect-ratio
+                                :label (tr "media.keep-aspect-ratio")}]])
 
               [:> button* {:class (stl/css :choose-image)
                            :variant "secondary"
