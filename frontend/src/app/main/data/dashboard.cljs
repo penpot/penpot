@@ -51,17 +51,28 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper    (rx/filter (ptk/type? ::finalize) stream)
-            profile-id (:profile-id state)]
+            profile-id (:profile-id state)
+            current-team (dm/get-in state [:teams team-id])
+            organization-id (dm/get-in current-team [:organization :id])
+
+            subscriptions (cond-> [{:type :subscribe-team :team-id team-id}]
+                            (some? organization-id)
+                            (conj {:type :subscribe-organization :organization-id organization-id}))]
 
         (->> (rx/merge
               (rx/of (fetch-projects team-id)
                      (df/fetch-fonts team-id))
+              (->> (rx/from subscriptions)
+                   (rx/map dws/send))
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
                    (rx/filter (fn [{:keys [topic] :as msg}]
                                 (or (= topic uuid/zero)
-                                    (= topic profile-id))))
+                                    (= topic profile-id)
+                                    (= topic team-id)
+                                    (when (some? organization-id)
+                                      (= topic organization-id)))))
                    (rx/map process-message)))
 
              (rx/take-until stopper))))))

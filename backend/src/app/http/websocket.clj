@@ -113,6 +113,7 @@
   (let [psub (::profile-subscription @state)
         fsub (::file-subscription @state)
         tsub (::team-subscription @state)
+        osub (::organization-subscription @state)
         msg  {:type :disconnect
               :profile-id profile-id
               :session-id session-id}]
@@ -124,6 +125,11 @@
 
     ;; Close team subscription if exists
     (when-let [ch (:channel tsub)]
+      (sp/close! ch)
+      (mbus/purge! msgbus [ch]))
+
+    ;; Close organization subscription if exists
+    (when-let [ch (:channel osub)]
       (sp/close! ch)
       (mbus/purge! msgbus [ch]))
 
@@ -151,6 +157,29 @@
     (when-let [ch (:channel prev-subs)]
       (sp/close! ch)
       (mbus/purge! msgbus [ch]))))
+
+(defmethod handle-message :subscribe-organization
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [organization-id] :as params}]
+  (l/trace :fn "handle-message" :event "subscribe-organization" :organization-id organization-id :conn-id id)
+  (let [prev-subs (get @state ::organization-subscription)
+        channel   (sp/chan :buf (sp/dropping-buffer 64)
+                           :xf  (remove #(= (:session-id %) session-id)))]
+    (sp/pipe channel output-ch false)
+    (mbus/sub! msgbus :topic organization-id :chan channel)
+    (let [subs {:organization-id organization-id :channel channel :topic organization-id}]
+      (swap! state assoc ::organization-subscription subs))
+    ;; Close previous subscription if exists (e.g. on team switch)
+    (when-let [ch (:channel prev-subs)]
+      (sp/close! ch)
+      (mbus/purge! msgbus [ch]))))
+
+(defmethod handle-message :unsubscribe-organization
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id]} {:keys [organization-id] :as params}]
+  (l/trace :fn "handle-message" :event "unsubscribe-organization" :organization-id organization-id :conn-id id)
+  (when-let [osub (::organization-subscription @state)]
+    (sp/close! (:channel osub))
+    (mbus/purge! msgbus [(:channel osub)])
+    (swap! state dissoc ::organization-subscription)))
 
 
 (defmethod handle-message :subscribe-file
