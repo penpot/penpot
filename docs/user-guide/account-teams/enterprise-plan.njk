@@ -46,10 +46,9 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
 <ol>
   <li><strong>Switch organization menu: </strong> To navigate between the organizations you own.</li>
   <li><strong>Organization settings: </strong> To change basic settings, such as renaming it or deleting it.</li>
-  <li><strong>A "Back to Files" button </strong> that returns you to a team dashboard.</li>
+  <li><strong>A "Go to files" button </strong> that returns you to a team dashboard.</li>
   <li><strong>Your user avatar</strong>, that expands into a full user menu.</li>
-  <li><strong>Module Category: </strong> A group of modules that share a topic. Sometimes they are modules themselves, as in Advanced Permissions.</li>
-  <li><strong>Module: </strong> The feature itself to configure.</li>
+  <li><strong>Module: </strong> The control itself to configure.</li>
 </ol>
 
 <figure>
@@ -71,7 +70,7 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
 </figure>
 
 <p>Team members work within projects and files as usual. What changes under Enterprise is the org owner's ability to restrict or govern that work from the Admin Console.</p>
-<p>Within each team, the <a href="https://help.penpot.app/user-guide/account-teams/teams/" target="_blank">standard Penpot roles</a> apply.</p>
+<p>Within each team, the <a href="https://help.penpot.app/user-guide/account-teams/teams/#teams-members" target="_blank">standard Penpot roles</a> apply.</p>
 
 <h3 id="managing-organization-membership">Managing organization membership
   <a class="direct-link" href="#managing-organization-membership">#</a>
@@ -189,9 +188,10 @@ desc: Learn how the Enterprise plan works in Penpot. Discover its features and h
 
   <h4>What happens to existing sessions</h4>
   <p>When SSO is activated, any member who is currently inside one of the organization's teams is cut off immediately and sent through the SSO login. This does not log them out of Penpot entirely. They can still reach teams that do not belong to your organization without re-authenticating.</p>
+  <p>SSO sessions last 4 hours. When a session expires, members are routed through the SSO login again. If they are still in the directory, they are signed back in immediately.</p>
 
   <h4>Editing an active configuration</h4>
-  <p>While SSO is active, you can edit any field. As soon as you make a change, <strong>Apply changes</strong> and <strong>Discard changes</strong> buttons appear. Discarding restores every field to the current live configuration. Applying runs the same test connection as the initial setup, without a confirmation dialog. If the connection fails, your live configuration is not touched.</p>
+  <p>While SSO is active, you can edit any field. As soon as you make a change, <strong>Apply changes</strong> and <strong>Discard changes</strong> buttons appear. Discarding restores every field to the current live configuration. Applying runs the same test connection as the initial setup, without a confirmation dialog. If the connection fails, your live configuration is not touched. Changes may take up to 5 minutes to apply for members who are currently working in a file.</p>
 
   <h4>Deactivating SSO</h4>
   <p>Click <strong>Deactivate SSO</strong> and confirm. The configuration is preserved as a draft so you can reactivate it later without re-entering your credentials. Members are notified by email the first time SSO is activated. If you deactivate and reactivate within 24 hours, the notification is not re-sent.</p>
