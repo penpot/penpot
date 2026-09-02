@@ -707,13 +707,32 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(use_shadow, false, None)
+        self.paragraph_builders(use_shadow, false, None, None)
     }
 
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
     pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, true, None)
+        self.paragraph_builders(None, true, None, None)
+    }
+
+    /// Maximum number of stacked fills across every span in this text block.
+    pub fn max_fill_layers(&self) -> usize {
+        self.paragraphs()
+            .iter()
+            .flat_map(|p| p.children())
+            .map(|s| s.fills.len())
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Builds paragraph builders that paint a single fill layer per span for SVG
+    /// export. `layer_from_bottom` is 0 for the bottommost fill (fills[last]).
+    pub fn paragraph_builder_group_for_fill_layer(
+        &self,
+        layer_from_bottom: usize,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(None, false, None, Some(layer_from_bottom))
     }
 
     fn paragraph_builders(
@@ -721,6 +740,7 @@ impl TextContent {
         use_shadow: Option<bool>,
         opaque: bool,
         align_override: Option<skia::textlayout::TextAlign>,
+        fill_layer: Option<usize>,
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
@@ -736,11 +756,12 @@ impl TextContent {
             for span in paragraph.children() {
                 let remove_alpha =
                     opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
-                let text_style = span.to_style(
+                let text_style = span.to_style_with_paint(
                     &self.bounds(),
                     fallback_fonts,
                     remove_alpha,
                     paragraph.line_height(),
+                    fill_layer,
                 );
                 let text: String = span.apply_text_transform();
                 if !text.is_empty() {
@@ -762,7 +783,7 @@ impl TextContent {
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
         let mut measure_builders =
-            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left));
+            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left), None);
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut measure_builders, f32::MAX);
@@ -1349,15 +1370,41 @@ impl TextSpan {
         remove_alpha: bool,
         paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
-        let mut style = skia::textlayout::TextStyle::default();
-        let mut paint = paint::Paint::default();
+        self.to_style_with_paint(
+            content_bounds,
+            fallback_fonts,
+            remove_alpha,
+            paragraph_line_height,
+            None,
+        )
+    }
 
-        if remove_alpha {
+    fn to_style_with_paint(
+        &self,
+        content_bounds: &Rect,
+        fallback_fonts: &HashSet<String>,
+        remove_alpha: bool,
+        paragraph_line_height: f32,
+        fill_layer_from_bottom: Option<usize>,
+    ) -> skia::textlayout::TextStyle {
+        let mut style = skia::textlayout::TextStyle::default();
+        let paint = if remove_alpha {
+            let mut paint = paint::Paint::default();
             paint.set_color(skia::Color::BLACK);
             paint.set_alpha(255);
+            paint
+        } else if let Some(layer) = fill_layer_from_bottom {
+            if layer < self.fills.len() {
+                let fill_idx = self.fills.len() - 1 - layer;
+                self.fills[fill_idx].to_paint(content_bounds, true)
+            } else {
+                let mut paint = paint::Paint::default();
+                paint.set_color(skia::Color::TRANSPARENT);
+                paint
+            }
         } else {
-            paint = merge_fills(&self.fills, *content_bounds);
-        }
+            merge_fills(&self.fills, *content_bounds)
+        };
 
         let max_line_height = f32::max(paragraph_line_height, self.line_height);
         style.set_height(max_line_height);

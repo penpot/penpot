@@ -22,14 +22,24 @@ pub(super) struct VectorRenderer<'a> {
     canvas: &'a Canvas,
     shared: &'a mut RenderResources,
     scale: f32,
+    /// When `true`, multiple fills are composited into a single shader (PDF).
+    /// When `false`, each fill is drawn separately so SkSVGDevice can emit
+    /// `fill` attributes (SVG export).
+    compose_fills: bool,
 }
 
 impl<'a> VectorRenderer<'a> {
-    pub fn new(canvas: &'a Canvas, shared: &'a mut RenderResources, scale: f32) -> Self {
+    pub fn new(
+        canvas: &'a Canvas,
+        shared: &'a mut RenderResources,
+        scale: f32,
+        compose_fills: bool,
+    ) -> Self {
         Self {
             canvas,
             shared,
             scale,
+            compose_fills,
         }
     }
 }
@@ -40,9 +50,9 @@ impl ShapeRenderer for VectorRenderer<'_> {
             return Ok(());
         }
 
-        // Handle image fills individually
         let has_image_fills = fills.iter().any(|f| matches!(f, Fill::Image(_)));
-        if has_image_fills {
+        if !self.compose_fills || has_image_fills {
+            // fills[0] is the topmost layer; draw bottom → top (matches GPU + classic SVG).
             for fill in fills.iter().rev() {
                 match fill {
                     Fill::Image(image_fill) => {
@@ -845,7 +855,7 @@ fn render_frame(
     if !element.fills.is_empty() {
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
         renderer.draw_fills(element, &element.fills)?;
         renderer.draw_fill_inner_shadows(element)?;
         canvas.restore();
@@ -862,7 +872,7 @@ fn render_frame(
     if !visible_strokes.is_empty() {
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
         renderer.draw_strokes(element, &visible_strokes)?;
         canvas.restore();
     }
@@ -900,7 +910,7 @@ fn render_container_drop_shadows(
         );
 
         if draw_fills && !element.fills.is_empty() {
-            let mut renderer = VectorRenderer::new(canvas, shared, scale);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
             renderer.draw_fills(element, &element.fills)?;
         }
 
@@ -943,7 +953,7 @@ fn render_leaf(
         canvas.save_layer(&layer_rec);
     }
 
-    let mut renderer = VectorRenderer::new(canvas, shared, scale);
+    let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
 
     // Layer blur (non-text shapes)
     let blur_layer = if !matches!(element.shape_type, Type::Text(_)) {

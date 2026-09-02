@@ -194,7 +194,7 @@ fn render_leaf(
             let canvas = builder.canvas();
             canvas.save();
             canvas.concat(&matrix);
-            let mut renderer = VectorRenderer::new(canvas, shared, scale);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
             render_leaf_content(&mut renderer, element)?;
             canvas.restore();
         }

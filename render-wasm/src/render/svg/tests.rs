@@ -1,10 +1,43 @@
 use super::fixtures::*;
 
-use crate::shapes::BlendMode;
+use crate::shapes::{BlendMode, Fill, SolidColor};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 
 use skia_safe as skia;
+
+#[test]
+fn exports_a_rect_with_multiple_solid_fills() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_rect_with_fills(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        vec![
+            // fills[0] is topmost in Penpot (red 50%).
+            Fill::Solid(SolidColor(skia::Color::from_argb(128, 245, 0, 0))),
+            // fills[1] is underneath (blue 100%).
+            Fill::Solid(SolidColor(skia::Color::from_rgb(0, 63, 255))),
+        ],
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.matches("fill=\"#").count() >= 2,
+        "each solid fill must emit a fill attribute: {svg}"
+    );
+    let blue_pos = svg.to_ascii_lowercase().find("fill=\"#003fff\"");
+    let red_pos = svg.to_ascii_lowercase().find("fill=\"#f50000\"");
+    assert!(blue_pos.is_some(), "missing bottom blue fill: {svg}");
+    assert!(red_pos.is_some(), "missing top red fill: {svg}");
+    assert!(
+        blue_pos.unwrap() < red_pos.unwrap(),
+        "bottom fill must appear before top fill in SVG: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
 
 #[test]
 fn exports_a_solid_rect() {
@@ -171,6 +204,38 @@ fn exports_an_unclipped_frame_with_overflowing_child() {
     assert!(
         svg.contains("width=\"150\" height=\"150\""),
         "unclipped frame should export at extrect size: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_with_multiple_solid_fills() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_fills(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        vec![
+            Fill::Solid(SolidColor(skia::Color::from_argb(128, 245, 0, 0))),
+            Fill::Solid(SolidColor(skia::Color::from_rgb(0, 63, 255))),
+        ],
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.matches("fill=\"#").count() >= 2,
+        "each solid fill must emit a fill attribute: {svg}"
+    );
+    let blue_pos = svg.to_ascii_lowercase().find("fill=\"#003fff\"");
+    let red_pos = svg.to_ascii_lowercase().find("fill=\"#f50000\"");
+    assert!(blue_pos.is_some(), "missing bottom blue fill: {svg}");
+    assert!(red_pos.is_some(), "missing top red fill: {svg}");
+    assert!(
+        blue_pos.unwrap() < red_pos.unwrap(),
+        "bottom fill must appear before top fill in SVG: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
