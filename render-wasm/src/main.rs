@@ -53,47 +53,6 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn set_viewport_interest_area_threshold(
-    viewport_interest_area_threshold: i32,
-) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_max_blocking_time_ms(max_blocking_time_ms: i32) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_max_blocking_time_ms(max_blocking_time_ms);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_node_batch_threshold(node_batch_threshold: i32) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_node_batch_threshold(node_batch_threshold);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_blur_downscale_threshold(blur_downscale_threshold: f32) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_blur_downscale_threshold(blur_downscale_threshold);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
-    get_render_state().set_antialias_threshold(threshold);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     with_state!(state, {
         let color = skia::Color::new(raw_color);
@@ -471,16 +430,6 @@ pub extern "C" fn has_shape(a: u32, b: u32, c: u32, d: u32) -> Result<bool> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_state!(state, {
-        let shape_id = uuid_from_u32_quartet(a, b, c, d);
-        state.touch_shape(shape_id);
-    });
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
     with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
@@ -541,16 +490,6 @@ pub extern "C" fn set_shape_transform(
     Ok(())
 }
 
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        shape.add_child(id);
-    });
-    Ok(())
-}
-
 fn set_children_set(entries: Vec<Uuid>) -> Result<()> {
     with_state!(state, {
         state.set_current_shape_children(entries)?;
@@ -562,124 +501,6 @@ fn set_children_set(entries: Vec<Uuid>) -> Result<()> {
 #[wasm_error]
 pub extern "C" fn set_children_0() -> Result<()> {
     let entries = vec![];
-    set_children_set(entries)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_children_1(a1: u32, b1: u32, c1: u32, d1: u32) -> Result<()> {
-    let entries = vec![uuid_from_u32_quartet(a1, b1, c1, d1)];
-    set_children_set(entries)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_children_2(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
-) -> Result<()> {
-    let entries = vec![
-        uuid_from_u32_quartet(a1, b1, c1, d1),
-        uuid_from_u32_quartet(a2, b2, c2, d2),
-    ];
-    set_children_set(entries)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_children_3(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
-    a3: u32,
-    b3: u32,
-    c3: u32,
-    d3: u32,
-) -> Result<()> {
-    let entries = vec![
-        uuid_from_u32_quartet(a1, b1, c1, d1),
-        uuid_from_u32_quartet(a2, b2, c2, d2),
-        uuid_from_u32_quartet(a3, b3, c3, d3),
-    ];
-    set_children_set(entries)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_children_4(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
-    a3: u32,
-    b3: u32,
-    c3: u32,
-    d3: u32,
-    a4: u32,
-    b4: u32,
-    c4: u32,
-    d4: u32,
-) -> Result<()> {
-    let entries = vec![
-        uuid_from_u32_quartet(a1, b1, c1, d1),
-        uuid_from_u32_quartet(a2, b2, c2, d2),
-        uuid_from_u32_quartet(a3, b3, c3, d3),
-        uuid_from_u32_quartet(a4, b4, c4, d4),
-    ];
-    set_children_set(entries)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_children_5(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
-    a3: u32,
-    b3: u32,
-    c3: u32,
-    d3: u32,
-    a4: u32,
-    b4: u32,
-    c4: u32,
-    d4: u32,
-    a5: u32,
-    b5: u32,
-    c5: u32,
-    d5: u32,
-) -> Result<()> {
-    let entries = vec![
-        uuid_from_u32_quartet(a1, b1, c1, d1),
-        uuid_from_u32_quartet(a2, b2, c2, d2),
-        uuid_from_u32_quartet(a3, b3, c3, d3),
-        uuid_from_u32_quartet(a4, b4, c4, d4),
-        uuid_from_u32_quartet(a5, b5, c5, d5),
-    ];
     set_children_set(entries)?;
     Ok(())
 }

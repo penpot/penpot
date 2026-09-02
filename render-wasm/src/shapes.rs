@@ -652,6 +652,7 @@ impl Shape {
         self.background_blur.filter(|blur| !blur.hidden)
     }
 
+    #[cfg(test)]
     pub fn add_child(&mut self, id: Uuid) {
         self.children.push(id);
     }

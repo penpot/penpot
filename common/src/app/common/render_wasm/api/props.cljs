@@ -17,7 +17,6 @@
    [app.common.math :as mth]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.mem :as mem]
-   [app.common.render-wasm.mem.heap32 :as mem.h32]
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.serializers.color :as sr-clr]
    [app.common.render-wasm.wasm :as wasm]
@@ -26,22 +25,6 @@
    [app.common.types.path :as path]))
 
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
-
-(def ^:const UUID-U8-SIZE 16)
-
-(defn set-shape-children
-  "Uploads the child id list via the dynamic `_set_children` path (handles any
-  count). The browser also has fixed-arity fast paths for the incremental edit
-  path; this dynamic one is the shared/batch version."
-  [children]
-  (let [children (into [] (filter uuid?) children)]
-    (if (empty? children)
-      (h/call wasm/internal-module "_set_children_0")
-      (let [heap   (mem/get-heap-u32)
-            size   (mem/get-alloc-size children UUID-U8-SIZE)
-            offset (mem/alloc->offset-32 size)]
-        (reduce (fn [o id] (mem.h32/write-uuid o heap id)) offset children)
-        (h/call wasm/internal-module "_set_children")))))
 
 (defn set-shape-bool-type
   [bool-type]
