@@ -135,9 +135,7 @@ impl Type {
                     layout.scale_content(value);
                 }
             }
-            Type::Text(TextContent { paragraphs, .. }) => {
-                paragraphs.iter_mut().for_each(|p| p.scale_content(value));
-            }
+            Type::Text(content) => content.scale_content(value),
             _ => {}
         }
     }

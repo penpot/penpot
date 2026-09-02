@@ -491,13 +491,20 @@ impl TextContent {
     /// clones paragraphs into a rebound copy with an empty layout cache.
     pub fn paint_content_for_selrect<'a>(&'a self, selrect: Rect) -> Cow<'a, Self> {
         let stored_bounds = self.bounds();
-        if (stored_bounds.width() - selrect.width()).abs() < 0.01
-            && (stored_bounds.height() - selrect.height()).abs() < 0.01
+        if crate::math::is_close_to(stored_bounds.width(), selrect.width())
+            && crate::math::is_close_to(stored_bounds.height(), selrect.height())
         {
             Cow::Borrowed(self)
         } else {
             Cow::Owned(self.new_bounds(selrect))
         }
+    }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.paragraphs_mut()
+            .iter_mut()
+            .for_each(|p| p.scale_content(value));
+        self.layout.clear();
     }
 
     pub fn set_xywh(&mut self, x: f32, y: f32, w: f32, h: f32) {
@@ -631,7 +638,7 @@ impl TextContent {
             return self.content_rect(selrect, valign);
         }
 
-        let tight = if !self.layout.paragraphs.is_empty() {
+        let tight = if self.has_usable_paint_layout(shape) {
             self.rect_from_paragraphs(selrect, valign)
         } else {
             let mut text_content = self.clone();
@@ -1004,10 +1011,7 @@ impl TextContent {
 
     /// True when cached Skia paragraphs can be painted as-is (no rebuild/layout).
     pub fn has_usable_paint_layout(&self, shape: &Shape) -> bool {
-        if self.layout.needs_update() || self.layout_version != self.content_version {
-            return false;
-        }
-        self.layout_matches_paint_container(shape)
+        self.layout_cache_versions_match() && self.layout_matches_paint_container(shape)
     }
 
     pub(crate) fn layout_cache_versions_match(&self) -> bool {
@@ -1021,8 +1025,7 @@ impl TextContent {
         let Some(layout_w) = self.layout_width else {
             return false;
         };
-        let container_w = self.get_width(shape.selrect().width());
-        (layout_w - container_w).abs() < f32::EPSILON
+        crate::math::is_close_to(layout_w, self.get_width(shape.selrect().width()))
     }
 
     /// True when any span requests underline/overline/line-through (custom draw path).
@@ -1062,7 +1065,7 @@ impl TextContent {
         let layout_matches_container = self.grow_type() == GrowType::AutoWidth
             || self
                 .layout_width
-                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+                .is_some_and(|w| crate::math::is_close_to(w, selrect.width()));
 
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
@@ -1076,7 +1079,7 @@ impl TextContent {
         match self.grow_type() {
             GrowType::AutoHeight => {
                 let result = self.text_layout_auto_height();
-                self.layout_width = Some(result.2.width);
+                self.layout_width = Some(selrect.width());
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::AutoWidth => {
@@ -1086,7 +1089,7 @@ impl TextContent {
             }
             GrowType::Fixed => {
                 let result = self.text_layout_fixed();
-                self.layout_width = Some(result.2.width);
+                self.layout_width = Some(selrect.width());
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
         }

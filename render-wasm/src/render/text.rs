@@ -341,6 +341,15 @@ pub fn try_paint_from_layout_cache(
         return Ok(false);
     }
 
+    if text_content
+        .layout
+        .paragraphs
+        .iter()
+        .any(|group| group.is_empty())
+    {
+        return Ok(false);
+    }
+
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
         let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
