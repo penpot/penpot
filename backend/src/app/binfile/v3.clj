@@ -467,25 +467,26 @@
   Raises :validation :max-file-size-reached when the limit is exceeded."
   ^InputStream
   [^InputStream input ^long max-size]
-  (let [counter (atom 0)]
+  (let [counter (atom 0)
+        on-read (fn [n]
+                  (when (pos? n)
+                    (when (> (swap! counter + (long n)) max-size)
+                      (ex/raise :type :validation
+                                :code :max-file-size-reached
+                                :hint (str "stream exceeded max size: " max-size))))
+                  n)]
     (proxy [FilterInputStream] [input]
       (read
         ([]
          (let [b (.read input)]
-           (when (pos? b)
-             (when (> (swap! counter inc) max-size)
-               (ex/raise :type :validation
-                         :code :max-file-size-reached
-                         :hint (str "stream exceeded max size: " max-size))))
+           (when (pos? b) (on-read 1))
            b))
-        ([buf off len]
-         (let [n (.read input buf off len)]
-           (when (pos? n)
-             (when (> (swap! counter + (long n)) max-size)
-               (ex/raise :type :validation
-                         :code :max-file-size-reached
-                         :hint (str "stream exceeded max size: " max-size))))
-           n))))))
+        ([^bytes buf]
+         (on-read (.read input buf 0 (alength buf))))
+        ([^bytes buf off]
+         (on-read (.read input buf (int off) (- (alength buf) (int off)))))
+        ([^bytes buf off len]
+         (on-read (.read input buf (int off) (int len))))))))
 
 (defn- zip-entry-reader
   [^ZipFile input ^ZipEntry entry]
