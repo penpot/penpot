@@ -552,33 +552,8 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) -> Result<()> 
 }
 
 fn set_children_set(entries: Vec<Uuid>) -> Result<()> {
-    let mut deleted = Vec::new();
-    let mut parent_id = None;
-
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        parent_id = Some(shape.id);
-        (_, deleted) = shape.compute_children_differences(&entries);
-        shape.children = entries.clone();
-
-        for id in entries {
-            state.touch_shape(id);
-            if let Some(children_shape) = state.shapes.get_mut(&id) {
-                children_shape.set_deleted(false);
-            }
-        }
-    });
-
     with_state!(state, {
-        let Some(parent_id) = parent_id else {
-            return Err(Error::RecoverableError(
-                "set_children_set: Parent ID not found".to_string(),
-            ));
-        };
-
-        for id in deleted {
-            state.delete_shape_children(parent_id, id);
-            state.touch_shape(id);
-        }
+        state.set_current_shape_children(entries)?;
     });
     Ok(())
 }

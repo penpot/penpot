@@ -41,6 +41,15 @@ pub fn get_font_collection() -> &'static FontCollection {
     }
 }
 
+/// A negative f32 means "unset" — the renderer falls back to its default.
+pub fn decode_optional_f32(value: f32) -> Option<f32> {
+    if value.is_finite() && value >= 0.0 {
+        Some(value)
+    } else {
+        None
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum Browser {

@@ -200,6 +200,10 @@ pub struct Shape {
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
     deleted: bool,
+    /// Fills from a cold-load batch, held until text content is uploaded and laid out.
+    deferred_batch_fills: Option<Vec<Fill>>,
+    /// Strokes from a cold-load batch, applied together with deferred fills.
+    deferred_batch_strokes: Option<Vec<Stroke>>,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -302,6 +306,8 @@ impl Shape {
             svg_transform: None,
             ignore_constraints: false,
             deleted: false,
+            deferred_batch_fills: None,
+            deferred_batch_strokes: None,
         }
     }
 
@@ -665,6 +671,7 @@ impl Shape {
     }
 
     pub fn set_fills(&mut self, fills: Vec<Fill>) {
+        self.deferred_batch_fills = None;
         self.fills = fills;
     }
 
@@ -707,8 +714,29 @@ impl Shape {
     }
 
     pub fn clear_strokes(&mut self) {
+        self.deferred_batch_strokes = None;
         self.invalidate_extrect();
         self.strokes.clear();
+    }
+
+    pub fn set_deferred_batch_fills(&mut self, fills: Vec<Fill>) {
+        self.deferred_batch_fills = Some(fills);
+    }
+
+    pub fn set_deferred_batch_strokes(&mut self, strokes: Vec<Stroke>) {
+        self.deferred_batch_strokes = Some(strokes);
+    }
+
+    /// Apply fill/stroke records that were parsed from a batch upload but held
+    /// back until text content exists and has been laid out.
+    pub fn apply_deferred_batch_paint(&mut self) {
+        if let Some(fills) = self.deferred_batch_fills.take() {
+            self.fills = fills;
+        }
+        if let Some(strokes) = self.deferred_batch_strokes.take() {
+            self.strokes = strokes;
+            self.invalidate_extrect();
+        }
     }
 
     pub fn set_path_segments(&mut self, segments: Vec<Segment>) {

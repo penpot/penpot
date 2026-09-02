@@ -1,4 +1,3 @@
-use crate::mem;
 use crate::shapes::{BlendMode, ConstraintH, ConstraintV};
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
@@ -6,16 +5,14 @@ use crate::wasm::blend::RawBlendMode;
 use crate::wasm::layouts::constraints::{RawConstraintH, RawConstraintV};
 use crate::with_state;
 
-#[allow(unused_imports)]
-use crate::error::{Error, Result};
-use macros::wasm_error;
+use crate::error::Result;
 
 use super::RawShapeType;
 
 const FLAG_CLIP_CONTENT: u8 = 0b0000_0001;
 const FLAG_HIDDEN: u8 = 0b0000_0010;
 
-const RAW_BASE_PROPS_SIZE: usize = std::mem::size_of::<RawBasePropsData>();
+pub(crate) const RAW_BASE_PROPS_SIZE: usize = std::mem::size_of::<RawBasePropsData>();
 
 /// Binary layout for batched shape base properties.
 ///
@@ -24,7 +21,7 @@ const RAW_BASE_PROPS_SIZE: usize = std::mem::size_of::<RawBasePropsData>();
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
-pub struct RawBasePropsData {
+pub(crate) struct RawBasePropsData {
     // UUID id (16 bytes)
     id_a: u32,
     id_b: u32,
@@ -100,21 +97,8 @@ impl From<[u8; RAW_BASE_PROPS_SIZE]> for RawBasePropsData {
     }
 }
 
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_shape_base_props() -> Result<()> {
-    let bytes = mem::bytes();
-
-    if bytes.len() < RAW_BASE_PROPS_SIZE {
-        return Ok(());
-    }
-
-    // FIXME: this should just be a try_from
-    let data: [u8; RAW_BASE_PROPS_SIZE] = bytes[..RAW_BASE_PROPS_SIZE]
-        .try_into()
-        .map_err(|_| Error::CriticalError("Invalid bytes for base props".to_string()))?;
-    let raw = RawBasePropsData::from(data);
-
+/// Apply base props from a parsed record (selects the shape and sets core attrs).
+pub(crate) fn apply_base_props(raw: &RawBasePropsData) -> Result<()> {
     let id = raw.id();
     let parent_id = raw.parent_id();
     let shape_type = RawShapeType::from(raw.shape_type);

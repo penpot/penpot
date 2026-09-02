@@ -344,6 +344,36 @@ impl State {
         self.shapes.set_modifiers(modifiers);
     }
 
+    /// Replace the current shape's children list (same semantics as `_set_children`).
+    pub fn set_current_shape_children(&mut self, entries: Vec<Uuid>) -> Result<()> {
+        let (parent_id, deleted) = {
+            let Some(shape) = self.current_shape_mut() else {
+                return Err(Error::RecoverableError(
+                    "set_current_shape_children: no current shape".to_string(),
+                ));
+            };
+
+            let id = shape.id;
+            let (_, deleted) = shape.compute_children_differences(&entries);
+            shape.children = entries.clone();
+            (id, deleted)
+        };
+
+        for id in &entries {
+            self.touch_shape(*id);
+            if let Some(children_shape) = self.shapes.get_mut(id) {
+                children_shape.set_deleted(false);
+            }
+        }
+
+        for id in deleted {
+            self.delete_shape_children(parent_id, id);
+            self.touch_shape(id);
+        }
+
+        Ok(())
+    }
+
     pub fn touch_current(&mut self) {
         if let Some(current_id) = self.current_id {
             self.touch_shape(current_id);
