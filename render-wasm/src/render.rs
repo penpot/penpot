@@ -1404,6 +1404,13 @@ impl RenderState {
                     .inner_shadows_visible()
                     .any(|s| s.is_perceptible_at_scale_for(scale, shape.is_recursive())));
 
+        let has_inherited_drop_shadows = !skip_drop_shadows
+            && self.nested_shadows.iter().flatten().any(|shadow| {
+                !shadow.hidden()
+                    && shadow.style() == crate::shapes::ShadowStyle::Drop
+                    && shadow.is_perceptible_at_scale(scale)
+            });
+
         // Clip is allowed: we apply the same stack on Current after scale+translate.
         // Opacity < 1 with SrcOver is OK: render_shape_enter already opened a
         // save_layer on Current; painting fills/strokes into that layer matches
@@ -1421,8 +1428,9 @@ impl RenderState {
             shape.shape_type,
             Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_) | Type::Frame(_)
         ) && !(shape.fills.is_empty() && has_nested_fills);
-        let is_direct_text =
-            matches!(shape.shape_type, Type::Text(_)) && !shape.has_visible_strokes();
+        let is_direct_text = matches!(shape.shape_type, Type::Text(_))
+            && !shape.has_visible_strokes()
+            && !has_inherited_drop_shadows;
         let can_render_directly = apply_to_current_surface
             && offset.is_none()
             && parent_shadows.is_none()
@@ -1632,6 +1640,7 @@ impl RenderState {
                     && parent_shadows.is_none()
                     && (skip_effects
                         || (shape.blur.is_none()
+                            && !has_inherited_drop_shadows
                             && !shape
                                 .drop_shadows_visible()
                                 .any(|s| s.is_perceptible_at_scale(self.get_scale()))
