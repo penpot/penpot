@@ -41,7 +41,7 @@ pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
     let Type::Text(text_content) = &base.shape_type else {
         return false;
     };
-    let before = oriented_container_bounds(base);
+    let before = base.bounds();
     let after = before.transform(modifier);
     match text_content.grow_type() {
         GrowType::AutoWidth => !crate::math::is_close_to(before.height(), after.height()),
@@ -49,27 +49,6 @@ pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
             !crate::math::is_close_to(before.width(), after.width())
         }
     }
-}
-
-fn oriented_container_bounds(shape: &Shape) -> Bounds {
-    let selrect = shape.selrect();
-    let mut bounds = Bounds::new(
-        Point::new(selrect.x(), selrect.y()),
-        Point::new(selrect.x() + selrect.width(), selrect.y()),
-        Point::new(
-            selrect.x() + selrect.width(),
-            selrect.y() + selrect.height(),
-        ),
-        Point::new(selrect.x(), selrect.y() + selrect.height()),
-    );
-    if !shape.transform.is_identity() {
-        let mut matrix = shape.transform;
-        let center = shape.center();
-        matrix.post_translate(center);
-        matrix.pre_translate(-center);
-        bounds.transform_mut(&matrix);
-    }
-    bounds
 }
 
 #[repr(u8)]
@@ -304,7 +283,77 @@ pub struct TextDecorationSegment {
     pub width: f32,
 }
 
-fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+/// Underline / line-through geometry for one laid-out paragraph placed at
+/// `x`, `y_accum`. Shared by [`calculate_text_layout_data`] and the
+/// layout-cache paint path.
+pub fn paragraph_decoration_segments(
+    paragraph: &skia::textlayout::Paragraph,
+    x: f32,
+    y_accum: f32,
+) -> Vec<TextDecorationSegment> {
+    let mut decorations = Vec::new();
+    for line in &paragraph.get_line_metrics() {
+        let style_metrics: Vec<_> = line
+            .get_style_metrics(line.start_index..line.end_index)
+            .into_iter()
+            .collect();
+        let line_baseline = y_accum + line.baseline as f32;
+        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+            calculate_decoration_metrics(&style_metrics, line_baseline);
+        for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
+            let text_style = &style_metric.text_style;
+            let style_end = style_metrics
+                .get(i + 1)
+                .map(|(next_i, _)| *next_i)
+                .unwrap_or(line.end_index);
+            let seg_start = (*style_start).max(line.start_index);
+            let seg_end = style_end.min(line.end_index);
+            if seg_start >= seg_end {
+                continue;
+            }
+            let rects = paragraph.get_rects_for_range(
+                seg_start..seg_end,
+                skia::textlayout::RectHeightStyle::Tight,
+                skia::textlayout::RectWidthStyle::Tight,
+            );
+            let (segment_width, actual_x_offset) = if !rects.is_empty() {
+                let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                let skia_x_offset = rects
+                    .first()
+                    .map(|r| r.rect.left - line.left as f32)
+                    .unwrap_or(0.0);
+                (total_width, skia_x_offset)
+            } else {
+                (0.0, 0.0)
+            };
+            let text_left = x + line.left as f32 + actual_x_offset;
+            let text_width = segment_width;
+            if text_style.decoration().ty == skia::textlayout::TextDecoration::UNDERLINE {
+                decorations.push(TextDecorationSegment {
+                    kind: skia::textlayout::TextDecoration::UNDERLINE,
+                    text_style: (*text_style).clone(),
+                    y: underline_y.unwrap_or(line_baseline),
+                    thickness: max_underline_thickness,
+                    left: text_left,
+                    width: text_width,
+                });
+            }
+            if text_style.decoration().ty == skia::textlayout::TextDecoration::LINE_THROUGH {
+                decorations.push(TextDecorationSegment {
+                    kind: skia::textlayout::TextDecoration::LINE_THROUGH,
+                    text_style: (*text_style).clone(),
+                    y: strike_y.unwrap_or(line_baseline),
+                    thickness: max_strike_thickness,
+                    left: text_left,
+                    width: text_width,
+                });
+            }
+        }
+    }
+    decorations
+}
+
+pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
     match valign {
         VerticalAlign::Center => (container_h - content_h) / 2.0,
         VerticalAlign::Bottom => container_h - content_h,
@@ -1680,68 +1729,7 @@ pub fn calculate_text_layout_data(
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
-            // Calculate text decorations for this paragraph
-            let mut decorations = Vec::new();
-            let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
-                        continue;
-                    }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                }
-            }
+            let decorations = paragraph_decoration_segments(&skia_paragraph, x, y_accum);
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
