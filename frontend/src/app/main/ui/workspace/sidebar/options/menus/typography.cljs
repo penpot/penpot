@@ -221,12 +221,18 @@
              :role "img"
              :aria-label (:name font)}
        [:use {:href (dm/str "#" fonts/preview-sprite-prefix font-id)}]]
-      [:span {:class (stl/css :font-item-label)
-              :style #js {:fontFamily (when loaded?
-                                        (dm/str "\"" (:family font) "\", sans-serif"))
-                          :transform  (when-not (zero? label-offset)
-                                        (dm/str "translateY(" label-offset "em)"))}}
-       (:name font)])))
+      ;; The vertical correction goes on an INNER span, not on `.font-item-label`
+      ;; itself: that class carries its own `overflow: hidden` (from the
+      ;; text-ellipsis mixin, needed to truncate long font names), and a
+      ;; transform applied to a self-clipping element moves its clip region
+      ;; along with it — a no-op. The inner span has no overflow of its own, so
+      ;; the shift actually moves the ink within the outer's fixed clip area.
+      [:span {:class (stl/css :font-item-label)}
+       [:span {:style #js {:fontFamily (when loaded?
+                                         (dm/str "\"" (:family font) "\", sans-serif"))
+                           :transform  (when-not (zero? label-offset)
+                                         (dm/str "translateY(" label-offset "em)"))}}
+        (:name font)]])))
 
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
