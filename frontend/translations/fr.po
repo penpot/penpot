@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-03 11:51+0000\n"
-"Last-Translator: Surfoo <surfooo@gmail.com>\n"
+"Last-Translator: Philippe Accorsi <philippe.accorsi@algoo.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -3729,7 +3729,7 @@ msgstr "L'invitation a bien été supprimée"
 
 #: src/app/main/ui/dashboard/team.cljs:193, src/app/main/ui/dashboard/team.cljs:1071
 msgid "notifications.invitation-email-sent"
-msgstr "L'e‑mail d'invitation a bien été envoyé"
+msgstr "E‑mail d'invitation envoyé !"
 
 #: src/app/main/ui/dashboard/team.cljs:719
 msgid "notifications.invitation-link-copied"
