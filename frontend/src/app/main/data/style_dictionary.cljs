@@ -584,11 +584,37 @@
                      (into {}))]
     (merge resolved dropped)))
 
+(defn- valid-token-value?
+  [[_ token]]
+  (some? (:value token)))
+
+(defn- merge-invalid-value-tokens
+  "Tokens with a `nil` value (e.g. a composite typography token saved with
+  no fields filled in) must never reach StyleDictionary: some of its
+  preprocessors (`@tokens-studio/sd-transforms`'s font-styles preprocessor,
+  in particular) assume a typography token's value is never null and throw
+  an uncaught exception when it is, taking down token resolution for the
+  whole file.
+
+  `tokens` is the full, unfiltered token map; `resolved` only contains the
+  valid subset that was actually sent to StyleDictionary. Tag the invalid
+  ones with the same \"empty value\" error the token forms already use
+  instead of ever letting them reach the resolver."
+  [tokens resolved]
+  (let [invalid (->> tokens
+                     (remove valid-token-value?)
+                     (map (fn [[k token]]
+                            [k (assoc token :errors [(wte/get-error-code :error.token/empty-input)])]))
+                     (into {}))]
+    (merge resolved invalid)))
+
 (defn resolve-tokens
   [tokens]
-  (let [tokens-tree (ctob/tokens-tree tokens)]
-    (->> (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)))
-         (rx/map #(merge-name-collisions tokens %)))))
+  (let [valid-tokens (into {} (filter valid-token-value?) tokens)
+        tokens-tree  (ctob/tokens-tree valid-tokens)]
+    (->> (resolve-tokens-tree tokens-tree #(get valid-tokens (sd-token-name %)))
+         (rx/map #(merge-name-collisions valid-tokens %))
+         (rx/map #(merge-invalid-value-tokens tokens %)))))
 
 (defn resolve-tokens-interactive
   "Interactive check of resolving tokens.
@@ -610,15 +636,18 @@
   computation we can restore any token, even clashing ones with the
   same :name path by just looking up that :id in the ids map."
   [tokens]
-  (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
-    (->> (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))
-         (rx/map #(merge-name-collisions tokens %)))))
+  (let [valid-tokens (into {} (filter valid-token-value?) tokens)
+        {:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree valid-tokens)]
+    (->> (resolve-tokens-tree tokens-tree #(get ids (sd-token-uuid %)))
+         (rx/map #(merge-name-collisions valid-tokens %))
+         (rx/map #(merge-invalid-value-tokens tokens %)))))
 
 (defn resolve-tokens-with-verbose-errors [tokens]
-  (resolve-tokens-tree
-   (ctob/tokens-tree tokens)
-   #(get tokens (sd-token-name %))
-   (StyleDictionary. (assoc default-config :log {:verbosity "verbose"}))))
+  (let [valid-tokens (into {} (filter valid-token-value?) tokens)]
+    (resolve-tokens-tree
+     (ctob/tokens-tree valid-tokens)
+     #(get valid-tokens (sd-token-name %))
+     (StyleDictionary. (assoc default-config :log {:verbosity "verbose"})))))
 
 ;; === Hooks
 
