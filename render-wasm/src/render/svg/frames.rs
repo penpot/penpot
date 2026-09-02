@@ -34,7 +34,7 @@ pub(super) fn render_frame(
         let canvas = builder.canvas();
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
         renderer.draw_fills(element, &element.fills)?;
         canvas.restore();
     }
@@ -51,7 +51,7 @@ pub(super) fn render_frame(
         let canvas = builder.canvas();
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
         renderer.draw_strokes(element, &visible_strokes)?;
         canvas.restore();
     }

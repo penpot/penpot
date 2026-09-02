@@ -400,8 +400,17 @@ fn render_text_on_canvas(
 pub fn paint_text_fill(canvas: &Canvas, shape: &Shape) {
     let text_content = shape.get_text_content();
     let text_content = text_content.new_bounds(shape.selrect());
-    let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-    paint_text_with_emoji_overlay(canvas, shape, &mut paragraph_builders, false);
+    let max_layers = text_content.max_fill_layers();
+    if max_layers == 0 {
+        return;
+    }
+
+    // Each fill layer is painted separately so SkSVGDevice can emit `fill`
+    // attributes (merged shaders are dropped). Bottom layer first.
+    for layer in 0..max_layers {
+        let mut paragraph_builders = text_content.paragraph_builder_group_for_fill_layer(layer);
+        paint_text_with_emoji_overlay(canvas, shape, &mut paragraph_builders, false);
+    }
 }
 
 /// Lays out and paints paragraph builders without any layer management.

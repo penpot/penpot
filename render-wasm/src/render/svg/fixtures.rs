@@ -35,11 +35,28 @@ pub(super) fn add_solid_rect(
     (l, t, r, b): (f32, f32, f32, f32),
     color: skia::Color,
 ) {
+    add_rect_with_fills(
+        pool,
+        id,
+        parent,
+        (l, t, r, b),
+        vec![Fill::Solid(SolidColor(color))],
+    );
+}
+
+/// Adds a rectangle with the given fill stack (bottom → top).
+pub(super) fn add_rect_with_fills(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    fills: Vec<Fill>,
+) {
     let shape = pool.add_shape(id);
     shape.set_parent(parent);
     shape.set_shape_type(Type::Rect(Rect::default()));
     shape.set_selrect(l, t, r, b);
-    shape.set_fills(vec![Fill::Solid(SolidColor(color))]);
+    shape.set_fills(fills);
 }
 
 /// Adds a solid-filled frame (board) to the pool.
@@ -85,6 +102,25 @@ pub(super) fn add_solid_text(
     font_size: f32,
     fill: skia::Color,
 ) {
+    add_text_with_fills(
+        pool,
+        id,
+        (l, t, r, b),
+        text,
+        font_size,
+        vec![Fill::Solid(SolidColor(fill))],
+    );
+}
+
+/// Adds a single-line text shape with the given fill stack (top → bottom).
+pub(super) fn add_text_with_fills(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    text: &str,
+    font_size: f32,
+    fills: Vec<Fill>,
+) {
     let bounds = skia::Rect::from_ltrb(l, t, r, b);
     let mut content = TextContent::new(bounds, GrowType::Fixed);
     let line_height = 1.2;
@@ -99,7 +135,7 @@ pub(super) fn add_solid_text(
         TextDirection::LTR,
         400,
         Uuid::nil(),
-        vec![Fill::Solid(SolidColor(fill))],
+        fills,
     );
     content.add_paragraph(Paragraph::new(
         TextAlign::Left,
@@ -113,10 +149,6 @@ pub(super) fn add_solid_text(
 
     let shape = pool.add_shape(id);
     shape.set_parent(Uuid::nil());
-    // Set the selrect before the text type: `set_selrect` on a text shape
-    // eagerly relayouts (needing the font collection), which isn't available
-    // until the export installs it. The render recomputes text layout from the
-    // selrect anyway.
     shape.set_selrect(l, t, r, b);
     shape.set_shape_type(Type::Text(content));
 }
