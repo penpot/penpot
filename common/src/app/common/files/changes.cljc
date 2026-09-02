@@ -1269,3 +1269,18 @@
   "Check if a commit contains changes that modify the tokens library."
   [changes]
   (some #(tokens-lib-change-types (:type %)) changes))
+
+(def ^:private tokens-sets-or-themes-change-types
+  "Set of change types that modify the structure of the tokens library sets
+  or themes (as opposed to `:set-token`, which only edits a token's value)."
+  #{:set-token-set
+    :set-token-theme
+    :rename-token-set-group
+    :move-token-set
+    :move-token-set-group})
+
+(defn tokens-sets-or-themes-changed?
+  "Check if a commit contains changes that modify the tokens library sets or
+  themes structure (renamed/added/removed sets, theme set-membership, etc.)."
+  [changes]
+  (some #(tokens-sets-or-themes-change-types (:type %)) changes))
