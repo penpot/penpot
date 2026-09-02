@@ -34,7 +34,9 @@
 
 (defmethod ig/init-key ::client
   [_ _]
-  (http/build-client {:connect-timeout 30000
+  (http/build-client {:connect-timeout 30000 ;; max connection time
+                      :request-timeout 30000 ;; max read time
+                      :executor (java.util.concurrent.Executors/newFixedThreadPool 32) ;; limit pool
                       :follow-redirects :never}))
 
 (defn send!
