@@ -26,7 +26,7 @@ Penpot MCP enables **multi-directional workflows** between design and code. Beca
   title="Quick demo: Penpot MCP server in action"
   width="100%"
   height="480"
-  src="https://www.youtube.com/embed/CfvcgMQEmLk?rel=0"
+  src="https://www.youtube.com/embed/7V01SKVG6PQ?rel=0"
   loading="lazy"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
   referrerpolicy="strict-origin-when-cross-origin"
