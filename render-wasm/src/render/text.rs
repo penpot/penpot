@@ -4,7 +4,7 @@ use crate::{
     math::Rect,
     shapes::{
         add_text_with_tabs, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
-        ParagraphLayout, Stroke, StrokeKind, TextContent,
+        ParagraphLayout, Stroke, StrokeKind, TextContent, VerticalAlign,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -318,6 +318,141 @@ pub fn render_overlay_emoji(
     )
 }
 
+/// Paint fill glyphs from `TextContent.layout` when the cache is valid.
+///
+/// Avoids rebuilding ParagraphBuilders and re-running Skia layout on every
+/// paint. Only safe for the plain fill pass (no stroke/shadow-specific builders).
+/// Returns `true` when painting was done from cache.
+pub fn try_paint_from_layout_cache(
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
+    shape: &Shape,
+    surface_id: Option<SurfaceId>,
+    layout_cache_rotation_only: bool,
+) -> Result<bool> {
+    let text_content = shape.get_text_content();
+    let cache_usable = if layout_cache_rotation_only {
+        text_content.layout_cache_versions_match()
+    } else {
+        text_content.has_usable_paint_layout(shape)
+    };
+    if !cache_usable {
+        return Ok(false);
+    }
+
+    if let Some(render_state) = render_state {
+        let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
+        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
+        paint_from_cached_layout(canvas, shape, text_content);
+        return Ok(true);
+    }
+
+    if let Some(canvas) = canvas {
+        paint_from_cached_layout(canvas, shape, text_content);
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
+fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
+    let selrect = shape.selrect();
+    let x = selrect.x();
+    let base_y = selrect.y();
+    let paragraphs = &text_content.layout.paragraphs;
+    let draw_decorations = text_content.has_text_decorations();
+
+    let total_text_height: f32 = paragraphs
+        .iter()
+        .filter_map(|group| group.first())
+        .map(|p| p.height())
+        .sum();
+    let vertical_offset = match shape.vertical_align() {
+        VerticalAlign::Center => (selrect.height() - total_text_height) / 2.0,
+        VerticalAlign::Bottom => selrect.height() - total_text_height,
+        _ => 0.0,
+    };
+
+    let mut y_accum = base_y + vertical_offset;
+    for group in paragraphs.iter() {
+        let Some(paragraph) = group.first() else {
+            continue;
+        };
+        paragraph.paint(canvas, (x, y_accum));
+        if draw_decorations {
+            paint_decorations_for_paragraph(canvas, paragraph, x, y_accum);
+        }
+        y_accum += paragraph.height();
+    }
+}
+
+fn paint_decorations_for_paragraph(
+    canvas: &Canvas,
+    paragraph: &skia::textlayout::Paragraph,
+    x: f32,
+    y_accum: f32,
+) {
+    let line_metrics = paragraph.get_line_metrics();
+    for line in &line_metrics {
+        let style_metrics: Vec<_> = line
+            .get_style_metrics(line.start_index..line.end_index)
+            .into_iter()
+            .collect();
+        let line_baseline = y_accum + line.baseline as f32;
+        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+            calculate_decoration_metrics(&style_metrics, line_baseline);
+        for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
+            let text_style = &style_metric.text_style;
+            let style_end = style_metrics
+                .get(i + 1)
+                .map(|(next_i, _)| *next_i)
+                .unwrap_or(line.end_index);
+            let seg_start = (*style_start).max(line.start_index);
+            let seg_end = style_end.min(line.end_index);
+            if seg_start >= seg_end {
+                continue;
+            }
+            let rects = paragraph.get_rects_for_range(
+                seg_start..seg_end,
+                skia::textlayout::RectHeightStyle::Tight,
+                skia::textlayout::RectWidthStyle::Tight,
+            );
+            let (segment_width, actual_x_offset) = if !rects.is_empty() {
+                let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                let skia_x_offset = rects
+                    .first()
+                    .map(|r| r.rect.left - line.left as f32)
+                    .unwrap_or(0.0);
+                (total_width, skia_x_offset)
+            } else {
+                (0.0, 0.0)
+            };
+            let text_left = x + line.left as f32 + actual_x_offset;
+            let text_width = segment_width;
+            if text_style.decoration().ty == TextDecoration::UNDERLINE {
+                draw_text_decorations(
+                    canvas,
+                    text_style,
+                    Some(underline_y.unwrap_or(line_baseline)),
+                    max_underline_thickness,
+                    text_left,
+                    text_width,
+                );
+            }
+            if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
+                draw_text_decorations(
+                    canvas,
+                    text_style,
+                    Some(strike_y.unwrap_or(line_baseline)),
+                    max_strike_thickness,
+                    text_left,
+                    text_width,
+                );
+            }
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_text_on_canvas(
     canvas: &Canvas,
@@ -331,6 +466,8 @@ fn render_text_on_canvas(
 ) {
     let layer_bounds = shape.layer_bounds();
 
+    // Layer stack is managed here (blur / shadow / inset). `draw_text` is
+    // self-contained and only opens a layer when stroke-group opacity needs it.
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
@@ -391,8 +528,6 @@ fn render_text_on_canvas(
     if blur.is_some() {
         canvas.restore();
     }
-
-    canvas.restore();
 }
 
 /// Paints text fill for vector SVG export. Skips `save_layer` wrappers that
@@ -766,20 +901,22 @@ fn draw_text(
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
-    let layer_bounds = shape.layer_bounds();
-
+    // Multi-style spans are already encoded in each ParagraphBuilder's
+    // TextStyles; paragraph.paint handles them without an isolation layer.
+    // Only open a save_layer when stroke-group opacity must composite as one.
     if let Some(opacity) = layer_opacity {
+        let layer_bounds = shape.layer_bounds();
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
         let layer_rec = SaveLayerRec::default()
             .bounds(&layer_bounds)
             .paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
+        canvas.restore();
     } else {
-        canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
     }
-
-    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
 }
 
 /// Renders a text stroke masked to the glyph shape.

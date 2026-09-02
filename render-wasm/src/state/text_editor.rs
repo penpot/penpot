@@ -796,8 +796,7 @@ impl TextEditorState {
             }
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);
@@ -822,8 +821,7 @@ impl TextEditorState {
             self.selection.set_caret(clamped);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);
@@ -844,8 +842,7 @@ impl TextEditorState {
             self.selection.set_caret(new_cursor);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);

@@ -153,6 +153,15 @@ impl ShapesPoolImpl {
         self.modifiers.get(&idx)
     }
 
+    /// Modifier applied to `id`, including one inherited from an ancestor.
+    pub fn get_layout_modifier(&self, id: &Uuid) -> Option<skia::Matrix> {
+        if let Some(matrix) = self.get_modifier(id) {
+            return Some(*matrix);
+        }
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.find_nearest_ancestor_modifier(idx)
+    }
+
     /// Get a shape by UUID without applying modifiers/structure/scale-content.
     pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
         let idx = *self.uuid_to_idx.get(id)?;
