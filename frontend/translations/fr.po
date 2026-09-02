@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-31 17:02+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-09-02 08:54+0000\n"
+"Last-Translator: Surfoo <surfooo@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 2026.8.dev0\n"
+"X-Generator: Weblate 2026.9.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -2161,7 +2161,7 @@ msgstr "Thèmes actifs"
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
 #, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
-msgstr "Copier le code CSS dans le presse-papiers"
+msgstr "Copier la notation CSS abrégée dans le presse-papiers"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
 msgid "inspect.tabs.styles.copy-to-clipboard"
@@ -4024,7 +4024,7 @@ msgstr "Quelle est la taille de votre équipe ?"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "Dites nous quel est votre poste"
+msgstr "Quelle est la taille de votre entreprise ?"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
@@ -4994,7 +4994,9 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:289
 msgid "subscription.settings.management.dialog.payment-explanation"
-msgstr "(Aucun paiement ne sera fait maintenant)"
+msgstr ""
+"Facturé après la période d'essai. Aucune carte bancaire n'est requise pour "
+"le moment."
 
 #: src/app/main/ui/settings/subscription.cljs:282, src/app/main/ui/settings/subscription.cljs:286
 #, markdown
@@ -6166,11 +6168,11 @@ msgstr "Possèdent le même nom."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "Sont du même type"
+msgstr "Sont du même type."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "Possèdent le même niveau hiérarchique"
+msgstr "Possèdent le même niveau hiérarchique."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
@@ -7742,7 +7744,7 @@ msgstr "Masques"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:566
 msgid "workspace.sidebar.layers.search"
-msgstr "Rechercher des calques"
+msgstr "Rechercher…"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:639, src/app/main/ui/workspace/sidebar/layers.cljs:733
 msgid "workspace.sidebar.layers.shapes"
@@ -8078,7 +8080,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s collections actives"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Valeur initiale : %s"
 
@@ -8121,7 +8122,6 @@ msgid "workspace.tokens.remapping-in-progress"
 msgstr "Remappage des références du token..."
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Valeur déduite : %s"
 
@@ -8238,7 +8238,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Liste des thèmes"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Description"
 
@@ -8260,7 +8259,7 @@ msgstr "Nom"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:273
 msgid "workspace.tokens.token-name-duplication-validation-error"
-msgstr "Il existe déjà un token au chemin : %s"
+msgstr "Il existe déjà un token au chemin : %s ou à un préfixe de celui-ci."
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:270
 msgid "workspace.tokens.token-name-length-validation-error"
@@ -8663,3 +8662,393 @@ msgstr "Ce fichier semble endommagé."
 #, fuzzy
 msgid "dashboard.my-teams"
 msgstr "Mes équipes"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+msgid "workspace.tokens.ref-not-valid"
+msgstr ""
+"La référence dans {%s} n'est pas valide ou ne fait partie d'aucune "
+"collection active."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Le token {%s} ne fait partie d'aucune collection active ou a une valeur "
+"invalide."
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Accès au presse-papiers refusé. Veuillez autoriser les permissions du presse-"
+"papiers dans votre navigateur pour coller du contenu"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"L'API du presse-papiers n'est pas disponible. Servez Penpot via HTTPS pour "
+"activer l'accès au presse-papiers"
+
+#: common/src/app/common/types/team.cljc:26
+#, unused
+msgid "errors.team-name-invalid-chars"
+msgstr ""
+"Le nom de l'équipe ne peut contenir aucun des caractères suivants : '.', ':' "
+"ou '/'"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Le nom de la famille de police ne peut contenir que des lettres, chiffres, "
+"espaces, tirets, traits de soulignement et points."
+
+#: src/app/main/ui/static.cljs:93
+msgid "errors.invite-expired"
+msgstr ""
+"Cette invitation a expiré. Demandez au propriétaire de l'équipe de vous en "
+"envoyer une nouvelle."
+
+#: src/app/main/ui/static.cljs:89
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Cette invitation concerne une autre adresse e-mail. Déconnectez-vous et "
+"connectez-vous avec le compte invité, ou demandez une nouvelle invitation au "
+"propriétaire de l'équipe."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:466
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Seul le propriétaire d'une équipe peut la supprimer."
+
+#: src/app/main/data/media.cljs:74
+#, unused
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Le thème fait référence à des collections inexistantes : %s"
+
+#: src/app/main/data/workspace/mcp.cljs:185
+#, unused
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP est actif dans un autre onglet. Basculer ici ?"
+
+#, unused
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP est maintenant actif dans cet onglet."
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
+msgid "errors.tokens.empty-field"
+msgstr "Ce champ ne peut pas être vide"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:107
+msgid "errors.tokens.invalid-font-family-token-value"
+msgstr ""
+"Valeur de token invalide : vous ne pouvez référencer qu'un token de type "
+"famille de police"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:103
+msgid "errors.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Valeur de graisse de police invalide : utilisez des valeurs numériques (100-"
+"950) ou des noms standards (thin, light, regular, bold, etc.) éventuellement "
+"suivis de 'Italic'"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:119
+msgid "errors.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Type d'ombre invalide : seules les valeurs 'innerShadow' ou 'dropShadow' "
+"sont acceptées"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:131
+msgid "errors.tokens.invalid-token-value-shadow"
+msgstr "Valeur invalide : doit référencer un token d'ombre composite."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:123
+msgid "errors.tokens.shadow-blur-range"
+msgstr "Le flou de l'ombre doit être supérieur ou égal à 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:127
+msgid "errors.tokens.shadow-spread-range"
+msgstr "L'étalement de l'ombre doit être supérieur ou égal à 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:67, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
+msgid "errors.tokens.name-collision"
+msgstr ""
+"Le nom de groupe de %s entre en conflit avec un token du même nom dans une "
+"autre collection active."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "errors.tokens.circular-reference"
+msgstr "Le token contient une référence circulaire"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.organization-invitation-accepted"
+msgstr "Vous faites désormais partie de %s"
+
+msgid "errors.circular-library-reference"
+msgstr ""
+"Impossible d'ajouter la bibliothèque : cela créerait une dépendance "
+"circulaire"
+
+#, unused
+msgid "errors.organization-leave.no-valid-teams"
+msgstr "Un problème est survenu en quittant l'organisation. Veuillez réessayer."
+
+#, unused
+msgid "errors.organization-leave.organization-owner-cannot-leave"
+msgstr "Le propriétaire de l'organisation ne peut pas quitter l'organisation."
+
+#: src/app/main/ui/auth/verify_token.cljs:97
+msgid "errors.organization-not-found"
+msgstr "Cette organisation n'existe pas"
+
+#: src/app/render_wasm/api.cljs:2052
+msgid "webgl.webgl-context-lost.toast"
+msgstr "Le contexte WebGL a été perdu"
+
+#: src/app/render_wasm/api.cljs:2068
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "Le contexte WebGL a été restauré"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Oups ! WebGL n'est pas disponible"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:62
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr ""
+"WebGL n'est pas disponible dans votre navigateur, alors qu'il est nécessaire "
+"au fonctionnement de Penpot. Veuillez vérifier les paramètres de votre "
+"navigateur et/ou fermer les onglets gourmands en ressources graphiques."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Suivez notre "
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:70
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "guide de dépannage WebGL"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr ""
+" pour vérifier les paramètres du navigateur, l'accélération graphique, les "
+"pilotes ainsi que les problèmes système courants."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Aller au tableau de bord"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:78
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Guide de dépannage"
+
+#, unused
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "Rendu WebGL activé"
+
+#, unused
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "Rendu WebGL désactivé"
+
+msgid "notifications.invitation-canceled"
+msgstr "Cette invitation n'est plus disponible."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:505
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Certaines copies n'ont pas pu être basculées. Les composants ne peuvent pas "
+"être imbriqués en eux-mêmes."
+
+#: src/app/main/ui/settings/integrations.cljs:406
+msgid "integrations.expired-on"
+msgstr "Expiré le %s"
+
+#: src/app/main/ui/settings/integrations.cljs:527
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"La clé MCP utilisée pour se connecter au serveur MCP a expiré. La connexion "
+"ne peut donc pas être établie."
+
+#: src/app/main/ui/settings/integrations.cljs:87
+msgid "integrations.notification.success.token-copied"
+msgstr "Token copié"
+
+#: src/app/main/ui/settings/integrations.cljs:86
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "Clé MCP copiée"
+
+#: src/app/main/ui/settings/integrations.cljs:254, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:332
+msgid "integrations.notification.success.created"
+msgstr "Token créé avec succès"
+
+#: src/app/main/ui/settings/integrations.cljs:491
+msgid "integrations.notification.success.copied-link"
+msgstr "Lien copié dans le presse-papiers"
+
+#: src/app/main/ui/settings/integrations.cljs:457
+msgid "integrations.notification.success.mcp-server-disabled"
+msgstr "Serveur MCP désactivé"
+
+#: src/app/main/ui/settings/integrations.cljs:456
+msgid "integrations.notification.success.mcp-server-enabled"
+msgstr "Serveur MCP activé"
+
+#: src/app/main/ui/static.cljs:337
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot est temporairement indisponible en raison d'un problème système. "
+"Veuillez réessayer sous peu."
+
+#: src/app/main/ui/dashboard/team.cljs:293
+msgid "modals.invite-restricted-members.title"
+msgstr "Certaines invitations ne peuvent pas être envoyées"
+
+#: src/app/plugins/utils.cljs:547
+msgid "plugins.validation.message"
+msgstr "Le champ %s est invalide : %s"
+
+#: src/app/main/data/workspace/clipboard.cljs:1201
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Erreur lors de la copie de l'image"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+#, unused
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Erreur d'importation : nom de token dupliqué dans le JSON."
+
+#: src/app/main/data/workspace/tokens/application.cljs:730, src/app/main/ui/workspace/tokens/management/group.cljs:161
+msgid "workspace.tokens.error-text-edition"
+msgstr ""
+"Les tokens ne peuvent pas être appliqués pendant l'édition de texte. "
+"Sélectionnez plutôt le calque de texte."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:60
+msgid "workspace.tokens.duplicate-group"
+msgstr "Dupliquer le groupe de tokens"
+
+#, unused
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Rendu indisponible. Actualisez pour reprendre l'édition."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Code invalide."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
+msgid "nitrate.activation-code.expired-error"
+msgstr "Ce code a expiré."
+
+#: src/app/main/ui/dashboard/subscription.cljs:220
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Votre abonnement Enterprise a expiré. (%s)"
+
+#, unused
+msgid "workspace.toast.comments-visible"
+msgstr "Commentaires visibles"
+
+#, unused
+msgid "workspace.toast.comments-hidden"
+msgstr "Commentaires masqués"
+
+#: src/app/main/data/nitrate.cljs:165
+msgid "dashboard.leave-organization.toast"
+msgstr "Vous ne faites plus partie de l'organisation %s."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Les rectangles, ellipses, chemins et opérations booléennes comptent comme "
+"étant du même type."
+
+#: src/app/main/ui/workspace/context_menu.cljs:632, src/app/main/ui/workspace/sidebar/assets/components.cljs:663, src/app/main/ui/workspace/sidebar/assets/groups.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1102
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combiner en variantes"
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:54, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:159
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "none | uppercase | lowercase | capitalize ou {alias}"
+
+#: src/app/main/ui/workspace/libraries.cljs:367
+msgid "workspace.libraries.connected-to"
+msgstr "Connecté à"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:163, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:164, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:168
+msgid "workspace.tokens.shadow-blur"
+msgstr "Flou"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:116
+msgid "workspace.tokens.shadow-inset"
+msgstr "Intérieure"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:87
+#, unused
+msgid "workspace.tokens.no-references-found"
+msgstr "Aucune référence trouvée"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:570
+msgid "workspace.sidebar.layers.filter"
+msgstr "Filtrer"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
+msgid "workspace.assets.delete-group"
+msgstr "Supprimer le groupe"
+
+#: src/app/main/ui/workspace/context_menu.cljs:869
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Copier les lignes"
+
+#: src/app/main/ui/workspace/context_menu.cljs:873
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Copier les colonnes"
+
+#: src/app/main/ui/workspace/context_menu.cljs:877
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Coller"
+
+#: src/app/main/ui/workspace/context_menu.cljs:911
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Couleur du guide"
+
+#: src/app/main/ui/workspace/context_menu.cljs:923
+msgid "workspace.context-menu.guides.remove"
+msgstr "Supprimer le guide"
+
+#: src/app/main/ui/workspace/main_menu.cljs:410
+msgid "workspace.header.menu.lock-guides"
+msgstr "Verrouiller les guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:409
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Déverrouiller les guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:869
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Connecter"
+
+#: src/app/main/ui/workspace/main_menu.cljs:868
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Déconnecter"
+
+#: src/app/main/ui/workspace/main_menu.cljs:877
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Gérer (statut : activé)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:878
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Gérer (statut : désactivé)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:1101
+msgid "workspace.header.menu.option.mcp"
+msgstr "Serveur MCP"
+
+#: src/app/main/ui/workspace/main_menu.cljs:530
+msgid "workspace.header.menu.find"
+msgstr "Rechercher"
+
+#: src/app/main/ui/workspace/main_menu.cljs:537
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Rechercher et remplacer"
+
+#: src/app/main/ui/workspace/main_menu.cljs:337
+msgid "workspace.header.menu.enable-webgl"
+msgstr "Activer le rendu WebGL (bêta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.disable-webgl"
+msgstr "Désactiver le rendu WebGL (bêta)"
