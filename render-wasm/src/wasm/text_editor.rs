@@ -1,12 +1,12 @@
 use macros::{wasm_error, ToJs};
 
 use crate::globals::{get_render_state, get_text_editor_state};
-use crate::math::{Matrix, Point, Rect};
+use crate::math::{Matrix, Point};
 use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
-use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::{State, TextEditorEvent, TextSelection};
+use crate::shapes::{TextAlign, TextPositionWithAffinity, Type, VerticalAlign};
+use crate::state::{State, TextEditorEvent};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::uuid::Uuid;
@@ -644,40 +644,6 @@ pub extern "C" fn text_editor_move_cursor(
 // ============================================================================
 
 #[no_mangle]
-pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
-    with_state!(state, {
-        if !get_text_editor_state().has_focus || !get_text_editor_state().cursor_visible {
-            return std::ptr::null_mut();
-        }
-
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return std::ptr::null_mut();
-        };
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return std::ptr::null_mut();
-        };
-
-        let Type::Text(text_content) = &shape.shape_type else {
-            return std::ptr::null_mut();
-        };
-
-        let cursor = &get_text_editor_state().selection.focus;
-
-        if let Some(rect) = get_cursor_rect(text_content, cursor, shape) {
-            let mut bytes = vec![0u8; 16];
-            bytes[0..4].copy_from_slice(&rect.left().to_le_bytes());
-            bytes[4..8].copy_from_slice(&rect.top().to_le_bytes());
-            bytes[8..12].copy_from_slice(&rect.width().to_le_bytes());
-            bytes[12..16].copy_from_slice(&rect.height().to_le_bytes());
-            return mem::write_bytes(bytes);
-        }
-
-        std::ptr::null_mut()
-    })
-}
-
-#[no_mangle]
 pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
     with_state!(state, {
         if !get_text_editor_state().has_focus {
@@ -834,47 +800,6 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
         bytes.extend_from_slice(&letter_spacing.to_le_bytes()); // 120    // 30
         bytes.extend_from_slice(&fill_bytes); // 124
 
-        mem::write_bytes(bytes)
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
-    with_state!(state, {
-        if !get_text_editor_state().has_focus {
-            return std::ptr::null_mut();
-        }
-
-        if get_text_editor_state().selection.is_collapsed() {
-            return std::ptr::null_mut();
-        }
-
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return std::ptr::null_mut();
-        };
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return std::ptr::null_mut();
-        };
-
-        let Type::Text(text_content) = &shape.shape_type else {
-            return std::ptr::null_mut();
-        };
-
-        let selection = &get_text_editor_state().selection;
-        let rects = get_selection_rects(text_content, selection, shape);
-        if rects.is_empty() {
-            return std::ptr::null_mut();
-        }
-
-        let mut bytes = Vec::with_capacity(4 + rects.len() * 16);
-        bytes.extend_from_slice(&(rects.len() as u32).to_le_bytes());
-        for rect in rects {
-            bytes.extend_from_slice(&rect.left().to_le_bytes());
-            bytes.extend_from_slice(&rect.top().to_le_bytes());
-            bytes.extend_from_slice(&rect.width().to_le_bytes());
-            bytes.extend_from_slice(&rect.height().to_le_bytes());
-        }
         mem::write_bytes(bytes)
     })
 }
@@ -1123,140 +1048,4 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
         }
         true
     })
-}
-
-// ============================================================================
-// HELPERS: Cursor & Selection
-// ============================================================================
-
-fn get_cursor_rect(
-    text_content: &TextContent,
-    cursor: &TextPositionWithAffinity,
-    shape: &Shape,
-) -> Option<Rect> {
-    let paragraphs = text_content.paragraphs();
-    if cursor.paragraph >= paragraphs.len() {
-        return None;
-    }
-
-    let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
-
-    let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-    let valign_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (shape.selrect().height() - total_height) / 2.0,
-        VerticalAlign::Bottom => shape.selrect().height() - total_height,
-        _ => 0.0,
-    };
-
-    let mut y_offset = valign_offset;
-    for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
-        if idx == cursor.paragraph {
-            let utf16_pos = paragraphs[cursor.paragraph].char_offset_to_utf16(cursor.offset);
-
-            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            let rects = laid_out_para.get_rects_for_range(
-                utf16_pos..utf16_pos,
-                RectHeightStyle::Tight,
-                RectWidthStyle::Tight,
-            );
-
-            let (x, height) = if !rects.is_empty() {
-                (rects[0].rect.left(), rects[0].rect.height())
-            } else {
-                let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
-                let height = laid_out_para.height();
-                (pos.position as f32, height)
-            };
-
-            let selrect = shape.selrect();
-            let base_x = selrect.x();
-            let base_y = selrect.y() + y_offset;
-
-            return Some(Rect::from_xywh(base_x + x, base_y, 1.0, height));
-        }
-        y_offset += laid_out_para.height();
-    }
-
-    None
-}
-
-/// Get selection rectangles for a given selection.
-fn get_selection_rects(
-    text_content: &TextContent,
-    selection: &TextSelection,
-    shape: &Shape,
-) -> Vec<Rect> {
-    let mut rects = Vec::new();
-
-    let start = selection.start();
-    let end = selection.end();
-
-    let paragraphs = text_content.paragraphs();
-    let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
-
-    let selrect = shape.selrect();
-
-    let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-    let valign_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect.height() - total_height) / 2.0,
-        VerticalAlign::Bottom => selrect.height() - total_height,
-        _ => 0.0,
-    };
-
-    let mut y_offset = valign_offset;
-
-    for (para_idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
-        let para_height = laid_out_para.height();
-
-        if para_idx < start.paragraph || para_idx > end.paragraph {
-            y_offset += para_height;
-            continue;
-        }
-
-        if para_idx >= paragraphs.len() {
-            y_offset += para_height;
-            continue;
-        }
-
-        let para = &paragraphs[para_idx];
-        let para_char_count: usize = para
-            .children()
-            .iter()
-            .map(|span| span.text.chars().count())
-            .sum();
-        let range_start = if para_idx == start.paragraph {
-            start.offset
-        } else {
-            0
-        };
-
-        let range_end = if para_idx == end.paragraph {
-            end.offset
-        } else {
-            para_char_count
-        };
-
-        if range_start < range_end {
-            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            let text_boxes = laid_out_para.get_rects_for_range(
-                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
-                RectHeightStyle::Tight,
-                RectWidthStyle::Tight,
-            );
-
-            for text_box in text_boxes {
-                let r = text_box.rect;
-                rects.push(Rect::from_xywh(
-                    selrect.x() + r.left(),
-                    selrect.y() + y_offset + r.top(),
-                    r.width(),
-                    r.height(),
-                ));
-            }
-        }
-
-        y_offset += para_height;
-    }
-
-    rects
 }

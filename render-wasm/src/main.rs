@@ -53,47 +53,6 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn set_viewport_interest_area_threshold(
-    viewport_interest_area_threshold: i32,
-) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold)?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_max_blocking_time_ms(max_blocking_time_ms: i32) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_max_blocking_time_ms(max_blocking_time_ms);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_node_batch_threshold(node_batch_threshold: i32) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_node_batch_threshold(node_batch_threshold);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_blur_downscale_threshold(blur_downscale_threshold: f32) -> Result<()> {
-    let render_state = get_render_state();
-    render_state.set_blur_downscale_threshold(blur_downscale_threshold);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
-    get_render_state().set_antialias_threshold(threshold);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     with_state!(state, {
         let color = skia::Color::new(raw_color);
@@ -467,16 +426,6 @@ pub extern "C" fn has_shape(a: u32, b: u32, c: u32, d: u32) -> Result<bool> {
         let id = uuid_from_u32_quartet(a, b, c, d);
         return Ok(state.has_shape(id));
     });
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_state!(state, {
-        let shape_id = uuid_from_u32_quartet(a, b, c, d);
-        state.touch_shape(shape_id);
-    });
-    Ok(())
 }
 
 #[no_mangle]

@@ -911,37 +911,6 @@ impl RenderState {
             .ensure_tile_atlas_layout(self.tile_viewbox.interest_rect.len().max(1) as usize);
     }
 
-    pub fn set_antialias_threshold(&mut self, value: f32) {
-        self.options.set_antialias_threshold(value);
-    }
-
-    pub fn set_viewport_interest_area_threshold(&mut self, value: i32) -> Result<()> {
-        // Only when this function returns true (it means the value
-        // was changed properly) the tile_viewbox.set_interest is called.
-        if self.options.set_viewport_interest_area_threshold(value) {
-            // The TileViewbox stores its own copy of `interest` (set at
-            // construction). Without propagating, options change wouldn't
-            // affect pending_tiles generation.
-            self.tile_viewbox
-                .set_interest(self.options.dpr_viewport_interest_area_threshold);
-            self.tile_viewbox.update(&self.viewbox);
-            self.ensure_tile_atlas_layout();
-        }
-        Ok(())
-    }
-
-    pub fn set_node_batch_threshold(&mut self, value: i32) {
-        self.options.set_node_batch_threshold(value);
-    }
-
-    pub fn set_max_blocking_time_ms(&mut self, value: i32) {
-        self.options.set_max_blocking_time_ms(value);
-    }
-
-    pub fn set_blur_downscale_threshold(&mut self, value: f32) {
-        self.options.set_blur_downscale_threshold(value);
-    }
-
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.background_color = color;
     }

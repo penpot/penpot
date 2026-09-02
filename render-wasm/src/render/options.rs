@@ -121,45 +121,4 @@ impl RenderOptions {
     pub fn show_wasm_info(&self) -> bool {
         self.flags & SHOW_WASM_INFO == SHOW_WASM_INFO
     }
-
-    pub fn set_antialias_threshold(&mut self, value: f32) -> bool {
-        if value.is_finite() && value > 0.0 {
-            self.antialias_threshold = value;
-            return true;
-        }
-        false
-    }
-
-    pub fn set_blur_downscale_threshold(&mut self, value: f32) -> bool {
-        if value.is_finite() && value > 0.0 {
-            self.blur_downscale_threshold = value;
-            return true;
-        }
-        false
-    }
-
-    pub fn set_viewport_interest_area_threshold(&mut self, value: i32) -> bool {
-        if value >= 0 && self.viewport_interest_area_threshold != value {
-            self.viewport_interest_area_threshold = value;
-            self.update_dpr_viewport_interest_area_threshold();
-            return true;
-        }
-        false
-    }
-
-    pub fn set_node_batch_threshold(&mut self, value: i32) -> bool {
-        if value > 0 {
-            self.node_batch_threshold = value;
-            return true;
-        }
-        false
-    }
-
-    pub fn set_max_blocking_time_ms(&mut self, value: i32) -> bool {
-        if value > 0 {
-            self.max_blocking_time_ms = value;
-            return true;
-        }
-        false
-    }
 }
