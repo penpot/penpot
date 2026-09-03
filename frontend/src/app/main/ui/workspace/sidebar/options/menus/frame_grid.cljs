@@ -14,10 +14,10 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
@@ -211,11 +211,10 @@
        (if (= type :square)
          [:div {:class (stl/css :grid-size)
                 :title (tr "workspace.options.size")}
-          [:> deprecated-input/numeric-input* {:min 0.01
-                                               :value (or (:size params) "")
-                                               :no-validate true
-                                               :class (stl/css :numeric-input)
-                                               :on-change (handle-change :params :size)}]]
+          [:> numeric-input* {:min 0.01
+                              :value (or (:size params) "")
+                              :inner-class (stl/css :numeric-input)
+                              :on-change (handle-change :params :size)}]]
 
          [:div {:class (stl/css :editable-select-wrapper)}
           [:& editable-select {:value (:size params)
@@ -292,43 +291,30 @@
                    :title (if (= :row type)
                             (tr "workspace.options.grid.params.height")
                             (tr "workspace.options.grid.params.width"))}
-             [:span {:class (stl/css :icon-text)}
-              (if (= :row type)
-                "H"
-                "W")]
-             [:> deprecated-input/numeric-input* {:placeholder "Auto"
-                                                  :on-change handle-change-item-length
-                                                  :is-nillable true
-                                                  :class (stl/css :numeric-input)
-                                                  :value (or (:item-length params) "")}]]
+             [:> numeric-input* {:placeholder "Auto"
+                                 :on-change handle-change-item-length
+                                 :nillable true
+                                 :icon (if (= :row type) i/character-h i/character-w)
+                                 :inner-class (stl/css :numeric-input)
+                                 :value (or (:item-length params) "")}]]
 
             [:div {:class (stl/css :gutter)
                    :title (tr "workspace.options.grid.params.gutter")}
-             [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :row))}
-              [:> icon* {:icon-id i/gap-horizontal
-                         :size "s"
-                         :aria-hidden true
-                         :class (stl/css :grid-param-icon)}]]
-             [:> deprecated-input/numeric-input* {:placeholder "0"
-                                                  :on-change (handle-change :params :gutter)
-                                                  :is-nillable true
-                                                  :class (stl/css :numeric-input)
-                                                  :value (or (:gutter params) 0)}]]
+             [:> numeric-input* {:placeholder "0"
+                                 :on-change (handle-change :params :gutter)
+                                 :nillable true
+                                 :icon (if (= type :row) i/gap-vertical i/gap-horizontal)
+                                 :inner-class (stl/css :numeric-input)
+                                 :value (or (:gutter params) 0)}]]
 
             [:div {:class (stl/css :margin)
                    :title (tr "workspace.options.grid.params.margin")}
-             [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :column))}
-              [:> icon* {:icon-id i/grid-margin
-                         :size "s"
-                         :aria-hidden true
-                         :class (stl/css :grid-param-icon)}]]
-             [:> deprecated-input/numeric-input* {:placeholder "0"
-                                                  :on-change (handle-change :params :margin)
-                                                  :is-nillable true
-                                                  :class (stl/css :numeric-input)
-                                                  :value (or (:margin params) 0)}]]
+             [:> numeric-input* {:placeholder "0"
+                                 :on-change (handle-change :params :margin)
+                                 :nillable true
+                                 :icon (if (= type :column) i/margin-left-right i/margin-top-bottom)
+                                 :inner-class (stl/css :numeric-input)
+                                 :value (or (:margin params) 0)}]]
 
             [:> default-options-toggle* {:show show-more-options?
                                          :disabled is-default

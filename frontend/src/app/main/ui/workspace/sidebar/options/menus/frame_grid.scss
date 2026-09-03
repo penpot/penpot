@@ -148,7 +148,6 @@
     }
   }
 
-  .grid-size,
   .editable-select-wrapper .column-select {
     .numeric-input {
       margin: 0;
@@ -174,6 +173,12 @@
       background-color: var(--color-background-quaternary);
       color: var(--color-foreground-primary);
     }
+
+    .numeric-input {
+      --input-height: #{$sz-28};
+
+      flex-grow: 1;
+    }
   }
 
   .editable-select-wrapper {
@@ -182,10 +187,6 @@
     padding: 0;
     position: relative;
 
-    // The editable-select component already provides its own box styling
-    // (border, background, radius) — only the docked/square-left corner
-    // treatment is overridden here, deliberately scoped under this wrapper
-    // so it reliably outranks the component's own single-class rules.
     .column-select {
       block-size: $sz-32;
       border-radius: 0 $br-8 $br-8 0;
@@ -194,7 +195,6 @@
     }
   }
 
-  .grid-size .numeric-input,
   .editable-select-wrapper .column-select .numeric-input {
     @include use-typography("body-small");
 
@@ -250,12 +250,8 @@
 
       border: $b-1 solid var(--color-background-quaternary);
 
-      .icon {
-        stroke: var(--color-foreground-secondary);
-      }
-
       .numeric-input {
-        color: var(--color-foreground-secondary);
+        --input-fg-color: var(--color-foreground-secondary);
       }
     }
   }
@@ -316,9 +312,6 @@
 
   &:focus-visible {
     outline: none;
-
-    // Deprecated focus-type mixin hardcoded a 1px border here, narrower
-    // than this button's own 2px rest border-width — preserved as-is.
     border: $b-1 solid var(--color-accent-primary);
 
     --show-more-options-background-color: var(--color-background-tertiary);
@@ -381,54 +374,12 @@
   color: var(--grid-param-input-color);
 
   .numeric-input {
-    border: none;
-    background: none;
-    outline: none;
-    display: block;
-    max-inline-size: 99%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    block-size: $sz-28;
-    inline-size: 100%;
+    --input-height: #{$sz-28};
+
     flex-grow: 1;
     margin-block: var(--sp-xxs);
     margin-inline: 0;
     padding-inline-start: $sz-6;
-    border-radius: $br-8;
-    color: var(--color-foreground-primary);
-
-    &[disabled] {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-
-    &::placeholder {
-      color: var(--color-foreground-secondary);
-    }
-  }
-
-  // Shared base for .icon-text (height) and .icon (gutter/margin) — both
-  // are the same kind of label slot, just with different content.
-  .icon-text,
-  .icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    inline-size: px2rem(20);
-    padding-inline-start: var(--sp-s);
-    block-size: $sz-32;
-    color: var(--grid-param-input-color);
-  }
-
-  .grid-param-icon {
-    fill: none;
-    stroke-width: 1.33px;
-
-    // Unlike the label text and background/border colors below, the
-    // deprecated placeholder never re-colored this icon on hover/
-    // active/focus — it stayed rest-colored; preserved as-is.
-    color: var(--color-foreground-secondary);
   }
 
   &:hover {
@@ -448,17 +399,6 @@
   &:focus,
   &:focus-within {
     --grid-param-input-background-color: var(--color-background-tertiary);
-  }
-}
-
-.height .icon-text {
-  padding-block-start: px2rem(1);
-}
-
-.gutter,
-.margin {
-  .icon.rotated .grid-param-icon {
-    transform: rotate(90deg);
   }
 }
 
