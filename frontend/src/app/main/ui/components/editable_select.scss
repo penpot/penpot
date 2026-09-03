@@ -4,87 +4,126 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-// FIXME: we need this import for %asset-element
-@use "refactor/basic-rules.scss" as deprecated;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as *;
 
 .editable-select {
-  @extend %asset-element;
+  @include use-typography("body-small");
+
+  --editable-select-background-color: var(--color-background-tertiary);
 
   margin: 0;
-  border: $b-1 solid var(--input-border-color);
+  border: $b-1 solid var(--color-background-tertiary);
   position: relative;
   display: flex;
-  height: $sz-32;
-  width: 100%;
+  align-items: center;
+  inline-size: 100%;
+  block-size: $sz-32;
   padding: var(--sp-s);
   border-radius: $br-8;
   cursor: pointer;
+  background-color: var(--editable-select-background-color);
+  color: var(--color-foreground-primary);
 
-  .dropdown-button {
-    display: flex;
-    place-content: center;
+  &:hover {
+    --editable-select-background-color: var(--color-background-quaternary);
+  }
+}
 
-    svg {
-      @extend %button-icon-small;
+.dropdown-button {
+  display: flex;
+  place-content: center;
+}
 
-      transform: rotate(90deg);
-      stroke: var(--icon-foreground);
+.dropdown-icon {
+  color: var(--color-foreground-secondary);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  inset-block-start: $sz-32;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  min-inline-size: px2rem(70);
+  max-block-size: px2rem(320); // TODO: when this gets addressed in the DS, use a token
+  padding: var(--sp-xxs);
+  margin: 0;
+  margin-block-start: px2rem(1);
+  border: $b-2 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  overflow: hidden auto;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+}
+
+.separator {
+  margin: 0;
+  block-size: $sz-12;
+}
+
+.dropdown-element {
+  --dropdown-element-color: var(--color-foreground-secondary);
+  --dropdown-element-icon-color: var(--color-foreground-secondary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  block-size: $sz-32;
+  padding-block: 0;
+  padding-inline: var(--sp-s);
+  border-radius: $br-6;
+  cursor: pointer;
+  color: var(--dropdown-element-color);
+
+  @include use-typography("body-small");
+
+  &.is-selected {
+    --dropdown-element-color: var(--color-foreground-primary);
+    --dropdown-element-icon-color: var(--color-foreground-primary);
+
+    .check-tick {
+      visibility: visible;
     }
   }
 
-  .custom-select-dropdown {
-    @extend %dropdown-wrapper;
+  &:hover {
+    --dropdown-element-color: var(--color-foreground-primary);
+    --dropdown-element-icon-color: var(--color-foreground-primary);
 
-    width: max-content;
-    max-height: px2rem(320); // TODO: when this gets addressed in the DS, use a token
-    .separator {
-      margin: 0;
-      height: $sz-12;
-    }
-
-    .dropdown-element {
-      @extend %dropdown-element-base;
-
-      color: var(--menu-foreground-color-rest);
-
-      .label {
-        flex-grow: 1;
-        width: 100%;
-      }
-
-      .check-icon {
-        display: flex;
-        place-content: center;
-
-        svg {
-          @extend %button-icon-small;
-
-          visibility: hidden;
-          stroke: var(--icon-foreground);
-        }
-      }
-
-      &.is-selected {
-        color: var(--menu-foreground-color);
-
-        .check-icon svg {
-          stroke: var(--menu-foreground-color);
-          visibility: visible;
-        }
-      }
-
-      &:hover {
-        background-color: var(--menu-background-color-hover);
-        color: var(--menu-foreground-color-hover);
-
-        .check-icon svg {
-          stroke: var(--menu-foreground-color-hover);
-        }
-      }
-    }
+    background-color: var(--color-background-quaternary);
   }
+}
+
+.label,
+.check-icon {
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label {
+  flex-grow: 1;
+  inline-size: 100%;
+}
+
+.check-icon {
+  display: flex;
+  place-content: center;
+}
+
+.check-tick {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  fill: none;
+  stroke-width: 1.33px;
+  visibility: hidden;
+  color: var(--dropdown-element-icon-color);
 }
