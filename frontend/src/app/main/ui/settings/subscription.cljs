@@ -745,7 +745,6 @@
                          :cta-link (if (and (contains? cf/flags :admin-console) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")
                          :current-plan false}])
 
@@ -783,6 +782,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :code-action :activate
+                         :recommended (= subscription-type "professional")
                          :show-button-cta (not nitrate-license)
                          :current-plan false
                          :inline-error nitrate-start-error-message}])]]]))
