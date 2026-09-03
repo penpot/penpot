@@ -421,7 +421,8 @@ $thumbnail-default-height: px2rem(168);
 .library-typography-sample {
   block-size: px2rem(20);
   margin-inline-end: var(--sp-xs);
-  inline-size: px2rem(20);
+  min-inline-size: px2rem(20);
+  white-space: nowrap;
 }
 
 // ─── MISC ──────────────────────────────────────
