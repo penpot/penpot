@@ -511,10 +511,11 @@
                                 ::ev/origin "settings"}))
            (if (= subscription-type "nitrate")
              (st/emit! (dnt/show-nitrate-popup
-                        :nitrate-dialog
+                        :nitrate-form
                         {:nitrate-license nitrate-license
                          :event-origin "settings:plan-confirmation-modal"
-                         :subscription-start-origin "settings"}))
+                         :subscription-start-origin "settings"
+                         :base-url (rt/get-current-href)}))
              (st/emit!
               (modal/show :management-dialog
                           {:subscription-type subscription-type
@@ -526,7 +527,7 @@
          (mf/deps nitrate-license)
          (fn [current-subscription subscription-type & [has-billing-access?]]
            (if (= current-subscription "unlimited")
-             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form {:nitrate-license nitrate-license :show-contact-sales-option true :base-url (rt/get-current-href)}))
              (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type
                                                                   :has-billing-access? has-billing-access?})))))
 
@@ -786,70 +787,6 @@
                          :show-button-cta (not nitrate-license)
                          :current-plan false
                          :inline-error nitrate-start-error-message}])]]]))
-
-(mf/defc subscribe-nitrate-dialog
-  {::mf/register modal/components
-   ::mf/register-as :nitrate-dialog}
-  [{:keys [nitrate-license show-contact-sales-option event-origin subscription-start-origin] :as connectivity}]
-  ;; TODO add translations for this texts when we have the definitive ones
-  (let [online? (:licenses connectivity)
-        handle-close-dialog
-        (mf/use-fn
-         (fn []
-           (st/emit! (ev/event {::ev/name "close-subscription-modal"
-                                ::ev/origin "nitrate:plan-confirmation-modal"
-                                :product "nitrate:enterprise"}))
-           (modal/hide!)))
-
-        on-subscribe-click
-        (mf/use-fn
-         (fn []
-           (dnt/go-to-buy-nitrate-license
-            "monthly"
-            (rt/get-current-href)
-            dnt/go-to-subscription-url
-            event-origin
-            (if nitrate-license "paid" "trial")
-            subscription-start-origin)))]
-
-    [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
-       [:> icon* {:icon-id "close"
-                  :size "m"}]]
-      [:div {:class (stl/css :modal-title :subscription-title :nitrate-subscription)}
-       (tr "nitrate.form.title")]
-
-      (if (and online? (not show-contact-sales-option))
-        [:div {:class (stl/css :modal-content)}
-
-         [:*
-          [:div {:class (stl/css :modal-text)} (tr "nitrate.form.enterprise-intro" ":")]
-          [:div {:class (stl/css :modal-text :price-text)}
-           [:span {:class (stl/css :price-value)} "25$"]
-           " / " (tr "subscription.settings.organization-member-month")]
-          [:div {:class (stl/css :modal-text)}
-           (tr "nitrate.form.enterprise-description")]
-
-          [:div {:class (stl/css :modal-footer)}
-           [:div {:class (stl/css :action-buttons)}
-            [:input
-             {:class (stl/css :cancel-button)
-              :type "button"
-              :value (tr "ds.confirm-cancel")
-              :on-click handle-close-dialog}]
-
-            [:input
-             {:class (stl/css :primary-button)
-              :type "button"
-              :value (if nitrate-license (tr "subscription.settings.subscribe") (tr "nitrate.form.free-trial-button"))
-              :on-click on-subscribe-click}]]]]]
-        [:div {:class (stl/css :modal-content :modal-contact-content)}
-         [:div {:class (stl/css :modal-text)}
-          (tr "nitrate.form.enterprise-intro" ".") " " (if nitrate-license (tr "nitrate.form.contact-us-upgrade") (tr "nitrate.form.contact-us-free-trial"))]
-         [:div {:class (stl/css :modal-text)}
-          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.net"}
-           "sales@penpot.net"]]])]]))
 
 (mf/defc nitrate-contact-sales-dialog
   {::mf/register modal/components

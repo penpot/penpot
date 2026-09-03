@@ -27,6 +27,7 @@
 
   (let [show-contact-sales-option (:show-contact-sales-option connectivity)
         subscription-start-origin (:subscription-start-origin connectivity)
+        base-url                  (or (:base-url connectivity) dnt/go-to-ac-url)
         online? (and (:licenses connectivity) (not show-contact-sales-option))
         profile  (mf/deref refs/profile)
         on-click
@@ -34,7 +35,7 @@
          (fn []
            (dnt/go-to-buy-nitrate-license
             "monthly"
-            dnt/go-to-ac-url
+            base-url
             dnt/go-to-subscription-url
             "dashboard:plan-confirmation-modal"
             (if (:subscription profile) "paid" "trial")
