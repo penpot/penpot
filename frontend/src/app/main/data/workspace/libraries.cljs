@@ -842,7 +842,9 @@
                (rx/delay 5000)
                (rx/map fetch-library-thumbnails))
           (when (ch/tokens-lib-changed? changes)
-            (rx/of (dwtp/propagate-workspace-tokens))))
+            (rx/of (dwtp/propagate-workspace-tokens)))
+          (when (ch/notifiable-token-change-occured? changes)
+            (rx/of (ntf/info (tr "workspace.tokens.notifications.source-sets-or-themes-updated")))))
 
          (rx/take-until stopper-s))))))
 
