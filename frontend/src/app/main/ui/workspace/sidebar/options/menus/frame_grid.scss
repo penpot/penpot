@@ -55,206 +55,184 @@
   gap: px2rem(1);
   border-radius: $br-8;
   background-color: var(--color-background-primary);
+}
 
-  .show-options {
-    --show-options-background-color: var(--color-background-tertiary);
-    --show-options-border-color: var(--color-background-tertiary);
-    --show-options-color: var(--color-foreground-secondary);
+.show-options {
+  --show-options-background-color: var(--color-background-tertiary);
+  --show-options-border-color: var(--color-background-tertiary);
+  --show-options-color: var(--color-foreground-secondary);
 
-    // Tracks --show-options-color everywhere except :disabled — the
-    // deprecated button-secondary placeholder never re-colored its icon on
-    // disable, so the icon stayed rest-colored; preserved as-is.
-    --show-options-icon-color: var(--color-foreground-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: $sz-28;
+  border-radius: $br-8 0 0 $br-8;
+  box-sizing: border-box;
+  border: $b-1 solid var(--show-options-border-color);
+  background-color: var(--show-options-background-color);
+  color: var(--show-options-color);
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    block-size: $sz-32;
-    inline-size: $sz-28;
-    border-radius: $br-8 0 0 $br-8;
-    box-sizing: border-box;
-    border: $b-1 solid var(--show-options-border-color);
-    background-color: var(--show-options-background-color);
-    color: var(--show-options-color);
-
-    &:focus-visible {
-      outline: none;
-
-      --show-options-border-color: var(--color-accent-primary);
-    }
-
-    &:hover {
-      --show-options-background-color: var(--color-background-quaternary);
-      --show-options-border-color: var(--color-background-quaternary);
-      --show-options-color: var(--color-accent-primary);
-      --show-options-icon-color: var(--color-accent-primary);
-
-      text-decoration: none;
-    }
-
-    &:active {
-      outline: none;
-
-      --show-options-background-color: var(--color-background-secondary);
-      --show-options-border-color: var(--color-background-quaternary);
-      --show-options-color: var(--color-accent-primary);
-      --show-options-icon-color: var(--color-accent-primary);
-    }
-
-    &:global(.disabled),
-    &[disabled],
-    &:disabled {
-      --show-options-background-color: var(--color-background-quaternary);
-      --show-options-border-color: var(--color-background-quaternary);
-      --show-options-color: var(--color-foreground-disabled);
-
-      cursor: unset;
-    }
-
-    // TODO: the deprecated `.selected` background/border colors diverge by
-    // theme (light theme used --color-background-primary /
-    // --color-background-secondary instead of the values below) — the
-    // design-tokens.scss alias was theme-conditional with no single DS
-    // token equivalent. Kept the default/dark values; confirm with design
-    // before relying on this in light theme.
-    &.selected {
-      outline: none;
-
-      --show-options-background-color: var(--color-background-quaternary);
-      --show-options-border-color: var(--color-background-quaternary);
-      --show-options-color: var(--color-accent-primary);
-      --show-options-icon-color: var(--color-accent-primary);
-    }
-  }
-
-  .type-select-wrapper {
-    flex-grow: 1;
-    inline-size: $sz-96;
-    padding: 0;
-    border-radius: 0;
-    block-size: $sz-32;
-
-    .grid-type-select {
-      --grid-type-select-border-color: var(--color-background-tertiary);
-
-      border-radius: 0;
-      block-size: 100%;
-      box-sizing: border-box;
-      border: $b-1 solid var(--grid-type-select-border-color);
-
-      &:hover {
-        --grid-type-select-border-color: var(--color-background-quaternary);
-      }
-    }
-  }
-
-  .editable-select-wrapper .column-select {
-    .numeric-input {
-      margin: 0;
-      padding: 0;
-    }
-  }
-
-  .grid-size {
-    @include use-typography("body-small");
-
-    display: flex;
-    align-items: center;
-    block-size: $sz-32;
-    inline-size: px2rem(60);
-    margin: 0;
-    padding: 0;
-    padding-inline-start: var(--sp-s);
-    border-radius: 0 $br-8 $br-8 0;
-    background-color: var(--color-background-tertiary);
-    color: var(--color-foreground-primary);
-
-    &:hover {
-      background-color: var(--color-background-quaternary);
-      color: var(--color-foreground-primary);
-    }
-
-    .numeric-input {
-      --input-height: #{$sz-28};
-
-      flex-grow: 1;
-    }
-  }
-
-  .editable-select-wrapper {
-    inline-size: px2rem(60);
-    margin: 0;
-    padding: 0;
-    position: relative;
-
-    .column-select {
-      block-size: $sz-32;
-      border-radius: 0 $br-8 $br-8 0;
-      box-sizing: border-box;
-      border: $b-1 solid var(--color-background-tertiary);
-    }
-  }
-
-  .editable-select-wrapper .column-select .numeric-input {
-    @include use-typography("body-small");
-
-    border: none;
-    background: none;
+  &:focus-visible {
     outline: none;
-    display: block;
-    max-inline-size: 99%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    block-size: $sz-28;
-    inline-size: 100%;
-    flex-grow: 1;
-    border-radius: $br-8;
+
+    --show-options-border-color: var(--color-accent-primary);
+  }
+
+  &:hover {
+    --show-options-background-color: var(--color-background-quaternary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-accent-primary);
+
+    text-decoration: none;
+  }
+
+  &:active {
+    outline: none;
+
+    --show-options-background-color: var(--color-background-secondary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-accent-primary);
+  }
+
+  &[disabled],
+  &:disabled {
+    --show-options-background-color: var(--color-background-quaternary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-foreground-disabled);
+
+    cursor: unset;
+  }
+
+  &.selected {
+    outline: none;
+
+    --show-options-background-color: var(--color-background-quaternary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-accent-primary);
+  }
+}
+
+.type-select-wrapper {
+  flex-grow: 1;
+  inline-size: $sz-96;
+  padding: 0;
+  border-radius: 0;
+  block-size: $sz-32;
+}
+
+.type-select-wrapper .grid-type-select {
+  --grid-type-select-border-color: var(--color-background-tertiary);
+
+  border-radius: 0;
+  block-size: 100%;
+  box-sizing: border-box;
+  border: $b-1 solid var(--grid-type-select-border-color);
+
+  &:hover {
+    --grid-type-select-border-color: var(--color-background-quaternary);
+  }
+}
+
+.grid-size {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: px2rem(60);
+  margin: 0;
+  padding: 0;
+  padding-inline-start: var(--sp-s);
+  border-radius: 0 $br-8 $br-8 0;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
     color: var(--color-foreground-primary);
-
-    &[disabled] {
-      opacity: 0.5;
-      pointer-events: none;
-    }
   }
+}
 
-  &.hidden {
-    .show-options {
-      @include hidden-control;
+.grid-size .numeric-input {
+  --input-height: #{$sz-28};
 
-      border: $b-1 solid var(--color-background-quaternary);
-    }
+  flex-grow: 1;
+}
 
-    .type-select-wrapper,
-    .editable-select-wrapper {
-      @include hidden-control;
+.editable-select-wrapper {
+  inline-size: px2rem(60);
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
 
-      .column-select,
-      .grid-type-select {
-        @include hidden-control;
+.editable-select-wrapper .column-select {
+  block-size: $sz-32;
+  border-radius: 0 $br-8 $br-8 0;
+  box-sizing: border-box;
+  border: $b-1 solid var(--color-background-tertiary);
+}
 
-        border: $b-1 solid var(--color-background-quaternary);
-      }
+.column-select .numeric-input {
+  @include use-typography("body-small");
 
-      .column-select {
-        border-radius: 0 $br-8 $br-8 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  block-size: $sz-28;
+  inline-size: 100%;
+  flex-grow: 1;
+  border-radius: $br-8;
+  color: var(--color-foreground-primary);
 
-        .numeric-input {
-          @include hidden-control;
-        }
-      }
-    }
-
-    .grid-size {
-      @include hidden-control;
-
-      border: $b-1 solid var(--color-background-quaternary);
-
-      .numeric-input {
-        --input-fg-color: var(--color-foreground-secondary);
-      }
-    }
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
   }
+}
+
+.hidden .show-options {
+  @include hidden-control;
+
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.hidden .type-select-wrapper,
+.hidden .editable-select-wrapper {
+  @include hidden-control;
+}
+
+.hidden .column-select,
+.hidden .grid-type-select {
+  @include hidden-control;
+
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.hidden .column-select {
+  border-radius: 0 $br-8 $br-8 0;
+}
+
+.hidden .column-select .numeric-input {
+  @include hidden-control;
+}
+
+.hidden .grid-size {
+  @include hidden-control;
+
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.hidden .grid-size .numeric-input {
+  --input-fg-color: var(--color-foreground-secondary);
 }
 
 .actions {
@@ -332,7 +310,6 @@
     --show-more-options-color: var(--color-accent-primary);
   }
 
-  &:global(.disabled),
   &[disabled],
   &:disabled {
     --show-more-options-color: var(--color-foreground-disabled);
@@ -341,8 +318,6 @@
     pointer-events: none;
   }
 
-  // TODO: same theme-conditional alias caveat as .show-options.selected
-  // above — kept the default/dark values, confirm light theme.
   &.selected {
     outline: none;
 
@@ -350,10 +325,10 @@
     --show-more-options-border-color: var(--color-background-quaternary);
     --show-more-options-color: var(--color-accent-primary);
   }
+}
 
-  svg {
-    stroke: var(--show-more-options-color);
-  }
+.show-more-options svg {
+  stroke: var(--show-more-options-color);
 }
 
 .height,
@@ -373,15 +348,6 @@
   border: $b-1 solid var(--grid-param-input-border-color);
   color: var(--grid-param-input-color);
 
-  .numeric-input {
-    --input-height: #{$sz-28};
-
-    flex-grow: 1;
-    margin-block: var(--sp-xxs);
-    margin-inline: 0;
-    padding-inline-start: $sz-6;
-  }
-
   &:hover {
     --grid-param-input-color: var(--color-foreground-primary);
     --grid-param-input-background-color: var(--color-background-quaternary);
@@ -400,6 +366,17 @@
   &:focus-within {
     --grid-param-input-background-color: var(--color-background-tertiary);
   }
+}
+
+.height .numeric-input,
+.gutter .numeric-input,
+.margin .numeric-input {
+  --input-height: #{$sz-28};
+
+  flex-grow: 1;
+  margin-block: var(--sp-xxs);
+  margin-inline: 0;
+  padding-inline-start: $sz-6;
 }
 
 .more-options {
