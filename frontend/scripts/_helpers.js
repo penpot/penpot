@@ -1,4 +1,5 @@
 import proc from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import ph from "node:path";
 import os from "node:os";
@@ -412,11 +413,36 @@ async function generateSvgSprites() {
   );
 }
 
+// Collect the CSP hashes of the inline scripts of a rendered template into
+// the given set. The hash covers the exact bytes between the script tags, so
+// it has to be computed on the rendered output and never on the mustache
+// source. Scripts carrying a src attribute are external and are covered by
+// 'self' instead.
+function collectCspHashes(html, hashes) {
+  const pattern = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+
+  for (const match of html.matchAll(pattern)) {
+    const digest = crypto
+      .createHash("sha256")
+      .update(match[1], "utf8")
+      .digest("base64");
+    hashes.add(`'sha256-${digest}'`);
+  }
+
+  return hashes;
+}
+
 async function generateTemplates() {
   await fs.mkdir("./resources/public/", { recursive: true });
 
   const manifest = await generateManifest();
   let content;
+
+  // Every template written into resources/public/ is served by the frontend
+  // container under the same Content Security Policy, so all of them have to
+  // contribute their hashes. The storybook previews are excluded because they
+  // are not served by that container.
+  const cspHashes = new Set();
 
   const iconsSprite = await fs.readFile(
     "resources/public/images/sprites/symbol/icons.svg",
@@ -447,6 +473,7 @@ async function generateTemplates() {
   );
 
   await fs.writeFile("./resources/public/index.html", content);
+  collectCspHashes(content, cspHashes);
 
   content = await renderTemplate(
     "resources/templates/challenge.mustache",
@@ -454,6 +481,7 @@ async function generateTemplates() {
     partials,
   );
   await fs.writeFile("./resources/public/challenge.html", content);
+  collectCspHashes(content, cspHashes);
 
   content = await renderTemplate(
     "resources/templates/preview-body.mustache",
@@ -475,6 +503,7 @@ async function generateTemplates() {
   );
 
   await fs.writeFile("./resources/public/render.html", content);
+  collectCspHashes(content, cspHashes);
 
   content = await renderTemplate(
     "resources/templates/rasterizer.mustache",
@@ -482,6 +511,12 @@ async function generateTemplates() {
   );
 
   await fs.writeFile("./resources/public/rasterizer.html", content);
+  collectCspHashes(content, cspHashes);
+
+  await fs.writeFile(
+    "./resources/public/csp-script-hashes.txt",
+    [...cspHashes].join(" ") + "\n",
+  );
 }
 
 export async function compileStorybookStyles() {
