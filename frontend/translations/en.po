@@ -10159,6 +10159,10 @@ msgstr "This is the current Tokens source"
 msgid "workspace.tokens.open-connected-library"
 msgstr "Open connected library"
 
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Tokens source sets or themes have been modified"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused
 msgid "workspace.tokens.warning-name-change"
