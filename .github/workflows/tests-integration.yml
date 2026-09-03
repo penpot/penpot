@@ -102,17 +102,14 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     name: "Integration Tests (${{ matrix.shard }})"
     runs-on: penpot-extended-runner
-    timeout-minutes: ${{ github.base_ref == 'staging' && 60 || 25 }}
+    timeout-minutes: 40
 
     needs: build-integration
 
-    # TEMPORARY (release stabilization): PRs targeting `staging` run on a
-    # single serial shard, so new flakes cannot block the release work.
-    # Remove the `github.base_ref` branch below to restore full parallelism.
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJSON(inputs.shards || (github.base_ref == 'staging' && '[1]' || '[1, 2, 3, 4]')) }}
+        shard: ${{ fromJSON(inputs.shards || '[1, 2, 3, 4]') }}
 
     container:
       image: penpotapp/devenv:latest
@@ -153,12 +150,8 @@ jobs:
         working-directory: ./frontend
         env:
           WORKERS: ${{ inputs.workers }}
-          BASE_REF: ${{ github.base_ref }}
         run: |
-          # TEMPORARY (release stabilization): see the note on the matrix above.
-          if [ -z "$WORKERS" ]; then
-            if [ "$BASE_REF" = "staging" ]; then WORKERS=1; else WORKERS=2; fi
-          fi
+          WORKERS=${WORKERS:-2}
           echo "Running shard ${{ matrix.shard }}/${{ strategy.job-total }} with $WORKERS workers"
           pnpm exec playwright test --project default \
             --workers="$WORKERS" \
@@ -235,6 +228,18 @@ jobs:
             exit 0
           fi
           jq -r -f ../.github/scripts/playwright-summary.jq report.json >> "$GITHUB_STEP_SUMMARY"
+
+      # Kept for 30 days so flakiness rates can be aggregated across runs
+      # without scraping job logs.
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-json-report
+          path: frontend/report.json
+          overwrite: true
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v7
