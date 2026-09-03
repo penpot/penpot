@@ -1446,6 +1446,9 @@
                  (rx/filter #(= :local (:source %)))
                  ;; Translation commits never propagate component changes.
                  (rx/filter (complement :translation?))
+                 ;; Derived / corrective commits (font-load selrect fix,
+                 ;; position-data regen) are not user component edits.
+                 (rx/filter (complement :skip-component-sync?))
                  ;; Keep waits pending while component changes are checked.
                  (rx/map start-sync-barrier)
                  (rx/observe-on :async))

@@ -244,7 +244,8 @@
                    {:redo-changes changes :undo-changes []
                     :save-undo? false
                     :origin it
-                    :tags #{:position-data}}))
+                    :tags #{:position-data}
+                    :skip-component-sync? true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -511,7 +512,7 @@
                     (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
                     (rx/map deref)
                     (rx/map (fn [{:keys [ids]}]
-                              (dwwt/resize-wasm-text-all ids))))
+                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
 
                (let [local-commits-s
                      (->> stream
@@ -565,7 +566,8 @@
                              (dch/commit-changes
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
-                               :tags #{:position-data}})))))
+                               :tags #{:position-data}
+                               :skip-component-sync? true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream
