@@ -5,8 +5,8 @@ use crate::math::{Matrix, Point};
 use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
-use crate::shapes::{TextAlign, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::{State, TextEditorEvent};
+use crate::shapes::{TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
+use crate::state::{State, TextEditorEvent, TextEditorState};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::uuid::Uuid;
@@ -133,8 +133,10 @@ pub extern "C" fn text_editor_select_all() -> bool {
     })
 }
 
-#[no_mangle]
-pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+fn with_active_text_at_point<F>(x: f32, y: f32, apply: F)
+where
+    F: FnOnce(&mut TextEditorState, &TextContent, &TextPositionWithAffinity),
+{
     with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
@@ -154,8 +156,30 @@ pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
 
         let point = Point::new(x, y);
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            get_text_editor_state().select_word_boundary(text_content, &position);
+            apply(get_text_editor_state(), text_content, &position);
         }
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+    with_active_text_at_point(x, y, |editor, text_content, position| {
+        editor.select_word_boundary(text_content, position)
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_select_paragraph(x: f32, y: f32) {
+    // A drag that produced a range must survive the trailing click; a jitter
+    // that left the caret collapsed must not suppress the paragraph select.
+    let editor = get_text_editor_state();
+    if editor.is_click_event_skipped && editor.selection.is_selection() {
+        editor.is_click_event_skipped = false;
+        return;
+    }
+
+    with_active_text_at_point(x, y, |editor, text_content, position| {
+        editor.select_paragraph(text_content, position)
     })
 }
 

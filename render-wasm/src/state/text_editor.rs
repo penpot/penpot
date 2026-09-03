@@ -9,10 +9,7 @@ use crate::shapes::{
 use crate::uuid::Uuid;
 use crate::wasm::text::helpers::{self as text_helpers, find_text_span_at_offset};
 use crate::wasm::text_editor::CursorDirection;
-use skia_safe::{
-    textlayout::{Affinity, PositionWithAffinity},
-    Color,
-};
+use skia_safe::Color;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TextSelection {
@@ -329,7 +326,7 @@ impl TextComposition {
 
         let focus = selection.focus;
         let previous_len = self.previous.chars().count();
-        let anchor = TextPositionWithAffinity::new_without_affinity(
+        let anchor = TextPositionWithAffinity::new_downstream_affinity(
             focus.paragraph,
             focus.offset + previous_len,
         );
@@ -437,9 +434,22 @@ impl TextEditorState {
         true
     }
 
-    pub fn select_all(&mut self, text_content: &TextContent) -> bool {
+    fn select_range(
+        &mut self,
+        text_content: &TextContent,
+        start: &TextPositionWithAffinity,
+        end: &TextPositionWithAffinity,
+    ) {
         self.is_pointer_selection_active = false;
-        self.set_caret_from_position(&TextPositionWithAffinity::empty());
+        self.is_click_event_skipped = false;
+        self.set_caret_from_position(start);
+        self.extend_selection_from_position(end);
+        self.update_styles(text_content);
+        self.reset_blink();
+        self.push_event(TextEditorEvent::SelectionChanged);
+    }
+
+    pub fn select_all(&mut self, text_content: &TextContent) -> bool {
         let num_paragraphs = text_content.paragraphs().len().saturating_sub(1);
         let Some(last_paragraph) = text_content.paragraphs().last() else {
             return false;
@@ -449,17 +459,11 @@ impl TextEditorState {
         };
         // Offsets are counted in characters, not bytes.
         let offset = text_helpers::paragraph_char_count(last_paragraph);
-        self.extend_selection_from_position(&TextPositionWithAffinity::new(
-            PositionWithAffinity {
-                position: offset as i32,
-                affinity: Affinity::Upstream,
-            },
-            num_paragraphs,
-            offset,
-        ));
-        self.update_styles(text_content);
-        self.reset_blink();
-        self.push_event(TextEditorEvent::SelectionChanged);
+        self.select_range(
+            text_content,
+            &TextPositionWithAffinity::empty(),
+            &TextPositionWithAffinity::new_upstream_affinity(num_paragraphs, offset),
+        );
 
         true
     }
@@ -469,8 +473,6 @@ impl TextEditorState {
         text_content: &TextContent,
         position: &TextPositionWithAffinity,
     ) {
-        self.is_pointer_selection_active = false;
-
         let paragraphs = text_content.paragraphs();
         if paragraphs.is_empty() || position.paragraph >= paragraphs.len() {
             return;
@@ -485,7 +487,7 @@ impl TextEditorState {
 
         let chars: Vec<char> = paragraph_text.chars().collect();
         if chars.is_empty() {
-            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+            self.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(
                 position.paragraph,
                 0,
             ));
@@ -507,7 +509,7 @@ impl TextEditorState {
         }
 
         if !text_helpers::is_word_char(chars[offset]) {
-            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+            self.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(
                 position.paragraph,
                 position.offset.min(chars.len()),
             ));
@@ -527,17 +529,31 @@ impl TextEditorState {
             end += 1;
         }
 
-        self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
-            position.paragraph,
-            start,
-        ));
-        self.extend_selection_from_position(&TextPositionWithAffinity::new_without_affinity(
-            position.paragraph,
-            end,
-        ));
-        self.update_styles(text_content);
-        self.reset_blink();
-        self.push_event(TextEditorEvent::SelectionChanged);
+        self.select_range(
+            text_content,
+            &TextPositionWithAffinity::new_downstream_affinity(position.paragraph, start),
+            &TextPositionWithAffinity::new_downstream_affinity(position.paragraph, end),
+        );
+    }
+
+    pub fn select_paragraph(
+        &mut self,
+        text_content: &TextContent,
+        position: &TextPositionWithAffinity,
+    ) {
+        let paragraphs = text_content.paragraphs();
+        if paragraphs.is_empty() || position.paragraph >= paragraphs.len() {
+            return;
+        }
+
+        // Offsets are counted in characters, not bytes.
+        let offset = text_helpers::paragraph_char_count(&paragraphs[position.paragraph]);
+
+        self.select_range(
+            text_content,
+            &TextPositionWithAffinity::new_downstream_affinity(position.paragraph, 0),
+            &TextPositionWithAffinity::new_upstream_affinity(position.paragraph, offset),
+        );
     }
 
     pub fn set_caret_from_position(&mut self, position: &TextPositionWithAffinity) {
@@ -838,7 +854,7 @@ impl TextEditorState {
         let cursor = self.selection.focus;
         if text_helpers::split_paragraph_at_cursor(text_content, &cursor) {
             let new_cursor =
-                TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0);
+                TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph + 1, 0);
             self.selection.set_caret(new_cursor);
         }
 

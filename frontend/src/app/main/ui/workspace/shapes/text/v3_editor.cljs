@@ -159,6 +159,10 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- triple-click?
+  [^js native-event]
+  (>= (.-detail native-event) 3))
+
 (defn- input-surface-class
   "Class list for the contenteditable capture surface.
 
@@ -492,7 +496,9 @@
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
-             (wasm.api/text-editor-set-cursor-from-offset off-pt)
+             (if (triple-click? native-event)
+               (wasm.api/text-editor-select-paragraph off-pt)
+               (wasm.api/text-editor-set-cursor-from-offset off-pt))
              (wasm.api/render-text-editor-overlay!))))
 
         on-double-click

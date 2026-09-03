@@ -311,6 +311,7 @@
 (def text-editor-get-active-shape-id text-editor/text-editor-get-active-shape-id)
 (def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
+(def text-editor-select-paragraph text-editor/text-editor-select-paragraph)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
 
 (def dpr
