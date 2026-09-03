@@ -570,41 +570,54 @@
   []
   (reset! pending-caret-styles {}))
 
-(defn- merge-exported-texts-into-content
-  "Merge exported span texts back into the existing content tree.
+(defn merge-exported-texts-into-content
+  "Merge exported spans back into the existing content tree.
 
-  The WASM editor may split or merge paragraphs (Enter / Backspace at
-  paragraph boundary), so the exported structure can differ from the
-  original.  When extra paragraphs or spans appear we clone styling from
-  the nearest existing sibling; when fewer appear we truncate.
+  The WASM editor may split or merge paragraphs (Enter / Backspace at a
+  paragraph boundary, paste of several lines), so the exported structure can
+  differ from the original one, and a positional merge would leave the text of
+  one paragraph wearing the styling of another. Every exported span carries the
+  position it had in the tree we last exchanged with WASM (`:p`/`:s`), so the
+  styling is taken from there; a span WASM never saw falls back to its position
+  and then to the last existing span.
 
-  exported-texts  vector of vectors  [[\"span1\" \"span2\"] [\"p2s1\"]]
-  content         existing Penpot content map (root -> paragraph-set -> …)"
-  [content exported-texts]
+  exported  vector of paragraphs, each a vector of `{:p 0 :s 0 :t \"text\"}`
+  content   existing Penpot content map (root -> paragraph-set -> …)"
+  [content exported]
   (let [para-set       (first (get content :children))
         orig-paras     (get para-set :children)
-        num-orig       (count orig-paras)
         last-orig-para (when (seq orig-paras) (last orig-paras))
         template-span  (when last-orig-para
                          (-> last-orig-para :children last))
+
+        styling-para
+        (fn [para-idx spans]
+          (or (get orig-paras (get (first spans) :p))
+              (get orig-paras para-idx)
+              last-orig-para))
+
+        styling-span
+        (fn [orig-para span-idx {:keys [p s]}]
+          (or (get-in orig-paras [p :children s])
+              (get-in orig-para [:children span-idx])
+              (-> orig-para :children last)
+              template-span))
+
         new-paras
-        (mapv (fn [para-idx exported-span-texts]
-                (let [orig-para (if (< para-idx num-orig)
-                                  (nth orig-paras para-idx)
-                                  (dissoc last-orig-para :children))
-                      orig-spans     (get orig-para :children)
-                      num-orig-spans (count orig-spans)
-                      last-orig-span (when (seq orig-spans) (last orig-spans))]
+        (mapv (fn [para-idx spans]
+                (let [orig-para (styling-para para-idx spans)]
                   (assoc orig-para :children
-                         (mapv (fn [span-idx new-text]
-                                 (let [orig-span (if (< span-idx num-orig-spans)
-                                                   (nth orig-spans span-idx)
-                                                   (or last-orig-span template-span))]
-                                   (assoc orig-span :text new-text)))
-                               (range (count exported-span-texts))
-                               exported-span-texts))))
-              (range (count exported-texts))
-              exported-texts)
+                         (if (seq spans)
+                           (mapv (fn [span-idx span]
+                                   (-> (styling-span orig-para span-idx span)
+                                       (assoc :text (get span :t))))
+                                 (range (count spans))
+                                 spans)
+                           ;; A paragraph with no spans is dropped on the way
+                           ;; back to WASM (and fails the content schema).
+                           [(assoc (or template-span {}) :text "")]))))
+              (range (count exported))
+              exported)
         new-para-set (assoc para-set :children new-paras)]
     (assoc content :children [new-para-set])))
 
@@ -634,9 +647,9 @@
   []
   (when (and (wasm/ready?) (text-editor-has-focus?))
     (let [shape-id  (text-editor-get-active-shape-id)
-          new-texts (text-editor-export-content)]
+          new-texts (when shape-id (text-editor-export-content))]
       (when (and shape-id new-texts)
-        (let [texts-clj (js->clj new-texts)
+        (let [texts-clj (js->clj new-texts :keywordize-keys true)
               ;; A brand-new empty text shape (single click) has no cached
               ;; content yet, so fall back to a default template so the first
               ;; keystrokes are synced back to the shape instead of dropped.
@@ -675,7 +688,11 @@
                          span-end  (+ pos span-len)
                          ol-start  (max pos sel-start)
                          ol-end    (min span-end sel-end)
-                         has-overlap? (< ol-start ol-end)]
+                         ;; An empty span has no range to overlap, but an empty
+                         ;; line inside the selection still has to be restyled.
+                         has-overlap? (or (< ol-start ol-end)
+                                          (and (zero? span-len)
+                                               (<= sel-start pos sel-end)))]
                      (if (not has-overlap?)
                        (recur (rest spans) span-end (conj acc span))
                        (let [before   (when (> ol-start pos)

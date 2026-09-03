@@ -924,11 +924,11 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
             return std::ptr::null_mut();
         };
 
-        let Some(shape) = state.shapes.get(&shape_id) else {
+        let Some(shape) = state.shapes.get_mut(&shape_id) else {
             return std::ptr::null_mut();
         };
 
-        let Type::Text(text_content) = &shape.shape_type else {
+        let Type::Text(text_content) = &mut shape.shape_type else {
             return std::ptr::null_mut();
         };
 
@@ -943,11 +943,18 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
                     .replace('\n', "\\n")
                     .replace('\r', "\\r")
                     .replace('\t', "\\t");
-                span_parts.push(format!("\"{}\"", escaped_text));
+                span_parts.push(format!(
+                    "{{\"p\":{},\"s\":{},\"t\":\"{}\"}}",
+                    span.paragraph_position, span.span_position, escaped_text
+                ));
             }
             json_parts.push(format!("[{}]", span_parts.join(",")));
         }
         let json = format!("[{}]", json_parts.join(","));
+
+        // The host rebuilds its content tree out of this JSON, so the current
+        // positions are what the next call has to report against.
+        text_content.reset_span_positions();
 
         let mut bytes = json.into_bytes();
         bytes.push(0);
