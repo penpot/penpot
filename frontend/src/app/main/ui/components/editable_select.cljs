@@ -183,7 +183,7 @@
      [:span {:class (stl/css :dropdown-button)
              :on-click toggle-dropdown}
       [:> icon* {:icon-id i/arrow-down
-                 :size "s"
+                 :size "m"
                  :aria-hidden true
                  :class (stl/css :dropdown-icon)}]]
 
@@ -199,7 +199,7 @@
              [:li
               {:key (str element-id "-" index)
                :class (stl/css-case :dropdown-element true
-                                    :is-selected (= (dm/str value) current-value))
+                                    :is-selected (= (dm/str value) (dm/str current-value)))
                :data-value value
                :on-click select-item}
               [:span {:class (stl/css :label)} label]
