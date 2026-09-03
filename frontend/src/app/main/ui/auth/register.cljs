@@ -114,6 +114,7 @@
                                 (str "<ul>" items "</ul>"))]
                  (st/emit! (ntf/show {:content (tr "errors.weak-password")
                                       :detail detail
+                                      :is-html true
                                       :type :toast
                                       :level :error})))
 

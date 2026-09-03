@@ -745,7 +745,6 @@
                          :cta-link (if (and (contains? cf/flags :admin-console) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")
                          :current-plan false}])
 
@@ -783,6 +782,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :code-action :activate
+                         :recommended (= subscription-type "professional")
                          :show-button-cta (not nitrate-license)
                          :current-plan false
                          :inline-error nitrate-start-error-message}])]]]))
@@ -848,8 +848,8 @@
          [:div {:class (stl/css :modal-text)}
           (tr "nitrate.form.enterprise-intro" ".") " " (if nitrate-license (tr "nitrate.form.contact-us-upgrade") (tr "nitrate.form.contact-us-free-trial"))]
          [:div {:class (stl/css :modal-text)}
-          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.app"}
-           "sales@penpot.app"]]])]]))
+          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.net"}
+           "sales@penpot.net"]]])]]))
 
 (mf/defc nitrate-contact-sales-dialog
   {::mf/register modal/components
@@ -898,7 +898,7 @@
                         :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
            [:> button* {:variant "primary"
                         :type "button"
-                        :on-click #(dom/open-new-window (dm/str "mailto:sales@penpot.app?subject=Switch%20to%20the%20" subscription-type "%20plan"))} (tr "nitrate.contact-sales.button")]]])]]]))
+                        :on-click #(dom/open-new-window (dm/str "mailto:sales@penpot.net?subject=Switch%20to%20the%20" subscription-type "%20plan"))} (tr "nitrate.contact-sales.button")]]])]]]))
 
 (mf/defc nitrate-cancel-contact-sales-dialog
   {::mf/register modal/components

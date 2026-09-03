@@ -241,6 +241,18 @@
   (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
           (update :data blob/decode)))
 
+(defn- check-fragment-scope!
+  "Checks that the fragment is reachable from the pages authorized by
+  the share-link. Raises a :not-found exception if the fragment is not reachable."
+  [cfg file-id fragment-id pages]
+  (let [fdata (-> (bfc/get-file cfg file-id :read-only? true)
+                  (get :data)
+                  (update :pages-index select-keys pages))]
+    (when-not (contains? (feat.fdata/get-used-pointer-ids fdata) fragment-id)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "object not found"))))
+
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."
   {::doc/added "1.17"
@@ -250,11 +262,9 @@
   [cfg {:keys [::rpc/profile-id file-id fragment-id share-id]}]
   (db/run! cfg (fn [cfg]
                  (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)]
-                   (when (= :share-link (:type perms))
-                     (ex/raise :type :not-found
-                               :code :object-not-found
-                               :hint "object not found"))
                    (check-read-permissions! perms)
+                   (when (= :share-link (:type perms))
+                     (check-fragment-scope! cfg file-id fragment-id (:pages perms)))
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
 

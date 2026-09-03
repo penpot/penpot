@@ -118,8 +118,8 @@
               (tr "nitrate.form.contact-upgrade")
               (tr "nitrate.form.contact-trial"))]
            [:p {:class (stl/css :modal-text-large)}
-            [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
-             "sales@penpot.app"]]
+            [:a {:class (stl/css :link) :href "mailto:sales@penpot.net"}
+             "sales@penpot.net"]]
            [:div  {:class (stl/css :activation-code)}
             [:p {:class (stl/css :modal-text-large)}
              [:a {:class (stl/css :link)
