@@ -160,7 +160,7 @@
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
-           selected-before translation?]}]
+           selected-before translation? skip-component-sync?]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -188,7 +188,8 @@
                    :stack-undo? stack-undo?
                    :ignore-wasm? ignore-wasm?
                    :selected-before selected-before
-                   :translation? translation?}]
+                   :translation? translation?
+                   :skip-component-sync? skip-component-sync?}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
@@ -227,7 +228,7 @@
                  undo-group, they will be undone or redone in a single step
    "
   [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id
-           translation?]
+           translation? skip-component-sync?]
     :or {save-undo? true
          stack-undo? false
          undo-group (uuid/next)
@@ -261,4 +262,5 @@
                        (assoc :redo-changes rchg)
                        (assoc :selected-before selected)
                        (assoc :translation? translation?)
+                       (assoc :skip-component-sync? skip-component-sync?)
                        (commit)))))))))
