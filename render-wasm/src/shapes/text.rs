@@ -192,11 +192,22 @@ impl TextPositionWithAffinity {
         }
     }
 
-    pub fn new_without_affinity(paragraph: usize, offset: usize) -> Self {
+    pub fn new_downstream_affinity(paragraph: usize, offset: usize) -> Self {
         Self {
             position_with_affinity: PositionWithAffinity {
                 position: offset as i32,
                 affinity: Affinity::Downstream,
+            },
+            paragraph,
+            offset,
+        }
+    }
+
+    pub fn new_upstream_affinity(paragraph: usize, offset: usize) -> Self {
+        Self {
+            position_with_affinity: PositionWithAffinity {
+                position: offset as i32,
+                affinity: Affinity::Upstream,
             },
             paragraph,
             offset,

@@ -450,6 +450,11 @@
   (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_select_word_boundary" x y)))
 
+(defn text-editor-select-paragraph
+  [{:keys [x y]}]
+  (when (wasm/ready?)
+    (h/call wasm/internal-module "_text_editor_select_paragraph" x y)))
+
 (defn text-editor-blur
   []
   (when (wasm/ready?)
