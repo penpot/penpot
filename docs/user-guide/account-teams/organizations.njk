@@ -1,0 +1,227 @@
+---
+title: Organizations
+order: 3
+desc: Learn how Organizations work in Penpot Enterprise, creating one, the Admin Console, membership, Modules and Controls, and Single Sign-On (SSO).
+---
+
+<h1 id="organizations">Organizations</h1>
+<p class="main-paragraph">An organization is the governance layer Penpot Enterprise adds on top of your teams. This section covers how to create and manage one: the Admin Console, membership, and the Modules and Controls used to configure it, including Single Sign-On (SSO).</p>
+
+<h3 id="creating-an-organization">Creating an organization
+  <a class="direct-link" href="#creating-an-organization">#</a>
+</h3>
+<p>Creating an organization is as easy as giving it a name.</p>
+<p>Once the organization is created, you'll be taken to the Admin Console. At this point, the organization has one member: you, the owner.</p>
+
+<h3 id="the-admin-console">The Admin Console
+  <a class="direct-link" href="#the-admin-console">#</a>
+</h3>
+<p>The Admin Console is the admin interface for your organization. Only the organization owner can access it.</p>
+<p>You can reach the Admin Console directly at <code>/admin-console</code>, or from any team dashboard in Penpot by opening the organization navigation menu and clicking the Admin Console link. If you own more than one organization, you can switch between them from within the Admin Console.</p>
+
+<figure>
+  <a href="/img/enterprise/enterprise-access-admin-console.webp" target="_blank">
+    <img alt="Accessing the Admin Console" src="/img/enterprise/enterprise-access-admin-console.webp"/>
+  </a>
+</figure>
+
+<p>The Admin Console includes:</p>
+
+<ol>
+  <li><strong>Switch organization menu: </strong> To navigate between the organizations you own.</li>
+  <li><strong>Organization settings: </strong> To change basic settings, such as renaming it or deleting it.</li>
+  <li><strong>A "Go to files" button </strong> that returns you to a team dashboard.</li>
+  <li><strong>Your user avatar</strong>, that expands into a full user menu.</li>
+  <li><strong>Module: </strong> The control itself to configure.</li>
+</ol>
+
+<figure>
+  <a href="/img/enterprise/enterprise-admin-console.webp" target="_blank">
+    <img alt="Admin Console" src="/img/enterprise/enterprise-admin-console.webp"/>
+  </a>
+</figure>
+
+<h3 id="organizations-and-teams">Organizations and teams
+  <a class="direct-link" href="#organizations-and-teams">#</a>
+</h3>
+<p>An organization groups one or more Teams under a shared governance structure. Teams continue to work just as they do in standard Penpot, with the added layer that the org owner can apply configuration that affects all members across the organization's teams.</p>
+<h4>How teams relate to organizations</h4>
+
+<p>Teams inside an organization inherit the governance settings applied at the org level via the Admin Console. The structure is:</p>
+
+<figure>
+  <img alt="organization-hierarchy" src="/img/enterprise/enterprise-organization-hierarchy-w.webp"/>
+</figure>
+
+<p>Team members work within projects and files as usual. What changes under Enterprise is the org owner's ability to restrict or govern that work from the Admin Console.</p>
+<p>Within each team, the <a href="https://help.penpot.app/user-guide/account-teams/teams/#teams-members" target="_blank">standard Penpot roles</a> apply.</p>
+
+<h3 id="managing-organization-membership">Managing organization membership
+  <a class="direct-link" href="#managing-organization-membership">#</a>
+</h3>
+<p>At launch, an organization has a single member: the owner. Additional members are brought in by being part of a team added to the organization, being invited to teams within the organization, or being directly invited to the organization by the owner.</p>
+<p>The Admin Console provides a unified view of all members across teams within the organization.</p>
+
+<figure>
+  <a href="/img/enterprise/enterprise-membership-w.webp" target="_blank">
+    <img alt="Admin-Console Members page" src="/img/enterprise/enterprise-membership-w.webp"/>
+  </a>
+</figure>
+
+<h3 id="modules-and-controls">Modules and Controls
+  <a class="direct-link" href="#modules-and-controls">#</a>
+</h3>
+
+<p>Modules are the configurable governance capabilities available to Enterprise organizations. Each Module is made up of one or more Controls: the individual settings that define who can do what, and where.</p>
+<p>Modules are configured from the Admin Console and apply organization-wide. </p>
+
+<table cellspacing="0" cellpadding="1" border="1" width="100%">
+  <thead>
+    <tr>
+      <th valign="top" class="cellrowborder">Modules</th>
+      <th valign="top" class="cellrowborder" style="text-align: center;">What it does</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Single Sign-On (SSO)</td>
+      <td>Requires all org members to authenticate through your corporate identity provider before accessing the organization's teams and files.</td>
+    </tr>
+    <tr>
+      <td>Advanced permissions</td>
+      <td>Defines who can create, view, edit, administer, or share teams, projects, and files. Also controls who can invite new members to teams.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="module-advanced-permissions">Module: Advanced permissions
+  <a class="direct-link" href="#module-advanced-permissions">#</a>
+</h3>
+
+  <p>Advanced Permissions gives the organization owner fine-grained control over what members can do across all teams in the organization. Rather than relying on the default Penpot team roles alone, this module lets you restrict or open up specific actions at the organization level.</p>
+
+  <h4>What it controls</h4>
+
+  <p>The Advanced Permissions module is made up of individual Controls. Each Control governs a specific action, and each has a set of options to choose from. The selected option becomes the rule for the entire organization.</p>
+
+  <h4>How to configure it</h4>
+
+  <p>Advanced Permissions is configured from the Admin Console. Changes apply to all teams within the organization immediately.</p>
+  <ol>
+    <li>Open the Admin Console.</li>
+    <li>Select Advanced Permissions from the left sidebar.</li>
+    <li>For each Control, select the option that fits your governance policy.</li>
+    <li>Changes take effect right away. There is no publish or save step.</li>
+  </ol>
+
+  <h4>How it relates to team roles</h4>
+
+  <p>Advanced Permissions works on top of the standard Penpot team roles (Viewer, Editor, Admin, Owner). It does not replace them. Think of it as a ceiling: even if a member's team role would normally allow an action, an Advanced Permissions Control can prevent it organization-wide.</p>
+  <p>For example, if “New team members” is set to "Organization members only," a team owner who would normally be able to invite anyone will find that option restricted to people who are already part of the organization.</p>
+
+  <h4>Default behavior</h4>
+
+  <p>When an organization is first created, all controls are configured with the most permissive setting; the same setting is used by all teams that are not part of any organization. No behavior changes until you actively configure a Control.</p>
+
+<h3 id="module-single-sign-on">Module: Single Sign-On (SSO)
+  <a class="direct-link" href="#module-single-sign-on">#</a>
+</h3>
+
+  <p>Single Sign-On lets you require all members of your organization to authenticate through your corporate identity provider (IdP) before accessing any of the organization's teams and files.</p>
+  <p>SSO applies to teams and files only. The Admin Console is always accessible without SSO, so you can always reach your configuration to adjust or deactivate it, even if your own directory entry changes.</p>
+
+  <h4>Configuring your identity provider</h4>
+  <p>Before setting up SSO in Penpot, you need to register Penpot as an application in your identity provider. The steps vary by provider, but you will always need to set the following <strong>callback URL</strong> in your IdP configuration:</p>
+  <p><strong><code>https://&lt;your-penpot-domain&gt;/api/auth/oidc/callback</code></strong></p>
+  <p>Your IdP will then give you a <strong>Client ID</strong> and <strong>Client Secret</strong> to use in Penpot. Once you have those:</p>
+  <ol>
+    <li>Open the Admin Console.</li>
+    <li>Select <strong>SSO Config</strong>.</li>
+    <li>Choose your provider and fill in the fields.</li>
+  </ol>
+
+  <figure>
+    <a href="/img/enterprise/enterprise-module-sso.webp" target="_blank">
+      <img alt="SSO configuration" src="/img/enterprise/enterprise-module-sso.webp"/>
+    </a>
+  </figure>
+
+  <h5>Generic authentication (OpenID Connect)</h5>
+  <p>Use this option for any identity provider that supports the OIDC protocol, such as Okta, Keycloak, or Auth0.</p>
+  <ul>
+    <li><strong>Issuer / Authority URL:</strong> base URL of your OIDC provider, used to autodiscover endpoints</li>
+    <li><strong>Client ID:</strong> client identifier assigned by your provider</li>
+    <li><strong>Client Secret:</strong> client secret assigned by your provider</li>
+  </ul>
+
+  <h5>Azure Active Directory (OpenID Connect)</h5>
+  <ul>
+    <li><strong>Issuer / Authority URL:</strong> <code>https://login.microsoftonline.com/&lt;your-tenant-id&gt;/v2.0/</code></li>
+    <li><strong>Client ID:</strong> Application (client) ID from your Azure app registration</li>
+    <li><strong>Client Secret:</strong> client secret value from your Azure app registration</li>
+  </ul>
+
+  <h5>Google (OAuth)</h5>
+  <ul>
+    <li><strong>Client ID:</strong> client identifier from your Google Cloud OAuth 2.0 credentials</li>
+    <li><strong>Client Secret:</strong> client secret from your Google Cloud OAuth 2.0 credentials</li>
+  </ul>
+
+  <p>When all fields are filled, click <strong>Activate SSO</strong>. Penpot will run a test connection against your IdP. If the connection fails, your draft is kept and no changes are applied.</p>
+  <p>If the test passes, a confirmation dialog will appear. It will warn you that members not in your directory will lose access to the organization's teams once SSO is active. Review your member list if needed, then confirm. SSO becomes active immediately.</p>
+
+  <h4>What happens to existing sessions</h4>
+  <p>When SSO is activated, any member who is currently inside one of the organization's teams is cut off immediately and sent through the SSO login. This does not log them out of Penpot entirely. They can still reach teams that do not belong to your organization without re-authenticating.</p>
+  <p>SSO sessions last 4 hours. When a session expires, members are routed through the SSO login again. If they are still in the directory, they are signed back in immediately.</p>
+
+  <h4>Editing an active configuration</h4>
+  <p>While SSO is active, you can edit any field. As soon as you make a change, <strong>Apply changes</strong> and <strong>Discard changes</strong> buttons appear. Discarding restores every field to the current live configuration. Applying runs the same test connection as the initial setup, without a confirmation dialog. If the connection fails, your live configuration is not touched. Changes may take up to 5 minutes to apply for members who are currently working in a file.</p>
+
+  <h4>Deactivating SSO</h4>
+  <p>Click <strong>Deactivate SSO</strong> and confirm. The configuration is preserved as a draft so you can reactivate it later without re-entering your credentials. Members are notified by email the first time SSO is activated. If you deactivate and reactivate within 24 hours, the notification is not re-sent.</p>
+
+  <h4>For your members</h4>
+  <p>Members do not need to do anything to prepare. When they next try to access the organization's teams, they will be asked to authenticate through your IdP. If they are already signed in through that provider, the step is skipped automatically.</p>
+  <p>Org membership still requires an invitation from you. Being in the directory alone does not grant access to Penpot or to your organization.</p>
+  <p>If a member is not in your directory, they remain an org member but cannot enter the organization's teams until they are added. A single email is sent to all current members and pending invitees when SSO is first activated, explaining what changed and who to contact if they cannot get in.</p>
+
+<h3 id="frequently-asked-questions"> Frequently asked questions
+  <a class="direct-link" href="#frequently-asked-questions">#</a>
+</h3>
+
+  <h4>Can a team belong to more than one organization?</h4>
+  <p>No. A team belongs to a single organization.</p>
+
+  <h4>Can non-owners access the Admin Console?</h4>
+  <p>No. Access to the Admin Console is currently exclusive to the organization owner. If another user attempts to access the Admin Console URL, they will see a 404 page.</p>
+
+  <h4>What is the organization name used for?</h4>
+  <p>It's the human-readable name used to identify your organization in the UI, in emails, and in URLs. It is not your official billing name. You can change it at any time without affecting navigation or functionality.</p>
+
+  <h4>Do Advanced Permissions replace the standard Penpot team roles?</h4>
+  <p>No. Advanced Permissions work on top of the existing roles (Viewer, Editor, Admin, Owner). They add an organization-wide ceiling on what any role can do, but they do not change how roles work within a team.</p>
+
+  <h4>What is the default behavior when I first create an organization?</h4>
+  <p>All Controls are set to their most permissive option. Nothing changes until you actively configure a Control.</p>
+
+  <h4>What happens to existing team admins if I change a Control that restricts their permissions?</h4>
+  <p>The restriction applies immediately. An admin who could previously perform an action will no longer be able to do so as soon as the Control is changed, with no grace period.</p>
+
+  <h4>Is this the same as the authentication providers in Penpot's self-hosting configuration?</h4>
+  <p>No. Penpot's self-hosted configuration lets server administrators enable login methods (Google, GitHub, GitLab, OIDC) at the instance level, so users can sign in to Penpot itself with those providers. That is a server-level setting managed by whoever runs the infrastructure.</p>
+  <p>The SSO module in Enterprise is different in scope and purpose. It is configured by you, the organization owner, from the Admin Console, and it governs access to your organization's teams and files specifically. It does not change how users log in to Penpot as a platform, only whether they need to pass through your corporate identity provider to reach your organization's content.</p>
+
+  <h4>Does SSO affect the Admin Console?</h4>
+  <p>No. The Admin Console is always accessible without SSO, regardless of your configuration. This ensures you can always reach your settings to adjust or deactivate SSO, even if something changes on the directory side.</p>
+
+  <h4>What happens if my identity provider goes down while SSO is active?</h4>
+  <p>Current sessions continue until they expire. The next time a member tries to authenticate through your IdP and the provider is unreachable, the login will fail. There is no automatic bypass. Since the Admin Console is outside SSO, you can still reach your configuration to deactivate SSO if needed.</p>
+
+  <h4>Can I use the same identity provider for more than one organization?</h4>
+  <p>Yes. Two different organizations, and the Penpot instance itself, can share the same IdP. A successful SSO login never grants org membership on its own, so there is no risk of cross-organization access. Membership always requires an explicit invitation.</p>
+
+  <h4>What if a member is not in my directory?</h4>
+  <p>They remain an org member and keep their Penpot account, but they cannot enter the organization's teams until they are added to the directory. We send them an email when SSO is first activated explaining the situation and telling them to contact you.</p>
+
+  <h4>Does accepting an invitation automatically give someone access to my org's teams?</h4>
+  <p>Only if they are also in your directory. An invitee can register and accept the invitation, but if they are not in the directory, they become an org member without being able to enter the teams. Acceptance is never blocked on that basis.</p>
