@@ -13,7 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :as deprecated-input]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
@@ -182,7 +182,10 @@
 
      [:span {:class (stl/css :dropdown-button)
              :on-click toggle-dropdown}
-      deprecated-icon/arrow]
+      [:> icon* {:icon-id i/arrow-down
+                 :size "m"
+                 :aria-hidden true
+                 :class (stl/css :dropdown-icon)}]]
 
      [:& dropdown {:show (or is-open? false)
                    :on-close close-dropdown}
@@ -196,9 +199,12 @@
              [:li
               {:key (str element-id "-" index)
                :class (stl/css-case :dropdown-element true
-                                    :is-selected (= (dm/str value) current-value))
+                                    :is-selected (= (dm/str value) (dm/str current-value)))
                :data-value value
                :on-click select-item}
               [:span {:class (stl/css :label)} label]
               [:span {:class (stl/css :check-icon)}
-               deprecated-icon/tick]])))]]]))
+               [:> icon* {:icon-id i/tick
+                          :aria-hidden true
+                          :size "s"
+                          :class (stl/css :check-tick)}]]])))]]]))
