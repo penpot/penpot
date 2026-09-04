@@ -90,6 +90,11 @@ pub struct TextContentSize {
 
 const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
 
+/// Matches `marginRight: "1px"` on `.paragraph-set` in the HTML text renderer
+/// (`frontend/src/app/main/ui/shapes/text/styles.cljs`). DOM `getBoundingClientRect`
+/// includes that margin in auto-width measurements; Skia `longest_line()` does not.
+const PARAGRAPH_SET_MARGIN_RIGHT: f32 = 1.0;
+
 impl TextContentSize {
     pub fn default() -> Self {
         Self {
@@ -863,7 +868,7 @@ impl TextContent {
         let measure_paragraphs =
             build_paragraphs_from_paragraph_builders(&mut measure_builders, f32::MAX);
 
-        let width = measure_paragraphs
+        let content_width = measure_paragraphs
             .iter()
             .flatten()
             .fold(0.0_f32, |auto_width, paragraph| {
@@ -871,9 +876,10 @@ impl TextContent {
             })
             .ceil();
 
-        // Re-layout at that width with the real alignment.
+        // Re-layout at the intrinsic width (without the HTML margin slack).
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs =
+            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, content_width);
         let height = paragraphs
             .iter()
             .flatten()
@@ -881,10 +887,11 @@ impl TextContent {
                 auto_height + paragraph.height()
             });
 
+        let reported_width = content_width + PARAGRAPH_SET_MARGIN_RIGHT;
         let size = TextContentSize::new_with_normalized_line_height(
-            width,
+            reported_width,
             height.ceil(),
-            width,
+            reported_width,
             normalized_line_height,
         );
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
