@@ -122,8 +122,14 @@ desc: Style your designs with Penpot's options! Learn about color fills, gradien
   <img alt="Multiple strokes" src="/img/styling/stroke-multiple.webp"/>
 </figure>
 
+<h2 id="stroke-to-path">Stroke to path</h2>
+<p>A path is the underlying geometry: a sequence of points and segments (straight lines or Bezier curves). A stroke is the visible line drawn along that path, with properties such as width, color, opacity, dashes, caps, and joins.</p>
+<p><strong>Stroke to path</strong> turns the visible outline of a stroke into a separate, editable path. You can then reshape or style that outline independently of the original path. The new shape is usually closed. That matters for SVG, boolean operations, and editing the outline as geometry.</p>
+<p>To convert a stroke, select a layer that has one, open the layer menu, and choose <strong>Stroke to path</strong>. Penpot creates a new path from each stroke (named with " (stroke)") and removes the strokes from the original layer.</p>
+<p class="advice">Stroke to path is currently available when <a href="/user-guide/first-steps/troubleshooting-webgl/">WebGL rendering</a> is enabled.</p>
+
 <h2 id="stroke-caps">Stroke Caps</h2>
-<p>Ever needed an arrow to point something? You can style the ends of any open paths selecting different styles for each end of an open path.</p>
+<p>Ever needed an arrow to point something? You can style the ends of any open paths selecting different styles for each end of an open path. You can also start from the <a href="/user-guide/designing/layers/#lines-arrows">Arrow tool</a>, which already applies a triangle cap.</p>
 <figure>
   <video title="Stroke cap" muted="" playsinline="" controls="" width="100%" poster="/img/styling/stroke-cap.webp" height="auto">
     <source src="/img/styling/stroke-cap.mp4" type="video/mp4">
