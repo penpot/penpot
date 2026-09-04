@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="108" height="88" viewBox="0 0 108 88">
+	<rect fill="none" stroke="blue" stroke-width="8" stroke-miterlimit="4" transform="translate(-6 -6)" x="10" y="10" width="100" height="80"/>
+</svg>

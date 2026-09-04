@@ -1,6 +1,6 @@
 use super::fixtures::*;
 
-use crate::shapes::{BlendMode, Fill, SolidColor};
+use crate::shapes::{BlendMode, Fill, SolidColor, StrokeKind};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 
@@ -236,6 +236,226 @@ fn exports_text_with_multiple_solid_fills() {
     assert!(
         blue_pos.unwrap() < red_pos.unwrap(),
         "bottom fill must appear before top fill in SVG: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_solid_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        solid_stroke(StrokeKind::Inner, 10.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "inner stroke must emit a filled outline: {svg}"
+    );
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "aligned stroke outline should use evenodd: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_solid_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        solid_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("stroke=\"blue\"") || svg.to_ascii_lowercase().contains("stroke=\"#0000ff\""),
+        "center stroke must keep a stroke attribute: {svg}"
+    );
+    assert!(
+        !svg.contains("fill-rule=\"evenodd\""),
+        "center stroke must not expand to an evenodd outline: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_solid_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (20.0, 20.0, 120.0, 100.0),
+        solid_stroke(StrokeKind::Outer, 10.0, skia::Color::from_rgb(255, 0, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"red\"") || svg.to_ascii_lowercase().contains("fill=\"#ff0000\""),
+        "outer stroke must emit a filled outline: {svg}"
+    );
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "aligned stroke outline should use evenodd: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_solid_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        solid_stroke(StrokeKind::Inner, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "closed path inner stroke must emit a filled outline: {svg}"
+    );
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "aligned stroke outline should use evenodd: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_solid_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        solid_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(0, 128, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("stroke=\"green\"") || svg.to_ascii_lowercase().contains("stroke=\"#008000\""),
+        "closed path center stroke must keep a stroke attribute: {svg}"
+    );
+    assert!(
+        !svg.contains("fill-rule=\"evenodd\""),
+        "center stroke must not expand to an evenodd outline: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_solid_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        solid_stroke(StrokeKind::Outer, 8.0, skia::Color::from_rgb(0, 128, 0)),
+    );
+
+    let svg = render(&pool, id);
+    // Path outer previously used save_layer+Clear (dropped by SkSVG). Must not
+    // be a bare stroked path with no visible paint.
+    assert!(
+        svg.contains("fill=\"green\"") || svg.to_ascii_lowercase().contains("fill=\"#008000\""),
+        "closed path outer stroke must emit a filled outline: {svg}"
+    );
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "aligned stroke outline should use evenodd: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_solid_inner_stroke() {
+    // Open paths force Center alignment regardless of the requested kind.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_open_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        solid_stroke(StrokeKind::Inner, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("stroke=\"blue\"") || svg.to_ascii_lowercase().contains("stroke=\"#0000ff\""),
+        "open path inner stroke must render as center stroke: {svg}"
+    );
+    assert!(
+        !svg.contains("fill-rule=\"evenodd\""),
+        "open path must not expand to an evenodd outline: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_solid_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_open_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        solid_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(255, 0, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("stroke=\"red\"") || svg.to_ascii_lowercase().contains("stroke=\"#ff0000\""),
+        "open path center stroke must keep a stroke attribute: {svg}"
+    );
+    assert!(
+        !svg.contains("fill-rule=\"evenodd\""),
+        "open path must not expand to an evenodd outline: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_solid_outer_stroke() {
+    // Open paths force Center alignment regardless of the requested kind.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_open_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        solid_stroke(StrokeKind::Outer, 8.0, skia::Color::from_rgb(0, 128, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("stroke=\"green\"") || svg.to_ascii_lowercase().contains("stroke=\"#008000\""),
+        "open path outer stroke must render as center stroke: {svg}"
+    );
+    assert!(
+        !svg.contains("fill-rule=\"evenodd\""),
+        "open path must not expand to an evenodd outline: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
