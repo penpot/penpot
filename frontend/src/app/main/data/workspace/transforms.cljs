@@ -152,8 +152,7 @@
 (defn- shape-has-image-fill?
   [shape]
   (boolean (or (some :fill-image (:fills shape))
-               (:fill-image shape)
-               (cfh/image-shape? shape))))
+               (:fill-image shape))))
 
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
@@ -193,10 +192,6 @@
                   ;; Resize vector
                   scalev (-> (gpt/divide (gpt/add shapev deltav) shapev)
                              (gpt/no-zeros))
-
-                  ;; Prevent non-positive scale to avoid division by zero or flipping to negative size
-                  scalev (gpt/point (max 0.001 (dm/get-prop scalev :x))
-                                    (max 0.001 (dm/get-prop scalev :y)))
 
                   scalev (if ^boolean lock?
                            (let [v (cond
@@ -252,6 +247,10 @@
                   sy (dm/get-prop scalev :y)
                   w-new (* width sx)
                   h-new (* height sy)
+
+                  bounds-resize? (and ^boolean bounds-resize?
+                                      (pos? w-new)
+                                      (pos? h-new))
 
                   [dx dy] (if ^boolean center?
                             [(/ (* width (- 1.0 sx)) 2.0)

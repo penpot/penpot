@@ -100,8 +100,7 @@
     :layout-grid-columns
     :layout-grid-rows
     :fills
-    :fill-image
-    :metadata})
+    :fill-image})
 
 ;; -- temporary modifiers -------------------------------------------
 

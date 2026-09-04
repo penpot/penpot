@@ -94,19 +94,17 @@ fn draw_image_fill(
     let container = &shape.selrect;
     let sampling = get_resources().sampling_options;
 
-    let (src_rect, dest_rect, needs_clip) = if let Some(tf) = image_fill.transform() {
-        let dest_x = container.left + tf.x * container.width();
-        let dest_y = container.top + tf.y * container.height();
-        let dest_w = tf.width * container.width();
-        let dest_h = tf.height * container.height();
-        let dest_rect = MathRect::from_xywh(dest_x, dest_y, dest_w, dest_h);
-        let src_rect = MathRect::from_xywh(0.0, 0.0, size.width as f32, size.height as f32);
-        (src_rect, dest_rect, true)
-    } else {
-        let src_rect = get_source_rect(size, container, image_fill);
-        let dest_rect = *container;
-        (src_rect, dest_rect, !is_axis_aligned_image_rect(shape))
+    let dest_rect = match image_fill.transform() {
+        Some(tf) => MathRect::from_xywh(
+            container.left + tf.x * container.width(),
+            container.top + tf.y * container.height(),
+            tf.width * container.width(),
+            tf.height * container.height(),
+        ),
+        None => *container,
     };
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
+    let needs_clip = image_fill.transform().is_some() || !is_axis_aligned_image_rect(shape);
 
     // `save_layer` is only required when a shape-level image filter (blur) must
     // run over the clipped image. Otherwise a plain save/clip (or no clip for
@@ -191,38 +189,30 @@ fn draw_svg_image_fill(
     let fill_layer = skia::canvas::SaveLayerRec::default().paint(paint);
     canvas.save_layer(&fill_layer);
 
-    if let Some(tf) = image_fill.transform() {
-        let dest_x = container.left + tf.x * container.width();
-        let dest_y = container.top + tf.y * container.height();
-        let dest_w = tf.width * container.width();
-        let dest_h = tf.height * container.height();
-        let scale_x = if size.width > 0 {
-            dest_w / size.width as f32
-        } else {
-            1.0
-        };
-        let scale_y = if size.height > 0 {
-            dest_h / size.height as f32
-        } else {
-            1.0
-        };
-        canvas.translate((dest_x, dest_y));
-        canvas.scale((scale_x, scale_y));
-    } else {
-        let src_rect = get_source_rect(size, container, image_fill);
-        if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
-            canvas.restore();
-            canvas.restore();
-            return true;
-        }
-        let scale_x = container.width() / src_rect.width();
-        let scale_y = container.height() / src_rect.height();
-        canvas.translate((
-            container.left - src_rect.left * scale_x,
-            container.top - src_rect.top * scale_y,
-        ));
-        canvas.scale((scale_x, scale_y));
+    let dest_rect = match image_fill.transform() {
+        Some(tf) => MathRect::from_xywh(
+            container.left + tf.x * container.width(),
+            container.top + tf.y * container.height(),
+            tf.width * container.width(),
+            tf.height * container.height(),
+        ),
+        None => *container,
+    };
+
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
+    if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
+        canvas.restore();
+        canvas.restore();
+        return true;
     }
+
+    let scale_x = dest_rect.width() / src_rect.width();
+    let scale_y = dest_rect.height() / src_rect.height();
+    canvas.translate((
+        dest_rect.left - src_rect.left * scale_x,
+        dest_rect.top - src_rect.top * scale_y,
+    ));
+    canvas.scale((scale_x, scale_y));
 
     dom.render(canvas);
 

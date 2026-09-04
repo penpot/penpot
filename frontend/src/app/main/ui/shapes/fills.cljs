@@ -126,7 +126,7 @@
                        img-h (if (some? tf) (* (get tf :height 1) height) height)
                        image-props #js {:id (dm/str "fill-image-" render-id "-" fill-index)
                                         :href (get embed uri uri)
-                                        :preserveAspectRatio (if (some? tf) "none" (if keep-ar? "xMidYMid slice" "none"))
+                                        :preserveAspectRatio (if keep-ar? "xMidYMid slice" "none")
                                         :x img-x
                                         :y img-y
                                         :width img-w
@@ -137,7 +137,7 @@
                  [:> :rect props])))
 
            (when ^boolean has-image?
-             (let [tf (or (-> image :transform) (-> metadata :transform))
+             (let [tf (-> image :transform)
                    img-x (if (some? tf) (* (get tf :x 0) width) 0)
                    img-y (if (some? tf) (* (get tf :y 0) height) 0)
                    img-w (if (some? tf) (* (get tf :width 1) width) width)
