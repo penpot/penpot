@@ -170,6 +170,23 @@
                   [:workspace-tokens :unfolded-token-types]
                   (make-unfolded-token-types-state file-id set-id #{}))))))
 
+(defn expand-all-token-types
+  "Opens all token type sections that have tokens in the given lib.
+   Used after import so the user can verify everything at a glance."
+  [lib]
+  (ptk/reify ::expand-all-token-types
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id   (:current-file-id state)
+            set-id    (get-in state [:workspace-tokens :selected-token-set-id])
+            all-types (->> (ctob/get-all-tokens lib)
+                           (map :type)
+                           (into #{}))]
+        (save-unfolded-token-types-in-storage file-id set-id all-types)
+        (assoc-in state
+                  [:workspace-tokens :unfolded-token-types]
+                  (make-unfolded-token-types-state file-id set-id all-types))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS TREE - Toggle tree nodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
