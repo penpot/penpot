@@ -55,6 +55,44 @@
   color: var(--title-foreground-color-hover);
 }
 
+.title-summary {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  gap: deprecated.$s-4;
+  min-width: 0;
+  max-width: deprecated.$s-120;
+  margin-inline-start: deprecated.$s-8;
+  overflow: hidden;
+  color: var(--color-foreground-secondary);
+}
+
+.title-summary-text {
+  @include t.use-typography("body-small");
+
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title-summary-counter {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  padding: 0 deprecated.$s-6;
+
+  // Half of the height, so the badge stays fully rounded (pill shaped)
+  // also when the count has more than one digit.
+  border-radius: deprecated.$s-8;
+  background-color: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
+}
+
 .icon {
   color: var(--arrow-icon-color);
 }

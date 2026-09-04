@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as ctc]
    [app.common.types.stroke :as cts]
    [app.config :as cf]
    [app.main.data.workspace :as udw]
@@ -17,6 +18,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet-list*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -79,6 +81,13 @@
 
         strokes         (:strokes values)
         has-strokes?    (or (= :multiple strokes) (some? (seq strokes)))
+
+        summary         (when has-strokes?
+                          (if (= :multiple strokes)
+                            (tr "settings.multiple")
+                            (mf/html
+                             [:> color-bullet-list*
+                              {:colors (mapv ctc/stroke->color strokes)}])))
 
 
         on-color-change
@@ -252,6 +261,7 @@
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        label
+                      :summary      summary
                       :class        (stl/css-case :stroke-title-bar (not has-strokes?))}
        (when (not (= :multiple strokes))
          [:> icon-button* {:variant "ghost"

@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as *;
 
 // TODO: this must be a custom property in the design system
@@ -45,10 +47,61 @@
   border: none;
 }
 
+// Holds the title and its collapsed summary together so the summary sits
+// right next to the title text instead of being pushed to the far edge of
+// the header; this element (not `.panel-title` alone) is the flexible one.
+.title-group {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .panel-title {
   @include use-typography("headline-small");
 
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   color: var(--title-color);
   padding-block: var(--title-padding);
+}
+
+.title-summary {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  gap: var(--sp-xs);
+  min-width: 0;
+  max-width: $sz-120;
+  margin-inline-start: var(--sp-s);
+  overflow: hidden;
+  color: var(--color-foreground-secondary);
+}
+
+.title-summary-text {
+  @include use-typography("body-small");
+
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title-summary-counter {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: $sz-16;
+  height: $sz-16;
+  padding: 0 $sz-6;
+
+  // Half of the height, so the badge stays fully rounded (pill shaped)
+  // also when the count has more than one digit.
+  border-radius: $br-8;
+  background-color: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
 }

@@ -9,12 +9,15 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as ctco]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
+   [app.main.ui.components.color-bullet :refer [color-bullet-list*]]
    [app.main.ui.inspect.exports :as exports]
    [app.main.ui.inspect.styles.panels.blur :refer [blur-panel*]]
    [app.main.ui.inspect.styles.panels.fill :refer [fill-panel*]]
@@ -79,6 +82,33 @@
 
 (defn- has-shadow? [shape]
   (seq (:shadow shape)))
+
+(defn- fill-summary
+  "Compact color bullet list summarizing every fill across `shapes`."
+  [shapes]
+  (mf/html
+   [:> color-bullet-list*
+    {:colors (into [] (mapcat (fn [shape] (map types.fills/fill->color (:fills shape)))) shapes)}]))
+
+(defn- stroke-summary
+  "Compact color bullet list summarizing every stroke across `shapes`."
+  [shapes]
+  (mf/html
+   [:> color-bullet-list*
+    {:colors (into [] (mapcat (fn [shape] (map ctco/stroke->color (:strokes shape)))) shapes)}]))
+
+(defn- shadow-summary
+  "Total number of shadows across `shapes`."
+  [shapes]
+  (reduce + 0 (map (comp count :shadow) shapes)))
+
+(defn- blur-summary
+  "Total number of blur-like properties (blur, background blur) across `shapes`."
+  [shapes]
+  (reduce + 0 (map (fn [shape]
+                     (+ (if (:blur shape) 1 0)
+                        (if (:background-blur shape) 1 0)))
+                   shapes)))
 
 (defn- get-shape-type
   [shapes first-shape first-component]
@@ -208,7 +238,8 @@
            (let [shapes (filter has-fill? shapes)]
              (when (seq shapes)
                [:> style-box* {:panel :fill
-                               :shorthand (:fill shorthands)}
+                               :shorthand (:fill shorthands)
+                               :summary (fill-summary shapes)}
                 [:> fill-panel* {:color-space color-space
                                  :shapes shapes
                                  :resolved-tokens resolved-active-tokens
@@ -219,7 +250,8 @@
            (let [shapes (filter has-stroke? shapes)]
              (when (seq shapes)
                [:> style-box* {:panel :stroke
-                               :shorthand (:stroke shorthands)}
+                               :shorthand (:stroke shorthands)
+                               :summary (stroke-summary shapes)}
                 [:> stroke-panel* {:color-space color-space
                                    :shapes shapes
                                    :objects objects
@@ -245,7 +277,8 @@
            :blur
            (let [shapes (->> shapes (filter has-blur?))]
              (when (seq shapes)
-               [:> style-box* {:panel :blur}
+               [:> style-box* {:panel :blur
+                               :summary (blur-summary shapes)}
                 [:> blur-panel* {:shapes shapes}]]))
            ;; TEXT PANEL
            :text
@@ -263,7 +296,8 @@
            (let [shapes (filter has-shadow? shapes)]
              (when (seq shapes)
                [:> style-box* {:panel :shadow
-                               :shorthand (:shadow shorthands)}
+                               :shorthand (:shadow shorthands)
+                               :summary (shadow-summary shapes)}
                 [:> shadow-panel* {:shapes shapes
                                    :resolved-tokens resolved-active-tokens
                                    :color-space color-space

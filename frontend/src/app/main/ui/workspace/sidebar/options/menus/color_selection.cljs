@@ -12,6 +12,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet-list*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -98,7 +99,7 @@
 (mf/defc color-selection-menu*
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [{:keys [shapes file-id libraries]}]
-  (let [{:keys [groups library-colors colors token-colors]}
+  (let [{:keys [groups all-colors library-colors colors token-colors]}
         (mf/with-memo [file-id shapes libraries]
           (prepare-colors shapes file-id libraries))
 
@@ -203,6 +204,9 @@
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        (tr "workspace.options.selection-color")
+                      :summary      (when has-colors?
+                                      (mf/html
+                                       [:> color-bullet-list* {:colors all-colors}]))
                       :class        (stl/css-case :title-spacing-selected-colors (not has-colors?))}]]
 
      (when open?

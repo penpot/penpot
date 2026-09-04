@@ -61,6 +61,12 @@
         (or (= :multiple exports)
             (some? (seq exports)))
 
+        summary
+        (when has-exports?
+          (if (= :multiple exports)
+            (tr "settings.multiple")
+            (count exports)))
+
         toggle-content
         (mf/use-fn #(swap! open* not))
 
@@ -208,6 +214,7 @@
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
+                      :summary      summary
                       :class        (stl/css-case :title-spacing-export (not has-exports?))}
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.export.add-export")
