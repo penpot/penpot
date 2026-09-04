@@ -424,6 +424,45 @@
                  (files/check-comment-permissions! cfg profile-id file-id share-id)
                  (get-file-comments-users conn file-id profile-id))))
 
+(def ^:private sql:team-comment-users
+  "WITH available_profiles AS (
+     SELECT DISTINCT c.owner_id AS id
+       FROM comment AS c
+      INNER JOIN comment_thread AS ct ON (ct.id = c.thread_id)
+      INNER JOIN file AS f ON (f.id = ct.file_id)
+      INNER JOIN project AS p ON (p.id = f.project_id)
+      WHERE p.team_id = ?
+        AND f.deleted_at IS NULL
+        AND p.deleted_at IS NULL
+  )
+  SELECT p.id,
+         p.email,
+         p.fullname AS name,
+         p.fullname AS fullname,
+         p.photo_id,
+         p.is_active
+    FROM profile AS p
+   WHERE p.id IN (SELECT id FROM available_profiles) OR p.id=?")
+
+(defn get-team-comments-users
+  [conn team-id profile-id]
+  (db/exec! conn [sql:team-comment-users team-id profile-id]))
+
+(def ^:private
+  schema:get-profiles-for-team-comments
+  [:map {:title "get-profiles-for-team-comments"}
+   [:team-id ::sm/uuid]])
+
+(sv/defmethod ::get-profiles-for-team-comments
+  "Retrieves profiles of all participants on comment threads across an
+  entire team in a single batched query, avoiding per-file RPC calls."
+  {::doc/added "2.6"
+   ::sm/params schema:get-profiles-for-team-comments}
+  [cfg {:keys [::rpc/profile-id team-id]}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (teams/check-read-permissions! cfg profile-id team-id)
+                 (get-team-comments-users conn team-id profile-id))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
