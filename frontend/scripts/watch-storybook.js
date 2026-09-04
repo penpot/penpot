@@ -81,8 +81,8 @@ h.watch("translations", null, async function (path) {
 log.info("watch: assets (~)");
 h.watch(["resources/images", "resources/fonts"], null, async function (path) {
   log.info("changed:", path);
-  await h.compileSvgSprites();
   await h.copyAssets();
+  await h.compileSvgSprites();
   await h.compileTemplates();
 });
 
