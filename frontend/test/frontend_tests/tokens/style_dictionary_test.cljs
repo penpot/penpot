@@ -131,30 +131,29 @@
 (t/deftest resolve-tokens-nil-value-test
   (t/async
     done
-    (t/testing "token with nil value produces an error instead of crashing resolution"
-      (let [tokens (-> (ctob/make-tokens-lib)
-                       (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
-                                                          :name "core"))
-                       (ctob/add-token (cthi/id :core-set)
-                                       (ctob/make-token {:name "typography.empty"
-                                                         :value nil
-                                                         :type :typography}))
-                       (ctob/add-token (cthi/id :core-set)
-                                       (ctob/make-token {:name "borderRadius.sm"
-                                                         :value "12px"
-                                                         :type :border-radius}))
-                       (ctob/get-all-tokens-map))]
-        (-> (sd/resolve-tokens tokens)
-            (rx/sub!
-             (fn [resolved-tokens]
-               (t/testing "the nil-value token is tagged with an error instead of crashing"
-                 (t/is (contains? resolved-tokens "typography.empty"))
-                 (t/is (nil? (get-in resolved-tokens ["typography.empty" :resolved-value])))
-                 (t/is (= :error.token/empty-input
-                          (get-in resolved-tokens ["typography.empty" :errors 0 :error/code]))))
-               (t/testing "other tokens still resolve normally"
-                 (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value]))))
-               (done))))))))
+    (let [tokens (-> (ctob/make-tokens-lib)
+                     (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
+                                                        :name "core"))
+                     (ctob/add-token (cthi/id :core-set)
+                                     (ctob/make-token {:name "typography.empty"
+                                                       :value nil
+                                                       :type :typography}))
+                     (ctob/add-token (cthi/id :core-set)
+                                     (ctob/make-token {:name "borderRadius.sm"
+                                                       :value "12px"
+                                                       :type :border-radius}))
+                     (ctob/get-all-tokens-map))]
+      (-> (sd/resolve-tokens tokens)
+          (rx/sub!
+           (fn [resolved-tokens]
+             (t/testing "the nil-value token is tagged with an error instead of crashing"
+               (t/is (contains? resolved-tokens "typography.empty"))
+               (t/is (nil? (get-in resolved-tokens ["typography.empty" :resolved-value])))
+               (t/is (= :error.token/empty-input
+                        (get-in resolved-tokens ["typography.empty" :errors 0 :error/code]))))
+             (t/testing "other tokens still resolve normally"
+               (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value]))))
+             (done))))))))
 
 (t/deftest resolve-tokens-interactive-test
   (t/async
