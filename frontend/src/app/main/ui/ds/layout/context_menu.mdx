@@ -1,0 +1,109 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as ContextMenu from "./context_menu.stories";
+
+<Meta title="Layout/Context Menu" />
+
+# Context Menu
+
+A context menu displays a list of actions or options tied to a specific area of the interface, opened with a right click (or long press on touch) instead of clicking a visible trigger button. It's positioned at the pointer, growing down and to the right when there's room, and flipping to grow upward when it isn't.
+
+## Example
+
+### Default
+
+<Canvas of={ContextMenu.Default} />
+
+---
+
+# Usage
+
+```clojure
+[:> context-menu*
+ {:aria-label (tr "workspace.shape.menu.title")
+  :on-action (fn [key] (handle-action key))
+  :trigger [:> layer-row* {:shape shape}]}
+
+ [:> menu-item* {:id "rename"} "Rename"]
+ [:> menu-item* {:id "duplicate"} "Duplicate"]
+ [:> menu-separator*]
+ [:> menu-item* {:id "delete"} "Delete"]]
+```
+
+`trigger` is the area that responds to a right click — it can be any content, not just a button; it's rendered as-is (no extra box around it) and only gains a right-click listener. The menu itself is entirely self-contained: opening, positioning, and closing (selection, **Escape**, outside click) are all handled internally, no `is-open` plumbing required from the caller.
+
+---
+
+# Context menu props
+## trigger
+
+The area that opens the menu on right click. Rendered without adding any wrapping box to the layout.
+
+Type: React element
+
+## aria-label
+
+Accessible name for the menu, read by screen readers. Required — a context menu has no visible trigger button to derive a label from.
+
+Type: string
+
+## on-action
+
+Callback invoked with the selected item's `id` when an item is chosen.
+
+Type: function
+
+## placement
+
+Controls where the menu grows from the click point.
+
+Options
+
+"top", "top start", "top end", "bottom", "bottom start" (default), "bottom end", "left", "right"
+
+The menu flips to the opposite vertical side automatically when there isn't enough room in the preferred direction — e.g. `"bottom start"` (grows right and down) becomes `"top start"` (grows right and up) near the bottom of the viewport.
+
+## is-disabled
+
+Prevents the context menu from opening.
+
+Default: false
+
+## class
+
+Additional CSS class applied to the menu.
+
+---
+
+# MenuItem props
+
+Same as the [Menu](/docs/layout-menu--docs) component's `menu-item*` and `menu-separator*`.
+
+---
+
+# Accessibility
+
+The context menu automatically provides:
+
+- Accessible `menu`/`menuitem` semantics
+- Full keyboard navigation (arrow keys, Home/End, typeahead)
+- Focus management and restoration when closed
+- Dismissal with **Escape** and outside click
+- Long-press support on touch devices, where right click doesn't exist
+
+---
+
+# Best practices
+
+Use a context menu for:
+
+- Actions tied to a specific item (a layer, a file, a row) that don't need a persistently visible trigger
+
+Avoid using a context menu for:
+
+- The *only* way to reach an action — right click isn't discoverable; pair it with a visible menu trigger (see [Menu](/docs/layout-menu--docs)) or keyboard shortcut for the same actions when possible
+- A long list of unrelated actions — keep it scoped to the item that was clicked

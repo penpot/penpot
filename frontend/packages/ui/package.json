@@ -11,6 +11,10 @@
       "import": "./dist/modal.js",
       "types": "./dist/modal.d.ts"
     },
+    "./menu": {
+      "import": "./dist/menu.js",
+      "types": "./dist/menu.d.ts"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {

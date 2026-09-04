@@ -1,0 +1,190 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as Menu from "./menu.stories";
+
+<Meta title="Layout/Menu" />
+
+# Menu
+
+A menu displays a list of actions or options that a user can choose from. It opens next to a trigger element and closes on selection, **Escape**, or an outside click. Use it to build dropdowns and context menus.
+
+## Example
+
+### Default
+
+<Canvas of={Menu.Default} />
+
+### With a submenu
+
+<Canvas of={Menu.WithSubMenu} />
+
+---
+
+# Usage
+
+```clojure
+(let [open* (mf/use-state false)]
+  [:> menu*
+   {:is-open @open*
+    :on-open-change #(reset! open* %)
+    :trigger (mf/html
+              [:> button* {:variant "secondary"
+                           :on-click #(reset! open* true)}
+               "Open menu"])
+    :on-action (fn [key] (handle-action key))}
+
+   [:> menu-item* {:id "rename"} "Rename"]
+   [:> menu-item* {:id "duplicate"} "Duplicate"]
+   [:> menu-separator*]
+   [:> menu-item* {:id "delete"} "Delete"]])
+```
+
+`is-open`/`on-open-change` must be driven by the caller: the trigger button opens the menu through its own `on-click`, and `on-open-change` reports back closes from selection, **Escape**, or an outside click. This mirrors the modal's usage — the menu (like the modal) doesn't assume its trigger is a react-aria-aware pressable element, so it can't wire an automatic click-to-open behavior on an arbitrary trigger by itself. For a context menu triggered by a right click, skip `trigger`/`on-click` and call `on-open-change`/set `is-open` directly from the `on-context-menu` handler instead.
+
+---
+
+# Menu props
+## trigger
+
+Element that opens the menu.
+
+Type: React element
+
+## is-open
+
+Controls whether the menu is open.
+
+Type: boolean
+
+## on-open-change
+
+Callback invoked whenever the open state changes.
+
+Type: function
+
+## on-action
+
+Callback invoked with the selected item's `id` when an item is chosen.
+
+Type: function
+
+## placement
+
+Controls where the menu opens relative to its trigger.
+
+Options
+
+"top", "top start", "top end", "bottom" (default), "bottom start", "bottom end", "left", "right"
+
+## class
+
+Additional CSS class applied to the menu.
+
+---
+
+# MenuItem props
+## id
+
+Unique identifier for the item, passed to `on-action` when selected.
+
+Type: string | number
+
+## is-disabled
+
+Prevents the item from being selected.
+
+Default: false
+
+## on-action
+
+Callback invoked when this specific item is selected.
+
+Type: function
+
+## text-value
+
+Plain-text representation of the item, used for typeahead. Required when the item's content isn't a plain string.
+
+Type: string
+
+## class
+
+Additional CSS class applied to the item.
+
+---
+
+# SubMenu props
+
+A `sub-menu*` nests a further list of items behind one item, opening on hover or when navigated into with the keyboard. Use it in place of `menu-item*` for that item:
+
+```clojure
+[:> sub-menu* {:trigger "Share" :on-action (fn [key] (handle-action key))}
+ [:> menu-item* {:id "share-link"} "Copy link"]
+ [:> menu-item* {:id "share-email"} "Send by email"]]
+```
+
+Selecting any item inside a submenu closes the whole menu, not just that submenu.
+
+## trigger
+
+Label shown for the item that opens the submenu.
+
+Type: React element
+
+## id
+
+Unique identifier for the submenu trigger item.
+
+Type: string | number
+
+## is-disabled
+
+Prevents the submenu from being opened.
+
+Default: false
+
+## on-action
+
+Callback invoked with the selected item's `id` when an item inside this submenu is chosen. Separate from the parent menu's own `on-action` — it isn't called for submenu selections.
+
+Type: function
+
+## text-value
+
+Plain-text representation of the trigger, used for typeahead. Required when `trigger` isn't a plain string.
+
+Type: string
+
+## class
+
+Additional CSS class applied to the submenu's item list.
+
+---
+
+# Accessibility
+
+The menu automatically provides:
+
+- Accessible `menu`/`menuitem` semantics
+- Full keyboard navigation (arrow keys, Home/End, typeahead)
+- Focus management and restoration when closed
+- Dismissal with **Escape** and outside click
+
+---
+
+# Best practices
+
+Use a menu for:
+
+- A list of actions tied to a trigger button (dropdown)
+- A contextual list of actions tied to a right click (context menu)
+
+Avoid using a menu for:
+
+- Long forms or free-text input
+- Navigation between pages (use a link/nav component instead)
+- A single toggleable option (use a switch or checkbox instead)
