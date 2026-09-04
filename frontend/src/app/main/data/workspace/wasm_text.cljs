@@ -96,10 +96,15 @@
 
 (defn- merge-resize-debounce-opts
   [prev {:keys [undo-group undo-id skip-component-sync?]}]
-  (cond-> (or prev {})
-    (some? undo-group) (assoc :undo-group undo-group)
-    (some? undo-id) (assoc :undo-id undo-id)
-    skip-component-sync? (assoc :skip-component-sync? true)))
+  ;; One commit per batch, so one flag for every shape in it. Keep it on
+  ;; only while every resize in the batch is derived.
+  (let [prev (or prev {:skip-component-sync? true})]
+    (cond-> prev
+      (some? undo-group) (assoc :undo-group undo-group)
+      (some? undo-id)    (assoc :undo-id undo-id)
+      :always            (assoc :skip-component-sync?
+                                (boolean (and skip-component-sync?
+                                              (:skip-component-sync? prev)))))))
 
 (defn resize-wasm-text-debounce-commit
   []
@@ -160,8 +165,7 @@
          (-> state
              (update ::resize-wasm-text-debounce-ids (fnil conj []) id)
              (update ::resize-wasm-text-reflow-tasks (fnil conj []) reflow-task)
-             (cond-> (seq opts)
-               (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts))
+             (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts)
              (cond-> (nil? (::resize-wasm-text-debounce-event state))
                (assoc ::resize-wasm-text-debounce-event cur-event))))
 

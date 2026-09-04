@@ -41,7 +41,7 @@ pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
     let Type::Text(text_content) = &base.shape_type else {
         return false;
     };
-    let before = oriented_container_bounds(base);
+    let before = base.bounds();
     let after = before.transform(modifier);
     match text_content.grow_type() {
         GrowType::AutoWidth => !crate::math::is_close_to(before.height(), after.height()),
@@ -49,27 +49,6 @@ pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
             !crate::math::is_close_to(before.width(), after.width())
         }
     }
-}
-
-fn oriented_container_bounds(shape: &Shape) -> Bounds {
-    let selrect = shape.selrect();
-    let mut bounds = Bounds::new(
-        Point::new(selrect.x(), selrect.y()),
-        Point::new(selrect.x() + selrect.width(), selrect.y()),
-        Point::new(
-            selrect.x() + selrect.width(),
-            selrect.y() + selrect.height(),
-        ),
-        Point::new(selrect.x(), selrect.y() + selrect.height()),
-    );
-    if !shape.transform.is_identity() {
-        let mut matrix = shape.transform;
-        let center = shape.center();
-        matrix.post_translate(center);
-        matrix.pre_translate(-center);
-        bounds.transform_mut(&matrix);
-    }
-    bounds
 }
 
 #[repr(u8)]
@@ -315,7 +294,77 @@ pub struct TextDecorationSegment {
     pub width: f32,
 }
 
-fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+/// Underline / line-through geometry for one laid-out paragraph placed at
+/// `x`, `y_accum`. Shared by [`calculate_text_layout_data`] and the
+/// layout-cache paint path.
+pub fn paragraph_decoration_segments(
+    paragraph: &skia::textlayout::Paragraph,
+    x: f32,
+    y_accum: f32,
+) -> Vec<TextDecorationSegment> {
+    let mut decorations = Vec::new();
+    for line in &paragraph.get_line_metrics() {
+        let style_metrics: Vec<_> = line
+            .get_style_metrics(line.start_index..line.end_index)
+            .into_iter()
+            .collect();
+        let line_baseline = y_accum + line.baseline as f32;
+        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+            calculate_decoration_metrics(&style_metrics, line_baseline);
+        for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
+            let text_style = &style_metric.text_style;
+            let style_end = style_metrics
+                .get(i + 1)
+                .map(|(next_i, _)| *next_i)
+                .unwrap_or(line.end_index);
+            let seg_start = (*style_start).max(line.start_index);
+            let seg_end = style_end.min(line.end_index);
+            if seg_start >= seg_end {
+                continue;
+            }
+            let rects = paragraph.get_rects_for_range(
+                seg_start..seg_end,
+                skia::textlayout::RectHeightStyle::Tight,
+                skia::textlayout::RectWidthStyle::Tight,
+            );
+            let (segment_width, actual_x_offset) = if !rects.is_empty() {
+                let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                let skia_x_offset = rects
+                    .first()
+                    .map(|r| r.rect.left - line.left as f32)
+                    .unwrap_or(0.0);
+                (total_width, skia_x_offset)
+            } else {
+                (0.0, 0.0)
+            };
+            let text_left = x + line.left as f32 + actual_x_offset;
+            let text_width = segment_width;
+            if text_style.decoration().ty == skia::textlayout::TextDecoration::UNDERLINE {
+                decorations.push(TextDecorationSegment {
+                    kind: skia::textlayout::TextDecoration::UNDERLINE,
+                    text_style: (*text_style).clone(),
+                    y: underline_y.unwrap_or(line_baseline),
+                    thickness: max_underline_thickness,
+                    left: text_left,
+                    width: text_width,
+                });
+            }
+            if text_style.decoration().ty == skia::textlayout::TextDecoration::LINE_THROUGH {
+                decorations.push(TextDecorationSegment {
+                    kind: skia::textlayout::TextDecoration::LINE_THROUGH,
+                    text_style: (*text_style).clone(),
+                    y: strike_y.unwrap_or(line_baseline),
+                    thickness: max_strike_thickness,
+                    left: text_left,
+                    width: text_width,
+                });
+            }
+        }
+    }
+    decorations
+}
+
+pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
     match valign {
         VerticalAlign::Center => (container_h - content_h) / 2.0,
         VerticalAlign::Bottom => container_h - content_h,
@@ -453,13 +502,20 @@ impl TextContent {
     /// clones paragraphs into a rebound copy with an empty layout cache.
     pub fn paint_content_for_selrect<'a>(&'a self, selrect: Rect) -> Cow<'a, Self> {
         let stored_bounds = self.bounds();
-        if (stored_bounds.width() - selrect.width()).abs() < 0.01
-            && (stored_bounds.height() - selrect.height()).abs() < 0.01
+        if crate::math::is_close_to(stored_bounds.width(), selrect.width())
+            && crate::math::is_close_to(stored_bounds.height(), selrect.height())
         {
             Cow::Borrowed(self)
         } else {
             Cow::Owned(self.new_bounds(selrect))
         }
+    }
+
+    pub fn scale_content(&mut self, value: f32) {
+        self.paragraphs_mut()
+            .iter_mut()
+            .for_each(|p| p.scale_content(value));
+        self.layout.clear();
     }
 
     pub fn set_xywh(&mut self, x: f32, y: f32, w: f32, h: f32) {
@@ -593,7 +649,7 @@ impl TextContent {
             return self.content_rect(selrect, valign);
         }
 
-        let tight = if !self.layout.paragraphs.is_empty() {
+        let tight = if self.has_usable_paint_layout(shape) {
             self.rect_from_paragraphs(selrect, valign)
         } else {
             let mut text_content = self.clone();
@@ -966,10 +1022,7 @@ impl TextContent {
 
     /// True when cached Skia paragraphs can be painted as-is (no rebuild/layout).
     pub fn has_usable_paint_layout(&self, shape: &Shape) -> bool {
-        if self.layout.needs_update() || self.layout_version != self.content_version {
-            return false;
-        }
-        self.layout_matches_paint_container(shape)
+        self.layout_cache_versions_match() && self.layout_matches_paint_container(shape)
     }
 
     pub(crate) fn layout_cache_versions_match(&self) -> bool {
@@ -983,8 +1036,7 @@ impl TextContent {
         let Some(layout_w) = self.layout_width else {
             return false;
         };
-        let container_w = self.get_width(shape.selrect().width());
-        (layout_w - container_w).abs() < f32::EPSILON
+        crate::math::is_close_to(layout_w, self.get_width(shape.selrect().width()))
     }
 
     /// True when any span requests underline/overline/line-through (custom draw path).
@@ -1024,7 +1076,7 @@ impl TextContent {
         let layout_matches_container = self.grow_type() == GrowType::AutoWidth
             || self
                 .layout_width
-                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+                .is_some_and(|w| crate::math::is_close_to(w, selrect.width()));
 
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
@@ -1038,7 +1090,7 @@ impl TextContent {
         match self.grow_type() {
             GrowType::AutoHeight => {
                 let result = self.text_layout_auto_height();
-                self.layout_width = Some(result.2.width);
+                self.layout_width = Some(selrect.width());
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::AutoWidth => {
@@ -1048,7 +1100,7 @@ impl TextContent {
             }
             GrowType::Fixed => {
                 let result = self.text_layout_fixed();
-                self.layout_width = Some(result.2.width);
+                self.layout_width = Some(selrect.width());
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
         }
@@ -1691,68 +1743,7 @@ pub fn calculate_text_layout_data(
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
-            // Calculate text decorations for this paragraph
-            let mut decorations = Vec::new();
-            let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
-                        continue;
-                    }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                }
-            }
+            let decorations = paragraph_decoration_segments(&skia_paragraph, x, y_accum);
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
