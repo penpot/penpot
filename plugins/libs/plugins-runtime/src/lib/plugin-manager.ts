@@ -157,6 +157,9 @@ export async function createPluginManager(
       }
     },
     getModal: () => modal,
+    get iframeWindow(): Window | null {
+      return modal?.getIframeContentWindow() ?? null;
+    },
     registerListener,
     registerMessageCallback,
     sendMessage: (message: unknown) => {

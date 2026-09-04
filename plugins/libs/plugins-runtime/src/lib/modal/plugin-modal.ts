@@ -18,6 +18,7 @@ export class PluginModalElement extends HTMLElement {
   wrapper = document.createElement('div');
   #inner = document.createElement('div');
   #dragEvents: ReturnType<typeof dragHandler> | null = null;
+  #iframe: HTMLIFrameElement | null = null;
 
   setTheme(theme: Theme) {
     if (this.wrapper) {
@@ -110,15 +111,15 @@ export class PluginModalElement extends HTMLElement {
 
     header.appendChild(closeButton);
 
-    const iframe = document.createElement('iframe');
-    iframe.src = iframeSrc;
+    this.#iframe = document.createElement('iframe');
+    this.#iframe.src = iframeSrc;
 
     const allowList: string[] = [];
     if (allowClipboardRead) allowList.push('clipboard-read');
     if (allowClipboardWrite) allowList.push('clipboard-write');
-    iframe.allow = allowList.join('; ');
+    this.#iframe.allow = allowList.join('; ');
 
-    iframe.sandbox.add(
+    this.#iframe.sandbox.add(
       'allow-scripts',
       'allow-forms',
       'allow-modals',
@@ -129,10 +130,10 @@ export class PluginModalElement extends HTMLElement {
     );
 
     if (allowDownloads) {
-      iframe.sandbox.add('allow-downloads');
+      this.#iframe.sandbox.add('allow-downloads');
     }
 
-    iframe.addEventListener('load', () => {
+    this.#iframe.addEventListener('load', () => {
       this.shadowRoot?.dispatchEvent(
         new CustomEvent('load', {
           composed: true,
@@ -159,12 +160,12 @@ export class PluginModalElement extends HTMLElement {
     );
 
     this.addEventListener('message', (e: Event) => {
-      if (!iframe.contentWindow) {
+      if (!this.#iframe?.contentWindow) {
         return;
       }
 
       try {
-        iframe.contentWindow.postMessage((e as CustomEvent).detail, '*');
+        this.#iframe.contentWindow.postMessage((e as CustomEvent).detail, '*');
       } catch (err) {
         console.error(
           'plugin modal: failed to send message to iframe via postMessage.',
@@ -177,7 +178,7 @@ export class PluginModalElement extends HTMLElement {
 
     this.wrapper.appendChild(this.#inner);
     this.#inner.appendChild(header);
-    this.#inner.appendChild(iframe);
+    this.#inner.appendChild(this.#iframe);
 
     const style = document.createElement('style');
     style.textContent = modalCss;
@@ -185,6 +186,10 @@ export class PluginModalElement extends HTMLElement {
     this.shadowRoot.appendChild(style);
 
     this.calculateZIndex();
+  }
+
+  getIframeContentWindow(): Window | null {
+    return this.#iframe?.contentWindow ?? null;
   }
 
   size() {
