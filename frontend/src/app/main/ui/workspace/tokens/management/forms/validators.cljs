@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.tokens.management.forms.validators
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -39,20 +40,22 @@
                   :always
                   (update (:name token) #(ctob/make-token (merge % prev-token token))))]
 
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens'))
-           (sd/resolve-tokens-interactive tokens'))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [resolved-token (cond-> (get resolved-tokens (:name token))
-                                   (contains? cf/flags :tokenscript)
-                                   (update :resolved-value ts/tokenscript-symbols->penpot-unit))]
-              (cond
-                (:resolved-value resolved-token)
-                (rx/of resolved-token)
+    (if (cfo/token-circular-reference? tokens' (:name token))
+      (rx/throw {:errors [(wte/get-error-code :error.token/circular-reference)]})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens'))
+             (sd/resolve-tokens-interactive tokens'))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [resolved-token (cond-> (get resolved-tokens (:name token))
+                                     (contains? cf/flags :tokenscript)
+                                     (update :resolved-value ts/tokenscript-symbols->penpot-unit))]
+                (cond
+                  (:resolved-value resolved-token)
+                  (rx/of resolved-token)
 
-                :else (rx/throw {:errors (or (seq (:errors resolved-token))
-                                             [(wte/get-error-code :error/unknown-error)])}))))))))
+                  :else (rx/throw {:errors (or (seq (:errors resolved-token))
+                                               [(wte/get-error-code :error/unknown-error)])})))))))))
 
 (defn- validate-token-with [token validators]
   (if-let [error (some (fn [validate] (validate token)) validators)]
