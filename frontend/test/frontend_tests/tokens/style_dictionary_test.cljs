@@ -143,17 +143,21 @@
                                                        :value "12px"
                                                        :type :border-radius}))
                      (ctob/get-all-tokens-map))]
-      (-> (sd/resolve-tokens tokens)
-          (rx/sub!
-           (fn [resolved-tokens]
-             (t/testing "the nil-value token is tagged with an error instead of crashing"
-               (t/is (contains? resolved-tokens "typography.empty"))
-               (t/is (nil? (get-in resolved-tokens ["typography.empty" :resolved-value])))
-               (t/is (= :error.token/empty-input
-                        (get-in resolved-tokens ["typography.empty" :errors 0 :error/code]))))
-             (t/testing "other tokens still resolve normally"
-               (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value]))))
-             (done))))))))
+      (->> (sd/resolve-tokens tokens)
+           (rx/subs!
+            (fn [resolved-tokens]
+              (t/testing "the nil-value token is tagged with an error instead of crashing"
+                (t/is (contains? resolved-tokens "typography.empty"))
+                (t/is (nil? (get-in resolved-tokens ["typography.empty" :resolved-value])))
+                (t/is (= :error.token/empty-input
+                         (get-in resolved-tokens ["typography.empty" :errors 0 :error/code]))))
+              (t/testing "other tokens still resolve normally"
+                (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))))
+            (fn [err]
+              (t/do-report {:type :error :message "Stream error" :actual err})
+              (done))
+            (fn []
+              (done)))))))
 
 (t/deftest resolve-tokens-interactive-test
   (t/async
