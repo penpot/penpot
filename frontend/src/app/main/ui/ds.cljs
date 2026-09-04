@@ -25,6 +25,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*
                                                                     token-status-list]]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator* sub-menu* context-menu*]]
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.actionable :refer [actionable*]]
@@ -88,6 +89,11 @@
     :ModalHeader modal-header*
     :ModalContent modal-content*
     :ModalFooter modal-footer*
+    :Menu menu*
+    :MenuItem menu-item*
+    :MenuSeparator menu-separator*
+    :SubMenu sub-menu*
+    :ContextMenu context-menu*
 
     :set-default-translations
     (fn [data]
