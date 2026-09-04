@@ -10,9 +10,13 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.dashboard.shortcuts :as dsc]
    [app.main.data.dashboard.shortcuts.customize :as customize]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
+   [app.main.data.viewer.shortcuts :as vsc]
+   [app.main.data.workspace.path.shortcuts :as psc]
+   [app.main.data.workspace.shortcuts :as wsc]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -107,14 +111,24 @@
 (def ^:private import-contexts
   [:workspace :dashboard :viewer])
 
+(def ^:private context->known-keys
+  {:workspace (into #{} (concat (keys psc/shortcuts) (keys wsc/shortcuts)))
+   :dashboard (into #{} (keys dsc/shortcuts))
+   :viewer    (into #{} (keys vsc/shortcuts))})
+
+(defn- build-context-shortcuts
+  [all-shortcuts ctx]
+  (let [known-keys (get context->known-keys ctx)]
+    (into {} (filter (fn [[k _]] (contains? known-keys k))) all-shortcuts)))
+
 (defn- import-context-group
   "Imports a single context group from the payload, disabling any default
    shortcut whose command collides with a newly imported one, and any
    previously-imported entry in the same batch with a duplicate command."
-  [group all-shortcuts]
+  [group context-shortcuts]
   (reduce
    (fn [acc [command recorded-command]]
-     (let [default-conflict (find-conflict recorded-command all-shortcuts command)
+     (let [default-conflict (find-conflict recorded-command context-shortcuts command)
            acc-conflict     (some (fn [[k v]]
                                     (when (and (not= k command) (= v recorded-command))
                                       k))
@@ -136,7 +150,8 @@
         new-customs (reduce
                      (fn [acc ctx]
                        (if (contains? shortcuts ctx)
-                         (assoc acc ctx (import-context-group (get shortcuts ctx) all-shortcuts))
+                         (let [ctx-sc (build-context-shortcuts all-shortcuts ctx)]
+                           (assoc acc ctx (import-context-group (get shortcuts ctx) ctx-sc)))
                          acc))
                      current-customs
                      import-contexts)]
@@ -146,6 +161,20 @@
 (defn add-translation
   [type item]
   (map (fn [[k v]] [k (assoc v :translation (translation-keyname type k))]) item))
+
+(defn shortcut->command-string
+  "Extract a lowercase searchable string from a shortcut entry's key combo(s).
+  Prefers `:show-command` (display override) over `:command` (Mousetrap format),
+  matching what the keycap UI renders. Joins vector commands (key sequences)
+  with a space so every token is searchable. Returns \"\" when there is no
+  command (e.g. a section/subsection node)."
+  [shortcut]
+  (let [cmd (or (:show-command shortcut) (:command shortcut))]
+    (-> (cond
+          (nil? cmd)    ""
+          (vector? cmd) (str/join " " cmd)
+          :else         (str cmd))
+        (str/lower))))
 
 (defn shortcuts->subsections
   [shortcuts]
@@ -576,11 +605,19 @@
   [{:keys [elements filter-term is-match-section is-match-subsection
            editable? custom-shortcuts section-key conflicts hidden subsection-name]}]
   (let [shortcut-translations (->> elements vals (map :translation) sort)
-        match-shortcut?       (some #(matches-search % filter-term) shortcut-translations)
+        match-shortcut?       (some (fn [info]
+                                      (or (matches-search (:translation info) filter-term)
+                                          (matches-search (shortcut->command-string info) filter-term)))
+                                    (vals elements))
         filtered              (if (and (or is-match-section is-match-subsection) (not match-shortcut?))
                                 shortcut-translations
-                                (filter #(matches-search % filter-term) shortcut-translations))
-        sorted-filtered       (sort filtered)
+                                (->> (vals elements)
+                                     (filter (fn [info]
+                                               (or (matches-search (:translation info) filter-term)
+                                                   (matches-search (shortcut->command-string info) filter-term))))
+                                     (map :translation)
+                                     sort))
+        sorted-filtered       filtered
         trigger-ref            (mf/use-ref nil)]
 
     [:ul {:class (stl/css :sub-menu)
@@ -597,8 +634,9 @@
                                       (get custom-shortcuts section-key))
              group-map              (if (map? group-map) group-map {})
              customized?            (contains? group-map command)
-             has-conflict?          (contains? conflicts command)]
-         (if editable?
+             has-conflict?          (contains? conflicts command)
+             customizable?          (not (false? (:customizable command-info)))]
+         (if (and editable? customizable?)
            [:> shortcut-row-editable* {:elements elements
                                        :custom-shortcuts custom-shortcuts
                                        :section-key section-key
@@ -611,9 +649,13 @@
                  :data-conflict (str has-conflict?)
                  :aria-label command-translate
                  :key command-translate}
-            [:span {:class (stl/css :command-name)
-                    :id (dm/str command-translate "-label")}
-             command-translate]
+            [:span
+             [:span {:class (stl/css-case :command-name true
+                                          :not-customizable-label (not customizable?))
+                     :id (dm/str command-translate "-label")}
+              command-translate]
+             (when (not customizable?)
+               [:span {:class (stl/css :not-customizable-label)} "(not customizable)"])]
             [:div {:class (stl/css :shortcut-actions)
                    :aria-labelledby (dm/str command-translate "-label")}
              (if (and customized? (str/blank? content))
