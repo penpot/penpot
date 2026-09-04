@@ -2,7 +2,8 @@ use skia_safe::{self as skia, Canvas, Paint, RRect};
 
 use crate::error::Result;
 use crate::shapes::{
-    merge_fills, radius_to_sigma, BlurType, Fill, Frame, Rect, Shape, Stroke, StrokeKind, Type,
+    circle_segments, merge_fills, radius_to_sigma, rect_segments, stroke_to_path, BlurType, Fill,
+    Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, Type,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -22,9 +23,10 @@ pub(super) struct VectorRenderer<'a> {
     canvas: &'a Canvas,
     shared: &'a mut RenderResources,
     scale: f32,
-    /// When `true`, multiple fills are composited into a single shader (PDF).
-    /// When `false`, each fill is drawn separately so SkSVGDevice can emit
-    /// `fill` attributes (SVG export).
+    /// When `true`, use PDF/GPU-friendly compositing (`merge_fills`,
+    /// `save_layer` for outer strokes). When `false` (SVG export), avoid
+    /// techniques that `SkSVGDevice` drops: draw fills individually and emit
+    /// solid Inner/Outer strokes as filled outlines.
     compose_fills: bool,
 }
 
@@ -82,8 +84,16 @@ impl ShapeRenderer for VectorRenderer<'_> {
     }
 
     fn draw_strokes(&mut self, shape: &Shape, strokes: &[&Stroke]) -> Result<()> {
+        let svg_export = !self.compose_fills;
         for stroke in strokes.iter().rev() {
-            draw_single_stroke(self.canvas, self.shared, self.scale, shape, stroke)?;
+            draw_single_stroke(
+                self.canvas,
+                self.shared,
+                self.scale,
+                shape,
+                stroke,
+                svg_export,
+            )?;
         }
         Ok(())
     }
@@ -1064,14 +1074,73 @@ fn draw_single_stroke(
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
+    svg_export: bool,
 ) -> Result<()> {
     // Image-fill strokes: the stroke masks the visible area of the image.
     if let Fill::Image(image_fill) = &stroke.fill {
         return draw_image_stroke(canvas, shared, scale, shape, stroke, image_fill);
     }
 
+    // Techniques SkSVGDevice cannot keep (save_layer+Clear/clip for Outer,
+    // PathEffect stamps for dots/dashes): expand to a filled outline instead.
+    // Solid Center stays on the shared stroke path.
+    if svg_export && draw_svg_stroke_as_fill(canvas, shape, stroke) {
+        return Ok(());
+    }
+
     draw_stroke_geometry(canvas, scale, shape, stroke, false);
     Ok(())
+}
+
+/// Draws a stroke as a filled path outline for SVG export.
+///
+/// Handles solid Inner/Outer and all dotted/dashed/mixed alignments (including
+/// Center and open paths, which force Center). Returns `true` when handled.
+fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> bool {
+    let is_open = shape.is_open();
+    let kind = stroke.render_kind(is_open);
+    let solid_outline = match stroke.style {
+        StrokeStyle::Solid => match kind {
+            // Solid Center already serializes as a native SVG stroke.
+            StrokeKind::Center => return false,
+            StrokeKind::Inner | StrokeKind::Outer => {
+                if is_open {
+                    return false;
+                }
+                true
+            }
+        },
+        // PathEffects (path_1d / dash) do not survive SkSVGDevice; expand them.
+        StrokeStyle::Dotted | StrokeStyle::Dashed | StrokeStyle::Mixed => false,
+    };
+
+    let shape_path = match &shape.shape_type {
+        Type::Rect(r) => Path::new(rect_segments(shape, r.corners)),
+        Type::Frame(f) => Path::new(rect_segments(shape, f.corners)),
+        Type::Circle => Path::new(circle_segments(shape)),
+        Type::Path(_) | Type::Bool(_) => match shape.shape_type.path() {
+            Some(path) => path.clone(),
+            None => return false,
+        },
+        Type::Text(_) | Type::SVGRaw(_) | Type::Group(_) => return false,
+    };
+
+    let Some(outline) = stroke_to_path(
+        stroke,
+        &shape_path,
+        None,
+        &shape.selrect,
+        shape.svg_attrs.as_ref(),
+        solid_outline,
+    ) else {
+        return false;
+    };
+
+    let mut paint = stroke.fill.to_paint(&shape.selrect, true);
+    paint.set_style(skia::PaintStyle::Fill);
+    paint.set_anti_alias(true);
+    canvas.draw_path(&outline.to_skia_path(shape.svg_attrs.as_ref()), &paint);
+    true
 }
 
 /// Draws a stroke's geometry by shape type, kind and dash style. Rect/Circle

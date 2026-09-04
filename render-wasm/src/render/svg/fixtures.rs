@@ -5,8 +5,9 @@ use skia_safe as skia;
 use crate::globals::TestRenderResourcesGuard;
 use crate::render::{FontStore, RenderResources};
 use crate::shapes::{
-    Fill, FontFamily, FontStyle, Frame, Group, GrowType, Paragraph, Rect, SolidColor, TextAlign,
-    TextContent, TextDirection, TextSpan, Type,
+    Fill, FontFamily, FontStyle, Frame, Group, GrowType, Paragraph, Path, Rect, Segment,
+    SolidColor, Stroke, StrokeKind, StrokeStyle, TextAlign, TextContent, TextDirection, TextSpan,
+    Type,
 };
 use crate::state::ShapesPool;
 use crate::utils::uuid_from_u32_quartet;
@@ -151,6 +152,101 @@ pub(super) fn add_text_with_fills(
     shape.set_parent(Uuid::nil());
     shape.set_selrect(l, t, r, b);
     shape.set_shape_type(Type::Text(content));
+}
+
+/// Adds a rectangle with a single solid stroke (no fill).
+pub(super) fn add_stroked_rect(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    stroke: Stroke,
+) {
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_shape_type(Type::Rect(Rect::default()));
+    shape.set_selrect(l, t, r, b);
+    shape.set_fills(vec![]);
+    shape.add_stroke(stroke);
+}
+
+/// Adds a closed rectangular path with a single solid stroke (no fill).
+pub(super) fn add_stroked_closed_path(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    bounds: (f32, f32, f32, f32),
+    stroke: Stroke,
+) {
+    add_stroked_path(pool, id, parent, bounds, stroke, true);
+}
+
+/// Adds an open polyline path with a single solid stroke (no fill).
+pub(super) fn add_stroked_open_path(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    bounds: (f32, f32, f32, f32),
+    stroke: Stroke,
+) {
+    add_stroked_path(pool, id, parent, bounds, stroke, false);
+}
+
+fn add_stroked_path(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    stroke: Stroke,
+    closed: bool,
+) {
+    let mut segments = vec![
+        Segment::MoveTo((l, t)),
+        Segment::LineTo((r, t)),
+        Segment::LineTo((r, b)),
+        Segment::LineTo((l, b)),
+    ];
+    if closed {
+        segments.push(Segment::Close);
+    }
+    let path = Path::new(segments);
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_shape_type(Type::Path(path));
+    shape.set_selrect(l, t, r, b);
+    shape.set_fills(vec![]);
+    shape.add_stroke(stroke);
+}
+
+pub(super) fn solid_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Solid, width, color)
+}
+
+pub(super) fn dotted_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Dotted, width, color)
+}
+
+pub(super) fn dashed_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Dashed, width, color)
+}
+
+pub(super) fn mixed_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Mixed, width, color)
+}
+
+fn stroke_with_style(
+    kind: StrokeKind,
+    style: StrokeStyle,
+    width: f32,
+    color: skia::Color,
+) -> Stroke {
+    let mut stroke = match kind {
+        StrokeKind::Inner => Stroke::new_inner_stroke(width, style, None, None, None, None),
+        StrokeKind::Outer => Stroke::new_outer_stroke(width, style, None, None, None, None),
+        StrokeKind::Center => Stroke::new_center_stroke(width, style, None, None, None, None),
+    };
+    stroke.fill = Fill::Solid(SolidColor(color));
+    stroke
 }
 
 pub(super) fn render(pool: &ShapesPool, root: Uuid) -> String {

@@ -60,7 +60,8 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// `<clipPath>`.
 ///
 /// Special-case re-emission for shadows, layer blur, masks, text strokes, and
-/// deferred strokes is intentionally out of scope for this cut.
+/// image strokes is intentionally out of scope for this cut. Solid Inner/Outer
+/// and dotted/dashed strokes are emitted as filled outlines.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,
