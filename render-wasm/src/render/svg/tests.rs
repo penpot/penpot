@@ -461,6 +461,247 @@ fn exports_open_path_with_solid_outer_stroke() {
 }
 
 #[test]
+fn exports_rect_with_dotted_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        dotted_stroke(StrokeKind::Inner, 10.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "dotted inner stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_dotted_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        dotted_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    // PathEffect does not serialize; dots expand to filled outline geometry.
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "dotted center stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_dotted_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (20.0, 20.0, 120.0, 100.0),
+        dotted_stroke(StrokeKind::Outer, 10.0, skia::Color::from_rgb(255, 0, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"red\"") || svg.to_ascii_lowercase().contains("fill=\"#ff0000\""),
+        "dotted outer stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_dotted_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        dotted_stroke(StrokeKind::Inner, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "closed path dotted inner stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_dotted_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        dotted_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(0, 128, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"green\"") || svg.to_ascii_lowercase().contains("fill=\"#008000\""),
+        "closed path dotted center stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_dotted_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        dotted_stroke(StrokeKind::Outer, 8.0, skia::Color::from_rgb(0, 128, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"green\"") || svg.to_ascii_lowercase().contains("fill=\"#008000\""),
+        "closed path dotted outer stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_dotted_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_open_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        dotted_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(255, 0, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"red\"") || svg.to_ascii_lowercase().contains("fill=\"#ff0000\""),
+        "open path dotted stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_dashed_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        dashed_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "dashed center stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_dashed_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (20.0, 20.0, 120.0, 100.0),
+        dashed_stroke(StrokeKind::Outer, 10.0, skia::Color::from_rgb(255, 0, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"red\"") || svg.to_ascii_lowercase().contains("fill=\"#ff0000\""),
+        "dashed outer stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_dashed_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        dashed_stroke(StrokeKind::Inner, 8.0, skia::Color::from_rgb(0, 128, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"green\"") || svg.to_ascii_lowercase().contains("fill=\"#008000\""),
+        "closed path dashed inner stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_mixed_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        mixed_stroke(StrokeKind::Center, 8.0, skia::Color::from_rgb(0, 0, 255)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"blue\"") || svg.to_ascii_lowercase().contains("fill=\"#0000ff\""),
+        "mixed center stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_mixed_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        mixed_stroke(StrokeKind::Outer, 8.0, skia::Color::from_rgb(255, 0, 0)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"red\"") || svg.to_ascii_lowercase().contains("fill=\"#ff0000\""),
+        "closed path mixed outer stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn exports_solid_text_with_font_face() {
     let mut pool = ShapesPool::new();
     let id = uid(1);

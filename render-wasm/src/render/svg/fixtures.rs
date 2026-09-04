@@ -219,16 +219,31 @@ fn add_stroked_path(
 }
 
 pub(super) fn solid_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Solid, width, color)
+}
+
+pub(super) fn dotted_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Dotted, width, color)
+}
+
+pub(super) fn dashed_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Dashed, width, color)
+}
+
+pub(super) fn mixed_stroke(kind: StrokeKind, width: f32, color: skia::Color) -> Stroke {
+    stroke_with_style(kind, StrokeStyle::Mixed, width, color)
+}
+
+fn stroke_with_style(
+    kind: StrokeKind,
+    style: StrokeStyle,
+    width: f32,
+    color: skia::Color,
+) -> Stroke {
     let mut stroke = match kind {
-        StrokeKind::Inner => {
-            Stroke::new_inner_stroke(width, StrokeStyle::Solid, None, None, None, None)
-        }
-        StrokeKind::Outer => {
-            Stroke::new_outer_stroke(width, StrokeStyle::Solid, None, None, None, None)
-        }
-        StrokeKind::Center => {
-            Stroke::new_center_stroke(width, StrokeStyle::Solid, None, None, None, None)
-        }
+        StrokeKind::Inner => Stroke::new_inner_stroke(width, style, None, None, None, None),
+        StrokeKind::Outer => Stroke::new_outer_stroke(width, style, None, None, None, None),
+        StrokeKind::Center => Stroke::new_center_stroke(width, style, None, None, None, None),
     };
     stroke.fill = Fill::Solid(SolidColor(color));
     stroke
