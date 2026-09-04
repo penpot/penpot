@@ -34,6 +34,8 @@
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.dashboard.team :refer [team-settings-page* team-members-page* team-invitations-page* webhooks-page*]]
    [app.main.ui.dashboard.templates :refer [templates-section*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.plugins]
@@ -49,6 +51,26 @@
    [goog.events :as events]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+;; FIXME: temporary harness for manually testing the Menu component; remove
+;; once it's wired into a real dashboard action.
+(mf/defc menu-test*
+  {::mf/private true}
+  []
+  (let [open* (mf/use-state false)]
+    [:> menu*
+     {:is-open @open*
+      :on-open-change #(reset! open* %)
+      :placement "bottom start"
+      :trigger (mf/html
+                [:> button* {:variant "secondary"
+                             :on-click #(reset! open* true)}
+                 "Open menu"])
+      :on-action #(js/console.log "menu action" (name %))}
+     [:> menu-item* {:id "rename"} "Rename"]
+     [:> menu-item* {:id "duplicate"} "Duplicate"]
+     [:> menu-separator*]
+     [:> menu-item* {:id "delete"} "Delete"]]))
 
 (mf/defc dashboard-content*
   {::mf/private true}
@@ -96,6 +118,7 @@
            :ref container}
 
      [:> progress-notification-widget*]
+     [:> menu-test*]
 
      (case section
        :dashboard-recent
