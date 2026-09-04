@@ -122,6 +122,43 @@
                         (get-in resolved-tokens ["typography.bad" :errors 0 :error/code])))
                (done))))))))
 
+;; Regression: a token with a `nil` value (e.g. a composite typography
+;; token saved via the workspace form with no fields filled in) must never
+;; reach StyleDictionary — its `tokens-studio` preprocessor assumes a
+;; typography token's value is never null and throws an uncaught exception
+;; on it, which used to take down resolution for every other token in the
+;; file. It should be tagged with an empty-input error instead.
+(t/deftest resolve-tokens-nil-value-test
+  (t/async
+    done
+    (let [tokens (-> (ctob/make-tokens-lib)
+                     (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
+                                                        :name "core"))
+                     (ctob/add-token (cthi/id :core-set)
+                                     (ctob/make-token {:name "typography.empty"
+                                                       :value nil
+                                                       :type :typography}))
+                     (ctob/add-token (cthi/id :core-set)
+                                     (ctob/make-token {:name "borderRadius.sm"
+                                                       :value "12px"
+                                                       :type :border-radius}))
+                     (ctob/get-all-tokens-map))]
+      (->> (sd/resolve-tokens tokens)
+           (rx/subs!
+            (fn [resolved-tokens]
+              (t/testing "the nil-value token is tagged with an error instead of crashing"
+                (t/is (contains? resolved-tokens "typography.empty"))
+                (t/is (nil? (get-in resolved-tokens ["typography.empty" :resolved-value])))
+                (t/is (= :error.token/empty-input
+                         (get-in resolved-tokens ["typography.empty" :errors 0 :error/code]))))
+              (t/testing "other tokens still resolve normally"
+                (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))))
+            (fn [err]
+              (t/do-report {:type :error :message "Stream error" :actual err})
+              (done))
+            (fn []
+              (done)))))))
+
 (t/deftest resolve-tokens-interactive-test
   (t/async
     done
