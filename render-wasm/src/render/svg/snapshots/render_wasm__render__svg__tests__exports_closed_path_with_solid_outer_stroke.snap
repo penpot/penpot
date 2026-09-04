@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="132" height="112" viewBox="0 0 132 112">
+	<path fill="green" transform="translate(16 16)" d="M-8 -8L108 -8L108 88L-8 88L-8 -8ZM100 0L0 0L0 80L100 80L100 0Z" fill-rule="evenodd"/>
+</svg>
