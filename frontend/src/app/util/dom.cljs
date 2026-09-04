@@ -949,6 +949,36 @@
     {:ascent (.-fontBoundingBoxAscent measure)
      :descent (.-fontBoundingBoxDescent measure)}))
 
+(defn measure-text-metrics
+  "Measure the font-wide (bounding-box) and glyph-ink vertical metrics of `text`
+  at `font-size` px for the given font.
+
+  Returns `{:font-ascent :font-descent :ink-ascent :ink-descent}` in px, or nil
+  when the browser doesn't expose the bounding-box metrics. The font-wide
+  values track what CSS uses for the line box, while the ink ones track the
+  visible glyphs, which is what an optical centering shift needs."
+  ([family weight style]
+   (measure-text-metrics family weight style "Ag" 16))
+  ([family weight style text font-size]
+   (let [element (.createElement globals/document "canvas")
+         context (.getContext element "2d")
+         _       (set! (.-font context)
+                       (dm/str (or weight "400") " " (or style "normal") " "
+                               font-size "px \"" family "\""))
+         measure ^js (.measureText context (str text))
+         font-ascent  (.-fontBoundingBoxAscent measure)
+         font-descent (.-fontBoundingBoxDescent measure)
+         ink-ascent   (.-actualBoundingBoxAscent measure)
+         ink-descent  (.-actualBoundingBoxDescent measure)]
+     (when (and (number? font-ascent)
+                (number? font-descent)
+                (number? ink-ascent)
+                (number? ink-descent))
+       {:font-ascent  font-ascent
+        :font-descent font-descent
+        :ink-ascent   ink-ascent
+        :ink-descent  ink-descent}))))
+
 (defn clone-node
   ([^js node]
    (clone-node node true))

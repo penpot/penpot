@@ -5,7 +5,12 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.ssrf
-  "URL/host validation to prevent Server-Side Request Forgery."
+  "URL/host validation to prevent Server-Side Request Forgery.
+
+   The blocklist covers the standard JVM InetAddress classifications plus
+   explicit ranges: IPv6 ULA, IPv4-mapped loopback, cloud metadata,
+   operator-supplied CIDRs and the IPv6 transition mechanisms NAT64, 6to4
+   and Teredo."
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -122,6 +127,20 @@
          ;; Check the embedded IPv4 is loopback (127.x.x.x)
          (= (bit-and (aget bs 12) 0xFF) 127))))
 
+(defn- transition-prefix
+  "Classify a 16-byte IPv6 address into its transition mechanism:
+   :nat64 (64:ff9b::/96), :6to4 (2002::/16), :teredo (2001:0000::/32) or nil."
+  [^bytes bs]
+  (let [b0 (bit-and (aget bs 0) 0xFF)
+        b1 (bit-and (aget bs 1) 0xFF)
+        b2 (bit-and (aget bs 2) 0xFF)
+        b3 (bit-and (aget bs 3) 0xFF)]
+    (cond
+      (and (= b0 0x00) (= b1 0x64) (= b2 0xFF) (= b3 0x9B)) :nat64
+      (and (= b0 0x20) (= b1 0x02))                         :6to4
+      (and (= b0 0x20) (= b1 0x01) (= b2 0x00) (= b3 0x00)) :teredo
+      :else nil)))
+
 (defn- blocked-address?
   "Check if an InetAddress should be blocked. Returns true if blocked."
   [^InetAddress addr]
@@ -141,12 +160,15 @@
    ;; Cloud metadata IPs (exact match)
    (contains? cloud-metadata-ips (.getHostAddress addr))
 
-   ;; Extra blocked CIDRs (IPv4 only)
+   ;; Extra blocked CIDRs (IPv4 only) and IPv6 transition mechanisms
    (let [bs (.getAddress addr)]
      (if (= (alength bs) 4)
        (or (some #(in-cidr4? bs %) extra-blocked-ranges)
            (some #(in-cidr4? bs %) extra-blocked-cidrs))
-       false))))
+       ;; IPv6 transition mechanisms (NAT64/6to4/Teredo): the range is
+       ;; rejected outright.
+       (boolean (when (= (alength bs) 16)
+                  (transition-prefix bs)))))))
 
 (defn resolve-host
   "Resolve a hostname to all InetAddress objects. Wraps InetAddress/getAllByName
@@ -163,8 +185,10 @@
     - host must resolve to at least one address, and
     - **every** resolved address must NOT be in the blocklist
       (loopback, link-local, site-local, multicast, any-local,
-      cloud-metadata 169.254.169.254, IPv6 ULA fc00::/7, IPv4-mapped
-       IPv6 of any blocked IPv4, plus operator-supplied CIDRs).
+      cloud-metadata 169.254.169.254, IPv6 ULA fc00::/7, IPv6 transition
+      mechanisms NAT64 64:ff9b::/96, 6to4 2002::/16 and Teredo
+      2001:0000::/32, IPv4-mapped IPv6 of any blocked IPv4,
+      plus operator-supplied CIDRs).
    When the host is an IP literal (decimal/octal/hex/IPv6) it is
    normalized via `com.google.common.net.InetAddresses` before the
    check.

@@ -3,11 +3,8 @@ description: Execute a ready plan end-to-end — create a GitHub issue, branch i
 agent: build
 ---
 
-# Implement Plan
-
 This command is run once a plan is ready (for example, from plan mode). Execute
-the plan already prepared in the current session context — it does not take
-extra arguments. Follow these steps in order.
+the plan already prepared in the current session context. Follow these steps in order.
 
 ## 1. Create the issue
 

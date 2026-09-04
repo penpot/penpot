@@ -41,7 +41,7 @@ jobs:
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
-      build_key: ${{ steps.vars.outputs.build_key }}
+      sha: ${{ steps.vars.outputs.sha }}
       exists: ${{ steps.check.outputs.exists }}
 
     steps:
@@ -59,6 +59,7 @@ jobs:
         run: |
           GH_REF="${{ inputs.gh_ref || github.ref_name }}"
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
 
           BUNDLE_VERSION=$(aws s3api head-object \
             --bucket ${{ secrets.S3_BUCKET }} \
@@ -67,15 +68,10 @@ jobs:
             --output text)
           echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
 
-          # Image content = bundle + docker build context, so the build key
-          # combines both.
-          CTX_HASH=$(git rev-parse "HEAD:docker/images" | cut -c1-12)
-          echo "build_key=${BUNDLE_VERSION}-${CTX_HASH}" >> $GITHUB_OUTPUT
-
       # The image set is a single block, so a single set-level check is
       # enough: `promote` drops a marker object in S3 only after every
       # image was built AND every branch tag was moved. Marker present
-      # means there is nothing at all to do for this build key.
+      # means there is nothing at all to do for this commit.
       - name: Check if this image set is already built
         id: check
         env:
@@ -85,13 +81,13 @@ jobs:
         run: |
           if aws s3api head-object \
                --bucket ${{ secrets.S3_BUCKET }} \
-               --key "markers/images-${{ steps.vars.outputs.build_key }}" \
+               --key "markers/images-sha-${{ steps.vars.outputs.sha }}" \
                > /dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
             {
               echo "### ⏭️ Image set build skipped"
               echo ""
-              echo "The whole set was already built and promoted for \`${{ steps.vars.outputs.build_key }}\`."
+              echo "The whole set was already built and promoted for \`sha-${{ steps.vars.outputs.sha }}\`."
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -101,7 +97,7 @@ jobs:
             # prune stale bundles while at it.
             mkdir -p "$BUNDLE_CACHE"
             find "$BUNDLE_CACHE" -type f -mtime +1 -delete || true
-            ZIP="$BUNDLE_CACHE/penpot-${{ steps.vars.outputs.build_key }}.zip"
+            ZIP="$BUNDLE_CACHE/penpot-${{ steps.vars.outputs.bundle_version }}.zip"
             if [ ! -f "$ZIP" ]; then
               aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip" "$ZIP.$$.tmp"
               mv "$ZIP.$$.tmp" "$ZIP"
@@ -173,7 +169,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          ZIP="$BUNDLE_CACHE/penpot-${{ needs.prepare.outputs.build_key }}.zip"
+          ZIP="$BUNDLE_CACHE/penpot-${{ needs.prepare.outputs.bundle_version }}.zip"
           if [ ! -f "$ZIP" ]; then
             echo "Bundle not found in host cache; falling back to S3."
             mkdir -p "$BUNDLE_CACHE"
@@ -213,7 +209,7 @@ jobs:
           sbom: true
           # Immutable tag only; branch tags are moved atomically for the
           # whole image set by the `promote` job.
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:build-${{ needs.prepare.outputs.build_key }}
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:sha-${{ needs.prepare.outputs.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
@@ -249,7 +245,7 @@ jobs:
           for image in $ALL_IMAGES; do
             docker buildx imagetools create \
               -t "${{ secrets.DOCKER_REGISTRY }}/$image:${{ needs.prepare.outputs.gh_ref }}" \
-              "${{ secrets.DOCKER_REGISTRY }}/$image:build-${{ needs.prepare.outputs.build_key }}"
+              "${{ secrets.DOCKER_REGISTRY }}/$image:sha-${{ needs.prepare.outputs.sha }}"
           done
 
       # The marker is written LAST: its presence certifies that all five
@@ -261,11 +257,11 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           echo "${{ github.run_id }}" | aws s3 cp - \
-            "s3://${{ secrets.S3_BUCKET }}/markers/images-${{ needs.prepare.outputs.build_key }}"
+            "s3://${{ secrets.S3_BUCKET }}/markers/images-sha-${{ needs.prepare.outputs.sha }}"
           {
             echo "### ✅ Image set promoted"
             echo ""
-            echo "All \`:${{ needs.prepare.outputs.gh_ref }}\` tags now point to \`build-${{ needs.prepare.outputs.build_key }}\`."
+            echo "All \`:${{ needs.prepare.outputs.gh_ref }}\` tags now point to \`sha-${{ needs.prepare.outputs.sha }}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 4. Single failure notification for the whole workflow ─────────────

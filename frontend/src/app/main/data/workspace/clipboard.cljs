@@ -1203,7 +1203,7 @@
 
          ;; Call exporter to get image URI, then fetch blob and resolve the deferred.
          (->> (if (and (features/active-feature? state "render-wasm/v1")
-                       (features/active-feature? state "wasm-export/v1"))
+                       (contains? cf/flags :wasm-export))
                 (rx/of {:uri (wasm.exports/export-image-uri export)})
                 (rp/cmd! :export
                          {:exports [export]

@@ -66,7 +66,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.19.0 \
+ENV NODE_VERSION=v24.20.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -100,7 +100,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.18.21
+ENV OPENCODE_VERSION=1.18.25
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

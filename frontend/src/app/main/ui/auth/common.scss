@@ -4,56 +4,15 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as *;
 
-.auth-form-wrapper {
-  inline-size: 100%;
-  padding-block-end: 0;
-  display: grid;
+.form {
+  display: flex;
+  flex-direction: column;
   gap: var(--sp-m);
-
-  // Native <form> inside auth-form-wrapper — no class available
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-m);
-    margin-block-start: var(--sp-m);
-  }
-}
-
-.auth-title-wrapper {
-  inline-size: 100%;
-  padding-block-end: 0;
-  display: grid;
-  gap: var(--sp-s);
-}
-
-.separator {
-  border-color: var(--color-background-quaternary);
-  margin: 0;
-}
-
-.auth-title {
-  @include use-typography("title-large");
-
-  line-height: 1.2;
-  color: var(--color-foreground-primary);
-}
-
-.auth-subtitle {
-  @include use-typography("title-small");
-
-  color: var(--color-foreground-secondary);
-}
-
-.auth-tagline {
-  @include use-typography("title-small");
-
-  margin: 0;
-  color: var(--color-foreground-secondary);
+  margin: var(--sp-m) 0;
 }
 
 .form-field {
@@ -62,36 +21,40 @@
   --input-min-width: 100%;
 }
 
-.buttons-stack {
-  display: grid;
-  gap: var(--sp-s);
-}
+.form-submit-btn {
+  --button-bg-color: var(--color-accent-primary);
+  --button-border-color: var(--color-accent-primary);
+  --button-fg-color: var(--color-background-secondary);
 
-.login-button,
-.login-ldap-button {
   @include use-typography("headline-small");
 
   display: flex;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
-  background-color: var(--color-accent-primary);
-  border: $b-1 solid var(--color-accent-primary);
-  color: var(--color-background-secondary);
+  background-color: var(--button-bg-color);
+  border: $b-1 solid var(--button-border-color);
+  color: var(--button-fg-color);
   border-radius: $br-8;
   min-block-size: $sz-32;
   block-size: $sz-40;
   inline-size: 100%;
 
+  &:hover {
+    --button-bg-color: var(--color-accent-tertiary);
+    --button-border-color: var(--color-accent-tertiary);
+    --button-fg-color: var(--color-background-secondary);
+
+    text-decoration: none;
+  }
+
   &:disabled {
-    background-color: var(--color-background-quaternary);
-    border: 1px solid var(--color-background-quaternary);
-    color: var(--color-foreground-disabled);
-    cursor: unset;
+    --button-bg-color: var(--color-background-quaternary);
+    --button-border-color: var(--color-background-quaternary);
+    --button-fg-color: var(--color-foreground-disabled);
   }
 }
 
-.go-back {
+.go-back-row {
   display: flex;
   flex-direction: column;
   gap: var(--sp-m);
@@ -100,19 +63,68 @@
 }
 
 .go-back-link {
+  --button-bg-color: var(--color-background-tertiary);
+  --button-border-color: var(--color-background-tertiary);
+  --button-fg-color: var(--color-foreground-secondary);
+
+  @include use-typography("headline-small");
+
   background: none;
-  cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
-  border: $b-1 solid var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
-
-  @include use-typography("headline-small");
-
+  background-color: var(--button-bg-color);
+  border: $b-1 solid var(--button-border-color);
+  color: var(--button-fg-color);
   block-size: $sz-40;
+
+  &:hover {
+    --button-bg-color: var(--color-background-quaternary);
+    --button-border-color: var(--color-background-quaternary);
+    --button-fg-color: var(--color-accent-primary);
+
+    text-decoration: none;
+  }
+}
+
+.separator {
+  border-color: var(--color-background-quaternary);
+  margin: 0;
+}
+
+.wrapper {
+  inline-size: 100%;
+  padding-block-end: 0;
+  display: grid;
+  gap: var(--sp-m);
+}
+
+.title-wrapper {
+  inline-size: 100%;
+  padding-block-end: 0;
+  display: grid;
+  gap: var(--sp-s);
+}
+
+.title {
+  @include use-typography("title-large");
+
+  line-height: 1.2;
+  color: var(--color-foreground-primary);
+}
+
+.subtitle {
+  @include use-typography("title-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.tagline {
+  @include use-typography("title-small");
+
+  margin: 0;
+  color: var(--color-foreground-secondary);
 }
 
 .links {
@@ -120,104 +132,10 @@
   gap: var(--sp-xxl);
 }
 
-.register,
-.account,
-.recovery-request,
-.demo-account {
-  display: flex;
-  justify-content: center;
-  gap: var(--sp-s);
-  padding: 0;
-}
+.notification-email {
+  @include use-typography("title-medium");
 
-.register-text,
-.account-text,
-.recovery-text,
-.demo-account-text {
-  @include use-typography("title-small");
-
-  text-align: right;
-  color: var(--color-foreground-secondary);
-}
-
-.register-link,
-.account-link,
-.recovery-link,
-.forgot-pass-link,
-.demo-account-link {
-  @include use-typography("title-small");
-
-  text-align: left;
-  background-color: transparent;
-  border: none;
-  display: inline;
+  line-height: 1.2;
   color: var(--color-accent-primary);
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.forgot-password {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.submit-btn,
-.register-btn,
-.recover-btn {
-  @include use-typography("headline-small");
-
-  background: none;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--color-accent-primary);
-  border: $b-1 solid var(--color-accent-primary);
-  color: var(--color-background-secondary);
-  border-radius: $br-8;
-  min-block-size: $sz-32;
-  block-size: $sz-40;
-  inline-size: 100%;
-
-  &:disabled {
-    background-color: var(--color-background-quaternary);
-    border: $b-1 solid var(--color-background-quaternary);
-    color: var(--color-foreground-disabled);
-    cursor: unset;
-  }
-}
-
-.login-btn {
-  @include use-typography("title-small");
-
-  display: flex;
-  align-items: center;
-  gap: px2rem(6);
-  inline-size: 100%;
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-
-  span {
-    padding-block-start: var(--sp-xxs);
-  }
-
-  &:hover {
-    color: var(--color-foreground-primary);
-    background-color: var(--color-background-quaternary);
-  }
-
-  &:disabled {
-    background-color: var(--color-background-quaternary);
-    border: 1px solid var(--color-background-quaternary);
-    color: var(--color-foreground-disabled);
-    cursor: unset;
-  }
-}
-
-.auth-buttons {
-  display: flex;
-  gap: var(--sp-s);
+  margin-inline: $sz-36;
 }

@@ -9,7 +9,9 @@
   (:require
    [app.common.exceptions :as ex])
   (:import
-   [org.passay CharacterCharacteristicsRule CharacterRule EnglishCharacterData PasswordData]))
+   [org.passay PasswordData]
+   [org.passay.data EnglishCharacterData]
+   [org.passay.rule CharacterCharacteristicsRule CharacterRule]))
 
 (defonce ^:private passay-code->translation-key
   {"INSUFFICIENT_LOWERCASE"   "errors.weak-password.insufficient-lowercase"
@@ -18,12 +20,13 @@
    "INSUFFICIENT_SPECIAL"     "errors.weak-password.insufficient-special"})
 
 (defonce ^:private character-characteristics-rule
-  (doto (CharacterCharacteristicsRule.)
-    (.setRules [(CharacterRule. EnglishCharacterData/LowerCase 1)
+  (CharacterCharacteristicsRule.
+   4
+   (into-array org.passay.rule.CharacterRule
+               [(CharacterRule. EnglishCharacterData/LowerCase 1)
                 (CharacterRule. EnglishCharacterData/UpperCase 1)
                 (CharacterRule. EnglishCharacterData/Digit 1)
-                (CharacterRule. EnglishCharacterData/Special 1)])
-    (.setNumberOfCharacteristics 4)))
+                (CharacterRule. EnglishCharacterData/Special 1)])))
 
 (defn validate-password
   "Validates password strength.

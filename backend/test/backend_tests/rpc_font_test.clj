@@ -59,8 +59,13 @@
   (let [out (th/command! {::th/type        :create-upload-session
                           ::rpc/profile-id (:id prof)
                           :total-chunks    total-chunks})]
-    (t/is (nil? (:error out)))
-    (:session-id (:result out))))
+    (let [session-id (:session-id (:result out))]
+      (t/is (nil? (:error out))
+            (str "create-upload-session failed: "
+                 (some-> (:error out) ex-data)))
+      (t/is (uuid? session-id)
+            (str "create-upload-session returned an invalid session-id: " session-id))
+      session-id)))
 
 (defn- upload-font-chunked!
   "Splits `font-bytes` into chunks of `chunk-size` bytes, creates an upload
@@ -68,14 +73,15 @@
   [prof ^bytes font-bytes mtype chunk-size]
   (let [chunks     (split-bytes-into-chunks font-bytes chunk-size)
         session-id (create-upload-session! prof (count chunks))]
-    (doseq [[idx chunk-data] (map-indexed vector chunks)]
-      (let [mfile (make-chunk-mfile chunk-data mtype)
-            out   (th/command! {::th/type        :upload-chunk
-                                ::rpc/profile-id (:id prof)
-                                :session-id      session-id
-                                :index           idx
-                                :content         mfile})]
-        (t/is (nil? (:error out)))))
+    (when (uuid? session-id)
+      (doseq [[idx chunk-data] (map-indexed vector chunks)]
+        (let [mfile (make-chunk-mfile chunk-data mtype)
+              out   (th/command! {::th/type        :upload-chunk
+                                  ::rpc/profile-id (:id prof)
+                                  :session-id      session-id
+                                  :index           idx
+                                  :content         mfile})]
+          (t/is (nil? (:error out))))))
     session-id))
 
 (defn- assert-font-variant-result
@@ -613,43 +619,42 @@
   ;; N2-07: A user with edit permissions on their own team must not be
   ;; able to create a font variant using a font-id that already belongs
   ;; to another team (BOLA / CWE-639).
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof1   (th/create-profile* 1 {:is-active true})
-          prof2   (th/create-profile* 2 {:is-active true})
-          team1   (:default-team-id prof1)
-          team2   (:default-team-id prof2)
-          font-id (uuid/custom 10 999)
-          data    (-> (io/resource "backend_tests/test_files/font-1.ttf")
-                      (io/read*))]
+  (let [prof1   (th/create-profile* 1 {:is-active true})
+        prof2   (th/create-profile* 2 {:is-active true})
+        team1   (:default-team-id prof1)
+        team2   (:default-team-id prof2)
+        font-id (uuid/custom 10 999)
+        data    (-> (io/resource "backend_tests/test_files/font-1.ttf")
+                    (io/read*))]
 
-      ;; prof1 creates a font variant in team1 with font-id
-      (let [session-id (upload-font-chunked! prof1 data "font/ttf" (* 4 1024 1024))
-            params {::th/type :create-font-variant
-                    ::rpc/profile-id (:id prof1)
-                    :team-id     team1
-                    :font-id     font-id
-                    :font-family "SharedFont"
-                    :font-weight 400
-                    :font-style  "normal"
-                    :uploads     {"font/ttf" session-id}}
-            out    (th/command! params)]
-        (t/is (nil? (:error out))))
+    ;; prof1 creates a font variant in team1 with font-id
+    (let [session-id (upload-font-chunked! prof1 data "font/ttf" (* 4 1024 1024))
+          params {::th/type :create-font-variant
+                  ::rpc/profile-id (:id prof1)
+                  :team-id     team1
+                  :font-id     font-id
+                  :font-family "SharedFont"
+                  :font-weight 400
+                  :font-style  "normal"
+                  :uploads     {"font/ttf" session-id}}
+          out    (th/command! params)]
+      (t/is (nil? (:error out))))
 
-      ;; prof2 tries to create a variant using the same font-id but
-      ;; in team2, which must be rejected because font-id belongs to team1
-      (let [session-id (upload-font-chunked! prof2 data "font/ttf" (* 4 1024 1024))
-            params {::th/type :create-font-variant
-                    ::rpc/profile-id (:id prof2)
-                    :team-id     team2
-                    :font-id     font-id
-                    :font-family "SharedFont"
-                    :font-weight 700
-                    :font-style  "normal"
-                    :uploads     {"font/ttf" session-id}}
-            out    (th/command! params)]
-        (t/is (some? (:error out)))
-        (t/is (= :not-found (-> out :error ex-data :type)))
-        (t/is (= :object-not-found (-> out :error ex-data :code)))))))
+    ;; prof2 tries to create a variant using the same font-id but
+    ;; in team2, which must be rejected because font-id belongs to team1
+    (let [session-id (upload-font-chunked! prof2 data "font/ttf" (* 4 1024 1024))
+          params {::th/type :create-font-variant
+                  ::rpc/profile-id (:id prof2)
+                  :team-id     team2
+                  :font-id     font-id
+                  :font-family "SharedFont"
+                  :font-weight 700
+                  :font-style  "normal"
+                  :uploads     {"font/ttf" session-id}}
+          out    (th/command! params)]
+      (t/is (some? (:error out)))
+      (t/is (= :not-found (-> out :error ex-data :type)))
+      (t/is (= :object-not-found (-> out :error ex-data :code))))))
 
 (t/deftest get-font-variants-nonexistent-file
   (let [prof (th/create-profile* 1 {:is-active true})

@@ -252,12 +252,12 @@
           (let [text-content-pending (api/set-shape-text-content id v)
                 pending-thumbnails (vec text-content-pending)
                 pending-full (vec (api/set-shape-text-images id v))
-                font-pending-ids (when (some :callback text-content-pending) [id])]
+                text-font-state (api/text-font-state-for-shape shape)]
             ;; FIXME: this is a hack to process the pending tasks
             ;; asynchronously we should probably modify set-wasm-attr!
             ;; to return a list of callbacks to be executed in a
             ;; second pass.
-            (api/process-pending [shape] pending-thumbnails pending-full font-pending-ids api/noop-fn)
+            (api/process-pending [shape] pending-thumbnails pending-full text-font-state api/noop-fn)
             nil))
 
         :grow-type
@@ -341,7 +341,8 @@
       (when (d/not-empty? shape-changes)
         (->> (rx/from shape-changes)
              (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
-             (rx/subs! #(api/request-render "set-wasm-attrs")))))))
+             (rx/reduce conj [])
+             (rx/subs! (fn [_] (api/request-render "set-wasm-attrs"))))))))
 
 ;; `conj` empty set initialization
 (def conj* (fnil conj (d/ordered-set)))

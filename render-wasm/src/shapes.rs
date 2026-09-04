@@ -200,6 +200,10 @@ pub struct Shape {
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
     deleted: bool,
+    /// Fills from a cold-load batch, held until text content is uploaded and laid out.
+    deferred_batch_fills: Option<Vec<Fill>>,
+    /// Strokes from a cold-load batch, applied together with deferred fills.
+    deferred_batch_strokes: Option<Vec<Stroke>>,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -302,6 +306,8 @@ impl Shape {
             svg_transform: None,
             ignore_constraints: false,
             deleted: false,
+            deferred_batch_fills: None,
+            deferred_batch_strokes: None,
         }
     }
 
@@ -646,6 +652,7 @@ impl Shape {
         self.background_blur.filter(|blur| !blur.hidden)
     }
 
+    #[cfg(test)]
     pub fn add_child(&mut self, id: Uuid) {
         self.children.push(id);
     }
@@ -665,6 +672,7 @@ impl Shape {
     }
 
     pub fn set_fills(&mut self, fills: Vec<Fill>) {
+        self.deferred_batch_fills = None;
         self.fills = fills;
     }
 
@@ -707,8 +715,29 @@ impl Shape {
     }
 
     pub fn clear_strokes(&mut self) {
+        self.deferred_batch_strokes = None;
         self.invalidate_extrect();
         self.strokes.clear();
+    }
+
+    pub fn set_deferred_batch_fills(&mut self, fills: Vec<Fill>) {
+        self.deferred_batch_fills = Some(fills);
+    }
+
+    pub fn set_deferred_batch_strokes(&mut self, strokes: Vec<Stroke>) {
+        self.deferred_batch_strokes = Some(strokes);
+    }
+
+    /// Apply fill/stroke records that were parsed from a batch upload but held
+    /// back until text content exists and has been laid out.
+    pub fn apply_deferred_batch_paint(&mut self) {
+        if let Some(fills) = self.deferred_batch_fills.take() {
+            self.fills = fills;
+        }
+        if let Some(strokes) = self.deferred_batch_strokes.take() {
+            self.strokes = strokes;
+            self.invalidate_extrect();
+        }
     }
 
     pub fn set_path_segments(&mut self, segments: Vec<Segment>) {
@@ -960,6 +989,14 @@ impl Shape {
         Bounds::from_rect(&rect)
     }
 
+    pub fn extrect_depends_on_children(&self) -> bool {
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => true,
+            Type::Group(_) | Type::Frame(_) => !self.clip_content,
+            _ => false,
+        }
+    }
+
     fn apply_children_bounds(
         &self,
         bounds: Bounds,
@@ -1124,21 +1161,21 @@ impl Shape {
     }
 
     fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        // Own outsets (strokes, shadows, blur) are local-space, so they expand before the
+        // shape transform. Children extrects are already world-space: join them after it.
         let mut bounds = self.own_extrect_bounds();
-        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
-        bounds = self.apply_children_blur(bounds, shapes_pool);
 
         if !self.transform.is_identity() {
-            // Expand everything in the shape's local axis-aligned space first (strokes,
-            // shadows, blur, children). Only after that do we map the resulting bounds
-            // through the shape transform so rotation/skew is reflected in the final
-            // extrect.
             let mut matrix = self.transform;
             let center = self.center();
             matrix.post_translate(center);
             matrix.pre_translate(-center);
             bounds.transform_mut(&matrix);
         }
+
+        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
+        bounds = self.apply_children_blur(bounds, shapes_pool);
+
         bounds.to_rect()
     }
 

@@ -39,7 +39,7 @@
   .custom-select-dropdown {
     @extend %dropdown-wrapper;
 
-    width: fit-content;
+    width: max-content;
     max-height: px2rem(320); // TODO: when this gets addressed in the DS, use a token
     .separator {
       margin: 0;

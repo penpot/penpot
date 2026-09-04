@@ -134,7 +134,6 @@
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-text-editor-wasm "text-editor-wasm/v1"
     :feature-render-wasm "render-wasm/v1"
-    :feature-wasm-export "wasm-export/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"
     nil))

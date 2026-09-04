@@ -10,15 +10,23 @@
    [cljs.test :as t]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
+   [exporter-tests.export-shapes-test]
+   [exporter-tests.jobs-test]
    [exporter-tests.renderer-svg-test]
+   [exporter-tests.scheduler-test]
    [exporter-tests.shell-test]
+   [exporter-tests.wasm-pool-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
 
 (def test-namespaces
-  ['exporter-tests.renderer-svg-test
-   'exporter-tests.shell-test])
+  ['exporter-tests.export-shapes-test
+   'exporter-tests.jobs-test
+   'exporter-tests.renderer-svg-test
+   'exporter-tests.scheduler-test
+   'exporter-tests.shell-test
+   'exporter-tests.wasm-pool-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

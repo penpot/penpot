@@ -4,19 +4,4 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/_utils.scss" as *;
-@use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as *;
 @use "./common";
-
-.fields-row {
-  margin-block-end: var(--sp-s);
-}
-
-.notification-text-email {
-  @include use-typography("title-medium");
-
-  line-height: 1.2;
-  color: var(--color-accent-primary);
-  margin-inline: $sz-36;
-}

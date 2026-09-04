@@ -26,6 +26,7 @@
                                                  dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link*]]
    [app.main.ui.components.organization-avatar :refer [organization-avatar*]]
+   [app.main.ui.dashboard.check-updates :as dcu]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
@@ -438,7 +439,7 @@
       (when-not (contains? cf/flags :admin-console)
         [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
 
-      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :admin-console) (tr "dashboard.personal-projects") (tr "dashboard.your-penpot"))]
+      [:span {:class (stl/css :team-text)} (tr "dashboard.personal-projects")]
       (when (= default-team-id (:id team))
         tick-icon)]
 
@@ -725,7 +726,7 @@
 
         current-organization (dtm/team->organization team)
 
-        ;; Find the "your-penpot" teams, and transform them in organizations. When
+        ;; Find the "personal-projects" teams, and transform them in organizations. When
         ;; the selected team is directly accessible but not listed in
         ;; membership teams, include only its organization so the organization selector can
         ;; show the current selection without leaking the team into the
@@ -972,7 +973,7 @@
                                      :team-name-no-logo nitrate?)}
           (when-not nitrate?
             [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon])
-          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.personal-projects") (tr "dashboard.default-team-name"))]]
+          [:span {:class (stl/css :team-text)} (tr "dashboard.personal-projects")]]
 
          (and (contains? cf/flags :subscriptions)
               (not is-default?)
@@ -1256,8 +1257,11 @@
 
 (mf/defc about-penpot-menu*
   {::mf/private true}
-  [{:keys [on-close on-pointer-enter on-pointer-leave]}]
-  (let [version cf/version
+  [{:keys [on-close on-close-profile on-pointer-enter on-pointer-leave]}]
+  (let [version     cf/version
+        checking*   (mf/use-state false)
+        checking?   (deref checking*)
+
         show-release-notes
         (mf/use-fn
          (fn [event]
@@ -1275,7 +1279,22 @@
                                (dom/get-data "eventname"))]
              (st/emit! (ev/event {::ev/name eventname
                                   ::ev/origin "menu:in-app"}))
-             (dom/open-new-window url))))]
+             (dom/open-new-window url))))
+
+        check-for-updates
+        (mf/use-fn
+         (mf/deps on-close-profile version)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when-not @checking*
+             (st/emit! (ev/event {::ev/name "check-for-updates"
+                                  ::ev/origin "menu:in-app"
+                                  :version (:base version)}))
+             (dcu/check-for-updates!
+              (:base version)
+              {:on-start  #(reset! checking* true)
+               :on-finish #(do (reset! checking* false)
+                               (on-close-profile))}))))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :sub-menu :about)
@@ -1297,7 +1316,22 @@
                               :data-url "https://penpot.app/terms"
                               :on-click handle-click-url
                               :data-eventname "explore-terms-service-click"}
-      (tr "auth.terms-of-service")]]))
+      (tr "auth.terms-of-service")]
+     (when-not (contains? cf/flags :air-gapped-conf)
+       [:*
+        [:hr {:role "separator" :class (stl/css :submenu-separator)}]
+        [:> dropdown-menu-item* {:class (stl/css-case :submenu-item true
+                                                      :checking checking?)
+                                 :aria-disabled checking?
+                                 :can-focus (not checking?)
+                                 :on-click check-for-updates}
+         (if checking?
+           (tr "labels.checking-for-updates")
+           (tr "labels.check-for-updates"))
+         (when checking?
+           [:> icon* {:icon-id i/reload
+                      :class (stl/css :checking-icon)
+                      :size "s"}])]])]))
 
 (mf/defc profile-section*
   [{:keys [profile team]}]
@@ -1512,6 +1546,7 @@
 
          :about-penpot
          [:> about-penpot-menu* {:on-close close-sub-menu
+                                 :on-close-profile on-close
                                  :on-pointer-enter on-sub-menu-pointer-enter
                                  :on-pointer-leave on-menu-pointer-leave}]
          nil))]))

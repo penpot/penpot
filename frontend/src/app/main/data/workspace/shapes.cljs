@@ -110,7 +110,7 @@
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr
-            translation?]
+            translation? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -152,7 +152,8 @@
                           :ignore-touched ignore-touched
                           :with-objects? with-objects?})
                         (cond-> reg-objects? (pcb/resize-parents ids))
-                        (pcb/set-translation? translation?))))]
+                        (pcb/set-translation? translation?)
+                        (pcb/set-skip-component-sync? skip-component-sync?))))]
              ;; Check buffered text candidates when the buffer is committed.
              (if (or (empty? text-ids)
                      (not (wrfs/text-reflow-candidate? state props)))
@@ -187,7 +188,8 @@
   ([ids update-fn
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr translation?
+            skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -223,7 +225,8 @@
                                                 :translation? translation?})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
-                   (pcb/set-translation? translation?))
+                   (pcb/set-translation? translation?)
+                   (pcb/set-skip-component-sync? skip-component-sync?))
 
                changed-objects
                (pcb/lookup-objects changes)

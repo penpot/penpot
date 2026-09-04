@@ -296,5 +296,60 @@ Debug Main Page
       </form>
     </fieldset>
   </section>
+
+</main>
+
+<main class="dashboard wide">
+  <section class="widget wide">
+    <fieldset>
+      <legend>Export jobs:</legend>
+      <desc>
+        Export jobs as the exporter left them in redis. Records expire an hour
+        after the export settles, so this is a live view, not a history.
+      </desc>
+
+      <form method="get" action="/dbg">
+        <div class="row">
+          <input type="text" style="width:300px" name="job-id"
+                 placeholder="filter by job id" value="{{export-job-filter}}" />
+          <input type="submit" value="Filter" />
+          <a href="/dbg">clear</a>
+        </div>
+      </form>
+
+      <div class="scroll-box">
+        <table>
+          <thead>
+            <tr>
+              <th>JOB ID</th>
+              <th>STATE</th>
+              <th>PROGRESS</th>
+              <th>CMD</th>
+              <th>BACKEND</th>
+              <th>NAME</th>
+              <th>CREATED</th>
+              <th>ENDED</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for job in export-jobs %}
+            <tr>
+              <td><tt>{{job.id}}</tt></td>
+              <td>{{job.state}}{% if job.interrupted %} (interrupted){% endif %}</td>
+              <td>{{job.done}} / {{job.total}}</td>
+              <td>{{job.cmd}}</td>
+              <td>{{job.backend}}</td>
+              <td>{{job.name}}</td>
+              <td>{{job.created-at}}</td>
+              <td>{{job.ended-at}}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">No export jobs.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </fieldset>
+  </section>
 </main>
 {% endblock %}

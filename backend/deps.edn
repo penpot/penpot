@@ -17,7 +17,7 @@
 
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "7.6.0.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "7.7.0.RELEASE"}
   ;; Minimal dependencies required by lettuce, we need to include them
   ;; explicitly because clojure dependency management does not support
   ;; yet the BOM format.
@@ -25,7 +25,7 @@
   io.micrometer/micrometer-observation {:mvn/version "1.14.2"}
 
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
-  com.google.guava/guava {:mvn/version "33.6.0-jre"}
+  com.google.guava/guava {:mvn/version "33.7.1-jre"}
 
   funcool/yetti
   {:git/tag "v11.10"
@@ -40,32 +40,32 @@
   nrepl/nrepl {:mvn/version "1.7.0"}
 
   org.postgresql/postgresql {:mvn/version "42.7.13"}
-  org.xerial/sqlite-jdbc {:mvn/version "3.53.2.1"}
+  org.xerial/sqlite-jdbc {:mvn/version "3.53.4.0"}
 
   com.zaxxer/HikariCP {:mvn/version "7.1.0"}
 
-  io.whitfin/siphash {:mvn/version "2.0.0"}
+  io.whitfin/siphash {:mvn/version "3.0.0"}
 
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.6.1-359"}
-  org.passay/passay {:mvn/version "1.6.6"}
+  org.passay/passay {:mvn/version "2.0.0"}
 
   com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.4"}
 
-  org.jsoup/jsoup {:mvn/version "1.23.1"}
+  org.jsoup/jsoup {:mvn/version "1.23.2"}
 
   at.yawk.lz4/lz4-java
-  {:mvn/version "1.11.1"}
+  {:mvn/version "1.11.2"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
 
   dawran6/emoji {:mvn/version "0.2.0"}
-  markdown-clj/markdown-clj {:mvn/version "1.12.8"}
+  markdown-clj/markdown-clj {:mvn/version "1.12.9"}
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.50.1"}
-  software.amazon.awssdk/sts {:mvn/version "2.50.1"}
+  software.amazon.awssdk/s3 {:mvn/version "2.54.5"}
+  software.amazon.awssdk/sts {:mvn/version "2.54.5"}
 
   com.ladybugdb/lbug {:mvn/version "0.19.1"}
   ;; Required by Arrow RootAllocator (lbug only pulls arrow-memory-core).

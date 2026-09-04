@@ -26,6 +26,7 @@
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
    [app.http.session :as session]
+   [app.redis :as rds]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
@@ -53,11 +54,53 @@
 ;; INDEX
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private max-export-jobs 200)
+
+(defn- scan-export-job-keys
+  "Note: no index for now, get them all and filter"
+  [conn pattern]
+  (loop [cursor "0"
+         found  []]
+    (let [[cursor keys] (rds/scan conn cursor pattern max-export-jobs)
+          found         (into found keys)]
+      (if (or (nil? cursor)
+              (= "0" cursor)
+              (>= (count found) max-export-jobs))
+        (into [] (take max-export-jobs) found)
+        (recur cursor found)))))
+
+(defn- get-export-jobs
+  [cfg job-id]
+  (let [filtered? (not (str/empty-or-nil? job-id))
+        job-uuid  (when filtered? (parse-uuid job-id))]
+    (if (and filtered? (nil? job-uuid))
+      []
+      (try
+        (let [pattern (str "penpot.exporter." (cf/get :tenant) ".job." (or job-uuid "*"))]
+          (->> (rds/run! cfg (fn [{:keys [::rds/conn]}]
+                               (->> (scan-export-job-keys conn pattern)
+                                    (mapv (fn [key] (rds/hget conn key "data"))))))
+               (keep (fn [blob]
+                       (try
+                         (t/decode-str blob)
+                         (catch Throwable _ nil))))
+               (sort-by :created-at #(compare %2 %1))
+               ;; The exporter stores instants as epoch millis.
+               (map (fn [{:keys [created-at ended-at] :as job}]
+                      (-> job
+                          (assoc :created-at (some-> created-at ct/inst (ct/format-inst :rfc1123)))
+                          (assoc :ended-at (some-> ended-at ct/inst (ct/format-inst :rfc1123))))))
+               (vec)))
+        (catch Throwable cause
+          (l/warn :hint "unable to read export jobs" :cause cause)
+          [])))))
+
 (defn index-handler
   [cfg request]
   (let [profile-id (::session/profile-id request)
         offset     (clock/get-offset profile-id)
-        profile    (profile/get-profile cfg profile-id)]
+        profile    (profile/get-profile cfg profile-id)
+        job-filter (some-> request :params :job-id str/trim)]
     {::yres/status  200
      ::yres/headers {"content-type" "text/html"}
      ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
@@ -69,6 +112,8 @@
                                                         (ct/format-duration offset)
                                                         "NO OFFSET")
                                       :current-time  (ct/format-inst (ct/now) :http)
+                                      :export-jobs (get-export-jobs cfg job-filter)
+                                      :export-job-filter job-filter
                                       :supported-features cfeat/supported-features}))}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -321,11 +366,17 @@
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
               project-id (:default-project-id profile)
+              team       (teams/get-team pool
+                                         :profile-id profile-id
+                                         :project-id project-id)
               cfg        (assoc cfg
                                 ::bfc/overwrite false
                                 ::bfc/profile-id profile-id
                                 ::bfc/project-id project-id
-                                ::bfc/input path)]
+                                ::bfc/team-id (:id team)
+                                ::bfc/input path
+                                ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size)
+                                ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
           (bf.v3/import-files! cfg)
           {::yres/status  200
            ::yres/headers {"content-type" "text/plain"}
@@ -581,7 +632,10 @@
                         ::bfc/profile-id profile-id
                         ::bfc/project-id project-id
                         ::bfc/input path
-                        ::bfc/features (cfeat/get-team-enabled-features cf/flags team))]
+                        ::bfc/team-id (:id team)
+                        ::bfc/features (cfeat/get-team-enabled-features cf/flags team)
+                        ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size)
+                        ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
 
       (if (= format :binfile-v3)
         (bf.v3/import-files! cfg)

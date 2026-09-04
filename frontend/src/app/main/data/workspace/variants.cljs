@@ -539,9 +539,10 @@
       (let [objects               (dsh/lookup-page-objects state)
             selected-ids          (dsh/lookup-selected state)
             selected-shapes       (map (d/getf objects) selected-ids)
-            add-new-variant?      (every? ctc/is-variant? selected-shapes)
+            add-new-variant?      (and (seq selected-shapes) (every? ctc/is-variant? selected-shapes))
             undo-id              (js/Symbol)]
-        (if add-new-variant?
+        (cond
+          add-new-variant?
           (rx/concat
            (rx/of
             (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:shortcut-duplicate"})
@@ -549,7 +550,12 @@
             (add-new-variant (first selected-ids) false))
            (rx/from (map #(add-new-variant % true) (rest selected-ids)))
            (rx/of (dwu/commit-undo-transaction undo-id)))
-          (rx/of (dws/duplicate-selected true)))))))
+
+          (seq selected-ids)
+          (rx/of (dws/duplicate-selected true))
+
+          :else
+          (rx/empty))))))
 
 (defn rename-variant
   "Rename the variant container and all components belonging to this variant"

@@ -1,8 +1,3 @@
-# auto-confirm node_modules purge when pnpm detects an incompatible modules
-# directory (e.g. after a store location or pnpm major version change),
-# preventing the interactive prompt from blocking bootstrap
-confirmModulesPurge: false
-
 allowBuilds:
   esbuild: true
   sharp: false
@@ -19,9 +14,9 @@ minimumReleaseAgeExclude:
   - hono@4.12.34
 
 packages:
-  - "./packages/common"
-  - "./packages/server"
-  - "./packages/plugin"
+  - "packages/common"
+  - "packages/server"
+  - "packages/plugin"
 
 overrides:
   '@hono/node-server@<2.0.5': ^2.0.5

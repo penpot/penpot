@@ -4,7 +4,7 @@
   "description": "Simple library for handling keyboard shortcuts",
   "main": "index.js",
   "type": "module",
-  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
+  "packageManager": "pnpm@12.0.0+sha512.9e2e3dc3911995868dc94b8175c217c27e95408fa03b4a22749778f2b34f773b77cdd3b39ede8171b22fcd53be6a35342e9fac9948a68ef58df6488ce89a7e67",
   "author": "Craig Campbell",
   "license": "Apache-2.0 WITH LLVM-exception"
 }

@@ -413,7 +413,7 @@ msgstr "Pin this version"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
 msgid "dashboard.default-team-name"
-msgstr "Your Penpot"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/dashboard/deleted.cljs:265
 msgid "dashboard.delete-all-forever-confirmation.description"
@@ -1466,9 +1466,6 @@ msgid "dashboard.your-name"
 msgstr "Your name"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Your Penpot"
-
 msgid "dashboard.personal-projects"
 msgstr "Personal Projects"
 
@@ -3683,6 +3680,51 @@ msgstr "Variant"
 msgid "labels.version-notes"
 msgstr "Version %s notes"
 
+msgid "labels.check-for-updates"
+msgstr "Check for updates"
+
+msgid "labels.checking-for-updates"
+msgstr "Checking for updates..."
+
+msgid "dashboard.check-updates.available-title"
+msgstr "A NEW PENPOT VERSION IS AVAILABLE"
+
+msgid "dashboard.check-updates.available-message"
+msgstr "Newer releases include performance improvements, new capabilities, and fixes that keep your installation current."
+
+msgid "dashboard.check-updates.installed-version"
+msgstr "Installed version"
+
+msgid "dashboard.check-updates.latest-version"
+msgstr "Latest version"
+
+msgid "dashboard.check-updates.highlights-title"
+msgstr "What's new - Highlights"
+
+msgid "dashboard.check-updates.view-changelog"
+msgstr "View full changelog"
+
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "View release notes"
+
+msgid "dashboard.check-updates.unable-title"
+msgstr "UNABLE TO CHECK FOR UPDATES"
+
+msgid "dashboard.check-updates.unable-message"
+msgstr "This installation could not reach the Penpot releases service."
+
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Check your network or instance configuration and try again."
+
+msgid "dashboard.check-updates.try-again"
+msgstr "Try again"
+
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT IS UP TO DATE"
+
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "You're running the latest stable version:"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:298
 msgid "labels.view-only"
 msgstr "View only"
@@ -4696,7 +4738,7 @@ msgstr "You don't have access to this file."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
 msgid "not-found.no-permission.go-dashboard"
-msgstr "Go to your Penpot"
+msgstr "Go to Personal Projects"
 
 #: src/app/main/ui/static.cljs:289, src/app/main/ui/static.cljs:298
 msgid "not-found.no-permission.if-approves"
@@ -7778,9 +7820,29 @@ msgstr "Remove export"
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
 
+#: src/app/main/ui/exports/assets.cljs:325
+msgid "workspace.options.cancel-export"
+msgstr "Cancel"
+
 #: src/app/main/ui/exports/assets.cljs:252
 msgid "workspace.options.exporting-complete"
 msgstr "Export complete"
+
+#: src/app/main/ui/exports/assets.cljs:259
+msgid "workspace.options.exporting-cancelled"
+msgstr "Export cancelled"
+
+#: src/app/main/ui/exports/assets.cljs:258
+msgid "workspace.options.exporting-cancelling"
+msgstr "Cancelling..."
+
+#: src/app/main/ui/exports/assets.cljs:261
+msgid "workspace.options.exporting-queued"
+msgstr "Waiting..."
+
+#: src/app/main/ui/exports/assets.cljs:256
+msgid "workspace.options.exporting-busy"
+msgstr "Export service is busy, please try again later"
 
 #: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:253, src/app/main/ui/inspect/exports.cljs:216, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.exporting-object"

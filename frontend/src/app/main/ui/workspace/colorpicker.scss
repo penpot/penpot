@@ -112,105 +112,11 @@
   inline-size: 100%;
 }
 
-// TODO: Use a DS checkbox component
 .checkbox-option {
   display: flex;
   align-items: center;
-  margin-block: var(--sp-l) 0;
+  margin-block: var(--sp-l) var(--sp-m);
   margin-inline: 0;
-
-  // The native checkbox markup (label, span, input, svg) has no dedicated
-  // classes; styling these elements directly is unavoidable.
-  label {
-    @include t.use-typography("body-small");
-
-    display: flex;
-    align-items: center;
-    gap: px2rem(6);
-    cursor: pointer;
-    color: var(--color-foreground-secondary);
-
-    span {
-      --checkbox-icon-background-color: var(--color-background-quaternary);
-      --checkbox-icon-border-color: var(--color-foreground-secondary);
-      --checkbox-icon-foreground-color: var(--color-background-primary);
-
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      inline-size: $sz-16;
-      block-size: $sz-16;
-      min-inline-size: $sz-16;
-      min-block-size: $sz-16;
-      border-radius: $br-4;
-      background-color: var(--checkbox-icon-background-color);
-      border: $b-1 solid var(--checkbox-icon-border-color);
-
-      svg {
-        display: none;
-        inline-size: $sz-16;
-        block-size: $sz-16;
-        stroke: var(--checkbox-icon-foreground-color);
-      }
-
-      &:hover {
-        --checkbox-icon-border-color: var(--color-accent-primary-muted);
-      }
-
-      &:focus {
-        --checkbox-icon-border-color: var(--color-accent-primary);
-      }
-
-      &:global(.checked) {
-        --checkbox-icon-background-color: var(--color-accent-primary);
-        --checkbox-icon-border-color: var(--color-background-quaternary);
-
-        svg {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          inline-size: $sz-12;
-          block-size: $sz-12;
-          stroke-width: 1.33px;
-        }
-      }
-
-      &:global(.intermediate) {
-        --checkbox-icon-background-color: var(--color-foreground-secondary);
-        --checkbox-icon-foreground-color: var(--color-background-secondary);
-
-        svg {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          inline-size: $sz-12;
-          block-size: $sz-12;
-          stroke-width: 1.33px;
-        }
-      }
-
-      &:global(.unchecked) {
-        --checkbox-icon-border-color: var(--color-background-quaternary);
-      }
-    }
-
-    input {
-      margin: 0;
-    }
-
-    &:hover {
-      span {
-        --checkbox-icon-border-color: var(--color-accent-primary-muted);
-      }
-    }
-
-    &:focus,
-    &:focus-within {
-      span {
-        --checkbox-icon-border-color: var(--color-accent-primary);
-      }
-    }
-  }
 }
 
 .token-color-title {
