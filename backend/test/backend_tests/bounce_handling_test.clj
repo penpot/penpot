@@ -12,6 +12,7 @@
    [app.http.awsns :as awsns]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
+   [clojure.data.json :as j]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -290,3 +291,289 @@
 
     (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
     (t/is (true? (email/has-bounce-reports? pool (:email profile))))))
+
+(t/deftest test-validate-sns-url-rejects-s3-and-other-services
+  ;; S3 buckets are attacker-controlled
+  (t/is (false? (#'awsns/valid-sns-url? "https://my-bucket.s3.amazonaws.com/cert.pem")))
+  (t/is (false? (#'awsns/valid-sns-url? "https://my-bucket.s3.eu-central-1.amazonaws.com/cert.pem")))
+  ;; Other AWS services
+  (t/is (false? (#'awsns/valid-sns-url? "https://lambda.amazonaws.com/cert.pem")))
+  (t/is (false? (#'awsns/valid-sns-url? "https://ec2.amazonaws.com/cert.pem")))
+  ;; Plain amazonaws.com without sns prefix
+  (t/is (false? (#'awsns/valid-sns-url? "https://amazonaws.com/cert.pem"))))
+
+(t/deftest test-validate-sns-url-accepts-only-sns-hosts
+  ;; Valid SNS URLs with region
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.eu-central-1.amazonaws.com/cert.pem")))
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.us-east-1.amazonaws.com/cert.pem")))
+  (t/is (true? (#'awsns/valid-sns-url? "https://sns.ap-southeast-1.amazonaws.com/cert.pem"))))
+
+;; Helper to load test certificate and private key from resources
+;; See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html
+(defn- load-test-cert-and-key
+  "Loads the test certificate and private key from test resources."
+  []
+  (let [cert-pem (slurp (clojure.java.io/resource "sns-test-cert.pem"))
+        key-pem  (slurp (clojure.java.io/resource "sns-test-key.pem"))
+        ;; Parse certificate
+        cert-bytes (.getBytes (-> cert-pem
+                                  (clojure.string/replace "-----BEGIN CERTIFICATE-----" "")
+                                  (clojure.string/replace "-----END CERTIFICATE-----" "")
+                                  (clojure.string/replace #"\s+" ""))
+                              java.nio.charset.StandardCharsets/UTF_8)
+        cert-input (java.io.ByteArrayInputStream. (.decode (java.util.Base64/getDecoder) cert-bytes))
+        cf (java.security.cert.CertificateFactory/getInstance "X.509")
+        cert (.generateCertificate cf cert-input)
+        ;; Parse private key
+        key-bytes (.getBytes (-> key-pem
+                                 (clojure.string/replace "-----BEGIN PRIVATE KEY-----" "")
+                                 (clojure.string/replace "-----END PRIVATE KEY-----" "")
+                                 (clojure.string/replace #"\s+" ""))
+                             java.nio.charset.StandardCharsets/UTF_8)
+        key-spec (java.security.spec.PKCS8EncodedKeySpec. (.decode (java.util.Base64/getDecoder) key-bytes))
+        kf (java.security.KeyFactory/getInstance "RSA")
+        private-key (.generatePrivate kf key-spec)]
+    {:cert cert
+     :cert-bytes (.getEncoded cert)
+     :private-key private-key
+     :public-key (.getPublicKey cert)}))
+
+(t/deftest test-verify-signature-end-to-end-v1
+  (let [{:keys [cert-bytes private-key]} (load-test-cert-and-key)
+
+        msg         {"Type"             "Notification"
+                     "MessageId"        "test-msg-1"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "test message"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "1"}
+
+        string-to-sign (#'awsns/build-string-to-sign msg)
+        sig          (java.security.Signature/getInstance "SHA1withRSA")
+        _            (.initSign sig private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (true? (#'awsns/verify-signature {} msg-with-sig))))))
+
+(t/deftest test-verify-signature-end-to-end-v2
+  (let [{:keys [cert-bytes private-key]} (load-test-cert-and-key)
+
+        msg         {"Type"             "Notification"
+                     "MessageId"        "test-msg-2"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "test message"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "2"}
+
+        string-to-sign (#'awsns/build-string-to-sign msg)
+        sig          (java.security.Signature/getInstance "SHA256withRSA")
+        _            (.initSign sig private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (true? (#'awsns/verify-signature {} msg-with-sig))))))
+
+(t/deftest test-verify-signature-end-to-end-subscription-confirmation
+  (let [{:keys [cert-bytes private-key]} (load-test-cert-and-key)
+
+        msg         {"Type"             "SubscriptionConfirmation"
+                     "MessageId"        "test-msg-3"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "You have chosen to subscribe"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "Token"            "test-token-123"
+                     "SubscribeURL"     "https://sns.us-east-1.amazonaws.com/confirm"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "1"}
+
+        string-to-sign (#'awsns/build-string-to-sign msg)
+        sig          (java.security.Signature/getInstance "SHA1withRSA")
+        _            (.initSign sig private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (true? (#'awsns/verify-signature {} msg-with-sig))))))
+
+(t/deftest test-verify-signature-rejects-wrong-key
+  (let [{:keys [cert-bytes]} (load-test-cert-and-key)
+        ;; Generate a different keypair for signing
+        keypair-gen (java.security.KeyPairGenerator/getInstance "RSA")
+        _           (.initialize keypair-gen 2048)
+        kp          (.generateKeyPair keypair-gen)
+        wrong-private-key (.getPrivate kp)
+
+        msg         {"Type"             "Notification"
+                     "MessageId"        "test-msg-4"
+                     "TopicArn"         "arn:aws:sns:us-east-1:123:topic"
+                     "Message"          "test message"
+                     "Timestamp"        "2021-02-04T14:41:37.020Z"
+                     "SigningCertURL"   "https://sns.us-east-1.amazonaws.com/cert.pem"
+                     "SignatureVersion" "1"}
+
+        string-to-sign (#'awsns/build-string-to-sign msg)
+        sig          (java.security.Signature/getInstance "SHA1withRSA")
+        _            (.initSign sig wrong-private-key)
+        _            (.update sig (.getBytes string-to-sign java.nio.charset.StandardCharsets/UTF_8))
+        signature    (.encodeToString (java.util.Base64/getEncoder) (.sign sig))
+        msg-with-sig (assoc msg "Signature" signature)]
+
+    (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                            (java.io.ByteArrayInputStream. cert-bytes))]
+      (t/is (false? (#'awsns/verify-signature {} msg-with-sig))))))
+
+(t/deftest test-verify-signature-rejects-unsupported-version
+  (let [msg {"Type" "Notification"
+             "MessageId" "test-msg-3"
+             "TopicArn" "arn:aws:sns:us-east-1:123:topic"
+             "Message" "test message"
+             "Timestamp" "2021-02-04T14:41:37.020Z"
+             "SigningCertURL" "https://sns.us-east-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "3"
+             "Signature" "fake=="}]
+
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (#'awsns/verify-signature {} msg)))))
+
+(t/deftest test-build-string-to-sign-v1-notification
+  (let [msg {"Type"             "Notification"
+             "MessageId"        "msg-123"
+             "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+             "Message"          "{\"notificationType\":\"Bounce\"}"
+             "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "1"
+             "Signature"        "abc123=="}
+        result (#'awsns/build-string-to-sign msg)]
+    (t/is (string? result))
+    (t/is (.contains result "MessageId"))
+    (t/is (.contains result "msg-123"))
+    (t/is (.contains result "TopicArn"))
+    (t/is (.contains result "Message"))
+    (t/is (.contains result "Timestamp"))
+    ;; V1 does NOT include SigningCertURL, SignatureVersion, or Signature
+    (t/is (not (.contains result "SigningCertURL")))
+    (t/is (not (.contains result "SignatureVersion")))
+    (t/is (not (.contains result "Signature")))))
+
+(t/deftest test-build-string-to-sign-v2-notification
+  (let [msg {"Type"             "Notification"
+             "MessageId"        "msg-123"
+             "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+             "Message"          "{\"notificationType\":\"Bounce\"}"
+             "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "2"
+             "Signature"        "abc123=="}
+        result (#'awsns/build-string-to-sign msg)]
+    (t/is (string? result))
+    (t/is (.contains result "MessageId"))
+    (t/is (.contains result "TopicArn"))
+    ;; V2 uses the same fields as V1 (only hash algorithm differs: SHA1 vs SHA256)
+    ;; SigningCertURL and SignatureVersion are metadata, not part of the signed content
+    (t/is (not (.contains result "SigningCertURL")))
+    (t/is (not (.contains result "SignatureVersion")))
+    ;; Signature is never part of the string-to-sign
+    (t/is (not (.contains result "Signature\n")))))
+
+(t/deftest test-build-string-to-sign-subscription-confirmation
+  (let [msg {"Type"             "SubscriptionConfirmation"
+             "MessageId"        "msg-456"
+             "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+             "Message"          "You have chosen to subscribe"
+             "Timestamp"        "2021-02-04T14:41:37.020Z"
+             "Token"            "test-token-123"
+             "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+             "SignatureVersion" "1"
+             "Signature"        "xyz789=="
+             "SubscribeURL"     "https://sns.eu-central-1.amazonaws.com/confirm"}
+        result (#'awsns/build-string-to-sign msg)]
+    (t/is (string? result))
+    (t/is (.contains result "SubscribeURL"))
+    (t/is (.contains result "https://sns.eu-central-1.amazonaws.com/confirm"))
+    ;; Token must be included for SubscriptionConfirmation
+    (t/is (.contains result "Token"))
+    (t/is (.contains result "test-token-123"))))
+
+(t/deftest test-handle-request-returns-4xx-for-invalid-signature
+  (let [{:keys [cert-bytes]} (load-test-cert-and-key)
+        body (j/write-str
+              {"Type"             "Notification"
+               "MessageId"        "msg-123"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          "{\"test\":\"data\"}"
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "invalid-signature=="})
+        result (with-redefs [awsns/fetch-certificate (fn [_ _]
+                                                       (java.io.ByteArrayInputStream. cert-bytes))]
+                 (#'awsns/handle-request th/*system* body))]
+    (t/is (= 400 (:status result)))))
+
+(t/deftest test-handle-request-returns-4xx-for-invalid-url
+  (let [body (j/write-str
+              {"Type"             "Notification"
+               "MessageId"        "msg-123"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          "{\"test\":\"data\"}"
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://evil.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "fake-signature=="})
+        result (#'awsns/handle-request th/*system* body)]
+    (t/is (= 400 (:status result)))))
+
+(t/deftest test-handle-request-rejects-invalid-signing-cert-url
+  (let [pool (:app.db/pool th/*system*)
+        profile (th/create-profile* 1)
+        token (tokens/generate th/*system*
+                               {:iss :profile-identity
+                                :profile-id (:id profile)})
+        body (j/write-str
+              {"Type"             "Notification"
+               "MessageId"        "msg-123"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          (j/write-str {"notificationType" "Bounce"
+                                                "bounce" {"bounceType" "Permanent"
+                                                          "bounceSubType" "General"
+                                                          "bouncedRecipients" [{"emailAddress" "victim@example.com"}]
+                                                          "timestamp" "2021-02-04T14:41:38.000Z"}
+                                                "mail" {"source" "no-reply@penpot.app"
+                                                        "destination" ["victim@example.com"]
+                                                        "timestamp" "2021-02-04T14:41:37.020Z"
+                                                        "headers" [{"name" "X-Penpot-Data" "value" token}]}})
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://evil.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "fake-signature=="})]
+    (#'awsns/handle-request th/*system* body)
+    (let [reports (db/query pool :global-complaint-report :all)]
+      (t/is (empty? reports)))))
+
+(t/deftest test-handle-request-rejects-invalid-subscribe-url
+  (let [pool (:app.db/pool th/*system*)
+        body (j/write-str
+              {"Type"             "SubscriptionConfirmation"
+               "MessageId"        "msg-456"
+               "TopicArn"         "arn:aws:sns:eu-central-1:123:topic"
+               "Message"          "You have chosen to subscribe"
+               "Timestamp"        "2021-02-04T14:41:37.020Z"
+               "SigningCertURL"   "https://sns.eu-central-1.amazonaws.com/cert.pem"
+               "SignatureVersion" "1"
+               "Signature"        "fake-signature=="
+               "SubscribeURL"     "http://attacker.com/confirm"})]
+    (#'awsns/handle-request th/*system* body)
+    (let [reports (db/query pool :global-complaint-report :all)]
+      (t/is (empty? reports)))))
