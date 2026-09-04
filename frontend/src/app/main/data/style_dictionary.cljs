@@ -588,6 +588,12 @@
   [[_ token]]
   (some? (:value token)))
 
+(def ^:private xform-invalid-value-tokens
+  (comp
+   (remove valid-token-value?)
+   (map (fn [[k token]]
+          [k (assoc token :errors [(wte/get-error-code :error.token/empty-input)])]))))
+
 (defn- merge-invalid-value-tokens
   "Tokens with a `nil` value (e.g. a composite typography token saved with
   no fields filled in) must never reach StyleDictionary: some of its
@@ -601,12 +607,7 @@
   ones with the same \"empty value\" error the token forms already use
   instead of ever letting them reach the resolver."
   [tokens resolved]
-  (let [invalid (->> tokens
-                     (remove valid-token-value?)
-                     (map (fn [[k token]]
-                            [k (assoc token :errors [(wte/get-error-code :error.token/empty-input)])]))
-                     (into {}))]
-    (merge resolved invalid)))
+  (into resolved xform-invalid-value-tokens tokens))
 
 (defn resolve-tokens
   [tokens]
