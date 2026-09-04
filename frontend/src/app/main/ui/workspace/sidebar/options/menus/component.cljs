@@ -531,9 +531,10 @@
       (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (get % pos))) properties)
               base-options (get options-by-name (:name prop))
+              no-options?  (empty? base-options)
               boolean-pair (ctv/find-boolean-pair (mapv :id base-options))
               options      (cond-> base-options
-                             (empty? base-options)
+                             no-options?
                              (conj (get-variant-option (:value prop)))
 
                              mixed-value?
@@ -556,6 +557,7 @@
               [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
                            :options options
                            :empty-to-end true
+                           :disabled no-options?
                            :on-change (partial switch-component pos)
                            :key (str (:value prop) "-" key)}]])]))]
 
