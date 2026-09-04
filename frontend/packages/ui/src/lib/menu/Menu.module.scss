@@ -1,0 +1,142 @@
+@use "ds/_borders" as *;
+@use "ds/_sizes" as *;
+@use "ds/_utils" as *;
+@use "ds/spacing" as *;
+@use "ds/typography" as *;
+@use "ds/mixins" as *;
+
+.popover {
+  z-index: var(--z-index-dropdown);
+  filter: drop-shadow(var(--el-shadow-dark));
+
+  &[data-entering] {
+    animation: popover-fade-in 0.15s ease-out;
+  }
+
+  &[data-exiting] {
+    animation: popover-fade-out 0.1s ease-in;
+  }
+}
+
+.menu {
+  @include custom-scrollbar;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  min-inline-size: $sz-160;
+  max-block-size: px2rem(300);
+  padding: var(--sp-xxs);
+  margin: 0;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  overflow-y: auto;
+  outline: none;
+}
+
+.menuItem {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border-radius: $br-6;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+  outline: none;
+
+  &[data-hovered],
+  &[data-focused] {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &[data-disabled] {
+    color: var(--color-foreground-disabled);
+    cursor: default;
+  }
+}
+
+.subMenuItem {
+  justify-content: space-between;
+
+  &[data-open] {
+    background-color: var(--color-background-quaternary);
+  }
+}
+
+.subMenuLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subMenuChevron {
+  flex: 0 0 auto;
+  inline-size: $sz-16;
+  block-size: $sz-16;
+  color: var(--color-foreground-secondary);
+}
+
+.separator {
+  block-size: $b-1;
+  margin-block: var(--sp-xxs);
+  margin-inline: 0;
+  border: none;
+  background-color: var(--color-background-quaternary);
+}
+
+// Unlike .contextMenuTrigger below, this needs its own real bounding box —
+// the Popover positions itself against this element's DOM rect — so it
+// can't be display: contents. A flex/grid item is blockified and, by
+// default, stretched to fill its container's cross axis regardless of this
+// display value, which would inflate that box past the actual trigger and
+// throw off the Popover's position; align-self/justify-self: start opts
+// this out so the box always shrink-wraps its content instead.
+.menuTrigger {
+  display: inline-block;
+  align-self: start;
+  justify-self: start;
+}
+
+.contextMenuTrigger {
+  display: contents;
+}
+
+// Invisible 0x0 anchor moved to the pointer position on right-click; the
+// Popover positions itself relative to this instead of the trigger's own
+// (possibly large) bounding box.
+.contextMenuAnchor {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 0;
+  block-size: 0;
+  pointer-events: none;
+}
+
+@keyframes popover-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popover-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
