@@ -99,7 +99,7 @@
 (mf/defc group-tool*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [group drawtool on-select-tool]}]
+  [{:keys [slot tab-index on-focus group drawtool on-select-tool]}]
   (let [li-ref         (mf/use-ref nil)
         flyout-ref     (mf/use-ref nil)
 
@@ -149,26 +149,52 @@
 
         on-main-key-down
         (mf/use-fn
-         (mf/deps open)
          (fn [event]
-           (cond
-             (and open (kbd/esc? event))
-             (reset! open* false)
-
-             (or (kbd/enter? event) (kbd/space? event))
-             (do
-               (dom/prevent-default event)
-               (if open
-                 (reset! open* false)
-                 (do
+           (let [open-flyout
+                 (fn [focus-selector]
                    (cancel-timer! close-timer*)
-                   (reset! open* true))))
+                   (cancel-timer! open-timer*)
+                   (reset! open* true)
+                   (when-let [flyout (mf/ref-val flyout-ref)]
+                     (when-let [item (dom/query flyout focus-selector)]
+                       (dom/focus! item))))]
+             (cond
+               (kbd/esc? event)
+               (do
+                 (dom/prevent-default event)
+                 (reset! open* false))
 
-             (kbd/down-arrow? event)
-             (do
-               (dom/prevent-default event)
-               (cancel-timer! close-timer*)
-               (reset! open* true)))))
+               (and open (or (kbd/left-arrow? event) (kbd/right-arrow? event)))
+               (do
+                 (dom/prevent-default event)
+                 (reset! open* false))
+
+               ;; Enter / Space / Down open the menu and move focus to its
+               ;; first item (Menu Button pattern).
+               (or (kbd/enter? event) (kbd/space? event) (kbd/down-arrow? event))
+               (do
+                 (dom/prevent-default event)
+                 (open-flyout "[role=menuitemradio]"))
+
+               ;; Up opens the menu and moves focus to its last item (optional).
+               (kbd/up-arrow? event)
+               (do
+                 (dom/prevent-default event)
+                 (cancel-timer! close-timer*)
+                 (cancel-timer! open-timer*)
+                 (reset! open* true)
+                 (when-let [flyout (mf/ref-val flyout-ref)]
+                   (when-let [items (vec (dom/query-all flyout "[role=menuitemradio]"))]
+                     (when (seq items)
+                       (dom/focus! (peek items))))))))))
+
+        on-close-and-return-to-toolbar
+        (mf/use-fn
+         (fn []
+           (reset! open* false)
+           (when-let [li (mf/ref-val li-ref)]
+             (when-let [btn (.. li (querySelector "div[role=group] > button"))]
+               (dom/focus! btn)))))
 
         on-flyout-key-down
         (mf/use-fn
@@ -179,26 +205,35 @@
                      active (dom/get-active)
                      idx    (d/index-of-pred items #(identical? % active))]
                  (cond
-                   (kbd/space? event)
-                   (when active
+                   (kbd/down-arrow? event)
+                   (do
                      (dom/prevent-default event)
-                     (dom/click active))
+                     (let [next-idx (if (or (nil? idx) (= idx (dec (count items)))) 0 (inc idx))]
+                       (dom/focus! (nth items next-idx))))
 
+                   (kbd/up-arrow? event)
+                   (do
+                     (dom/prevent-default event)
+                     (let [next-idx (if (or (nil? idx) (zero? idx)) (dec (count items)) (dec idx))]
+                       (dom/focus! (nth items next-idx))))
+
+                   ;; Enter / Space activate the focused item and close the menu.
+                   (or (kbd/enter? event) (kbd/space? event))
+                   (do
+                     (dom/prevent-default event)
+                     (when active
+                       (dom/click active)
+                       (on-close-and-return-to-toolbar)))
+
+                   ;; Escape closes the menu and returns focus to the toolbar.
                    (kbd/esc? event)
                    (do
-                     (reset! open* false)
-                     (when-let [li (mf/ref-val li-ref)]
-                       (when-let [btn (.. li (querySelector "div[role=group] > button"))]
-                         (dom/focus! btn))))
-
-                   (kbd/tab? event)
-                   (do
                      (dom/prevent-default event)
-                     (let [shift? (.-shiftKey ^js event)
-                           next-idx (if shift?
-                                      (if (or (nil? idx) (zero? idx)) (dec (count items)) (dec idx))
-                                      (if (or (nil? idx) (= idx (dec (count items)))) 0 (inc idx)))]
-                       (dom/focus! (nth items next-idx))))))))))]
+                     (on-close-and-return-to-toolbar))
+
+                   ;; Tab / Shift+Tab move focus out of the menu and close it.
+                   (kbd/tab? event)
+                   (reset! open* false)))))))]
 
     (mf/with-effect []
       (fn []
@@ -228,6 +263,9 @@
                         :aria-expanded open
                         :has-tooltip false
                         :icon default-icon
+                        :tab-index tab-index
+                        :data-nav-slot slot
+                        :on-focus on-focus
                         :on-click (fn [event]
                                     (cancel-timer! open-timer*)
                                     (cancel-timer! close-timer*)
@@ -251,6 +289,7 @@
                             :aria-label (tool-label id)
                             :aria-pressed (= drawtool id)
                             :aria-checked (= drawtool id)
+                            :tab-index "-1"
                             :icon icon
                             :on-click on-select-tool
                             :data-tool (name id)}]])]]]))
@@ -258,7 +297,7 @@
 (mf/defc image-upload-tool*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  []
+  [{:keys [tab-index data-nav-slot on-focus]}]
   (let [ref      (mf/use-ref nil)
         file-id  (mf/use-ctx ctx/current-file-id)
 
@@ -287,6 +326,9 @@
                        :tooltip-placement "bottom"
                        :aria-label (tool-label :image)
                        :icon i/img
+                       :tab-index tab-index
+                       :data-nav-slot data-nav-slot
+                       :on-focus on-focus
                        :on-click on-display-uploader}]
      [:& file-uploader/file-uploader {:input-id "image-upload"
                                       :accept dwm/accept-image-types
@@ -297,7 +339,7 @@
 (mf/defc mcp-tool*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [is-mcp-connected]}]
+  [{:keys [is-mcp-connected tab-index data-nav-slot on-focus]}]
   (let [menu-open*   (mf/use-state false)
         menu-open?   (deref menu-open*)
 
@@ -319,6 +361,9 @@
 
     [:*
      [:> button* {:variant "ghost"
+                  :tab-index tab-index
+                  :data-nav-slot data-nav-slot
+                  :on-focus on-focus
                   :on-click on-toggle-menu
                   :aria-pressed menu-open?
                   :data-tool "mcp"
@@ -366,6 +411,58 @@
 
         separator?       (or plugins-enabled? *assert* mcp-show?)
 
+        toolbar-list-ref (mf/use-ref nil)
+
+        roving-idx*      (mf/use-state 0)
+        roving-idx       (deref roving-idx*)
+
+        options
+        (vec
+         (remove nil?
+                 [{:tool :move    :type :button}
+                  {:tool :frame   :type :button}
+                  {:tool :shapes  :type :group}
+                  {:tool :text    :type :button}
+                  {:tool :image   :type :button}
+                  {:tool :free-draw :type :group}
+                  (when plugins-enabled? {:tool :plugins :type :button})
+                  (when *assert*     {:tool :debug   :type :button})
+                  (when mcp-show?    {:tool :mcp     :type :button})]))
+
+        roving-idx-safe (min roving-idx (max 0 (dec (count options))))
+
+        tab-index-for
+        (fn [tool]
+          (if (= (d/index-of-pred options #(= (:tool %) tool)) roving-idx-safe)
+            "0"
+            "-1"))
+
+        on-nav-focus
+        (fn [tool]
+          (let [idx (d/index-of-pred options #(= (:tool %) tool))]
+            (when (and (some? idx) (not= idx roving-idx))
+              (reset! roving-idx* idx))))
+
+        on-arrow-nav
+        (mf/use-fn
+         (mf/deps options roving-idx-safe)
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when (and (or (kbd/left-arrow? event) (kbd/right-arrow? event))
+                        (not (some? (.closest ^js target "[role=menu]"))))
+               (dom/prevent-default event)
+               (let [n (count options)]
+                 (when (pos? n)
+                   (let [next-idx (if (kbd/right-arrow? event)
+                                    (if (>= roving-idx-safe (dec n)) 0 (inc roving-idx-safe))
+                                    (if (<= roving-idx-safe 0) (dec n) (dec roving-idx-safe)))]
+                     (reset! roving-idx* next-idx)
+                     (when-let [btn (dom/query (mf/ref-val toolbar-list-ref)
+                                               (str "[data-nav-slot=\""
+                                                    (name (:tool (nth options next-idx)))
+                                                    "\"]"))]
+                       (dom/focus! btn)))))))))
+
         on-display-plugins-manager
         (mf/use-fn
          (fn []
@@ -410,12 +507,14 @@
     (when-not ^boolean read-only?
       [:div {:role "toolbar"
              :aria-label (tr "workspace.toolbar.label")
-             :tab-index "0"
+             :tab-index "-1"
              :class (stl/css-case :toolbar true
                                   :no-rulers (not rulers-enabled)
                                   :hidden toolbar-hidden)}
-       [:ul {:class (stl/css :toolbar-options)
-             :data-testid "toolbar-options"}
+       [:ul {:ref toolbar-list-ref
+             :class (stl/css :toolbar-options)
+             :data-testid "toolbar-options"
+             :on-key-down on-arrow-nav}
         [:li {:class (stl/css :toolbar-option)}
          [:> icon-button* {:variant "ghost"
                            :tooltip-placement "bottom"
@@ -423,6 +522,9 @@
                                               (not selected-edition))
                            :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
                            :icon i/move
+                           :tab-index (tab-index-for :move)
+                           :data-nav-slot "move"
+                           :on-focus #(on-nav-focus :move)
                            :on-click on-interrupt}]]
 
         [:li {:class (stl/css :toolbar-option)}
@@ -431,10 +533,16 @@
                            :aria-pressed (= selected-drawing-tool :frame)
                            :aria-label (tool-label :frame)
                            :icon i/board
+                           :tab-index (tab-index-for :frame)
+                           :data-nav-slot "frame"
+                           :on-focus #(on-nav-focus :frame)
                            :on-click on-select-tool
                            :data-tool "frame"}]]
 
         [:> group-tool* {:key :shapes
+                         :slot "shapes"
+                         :tab-index (tab-index-for :shapes)
+                         :on-focus #(on-nav-focus :shapes)
                          :group (get grouped-tools :shapes)
                          :drawtool selected-drawing-tool
                          :on-select-tool on-select-tool}]
@@ -445,13 +553,21 @@
                            :aria-pressed (= selected-drawing-tool :text)
                            :aria-label (tool-label :text)
                            :icon i/text
+                           :tab-index (tab-index-for :text)
+                           :data-nav-slot "text"
+                           :on-focus #(on-nav-focus :text)
                            :on-click on-select-tool
                            :data-tool "text"}]]
 
         [:li {:class (stl/css :toolbar-option)}
-         [:> image-upload-tool*]]
+         [:> image-upload-tool* {:tab-index (tab-index-for :image)
+                                 :data-nav-slot "image"
+                                 :on-focus #(on-nav-focus :image)}]]
 
         [:> group-tool* {:key :free-draw
+                         :slot "free-draw"
+                         :tab-index (tab-index-for :free-draw)
+                         :on-focus #(on-nav-focus :free-draw)
                          :group (get grouped-tools :free-draw)
                          :drawtool selected-drawing-tool
                          :on-select-tool on-select-tool}]
@@ -465,6 +581,9 @@
                              :tooltip-placement "bottom"
                              :aria-label (tool-label :plugins)
                              :icon i/puzzle
+                             :tab-index (tab-index-for :plugins)
+                             :data-nav-slot "plugins"
+                             :on-focus #(on-nav-focus :plugins)
                              :on-click on-display-plugins-manager
                              :data-tool "plugins"}]])
 
@@ -475,11 +594,17 @@
                              :aria-pressed (contains? layout :debug-panel)
                              :aria-label (tool-label :debug)
                              :icon i/bug
+                             :tab-index (tab-index-for :debug)
+                             :data-nav-slot "debug"
+                             :on-focus #(on-nav-focus :debug)
                              :on-click on-toggle-debug-panel}]])
 
         (when mcp-show?
           [:li {:class (stl/css :toolbar-option)}
-           [:> mcp-tool* {:is-mcp-connected mcp-connected?}]])]
+           [:> mcp-tool* {:is-mcp-connected mcp-connected?
+                          :tab-index (tab-index-for :mcp)
+                          :data-nav-slot "mcp"
+                          :on-focus #(on-nav-focus :mcp)}]])]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")
