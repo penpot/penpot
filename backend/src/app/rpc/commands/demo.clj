@@ -49,6 +49,7 @@
                   :is-demo true
                   :password (derive-password-weak password)
                   :props {}}
+
         profile  (db/tx-run! cfg (fn [cfg]
                                    (->> (auth/create-profile cfg params)
                                         (auth/create-profile-rels cfg))))]
