@@ -220,6 +220,12 @@
 
     (update-profile-password! cfg (assoc profile :password password))
 
+    (eml/send! {::eml/conn (::db/conn cfg)
+                ::eml/factory eml/password-changed
+                :public-uri (cf/get :public-uri)
+                :to (:email profile)
+                :name (:fullname profile)})
+
     (->> (rph/get-request params)
          (session/get-session)
          (session/invalidate-others cfg))
