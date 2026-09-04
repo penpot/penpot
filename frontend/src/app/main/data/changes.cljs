@@ -103,12 +103,14 @@
           (wasm.api/process-objects shapes)
           (wasm.api/request-render "sync-wasm-structural-changes"))))))
 
-(defn- apply-changes-localy
+(defn- apply-changes-locally
   [{:keys [file-id redo-changes ignore-wasm?] :as commit} pending]
-  (ptk/reify ::apply-changes-localy
+  (ptk/reify ::apply-changes-locally
     ptk/UpdateEvent
     (update [_ state]
-      (let [undo-changes
+      (let [libraries (dsh/lookup-libraries state)
+
+            undo-changes
             (if pending
               (->> pending
                    (map :undo-changes)
@@ -126,8 +128,8 @@
 
             apply-changes
             (fn [fdata]
-              (let [fdata (cpc/process-changes fdata undo-changes false)
-                    fdata (cpc/process-changes fdata redo-changes false)
+              (let [fdata (cpc/process-changes fdata undo-changes false libraries)
+                    fdata (cpc/process-changes fdata redo-changes false libraries)
                     pids (into #{} xf:map-page-id redo-changes)]
                 (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
@@ -200,7 +202,7 @@
         (let [pending (when-not local?
                         (get-pending-commits state))]
           (rx/concat
-           (rx/of (apply-changes-localy commit pending))
+           (rx/of (apply-changes-locally commit pending))
            (if pending
              (rx/concat
               (->> (rx/from (reverse pending))
