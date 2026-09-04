@@ -276,7 +276,7 @@
           (seq strokes)
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
-             [:> stroke-row* {:key (dm/str "stroke-" index "-" (hash applied-tokens))
+             [:> stroke-row* {:key (dm/str "stroke-" index)
                               :index index
                               :stroke value
                               :title (tr "workspace.options.stroke-color")
