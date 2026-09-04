@@ -159,6 +159,10 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- double-click?
+  [^js native-event]
+  (= (.-detail native-event) 2))
+
 (defn- triple-click?
   [^js native-event]
   (>= (.-detail native-event) 3))
@@ -193,6 +197,8 @@
         ;; repaints the selection overlay while a drag is active (mirrors the
         ;; WASM `is_pointer_selection_active` guard), not on every hover move.
         dragging-ref (mf/use-ref false)
+
+        deferred-press-ref (mf/use-ref nil)
 
         fallback-fonts    (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
@@ -459,23 +465,29 @@
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
-                 off-pt (dom/get-offset-position native-event)]
+                 off-pt       (dom/get-offset-position native-event)]
              ;; Repositioning the caret abandons the pending caret style (also
              ;; covers click and double-click, which fire pointer-down first).
              (text-editor/clear-pending-caret-styles!)
-             (mf/set-ref-val! dragging-ref true)
              (if (.-shiftKey event)
-               (wasm.api/text-editor-pointer-down-extend off-pt)
-               (wasm.api/text-editor-pointer-down off-pt))
-             ;; Repaint the caret over the cached tiles instead of a full render,
-             ;; which flashes at high zoom (see `render-text-editor-overlay!`).
-             (wasm.api/render-text-editor-overlay!))))
+               (do
+                 (mf/set-ref-val! dragging-ref true)
+                 (wasm.api/text-editor-pointer-down-extend off-pt)
+                 ;; Repaint the caret over the cached tiles instead of a full
+                 ;; render, which flashes at high zoom.
+                 (wasm.api/render-text-editor-overlay!))
+               (mf/set-ref-val! deferred-press-ref off-pt)))))
 
         on-pointer-move
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
-                 off-pt (dom/get-offset-position native-event)]
+                 off-pt       (dom/get-offset-position native-event)]
+             (when-let [pressed-pt (and (pos? (.-buttons native-event))
+                                        (mf/ref-val deferred-press-ref))]
+               (mf/set-ref-val! deferred-press-ref nil)
+               (mf/set-ref-val! dragging-ref true)
+               (wasm.api/text-editor-pointer-down pressed-pt))
              (wasm.api/text-editor-pointer-move off-pt)
              ;; Only while dragging: `text-editor-pointer-move` is a no-op
              ;; otherwise, so avoid repainting on plain hover.
@@ -486,20 +498,37 @@
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
-                 off-pt (dom/get-offset-position native-event)]
+                 off-pt       (dom/get-offset-position native-event)
+                 dragging?    (mf/ref-val dragging-ref)]
              (mf/set-ref-val! dragging-ref false)
+             (mf/set-ref-val! deferred-press-ref nil)
              (wasm.api/text-editor-pointer-up off-pt)
-             (wasm.api/render-text-editor-overlay!))))
+             ;; Without a drag there is no pointer selection to close; the
+             ;; caret is placed by `on-click`.
+             (when dragging?
+               (wasm.api/render-text-editor-overlay!)))))
 
         on-click
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
-                 off-pt (dom/get-offset-position native-event)]
-             (if (triple-click? native-event)
-               (wasm.api/text-editor-select-paragraph off-pt)
-               (wasm.api/text-editor-set-cursor-from-offset off-pt))
-             (wasm.api/render-text-editor-overlay!))))
+                 off-pt       (dom/get-offset-position native-event)]
+             (cond
+               (triple-click? native-event)
+               (do
+                 (wasm.api/text-editor-select-paragraph off-pt)
+                 (wasm.api/render-text-editor-overlay!))
+
+               ;; `dblclick` selects the word right after. Shift+click still goes
+               ;; through: WASM consumes its skip-click flag there.
+               (and (double-click? native-event)
+                    (not (.-shiftKey event)))
+               nil
+
+               :else
+               (do
+                 (wasm.api/text-editor-set-cursor-from-offset off-pt)
+                 (wasm.api/render-text-editor-overlay!))))))
 
         on-double-click
         (mf/use-fn
