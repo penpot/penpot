@@ -606,7 +606,11 @@ impl TextContent {
             return self.content_rect(selrect, valign);
         }
 
-        let tight = if !self.layout.paragraphs.is_empty() {
+        let layout_matches_container = self
+            .layout_width
+            .is_some_and(|w| w.ceil() == self.get_width(selrect.width()).ceil());
+
+        let tight = if !self.layout.paragraphs.is_empty() && layout_matches_container {
             self.rect_from_paragraphs(selrect, valign)
         } else {
             let mut text_content = self.clone();
