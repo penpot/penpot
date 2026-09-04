@@ -59,9 +59,9 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// composed as native SVG `<g>` wrappers. Frame `clip content` uses a native
 /// `<clipPath>`.
 ///
-/// Special-case re-emission for shadows, layer blur, masks, text strokes,
-/// dotted/image strokes, and dashed Inner/Outer is intentionally out of scope
-/// for this cut. Solid Inner/Outer strokes are emitted as filled outlines.
+/// Special-case re-emission for shadows, layer blur, masks, text strokes, and
+/// image strokes is intentionally out of scope for this cut. Solid Inner/Outer
+/// and dotted/dashed strokes are emitted as filled outlines.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,

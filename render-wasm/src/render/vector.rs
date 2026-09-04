@@ -1081,10 +1081,10 @@ fn draw_single_stroke(
         return draw_image_stroke(canvas, shared, scale, shape, stroke, image_fill);
     }
 
-    // Solid Inner/Outer use save_layer + Clear (paths) or techniques that
-    // SkSVGDevice cannot keep. Expand to a filled outline instead so SVG gets
-    // real geometry (center strokes stay on the shared stroke path).
-    if svg_export && draw_solid_aligned_stroke_as_fill(canvas, shape, stroke) {
+    // Techniques SkSVGDevice cannot keep (save_layer+Clear/clip for Outer,
+    // PathEffect stamps for dots/dashes): expand to a filled outline instead.
+    // Solid Center stays on the shared stroke path.
+    if svg_export && draw_svg_stroke_as_fill(canvas, shape, stroke) {
         return Ok(());
     }
 
@@ -1092,16 +1092,27 @@ fn draw_single_stroke(
     Ok(())
 }
 
-/// Draws a solid Inner/Outer stroke as a filled path outline for SVG export.
-/// Returns `true` when it handled the stroke.
-fn draw_solid_aligned_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> bool {
-    if stroke.style != StrokeStyle::Solid || shape.is_open() {
-        return false;
-    }
-    match stroke.render_kind(shape.is_open()) {
-        StrokeKind::Center => return false,
-        StrokeKind::Inner | StrokeKind::Outer => {}
-    }
+/// Draws a stroke as a filled path outline for SVG export.
+///
+/// Handles solid Inner/Outer and all dotted/dashed/mixed alignments (including
+/// Center and open paths, which force Center). Returns `true` when handled.
+fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> bool {
+    let is_open = shape.is_open();
+    let kind = stroke.render_kind(is_open);
+    let solid_outline = match stroke.style {
+        StrokeStyle::Solid => match kind {
+            // Solid Center already serializes as a native SVG stroke.
+            StrokeKind::Center => return false,
+            StrokeKind::Inner | StrokeKind::Outer => {
+                if is_open {
+                    return false;
+                }
+                true
+            }
+        },
+        // PathEffects (path_1d / dash) do not survive SkSVGDevice; expand them.
+        StrokeStyle::Dotted | StrokeStyle::Dashed | StrokeStyle::Mixed => false,
+    };
 
     let shape_path = match &shape.shape_type {
         Type::Rect(r) => Path::new(rect_segments(shape, r.corners)),
@@ -1120,7 +1131,7 @@ fn draw_solid_aligned_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &St
         None,
         &shape.selrect,
         shape.svg_attrs.as_ref(),
-        true,
+        solid_outline,
     ) else {
         return false;
     };

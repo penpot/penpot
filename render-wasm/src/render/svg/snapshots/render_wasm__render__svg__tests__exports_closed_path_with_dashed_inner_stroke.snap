@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="80" viewBox="0 0 100 80">
+	<path fill="green" d="M18 0L0 0L0 8L18 8L18 0ZM0 36L0 18L8 18L8 36L0 36ZM0 72L0 54L8 54L8 72L0 72ZM28 80L10 80L10 72L28 72L28 80ZM64 80L45.999996 80L45.999996 72L64 72L64 80ZM100 80L100 72L82 72L82 80L100 80ZM100 44L100 62L92 62L92 44L100 44ZM100 8L100 26L92 26L92 8L100 8ZM72 0L90 0L90 8L72 8L72 0ZM36 0L54.000004 0L54.000004 8L36 8L36 0Z" fill-rule="evenodd"/>
+</svg>
