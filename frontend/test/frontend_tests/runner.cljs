@@ -39,6 +39,7 @@
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.logic.sidebar-transform-coalescing-test]
    [frontend-tests.logic.update-position-test]
+   [frontend-tests.logic.wasm-modifiers-nil-id-test]
    [frontend-tests.main-errors-test]
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
@@ -138,6 +139,7 @@
    'frontend-tests.main-errors-test
    'frontend-tests.logic.sidebar-transform-coalescing-test
    'frontend-tests.logic.update-position-test
+   'frontend-tests.logic.wasm-modifiers-nil-id-test
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.file-test
