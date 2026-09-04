@@ -98,7 +98,9 @@
     :layout-item-margin-type
     :layout-grid-cells
     :layout-grid-columns
-    :layout-grid-rows})
+    :layout-grid-rows
+    :fills
+    :fill-image})
 
 ;; -- temporary modifiers -------------------------------------------
 

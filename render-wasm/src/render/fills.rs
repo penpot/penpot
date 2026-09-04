@@ -3,6 +3,7 @@ use skia_safe::{self as skia, Paint, RRect};
 use super::{filters, RenderState, SurfaceId};
 use crate::error::Result;
 use crate::get_resources;
+use crate::math::Rect as MathRect;
 use crate::render::get_source_rect;
 use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
@@ -91,10 +92,19 @@ fn draw_image_fill(
     let size = image.dimensions();
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
-
-    let src_rect = get_source_rect(size, container, image_fill);
-    let dest_rect = container;
     let sampling = get_resources().sampling_options;
+
+    let dest_rect = match image_fill.transform() {
+        Some(tf) => MathRect::from_xywh(
+            container.left + tf.x * container.width(),
+            container.top + tf.y * container.height(),
+            tf.width * container.width(),
+            tf.height * container.height(),
+        ),
+        None => *container,
+    };
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
+    let needs_clip = image_fill.transform().is_some() || !is_axis_aligned_image_rect(shape);
 
     // `save_layer` is only required when a shape-level image filter (blur) must
     // run over the clipped image. Otherwise a plain save/clip (or no clip for
@@ -110,7 +120,7 @@ fn draw_image_fill(
         canvas.draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-            dest_rect,
+            &dest_rect,
             sampling,
             paint,
         );
@@ -121,11 +131,11 @@ fn draw_image_fill(
     let mut draw_paint = paint.clone();
     draw_paint.set_anti_alias(antialias);
 
-    if is_axis_aligned_image_rect(shape) {
+    if !needs_clip {
         canvas.draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-            dest_rect,
+            &dest_rect,
             sampling,
             &draw_paint,
         );
@@ -137,7 +147,7 @@ fn draw_image_fill(
     canvas.draw_image_rect_with_sampling_options(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-        dest_rect,
+        &dest_rect,
         sampling,
         &draw_paint,
     );
@@ -163,10 +173,6 @@ fn draw_svg_image_fill(
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let size = skia::ISize::new(size.width as i32, size.height as i32);
-    let src_rect = get_source_rect(size, container, image_fill);
-    if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
-        return true;
-    }
 
     let mut image_paint = skia::Paint::default();
     image_paint.set_anti_alias(antialias);
@@ -183,16 +189,31 @@ fn draw_svg_image_fill(
     let fill_layer = skia::canvas::SaveLayerRec::default().paint(paint);
     canvas.save_layer(&fill_layer);
 
-    // Map the cropped source rect onto the container: cover semantics when
-    // keep-aspect-ratio is set, stretch otherwise (same math as the raster
-    // path, expressed as a canvas transform).
-    let scale_x = container.width() / src_rect.width();
-    let scale_y = container.height() / src_rect.height();
+    let dest_rect = match image_fill.transform() {
+        Some(tf) => MathRect::from_xywh(
+            container.left + tf.x * container.width(),
+            container.top + tf.y * container.height(),
+            tf.width * container.width(),
+            tf.height * container.height(),
+        ),
+        None => *container,
+    };
+
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
+    if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
+        canvas.restore();
+        canvas.restore();
+        return true;
+    }
+
+    let scale_x = dest_rect.width() / src_rect.width();
+    let scale_y = dest_rect.height() / src_rect.height();
     canvas.translate((
-        container.left - src_rect.left * scale_x,
-        container.top - src_rect.top * scale_y,
+        dest_rect.left - src_rect.left * scale_x,
+        dest_rect.top - src_rect.top * scale_y,
     ));
     canvas.scale((scale_x, scale_y));
+
     dom.render(canvas);
 
     canvas.restore();
