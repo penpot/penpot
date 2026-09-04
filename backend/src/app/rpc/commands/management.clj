@@ -425,6 +425,7 @@
         cfg      (-> cfg
                      (assoc ::bfc/project-id project-id)
                      (assoc ::bfc/profile-id profile-id)
+                     (assoc ::bfc/team-id (:id team))
                      (assoc ::bfc/input template)
                      (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
                      (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
