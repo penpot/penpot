@@ -59,6 +59,31 @@
     :ease-out
     :ease-in-out})
 
+;; Design systems commonly specify motion as explicit curves rather than as one
+;; of the CSS keywords: Material 3, for instance, defines its whole motion scale
+;; with cubic-bezier() values, and three of them collapse onto `ease-out` when
+;; approximated. Easing values are stored as keywords and rendered with `name`,
+;; so a `cubic-bezier(...)` keyword travels unchanged through the viewer and the
+;; plugin API; only the schema needed widening.
+(def ^:private cubic-bezier-rx
+  #"^cubic-bezier\(\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*\)$")
+
+(defn cubic-bezier-easing?
+  [easing]
+  (and (keyword? easing)
+       (nil? (namespace easing))
+       (some? (re-matches cubic-bezier-rx (name easing)))))
+
+(defn valid-easing?
+  [easing]
+  (or (contains? easing-types easing)
+      (cubic-bezier-easing? easing)))
+
+(def schema:easing
+  [:or
+   [::sm/one-of easing-types]
+   [:and :keyword [:fn cubic-bezier-easing?]]])
+
 (def direction-types
   #{:right
     :left
@@ -75,7 +100,7 @@
   [:map {:title "AnimationDisolve"}
    [:animation-type [:= :dissolve]]
    [:duration ::sm/safe-int]
-   [:easing [::sm/one-of easing-types]]
+   [:easing schema:easing]
    [:way {:optional true} [::sm/one-of way-types]]
    [:offset-effect {:optional true} :boolean]
    [:direction {:optional true} [::sm/one-of direction-types]]])
@@ -84,7 +109,7 @@
   [:map {:title "AnimationSlide"}
    [:animation-type [:= :slide]]
    [:duration ::sm/safe-int]
-   [:easing [::sm/one-of easing-types]]
+   [:easing schema:easing]
    [:way [::sm/one-of way-types]]
    [:direction [::sm/one-of direction-types]]
    [:offset-effect :boolean]])
@@ -93,7 +118,7 @@
   [:map {:title "PushAnimation"}
    [:animation-type [:= :push]]
    [:duration ::sm/safe-int]
-   [:easing [::sm/one-of easing-types]]
+   [:easing schema:easing]
    [:direction [::sm/one-of direction-types]]])
 
 (def schema:animation
@@ -623,7 +648,7 @@
   [interaction easing]
 
   (assert (check-interaction interaction))
-  (assert (contains? easing-types easing)
+  (assert (valid-easing? easing)
           "expected valid easing")
   (assert (has-easing? interaction)
           "expected compatible interaction map")
