@@ -3,8 +3,6 @@ use macros::{wasm_error, ToJs};
 use crate::globals::{get_render_state, get_text_editor_state};
 use crate::math::{Matrix, Point};
 use crate::mem;
-use crate::render::text_editor as text_editor_render;
-use crate::render::SurfaceId;
 use crate::shapes::{TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
 use crate::state::{State, TextEditorEvent, TextEditorState};
 use crate::utils::uuid_from_u32_quartet;
@@ -851,7 +849,7 @@ fn update_text_layout_if_needed(state: &mut State, shape_id: Uuid) {
 /// Repaint the caret/selection over the last fully rendered frame.
 ///
 /// Re-composes Target from the Backbuffer (which still holds the last complete
-/// render) and draws the editor overlay on top, in a single submitted frame.
+/// render); the compose step draws the editor overlay itself.
 ///
 /// This exists because the caret blink must erase the previous caret, which
 /// means restoring the pixels underneath it. Doing that via `render_from_cache`
@@ -867,49 +865,7 @@ pub extern "C" fn text_editor_render_caret() {
         };
 
         update_text_layout_if_needed(state, shape_id);
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-
-        get_render_state().compose_frame(&state.shapes);
-
-        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
-        let viewbox = get_render_state().viewbox;
-        text_editor_render::render_overlay(
-            canvas,
-            &viewbox,
-            &get_render_state().options,
-            get_text_editor_state(),
-            shape,
-        );
-        get_render_state().flush_and_submit();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn text_editor_render_overlay() {
-    with_state!(state, {
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return;
-        };
-
-        update_text_layout_if_needed(state, shape_id);
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-
-        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
-        let viewbox = get_render_state().viewbox;
-        text_editor_render::render_overlay(
-            canvas,
-            &viewbox,
-            &get_render_state().options,
-            get_text_editor_state(),
-            shape,
-        );
-        get_render_state().flush_and_submit();
+        get_render_state().present_frame(&state.shapes);
     });
 }
 

@@ -27,6 +27,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
+use crate::globals::get_text_editor_state;
 use crate::math;
 use crate::shapes::{
     all_with_ancestors, modifier_changes_text_layout, radius_to_sigma, Blur, BlurType, Corners,
@@ -985,9 +986,32 @@ impl RenderState {
             debug::render(self);
         }
         if !self.preview_mode {
+            self.render_text_editor_overlay(tree);
             ui::render(self, tree);
         }
         debug::render_wasm_label(self);
+    }
+
+    /// Drawn on Target before the UI surface is composited, so rulers and guides
+    /// stay above the selection band
+    fn render_text_editor_overlay(&mut self, tree: ShapesPoolRef) {
+        let editor_state = get_text_editor_state();
+        let Some(shape_id) = editor_state.active_shape_id else {
+            return;
+        };
+        let Some(shape) = tree.get(&shape_id) else {
+            return;
+        };
+
+        let viewbox = self.viewbox;
+        let options = self.options;
+        text_editor::render_overlay(
+            self.surfaces.canvas(SurfaceId::Target),
+            &viewbox,
+            &options,
+            editor_state,
+            shape,
+        );
     }
 
     /// Renders only the canvas background and UI surface (rulers/frame), without

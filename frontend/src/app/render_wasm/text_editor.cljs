@@ -245,11 +245,6 @@
   (when (wasm/ready?)
     (h/call wasm/internal-module "_text_editor_update_blink" timestamp-ms)))
 
-(defn text-editor-render-overlay
-  []
-  (when (wasm/ready?)
-    (h/call wasm/internal-module "_text_editor_render_overlay")))
-
 (defn text-editor-render-caret
   "Re-compose the frame from the Backbuffer (the last full render) and draw the
    caret/selection overlay on top, submitting one atomic frame. Pixel identical
