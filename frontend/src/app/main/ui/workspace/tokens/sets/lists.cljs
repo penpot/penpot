@@ -86,8 +86,8 @@
 
 (mf/defc inline-add-button*
   []
-  (let [can-edit? (mf/use-ctx ctx/can-edit?)]
-    (if can-edit?
+  (let [can-edit-tokens? (mf/use-ctx ctx/can-edit-tokens?)]
+    (if can-edit-tokens?
       [:div {:class (stl/css :empty-sets-wrapper)}
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
         (tr "workspace.tokens.no-sets-yet")]
@@ -110,7 +110,10 @@
   [{:keys [id label is-editing is-active is-selected is-draggable is-collapsed path depth index
            on-toggle on-drop on-start-edition on-reset-edition on-edit-submit on-toggle-collapse]}]
 
-  (let [can-edit?
+  (let [can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
+
+        can-edit-file?
         (mf/use-ctx ctx/can-edit?)
 
         label-id
@@ -118,11 +121,11 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-editing id path can-edit?)
+         (mf/deps is-editing id path can-edit-tokens?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when (and can-edit? (not is-editing))
+           (when (and can-edit-tokens? (not is-editing))
              (st/emit! (dwtl/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group true
@@ -141,12 +144,12 @@
 
         on-checkbox-click
         (mf/use-fn
-         (mf/deps on-toggle path can-edit?)
+         (mf/deps on-toggle path can-edit-file?)
          #(on-toggle path))
 
         on-edit-submit'
         (mf/use-fn
-         (mf/deps path on-edit-submit can-edit?)
+         (mf/deps path on-edit-submit can-edit-tokens?)
          #(on-edit-submit path %))
 
         on-drop
@@ -196,7 +199,7 @@
          label]
         [:> checkbox*
          {:on-click on-checkbox-click
-          :disabled (not can-edit?)
+          :disabled (not can-edit-file?)
           :checked (case is-active
                      :all true
                      :partial "mixed"
@@ -207,7 +210,11 @@
   [{:keys [id set label is-editing is-active is-selected is-draggable is-new path depth index
            on-select on-toggle on-drop on-start-edition on-reset-edition on-edit-submit]}]
 
-  (let [can-edit? (mf/use-ctx ctx/can-edit?)
+  (let [can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
+
+        can-edit-file?
+        (mf/use-ctx ctx/can-edit?)
 
         on-click
         (mf/use-fn
@@ -220,11 +227,11 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-editing id path can-edit?)
+         (mf/deps is-editing id path can-edit-tokens?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when (and can-edit? (not is-editing))
+           (when (and can-edit-tokens? (not is-editing))
              (st/emit! (dwtl/assign-token-set-context-menu
                         {:position (dom/get-client-position event)
                          :is-group false
@@ -244,7 +251,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when (fn? on-toggle)
-             (on-toggle (ctob/get-name set)))))
+             (on-toggle (ctob/get-id set)))))
 
         on-edit-submit'
         (mf/use-fn
@@ -305,15 +312,15 @@
          label]
         [:> checkbox*
          {:on-click on-checkbox-click
-          :disabled (not can-edit?)
+          :disabled (not can-edit-file?)
           :arial-label (tr "workspace.tokens.select-set")
           :checked is-active}]])]))
 
 (mf/defc token-sets-tree*
   [{:keys [is-draggable
            selected
-           is-token-set-group-active
            is-token-set-active
+           is-token-set-group-active
            on-start-edition
            on-reset-edition
            on-edit-submit-set
@@ -418,7 +425,7 @@
             :set token-set
             :label (peek path)
             :is-editing (= edition-id id)
-            :is-active (is-token-set-active (ctob/get-name token-set))
+            :is-active (is-token-set-active id)
             :is-selected (= selected id)
             :is-draggable is-draggable
             :is-new false
@@ -452,15 +459,15 @@
            new-path
            edition-id]}]
 
-  (assert (fn? is-token-set-group-active) "expected a function for `is-token-set-group-active` prop")
   (assert (fn? is-token-set-active) "expected a function for `is-token-set-active` prop")
+  (assert (fn? is-token-set-group-active) "expected a function for `is-token-set-group-active` prop")
 
-  (let [theme-modal? (= origin "theme-modal")
-        can-edit?    (mf/use-ctx ctx/can-edit?)
-        draggable?   (and (not theme-modal?) can-edit?)
-        empty-state? (and theme-modal?
-                          (empty? token-sets)
-                          (not new-path))
+  (let [theme-modal?     (= origin "theme-modal")
+        can-edit-tokens? (mf/use-ctx ctx/can-edit-tokens?)
+        draggable?       (and (not theme-modal?) can-edit-tokens?)
+        empty-state?     (and theme-modal?
+                              (empty? token-sets)
+                              (not new-path))
 
         ;; NOTE: on-reset-edition and on-start-edition function can
         ;; come as nil, in this case we need to provide a safe

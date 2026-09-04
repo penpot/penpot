@@ -5,6 +5,7 @@
    [app.common.path-names :as cpn]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.helpers :as dh]
@@ -49,21 +50,18 @@
 
 (mf/defc selected-set-info*
   {::mf/private true}
-  [{:keys [tokens-lib selected-token-set-id]}]
+  [{:keys [tokens-lib tokens-status selected-token-set-id]}]
   (let [selected-token-set
         (mf/with-memo [tokens-lib selected-token-set-id]
           (when selected-token-set-id
             (some-> tokens-lib (ctob/get-set selected-token-set-id))))
 
-        active-token-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
-
         token-set-active?
         (mf/use-fn
-         (mf/deps active-token-sets-names)
-         (fn [name]
-           (contains? active-token-sets-names name)))]
+         (mf/deps tokens-status)
+         (fn [id]
+           (ctos/set-active? tokens-status id)))]
+
     [:div {:class (stl/css :sets-header-container)}
      [:> text* {:as "span"
                 :typography "headline-small"
@@ -71,7 +69,7 @@
                 :data-testid "active-token-set-title"}
       (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
      (when (and (some? selected-token-set-id)
-                (not (token-set-active? (ctob/get-name selected-token-set))))
+                (not (token-set-active? selected-token-set-id)))
        [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
         ;; NOTE: when no set in tokens-lib, the selected-token-set-id
         ;; will be `nil`, so for properly hide the inactive message we
@@ -84,7 +82,7 @@
 
 (mf/defc tokens-section*
   {::mf/private true}
-  [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
+  [{:keys [tokens-lib tokens-status active-tokens resolved-active-tokens]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
 
@@ -305,6 +303,7 @@
                                    :on-delete-node delete-node}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib
+                             :tokens-status tokens-status
                              :selected-token-set-id selected-token-set-id}]
 
      (for [type filled-group]

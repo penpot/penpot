@@ -7223,9 +7223,21 @@ msgid_plural "workspace.libraries.components"
 msgstr[0] "1 componente"
 msgstr[1] "%s componentes"
 
+#: src/app/main/ui/workspace/libraries.cljs:541
+msgid "workspace.libraries.connected-libraries"
+msgstr "Biblioteca conectada"
+
+#: src/app/main/ui/workspace/libraries.cljs:550
+msgid "workspace.libraries.connected-through"
+msgstr "Conectada mediante"
+
 #: src/app/main/ui/workspace/libraries.cljs:367
 msgid "workspace.libraries.connected-to"
 msgstr "Conectada con"
+
+#: src/app/main/ui/workspace/libraries.cljs:600
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "Aun no hay bibliotecas conectadas."
 
 #: src/app/main/ui/workspace/libraries.cljs:432
 msgid "workspace.libraries.empty.add-some"
@@ -7242,6 +7254,14 @@ msgstr "algunas plantillas aquí"
 #: src/app/main/ui/workspace/libraries.cljs:336
 msgid "workspace.libraries.file-library"
 msgstr "Biblioteca del archivo"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.tokens-source"
+msgstr "Fuente de tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Activar fuente de tokens"
 
 #: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:124
 msgid "workspace.libraries.graphics"
@@ -7291,6 +7311,10 @@ msgstr "Buscar bibliotecas compartidas"
 msgid "workspace.libraries.shared-libraries"
 msgstr "BIBLIOTECAS COMPARTIDAS"
 
+#: src/app/main/ui/workspace/libraries.cljs:311
+msgid "workspace.libraries.shared-library-added"
+msgstr "Añadido"
+
 #: src/app/main/ui/workspace/libraries.cljs:414
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Conectar biblioteca"
@@ -7330,6 +7354,24 @@ msgid "workspace.libraries.typography"
 msgid_plural "workspace.libraries.typography"
 msgstr[0] "1 tipografía"
 msgstr[1] "%s tipografías"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 token"
+msgstr[1] "%s tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 token set"
+msgstr[1] "%s token sets"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 token theme"
+msgstr[1] "%s token themes"
 
 #: src/app/main/ui/workspace/libraries.cljs:381
 msgid "workspace.libraries.unlink-library-btn"
@@ -9761,6 +9803,22 @@ msgstr "Usa una referencia"
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
 msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:24
+msgid "workspace.tokens.connected-library"
+msgstr "librería conectada"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:102
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "Esta es la actual fuente de Tokens"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:25
+msgid "workspace.tokens.open-connected-library"
+msgstr "Abrir librería conectada"
+
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Los sets o temas de la fuente de tokens se han modificado"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused

@@ -554,11 +554,14 @@ export class WorkspacePage extends BaseWebSocketPage {
     await expect(this.toolbarOptions).toHaveCSS("opacity", "0");
   }
 
+  async clickLayers(clickOptions = {}) {
+    await this.sidebar.getByText("Layers").click(clickOptions);
+  }
   async clickAssets(clickOptions = {}) {
     await this.sidebar.getByText("Assets").click(clickOptions);
   }
-  async clickLayers(clickOptions = {}) {
-    await this.sidebar.getByText("Layers").click(clickOptions);
+  async clickTokens(clickOptions = {}) {
+    await this.sidebar.getByText("Tokens").click(clickOptions);
   }
 
   async openLibrariesModal(clickOptions = {}) {

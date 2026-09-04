@@ -25,7 +25,6 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.tokenscript :as ts]
-   [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -95,11 +94,11 @@
      (watch [_ _ _]
        (when (number? value)
          (rx/of
-          (udw/trigger-bounding-box-cloaking shape-ids)
-          (udw/increase-rotation shape-ids value nil
-                                 {:page-id page-id
-                                  :ignore-touched true
-                                  :no-wasm? true})))))))
+          (dwtr/trigger-bounding-box-cloaking shape-ids)
+          (dwtr/increase-rotation shape-ids value nil
+                                  {:page-id page-id
+                                   :ignore-touched true
+                                   :no-wasm? true})))))))
 
 (defn update-stroke-width
   ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
@@ -675,9 +674,10 @@
                   (ctt/typography-token-keys (:type token)) (set/union attributes-to-remove ctt/typography-keys)
                   (ctt/typography-keys (:type token)) (set/union attributes-to-remove ctt/typography-token-keys)
                   :else attributes-to-remove)]
-            (when-let [tokens (some-> (dsh/lookup-file-data state)
-                                      (get :tokens-lib)
-                                      (ctob/get-tokens-in-active-sets))]
+            (when-let [tokens (let [tokens-lib    (dsh/lookup-tokens-lib state)
+                                    tokens-status (dsh/lookup-tokens-status state)]
+                                (when (and tokens-lib tokens-status)
+                                  (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))]
               (->> (if (contains? cf/flags :tokenscript)
                      (rx/of (ts/resolve-tokens tokens))
                      (sd/resolve-tokens tokens))

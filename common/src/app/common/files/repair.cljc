@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
@@ -782,6 +783,16 @@
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
+
+(defmethod repair-error :missing-tokens-status
+  [_ _ file-data _]
+  (let [tokens-lib (cfo/get-tokens-lib file-data)
+        tokens-status (cfo/make-tokens-status-from-lib tokens-lib)]
+    (log/debug :hint "repairing shape :tokens-status-missing")
+    (log/debug :hint "  -> add a tokens-status generated from the library")
+    (-> (pcb/empty-changes nil)
+        (pcb/with-library-data file-data)
+        (pcb/set-tokens-status tokens-status))))
 
 (defmethod repair-error :default
   [_ error file _]
