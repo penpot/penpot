@@ -132,6 +132,20 @@
       (-> (fonts/ensure-loaded! font-id)
           (p/then
            (fn [_]
+             ;; ensure-loaded! only guarantees the @font-face CSS text has
+             ;; been injected, not that the browser has actually fetched and
+             ;; parsed the font file: that fetch is lazy, normally triggered
+             ;; by the browser laying out DOM text with the font. Canvas
+             ;; measureText doesn't reliably trigger it, so without this
+             ;; explicit wait it can silently measure the fallback font
+             ;; instead, and the resulting bogus offset then gets cached
+             ;; forever — pushing the sample glyphs outside the clipped
+             ;; sample box instead of just centering them slightly wrong.
+             (let [spec (dm/str (or weight "400") " " (or style "normal") " 16px \"" family "\"")]
+               (-> (.load js/document.fonts spec)
+                   (p/catch (constantly nil))))))
+          (p/then
+           (fn [_]
              (let [em (or (optical-offset-em family weight style text) 0)]
                (swap! optical-offset-cache assoc key em)
                em)))))))
@@ -139,28 +153,41 @@
 (defn- use-optical-offset
   "Lazily resolve the optical-centering offset (in `em`) for sample text in a
   given font, measuring once per font/sample and caching it. Falls back to 0
-  when the font isn't available or the metrics can't be measured."
+  when the font isn't available or the metrics can't be measured.
+
+  Returns `[offset ready?]`. `ready?` is true immediately when a value is
+  already cached, and false only while the very first measurement of a given
+  font/sample is still pending. Callers should keep the sample hidden until
+  `ready?`: the offset (and so the sample's rendered position) jumps once
+  that first, async measurement resolves, and painting the glyphs before
+  then makes automated screenshot/position-based tests flaky — whether the
+  test runs before or after the jump is a timing race, not a deterministic
+  outcome."
   [font-id family weight style text]
-  (let [offset* (mf/use-state 0)]
+  (let [key     (optical-offset-key family weight style text)
+        offset* (mf/use-state #(get @optical-offset-cache key 0))
+        ready?* (mf/use-state #(contains? @optical-offset-cache key))]
     (mf/use-effect
      (mf/deps font-id family weight style text)
      (fn []
-       (let [cancelled? (volatile! false)
-             key        (optical-offset-key family weight style text)]
+       (let [cancelled? (volatile! false)]
          (if (contains? @optical-offset-cache key)
-           (reset! offset* (get @optical-offset-cache key))
+           (do
+             (reset! offset* (get @optical-offset-cache key))
+             (reset! ready?* true))
            (let [task (tm/schedule-on-idle
                        (fn []
                          (-> (load-optical-offset font-id family weight style text)
                              (p/then
                               (fn [em]
                                 (when-not @cancelled?
-                                  (reset! offset* em)))))))]
+                                  (reset! offset* em)
+                                  (reset! ready?* true)))))))]
              (fn []
                (vreset! cancelled? true)
                (tm/dispose! task)))))
        nil))
-    (deref offset*)))
+    [(deref offset*) (deref ready?*)]))
 
 (defn- sample-container-style
   "Inline style that applies the typography font to the (clipped, fixed-height)
@@ -194,10 +221,14 @@
   "Inline style that optically centers the sample glyphs. Must be applied to
   the text node itself, not to the clipped container: a transform on an
   `overflow: hidden` element moves its own clip region along with it, so it
-  would shift the whole box relative to the row instead of the glyphs inside it."
-  [em]
-  (when-not (zero? em)
-    #js {:transform (dm/str "translateY(" em "em)")}))
+  would shift the whole box relative to the row instead of the glyphs inside it.
+
+  Hidden until `ready?` (see `use-optical-offset`), so the glyphs only ever
+  appear already in their final, correctly centered position instead of
+  visibly jumping there after the first paint."
+  [em ready?]
+  #js {:transform (when-not (zero? em) (dm/str "translateY(" em "em)"))
+       :visibility (when-not ready? "hidden")})
 
 ;; --- FONT SELECTOR --------------------------------------------------------
 
@@ -228,11 +259,17 @@
         ;; the row, so shift it by the measured offset once the font is known.
         ;; The label renders at `body-medium` (400/normal), which is the weight
         ;; and style we measure against.
-        label-offset (use-optical-offset font-id
-                                         (:family font)
-                                         "400"
-                                         "normal"
-                                         (:name font))]
+        ;; The selector always shows the font's name text as-is, unlike the
+        ;; small "Ag" sample elsewhere in this file, so unlike there this
+        ;; doesn't need to hide anything until the offset is ready — a
+        ;; shifting label is a minor, acceptable visual nicety here, not
+        ;; the row's only content.
+        [label-offset _label-ready?]
+        (use-optical-offset font-id
+                            (:family font)
+                            "400"
+                            "normal"
+                            (:name font))]
     (if in-sprite?
       ;; `fill: currentColor` (scss) makes the sprite glyph follow the row color.
       [:svg {:class (stl/css :font-item-preview)
@@ -720,11 +757,12 @@
         font-data      (fonts/get-font-data (:font-id typography))
         typography-id  (:id typography)
         show-actions?  (and is-asset? is-editable)
-        offset         (use-optical-offset (:font-id typography)
-                                           (:font-family typography)
-                                           (:font-weight typography)
-                                           (:font-style typography)
-                                           "Ag")
+        [offset offset-ready?]
+        (use-optical-offset (:font-id typography)
+                            (:font-family typography)
+                            (:font-weight typography)
+                            (:font-style typography)
+                            "Ag")
 
         on-delete
         (mf/use-fn
@@ -760,7 +798,7 @@
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
                   :style (sample-container-style typography font-data)}
-            [:span {:style (sample-text-style offset)}
+            [:span {:style (sample-text-style offset offset-ready?)}
              (tr "workspace.assets.typography.sample")]]
 
            [:input
@@ -796,7 +834,7 @@
           [:div {:class (stl/css :typography-name-wrapper)}
            [:div {:class (stl/css :typography-sample)
                   :style (sample-container-style typography font-data)}
-            [:span {:style (sample-text-style offset)}
+            [:span {:style (sample-text-style offset offset-ready?)}
              (tr "workspace.assets.typography.sample")]]
 
            [:div {:class (stl/css :typography-name)
@@ -844,11 +882,12 @@
         open?                (deref open*)
         font-data            (fonts/get-font-data (:font-id typography))
         name-only?           (= (:name typography) (:name font-data))
-        offset               (use-optical-offset (:font-id typography)
-                                                 (:font-family typography)
-                                                 (:font-weight typography)
-                                                 (:font-style typography)
-                                                 "Ag")
+        [offset offset-ready?]
+        (use-optical-offset (:font-id typography)
+                            (:font-family typography)
+                            (:font-weight typography)
+                            (:font-style typography)
+                            "Ag")
 
         on-name-blur
         (mf/use-fn
@@ -914,7 +953,7 @@
          [:div
           {:class (stl/css :typography-sample-input)
            :style (sample-container-style typography font-data)}
-          [:span {:style (sample-text-style offset)}
+          [:span {:style (sample-text-style offset offset-ready?)}
            (tr "workspace.assets.typography.sample")]]
 
          [:input
@@ -933,7 +972,7 @@
          [:div
           {:class (stl/css :typography-sample)
            :style (sample-container-style typography font-data)}
-          [:span {:style (sample-text-style offset)}
+          [:span {:style (sample-text-style offset offset-ready?)}
            (tr "workspace.assets.typography.sample")]]
 
          [:div {:class (stl/css :name-block)
