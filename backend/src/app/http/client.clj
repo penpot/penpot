@@ -17,12 +17,17 @@
    [app.util.ssrf :as ssrf]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [java-http-clj.core :as http])
+   [java-http-clj.core :as http]
+   [promesa.exec :as px])
   (:import
    java.net.http.HttpClient
    java.net.URI))
 
 (def default-max-redirects 5)
+(def default-request-timeout 30000)
+(def default-executor-parallelism 32)
+
+(defonce ^:private executor (atom nil))
 
 (defn client?
   [o]
@@ -34,14 +39,25 @@
 
 (defmethod ig/init-key ::client
   [_ _]
-  (http/build-client {:connect-timeout 30000
-                      :follow-redirects :never}))
+  (let [exec (px/fixed-executor :parallelism default-executor-parallelism
+                                :prefix "penpot/http-client/")]
+    (reset! executor exec)
+    (http/build-client {:connect-timeout default-request-timeout
+                        :executor exec
+                        :follow-redirects :never})))
+
+(defmethod ig/halt-key! ::client
+  [_ _]
+  (when-let [exec @executor]
+    (px/shutdown! exec)
+    (reset! executor nil)))
 
 (defn send!
   ([client req] (send! client req {}))
   ([client req {:keys [response-type] :or {response-type :string}}]
    (assert (client? client) "expected valid http client")
-   (http/send req {:client client :as response-type})))
+   (http/send (merge {:timeout default-request-timeout} req)
+              {:client client :as response-type})))
 
 (defn- resolve-client
   [params]
