@@ -28,7 +28,11 @@
     (t/is (= 400 (media/parse-font-weight "Lighthaus")))
     (t/is (= 400 (media/parse-font-weight "Blackwood")))
     (t/is (= 400 (media/parse-font-weight "Thinker")))
-    (t/is (= 400 (media/parse-font-weight "Mediaeval")))))
+    (t/is (= 400 (media/parse-font-weight "Mediaeval"))))
+    
+  (t/testing "safely handles nil and non-string metadata without crashing"
+    (t/is (= 400 (media/parse-font-weight nil)))
+    (t/is (= 400 (media/parse-font-weight 700)))))
 
 (t/deftest test-parse-font-style
   (t/testing "matches italic with proper boundaries"
@@ -40,7 +44,11 @@
 
   (t/testing "does not match italic embedded in words"
     (t/is (= "normal" (media/parse-font-style "Italica")))
-    (t/is (= "normal" (media/parse-font-style "Roboto-Regular")))))
+    (t/is (= "normal" (media/parse-font-style "Roboto-Regular"))))
+    
+  (t/testing "safely handles nil and non-string metadata without crashing"
+    (t/is (= "normal" (media/parse-font-style nil)))
+    (t/is (= "normal" (media/parse-font-style 123)))))
 
 (t/deftest test-strip-image-extension
   (t/testing "removes extension from supported image files"
