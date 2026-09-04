@@ -48,6 +48,7 @@
               (bw/nav! page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
               (bw/wait-for-fonts page)
+              (bw/wait-for-images page)
               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
 
               ;; take the screnshot of requested objects, one by one
@@ -57,6 +58,7 @@
     (p/let [params {:file-id file-id
                     :page-id page-id
                     :share-id share-id
+                    :embed true
                     :object-id (mapv :id objects)
                     :route "objects"
                     :skip-children skip-children}
