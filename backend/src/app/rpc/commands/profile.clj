@@ -12,7 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.plugins :refer [schema:plugin-registry]]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -54,11 +54,11 @@
 
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
-  #{:subscription})
+  #{:subscription :plugins})
 
 (def schema:props
   [:map {:title "ProfileProps" :closed true}
-   [:plugins {:optional true} schema:plugin-registry]
+   [:plugins {:optional true} ctp/schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
@@ -77,6 +77,10 @@
    [:custom-shortcuts {:optional true}
     [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
    [:nudge {:optional true} schema:nudge]])
+
+(def schema:props-writeable
+  "Props schema for user-writable fields (excludes system-managed keys)."
+  (reduce sm/dissoc-key schema:props system-managed-props))
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -463,7 +467,7 @@
 (def ^:private
   schema:update-profile-props
   [:map {:title "update-profile-props"}
-   [:props schema:props]])
+   [:props schema:props-writeable]])
 
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
