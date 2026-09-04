@@ -225,6 +225,12 @@
 
         toggle-content (mf/use-fn #(swap! state* update :show-content not))
 
+        summary
+        (when (seq blur-values)
+          (if mixed-state
+            (tr "settings.multiple")
+            (count blur-values)))
+
         change!
         (mf/use-fn
          (mf/deps ids)
@@ -276,6 +282,7 @@
                                         (= type :multiple) (tr "workspace.options.blur-options.title.multiple")
                                         (= type :group) (tr "workspace.options.blur-options.title.group")
                                         :else (tr "labels.blur")))
+                      :summary      summary
                       :class        (stl/css-case :title-spacing-blur (not (seq blur-values))
                                                   :long-title true)}
        (when (and (not mixed-state)
