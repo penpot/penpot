@@ -343,9 +343,13 @@ By default, <code class="language-bash">smtp</code> flag is disabled, the email 
 printed to the console, which means that the emails will be shown in the stdout.
 
 Note that if you plan to invite members to a team, it is recommended that you enable SMTP
-as they will need to login to their account after receiving the invite link sent an in email.
-It is currently not possible to just add someone to a team without them accepting an
-invitation email.
+as they will need to login to their account after receiving the invite link sent in an email.
+
+There is one exception: with the `disable-email-verification` flag set, inviting an email
+that already has a profile adds that user to the team directly, without sending any
+invitation email and without requiring acceptance. Emails without an existing profile
+still follow the normal invitation flow. See the
+[`disable-email-verification` flag][8] description for more detail.
 
 If you have an SMTP service, uncomment the appropriate settings section in
 <code class="language-bash">docker-compose.yml</code> and configure those
@@ -672,6 +676,13 @@ for the user:
 - <code class="language-bash">disable-login-with-password</code>: allows disable password based login form
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
   tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
+- `disable-email-verification`: skips the email verification step on registration, making
+  newly registered profiles active immediately without any verification email. It also
+  changes the team invitation flow: inviting an email that already has a profile adds that
+  user to the team directly, without sending an invitation email (check the
+  [email configuration section][8] for more detail). Note that registering with an email
+  that already has an inactive profile is rejected as "email already exists" while this
+  flag is set. Not recommended for production environments.
 
 __Since version 1.13.0__
 
@@ -693,3 +704,4 @@ __Since version 2.0.0__
 [5]: /technical-guide/getting-started/docker#using-the-cli-for-administrative-tasks
 [6]: /technical-guide/integration/#webhooks
 [7]: /technical-guide/integration/#access-tokens
+[8]: /technical-guide/configuration/#email-configuration
