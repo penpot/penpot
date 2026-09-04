@@ -290,14 +290,18 @@
        get-components-with-duplicated-variant-props-and-values
        (map :main-instance-id)))
 
+(defn- get-variant-option
+  [val]
+  {:id val
+   :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)})
+
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
   (->> (filter #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (mapv (fn [val] {:id val
-                        :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
+       (mapv get-variant-option)))
 
 (mf/defc component-variant-property*
   [{:keys [pos prop options on-prop-name-blur on-prop-value-change on-reorder]}]
@@ -527,8 +531,12 @@
       (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (get % pos))) properties)
               base-options (get options-by-name (:name prop))
+              no-options?  (empty? base-options)
               boolean-pair (ctv/find-boolean-pair (mapv :id base-options))
               options      (cond-> base-options
+                             no-options?
+                             (conj (get-variant-option (:value prop)))
+
                              mixed-value?
                              (conj {:id mixed-label :label mixed-label :dimmed true}))]
 
@@ -549,6 +557,7 @@
               [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
                            :options options
                            :empty-to-end true
+                           :disabled no-options?
                            :on-change (partial switch-component pos)
                            :key (str (:value prop) "-" key)}]])]))]
 
