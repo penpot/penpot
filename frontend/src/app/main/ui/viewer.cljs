@@ -545,6 +545,7 @@
               :viewer-layout (not= section :inspect)
               :inspect-layout (= section :inspect))
       :data-fullscreen fullscreen?
+      :data-hide-ui (:hide-ui? local)
       :data-force-visible (:show-thumbnails local)}
 
 
@@ -618,7 +619,8 @@
                         :section section
                         :shown-thumbnails (:show-thumbnails local)
                         :interactions-mode interactions-mode
-                        :share share}]]))
+                        :share share
+                        :hide-ui? (:hide-ui? local)}]]))
 
 ;; --- Component: Viewer
 

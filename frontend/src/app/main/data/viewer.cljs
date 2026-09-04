@@ -37,6 +37,7 @@
   default-local-state
   {:zoom 1
    :fullscreen? false
+   :hide-ui? false
    :interactions-mode :show-on-click
    :show-interactions false
    :comments-mode :all
@@ -469,6 +470,12 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:viewer-local :fullscreen?] false))))
+
+(def toggle-hide-ui
+  (ptk/reify ::toggle-hide-ui
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:viewer-local :hide-ui?] not))))
 
 (defn set-viewport-size
   [{:keys [size]}]
