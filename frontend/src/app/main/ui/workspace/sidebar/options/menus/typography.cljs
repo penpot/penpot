@@ -166,9 +166,27 @@
   "Inline style that applies the typography font to the (clipped, fixed-height)
   sample container. Must be a real JS object (`#js`), not a ClojureScript map:
   the `:style` value here is a runtime expression, not a literal recognized by
-  the hiccup macro, so it reaches React unconverted."
-  [typography]
-  #js {:fontFamily (:font-family typography)
+  the hiccup macro, so it reaches React unconverted.
+
+  Falls back to `font-data` (the live fontsdb entry for the typography's
+  `:font-id`) when the typography's own `:font-family` is blank: a font that
+  was unloaded when a typography's font/variant was last changed can leave
+  that field nil on the record (the same failure mode `remove-nil-style-attrs`
+  repairs for shape text spans), and the sample would otherwise render in
+  whatever fallback font the browser picks instead of the intended one.
+
+  The family name is quoted, matching `font-item-preview*` below: setting
+  `style.fontFamily` to a raw, unquoted string parses it as CSS's
+  `<family-name>` grammar, i.e. whitespace-separated `<custom-ident>`s. A
+  family like \"Micro 5\" then tokenizes as the ident `Micro` followed by
+  the *number* `5` — not a valid ident — so the whole property is invalid
+  CSS and the browser silently drops it. A quoted `<string>` sidesteps that
+  entirely, since it isn't tokenized as identifiers at all."
+  [typography font-data]
+  #js {:fontFamily (let [family (:font-family typography)
+                         family (if (str/blank? family) (:family font-data) family)]
+                     (when-not (str/blank? family)
+                       (dm/str "\"" family "\"")))
        :fontWeight (:font-weight typography)
        :fontStyle  (:font-style typography)})
 
@@ -741,7 +759,7 @@
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
-                  :style (sample-container-style typography)}
+                  :style (sample-container-style typography font-data)}
             [:span {:style (sample-text-style offset)}
              (tr "workspace.assets.typography.sample")]]
 
@@ -777,7 +795,7 @@
          [:div {:class (stl/css :typography-info-wrapper)}
           [:div {:class (stl/css :typography-name-wrapper)}
            [:div {:class (stl/css :typography-sample)
-                  :style (sample-container-style typography)}
+                  :style (sample-container-style typography font-data)}
             [:span {:style (sample-text-style offset)}
              (tr "workspace.assets.typography.sample")]]
 
@@ -865,6 +883,13 @@
              (when ^boolean esc?
                (dom/blur! input-node)))))]
 
+    ;; use-optical-offset only triggers a font load as a side effect of an
+    ;; uncached offset measurement, so on a cache hit (e.g. a `0` offset
+    ;; cached from before the font was ever loaded) the font itself never
+    ;; gets fetched and the sample silently renders in the fallback font.
+    ;; Load it unconditionally too, same as the advanced-options view does.
+    (fonts/ensure-loaded! (:font-id typography))
+
     (mf/with-effect [is-editing]
       (when is-editing
         (reset! open* is-editing)))
@@ -888,7 +913,7 @@
         [:div {:class (stl/css :font-name-wrapper)}
          [:div
           {:class (stl/css :typography-sample-input)
-           :style (sample-container-style typography)}
+           :style (sample-container-style typography font-data)}
           [:span {:style (sample-text-style offset)}
            (tr "workspace.assets.typography.sample")]]
 
@@ -907,7 +932,7 @@
           :on-context-menu on-context-menu}
          [:div
           {:class (stl/css :typography-sample)
-           :style (sample-container-style typography)}
+           :style (sample-container-style typography font-data)}
           [:span {:style (sample-text-style offset)}
            (tr "workspace.assets.typography.sample")]]
 
