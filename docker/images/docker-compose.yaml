@@ -38,7 +38,7 @@ x-body-size: &penpot-http-body-size
 ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
 ## (eg http sessions, or invitations) are derived.
 ##
-## We recommend to use a trully randomly generated
+## We recommend to use a truly randomly generated
 ## 512 bits base64 encoded string here. You can generate one with:
 ##
 ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
