@@ -1,4 +1,5 @@
-import { describe, it, vi, expect, beforeEach } from 'vitest';
+import { describe, it, vi, expect, beforeAll, beforeEach } from 'vitest';
+import 'ses';
 import { loadPlugin, setContextBuilder, getPlugins } from './load-plugin';
 import { createPlugin } from './create-plugin';
 import { ses } from './ses.js';
@@ -11,10 +12,19 @@ vi.mock('./create-plugin', () => ({
 
 // NOTE: `./ses.js` is intentionally NOT mocked here. This test verifies the
 // real host/sandbox hardening boundary, so `ses.harden` must keep its real
-// implementation.
+// implementation backed by a real SES bootstrap (see `beforeAll` below).
 
 describe('loadPlugin host context boundary (regression for #11001)', () => {
   let manifest: Manifest;
+
+  beforeAll(() => {
+    // Real SES bootstrap: repairs intrinsics and installs the global
+    // `harden` that `ses.harden` delegates to. Without this, `ses.harden`
+    // would throw `ReferenceError: harden is not defined` instead of
+    // exercising the real deep-freeze behavior under test.
+    (globalThis as unknown as { repairIntrinsics(): void }).repairIntrinsics();
+    ses.hardenIntrinsics();
+  });
 
   beforeEach(() => {
     manifest = {
@@ -31,6 +41,27 @@ describe('loadPlugin host context boundary (regression for #11001)', () => {
         sendMessage: vi.fn(),
       },
     } as unknown as Awaited<ReturnType<typeof createPlugin>>);
+  });
+
+  it('control: real ses.harden deep-freezes host-owned functions', () => {
+    // Proves the real SES behavior this regression test guards against:
+    // hardening a host-created context permanently freezes host-owned
+    // functions reachable through it.
+    const hostListener = function hostListener() {
+      return 'host-value';
+    };
+    const hostContext = { addListener: hostListener };
+
+    ses.harden(hostContext);
+
+    expect(Object.isFrozen(hostListener)).toBe(true);
+    expect(Object.isExtensible(hostListener)).toBe(false);
+    // A later host-side augmentation of the frozen listener (e.g. a
+    // Zone.js-style `toString` patch applied on page navigation) throws
+    // instead of succeeding — the crash signature from #11001.
+    expect(() => {
+      hostListener.toString = () => 'patched-by-host';
+    }).toThrow(TypeError);
   });
 
   it('does not freeze host-owned functions reachable through the context', async () => {
