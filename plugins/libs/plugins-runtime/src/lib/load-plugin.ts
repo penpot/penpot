@@ -3,7 +3,6 @@ import type { Context } from '@penpot/plugin-types';
 import { loadManifest } from './parse-manifest.js';
 import { Manifest } from './models/manifest.model.js';
 import { createPlugin } from './create-plugin.js';
-import { ses } from './ses.js';
 
 let plugins: Awaited<ReturnType<typeof createPlugin>>[] = [];
 
@@ -52,8 +51,15 @@ export const loadPlugin = async function (
 
     closeAllPlugins();
 
+    // Do NOT harden the host-created context here. `ses.harden` performs a
+    // deep freeze, so hardening the context would permanently freeze
+    // host-owned objects and functions reachable through it (e.g. plugin API
+    // listeners and proxies the host still needs to modify on page
+    // navigation). Sandbox isolation is enforced at the compartment boundary
+    // instead (see `create-sandbox.ts`: hardened sandbox-owned globals and
+    // `ses.safeReturn` on values crossing into the sandbox).
     const plugin = await createPlugin(
-      ses.harden(context) as Context,
+      context,
       manifest,
       () => {
         plugins = plugins.filter((api) => api !== plugin);
