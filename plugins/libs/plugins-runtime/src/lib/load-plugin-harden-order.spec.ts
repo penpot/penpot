@@ -50,8 +50,8 @@ describe('host context hardening order (contrast evidence for #11001)', () => {
       const safeCallback = function safeCallback(value: unknown) {
         return callback(value);
       };
-      const debounced = function debounced(this: unknown) {
-        return safeCallback.apply(this, arguments as unknown as [unknown]);
+      const debounced = function debounced(this: unknown, ...args: [unknown]) {
+        return safeCallback.apply(this, args);
       };
       return { type, safeCallback, debounced };
     }
