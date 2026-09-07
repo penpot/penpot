@@ -242,7 +242,7 @@
                                                     :organization organization}))]
     (t/is (th/success? out))
     (t/is (= 1 (count @calls)))
-    (t/is (= uuid/zero (-> @calls first :topic)))
+    (t/is (= team-id (-> @calls first :topic)))
     (let [msg (-> @calls first :message)]
       (t/is (= :team-organization-change (:type msg)))
       (t/is (= nil (:notification msg)))
@@ -454,7 +454,7 @@
         ;; --- Verify: exactly one organization-deleted event is published on the message bus ---
         (t/is (:called? @mbus-mock))
         (let [msg (apply hash-map (rest (:call-args @mbus-mock)))]
-          (t/is (= uuid/zero (:topic msg)))
+          (t/is (= organization-id (:topic msg)))
           (t/is (= :organization-deleted (:type (:message msg))))
           (t/is (= organization-id (:organization-id (:message msg))))
           (t/is (= organization-name (:organization-name (:message msg))))
@@ -462,6 +462,24 @@
                    (set (:teams (:message msg)))))
           (t/is (= #{(:id empty-team)}
                    (set (:deleted-teams (:message msg))))))))))
+
+(t/deftest notify-organization-change-sso-publishes-event
+  (let [organization-id (uuid/random)
+        calls           (atom [])
+        out             (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
+                                                  (swap! calls conj {:topic topic
+                                                                     :message message}))]
+                          (th/management-command! {::th/type :notify-organization-sso-change
+                                                   ::rpc/profile-id (uuid/random)
+                                                   :organization-id organization-id
+                                                   :updated-props true
+                                                   :announce-activation false}))]
+    (t/is (th/success? out))
+    (t/is (= 1 (count @calls)))
+    (t/is (= organization-id (-> @calls first :topic)))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :organization-change-sso (:type msg)))
+      (t/is (= organization-id (:organization-id msg))))))
 
 (t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-organization-events
   ;; --- Deferred owned-organizations: nil during setup, filled before RPC ---
@@ -570,7 +588,7 @@
 
         ;; --- Verify: one organization-deleted event per organization, all on correct topic ---
         (t/is (= 2 (count msgs)))
-        (t/is (every? #(= uuid/zero (:topic %))
+        (t/is (every? #(contains? #{organization-1-id organization-2-id} (:topic %))
                       (->> (:call-args-list @mbus-mock)
                            (map #(apply hash-map (rest %))))))
         (t/is (= #{:organization-deleted} (set (map :type msgs))))
