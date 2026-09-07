@@ -172,10 +172,10 @@
         new-props (- min-props
                      (+ (count props)
                         (if add-name? 1 0)))
-        props     (ctv/add-new-props props (repeat new-props ""))]
+        props     (ctv/add-new-properties props (repeat new-props ""))]
 
     (if add-name?
-      (ctv/add-new-prop props (:name component))
+      (ctv/add-new-property props (:name component))
       props)))
 
 (defn- create-new-properties-from-non-variant

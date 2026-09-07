@@ -27,6 +27,9 @@
    [:variant-id {:optional true} ::sm/uuid]
    [:variant-properties {:optional true} [:vector schema:variant-property]]])
 
+(def valid-variant-component?
+  (sm/check-fn schema:variant-component))
+
 (def schema:variant-shape
   "The root shape of the main instance of a variant component"
   [:map
@@ -34,14 +37,17 @@
    [:variant-name {:optional true} :string]
    [:variant-error {:optional true} :string]])
 
+(def valid-variant-shape?
+  (sm/check-fn schema:variant-shape))
+
 (def schema:variant-container
   "Is a board that contains all variant components of a variant set,
   for grouping them visually in the workspace"
   [:map
    [:is-variant-container {:optional true} :boolean]])
 
-(def valid-variant-component?
-  (sm/check-fn schema:variant-component))
+(def valid-variant-container?
+  (sm/check-fn schema:variant-container))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -69,34 +75,34 @@
                   0)]
     (inc (max max-num (count properties)))))
 
-(defn add-new-prop
-  "Adds a new property with generated name and provided value to the existing props list."
-  [props value]
-  (conj props {:name (str property-prefix (next-property-number props))
+(defn add-new-property
+  "Adds a new property with generated name and provided value to the existing properties list."
+  [properties value]
+  (conj properties {:name (str property-prefix (next-property-number properties))
                :value value}))
 
-(defn add-new-props
-  "Adds new properties with generated names and provided values to the existing props list."
-  [props values]
-  (let [next-prop-num (next-property-number props)
+(defn add-new-properties
+  "Adds new properties with generated names and provided values to the existing properties list."
+  [properties values]
+  (let [next-prop-num (next-property-number properties)
         xf (map-indexed (fn [i v]
                           {:name (str property-prefix (+ next-prop-num i))
                            :value v}))]
-    (into props xf values)))
+    (into properties xf values)))
 
 (defn path-to-properties
   "From a list of properties and a name with path, assign each token of the
    path as value of a different property"
   ([path properties]
    (path-to-properties path properties 0))
-  ([path properties min-props]
+  ([path properties min-properties]
    (let [cpath          (cpn/split-path path)
-         total-props    (max (count cpath) min-props)
+         total-properties    (max (count cpath) min-properties)
          assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
          ;; Add empty strings to the end of cpath to reach the minimum number of properties
-         cpath          (take total-props (concat cpath (repeat "")))
+         cpath          (take total-properties (concat cpath (repeat "")))
          remaining      (drop (count properties) cpath)]
-     (add-new-props assigned remaining))))
+     (add-new-properties assigned remaining))))
 
 (defn properties-map->formula
   "Transforms a map of properties to a formula of properties omitting the empty ones"
@@ -129,21 +135,21 @@
 
 (defn find-properties-to-remove
   "Compares two property maps to find which properties should be removed"
-  [prev-props upd-props]
-  (let [upd-names (set (map :name upd-props))]
-    (filterv #(not (contains? upd-names (:name %))) prev-props)))
+  [prev-properties upd-properties]
+  (let [upd-names (set (map :name upd-properties))]
+    (filterv #(not (contains? upd-names (:name %))) prev-properties)))
 
 (defn find-properties-to-update
   "Compares two property maps to find which properties should be updated"
-  [prev-props upd-props]
+  [prev-properties upd-properties]
   (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
-                                  (not= (:value %) (:value prop)))) prev-props) upd-props))
+                                  (not= (:value %) (:value prop)))) prev-properties) upd-properties))
 
 (defn find-properties-to-add
   "Compares two property maps to find which properties should be added"
-  [prev-props upd-props]
-  (let [prev-names (set (map :name prev-props))]
-    (filterv #(not (contains? prev-names (:name %))) upd-props)))
+  [prev-properties upd-properties]
+  (let [prev-names (set (map :name prev-properties))]
+    (filterv #(not (contains? prev-names (:name %))) upd-properties)))
 
 (defn- split-base-name-and-number
   "Extract the number in parentheses from an item, if present, and return both the base name and the number"
@@ -177,8 +183,8 @@
 
 (defn update-number-in-repeated-prop-names
   "Add, keep or update a number for each prop name depending on the previous ones"
-  [props]
-  (->> props
+  [properties]
+  (->> properties
        (reduce (fn [acc prop]
                  (conj acc {:name (update-number-in-repeated-item (mapv :name acc) (:name prop))
                             :value (:value prop)}))
@@ -186,11 +192,11 @@
 
 (defn find-index-for-property-name
   "Finds the index of a name in a property map"
-  [props name]
+  [properties name]
   (some (fn [[idx prop]]
           (when (= (:name prop) name)
             idx))
-        (map-indexed vector props)))
+        (map-indexed vector properties)))
 
 (defn remove-prefix
   "Removes the given prefix (with or without a trailing ' / ') from the beginning of the name"
@@ -210,22 +216,22 @@
   (map :name))
 
 (defn- matching-indices
-  [props1 props2]
-  (let [names-in-p2 (into #{} xf:map-name props2)
+  [properties1 properties2]
+  (let [names-in-p2 (into #{} xf:map-name properties2)
         xform (comp
                (map-indexed (fn [index {:keys [name]}]
                               (when (contains? names-in-p2 name)
                                 index)))
                (filter some?))]
-    (into #{} xform props1)))
+    (into #{} xform properties1)))
 
 (defn- find-index-by-name
-  "Returns the index of the first item in props with the given name, or nil if not found."
-  [name props]
+  "Returns the index of the first item in properties with the given name, or nil if not found."
+  [name properties]
   (some (fn [[idx item]]
           (when (= (:name item) name)
             idx))
-        (map-indexed vector props)))
+        (map-indexed vector properties)))
 
 (defn- next-valid-position
   "Returns the first non-negative integer not present in the used-pos set."
@@ -236,42 +242,42 @@
       p)))
 
 (defn- find-position
-  "Returns the index of the property with the given name in `props`,
+  "Returns the index of the property with the given name in `properties`,
   or the next available index not in `used-pos` if not found."
-  [name props used-pos]
-  (or (find-index-by-name name props)
+  [name properties used-pos]
+  (or (find-index-by-name name properties)
       (next-valid-position used-pos)))
 
 (defn merge-properties
-  "Merges props2 into props1 with the following rules:
-    - For each property p2 in props2:
+  "Merges properties2 into properties1 with the following rules:
+    - For each property p2 in properties2:
       - Skip it if its value is empty.
-      - If props1 contains a property with the same name, update its value with that of p2.
-      - Otherwise, assign p2's value to the first unused property in props1. A property is considered used if:
-        - Its name exists in both props1 and props2, or
+      - If properties1 contains a property with the same name, update its value with that of p2.
+      - Otherwise, assign p2's value to the first unused property in properties1. A property is considered used if:
+        - Its name exists in both properties1 and properties2, or
         - Its value has already been updated during the merge.
-      - If no unused properties are available in props1, append a new property with a default name and p2's value."
-  [props1 props2]
-  (let [props2 (remove #(str/empty? (:value %)) props2)]
+      - If no unused properties are available in properties1, append a new property with a default name and p2's value."
+  [properties1 properties2]
+  (let [properties2 (remove #(str/empty? (:value %)) properties2)]
     (-> (reduce
-         (fn [{:keys [props used-pos]} prop]
-           (let [pos (find-position (:name prop) props used-pos)
+         (fn [{:keys [properties used-pos]} prop]
+           (let [pos (find-position (:name prop) properties used-pos)
                  used-pos (conj used-pos pos)]
-             (if (< pos (count props))
-               {:props (assoc-in (vec props) [pos :value] (:value prop)) :used-pos used-pos}
-               {:props (add-new-prop props (:value prop)) :used-pos used-pos})))
-         {:props (vec props1) :used-pos (matching-indices props1 props2)}
-         props2)
-        :props)))
+             (if (< pos (count properties))
+               {:properties (assoc-in (vec properties) [pos :value] (:value prop)) :used-pos used-pos}
+               {:properties (add-new-property properties (:value prop)) :used-pos used-pos})))
+         {:properties (vec properties1) :used-pos (matching-indices properties1 properties2)}
+         properties2)
+        :properties)))
 
 (defn compare-properties
   "Compares vectors of properties keeping the value if it is the same for all
    or setting a custom value where their values do not coincide"
-  ([props-list]
-   (compare-properties props-list nil))
+  ([properties-list]
+   (compare-properties properties-list nil))
 
-  ([props-list distinct-mark]
-   (let [grouped (group-by :name (apply concat props-list))
+  ([properties-list distinct-mark]
+   (let [grouped (group-by :name (apply concat properties-list))
          check-values (fn [values]
                         (let [vals (map :value values)]
                           (if (apply = vals)
@@ -291,19 +297,19 @@
      (not-blank? (first variant-ids)))))
 
 (defn distance
-  "Computes a weighted distance between two property lists `props1` and `props2`.
+  "Computes a weighted distance between two property lists `properties1` and `properties2`.
    Latter properties weight less that previous ones"
-  [props1 props2]
-  (let [total-num-props (count props1)
+  [properties1 properties2]
+  (let [total-num-properties (count properties1)
         xform           (map-indexed
                          (fn [idx [p1 p2]]
                            (if (not= p1 p2)
-                             (math/pow 2 (- total-num-props idx))
+                             (math/pow 2 (- total-num-properties idx))
                              0)))]
     (transduce
      xform
      +
-     (map vector props1 props2))))
+     (map vector properties1 properties2))))
 
 (defn variant-name-to-name
   "Transforms a variant-name (its properties values) into a standard name:
