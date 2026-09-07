@@ -236,7 +236,7 @@
                                    (into (mapcat :undo-changes) (reverse undo))
                                    (into remote)
                                    (into (mapcat :redo-changes) redo))}
-        event   (apply-changes-localy commit nil)
+        event   (apply-changes-locally commit nil)
         failed? (volatile! false)]
     (ptk/reify ::rebase-commits
       IDeref
