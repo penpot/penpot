@@ -34,18 +34,19 @@
                 [:send-user-feedback/global]]
    ::doc/added "1.18"
    ::sm/params schema:send-user-feedback}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id] :as params}]
   (when-not (contains? cf/flags :user-feedback)
     (ex/raise :type :restriction
               :code :feedback-disabled
               :hint "feedback not enabled"))
 
-  (let [profile (profile/get-profile pool profile-id)]
-    (send-user-feedback! pool profile params)
+  (let [pool   (::db/pool cfg)
+        profile (profile/get-profile (::db/pool cfg) profile-id)]
+    (send-user-feedback! cfg pool profile params)
     nil))
 
 (defn- send-user-feedback!
-  [pool profile params]
+  [cfg pool profile params]
   (let [destination
         (or (cf/get :user-feedback-destination)
             ;; LEGACY
@@ -55,16 +56,16 @@
         (d/without-nils
          {"error-report.txt" (:error-report params)})]
 
-    (eml/send! {::eml/conn pool
-                ::eml/factory eml/user-feedback
-                :to       destination
-                :reply-to (:email profile)
-                :email    (:email profile)
-                :attachments attachments
+    (eml/send! cfg {::eml/conn pool
+                    ::eml/factory eml/user-feedback
+                    :to       destination
+                    :reply-to (:email profile)
+                    :email    (:email profile)
+                    :attachments attachments
 
-                :feedback-subject (:subject params)
-                :feedback-type (:type params "not-specified")
-                :feedback-content (:content params)
-                :feedback-error-href (:error-href params)
-                :profile profile})
+                    :feedback-subject (:subject params)
+                    :feedback-type (:type params "not-specified")
+                    :feedback-content (:content params)
+                    :feedback-error-href (:error-href params)
+                    :profile profile})
     nil))

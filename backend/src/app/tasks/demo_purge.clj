@@ -13,23 +13,16 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.worker :as wrk]
    [integrant.core :as ig]))
 
 (def schema:demo-purge-params
   [:map
    [:profile-id ::sm/uuid]])
-
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
-
 (declare execute-demo-purge!)
 
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [{:keys [props]}]
-    (execute-demo-purge! cfg props)))
+(defmethod ig/assert-key ::demo-purge-job-def
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
 (defmethod ig/init-key ::demo-purge-job-def
   [_ cfg]
@@ -53,9 +46,8 @@
                               {:deleted-at now}
                               {:id profile-id}
                               {::db/return-keys false})
-                  (wrk/submit!
-                   (-> cfg
-                       (assoc ::wrk/task :delete-object)
-                       (assoc ::wrk/params {:object :profile
-                                            :deleted-at now
-                                            :id profile-id})))))))
+                  (jobs/submit! (assoc cfg ::db/conn conn)
+                                {::jobs/name :delete-object
+                                 ::jobs/params {:object :profile
+                                                :deleted-at now
+                                                :id profile-id}})))))

@@ -303,16 +303,11 @@
 
 (declare execute-telemetry!)
 
-(defmethod ig/assert-key ::handler
+(defmethod ig/assert-key ::telemetry-job-def
   [_ params]
   (assert (http/client? (::http/client params)) "expected a valid http client")
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (some? (::setup/props params)) "expected setup props to be available"))
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [task]
-    (execute-telemetry! cfg (:props task))))
 
 (def schema:telemetry-params
   [:map

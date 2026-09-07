@@ -50,23 +50,3 @@
                         (l/debug :hint "task finished" :total result)
                         result))))))
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
-
-(defmethod ig/expand-key ::handler
-  [k v]
-  {k (assoc v ::min-age (cf/get-deletion-delay))})
-
-(defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props] :as task}]
-    (let [min-age (or (:min-age props) min-age)]
-      (-> cfg
-          (assoc ::db/rollback (:rollback? props))
-          (db/tx-run! (fn [{:keys [::db/conn]}]
-                        (let [interval (db/interval min-age)
-                              result   (db/exec-one! conn [sql:delete-completed-tasks interval])
-                              result   (db/get-update-count result)]
-                          (l/debug :hint "task finished" :total result)
-                          result)))))))

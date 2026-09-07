@@ -52,14 +52,14 @@
 
 (defn- send-organization-setup-sso-email!
   "Send the organization SSO setup email to a single recipient, when allowed."
-  [conn organization-name {:keys [email profile]}]
+  [cfg conn organization-name {:keys [email profile]}]
   (when (or (nil? profile)
             (eml/allow-send-emails? conn profile))
-    (eml/send! {::eml/conn conn
-                ::eml/factory eml/organization-setup-sso
-                :public-uri (cf/get :public-uri)
-                :to email
-                :organization-name organization-name})))
+    (eml/send! cfg {::eml/conn conn
+                    ::eml/factory eml/organization-setup-sso
+                    :public-uri (cf/get :public-uri)
+                    :to email
+                    :organization-name organization-name})))
 
 (defn- get-organization-sso-notify-recipients
   "Unique organization members and pending organization/team invitees for SSO activation emails."
@@ -91,7 +91,7 @@
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn]}]
                   (doseq [recipient (get-organization-sso-notify-recipients conn cfg organization-id organization-summary)]
-                    (send-organization-setup-sso-email! conn (:name organization-summary) recipient))))))
+                    (send-organization-setup-sso-email! cfg conn (:name organization-summary) recipient))))))
 
 (defn send-organization-setup-sso-emails-for-team!
   "Notify team members who are not in `organization-member-ids-before` and pending team invitees."
@@ -101,4 +101,4 @@
       (db/tx-run! cfg
                   (fn [{:keys [::db/conn]}]
                     (doseq [recipient (get-team-sso-notify-recipients conn team-id organization-member-ids-before)]
-                      (send-organization-setup-sso-email! conn (:name organization-summary) recipient)))))))
+                      (send-organization-setup-sso-email! cfg conn (:name organization-summary) recipient)))))))

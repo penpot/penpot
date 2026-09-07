@@ -19,7 +19,6 @@
    [app.http.client :as http]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
-   [app.worker :as wrk]
    [clojure.data.json :as json]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
@@ -62,7 +61,7 @@
       (some->> (:project-id props) (lookup-webhooks-by-project pool))
       (some->> (:file-id props) (lookup-webhooks-by-file pool))))
 
-(defmethod ig/assert-key ::process-event-handler
+(defmethod ig/assert-key ::process-webhook-event-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (http/client? (::http/client params)) "expect valid http client"))
@@ -84,17 +83,13 @@
       (l/trc :hint "webhooks found for event" :total (count items))
       (db/tx-run! cfg (fn [cfg]
                         (doseq [item items]
-                          (wrk/submit! (-> cfg
-                                           (assoc ::wrk/task :run-webhook)
-                                           (assoc ::wrk/queue :webhooks)
-                                           (assoc ::wrk/max-retries 3)
-                                           (assoc ::wrk/params {:event props
-                                                                :config item})))))))))
+                          (jobs/submit! cfg
+                                        {::jobs/name :run-webhook
+                                         ::jobs/queue :webhooks
+                                         ::jobs/max-retries 3
+                                         ::jobs/params {:event props
+                                                        :config item}})))))))
 
-(defmethod ig/init-key ::process-event-handler
-  [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (process-event-impl! cfg props)))
 
 (def schema:process-webhook-event-params
   "Lax schema: the event map is the audit event payload (dynamic shape,
@@ -117,12 +112,12 @@
   {:key-fn str/camel
    :indent true})
 
-(defmethod ig/assert-key ::run-webhook-handler
+(defmethod ig/assert-key ::run-webhook-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (http/client? (::http/client params)) "expect valid http client"))
 
-(defmethod ig/expand-key ::run-webhook-handler
+(defmethod ig/expand-key ::run-webhook-job-def
   [k v]
   {k (merge {::max-errors 3} (d/without-nils v))})
 
@@ -189,10 +184,6 @@
                 (l/err :hint "unknown error on webhook request"
                        :cause cause)))))))))
 
-(defmethod ig/init-key ::run-webhook-handler
-  [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (run-webhook-impl! cfg props)))
 
 (def schema:run-webhook-params
   "Lax schema: :event is the audit event payload (dynamic shape) and

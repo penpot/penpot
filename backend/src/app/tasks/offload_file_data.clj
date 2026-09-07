@@ -45,19 +45,14 @@
                       (run! (partial offload-file-data cfg)
                             (db/plan conn [sql:get-file-data file-id])))))))
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
-  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (execute-offload-file-data! cfg props)))
-
 (def schema:offload-file-data-params
   [:map
    [:file-id ::sm/uuid]])
+
+(defmethod ig/assert-key ::offload-file-data-job-def
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
 (defmethod ig/init-key ::offload-file-data-job-def
   [_ cfg]

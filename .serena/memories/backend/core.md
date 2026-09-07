@@ -56,11 +56,13 @@ the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
 
 For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/rpc-db-worker-subtleties`.
 
-## Background tasks
+## Background tasks (unified jobs)
 
-A task handler is an Integrant component with `ig/assert-key`, `ig/expand-key`, and `ig/init-key`, returning the function run by the worker. New tasks also need wiring in `app.main`: handler config, worker registry entry, and cron entry if scheduled.
+Every background job is a job-def: a plain `(defn execute-X! [cfg params] ...)` in its namespace + a malli params schema + an `ig/init-key` that returns the job-def map `{::jobs/name, ::jobs/schema, ::jobs/handler, ::jobs/decoder, ::jobs/validator}` (decoder/validator precompiled at init). The registry is the `::jobs/defs` wiring in `app.main`, which also populates a module-level registry used by `jobs/submit!` as fallback — job-def components cannot ig/ref `::jobs/defs` (wiring cycle). Submit from RPC code passes its RPC cfg (it carries `::jobs/defs` via ig/ref).
 
-For worker dispatch, cron, retry semantics, deduplication, and queue internals: `mem:backend/rpc-db-worker-subtleties`.
+Dispatch: `::wrk/dispatcher` (claim + Redis RPUSH of JSON payloads), `::wrk/runner` per queue (`:default`, `:webhooks`, `:binfile` scaffold, dedicated `:cron`), lease-based orphans in the dispatcher batch. Cron (`::wrk/cron`) is a pure scheduler: it claims `scheduled_task` (SKIP LOCKED), prechecks an active instance of the same name+label, and submits the system job to the `:cron` queue; it never runs handlers in-process. The old `task` table is dormant (nothing writes it; `tasks-gc` keeps cleaning it).
+
+For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, and queue internals: `mem:backend/rpc-db-worker-subtleties`.
 
 ## REPL
 

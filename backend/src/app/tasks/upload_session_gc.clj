@@ -27,20 +27,15 @@
   "Params map (no params needed; config-derived only)."
   [:map {:closed true}])
 
-(defmethod ig/assert-key ::handler
+(defmethod ig/assert-key ::upload-session-gc-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::upload-session-gc-job-def
   [k v]
   {k (merge {::max-age (ct/duration {:hours 1})} v)})
 
 (declare execute-upload-session-gc!)
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [_]
-    (execute-upload-session-gc! cfg)))
 
 (defmethod ig/init-key ::upload-session-gc-job-def
   [_ cfg]

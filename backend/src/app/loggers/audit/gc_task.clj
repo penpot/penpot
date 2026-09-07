@@ -23,16 +23,7 @@
     (l/debug :hint "delete archived audit log entries" :deleted result)
     result))
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "valid database pool expected"))
-
 (declare execute-audit-log-gc!)
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [_]
-    (execute-audit-log-gc! cfg)))
 
 (def schema:audit-log-gc-params
   "Params map (no params needed; config-derived only)."

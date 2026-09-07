@@ -57,9 +57,25 @@
 (def ^:private schema:job-defs
   [:map-of :keyword schema:job-def])
 
+;; Module-level registry of the job-defs, populated by the ::jobs/defs
+;; ig component on init. It exists for the submit call-sites that run
+;; inside components that cannot reference `::jobs/defs` by ig/ref
+;; (the job-def components themselves are part of the registry; an ig
+;; ref would create a wiring cycle). Call-sites that can provide the
+;; registry via cfg take precedence over this global one.
+(def ^:private defs-registry (atom {}))
+
+(defn get-defs
+  "The registry for submit/lookup: the one provided on the cfg has
+  precedence over the module-level one (used by tests)."
+  [cfg defs]
+  (or defs (get cfg ::defs) @defs-registry))
+
+(def ^:private definitions-validator (sm/validator schema:job-defs))
+
 (defmethod ig/assert-key ::defs
   [_ defs]
-  (sm/check schema:job-defs defs)
+  (assert (definitions-validator defs) "expected valid job-defs map")
   (doseq [[name job-def] defs]
     (when-not (= (d/name name) (d/name (::name job-def)))
       (ex/raise :type :assertion
@@ -70,6 +86,7 @@
 
 (defmethod ig/init-key ::defs
   [_ defs]
+  (reset! defs-registry defs)
   (l/inf :hint "job definitions initialized" :jobs (count defs))
   defs)
 
@@ -148,7 +165,7 @@
 
   (check-options! options)
 
-  (let [job-def      (get-job-def (get cfg ::defs) name)
+  (let [job-def      (get-job-def (get-defs cfg nil) name)
         params       (validate-params! job-def params)
         delay        (ct/duration delay)
         now          (ct/now)

@@ -14,7 +14,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.worker :as wrk]
    [integrant.core :as ig]))
 
 (def ^:private
@@ -38,27 +37,26 @@
                                  :file-id (str id)
                                  :revn revn
                                  :modified-at (ct/format-inst modified-at))
-                          (wrk/submit! (assoc cfg ::wrk/params params))
+                          (jobs/submit! cfg
+                                        {::jobs/name :file-gc
+                                         ::jobs/params params
+                                         ::jobs/priority 10
+                                         ::jobs/delay 10000})
                           (jobs/heartbeat! cfg)
                           (inc total)))
                       0
                       (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
     {:processed total}))
 
-(defmethod ig/assert-key ::handler
+(declare execute-file-gc-scheduler!)
+
+(defmethod ig/assert-key ::file-gc-scheduler-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::file-gc-scheduler-job-def
   [k v]
   {k (assoc v ::min-age (cf/get-file-clean-delay))})
-
-(declare execute-file-gc-scheduler!)
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (execute-file-gc-scheduler! cfg props)))
 
 (def schema:file-gc-scheduler-params
   "min-age: duration object in-process; text over the job pipeline."
@@ -82,8 +80,4 @@
                       (ct/in-past))]
     (-> cfg
         (assoc ::db/rollback (:rollback? params))
-        (assoc ::wrk/task :file-gc)
-        (assoc ::wrk/priority 10)
-        (assoc ::wrk/mark-retries 0)
-        (assoc ::wrk/delay 10000)
         (db/tx-run! schedule! threshold))))

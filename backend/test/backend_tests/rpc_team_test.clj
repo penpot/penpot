@@ -861,7 +861,7 @@
         (t/is (= 1 (count result)))
         (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs!)
 
     ;; run permanent deletion (should be noop)
     (let [result (th/run-task! :objects-gc {})]
@@ -929,7 +929,7 @@
       #_(th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs!)
 
     (let [rows (th/db-exec! ["select * from team where id = ?" (:id team)])]
       (t/is (= 1 (count rows)))

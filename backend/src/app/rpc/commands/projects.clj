@@ -15,6 +15,7 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.logical-deletion :as ldel]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
@@ -23,8 +24,7 @@
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
-   [app.util.services :as sv]
-   [app.worker :as wrk]))
+   [app.util.services :as sv]))
 
 ;; --- Check Project Permissions
 
@@ -272,7 +272,7 @@
 ;; --- MUTATION: Delete Project
 
 (defn- delete-project
-  [conn team project-id]
+  [cfg conn team project-id]
   (let [delay   (ldel/get-deletion-delay team)
         project (db/update! conn :project
                             {:deleted-at (ct/in-future delay)}
@@ -284,11 +284,11 @@
                 :code :non-deletable-project
                 :hint "impossible to delete default project"))
 
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :project
-                                :deleted-at (:deleted-at project)
-                                :id project-id}})
+    (jobs/submit! (assoc cfg ::db/conn conn)
+                  {::jobs/name :delete-object
+                   ::jobs/params {:object :project
+                                  :deleted-at (:deleted-at project)
+                                  :id project-id}})
 
     project))
 
@@ -302,12 +302,12 @@
    ::sm/params schema:delete-project
    ::webhooks/event? true
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [team    (teams/get-team conn
                                 :profile-id profile-id
                                 :project-id id)
-        project (delete-project conn team id)]
+        project (delete-project cfg conn team id)]
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:team-id project)
                       :name (:name project)

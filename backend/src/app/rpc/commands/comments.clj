@@ -83,7 +83,7 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [conn profile comment thread file]
+  [cfg conn profile comment thread file]
   (let [team-users        (get-team-users conn (:team-id file))
         comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
@@ -114,6 +114,7 @@
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
           (eml/send!
+           cfg
            {::eml/conn conn
             ::eml/factory eml/comment-mention
             :public-uri (cf/get :public-uri)
@@ -129,6 +130,7 @@
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
           (eml/send!
+           cfg
            {::eml/conn conn
             ::eml/factory eml/comment-thread
             :public-uri (cf/get :public-uri)
@@ -144,6 +146,7 @@
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
           (eml/send!
+           cfg
            {::eml/conn conn
             ::eml/factory eml/comment-notification
             :public-uri (cf/get :public-uri)
@@ -530,7 +533,7 @@
     (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! conn profile comment thread file)
+    (send-comment-emails! cfg conn profile comment thread file)
 
     (-> thread
         (add-owner profile)
@@ -640,7 +643,7 @@
       ;; Update the current profile status in relation to the current thread
       (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (send-comment-emails! conn profile comment thread file)
+      (send-comment-emails! cfg conn profile comment thread file)
 
       (vary-meta comment assoc ::audit/props comment))))
 

@@ -37,7 +37,6 @@
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def schema:password
@@ -437,16 +436,16 @@
                                   {:iss :profile-identity
                                    :profile-id (:id profile)
                                    :exp (ct/in-future {:days 30})})]
-     (eml/send! {::eml/conn conn
-                 ::eml/factory eml/register
-                 :public-uri (cf/get :public-uri)
-                 :to (:email profile)
-                 :name (:fullname profile)
-                 :token vtoken
-                 :extra-data ptoken}))))
+     (eml/send! cfg {::eml/conn conn
+                     ::eml/factory eml/register
+                     :public-uri (cf/get :public-uri)
+                     :to (:email profile)
+                     :name (:fullname profile)
+                     :token vtoken
+                     :extra-data ptoken}))))
 
 (defn register-profile
-  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify cfg {:token token :iss :prepared-register})
         params     (cond-> claims
                      (:accept-newsletter-updates params)
@@ -475,8 +474,7 @@
         create-welcome-file-when-needed
         (fn []
           (when (:create-welcome-file params)
-            (let [cfg (dissoc cfg ::db/conn)]
-              (wrk/submit! executor (create-welcome-file cfg profile)))))]
+            (create-welcome-file cfg profile)))]
 
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
@@ -616,13 +614,13 @@
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (ct/in-future {:days 30})})]
-              (eml/send! {::eml/conn conn
-                          ::eml/factory eml/password-recovery
-                          :public-uri (cf/get :public-uri)
-                          :to (:email profile)
-                          :token (:token profile)
-                          :name (:fullname profile)
-                          :extra-data ptoken})
+              (eml/send! cfg {::eml/conn conn
+                              ::eml/factory eml/password-recovery
+                              :public-uri (cf/get :public-uri)
+                              :to (:email profile)
+                              :token (:token profile)
+                              :name (:fullname profile)
+                              :extra-data ptoken})
               nil))]
 
     (let [profile (->> (profile/clean-email email)

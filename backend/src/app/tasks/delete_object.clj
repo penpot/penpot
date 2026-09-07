@@ -172,20 +172,15 @@
    [:id ::sm/uuid]
    [:file-id {:optional true} ::sm/uuid]])
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
-
 (defn execute-delete-object!
   "Plain job handler: run the delete-object multimethod on the provided
   params inside a single transaction."
   [cfg params]
   (db/tx-run! cfg delete-object params))
 
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (execute-delete-object! cfg props)))
+(defmethod ig/assert-key ::job-def
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
 (defmethod ig/init-key ::job-def
   [_ cfg]

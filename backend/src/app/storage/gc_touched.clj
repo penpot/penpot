@@ -227,18 +227,13 @@
 
 (declare execute-storage-gc-touched!)
 
-(defmethod ig/assert-key ::handler
+(defmethod ig/assert-key ::storage-gc-touched-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::storage-gc-touched-job-def
   [k v]
   {k (merge {::min-age (ct/duration {:hours 2})} v)})
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [_]
-    (execute-storage-gc-touched! cfg)))
 
 (def schema:storage-gc-touched-params
   "Params map (no params needed; cfg-provided config only)."

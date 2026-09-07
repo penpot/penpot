@@ -25,6 +25,7 @@
    [app.email :as eml]
    [app.http :as-alias http]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
@@ -41,7 +42,6 @@
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 
@@ -309,11 +309,11 @@ RETURNING id, deleted_at;")
                                      deleted-at
                                      (db/create-array conn "uuid" team-ids)])]
       (doseq [{:keys [id deleted-at]} updated]
-        (wrk/submit! {::db/conn conn
-                      ::wrk/task :delete-object
-                      ::wrk/params {:object :team
-                                    :deleted-at deleted-at
-                                    :id id}}))))
+        (jobs/submit! (assoc cfg ::db/conn conn)
+                      {::jobs/name :delete-object
+                       ::jobs/params {:object :team
+                                      :deleted-at deleted-at
+                                      :id id}}))))
   nil)
 
 (defn manage-deleted-organization-teams
@@ -722,14 +722,14 @@ RETURNING id, deleted_at;")
                      (:fullname (profile/get-profile cfg profile-id))
                      user-name)]
     (db/tx-run! cfg (fn [{:keys [::db/conn]}]
-                      (eml/send! {::eml/conn    conn
-                                  ::eml/factory eml/renewal-notice
-                                  :public-uri   (cf/get :public-uri)
-                                  :to           user-email
-                                  :user-name    user-name
-                                  :renewal-date renewal-date
-                                  :estimated-amount amount-str
-                                  :organizations organizations}))))
+                      (eml/send! cfg {::eml/conn    conn
+                                      ::eml/factory eml/renewal-notice
+                                      :public-uri   (cf/get :public-uri)
+                                      :to           user-email
+                                      :user-name    user-name
+                                      :renewal-date renewal-date
+                                      :estimated-amount amount-str
+                                      :organizations organizations}))))
   nil)
 
 ;; API: exists-organization-team-invitations-for-non-members /

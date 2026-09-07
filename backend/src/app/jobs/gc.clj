@@ -69,37 +69,6 @@
                            rows)]
     [(count rows) (touch-resources! conn resource-ids)]))
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
-
-(defmethod ig/expand-key ::handler
-  [k v]
-  {k (assoc v ::min-age (cf/get-jobs-retention))})
-
-(defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props] :as _task}]
-    (let [min-age (or (:min-age props) min-age)
-          cfg     (assoc cfg ::db/rollback (:rollback? props))]
-      (db/tx-run! cfg
-                  (fn [{:keys [::db/conn]}]
-                    (let [[deleted-expired touched-expired]
-                          (delete-jobs! conn sql:delete-expired-jobs)
-
-                          [deleted-retained touched-retained]
-                          (delete-jobs! conn sql:delete-retained-jobs
-                                        (db/interval min-age))]
-                      (l/dbg :hint "jobs gc finished"
-                             :deleted-expired deleted-expired
-                             :touched-expired touched-expired
-                             :deleted-retained deleted-retained
-                             :touched-retained touched-retained)
-                      {:deleted-expired    deleted-expired
-                       :touched-expired    touched-expired
-                       :deleted-retained   deleted-retained
-                       :touched-retained   touched-retained}))))))
-
 (declare execute-jobs-gc!)
 
 (def schema:jobs-gc-params

@@ -28,6 +28,7 @@
    [app.features.fdata :as feat.fdata]
    [app.features.logical-deletion :as ldel]
    [app.http.sse :as sse]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
@@ -43,7 +44,6 @@
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
@@ -1045,7 +1045,7 @@
 ;; --- MUTATION COMMAND: delete-file
 
 (defn- mark-file-deleted
-  [conn team file-id]
+  [cfg conn team file-id]
   (let [delay (ldel/get-deletion-delay team)
         file  (db/update! conn :file
                           {:deleted-at (ct/in-future delay)}
@@ -1057,11 +1057,11 @@
     (db/delete! conn :file-library-rel
                 {:library-file-id file-id})
 
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :file
-                                :deleted-at (:deleted-at file)
-                                :id file-id}})
+    (jobs/submit! (assoc cfg ::db/conn conn)
+                  {::jobs/name :delete-object
+                   ::jobs/params {:object :file
+                                  :deleted-at (:deleted-at file)
+                                  :id file-id}})
     file))
 
 (def ^:private
@@ -1075,7 +1075,7 @@
   (let [team (teams/get-team conn
                              :profile-id profile-id
                              :file-id id)
-        file (mark-file-deleted conn team id)
+        file (mark-file-deleted cfg conn team id)
         msgbus (::mbus/msgbus cfg)]
 
     (mbus/pub! msgbus
@@ -1255,7 +1255,7 @@
    [:ids [::sm/set ::sm/uuid]]])
 
 (defn- permanently-delete-team-files
-  [{:keys [::db/conn]} {:keys [::rpc/request-at team-id ids]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at team-id ids]}]
   (let [ids (into #{}
                   d/xf:map-id
                   (db/exec! conn [sql:get-delete-team-files-candidates team-id
@@ -1267,11 +1267,11 @@
                           {:deleted-at request-at}
                           {:id id}
                           {::db/return-keys false})
-              (wrk/submit! {::db/conn conn
-                            ::wrk/task :delete-object
-                            ::wrk/params {:object :file
-                                          :deleted-at request-at
-                                          :id id}})
+              (jobs/submit! (assoc cfg ::db/conn conn)
+                            {::jobs/name :delete-object
+                             ::jobs/params {:object :file
+                                            :deleted-at request-at
+                                            :id id}})
               (conj acc id))
             #{}
             ids)))

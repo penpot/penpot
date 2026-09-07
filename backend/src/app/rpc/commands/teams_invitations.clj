@@ -267,24 +267,24 @@
                      (not recent?))
             (if organization
               (when (contains? cf/flags :admin-console)
-                (eml/send! {::eml/conn conn
-                            ::eml/factory eml/invite-to-organization
-                            :public-uri (cf/get :public-uri)
-                            :to email
-                            :invited-by (:fullname profile)
-                            :user-name (:fullname member)
-                            :organization organization
-                            :token itoken
-                            :extra-data ptoken}))
-              (eml/send! {::eml/conn conn
-                          ::eml/factory eml/invite-to-team
-                          :public-uri (cf/get :public-uri)
-                          :to email
-                          :invited-by (:fullname profile)
-                          :team (:name team)
-                          :organization (:organization team)
-                          :token itoken
-                          :extra-data ptoken})))
+                (eml/send! cfg {::eml/conn conn
+                                ::eml/factory eml/invite-to-organization
+                                :public-uri (cf/get :public-uri)
+                                :to email
+                                :invited-by (:fullname profile)
+                                :user-name (:fullname member)
+                                :organization organization
+                                :token itoken
+                                :extra-data ptoken}))
+              (eml/send! cfg {::eml/conn conn
+                              ::eml/factory eml/invite-to-team
+                              :public-uri (cf/get :public-uri)
+                              :to email
+                              :invited-by (:fullname profile)
+                              :team (:name team)
+                              :organization (:organization team)
+                              :token itoken
+                              :extra-data ptoken})))
 
           itoken)))))
 
@@ -329,13 +329,13 @@
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to (:email member)})
 
-    (eml/send! {::eml/conn conn
-                ::eml/factory eml/join-team
-                :public-uri (cf/get :public-uri)
-                :to (:email member)
-                :invited-by (:fullname profile)
-                :team (:name team)
-                :team-id (:id team)})))
+    (eml/send! cfg {::eml/conn conn
+                    ::eml/factory eml/join-team
+                    :public-uri (cf/get :public-uri)
+                    :to (:email member)
+                    :invited-by (:fullname profile)
+                    :team (:name team)
+                    :team-id (:id team)})))
 
 (def ^:private sql:valid-access-request-profiles
   "SELECT p.id, p.email, p.is_blocked
@@ -789,17 +789,17 @@
                     :else
                     eml/request-team-access)]
 
-      (eml/send! {::eml/conn conn
-                  ::eml/factory factory
-                  :public-uri (cf/get :public-uri)
-                  :to (:email team-owner)
-                  :requested-by (:fullname requester)
-                  :requested-by-email (:email requester)
-                  :team-name (:name team)
-                  :team-id team-id
-                  :file-name (:name file)
-                  :file-id file-id
-                  :page-id (:page-id file)})
+      (eml/send! cfg {::eml/conn conn
+                      ::eml/factory factory
+                      :public-uri (cf/get :public-uri)
+                      :to (:email team-owner)
+                      :requested-by (:fullname requester)
+                      :requested-by-email (:email requester)
+                      :team-name (:name team)
+                      :team-id team-id
+                      :file-name (:name file)
+                      :file-id file-id
+                      :page-id (:page-id file)})
 
       (with-meta {:request request}
         {::audit/props {:request 1}}))))

@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
@@ -55,22 +56,17 @@
                   :fullname fullname
                   :is-active true
                   :is-demo true
-                  :password (derive-password-weak password)
-                  :props (cond-> {}
-                           skip-onboarding (assoc :onboarding-viewed true
-                                                  ;; Redundant today: auth/create-profile
-                                                  ;; overwrites this with the current
-                                                  ;; version, kept so the skip does not
-                                                  ;; depend on that default.
-                                                  :release-notes-viewed (:main cf/version)))}
-        profile  (db/tx-run! cfg (fn [cfg]
+                  :deleted-at (ct/in-future (cf/get-deletion-delay))
+                  :password (derive-password password)
+                  :props {}}
+         profile  (db/tx-run! cfg (fn [cfg]
                                    (->> (auth/create-profile cfg params)
                                         (auth/create-profile-rels cfg))))]
 
-    (wrk/submit! (-> cfg
-                     (assoc ::wrk/task :demo-purge)
-                     (assoc ::wrk/delay (cf/get-deletion-delay))
-                     (assoc ::wrk/params {:profile-id (:id profile)})))
+    (jobs/submit! cfg
+                  {::jobs/name :demo-purge
+                   ::jobs/delay (cf/get-deletion-delay)
+                   ::jobs/params {:profile-id (:id profile)}})
 
     (with-meta {:email email
                 :password password}

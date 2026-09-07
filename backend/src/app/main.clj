@@ -195,24 +195,10 @@
    :app.storage.tmp/cleaner
    {::wrk/executor (ig/ref ::wrk/executor)}
 
-   ::sto.gc-deleted/handler
-   {::db/pool      (ig/ref ::db/pool)
-    ::sto/storage  (ig/ref ::sto/storage)}
-
-   ::sto.gc-touched/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   ::sto.pending-gc/handler
-   {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
-
    ::http.client/client
    {}
 
    ::session/manager
-   {::db/pool (ig/ref ::db/pool)}
-
-   ::session.tasks/gc
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.awsns/routes
@@ -263,6 +249,7 @@
 
    ::oidc/routes
    {::http.client/client (ig/ref ::http.client/client)
+    ::jobs/defs          (ig/ref ::jobs/defs)
     ::db/pool            (ig/ref ::db/pool)
     ::setup/props        (ig/ref ::setup/props)
     ::oidc/providers     (ig/ref ::oidc/providers)
@@ -329,6 +316,7 @@
 
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
+    ::jobs/defs           (ig/ref ::jobs/defs)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
@@ -357,10 +345,12 @@
 
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)
+    ::jobs/defs          (ig/ref ::jobs/defs)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
    :app.rpc/management-methods
    {::http.client/client (ig/ref ::http.client/client)
+    ::jobs/defs          (ig/ref ::jobs/defs)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
     ::wrk/executor       (ig/ref ::wrk/executor)
@@ -382,38 +372,10 @@
     ::setup/props            (ig/ref ::setup/props)
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
-   ::wrk/registry
-   {::mtx/metrics (ig/ref ::mtx/metrics)
-    ::wrk/tasks
-    {:sendmail           (ig/ref ::email/handler)
-     :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
-     :file-gc            (ig/ref :app.tasks.file-gc/handler)
-     :file-gc-scheduler  (ig/ref :app.tasks.file-gc-scheduler/handler)
-     :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
-     :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
-     :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :upload-session-gc  (ig/ref :app.tasks.upload-session-gc/handler)
-     :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
-     :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
-     :storage-pending-gc (ig/ref ::sto.pending-gc/handler)
-     :jobs-gc            (ig/ref :app.jobs.gc/handler)
-     :session-gc         (ig/ref ::session.tasks/gc)
-     :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
-     :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
-
-     :delete-object
-     (ig/ref :app.tasks.delete-object/handler)
-     :demo-purge
-     (ig/ref :app.tasks.demo-purge/handler)
-     :process-webhook-event
-     (ig/ref ::webhooks/process-event-handler)
-     :run-webhook
-     (ig/ref ::webhooks/run-webhook-handler)}}
-
    ::jobs/defs
    {:sendmail              (ig/ref ::email/job-def)
     :delete-object         (ig/ref :app.tasks.delete-object/job-def)
-    :demo-purge            (ig/ref :app.tasks.demo-purge/job-def)
+    :demo-purge            (ig/ref :app.tasks.demo-purge/demo-purge-job-def)
     :run-webhook           (ig/ref ::webhooks/run-webhook-job-def)
     :process-webhook-event (ig/ref ::webhooks/process-webhook-event-job-def)
     :file-gc               (ig/ref :app.tasks.file-gc/file-gc-job-def)
@@ -436,7 +398,7 @@
    :app.tasks.delete-object/job-def
    {::db/pool (ig/ref ::db/pool)}
 
-   :app.tasks.demo-purge/job-def
+   :app.tasks.demo-purge/demo-purge-job-def
    {::db/pool (ig/ref ::db/pool)}
 
    :app.loggers.webhooks/run-webhook-job-def
@@ -481,7 +443,7 @@
    {::db/pool (ig/ref ::db/pool)}
 
    ::session/session-gc-job-def
-   {::session.tasks/gc (ig/ref ::session.tasks/gc)}
+   {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc-scheduler/file-gc-scheduler-job-def
    {::db/pool (ig/ref ::db/pool)}
@@ -509,44 +471,6 @@
     ::email/password         (cf/get :smtp-password)
     ::email/default-reply-to (cf/get :smtp-default-reply-to)
     ::email/default-from     (cf/get :smtp-default-from)}
-
-   ::email/handler
-   {::email/sendmail (ig/ref ::email/sendmail)}
-
-   :app.tasks.tasks-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.jobs.gc/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.upload-session-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.objects-gc/handler
-   {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
-
-   :app.tasks.delete-object/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.demo-purge/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.file-gc/handler
-   {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
-
-   :app.tasks.file-gc-scheduler/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.offload-file-data/handler
-   {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
-
-   :app.tasks.telemetry/handler
-   {::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)
-    ::setup/props        (ig/ref ::setup/props)}
 
    ::srepl/urepl
    {:port (cf/get :urepl-port 6062)
@@ -579,22 +503,6 @@
 
    ::setup/clock
    {}
-
-   :app.loggers.audit.archive-task/handler
-   {::setup/shared-keys  (ig/ref ::setup/shared-keys)
-    ::http.client/client (ig/ref ::http.client/client)
-    ::db/pool            (ig/ref ::db/pool)}
-
-   :app.loggers.audit.gc-task/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   ::webhooks/process-event-handler
-   {::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)}
-
-   ::webhooks/run-webhook-handler
-   {::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)}
 
    :app.loggers.mattermost/reporter
    {::http.client/client (ig/ref ::http.client/client)}
@@ -633,7 +541,7 @@
 
 (def worker-config
   {::wrk/cron
-   {::wrk/registry            (ig/ref ::wrk/registry)
+   {::jobs/defs               (ig/ref ::jobs/defs)
     ::db/pool                 (ig/ref ::db/pool)
     ::wrk/entries
     [{:cron #penpot/cron "0 0 0 * * ?" ;; daily
@@ -685,7 +593,7 @@
     ::wrk/queue       :default
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
-    ::wrk/registry    (ig/ref ::wrk/registry)
+    ::jobs/defs       (ig/ref ::jobs/defs)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}
 
@@ -694,7 +602,25 @@
     ::wrk/queue       :webhooks
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
-    ::wrk/registry    (ig/ref ::wrk/registry)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)}
+
+   [::binfile ::wrk/runner]
+   {::wrk/parallelism (cf/get ::worker-binfile-parallelism 1)
+    ::wrk/queue       :binfile
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)}
+
+   [::cron ::wrk/runner]
+   {::wrk/parallelism (cf/get ::worker-cron-parallelism 2)
+    ::wrk/queue       :cron
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}})
 

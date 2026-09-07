@@ -103,44 +103,7 @@
                           (mark-archived! cfg rows)
                           (count events)))))))
 
-(def ^:private schema:handler-params
-  [:map
-   ::db/pool
-   ::setup/shared-keys
-   ::http/client])
-
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (sm/valid? schema:handler-params params) "valid params expected for handler"))
-
 (declare execute-audit-log-archive!)
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [params]
-    ;; NOTE: this let allows overwrite default configured values from
-    ;; the repl, when manually invoking the task.
-    (let [enabled (or (contains? cf/flags :audit-log-archive)
-                      (:enabled params false))
-
-          uri     (cf/get :audit-log-archive-uri)
-          uri     (or uri (:uri params))
-          cfg     (assoc cfg ::uri uri)]
-
-      (when (and enabled (not uri))
-        (ex/raise :type :internal
-                  :code :task-not-configured
-                  :hint "archive task not configured, missing uri"))
-
-      (when enabled
-        (loop [total 0]
-          (if-let [n (archive-events! cfg)]
-            (do
-              (px/sleep 100)
-              (recur (+ total ^long n)))
-
-            (when (pos? total)
-              (l/dbg :hint "events archived" :total total))))))))
 
 (def schema:audit-log-archive-params
   "Optional overrides for the repl invocation defaults."

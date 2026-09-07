@@ -18,7 +18,6 @@
    [app.db.sql :as sql]
    [app.jobs :as jobs]
    [app.util.template :as tmpl]
-   [app.worker :as wrk]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
    [integrant.core :as ig])
@@ -299,21 +298,28 @@
 
 (defn send!
   "Schedule an already defined email to be sent using asynchronously
-  using worker task."
-  [{:keys [::conn ::factory] :as params}]
-  (assert (db/connectable? conn) "expected a valid database connection or pool")
+  using the unified jobs machinery. The first `cfg` parameter is the
+  connectable context that provides the `::jobs/defs` registry (an RPC
+  method cfg or the system) and can provide a default connection; the
+  second `params` provides the email data and optionally the dedicated
+  `::conn` and `::factory` overrides."
+  [cfg {:keys [::conn ::factory] :as params}]
+  (assert (or (nil? conn) (db/connectable? conn))
+          "expected a valid database connection or pool")
 
   (let [email (if factory
                 (factory params)
                 (-> params
-                    (dissoc params)
+                    (dissoc ::conn ::factory)
                     (check-params)))]
-    (wrk/submit! {::wrk/task :sendmail
-                  ::wrk/delay 0
-                  ::wrk/max-retries 4
-                  ::wrk/priority 200
-                  ::db/conn conn
-                  ::wrk/params email})))
+    (jobs/submit! (-> cfg
+                      (dissoc ::db/conn)
+                      (cond-> conn (assoc ::db/conn conn)))
+                  {::jobs/name :sendmail
+                   ::jobs/delay 0
+                   ::jobs/max-retries 4
+                   ::jobs/priority 200
+                   ::jobs/params email})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SENDMAIL FN / TASK HANDLER
@@ -346,8 +352,9 @@
     (send-to-logger! cfg params)))
 
 (defmethod ig/init-key ::sendmail
-  [_ _cfg]
-  sendmail-impl!)
+  [_ cfg]
+  (fn [params]
+    (sendmail-impl! cfg params)))
 
 (defmethod ig/init-key ::job-def
   [_ {sendmail ::sendmail}]
@@ -356,15 +363,6 @@
    ::jobs/handler   sendmail
    ::jobs/decoder   (sm/decoder schema:params sm/json-transformer)
    ::jobs/validator (sm/validator schema:params)})
-
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (fn? (::sendmail params)) "expected valid sendmail handler"))
-
-(defmethod ig/init-key ::handler
-  [_ {:keys [::sendmail]}]
-  (fn [{:keys [props] :as task}]
-    (sendmail props)))
 
 (defn- send-to-logger!
   [_ email]

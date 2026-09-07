@@ -14,10 +14,10 @@
    [app.db :as db]
    [app.email :as eml]
    [app.http :as-alias http]
+   [app.jobs :as jobs]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
-   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
    [clojure.test :as t]
@@ -173,7 +173,7 @@
                                                                       :logo "https://evil.example/logo.png"
                                                                       :avatar-bg-url "https://evil.example/avatar.svg"
                                                                       :sso-active false}})
-              email-params    (first (:call-args @email-mock))
+              email-params    (second (:call-args @email-mock))
               organization    (:organization email-params)]
           (t/is (th/success? out))
           (t/is (= "Trusted Organization" (:name organization)))
@@ -394,7 +394,7 @@
                                  @organization-summary-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submission ---
-       wrk-mock    {:target 'app.worker/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit! :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -475,7 +475,7 @@
                                  :get-owned-organizations @owned-organizations-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submissions ---
-       wrk-mock    {:target 'app.worker/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit! :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -1723,7 +1723,7 @@
                                  nil))}
        ;; --- Email mock: capture sent emails ---
        email-mock  {:target 'app.email/send!
-                    :return (fn [params] (swap! sent conj params) nil)}]
+                    :return (fn [_cfg params] (swap! sent conj params) nil)}]
 
       ;; --- Setup: create profiles, team, organization-summary ---
       (let [owner       (th/create-profile* 1 {:is-active true :fullname "Owner"})
@@ -1800,7 +1800,7 @@
                 :organization-id (uuid/random)
                 :updated-props false
                 :announce-activation false}]
-    (with-redefs [eml/send! (fn [params] (swap! sent conj params))]
+    (with-redefs [eml/send! (fn [_cfg params] (swap! sent conj params))]
       (th/management-command! params))
     (t/is (empty? @sent))))
 

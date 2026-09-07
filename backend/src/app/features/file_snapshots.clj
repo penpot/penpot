@@ -19,9 +19,9 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.util.blob :as blob]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def sql:snapshots
@@ -406,12 +406,12 @@
   (assert (uuid? file-id) "missing file-id")
   (assert (ct/inst? deleted-at) "missing deleted-at")
 
-  (wrk/submit! {::db/conn (db/get-connection cfg)
-                ::wrk/task :delete-object
-                ::wrk/params {:object :snapshot
-                              :deleted-at deleted-at
-                              :file-id file-id
-                              :id id}})
+  (jobs/submit! cfg
+                {::jobs/name :delete-object
+                 ::jobs/params {:object :snapshot
+                                :deleted-at deleted-at
+                                :file-id file-id
+                                :id id}})
   (db/update! cfg :file-change
               {:deleted-at deleted-at}
               {:id id :file-id file-id}

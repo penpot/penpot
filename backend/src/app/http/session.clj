@@ -344,12 +344,12 @@
 ;; TASK: SESSION GC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::tasks/gc
+(defmethod ig/assert-key ::session-gc-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected valid database pool")
   (assert (ct/duration? (::tasks/max-age params))))
 
-(defmethod ig/expand-key ::tasks/gc
+(defmethod ig/expand-key ::session-gc-job-def
   [k v]
   (let [max-age (cf/get :auth-token-cookie-max-age default-cookie-max-age)]
     {k (merge {::tasks/max-age max-age} (d/without-nils v))}))
@@ -381,21 +381,15 @@
 
 (declare execute-session-gc!)
 
-(defmethod ig/init-key ::tasks/gc
-  [_ {:keys [::tasks/max-age] :as cfg}]
-  (l/dbg :hint "initializing session gc task" :max-age max-age)
-  (fn [_]
-    (execute-session-gc! cfg)))
-
 (def schema:session-gc-params
   "Params map (no params needed; config-derived only)."
   [:map {:closed true}])
 
 (defmethod ig/init-key ::session-gc-job-def
-  [_ {gc ::tasks/gc}]
+  [_ cfg]
   {::jobs/name      :session-gc
    ::jobs/schema    schema:session-gc-params
-   ::jobs/handler   gc
+   ::jobs/handler   (fn [_] (execute-session-gc! cfg))
    ::jobs/decoder   (sm/decoder schema:session-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:session-gc-params)})
 

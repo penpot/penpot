@@ -13,7 +13,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.worker :as wrk]
+   [app.jobs :as jobs]
    [cuerdas.core :as str]))
 
 (defmulti check-quote ::id)
@@ -73,7 +73,7 @@
                       (run! (partial check cfg) others)))))))
 
 (defn- send-notification!
-  [{:keys [::db/conn] :as params}]
+  [params]
   (l/warn :hint "max quote reached"
           :target (::target params)
           :profile-id (some-> params ::profile-id str)
@@ -93,16 +93,16 @@
                             "- Quote ID: '~(::target params)'\n"
                             "- Max: ~(::quote params)\n"
                             "- Total: ~(::total params) (INCR ~(::incr params 1))\n")]
-      (wrk/submit! {::db/conn conn
-                    ::wrk/task :sendmail
-                    ::wrk/delay (ct/duration "30s")
-                    ::wrk/max-retries 4
-                    ::wrk/priority 200
-                    ::wrk/dedupe true
-                    ::wrk/label "quotes-notification"
-                    ::wrk/params {:to (vec admins)
-                                  :subject subject
-                                  :body content}}))))
+      (jobs/submit! params
+                    {::jobs/name :sendmail
+                     ::jobs/delay (ct/duration "30s")
+                     ::jobs/max-retries 4
+                     ::jobs/priority 200
+                     ::jobs/dedupe true
+                     ::jobs/label "quotes-notification"
+                     ::jobs/params {:to (vec admins)
+                                    :subject subject
+                                    :body content}}))))
 
 (defn- generic-check!
   [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]

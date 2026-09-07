@@ -155,12 +155,12 @@
         (recur (+ total deleted))
         total))))
 
-(defmethod ig/assert-key ::handler
+(declare execute-storage-gc-deleted!)
+
+(defmethod ig/assert-key ::storage-gc-deleted-job-def
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
   (assert (db/pool? (::db/pool params)) "expect valid db pool"))
-
-    (execute-storage-gc-deleted! cfg)))
 
 (def schema:storage-gc-deleted-params
   "Params map (no params needed; cfg-provided config only)."

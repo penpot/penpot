@@ -27,7 +27,6 @@
    [app.features.file-snapshots :as fsnap]
    [app.jobs :as jobs]
    [app.storage :as sto]
-   [app.worker :as wrk]
    [integrant.core :as ig]))
 
 (declare get-file)
@@ -246,32 +245,6 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
-  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (try
-      (-> cfg
-          (assoc ::db/rollback (:rollback? props))
-          (assoc ::timestamp (ct/now))
-          (db/tx-run! (fn [cfg]
-                        (let [processed? (process-file! cfg props)]
-                          (when (and processed? (contains? cf/flags :tiered-file-data-storage))
-                            (wrk/submit! (-> cfg
-                                             (assoc ::wrk/task :offload-file-data)
-                                             (assoc ::wrk/params props)
-                                             (assoc ::wrk/priority 10)
-                                             (assoc ::wrk/delay 1000))))
-                          processed?))))
-      (catch Throwable cause
-        (l/err :hint "error on cleaning file"
-               :file-id (str (:file-id props))
-               :cause cause)))))
-
 (defn execute-file-gc!
   "Plain job handler: clean the media/thumbnails/fdata of one file."
   [cfg params]
@@ -285,11 +258,11 @@
                             processed? (process-file! cfg params)]
 
                         (when (and processed? (contains? cf/flags :tiered-file-data-storage))
-                          (wrk/submit! (-> cfg
-                                           (assoc ::wrk/task :offload-file-data)
-                                           (assoc ::wrk/params params)
-                                           (assoc ::wrk/priority 10)
-                                           (assoc ::wrk/delay 1000))))
+                          (jobs/submit! cfg
+                                        {::jobs/name :offload-file-data
+                                         ::jobs/params params
+                                         ::jobs/priority 10
+                                         ::jobs/delay 1000}))
                         processed?))))
     (catch Throwable cause
       (l/err :hint "error on cleaning file"

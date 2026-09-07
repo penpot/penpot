@@ -318,21 +318,16 @@
         (recur (long (+ total result)))
         total))))
 
-(defmethod ig/assert-key ::handler
+
+(defmethod ig/assert-key ::objects-gc-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::objects-gc-job-def
   [k v]
   {k (assoc v ::chunk-size 100)})
-
 (declare execute-objects-gc!)
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [_]
-    (execute-objects-gc! cfg)))
 
 (def schema:objects-gc-params
   [:map {:closed true}])
