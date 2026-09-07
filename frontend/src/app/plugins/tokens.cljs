@@ -90,10 +90,11 @@
     (if (some #(not (token-attr? %)) attrs)
       (u/not-valid plugin-id :applyToSelected attrs)
       (st/emit!
-       (-> (dwta/toggle-token {:token token
-                               :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
-                               :shape-ids shape-ids
-                               :expand-with-children false})
+       (-> (dwta/apply-token-from-input {:token token
+                                         :attrs (when (seq attrs)
+                                                  (into #{} (map token-attr-plugin->token-attr) attrs))
+                                         :shape-ids shape-ids
+                                         :expand-with-children false})
            (se/add-event plugin-id))))))
 
 (defn- typography-resolved-value->js
