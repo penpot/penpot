@@ -29,6 +29,11 @@
                (dm/get-in state [:viewer-local :fullscreen?]))
              st/state))
 
+(def hide-ui-ref
+  (l/derived (fn [state]
+               (dm/get-in state [:viewer-local :hide-ui?]))
+             st/state))
+
 (defn open-login-dialog
   []
   (modal/show! :login-register {}))
@@ -120,12 +125,16 @@
                    :key (dm/str "zoom-fullscreen-" sc)} sc])]]]]]))
 
 (mf/defc header-options
-  [{:keys [section zoom page file index permissions interactions-mode share]}]
+  [{:keys [section zoom page file index permissions interactions-mode share hide-ui?]}]
   (let [fullscreen?    (mf/deref fullscreen-ref)
 
         toggle-fullscreen
         (mf/use-fn
          (fn [] (st/emit! dv/toggle-fullscreen)))
+
+        toggle-hide-ui
+        (mf/use-fn
+         (fn [] (st/emit! dv/toggle-hide-ui)))
 
         go-to-workspace
         (mf/use-fn
@@ -191,6 +200,14 @@
        [:span {:on-click go-to-workspace
                :class (stl/css :edit-btn)}
         deprecated-icon/curve])
+
+     [:span {:title (tr "viewer.header.hide-ui" (sc/get-tooltip :toggle-hide-ui))
+             :class (stl/css-case :hide-ui-btn true
+                                  :selected hide-ui?)
+             :on-click toggle-hide-ui}
+      (if hide-ui?
+        deprecated-icon/hide
+        deprecated-icon/shown)]
 
      [:span {:title (tr "viewer.header.fullscreen")
              :class (stl/css-case :fullscreen-btn true
@@ -266,7 +283,7 @@
 
 
 (mf/defc header
-  [{:keys [project file page frame zoom section permissions index interactions-mode shown-thumbnails share]}]
+  [{:keys [project file page frame zoom section permissions index interactions-mode shown-thumbnails share hide-ui?]}]
   (let [go-to-dashboard
         (mf/use-fn
          #(st/emit! (dv/go-to-dashboard)))
@@ -306,7 +323,8 @@
 
 
     [:header {:class (stl/css-case :viewer-header true
-                                   :fullscreen (mf/deref fullscreen-ref))
+                                   :fullscreen (or (mf/deref fullscreen-ref)
+                                                   (mf/deref hide-ui-ref)))
               :on-click close-thumbnails}
      [:div {:class (stl/css :nav-zone)}
       ;; If the user doesn't have permission we disable the link
@@ -357,4 +375,5 @@
                          :index index
                          :zoom zoom
                          :interactions-mode interactions-mode
-                         :share share}]]))
+                         :share share
+                         :hide-ui? hide-ui?}]]))
