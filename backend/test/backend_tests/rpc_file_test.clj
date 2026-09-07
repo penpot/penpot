@@ -2087,6 +2087,39 @@
       (t/is (= (:id file-2) (:file-id (get rows 0))))
       (t/is (nil? (:deleted-at (get rows 0)))))))
 
+(t/deftest delete-shared-library-with-storage-file-data
+  (binding [cf/config (assoc cf/config :file-data-backend "storage")]
+    (let [profile (th/create-profile* 1)
+          params  {:profile-id (:id profile)
+                   :project-id (:default-project-id profile)}
+          library (th/create-file* 1 (assoc params :is-shared true))
+          file    (th/create-file* 2 params)]
+      (th/link-file-to-library* {:file-id (:id file)
+                                 :library-id (:id library)})
+
+      ;; Ensure the test exercises storage reads for both files.
+      (let [rows (th/db-exec! ["SELECT backend, data FROM file_data WHERE type = 'main'"])]
+        (t/is (= 2 (count rows)))
+        (t/is (every? #(= "storage" (:backend %)) rows))
+        (t/is (every? (comp nil? :data) rows)))
+
+      (th/run-task! :delete-object
+                    {:object :file
+                     :deleted-at (ct/now)
+                     :id (:id library)})
+
+      ;; The task swallows absorption errors, so verify the persisted result.
+      (let [deleted (db/get* th/*pool* :file {:id (:id library)}
+                             {::db/remove-deleted false})
+            out     (th/command! {::th/type :get-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id (:id file)})]
+        (t/is (some? (:deleted-at deleted)))
+        (t/is (false? (:is-shared deleted)))
+        (t/is (th/success? out))
+        (t/is (= (inc (:revn file)) (get-in out [:result :revn])))
+        (t/is (= (:id file) (get-in out [:result :data :id])))))))
+
 (t/deftest deleted-files-permanently-delete
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
