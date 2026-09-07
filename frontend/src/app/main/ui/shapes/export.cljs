@@ -339,7 +339,9 @@
                   :penpot:stroke-gap            ((d/nilf str) (:stroke-gap stroke))
                   :penpot:stroke-alignment      (d/name (:stroke-alignment stroke))
                   :penpot:stroke-cap-start      (d/name (:stroke-cap-start stroke))
-                  :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))}]))]))))
+                  :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))
+                  :penpot:stroke-join           (d/name (:stroke-join stroke))
+                  :penpot:stroke-miter-limit    ((d/nilf str) (:stroke-miter-limit stroke))}]))]))))
 
 (defn- export-interactions-data [{:keys [interactions]}]
   (when-let [interactions (seq interactions)]

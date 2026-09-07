@@ -38,7 +38,7 @@ use crate::wasm::layouts::{
 use crate::wasm::paths::bools::RawBoolType;
 use crate::wasm::shadows::RawShadowStyle;
 use crate::wasm::shapes::base_props::{apply_base_props, RawBasePropsData, RAW_BASE_PROPS_SIZE};
-use crate::wasm::strokes::{RawStrokeCap, RawStrokeStyle};
+use crate::wasm::strokes::{RawStrokeCap, RawStrokeJoin, RawStrokeStyle};
 use crate::wasm::text::RawGrowType;
 use crate::with_current_shape_mut;
 use crate::with_state;
@@ -402,11 +402,13 @@ fn parse_strokes(cur: &mut Cursor<'_>) -> Result<Vec<Stroke>> {
         let dash = cur.f32()?;
         let gap = cur.f32()?;
         let has_sides = cur.u8()? != 0;
-        let _pad = cur.take(3)?;
+        let join = cur.u8()?;
+        let _pad = cur.take(2)?;
         let top = cur.f32()?;
         let right = cur.f32()?;
         let bottom = cur.f32()?;
         let left = cur.f32()?;
+        let miter_limit = cur.f32()?;
         let fill_bytes = cur.take(RAW_FILL_DATA_SIZE)?;
         let fill = RawFillData::try_from(fill_bytes)
             .map_err(|e| Error::CriticalError(format!("upload_batch stroke fill: {e}")))?;
@@ -446,6 +448,8 @@ fn parse_strokes(cur: &mut Cursor<'_>) -> Result<Vec<Stroke>> {
         if has_sides {
             stroke.widths = Some([top, right, bottom, left]);
         }
+        stroke.join = RawStrokeJoin::from(join).try_into().ok();
+        stroke.miter_limit = decode_optional_f32(miter_limit);
         stroke.fill = fill.into();
         strokes.push(stroke);
     }

@@ -97,6 +97,12 @@
         default (unchecked-get values "none")]
     (d/nilv (unchecked-get values (d/name stroke-cap)) default)))
 
+(defn translate-stroke-join
+  [stroke-join]
+  (let [values (unchecked-get wasm/serializers "stroke-join")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name stroke-join)) default)))
+
 (defn serialize-path-attrs
   [svg-attrs]
   (reduce-kv

@@ -47,6 +47,9 @@
            on-stroke-cap-start-change
            on-stroke-cap-end-change
            on-stroke-cap-switch
+           join-available
+           on-stroke-join-change
+           on-stroke-miter-limit-change
            on-toggle-visibility
            disable-drag
            on-focus
@@ -278,6 +281,27 @@
          {:id "round" :value :round :label (tr "workspace.options.stroke-cap.round") :icon i/stroke-rounded}
          {:id "square" :value :square :label (tr "workspace.options.stroke-cap.square") :icon i/stroke-squared}]
 
+        stroke-join (or (:stroke-join stroke) :miter)
+
+        stroke-join-options
+        (mf/with-memo [stroke-join]
+          (d/concat-vec
+           (when (= :multiple stroke-join)
+             [{:value :multiple :label "--"}])
+           [{:id "miter" :value :miter :label (tr "workspace.options.stroke-join.miter")}
+            {:id "round" :value :round :label (tr "workspace.options.stroke-join.round")}
+            {:id "bevel" :value :bevel :label (tr "workspace.options.stroke-join.bevel")}]))
+
+        on-join-change
+        (mf/use-fn
+         (mf/deps index on-stroke-join-change)
+         #(on-stroke-join-change index (keyword %)))
+
+        on-miter-limit-change
+        (mf/use-fn
+         (mf/deps index on-stroke-miter-limit-change)
+         #(on-stroke-miter-limit-change index %))
+
         on-cap-switch
         (mf/use-fn
          (mf/deps index on-stroke-cap-switch)
@@ -502,4 +526,24 @@
                      :options stroke-caps-options
                      :data-testid "stroke.cap-end"
                      :disabled hidden?
-                     :on-change on-caps-end-change}]])]))
+                     :on-change on-caps-end-change}]])
+
+     ;; Stroke Join (miter / round / bevel)
+     (when join-available
+       [:div {:class (stl/css :stroke-join-options)
+              :data-testid "stroke.join-options"}
+        [:& select {:default-value stroke-join
+                    :options stroke-join-options
+                    :class (stl/css :stroke-join-select)
+                    :disabled hidden?
+                    :on-change on-join-change}]
+        (when (= :miter stroke-join)
+          [:> numeric-input-wrapper* {:on-change on-miter-limit-change
+                                      :text-icon "MITER"
+                                      :min 1
+                                      :on-focus on-focus
+                                      :on-blur on-blur
+                                      :attr :stroke-miter-limit
+                                      :class (stl/css :numeric-input-wrapper)
+                                      :property (tr "workspace.options.stroke-join.miter-limit")
+                                      :value (:stroke-miter-limit stroke)}])])]))

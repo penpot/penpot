@@ -69,6 +69,8 @@
                    style     (-> stroke :stroke-style sr/translate-stroke-style)
                    cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
                    cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                   join      (-> stroke :stroke-join sr/translate-stroke-join)
+                   miter     (or (:stroke-miter-limit stroke) -1)
                    ;; Sentinel -1 means "unset" on the Rust side — keeps the
                    ;; FFI signature flat while letting the renderer fall back
                    ;; to its default dash pattern when no override is stored.
@@ -81,6 +83,9 @@
                  :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end dash gap)
                  :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
                  (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end dash gap))
+
+               (when (pos? join)
+                 (h/call wasm/internal-module "_set_shape_stroke_join" join miter))
 
                ;; Per-side widths (rects/frames). Sides falling back to the
                ;; uniform width; skipped when all sides end up equal, so the

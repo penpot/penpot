@@ -83,6 +83,16 @@
   column-gap: var(--sp-xs);
 }
 
+.stroke-join-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--sp-xs);
+}
+
+.stroke-join-select {
+  grid-column: span 1;
+}
+
 .stroke-options-tokens {
   @include sidebar.option-grid-structure;
 

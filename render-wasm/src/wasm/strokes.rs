@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::mem;
-use crate::shapes::{self, StrokeCap, StrokeStyle};
+use crate::shapes::{self, StrokeCap, StrokeLineJoin, StrokeStyle};
 use crate::utils::decode_optional_f32;
 use crate::with_current_shape_mut;
 
@@ -65,6 +65,35 @@ impl TryFrom<RawStrokeCap> for StrokeCap {
             RawStrokeCap::DiamondMarker => Ok(StrokeCap::DiamondMarker),
             RawStrokeCap::Round => Ok(StrokeCap::Round),
             RawStrokeCap::Square => Ok(StrokeCap::Square),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawStrokeJoin {
+    None = 0,
+    Miter = 1,
+    Round = 2,
+    Bevel = 3,
+}
+
+impl From<u8> for RawStrokeJoin {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl TryFrom<RawStrokeJoin> for StrokeLineJoin {
+    type Error = ();
+
+    fn try_from(value: RawStrokeJoin) -> Result<Self, Self::Error> {
+        match value {
+            RawStrokeJoin::None => Err(()),
+            RawStrokeJoin::Miter => Ok(StrokeLineJoin::Miter),
+            RawStrokeJoin::Round => Ok(StrokeLineJoin::Round),
+            RawStrokeJoin::Bevel => Ok(StrokeLineJoin::Bevel),
         }
     }
 }
@@ -141,6 +170,17 @@ pub extern "C" fn add_shape_outer_stroke(
             decode_optional_f32(dash),
             decode_optional_f32(gap),
         ));
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_stroke_join(join: u8, miter_limit: f32) {
+    let join = RawStrokeJoin::from(join);
+
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape
+            .set_last_stroke_join(join.try_into().ok(), decode_optional_f32(miter_limit))
+            .expect("could not set stroke join");
     });
 }
 

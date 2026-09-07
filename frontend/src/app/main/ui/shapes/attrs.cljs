@@ -118,6 +118,12 @@
         (when (not= style :svg)
           (obj/set! attrs "strokeDasharray" (calculate-dasharray style width dash gap)))
 
+        (when-let [join (:stroke-join data)]
+          (obj/set! attrs "strokeLinejoin" (name join))
+          (when-let [limit (:stroke-miter-limit data)]
+            (when (= join :miter)
+              (obj/set! attrs "strokeMiterlimit" limit))))
+
         ;; For simple line caps we use svg stroke-line-cap attribute. This
         ;; only works if all caps are the same and we are not using the tricks
         ;; for inner or outer strokes.

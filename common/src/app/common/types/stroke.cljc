@@ -14,6 +14,7 @@
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
+(def stroke-joins #{:miter :round :bevel})
 
 (def default-stroke
   {:stroke-alignment :inner

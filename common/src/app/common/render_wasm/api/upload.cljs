@@ -41,7 +41,7 @@
 (def ^:const SECTION-STROKES 0x400)
 
 ;; Stroke header before RawFillData (must match upload_batch.rs).
-(def ^:const STROKE-HEADER-U8-SIZE 36)
+(def ^:const STROKE-HEADER-U8-SIZE 40)
 (def ^:const STROKE-ALIGN-CENTER 0)
 (def ^:const STROKE-ALIGN-INNER 1)
 (def ^:const STROKE-ALIGN-OUTER 2)
@@ -246,6 +246,8 @@
                     STROKE-ALIGN-CENTER)
         cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
         cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+        join      (-> stroke :stroke-join sr/translate-stroke-join)
+        miter     (or (:stroke-miter-limit stroke) -1)
         dash      (or (:stroke-dash stroke) -1)
         gap       (or (:stroke-gap stroke) -1)
         per-side? (boolean (:stroke-per-side stroke))
@@ -262,10 +264,12 @@
     (buf/write-f32 dview (+ offset 8) dash)
     (buf/write-f32 dview (+ offset 12) gap)
     (buf/write-u8 dview (+ offset 16) (if has-sides? 1 0))
+    (buf/write-u8 dview (+ offset 17) (d/nilv join 0))
     (buf/write-f32 dview (+ offset 20) top)
     (buf/write-f32 dview (+ offset 24) right)
     (buf/write-f32 dview (+ offset 28) bottom)
     (buf/write-f32 dview (+ offset 32) left)
+    (buf/write-f32 dview (+ offset 36) miter)
     (write-stroke-fill! dview (+ offset STROKE-HEADER-U8-SIZE) stroke)
     (+ offset STROKE-HEADER-U8-SIZE types.fills.impl/FILL-U8-SIZE)))
 

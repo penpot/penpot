@@ -56,6 +56,9 @@ pub struct Stroke {
     // Per-side widths [top, right, bottom, left] for rects and frames.
     // `None` means the uniform `width` applies to all sides.
     pub widths: Option<[f32; 4]>,
+    // Corner join for the stroke. `None` keeps the SVG-attr/Skia default.
+    pub join: Option<StrokeLineJoin>,
+    pub miter_limit: Option<f32>,
 }
 
 impl Stroke {
@@ -179,6 +182,8 @@ impl Stroke {
             dash,
             gap,
             widths: None,
+            join: None,
+            miter_limit: None,
         }
     }
 
@@ -200,6 +205,8 @@ impl Stroke {
             dash,
             gap,
             widths: None,
+            join: None,
+            miter_limit: None,
         }
     }
 
@@ -221,6 +228,8 @@ impl Stroke {
             dash,
             gap,
             widths: None,
+            join: None,
+            miter_limit: None,
         }
     }
 
@@ -352,6 +361,18 @@ impl Stroke {
                 }
                 StrokeLineJoin::Miter => {} // Skia default
             }
+        }
+
+        if let Some(join) = self.join {
+            paint.set_stroke_join(match join {
+                StrokeLineJoin::Miter => skia::paint::Join::Miter,
+                StrokeLineJoin::Round => skia::paint::Join::Round,
+                StrokeLineJoin::Bevel => skia::paint::Join::Bevel,
+            });
+        }
+
+        if let Some(limit) = self.miter_limit {
+            paint.set_stroke_miter(limit);
         }
 
         if self.style != StrokeStyle::Solid {

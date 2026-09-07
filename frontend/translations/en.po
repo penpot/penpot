@@ -8693,6 +8693,22 @@ msgstr "Round"
 msgid "workspace.options.stroke-cap.square"
 msgstr "Square"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-join.miter"
+msgstr "Miter"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-join.round"
+msgstr "Round"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-join.bevel"
+msgstr "Bevel"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-join.miter-limit"
+msgstr "Miter limit"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 #, unused
 msgid "workspace.options.stroke-cap.square-marker"

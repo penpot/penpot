@@ -180,6 +180,7 @@
     :available-viewer-wasm
     :stroke-path
     :stroke-per-side
+    :stroke-join
 
     ;; Exporter only: uses render-wasm for export instead of browser
     ;; renderer.

@@ -66,6 +66,7 @@
 (def stroke-caps-line stroke/stroke-caps-line)
 (def stroke-caps-marker stroke/stroke-caps-marker)
 (def stroke-caps (conj (set/union stroke-caps-line stroke-caps-marker) nil))
+(def stroke-joins (conj stroke/stroke-joins nil))
 
 (def shape-types
   #{:frame
@@ -153,6 +154,9 @@
     [::sm/one-of stroke-caps]]
    [:stroke-cap-end {:optional true}
     [::sm/one-of stroke-caps]]
+   [:stroke-join {:optional true}
+    [::sm/one-of stroke-joins]]
+   [:stroke-miter-limit {:optional true} ::sm/safe-number]
    [:stroke-color {:optional true} clr/schema:hex-color]
    [:stroke-color-gradient {:optional true} clr/schema:gradient]
    [:stroke-image {:optional true} clr/schema:image]

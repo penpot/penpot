@@ -28,6 +28,7 @@
    ["guide-kind" "RawGuideKind"]
    ["stroke-style" "RawStrokeStyle"]
    ["stroke-cap" "RawStrokeCap"]
+   ["stroke-join" "RawStrokeJoin"]
    ["shape-type" "RawShapeType"]
    ["constraint-h" "RawConstraintH"]
    ["constraint-v" "RawConstraintV"]

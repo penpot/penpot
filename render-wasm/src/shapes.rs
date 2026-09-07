@@ -708,6 +708,18 @@ impl Shape {
         Ok(())
     }
 
+    pub fn set_last_stroke_join(
+        &mut self,
+        join: Option<StrokeLineJoin>,
+        miter_limit: Option<f32>,
+    ) -> Result<(), String> {
+        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
+        stroke.join = join;
+        stroke.miter_limit = miter_limit;
+        self.invalidate_extrect();
+        Ok(())
+    }
+
     pub fn set_stroke_fill(&mut self, f: Fill) -> Result<(), String> {
         let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
         stroke.fill = f;

@@ -339,7 +339,9 @@
    :stroke-width-bottom
    :stroke-width-left
    :stroke-cap-start
-   :stroke-cap-end])
+   :stroke-cap-end
+   :stroke-join
+   :stroke-miter-limit])
 
 ;; FIXME: this function initializes an empty stroke, maybe we can move
 ;; it to common.types
