@@ -74,6 +74,10 @@ module. You can read it from `mem:<MODULE>/core`
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token
   authentication. Supports list/get operations with filtering and pagination.
   See `mem:scripts/error-reports`.
+- `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm
+  workspaces (root, modules, member packages). Keeps the shared pnpm store
+  at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and
+  `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
 
 # Dependency graph
 
