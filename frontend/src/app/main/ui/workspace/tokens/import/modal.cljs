@@ -35,7 +35,9 @@
    tokens-lib-stream
    (fn [lib]
      (st/emit! (ev/event {::ev/name "import-tokens" :type type})
-               (dwtl/import-tokens-lib lib))
+               (dwtl/import-tokens-lib lib)
+               (dwtl/clear-tokens-paths)
+               (dwtl/expand-all-token-types lib))
      (modal/hide!))
    (fn [err]
      (st/emit! (ntf/show {:content (dwte/humanize-errors [(ex-data err)])
