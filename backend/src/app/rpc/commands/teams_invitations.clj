@@ -235,9 +235,8 @@
                        :organization-name (:name organization)
                        :member-email (:email-to invitation)
                        :member-id (:id member)
-                       :role role}
-                organization
-                (assoc :user-who-send-invitation (str profile-id))
+                       :role role
+                       :user-who-send-invitation (str profile-id)}
 
                 (not organization)
                 (assoc :team-belongs-to-organization (boolean team-organization-id)
@@ -603,7 +602,7 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-read-permissions! cfg profile-id team-id)
+  (teams/check-edition-permissions! cfg profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id

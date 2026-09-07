@@ -23,9 +23,7 @@
   position: relative;
 
   &.resizable {
-    &:not(:focus-within) {
-      cursor: ew-resize;
-    }
+    cursor: ew-resize;
   }
 
   &:hover {

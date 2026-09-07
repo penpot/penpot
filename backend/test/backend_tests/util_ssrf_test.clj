@@ -80,6 +80,24 @@
   (t/is (false? (ssrf/safe-url? "http://[fd00::1]/foo")))
   (t/is (false? (ssrf/safe-url? "http://[fc00::1]/foo"))))
 
+(t/deftest validate-url-blocks-nat64-encoded-metadata
+  ;; 64:ff9b::a9fe:a9fe embeds 169.254.169.254 (cloud metadata)
+  (t/is (false? (ssrf/safe-url? "http://[64:ff9b::a9fe:a9fe]/latest/meta-data/"))))
+
+(t/deftest validate-url-blocks-nat64-encoded-loopback
+  ;; 64:ff9b::7f00:0001 embeds 127.0.0.1
+  (t/is (false? (ssrf/safe-url? "http://[64:ff9b::7f00:1]/foo"))))
+
+(t/deftest validate-url-blocks-6to4-encoded-private
+  ;; 2002:a00:1:: embeds 10.0.0.1; 2002:c0a8:101:: embeds 192.168.1.1
+  (t/is (false? (ssrf/safe-url? "http://[2002:a00:1::1]/foo")))
+  (t/is (false? (ssrf/safe-url? "http://[2002:c0a8:101::1]/foo"))))
+
+(t/deftest validate-url-blocks-teredo-encoded-addresses
+  ;; Teredo server prefix 2001:0000::/32
+  (t/is (false? (ssrf/safe-url?
+                 "http://[2001:0000:4136:e378:8000:63bf:3fff:fdd2]/foo"))))
+
 (t/deftest validate-url-blocks-encoded-loopback
   ;; Decimal encoding of 127.0.0.1 = 2130706433
   ;; InetAddress normalizes this to 127.0.0.1

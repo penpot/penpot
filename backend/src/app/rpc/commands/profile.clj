@@ -141,9 +141,7 @@
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
   [conn id & {:as opts}]
-  ;; NOTE: We need to set ::db/remove-deleted to false because demo profiles
-  ;; are created with a set deleted-at value
-  (-> (db/get-by-id conn :profile id (assoc opts ::db/remove-deleted false))
+  (-> (db/get-by-id conn :profile id opts)
       (decode-row)))
 
 ;; --- MUTATION: Update Profile (own)
@@ -524,7 +522,7 @@
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
     ;; (during delete-owned-organizations) and ::notify-organization-deletion.
     ;; Both preserve organization teams unchanged and only prefix or delete
-    ;; imported "Your Penpot" teams according to whether they still have files.
+    ;; imported "Personal Projects" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
     (when (contains? cf/flags :admin-console)

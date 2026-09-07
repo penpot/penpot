@@ -95,14 +95,21 @@
       ;; browser just focus the opened tab instead of creating new
       ;; tab.
       (let [name (str "viewer-" file-id)]
-        (unchecked-set ug/global "name" name)))))
+        (unchecked-set ug/global "name" name))
+      ;; Make every `cf/resolve-file-media` call (inspector, code panel,
+      ;; image previews, ...) share-link aware for the lifetime of this
+      ;; viewer. Cleared by `finalize` below.
+      (cf/set-current-share-id! share-id))))
 
 (defn finalize
   [_]
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :viewer))))
+      (dissoc state :viewer))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (cf/set-current-share-id! nil))))
 
 ;; --- Data Fetching
 
@@ -319,11 +326,12 @@
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
                  (assoc state :comment-threads)))
-          (on-error [{:keys [type] :as err}]
-            (if (or (= :authentication type)
-                    (= :not-found type))
-              (rx/empty)
-              (rx/throw err)))]
+          (on-error [cause]
+            (let [{:keys [type]} (ex-data cause)]
+              (if (or (= :authentication type)
+                      (= :not-found type))
+                (rx/empty)
+                (rx/throw cause))))]
 
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent

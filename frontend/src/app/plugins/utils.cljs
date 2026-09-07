@@ -282,8 +282,7 @@
   [code value]
   (if (some? value)
     (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
-    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code))))
-  nil)
+    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code)))))
 
 (defn not-valid
   [plugin-id code value]

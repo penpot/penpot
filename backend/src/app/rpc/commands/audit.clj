@@ -183,6 +183,7 @@
 
 (sv/defmethod ::get-enabled-flags
   {::audit/skip true
+   ::rpc/auth false
    ::doc/skip true
    ::doc/added "1.20"}
   [_cfg _params]

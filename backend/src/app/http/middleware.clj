@@ -83,18 +83,18 @@
               (instance? IllegalArgumentException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "invalid JSON in request body"
                         :cause cause)
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
                         :code :request-body-too-large
-                        :hint (ex-message cause))
+                        :hint "request body exceeds size limit")
 
               (instance? java.io.EOFException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "unexpected end of request body"
                         :cause cause)
 
               (instance? RuntimeException cause)

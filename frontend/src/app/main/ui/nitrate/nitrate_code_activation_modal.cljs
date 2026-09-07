@@ -120,7 +120,7 @@
         [:div
          (tr "nitrate.code-activation.footer-after") " "
          [:a {:class (stl/css :link)
-              :href "mailto:sales@nitrate.com"}
-          "sales@nitrate.com"]
+              :href "mailto:sales@penpot.app"}
+          "sales@penpot.app"]
          " "
          (tr "nitrate.code-activation.footer-before")]]]]]))

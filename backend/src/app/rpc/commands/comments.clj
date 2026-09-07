@@ -231,8 +231,11 @@
    ::sm/params schema:get-comment-threads}
   [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (files/check-comment-permissions! cfg profile-id file-id share-id)
-                 (get-comment-threads conn profile-id file-id))))
+                 (let [perms (files/check-comment-permissions! cfg profile-id file-id share-id)
+                       threads (get-comment-threads conn profile-id file-id)]
+                   (if (= :share-link (:type perms))
+                     (filterv #(contains? (:pages perms) (:page-id %)) threads)
+                     threads)))))
 
 (defn- get-comment-threads-sql
   [where]
@@ -329,9 +332,15 @@
    ::sm/params schema:get-comment-thread}
   [cfg {:keys [::rpc/profile-id file-id id share-id] :as params}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (files/check-comment-permissions! cfg profile-id file-id share-id)
-                 (some-> (db/exec-one! conn [sql:get-comment-thread profile-id file-id id])
-                         (decode-row)))))
+                 (let [perms  (files/check-comment-permissions! cfg profile-id file-id share-id)
+                       thread (some-> (db/exec-one! conn [sql:get-comment-thread profile-id file-id id])
+                                      (decode-row))]
+                   (when (and thread (= :share-link (:type perms)))
+                     (when-not (contains? (:pages perms) (:page-id thread))
+                       (ex/raise :type :not-found
+                                 :code :object-not-found
+                                 :hint "not found")))
+                   thread))))
 
 ;; --- COMMAND: Retrieve Comments
 
@@ -348,8 +357,13 @@
    ::sm/params schema:get-comments}
   [cfg {:keys [::rpc/profile-id thread-id share-id]}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (let [{:keys [file-id]} (get-comment-thread conn thread-id)]
-                   (files/check-comment-permissions! cfg profile-id file-id share-id)
+                 (let [{:keys [file-id page-id]} (get-comment-thread conn thread-id)
+                       perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+                   (when (and (= :share-link (:type perms))
+                              (not (contains? (:pages perms) page-id)))
+                     (ex/raise :type :not-found
+                               :code :object-not-found
+                               :hint "not found"))
                    (get-comments conn thread-id)))))
 
 (def sql:get-comments

@@ -97,9 +97,7 @@
         sitemap-height
         (if sitemap-collapsed? 32 height)]
 
-    [:article {:class (stl/css :layers-tab)
-               :style {:--height (dm/str height "px")}}
-
+    [:article {:class (stl/css :layers-tab)}
      [:> sitemap* {:layout layout
                    :height sitemap-height
                    :collapsed sitemap-collapsed?

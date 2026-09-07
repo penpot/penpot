@@ -37,7 +37,7 @@
 (defn- get-team-name
   [team]
   (if (:is-default team)
-    (tr "dashboard.your-penpot")
+    (tr "dashboard.personal-projects")
     (:name team)))
 
 (defn- group-by-team

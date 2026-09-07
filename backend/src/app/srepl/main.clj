@@ -398,10 +398,6 @@
                         (println (sm/humanize-explain explain))
                         (ex/print-throwable cause))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PROCESSING
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn repair-file!
   "Repair the list of errors detected by validation."
   [file-id & {:keys [rollback?] :or {rollback? true} :as options}]
@@ -409,6 +405,10 @@
         file-id (h/parse-uuid file-id)
         options (assoc options ::h/with-libraries? true)]
     (db/tx-run! system h/process-file! file-id procs.file-repair/repair-file options)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROCESSING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-file!
   "Apply a function to the file. Optionally save the changes or not.

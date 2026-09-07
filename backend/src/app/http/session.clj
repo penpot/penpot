@@ -204,7 +204,7 @@
   [{:keys [::manager]}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request response]
-    (some->> (get request ::id) (delete-session manager))
+    (some->> (get request ::session) :id (delete-session manager))
     (clear-session-cookie response)))
 
 (defn decode-token

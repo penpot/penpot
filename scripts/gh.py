@@ -473,8 +473,10 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
             state
             mergedAt
             createdAt
+            headRefName
             author { login }
             labels(first: 20) { nodes { name } }
+            files(first: 100) { nodes { path } }
             closingIssuesReferences(first: 5) { nodes { number } }
           }
         }
@@ -494,8 +496,9 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
         states: GraphQL states enum array literal, e.g. ``"[MERGED]"`` or ``"[OPEN CLOSED MERGED]"``
 
     Returns:
-        List of {number, title, body, state, merged_at, created_at, author,
-                labels: [str], closing_issues: [int]}
+        List of {number, title, body, state, merged_at, created_at,
+                head_ref_name, author, labels: [str], files: [str],
+                closing_issues: [int]}
     """
     query = GQL_MILESTONE_PRS_QUERY.replace("__STATES__", states)
     all_nodes: list[dict] = []
@@ -522,8 +525,10 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
                 "state": node["state"],
                 "merged_at": node.get("mergedAt"),
                 "created_at": node.get("createdAt"),
+                "head_ref_name": node.get("headRefName"),
                 "author": node["author"]["login"] if node["author"] else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "files": [file["path"] for file in node["files"]["nodes"]],
                 "closing_issues": [iss["number"] for iss in node["closingIssuesReferences"]["nodes"]],
             })
 
@@ -602,7 +607,20 @@ def cmd_prs(args: argparse.Namespace) -> None:
 
 def fetch_advisories() -> list[dict]:
     """Fetch all security advisories for the repository via REST API."""
-    return run_gh_rest(f"repos/{REPO}/security-advisories")
+    all_advisories: list[dict] = []
+    page = 1
+
+    while True:
+        advisories = run_gh_rest(
+            f"repos/{REPO}/security-advisories?per_page=100&page={page}"
+        )
+        all_advisories.extend(advisories)
+
+        if len(advisories) < 100:
+            break
+        page += 1
+
+    return all_advisories
 
 
 def fetch_advisory(ghsa_id: str) -> dict:

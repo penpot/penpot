@@ -353,7 +353,7 @@
                  ::sto/touched-at (ct/in-future {:minutes 30})
                  :profile-id profile-id
                  :content-type mtype
-                 :bucket "tempfile"}]
+                 :bucket sto/tempfile-bucket}]
 
     (sto/put-object! storage content)))
 

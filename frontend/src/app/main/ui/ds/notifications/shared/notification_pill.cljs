@@ -59,5 +59,7 @@
      (when detail
        [:details {:class (stl/css :error-detail)}
         [:summary {:class (stl/css :error-detail-summary)} (tr "workspace.notification-pill.detail")]
-        [:div {:class (stl/css :error-detail-content)
-               :dangerouslySetInnerHTML #js {:__html detail}}]])]))
+        (if is-html
+          [:div {:class (stl/css :error-detail-content)
+                 :dangerouslySetInnerHTML #js {:__html detail}}]
+          [:div {:class (stl/css :error-detail-content)} detail])])]))

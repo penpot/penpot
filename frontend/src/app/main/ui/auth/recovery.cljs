@@ -60,39 +60,38 @@
                           :initial params)]
 
     [:& fm/form {:on-submit on-submit
-                 :class (stl/css :recovery-form)
+                 :class (stl/css :form)
                  :form form}
 
-     [:div {:class (stl/css :fields-row)}
+     [:div {:class (stl/css :form-row)}
       [:& fm/input {:type "password"
                     :name :password-1
                     :show-success? true
                     :label (tr "auth.new-password")
                     :class (stl/css :form-field)}]]
 
-     [:div {:class (stl/css :fields-row)}
+     [:div {:class (stl/css :form-row)}
       [:& fm/input {:type "password"
                     :name :password-2
                     :show-success? true
                     :label (tr "auth.confirm-password")
                     :class (stl/css :form-field)}]]
 
-     [:> fm/submit-button*
-      {:label (tr "auth.recovery-submit")
-       :class (stl/css :submit-btn)}]]))
+     [:> fm/submit-button* {:label (tr "auth.recovery-submit")
+                            :class (stl/css :form-submit-btn)}]]))
 
 ;; --- Recovery Request Page
 
 (mf/defc recovery-page*
   [{:keys [params]}]
-  [:div {:class (stl/css :auth-form-wrapper)}
-   [:h1 {:class (stl/css :auth-title)} "Forgot your password?"]
-   [:div {:class (stl/css :auth-subtitle)} "Please enter your new password"]
+  [:div {:class (stl/css :wrapper)}
+   [:h1 {:class (stl/css :title)} (tr "auth.recovery-request-title")]
+   [:div {:class (stl/css :subtitle)} (tr "auth.recovery-request-subtitle")]
    [:hr {:class (stl/css :separator)}]
    [:> recovery-form* {:params params}]
 
    [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :go-back)}
+    [:div {:class (stl/css :go-back-row)}
      [:a {:on-click #(st/emit! (rt/nav :auth-login))
           :class (stl/css :go-back-link)}
       (tr "profile.recovery.go-to-login")]]]])

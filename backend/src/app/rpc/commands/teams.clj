@@ -575,7 +575,7 @@
                      (set/difference cfeat/frontend-only-features)
                      (set/difference cfeat/no-team-inheritable-features))
         params   {:profile-id profile-id
-                  :name "Your Penpot"
+                  :name "Personal Projects"
                   :features features
                   :organization-id organization-id
                   :is-default true}
@@ -829,7 +829,7 @@
                 :code :only-owner-can-delete-team))
 
     ;; Protect the user's personal default team from deletion.
-    ;; Organization-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    ;; Organization-scoped default teams ("Personal Projects") are allowed to be deleted when they have no files.
     (when (and (:is-default team) (not in-organization?))
       (ex/raise :type :validation
                 :code :non-deletable-team
@@ -944,8 +944,10 @@
    ::sm/params schema:delete-team-member
    ::db/transaction true}
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
-  (let [team  (get-team conn :profile-id profile-id :team-id team-id)
-        perms (get-permissions conn profile-id team-id)]
+  (let [team    (get-team conn :profile-id profile-id :team-id team-id)
+        perms   (get-permissions conn profile-id team-id)
+        members (get-team-members conn team-id)
+        member  (d/seek #(= member-id (:id %)) members)]
     (when-not (or (:is-owner perms)
                   (:is-admin perms))
       (ex/raise :type :validation
@@ -954,6 +956,15 @@
     (when (= member-id profile-id)
       (ex/raise :type :validation
                 :code :cant-remove-yourself))
+
+    (when-not member
+      (ex/raise :type :not-found
+                :code :member-does-not-exist))
+
+    (when (and (:is-owner member)
+               (not (:is-owner perms)))
+      (ex/raise :type :validation
+                :code :cant-remove-owner))
 
     (db/delete! conn :team-profile-rel {:profile-id member-id
                                         :team-id team-id})

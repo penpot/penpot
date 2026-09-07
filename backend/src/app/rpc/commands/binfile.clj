@@ -60,7 +60,7 @@
                                     {::sto/content data
                                      ::sto/touched-at (ct/in-future {:minutes 60})
                                      :content-type "application/zip"
-                                     :bucket "tempfile"})]
+                                     :bucket sto/tempfile-bucket})]
 
         (-> (cf/get :public-uri)
             (u/join "/assets/by-id/")
@@ -93,7 +93,9 @@
             (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
             (assoc ::bfc/project-id project-id)
             (assoc ::bfc/profile-id profile-id)
-            (assoc ::bfc/name name))
+            (assoc ::bfc/name name)
+            (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
+            (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
 
         input-path (:path file)
         owned?     (some? upload-id)

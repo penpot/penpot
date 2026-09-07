@@ -136,7 +136,9 @@
               (repo/cmd! :get-page {:file-id file-id
                                     :page-id page-id
                                     :share-id share-id
-                                    :object-id object-id
+                                    :object-id (if (uuid? object-id)
+                                                 object-id
+                                                 (set object-id))
                                     :features features}))
              (rx/tap (fn [[fonts]]
                        (when (seq fonts)
@@ -155,7 +157,7 @@
    [:embed {:optional true} :boolean]
    [:skip-children {:optional true} :boolean]
    [:object-id
-    [:or [::sm/set ::sm/uuid] ::sm/uuid]]])
+    [:or [:vector ::sm/uuid] ::sm/uuid]]])
 
 (def ^:private coerce-render-objects-params
   (sm/coercer schema:render-objects))
@@ -188,7 +190,7 @@
           {:file-id file-id
            :page-id page-id
            :share-id share-id
-           :object-ids (into #{} object-id)
+           :object-ids (into [] (distinct) object-id)
            :embed embed
            :skip-children skip-children
            :wasm wasm

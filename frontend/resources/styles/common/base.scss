@@ -41,6 +41,11 @@ body {
   scrollbar-width: thin;
 }
 
+::selection {
+  background: var(--color-accent-background-select);
+  color: var(--color-static-white);
+}
+
 img {
   height: auto;
   width: 100%;

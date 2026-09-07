@@ -505,13 +505,13 @@
    :schema schema:request-file-access))
 
 (def request-file-access-yourpenpot
-  "File access on Your Penpot request email."
+  "File access on Personal Projects request email."
   (template-factory
    :id ::request-file-access-yourpenpot
    :schema schema:request-file-access))
 
 (def request-file-access-yourpenpot-view
-  "File access on Your Penpot view mode request email."
+  "File access on Personal Projects view mode request email."
   (template-factory
    :id ::request-file-access-yourpenpot-view
    :schema schema:request-file-access))

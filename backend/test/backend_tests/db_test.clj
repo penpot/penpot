@@ -6,6 +6,7 @@
 
 (ns backend-tests.db-test
   (:require
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [backend-tests.helpers :as th]
    [clojure.test :as t])
@@ -41,3 +42,13 @@
 
     (t/testing "maximum pool size is reasonable"
       (t/is (pos? (:maximum-pool-size stats))))))
+
+(t/deftest uuid->hash-code-is-deterministic
+  (t/is (= (db/uuid->hash-code uuid/zero)
+           (db/uuid->hash-code uuid/zero))))
+
+(t/deftest uuid->hash-code-returns-long
+  (t/is (instance? Long (db/uuid->hash-code uuid/zero))))
+
+(t/deftest uuid->hash-code-stable-for-zero-uuid
+  (t/is (= 3659997967308761462 (db/uuid->hash-code uuid/zero))))
