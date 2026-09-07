@@ -62,9 +62,10 @@ export const loadPlugin = async function (
     //
     // Responsibility boundary: this function forwards the context to the
     // sandbox layer without deep-freezing it. The public API that plugins
-    // consume is constructed and returned by the API module, which applies
-    // its own return-value protection (safeReturn). Compartment isolation
-    // and intrinsics hardening are performed by createSandbox, not here.
+    // consume is constructed by the API module (`api/index.ts`), and
+    // `createSandbox`'s proxy handler applies `ses.safeReturn` to values
+    // crossing into the sandbox. Compartment isolation and intrinsics
+    // hardening are performed by createSandbox, not here.
     const plugin = await createPlugin(
       context,
       manifest,
