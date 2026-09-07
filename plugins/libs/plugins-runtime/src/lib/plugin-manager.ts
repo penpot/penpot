@@ -95,7 +95,7 @@ export async function createPluginManager(
   const openModal = (name: string, url: string, options?: OpenUIOptions) => {
     const theme = context.theme as Theme;
     const modalUrl = prepareUrl(manifest, url, { theme });
-    validateUIUrl(modalUrl);
+    validateUIUrl(modalUrl, manifest.host);
 
     if (modal?.getAttribute('iframe-src') === modalUrl) {
       return;

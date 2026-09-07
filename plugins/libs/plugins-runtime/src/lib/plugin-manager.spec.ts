@@ -310,7 +310,10 @@ describe('createPluginManager', () => {
 
     pluginManager.openModal('Test Modal', '/test-url');
 
-    expect(validateUIUrl).toHaveBeenCalledWith('https://example.com/plugin');
+    expect(validateUIUrl).toHaveBeenCalledWith(
+      'https://example.com/plugin',
+      manifest.host,
+    );
   });
 
   it('should throw when URL validation fails', async () => {
