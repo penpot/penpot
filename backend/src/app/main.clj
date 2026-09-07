@@ -24,6 +24,7 @@
    [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
+   [app.jobs.gc :as-alias jobs.gc]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -394,6 +395,7 @@
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
      :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :storage-pending-gc (ig/ref ::sto.pending-gc/handler)
+     :jobs-gc            (ig/ref :app.jobs.gc/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
      :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
@@ -427,6 +429,9 @@
    {::email/sendmail (ig/ref ::email/sendmail)}
 
    :app.tasks.tasks-gc/handler
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.jobs.gc/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.upload-session-gc/handler
@@ -560,6 +565,9 @@
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :storage-pending-gc}
+
+     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+      :task :jobs-gc}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :tasks-gc}

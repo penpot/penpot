@@ -401,6 +401,14 @@
   (or (c/get config :jobs-request-timeout)
       (ct/duration {:minutes 2})))
 
+(defn get-jobs-retention
+  "How long terminal (completed/failed/cancelled) internal job rows are
+  kept before the jobs GC deletes them; parity with the legacy tasks-gc
+  deletion delay."
+  []
+  (or (c/get config :jobs-retention)
+      (ct/duration {:days 7})))
+
 (defn get
   "A configuration getter. Helps code be more testable."
   ([key]
