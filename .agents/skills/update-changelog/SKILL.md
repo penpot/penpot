@@ -357,6 +357,39 @@ Insert the new version section right after the `# CHANGELOG` header (before
 the previous version entry). Use the `edit` tool with enough context to make
 a unique match.
 
+### 8b. Propose and populate the `:rocket: Epics and highlights` subsection
+
+After inserting the version section, proactively create or populate the
+`### :rocket: Epics and highlights` subsection. This section surfaces the
+most impactful changes for self-hosted users checking for updates.
+
+**When to create:** If the version section does not already have a
+`### :rocket: Epics and highlights` subsection, create one. Place it before
+`### :sparkles:` (matching existing order in CHANGES.md).
+
+**How to identify highlights:** Review the `:sparkles:` entries for the
+version and select 2–5 of the most impactful/user-visible ones. Criteria:
+- New user-visible features (not internal refactors)
+- Significant capability additions
+- Items that create "FOMO" for self-hosted users on older versions
+
+**Use release notes as hints:** Check
+`frontend/src/app/main/ui/releases/v2_<MINOR>.cljs` for the corresponding
+version. The slide titles and feature descriptions there are curated
+marketing content indicating what the team considers highlight-worthy. Match
+those themes to changelog entries. Treat these files as optional hints — they
+may not exist for every version.
+
+**Format requirement:** Every `:rocket:` entry MUST follow the standard
+changelog format with issue/PR references:
+```
+- <description> [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+```
+An entry without references is an anomaly.
+
+**Preserve existing entries:** If the `:rocket:` section already exists from
+a prior run, preserve its entries. Do not remove or rewrite them.
+
 ### 9. Verify
 
 Read the top of `CHANGES.md` and confirm:
@@ -468,9 +501,7 @@ Markdown viewer.
 ## What is an anomaly
 
 **An anomaly is a milestone-mismatch between an issue and its referenced
-PR.** It indicates that the changelog claim "this issue is fixed by this PR,
-all in milestone M" is inconsistent with the actual milestone assignments.
-There are exactly two types:
+PR, or a missing/defective `:rocket:` entry.** There are four types:
 
 1. **Issue is in the milestone, but its referenced PR is in a different
    milestone (or has no milestone).** The changelog claims a fix in this
@@ -486,6 +517,12 @@ There are exactly two types:
    PR that closes an issue with no milestone references an issue from
    another (probably private) project; that is expected and the issue is
    not part of this changelog. Do not report it.
+3. **missing-highlights:** A released version section has no
+   `### :rocket: Epics and highlights` subsection. Every released version
+   should have at least one highlight entry.
+4. **missing-highlight-reference:** A `:rocket:` entry lacks issue/PR
+   references. Every highlight entry must follow the standard changelog
+   format with `[#ISSUE]` and `(PR: [#PR])` links.
 
 **Anything else is not an anomaly.** Other discrepancies (exclusion
 labels on in-changelog issues, missing valid issues, unmerged PR
@@ -653,6 +690,35 @@ for pr_num in sorted(changelog_prs):
                 'issue_milestone': issue_ms,  # may be None
             })
 
+# --- Type C: released version sections without :rocket: subsection ---
+anomalies_c = []  # list of version strings
+rocket_heading_re = re.compile(r'^### :rocket:', re.MULTILINE)
+version_sections = re.split(r'(?=^## \d+\.\d+\.\d+)', content, flags=re.MULTILINE)
+for vs in version_sections:
+    m = re.match(r'^## (\d+\.\d+\.\d+)(.*)', vs)
+    if not m: continue
+    ver, suffix = m.group(1), m.group(2)
+    if 'unreleased' in suffix.lower(): continue
+    if not rocket_heading_re.search(vs):
+        anomalies_c.append(ver)
+
+# --- Type D: :rocket: entries without issue/PR references ---
+anomalies_d = []  # list of dicts: {version, line}
+issue_ref_re = re.compile(r'\[#\d+\]\(https://github\.com/penpot/penpot/issues/\d+\)')
+for vs in version_sections:
+    m = re.match(r'^## (\d+\.\d+\.\d+)(.*)', vs)
+    if not m: continue
+    ver = m.group(1)
+    rocket_match = rocket_heading_re.search(vs)
+    if not rocket_match: continue
+    # Extract the :rocket: subsection body (up to next ### or ##)
+    rocket_body = vs[rocket_match.end():]
+    rocket_body = re.split(r'(?m)^#{2,3}\s', rocket_body)[0]
+    for line in rocket_body.splitlines():
+        line = line.strip()
+        if line.startswith('- ') and not issue_ref_re.search(line):
+            anomalies_d.append({'version': ver, 'line': line[:100]})
+
 # --- Write report ---
 def fmt_ms(ms):
     return ms if ms else "_none_"
@@ -664,21 +730,27 @@ with open(OUTPUT, 'w') as f:
 
     n_a = len(anomalies_a)
     n_b = len(anomalies_b)
+    n_c = len(anomalies_c)
+    n_d = len(anomalies_d)
 
     f.write('## Summary\n\n')
     f.write(f'- **Issue in {MILESTONE}, referenced PR in different milestone or no milestone:** {n_a}\n')
     f.write(f'- **PR in {MILESTONE}, closing issue in a different milestone:** {n_b}\n')
-    f.write(f'- **Total anomalies:** {n_a + n_b}\n\n')
+    f.write(f'- **Released version missing :rocket: section:** {n_c}\n')
+    f.write(f'- **:rocket: entry without issue/PR references:** {n_d}\n')
+    f.write(f'- **Total anomalies:** {n_a + n_b + n_c + n_d}\n\n')
 
     # --- Anomalies section ---
-    if n_a or n_b:
+    if n_a or n_b or n_c or n_d:
         f.write('## Anomalies\n\n')
-        f.write('These are milestone mismatches between an issue in the changelog '
-                'and its referenced PR (or vice-versa). The changelog claim '
-                '"this issue is fixed by this PR, all in this milestone" is '
-                'inconsistent with the actual milestone assignments. '
-                'Resolve by either updating the milestone on the issue/PR or '
-                'removing the misleading entry from the changelog.\n\n')
+
+        if n_a or n_b:
+            f.write('These are milestone mismatches between an issue in the changelog '
+                    'and its referenced PR (or vice-versa). The changelog claim '
+                    '"this issue is fixed by this PR, all in this milestone" is '
+                    'inconsistent with the actual milestone assignments. '
+                    'Resolve by either updating the milestone on the issue/PR or '
+                    'removing the misleading entry from the changelog.\n\n')
 
         if n_a:
             f.write(f'### Issue in {MILESTONE}, PR in different milestone or no milestone\n\n')
@@ -709,8 +781,24 @@ with open(OUTPUT, 'w') as f:
                     badge = '🔴' if e['issue_milestone'] is None else '⚠️'
                     f.write(f'  - {badge} Closing {issue_link(e["issue"])} is in milestone **{ms_label}** (expected: {MILESTONE})\n')
                 f.write('\n')
+
+        if n_c:
+            f.write(f'\n### Released version missing :rocket: section\n\n')
+            f.write('These released versions have no `### :rocket: Epics and highlights` subsection. '
+                    'Add highlights to help self-hosted users understand what they are missing.\n\n')
+            for ver in anomalies_c:
+                f.write(f'- Version **{ver}**\n')
+            f.write('\n')
+
+        if n_d:
+            f.write(f'\n### :rocket: entry without issue/PR references\n\n')
+            f.write('These highlight entries lack the required issue/PR references. '
+                    'Add `[#ISSUE](...)` and `(PR: [#PR](...))` links.\n\n')
+            for d in anomalies_d:
+                f.write(f'- **{d["version"]}**: `{d["line"]}`\n')
+            f.write('\n')
     else:
-        f.write('✅ No anomalies found. All (issue, PR) pairs in the changelog have aligned milestone assignments.\n\n')
+        f.write('✅ No anomalies found. All (issue, PR) pairs in the changelog have aligned milestone assignments, and all released versions have properly referenced :rocket: entries.\n\n')
 
     # --- Context ---
     f.write('---\n\n')
@@ -726,8 +814,7 @@ print(f"Anomaly report written to {OUTPUT}")
 PYEOF
 ```
 
-This generates `CHANGES-ISSUES.md` containing **only the anomalies** —
-milestone mismatches between issues and their referenced PRs:
+This generates `CHANGES-ISSUES.md` containing **only the anomalies**:
 
 1. **Issue in milestone, referenced PR in different milestone or no milestone** —
    the changelog claims a fix here, but the PR is released elsewhere.
@@ -736,6 +823,10 @@ milestone mismatches between issues and their referenced PRs:
    (An issue with *no* milestone belongs to another, probably private,
    project — milestones are only required on the "Main" project — so it is
    neither an anomaly nor a changelog candidate.)
+3. **missing-highlights** — a released version section has no
+   `### :rocket: Epics and highlights` subsection.
+4. **missing-highlight-reference** — a `:rocket:` entry lacks issue/PR
+   references.
 
 **Rule violations are not in the report** — they are workflow errors the
 LLM must fix directly in `CHANGES.md` during step 6a (pre-flight checks).

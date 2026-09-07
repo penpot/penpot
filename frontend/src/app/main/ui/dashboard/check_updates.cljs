@@ -29,8 +29,8 @@
 (def ^:private telemetry-origin
   "check-updates-modal")
 
-(def ^:private highlights-md-url
-  "https://raw.githubusercontent.com/penpot/penpot/refs/heads/staging/HIGHLIGHTS.md")
+(def ^:private changelog-md-url
+  "https://raw.githubusercontent.com/penpot/penpot/refs/heads/staging/CHANGES.md")
 
 (def ^:private changelog-url
   "https://github.com/penpot/penpot/blob/staging/CHANGES.md")
@@ -44,6 +44,9 @@
 (def ^:private bullet-re
   #"^- (.+)$")
 
+(def ^:private rocket-heading-re
+  #"(?m)^### :rocket: Epics and highlights\s*$")
+
 (defn- unreleased-suffix?
   [suffix]
   (str/includes? (str/lower (or suffix "")) "unreleased"))
@@ -56,9 +59,21 @@
                  item)))
        vec))
 
+(defn- extract-rocket-items
+  "Given a version section body, find the :rocket: subsection and
+  extract its bullet items. Returns nil if no :rocket: or empty."
+  [version-body]
+  (when-let [[_ rocket-body] (str/split version-body rocket-heading-re 2)]
+    (let [subsection (-> (cstr/split rocket-body #"(?m)(?=^#{2,3}\s)") first)]
+      (when subsection
+        (let [items (parse-section-items subsection)]
+          (when (seq items) items))))))
+
 (defn parse-highlights
-  "Parse HIGHLIGHTS.md into released version sections with bullet items.
-  Skips Unreleased headings. Preserves file order (newest first)."
+  "Parse CHANGES.md into released version sections with bullet items from
+  the :rocket: Epics and highlights subsection. Skips Unreleased headings,
+  versions without a :rocket: section, and versions with an empty one.
+  Preserves file order (newest first)."
   [markdown]
   (if-not (string? markdown)
     []
@@ -66,14 +81,19 @@
          (keep (fn [part]
                  (when-let [[_ version suffix] (re-find version-heading-re part)]
                    (when-not (unreleased-suffix? suffix)
-                     {:version version
-                      :items   (parse-section-items part)}))))
+                     (when-let [items (extract-rocket-items part)]
+                       {:version version
+                        :items   items})))))
          vec)))
 
 (defn parse-latest-released-version
-  "Return the first non-unreleased `## X.Y.Z` heading from a highlights body."
+  "Return the first non-unreleased `## X.Y.Z` heading from a CHANGES.md body."
   [markdown]
-  (some-> (parse-highlights markdown) first :version))
+  (when (string? markdown)
+    (some->> (re-seq version-heading-re markdown)
+             (keep (fn [[_ version suffix]]
+                     (when-not (unreleased-suffix? suffix) version)))
+             first)))
 
 (defn highlights-until-installed
   "Keep released sections newer than the installed version (major, minor,
@@ -101,8 +121,8 @@
 
 (defn- handle-highlights
   [installed body]
-  (let [sections (parse-highlights body)
-        latest   (some-> sections first :version)]
+  (let [latest   (parse-latest-released-version body)
+        sections (parse-highlights body)]
     (cond
       (nil? latest)
       (show-unable-dialog)
@@ -124,7 +144,7 @@
    (->> (http/send! {:method :get
                      :mode :cors
                      :omit-default-headers true
-                     :uri highlights-md-url
+                     :uri changelog-md-url
                      :response-type :text})
         (rx/subs!
          (fn [response]
@@ -280,23 +300,25 @@
                   :class (stl/css :modal-msg)}
         (tr "dashboard.check-updates.available-message")]
 
-       [:> text* {:as "h3"
-                  :typography t/headline-small
-                  :class (stl/css :highlights-title)}
-        (tr "dashboard.check-updates.highlights-title")]
+       (when (seq highlights)
+         [:*
+          [:> text* {:as "h3"
+                     :typography t/headline-small
+                     :class (stl/css :highlights-title)}
+           (tr "dashboard.check-updates.highlights-title")]
 
-       [:div {:class (stl/css :highlights-scroll)}
-        (for [section highlights]
-          (let [version (:version section)
-                items   (:items section)]
-            [:div {:key version
-                   :class (stl/css :highlights-section)}
-             [:div {:class (stl/css :highlights-version)} version]
-             [:ul {:class (stl/css :highlights-list)}
-              (for [item items]
-                [:li {:key item
-                      :class (stl/css :highlights-item)}
-                 item])]]))]]
+          [:div {:class (stl/css :highlights-scroll)}
+           (for [section highlights]
+             (let [version (:version section)
+                   items   (:items section)]
+               [:div {:key version
+                      :class (stl/css :highlights-section)}
+                [:div {:class (stl/css :highlights-version)} version]
+                [:ul {:class (stl/css :highlights-list)}
+                 (for [item items]
+                   [:li {:key item
+                         :class (stl/css :highlights-item)}
+                    item])]]))]])]
 
       [:div {:class (stl/css :modal-footer :modal-footer-available)}
        [:> button* {:variant "secondary"

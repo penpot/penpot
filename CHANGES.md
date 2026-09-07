@@ -185,6 +185,10 @@
 ### :rocket: Epics and highlights
 
 - Render prototype viewer with WASM (Skia) engine instead of SVG [#10037](https://github.com/penpot/penpot/issues/10037) (PR: [#10038](https://github.com/penpot/penpot/pull/10038))
+- Add layer blur effect for visual depth and styling [#9844](https://github.com/penpot/penpot/issues/9844) (PR: [#10034](https://github.com/penpot/penpot/pull/10034))
+- Render guides in WebGL for consistent viewer performance [#10068](https://github.com/penpot/penpot/issues/10068) (PR: [#10014](https://github.com/penpot/penpot/pull/10014))
+- Add concurrency limiter and status indicators for MCP server communications [#9493](https://github.com/penpot/penpot/issues/9493) (PR: [#9748](https://github.com/penpot/penpot/pull/9748))
+- Add typography token row to multiselected texts for better token visibility [#9336](https://github.com/penpot/penpot/issues/9336) (PR: [#9128](https://github.com/penpot/penpot/pull/9128))
 
 ### :sparkles: New features & Enhancements
 
@@ -538,6 +542,10 @@
 - Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [#9137](https://github.com/penpot/penpot/issues/9137) (PR: [#9138](https://github.com/penpot/penpot/pull/9138))
 
 ## 2.15.0
+
+### :rocket: Epics and highlights
+
+- Add MCP server integration for AI-assisted design workflows [#9174](https://github.com/penpot/penpot/issues/9174) (PR: [#9032](https://github.com/penpot/penpot/pull/9032), [#9321](https://github.com/penpot/penpot/pull/9321))
 
 ### :sparkles: New features & Enhancements
 
