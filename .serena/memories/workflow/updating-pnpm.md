@@ -5,10 +5,15 @@ file (never pipe tool output through filters).
 
 ## Layout facts
 
-- The repo has 12 pnpm workspaces, each with its own `pnpm-workspace.yaml`
+- The repo has 11 pnpm workspaces, each with its own `pnpm-workspace.yaml`
   and `pnpm-lock.yaml`: the repo root plus `backend`, `common`, `docs`,
   `exporter`, `frontend`, `library`, `mcp`, `media-processor`, `plugins`,
-  `render-wasm`, and `plugins/apps/composable-test-suite`.
+  and `render-wasm`.
+- Every package inside a module workspace (for example all `plugins/apps/*`
+  and `plugins/libs/*` packages) is a plain member of that module's
+  workspace. Members must not carry their own `pnpm-workspace.yaml` or
+  `pnpm-lock.yaml`; their dependencies resolve through the parent
+  workspace's lockfile.
 - Every `package.json` (about 35 of them) must carry a `packageManager` field
   with the identical `pnpm@<version>+sha512.<hash>` value. Do not let them drift.
 - CI pins no pnpm version; workflows rely on corepack reading
@@ -42,10 +47,11 @@ file (never pipe tool output through filters).
   `ignoredBuiltDependencies`. Repo convention is `allowBuilds: esbuild: true`.
   Replace the placeholder and drop the `ignoredBuiltDependencies` entry,
   then re-run.
-- `plugins/apps/composable-test-suite` is both a member of the `plugins`
-  workspace and its own workspace root: pnpm picks the nearest
-  `pnpm-workspace.yaml` walking up, so commands run inside it use its own
-  workspace config and lockfile.
+- `plugins/apps/composable-test-suite` once had its own
+  `pnpm-workspace.yaml` and acted as a nested workspace root. That state is
+  gone on purpose: pnpm picks the nearest `pnpm-workspace.yaml` walking up,
+  so a nested one silently forks install and lockfile behavior. Do not
+  reintroduce it.
 - Expect metadata-only lockfile diffs when only the pnpm version moves:
   the pnpm self-reference entries, plus a new `packageManagerDependencies`
   section in lockfiles last written by older pnpm. Large diffs mean
@@ -54,6 +60,6 @@ file (never pipe tool output through filters).
 ## Verification
 
 - Every `packageManager` field is byte-identical (same version and hash).
-- `pnpm --version` in each of the 12 workspaces prints the target version.
-- `pnpm install --frozen-lockfile` succeeds in each of the 12 workspaces.
+- `pnpm --version` in each workspace prints the target version.
+- `pnpm install --frozen-lockfile` succeeds in each of the 11 workspaces.
 - `git diff` on lockfiles matches the expectations above.
