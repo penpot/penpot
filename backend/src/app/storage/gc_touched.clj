@@ -67,13 +67,26 @@
   (-> (db/exec-one! conn [sql:has-file-object-thumbnail-refs id])
       (get :has-refs)))
 
-(def ^:private
-  sql:has-file-thumbnail-refs
+(def ^:private sql:has-file-thumbnail-refs
   "SELECT EXISTS (SELECT 1 FROM file_thumbnail WHERE media_id = ?) AS has_refs")
 
 (defn- has-file-thumbnails-refs?
   [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-file-thumbnail-refs id])
+      (get :has-refs)))
+
+;; Objects in the job-resource bucket are referenced by the resource_id
+;; column of job rows (the unified jobs substrate). A live job row of
+;; any status keeps the object frozen; once no row references it (the
+;; jobs GC deletes expiring/retained rows and marks the object as
+;; touched before/at the same time) the object becomes deletable.
+
+(def ^:private sql:has-job-resource-refs
+  "SELECT EXISTS (SELECT 1 FROM job WHERE resource_id = ?) AS has_refs")
+
+(defn- has-job-resource-refs?
+  [conn {:keys [id]}]
+  (-> (db/exec-one! conn [sql:has-job-resource-refs id])
       (get :has-refs)))
 
 (def sql:exists-file-data-refs
@@ -162,6 +175,7 @@
     (= bucket "profile")               (process-objects! conn has-profile-refs? bucket objects)
     (= bucket "file-data")             (process-objects! conn has-file-data-refs? bucket objects)
     (= bucket sto/tempfile-bucket)     (process-objects! conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket sto/job-resource-bucket) (process-objects! conn has-job-resource-refs? bucket objects)
     (= bucket "organization")          (process-objects! conn (constantly false) bucket objects)
     :else
     (ex/raise :type :internal
