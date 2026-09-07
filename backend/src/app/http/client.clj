@@ -15,19 +15,17 @@
   (:require
    [app.common.schema :as sm]
    [app.util.ssrf :as ssrf]
+   [app.worker :as-alias wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [java-http-clj.core :as http]
-   [promesa.exec :as px])
+   [java-http-clj.core :as http])
   (:import
    java.net.http.HttpClient
    java.net.URI))
 
 (def default-max-redirects 5)
+(def default-connect-timeout 30000)
 (def default-request-timeout 30000)
-(def default-executor-parallelism 32)
-
-(defonce ^:private executor (atom nil))
 
 (defn client?
   [o]
@@ -38,19 +36,10 @@
   :pred client?})
 
 (defmethod ig/init-key ::client
-  [_ _]
-  (let [exec (px/fixed-executor :parallelism default-executor-parallelism
-                                :prefix "penpot/http-client/")]
-    (reset! executor exec)
-    (http/build-client {:connect-timeout default-request-timeout
-                        :executor exec
-                        :follow-redirects :never})))
-
-(defmethod ig/halt-key! ::client
-  [_ _]
-  (when-let [exec @executor]
-    (px/shutdown! exec)
-    (reset! executor nil)))
+  [_ {:keys [::wrk/executor]}]
+  (http/build-client {:connect-timeout default-connect-timeout
+                      :executor executor
+                      :follow-redirects :never}))
 
 (defn send!
   ([client req] (send! client req {}))
