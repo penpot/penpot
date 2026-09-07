@@ -24,6 +24,7 @@
    [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
+   [app.jobs :as-alias jobs]
    [app.jobs.gc :as-alias jobs.gc]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
@@ -408,6 +409,90 @@
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
      (ig/ref ::webhooks/run-webhook-handler)}}
+
+   ::jobs/defs
+   {:sendmail              (ig/ref ::email/job-def)
+    :delete-object         (ig/ref :app.tasks.delete-object/job-def)
+    :demo-purge            (ig/ref :app.tasks.demo-purge/job-def)
+    :run-webhook           (ig/ref ::webhooks/run-webhook-job-def)
+    :process-webhook-event (ig/ref ::webhooks/process-webhook-event-job-def)
+    :file-gc               (ig/ref :app.tasks.file-gc/file-gc-job-def)
+    :offload-file-data     (ig/ref :app.tasks.offload-file-data/offload-file-data-job-def)
+    :objects-gc            (ig/ref :app.tasks.objects-gc/objects-gc-job-def)
+    :storage-gc-deleted    (ig/ref ::sto.gc-deleted/storage-gc-deleted-job-def)
+    :storage-gc-touched    (ig/ref ::sto.gc-touched/storage-gc-touched-job-def)
+    :jobs-gc               (ig/ref :app.jobs.gc/jobs-gc-job-def)
+    :tasks-gc              (ig/ref :app.tasks.tasks-gc/tasks-gc-job-def)
+    :telemetry             (ig/ref :app.tasks.telemetry/telemetry-job-def)
+    :upload-session-gc     (ig/ref :app.tasks.upload-session-gc/upload-session-gc-job-def)
+    :session-gc            (ig/ref ::session/session-gc-job-def)
+    :file-gc-scheduler     (ig/ref :app.tasks.file-gc-scheduler/file-gc-scheduler-job-def)
+    :audit-log-archive     (ig/ref :app.loggers.audit.archive-task/audit-log-archive-job-def)
+    :audit-log-gc          (ig/ref :app.loggers.audit.gc-task/audit-log-gc-job-def)}
+
+   :app.email/job-def
+   {::email/sendmail (ig/ref ::email/sendmail)}
+
+   :app.tasks.delete-object/job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.demo-purge/job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.loggers.webhooks/run-webhook-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::http/client (ig/ref ::http.client/client)}
+
+   :app.loggers.webhooks/process-webhook-event-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::http/client (ig/ref ::http.client/client)}
+
+   :app.tasks.file-gc/file-gc-job-def
+   {::db/pool   (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.offload-file-data/offload-file-data-job-def
+   {::db/pool (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.objects-gc/objects-gc-job-def
+   {::db/pool    (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.storage.gc-deleted/storage-gc-deleted-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.storage.gc-touched/storage-gc-touched-job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.jobs.gc/jobs-gc-job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.tasks-gc/tasks-gc-job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.telemetry/telemetry-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::http/client (ig/ref ::http.client/client)
+    ::setup/props (ig/ref ::setup/props)}
+
+   :app.tasks.upload-session-gc/upload-session-gc-job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   ::session/session-gc-job-def
+   {::session.tasks/gc (ig/ref ::session.tasks/gc)}
+
+   :app.tasks.file-gc-scheduler/file-gc-scheduler-job-def
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.loggers.audit.archive-task/audit-log-archive-job-def
+   {::db/pool        (ig/ref ::db/pool)
+    ::http/client    (ig/ref ::http.client/client)
+    ::setup/shared-keys (ig/ref ::setup/shared-keys)}
+
+   :app.loggers.audit.gc-task/audit-log-gc-job-def
+   {::db/pool (ig/ref ::db/pool)}
 
    ::email/blacklist
    {}

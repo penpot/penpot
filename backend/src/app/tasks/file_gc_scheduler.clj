@@ -9,9 +9,11 @@
   file-gc task for all files that matches the eligibility threshold."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.worker :as wrk]
    [integrant.core :as ig]))
 
@@ -37,6 +39,7 @@
                                  :revn revn
                                  :modified-at (ct/format-inst modified-at))
                           (wrk/submit! (assoc cfg ::wrk/params params))
+                          (jobs/heartbeat! cfg)
                           (inc total)))
                       0
                       (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
@@ -50,15 +53,37 @@
   [k v]
   {k (assoc v ::min-age (cf/get-file-clean-delay))})
 
+(declare execute-file-gc-scheduler!)
+
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [threshold (-> (ct/duration (or (:min-age props) (::min-age cfg)))
-                        (ct/in-past))]
-      (-> cfg
-          (assoc ::db/rollback (:rollback? props))
-          (assoc ::wrk/task :file-gc)
-          (assoc ::wrk/priority 10)
-          (assoc ::wrk/mark-retries 0)
-          (assoc ::wrk/delay 10000)
-          (db/tx-run! schedule! threshold)))))
+    (execute-file-gc-scheduler! cfg props)))
+
+(def schema:file-gc-scheduler-params
+  "min-age: duration object in-process; text over the job pipeline."
+  [:map
+   [:min-age {:optional true} :any]])
+
+(defmethod ig/init-key ::file-gc-scheduler-job-def
+  [_ cfg]
+  {::jobs/name      :file-gc-scheduler
+   ::jobs/schema    schema:file-gc-scheduler-params
+   ::jobs/handler   (partial execute-file-gc-scheduler! cfg)
+   ::jobs/decoder   (sm/decoder schema:file-gc-scheduler-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:file-gc-scheduler-params)})
+
+(defn execute-file-gc-scheduler!
+  "Plain job handler: select the file gc candidates (media-trim pending
+  files before threshold) and schedule one file-gc job per file; no props
+  needed (min-age default from config; overridable for the repl runs)."
+  [cfg params]
+  (let [threshold (-> (ct/duration (or (:min-age params) (::min-age cfg)))
+                      (ct/in-past))]
+    (-> cfg
+        (assoc ::db/rollback (:rollback? params))
+        (assoc ::wrk/task :file-gc)
+        (assoc ::wrk/priority 10)
+        (assoc ::wrk/mark-retries 0)
+        (assoc ::wrk/delay 10000)
+        (db/tx-run! schedule! threshold))))

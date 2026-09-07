@@ -9,9 +9,11 @@
   of deleted or unreachable objects."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
@@ -325,20 +327,34 @@
   [k v]
   {k (assoc v ::chunk-size 100)})
 
+(declare execute-objects-gc!)
+
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props]}]
-    (let [skip-delay (:skip-delay props)
-          chunk-size (or (:chunk-size props) (::chunk-size cfg))
-          cfg        (-> cfg
-                         (assoc ::chunk-size chunk-size)
-                         (assoc ::timestamp (if skip-delay
-                                              (ct/in-future {:days 3650})
-                                              (ct/now))))]
-      (loop [procs (map deref deletion-proc-vars)
-             total 0]
-        (if-let [proc-fn (first procs)]
-          (let [result (execute-proc! cfg proc-fn)]
-            (recur (rest procs)
-                   (long (+ total result))))
-          {:processed total})))))
+  (fn [_]
+    (execute-objects-gc! cfg)))
+
+(def schema:objects-gc-params
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::objects-gc-job-def
+  [_ cfg]
+  {::jobs/name      :objects-gc
+   ::jobs/schema    schema:objects-gc-params
+   ::jobs/handler   (partial execute-objects-gc! cfg)
+   ::jobs/decoder   (sm/decoder schema:objects-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:objects-gc-params)})
+
+(defn execute-objects-gc!
+  "Plain job handler: garbage collect orphan storage objects."
+  ([cfg] (execute-objects-gc! cfg {}))
+  ([cfg _params]
+   (let [cfg (assoc cfg ::timestamp (ct/now))]
+     (loop [procs (map deref deletion-proc-vars)
+            total 0]
+       (if-let [proc-fn (first procs)]
+         (let [result (execute-proc! cfg proc-fn)]
+           (jobs/heartbeat! cfg)
+           (recur (rest procs)
+                  (long (+ total result))))
+         {:processed total})))))

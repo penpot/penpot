@@ -22,8 +22,10 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
@@ -214,6 +216,7 @@
          deleted 0]
     (if-let [chunk (get-chunk pool timestamp)]
       (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
+        (jobs/heartbeat! cfg)
         (recur (long (+ freezed nfo))
                (long (+ deleted ndo))))
       {:freeze freezed :delete deleted})))
@@ -221,6 +224,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare execute-storage-gc-touched!)
 
 (defmethod ig/assert-key ::handler
   [_ params]
@@ -231,10 +236,27 @@
   {k (merge {::min-age (ct/duration {:hours 2})} v)})
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props]}]
-    (let [threshold (if (:skip-delay props)
-                      (ct/now)
-                      (ct/minus (ct/now) min-age))]
-      (process-touched! (assoc cfg ::timestamp threshold)))))
+  [_ cfg]
+  (fn [_]
+    (execute-storage-gc-touched! cfg)))
+
+(def schema:storage-gc-touched-params
+  "Params map (no params needed; cfg-provided config only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::storage-gc-touched-job-def
+  [_ cfg]
+  {::jobs/name      :storage-gc-touched
+   ::jobs/schema    schema:storage-gc-touched-params
+   ::jobs/handler   (partial execute-storage-gc-touched! cfg)
+   ::jobs/decoder   (sm/decoder schema:storage-gc-touched-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:storage-gc-touched-params)})
+
+(defn execute-storage-gc-touched!
+  "Plain job handler: analyze the touched storage objects and freeze or
+  delete them depending on their references."
+  ([cfg] (execute-storage-gc-touched! cfg {}))
+  ([cfg _params]
+   (let [threshold (ct/minus (ct/now) (::min-age cfg))]
+     (process-touched! (assoc cfg ::timestamp threshold)))))
 

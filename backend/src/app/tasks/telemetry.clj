@@ -12,9 +12,11 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.util.json :as json]
@@ -299,6 +301,8 @@
 ;; TASK ENTRY POINT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare execute-telemetry!)
+
 (defmethod ig/assert-key ::handler
   [_ params]
   (assert (http/client? (::http/client params)) "expected a valid http client")
@@ -308,45 +312,64 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [task]
-    (let [params   (:props task)
-          send?    (get params :send? true)
-          enabled? (or (get params :enabled? false)
-                       (contains? cf/flags :telemetry))
-          subs     (get-subscriptions cfg)]
+    (execute-telemetry! cfg (:props task))))
 
+(def schema:telemetry-params
+  [:map
+   [:send? {:optional true} :boolean]
+   [:enabled? {:optional true} :boolean]])
 
-      ;; If we have telemetry enabled, then proceed the normal
-      ;; operation sending legacy report
+(defmethod ig/init-key ::telemetry-job-def
+  [_ cfg]
+  {::jobs/name      :telemetry
+   ::jobs/schema    schema:telemetry-params
+   ::jobs/handler   (partial execute-telemetry! cfg)
+   ::jobs/decoder   (sm/decoder schema:telemetry-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:telemetry-params)})
 
-      (if enabled?
-        (when send?
-          (db/run! cfg gc-events)
-          ;; Randomize start time to avoid thundering herd when multiple
-          ;; instances restart at the same time.
-          (px/sleep (rand-int 10000))
+(defn execute-telemetry!
+  "Plain job handler: send periodic telemetry data."
+  [cfg params]
+  (let [send?    (get params :send? true)
+        enabled? (or (get params :enabled? false)
+                     (contains? cf/flags :telemetry))
+        subs     (get-subscriptions cfg)]
 
+    (jobs/heartbeat! cfg)
+
+    ;; If we have telemetry enabled, then proceed the normal
+    ;; operation sending legacy report
+
+    (if enabled?
+      (when send?
+        (db/run! cfg gc-events)
+        ;; Randomize start time to avoid thundering herd when multiple
+        ;; instances restart at the same time.
+        (px/sleep (rand-int 10000))
+
+        (try
+          (let [stats (db/run! cfg get-legacy-stats)]
+            (send-legacy-data cfg stats subs))
+          (catch Exception cause
+            (l/wrn :hint "unable to send legacy report"
+                   :cause cause)))
+
+        ;; Ship any anonymous audit-log events accumulated in
+        ;; telemetry mode (only when audit-log feature is off).
+        (when-not (contains? cf/flags :audit-log)
           (try
-            (let [stats (db/run! cfg get-legacy-stats)]
-              (send-legacy-data cfg stats subs))
+            (db/run! cfg collect-and-send-audit-events)
             (catch Exception cause
-              (l/wrn :hint "unable to send legacy report"
-                     :cause cause)))
+              (l/wrn :hint "unable to send events"
+                     :cause cause)))))
 
-          ;; Ship any anonymous audit-log events accumulated in
-          ;; telemetry mode (only when audit-log feature is off).
-          (when-not (contains? cf/flags :audit-log)
-            (try
-              (db/run! cfg collect-and-send-audit-events)
-              (catch Exception cause
-                (l/wrn :hint "unable to send events"
-                       :cause cause)))))
+      ;; If we have telemetry disabled, but there are users that are
+      ;; explicitly checked the newsletter subscription on the
+      ;; onboarding dialog or the profile section, then proceed to
+      ;; send a limited telemetry data, that consists in the list of
+      ;; subscribed emails and the running penpot version.
+      (when (and send? (seq subs))
+        (px/sleep (rand-int 10000))
+        (ex/ignoring
+         (send-legacy-data cfg nil subs))))))
 
-        ;; If we have telemetry disabled, but there are users that are
-        ;; explicitly checked the newsletter subscription on the
-        ;; onboarding dialog or the profile section, then proceed to
-        ;; send a limited telemetry data, that consists in the list of
-        ;; subscribed emails and the running penpot version.
-        (when (and send? (seq subs))
-          (px/sleep (rand-int 10000))
-          (ex/ignoring
-           (send-legacy-data cfg nil subs)))))))

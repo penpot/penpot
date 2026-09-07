@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.jobs :as jobs]
    [app.util.template :as tmpl]
    [app.worker :as wrk]
    [clojure.java.io :as io]
@@ -320,30 +321,41 @@
 
 (declare send-to-logger!)
 
+(defn- sendmail-impl!
+  [cfg params]
+  (when (contains? cf/flags :smtp)
+    (let [session (create-smtp-session cfg)]
+      (with-open [transport (.getTransport session (if (::ssl cfg) "smtps" "smtp"))]
+        (.connect ^Transport transport
+                  ^String (::host cfg)
+                  ^String (::port cfg)
+                  ^String (::username cfg)
+                  ^String (::password cfg))
+
+        (let [^MimeMessage message (create-smtp-message cfg session params)]
+          (l/dbg :hint "sendmail"
+                 :id (:id params)
+                 :to (:to params)
+                 :subject (str/trim (:subject params)))
+
+          (.sendMessage ^Transport transport
+                        ^MimeMessage message
+                        (.getAllRecipients message))))))
+
+  (when (contains? cf/flags :log-emails)
+    (send-to-logger! cfg params)))
+
 (defmethod ig/init-key ::sendmail
-  [_ cfg]
-  (fn [params]
-    (when (contains? cf/flags :smtp)
-      (let [session (create-smtp-session cfg)]
-        (with-open [transport (.getTransport session (if (::ssl cfg) "smtps" "smtp"))]
-          (.connect ^Transport transport
-                    ^String (::host cfg)
-                    ^String (::port cfg)
-                    ^String (::username cfg)
-                    ^String (::password cfg))
+  [_ _cfg]
+  sendmail-impl!)
 
-          (let [^MimeMessage message (create-smtp-message cfg session params)]
-            (l/dbg :hint "sendmail"
-                   :id (:id params)
-                   :to (:to params)
-                   :subject (str/trim (:subject params)))
-
-            (.sendMessage ^Transport transport
-                          ^MimeMessage message
-                          (.getAllRecipients message))))))
-
-    (when (contains? cf/flags :log-emails)
-      (send-to-logger! cfg params))))
+(defmethod ig/init-key ::job-def
+  [_ {sendmail ::sendmail}]
+  {::jobs/name      :sendmail
+   ::jobs/schema    schema:params
+   ::jobs/handler   sendmail
+   ::jobs/decoder   (sm/decoder schema:params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:params)})
 
 (defmethod ig/assert-key ::handler
   [_ params]

@@ -9,33 +9,53 @@
    creation time with a delay matching the configured deletion-delay."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.worker :as wrk]
    [integrant.core :as ig]))
+
+(def schema:demo-purge-params
+  [:map
+   [:profile-id ::sm/uuid]])
 
 (defmethod ig/assert-key ::handler
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
+(declare execute-demo-purge!)
+
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props]}]
-    (let [profile-id (get props :profile-id)
-          now        (ct/now)]
+    (execute-demo-purge! cfg props)))
 
-      (l/trc :hint "demo-purge" :profile-id (str profile-id))
+(defmethod ig/init-key ::demo-purge-job-def
+  [_ cfg]
+  {::jobs/name      :demo-purge
+   ::jobs/schema    schema:demo-purge-params
+   ::jobs/handler   (partial execute-demo-purge! cfg)
+   ::jobs/decoder   (sm/decoder schema:demo-purge-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:demo-purge-params)})
 
-      ;; Mark the profile for immediate deletion
-      (db/tx-run! cfg
-                  (fn [{:keys [::db/conn] :as cfg}]
-                    (db/update! conn :profile
-                                {:deleted-at now}
-                                {:id profile-id}
-                                {::db/return-keys false})
-                    (wrk/submit!
-                     (-> cfg
-                         (assoc ::wrk/task :delete-object)
-                         (assoc ::wrk/params {:object :profile
-                                              :deleted-at now
-                                              :id profile-id}))))))))
+(defn execute-demo-purge!
+  "Plain job handler: mark the demo profile as deleted and submit the
+  corresponding delete-object job."
+  [cfg params]
+  (let [profile-id (:profile-id params)
+        now        (ct/now)]
+    (l/trc :hint "demo-purge" :profile-id (str profile-id))
+
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn] :as cfg}]
+                  (db/update! conn :profile
+                              {:deleted-at now}
+                              {:id profile-id}
+                              {::db/return-keys false})
+                  (wrk/submit!
+                   (-> cfg
+                       (assoc ::wrk/task :delete-object)
+                       (assoc ::wrk/params {:object :profile
+                                            :deleted-at now
+                                            :id profile-id})))))))

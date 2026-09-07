@@ -30,9 +30,11 @@
   row without being marked for reclaim."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [integrant.core :as ig]))
 
 (def ^:private sql:touch-objects
@@ -97,4 +99,44 @@
                        :touched-expired    touched-expired
                        :deleted-retained   deleted-retained
                        :touched-retained   touched-retained}))))))
+
+(declare execute-jobs-gc!)
+
+(def schema:jobs-gc-params
+  "min-age: duration object in-process; text over the job pipeline."
+  [:map
+   [:min-age {:optional true} :any]])
+
+(defmethod ig/init-key ::jobs-gc-job-def
+  [_ cfg]
+  {::jobs/name      :jobs-gc
+   ::jobs/schema    schema:jobs-gc-params
+   ::jobs/handler   (partial execute-jobs-gc! cfg)
+   ::jobs/decoder   (sm/decoder schema:jobs-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:jobs-gc-params)})
+
+(defn execute-jobs-gc!
+  "Plain job handler: delete expired rows (expires_at) and retained
+  internal terminal rows, marking the storage resources of the deleted
+  rows as touched (same transaction)."
+  [cfg params]
+  (let [min-age (or (:min-age params)
+                    (cf/get-jobs-retention))]
+    (db/tx-run! (assoc cfg ::db/rollback (:rollback? params))
+                (fn [{:keys [::db/conn]}]
+                  (let [[deleted-expired touched-expired]
+                        (delete-jobs! conn sql:delete-expired-jobs)
+
+                        [deleted-retained touched-retained]
+                        (delete-jobs! conn sql:delete-retained-jobs
+                                      (db/interval min-age))]
+                    (l/dbg :hint "jobs gc finished"
+                           :deleted-expired deleted-expired
+                           :touched-expired touched-expired
+                           :deleted-retained deleted-retained
+                           :touched-retained touched-retained)
+                    {:deleted-expired    deleted-expired
+                     :touched-expired    touched-expired
+                     :deleted-retained   deleted-retained
+                     :touched-retained   touched-retained})))))
 

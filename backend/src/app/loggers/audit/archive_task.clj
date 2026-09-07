@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
    [app.setup :as-alias setup]
    [integrant.core :as ig]
    [promesa.exec :as px]))
@@ -112,6 +113,8 @@
   [_ params]
   (assert (sm/valid? schema:handler-params params) "valid params expected for handler"))
 
+(declare execute-audit-log-archive!)
+
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [params]
@@ -138,4 +141,43 @@
 
             (when (pos? total)
               (l/dbg :hint "events archived" :total total))))))))
+
+(def schema:audit-log-archive-params
+  "Optional overrides for the repl invocation defaults."
+  [:map
+   [:enabled {:optional true} :boolean]
+   [:uri {:optional true} ::sm/text]])
+
+(defmethod ig/init-key ::audit-log-archive-job-def
+  [_ cfg]
+  {::jobs/name      :audit-log-archive
+   ::jobs/schema    schema:audit-log-archive-params
+   ::jobs/handler   (partial execute-audit-log-archive! cfg)
+   ::jobs/decoder   (sm/decoder schema:audit-log-archive-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-archive-params)})
+
+(defn execute-audit-log-archive!
+  "Plain job handler: archive the accumulated audit events in chunks
+  (heartbeat per iteration: the sent chunk batches can be long)."
+  [cfg params]
+  ;; NOTE: this let allows overwrite default configured values from
+  ;; the repl, when manually invoking the task.
+  (let [enabled (or (contains? cf/flags :audit-log-archive)
+                    (:enabled params false))
+        uri     (cf/get :audit-log-archive-uri)
+        uri     (or uri (:uri params))
+        cfg     (assoc cfg ::uri uri)]
+    (when (and enabled (not uri))
+      (ex/raise :type :internal
+                :code :task-not-configured
+                :hint "archive task not configured, missing uri"))
+    (when enabled
+      (loop [total 0]
+        (if-let [n (archive-events! cfg)]
+          (do
+            (jobs/heartbeat! cfg)
+            (px/sleep 100)
+            (recur (+ total ^long n)))
+          (when (pos? total)
+            (l/dbg :hint "events archived" :total total)))))))
 

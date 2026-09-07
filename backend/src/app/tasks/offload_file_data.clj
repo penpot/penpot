@@ -9,8 +9,10 @@
   storage (the database row) to a cold storage (fs or s3)."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
@@ -23,6 +25,7 @@
 
 (defn- offload-file-data
   [cfg {:keys [id file-id type] :as fdata}]
+  (jobs/heartbeat! cfg)
   (fdata/upsert! cfg (assoc fdata :backend "storage"))
   (l/trc :file-id (str file-id)
          :id (str id)
@@ -32,6 +35,16 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn execute-offload-file-data!
+  "Plain job handler: offload the file data rows of one file."
+  [cfg params]
+  (let [file-id (:file-id params)]
+    (-> cfg
+        (assoc ::db/rollback (:rollback? params))
+        (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
+                      (run! (partial offload-file-data cfg)
+                            (db/plan conn [sql:get-file-data file-id])))))))
+
 (defmethod ig/assert-key ::handler
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
@@ -40,9 +53,16 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [file-id (:file-id props)]
-      (-> cfg
-          (assoc ::db/rollback (:rollback? props))
-          (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
-                        (run! (partial offload-file-data cfg)
-                              (db/plan conn [sql:get-file-data file-id]))))))))
+    (execute-offload-file-data! cfg props)))
+
+(def schema:offload-file-data-params
+  [:map
+   [:file-id ::sm/uuid]])
+
+(defmethod ig/init-key ::offload-file-data-job-def
+  [_ cfg]
+  {::jobs/name      :offload-file-data
+   ::jobs/schema    schema:offload-file-data-params
+   ::jobs/handler   (partial execute-offload-file-data! cfg)
+   ::jobs/decoder   (sm/decoder schema:offload-file-data-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:offload-file-data-params)})

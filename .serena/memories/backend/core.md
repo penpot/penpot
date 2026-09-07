@@ -36,8 +36,18 @@ Backend RPC command areas without focused memories include access tokens, binfil
 
 `app.db` helpers accept cfg, pool, or conn in most places and convert kebab-case to snake_case:
 - `db/get`, `db/get*`, `db/query`, `db/insert!`, `db/update!`, `db/delete!`.
+- `db/get*`/`db/query` signature is `(ds table where-params & {:as opts})`: trailing
+  keywords become an opts MAP (ignored by the select builder — use `{::db/remove-deleted false}`
+  map as the single vararg to also see rows with `deleted_at` set), while a trailing
+  ODD number of keywords crashes with "Don't know how to create ISeq from: Keyword".
+  Extra keywords are NOT a column filter: rows always come back with all columns.
+- Next.js/JDBC caveat: where-maps don't support value vectors (no `IN`); use
+  `status = ANY(?)` with `db/create-array` inside `db/tx-run!`.
 - Use `db/run!` for multiple operations on one connection.
 - Use `db/tx-run!` for transactions.
+- `job`-substrate specifics (unified jobs): claims and terminal writers are
+  conditional updates (see `app.jobs`); GC deletes return resource ids via
+  `RETURNING` inside one transaction.
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 

@@ -18,6 +18,7 @@
    [app.http :as-alias http]
    [app.http.auth :as-alias http.auth]
    [app.http.session.tasks :as-alias tasks]
+   [app.jobs :as jobs]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.setup.clock :as clock]
@@ -378,8 +379,29 @@
            :deleted-v2 result-v2)
     (+ result-legacy result-v2)))
 
+(declare execute-session-gc!)
+
 (defmethod ig/init-key ::tasks/gc
   [_ {:keys [::tasks/max-age] :as cfg}]
   (l/dbg :hint "initializing session gc task" :max-age max-age)
   (fn [_]
-    (db/tx-run! cfg collect-expired-tasks)))
+    (execute-session-gc! cfg)))
+
+(def schema:session-gc-params
+  "Params map (no params needed; config-derived only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::session-gc-job-def
+  [_ {gc ::tasks/gc}]
+  {::jobs/name      :session-gc
+   ::jobs/schema    schema:session-gc-params
+   ::jobs/handler   gc
+   ::jobs/decoder   (sm/decoder schema:session-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:session-gc-params)})
+
+(defn execute-session-gc!
+  "Plain job handler: delete expired http sessions."
+  ([cfg] (execute-session-gc! cfg nil))
+  ([cfg _params]
+   (jobs/heartbeat! cfg)
+   (db/tx-run! cfg collect-expired-tasks)))

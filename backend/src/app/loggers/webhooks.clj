@@ -10,12 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.worker :as wrk]
    [clojure.data.json :as json]
@@ -65,30 +67,47 @@
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (http/client? (::http/client params)) "expect valid http client"))
 
+(defn process-event-impl!
+  [cfg props]
+
+  (let [items (lookup-webhooks cfg props)
+        event {:profile-id (:profile-id props)
+               :name "webhook"
+               :type "trigger"
+               :props {:name (get props :name)
+                       :event-id (get props :id)
+                       :total-affected (count items)}}]
+
+    (audit/insert cfg event)
+
+    (when items
+      (l/trc :hint "webhooks found for event" :total (count items))
+      (db/tx-run! cfg (fn [cfg]
+                        (doseq [item items]
+                          (wrk/submit! (-> cfg
+                                           (assoc ::wrk/task :run-webhook)
+                                           (assoc ::wrk/queue :webhooks)
+                                           (assoc ::wrk/max-retries 3)
+                                           (assoc ::wrk/params {:event props
+                                                                :config item})))))))))
+
 (defmethod ig/init-key ::process-event-handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
+    (process-event-impl! cfg props)))
 
-    (let [items (lookup-webhooks cfg props)
-          event {:profile-id (:profile-id props)
-                 :name "webhook"
-                 :type "trigger"
-                 :props {:name (get props :name)
-                         :event-id (get props :id)
-                         :total-affected (count items)}}]
+(def schema:process-webhook-event-params
+  "Lax schema: the event map is the audit event payload (dynamic shape,
+  produced by the audit logger submit)."
+  [:map-of :keyword :any])
 
-      (audit/insert cfg event)
-
-      (when items
-        (l/trc :hint "webhooks found for event" :total (count items))
-        (db/tx-run! cfg (fn [cfg]
-                          (doseq [item items]
-                            (wrk/submit! (-> cfg
-                                             (assoc ::wrk/task :run-webhook)
-                                             (assoc ::wrk/queue :webhooks)
-                                             (assoc ::wrk/max-retries 3)
-                                             (assoc ::wrk/params {:event props
-                                                                  :config item}))))))))))
+(defmethod ig/init-key ::process-webhook-event-job-def
+  [_ cfg]
+  {::jobs/name      :process-webhook-event
+   ::jobs/schema    schema:process-webhook-event-params
+   ::jobs/handler   (partial process-event-impl! cfg)
+   ::jobs/decoder   (sm/decoder schema:process-webhook-event-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:process-webhook-event-params)})
 ;; --- RUN
 
 (declare interpret-exception)
@@ -107,8 +126,8 @@
   [k v]
   {k (merge {::max-errors 3} (d/without-nils v))})
 
-(defmethod ig/init-key ::run-webhook-handler
-  [_ {:keys [::db/pool ::max-errors] :as cfg}]
+(defn run-webhook-impl!
+  [{:keys [::db/pool ::max-errors] :as cfg} props]
   (letfn [(update-webhook! [whook err]
             (if err
               (let [sql [(str "update webhook "
@@ -137,39 +156,58 @@
                          :req-data (db/tjson req)
                          :rsp-data (db/tjson rsp)}))]
 
-    (fn [{:keys [props] :as task}]
-      (let [event (:event props)
-            whook (:config props)
+    (let [event (:event props)
+          whook (:config props)
 
-            body  (case (:mtype whook)
-                    "application/json" (json/write-str event json-write-opts)
-                    "application/transit+json" (t/encode-str event)
-                    "application/x-www-form-urlencoded" (uri/map->query-string event))]
+          body  (case (:mtype whook)
+                  "application/json" (json/write-str event json-write-opts)
+                  "application/transit+json" (t/encode-str event)
+                  "application/x-www-form-urlencoded" (uri/map->query-string event))]
 
-        (l/dbg :hint "run webhook"
-               :event-name (:name event)
-               :webhook-id (str (:id whook))
-               :webhook-uri (:uri whook)
-               :webhook-mtype (:mtype whook))
+      (l/dbg :hint "run webhook"
+             :event-name (:name event)
+             :webhook-id (str (:id whook))
+             :webhook-uri (:uri whook)
+             :webhook-mtype (:mtype whook))
 
-        (let [req {:uri (:uri whook)
-                   :headers {"content-type" (:mtype whook)
-                             "user-agent" (str/ffmt "penpot/%" (:main cf/version))}
-                   :timeout (ct/duration "4s")
-                   :method :post
-                   :body body}]
-          (try
-            (let [rsp (http/req cfg req {:response-type :input-stream :sync? true})
-                  err (interpret-response rsp)]
-              (report-delivery! whook req rsp err)
-              (update-webhook! whook err))
-            (catch Throwable cause
-              (let [err (interpret-exception cause)]
-                (report-delivery! whook req nil err)
-                (update-webhook! whook err)
-                (when (= err "unknown")
-                  (l/err :hint "unknown error on webhook request"
-                         :cause cause))))))))))
+      (let [req {:uri (:uri whook)
+                 :headers {"content-type" (:mtype whook)
+                           "user-agent" (str/ffmt "penpot/%" (:main cf/version))}
+                 :timeout (ct/duration "4s")
+                 :method :post
+                 :body body}]
+        (try
+          (let [rsp (http/req cfg req {:response-type :input-stream :sync? true})
+                err (interpret-response rsp)]
+            (report-delivery! whook req rsp err)
+            (update-webhook! whook err))
+          (catch Throwable cause
+            (let [err (interpret-exception cause)]
+              (report-delivery! whook req nil err)
+              (update-webhook! whook err)
+              (when (= err "unknown")
+                (l/err :hint "unknown error on webhook request"
+                       :cause cause)))))))))
+
+(defmethod ig/init-key ::run-webhook-handler
+  [_ cfg]
+  (fn [{:keys [props] :as task}]
+    (run-webhook-impl! cfg props)))
+
+(def schema:run-webhook-params
+  "Lax schema: :event is the audit event payload (dynamic shape) and
+  :config is the webhook row (db row, dynamic)."
+  [:map
+   [:event [:map-of :keyword :any]]
+   [:config [:map-of :keyword :any]]])
+
+(defmethod ig/init-key ::run-webhook-job-def
+  [_ cfg]
+  {::jobs/name      :run-webhook
+   ::jobs/schema    schema:run-webhook-params
+   ::jobs/handler   (partial run-webhook-impl! cfg)
+   ::jobs/decoder   (sm/decoder schema:run-webhook-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:run-webhook-params)})
 
 (defn interpret-response
   [{:keys [status] :as response}]
