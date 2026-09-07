@@ -13,9 +13,9 @@
    [app.common.transit :as t]
    [app.config :as cf]
    [app.http :as-alias http]
+   [app.http.content-negotiation :as cnegot]
    [app.http.errors :as errors]
    [app.tokens :as tokens]
-   [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
    [yetti.middleware :as ymw]
@@ -126,12 +126,6 @@
 
 (def ^:const buffer-size (:xnio/buffer-size yt/defaults))
 
-(defn- write-json-value
-  [_ val]
-  (if (pmap/pointer-map? val)
-    [(pmap/get-id val) (meta val)]
-    val))
-
 (defn wrap-format-response
   [handler]
   (letfn [(transit-streamable-body [data opts _ output-stream]
@@ -153,7 +147,7 @@
                     data   (encode data)]
                 (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
                   (with-open [^java.io.OutputStreamWriter writer (java.io.OutputStreamWriter. bos)]
-                    (json/write writer data :key-fn json/write-camel-key :value-fn write-json-value))))
+                    (json/write writer data :key-fn json/write-camel-key :value-fn cnegot/write-json-value))))
               (catch java.io.IOException _)
               (catch Throwable cause
                 (binding [l/*context* {:value data}]
@@ -183,23 +177,11 @@
                       (assoc ::yres/body (yres/stream-body (partial transit-streamable-body body opts)))))
                 response)))
 
-          (format-from-params [{:keys [query-params] :as request}]
-            (and (= "json" (get query-params :_fmt))
-                 "application/json"))
-
           (format-response [response request]
-            (let [accept (or (format-from-params request)
-                             (yreq/get-header request "accept"))]
-              (cond
-                (or (= accept "application/transit+json")
-                    (str/includes? accept "application/transit+json"))
-                (format-response-with-transit response request)
-
-                (or (= accept "application/json")
-                    (str/includes? accept "application/json"))
-                (format-response-with-json response request)
-
-                :else
+            (let [format (cnegot/negotiate-format request)]
+              (case format
+                :transit (format-response-with-transit response request)
+                :json    (format-response-with-json response request)
                 (format-response-with-transit response request))))
 
           (process-response [response request]
