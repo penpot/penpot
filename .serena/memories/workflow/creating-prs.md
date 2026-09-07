@@ -1,6 +1,12 @@
 # Creating Pull Requests
 
-PR only on explicit request. Branch: issue/feature-specific; fallback `<type>/<short-description>` (`fix/...`, `feat/...`, `refactor/...`, `docs/...`, `chore/...`, `perf/...`).
+PR only on explicit request.
+
+## Branch Naming
+
+- Primary: `issue-NNNN` — one branch per GitHub issue (e.g. `issue-11525`).
+- No issue: free-form descriptive name, dash-separated, no slashes (e.g. `fix-ellipse-icon-typo`, `feat-auto-link-libraries`).
+- If the user already created the branch, use it as-is — never rename.
 
 ## Target Branch
 
