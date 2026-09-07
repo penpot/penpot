@@ -1489,11 +1489,11 @@
            :detach
            (fn []
              (cond
-               (not (u/page-active? page-id))
-               (u/not-valid plugin-id :detach "Cannot modify a page that is not currently active")
-
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :detach "Plugin doesn't have 'content:write' permission")
+
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :detach "Cannot modify a page that is not currently active")
 
                :else
                (st/emit! (dwl/detach-component id))))
@@ -1502,11 +1502,11 @@
            (fn [component]
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (u/page-active? page-id))
-                 (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
-
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
 
                  (not (obj/type-of? component "LibraryComponentProxy"))
                  (u/not-valid plugin-id :swapComponent "Component not valid")
@@ -1524,11 +1524,11 @@
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (u/page-active? page-id))
-                 (u/not-valid plugin-id :resetOverrides "Cannot modify a page that is not currently active")
-
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :resetOverrides "Plugin doesn't have 'content:write' permission")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :resetOverrides "Cannot modify a page that is not currently active")
 
                  (not (ctk/in-component-copy? shape))
                  (u/not-valid plugin-id :resetOverrides "The shape is not a component copy instance")

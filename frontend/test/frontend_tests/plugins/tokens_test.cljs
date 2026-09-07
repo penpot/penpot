@@ -519,6 +519,24 @@
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :toggleActive "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
 
+(t/deftest token-set-proxy-add-token-checks-permission
+  (let [plugin-id  "test-plugin"
+        file-id    (uuid/next)
+        set-id     (uuid/next)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id :name "core")))
+        errors     (atom [])]
+    (with-redefs [u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/locate-tokens-lib (constantly tokens-lib)
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (t/is (fn? (.-addToken proxy)))
+        (.addToken proxy #js {"type" "color" "name" "color.test" "value" "#FF0000"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addToken "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
 (t/deftest token-set-proxy-duplicate-checks-permission
   (let [plugin-id "test-plugin"
         file-id   (uuid/next)

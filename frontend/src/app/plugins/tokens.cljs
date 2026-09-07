@@ -286,7 +286,7 @@
 
          :else
          (st/emit! (-> (dwtl/update-token set-id id {:description value})
-                       (se/add-event :plugin-id)))))}
+                       (se/add-event plugin-id)))))}
 
     :duplicate
     (fn []
@@ -440,54 +440,54 @@
       :fn (fn [token-id]
             (let [token (u/locate-token file-id id token-id)]
               (when (some? token)
-                (token-proxy plugin-id file-id id token-id))))
+                (token-proxy plugin-id file-id id token-id))))}
 
-      :addToken
-      {:enumerable false
-       :schema (fn [args]
-                 (let [tokens-tree (-> (u/locate-tokens-lib file-id)
-                                       (ctob/get-tokens id)
-                                       ;; Convert to the adecuate format for schema
-                                       (ctob/tokens-tree))]
-                   [:tuple (-> (cfo/make-token-schema
-                                tokens-tree
-                                (cto/dtcg-token-type->token-type (-> args (first) (get "type")))
-                                nil)
-                               ;; Don't allow plugins to set the id
-                               (sm/dissoc-key :id)
-                               ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
-                               ;; and set a converter that changes DTCG types to internal types (:decode/json).
-                               ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
-                               (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))]))
-       :decode/options {:key-fn identity}
-       :fn (fn [attrs]
-             (cond
-               (not (r/check-permission plugin-id "content:write"))
-               (u/not-valid plugin-id :addToken "Plugin doesn't have 'content:write' permission")
+     :addToken
+     {:enumerable false
+      :schema (fn [args]
+                (let [tokens-tree (-> (u/locate-tokens-lib file-id)
+                                      (ctob/get-tokens id)
+                                      ;; Convert to the adecuate format for schema
+                                      (ctob/tokens-tree))]
+                  [:tuple (-> (cfo/make-token-schema
+                               tokens-tree
+                               (cto/dtcg-token-type->token-type (-> args (first) (get "type")))
+                               nil)
+                              ;; Don't allow plugins to set the id
+                              (sm/dissoc-key :id)
+                              ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
+                              ;; and set a converter that changes DTCG types to internal types (:decode/json).
+                              ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
+                              (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))]))
+      :decode/options {:key-fn identity}
+      :fn (fn [attrs]
+            (cond
+              (not (r/check-permission plugin-id "content:write"))
+              (u/not-valid plugin-id :addToken "Plugin doesn't have 'content:write' permission")
 
-               :else
-               (let [tokens-lib (u/locate-tokens-lib file-id)
-                     token (ctob/make-token attrs)
-                     ;; Resolve against all tokens in the library (including those
-                     ;; in inactive sets) so that references to structurally
-                     ;; existing tokens resolve even if their set is not active.
-                     ;; The target set's tokens take precedence over equally named
-                     ;; tokens in other sets, and the new token takes precedence
-                     ;; over all.
-                     tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
-                                            (ctob/get-tokens tokens-lib id))
-                                     (assoc (:name token) token))
-                     resolved-tokens (ts/resolve-tokens tokens-tree)
+              :else
+              (let [tokens-lib (u/locate-tokens-lib file-id)
+                    token (ctob/make-token attrs)
+                    ;; Resolve against all tokens in the library (including those
+                    ;; in inactive sets) so that references to structurally
+                    ;; existing tokens resolve even if their set is not active.
+                    ;; The target set's tokens take precedence over equally named
+                    ;; tokens in other sets, and the new token takes precedence
+                    ;; over all.
+                    tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                                           (ctob/get-tokens tokens-lib id))
+                                    (assoc (:name token) token))
+                    resolved-tokens (ts/resolve-tokens tokens-tree)
 
-                     {:keys [errors resolved-value] :as resolved-token}
-                     (get resolved-tokens (:name token))]
+                    {:keys [errors resolved-value] :as resolved-token}
+                    (get resolved-tokens (:name token))]
 
-                 (if resolved-value
-                   (do (st/emit! (-> (dwtl/create-token id token)
-                                     (se/add-event plugin-id)))
-                       (token-proxy plugin-id file-id id (:id token)))
-                   (do (u/not-valid plugin-id :addToken (str errors))
-                       nil)))))}}
+                (if resolved-value
+                  (do (st/emit! (-> (dwtl/create-token id token)
+                                    (se/add-event plugin-id)))
+                      (token-proxy plugin-id file-id id (:id token)))
+                  (do (u/not-valid plugin-id :addToken (str errors))
+                      nil)))))}
 
      :duplicate
      (fn []

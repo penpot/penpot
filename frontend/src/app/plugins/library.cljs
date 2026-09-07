@@ -943,27 +943,24 @@
     (fn []
       (let [component (u/locate-library-component file-id id)]
         (cond
-          (not component)
+          (or (nil? component)
+              (ctk/is-variant? component))
           nil
 
-          (not (ctk/is-variant? component))
-          (cond
-            (not (r/check-permission plugin-id "library:write"))
-            (u/not-valid plugin-id :transformInVariant "Plugin doesn't have 'library:write' permission")
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :transformInVariant "Plugin doesn't have 'library:write' permission")
 
-            :else
-            (st/emit!
-             (se/event plugin-id "transform-in-variant")
-             (dwv/transform-in-variant (:main-instance-id component)))))))
+          :else
+          (st/emit!
+           (se/event plugin-id "transform-in-variant")
+           (dwv/transform-in-variant (:main-instance-id component))))))
 
     :addVariant
     (fn []
       (let [component (u/locate-library-component file-id id)]
         (cond
-          (not component)
-          nil
-
-          (not (ctk/is-variant? component))
+          (or (nil? component)
+              (not (ctk/is-variant? component)))
           nil
 
           (not (r/check-permission plugin-id "library:write"))
