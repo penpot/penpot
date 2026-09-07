@@ -2,8 +2,8 @@ use skia_safe::{self as skia, Canvas, Paint, RRect};
 
 use crate::error::Result;
 use crate::shapes::{
-    circle_segments, merge_fills, radius_to_sigma, rect_segments, stroke_to_path, BlurType, Fill,
-    Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, Type,
+    circle_segments_local, merge_fills, radius_to_sigma, rect_segments_local, stroke_to_path,
+    BlurType, Fill, Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, Type,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -850,9 +850,9 @@ fn render_frame(
         canvas.save_layer(&layer_rec);
     }
 
-    // Clip to frame bounds in the frame's own space, then undo the transform so
-    // children draw at their absolute coords while staying clipped (mirrors the
-    // GPU clip). Outset ~0.5px like the GPU clip to avoid an AA seam.
+    // Clip fills + children only. Strokes render outside the content clip so
+    // outer/center strokes are not trimmed (same as GPU render_shape_exit).
+    canvas.save();
     if element.clip_content {
         canvas.concat(&matrix);
         clip_to_frame_content(canvas, element, scale);
@@ -876,8 +876,9 @@ fn render_frame(
     for child_id in &children {
         render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
     }
+    canvas.restore(); // content clip
 
-    // Strokes over children (clipped frames), in the frame's space.
+    // Strokes over children, outside the frame content clip.
     let visible_strokes: Vec<&Stroke> = element.visible_strokes().collect();
     if !visible_strokes.is_empty() {
         canvas.save();
@@ -1099,6 +1100,15 @@ fn draw_single_stroke(
 fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> bool {
     let is_open = shape.is_open();
     let kind = stroke.render_kind(is_open);
+
+    // Per-side rect/frame strokes already expand to an evenodd band in
+    // `draw_stroke_on_rect`. `stroke_to_path` only knows a uniform width.
+    if stroke.per_side_widths().is_some()
+        && matches!(shape.shape_type, Type::Rect(_) | Type::Frame(_))
+    {
+        return false;
+    }
+
     let solid_outline = match stroke.style {
         StrokeStyle::Solid => match kind {
             // Solid Center already serializes as a native SVG stroke.
@@ -1114,12 +1124,23 @@ fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> b
         StrokeStyle::Dotted | StrokeStyle::Dashed | StrokeStyle::Mixed => false,
     };
 
+    // Local (untransformed) geometry: the SVG leaf canvas already has
+    // `centered_transform`. Using `rect_segments` / `circle_segments` here
+    // would bake the same transform into the path and double-rotate.
+    // Path/Bool content is stored in parent space; `to_path_transform`
+    // undoes that so the outline matches `get_skia_path` (fills) under CTM.
     let shape_path = match &shape.shape_type {
-        Type::Rect(r) => Path::new(rect_segments(shape, r.corners)),
-        Type::Frame(f) => Path::new(rect_segments(shape, f.corners)),
-        Type::Circle => Path::new(circle_segments(shape)),
+        Type::Rect(r) => Path::new(rect_segments_local(shape, r.corners)),
+        Type::Frame(f) => Path::new(rect_segments_local(shape, f.corners)),
+        Type::Circle => Path::new(circle_segments_local(shape)),
         Type::Path(_) | Type::Bool(_) => match shape.shape_type.path() {
-            Some(path) => path.clone(),
+            Some(path) => {
+                let mut local = path.clone();
+                if let Some(t) = shape.to_path_transform() {
+                    local.transform(&t);
+                }
+                local
+            }
             None => return false,
         },
         Type::Text(_) | Type::SVGRaw(_) | Type::Group(_) => return false,
@@ -1140,6 +1161,20 @@ fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> b
     paint.set_style(skia::PaintStyle::Fill);
     paint.set_anti_alias(true);
     canvas.draw_path(&outline.to_skia_path(shape.svg_attrs.as_ref()), &paint);
+
+    // Expanded dotted/dashed strokes skip `draw_stroke_geometry`, which is
+    // where open-path caps are drawn. Overlay them here in local path space
+    // (same as fills / the outline above under the leaf CTM).
+    if is_open {
+        if let Some(cap_path) = transformed_skia_path(shape) {
+            let cap_paint =
+                stroke.to_stroked_paint(true, &shape.selrect, shape.svg_attrs.as_ref(), true);
+            super::strokes::handle_stroke_caps(
+                &cap_path, stroke, canvas, true, &cap_paint, None, true,
+            );
+        }
+    }
+
     true
 }
 

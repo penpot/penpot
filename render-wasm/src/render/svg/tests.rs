@@ -1,6 +1,6 @@
 use super::fixtures::*;
 
-use crate::shapes::{BlendMode, Fill, SolidColor, StrokeKind};
+use crate::shapes::{BlendMode, Fill, SolidColor, StrokeCap, StrokeKind};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 
@@ -209,6 +209,47 @@ fn exports_an_unclipped_frame_with_overflowing_child() {
 }
 
 #[test]
+fn exports_clipped_frame_with_solid_outer_stroke() {
+    // Regression: frame content clip must not wrap strokes — outer strokes
+    // sit outside the selrect and would be fully clipped away.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_frame(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 140.0, 100.0),
+        skia::Color::from_rgb(0xee, 0xee, 0xee),
+        true,
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.add_stroke(solid_stroke(
+            StrokeKind::Outer,
+            12.0,
+            skia::Color::from_rgb(0x10, 0x40, 0xff),
+        ));
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("clip-path=\"url(#"),
+        "clipped frame must keep content clip: {svg}"
+    );
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "outer stroke must emit an evenodd outline: {svg}"
+    );
+    let stroke_pos = svg.find("fill-rule=\"evenodd\"").expect("stroke outline");
+    let clip_close = svg.find("</g>").expect("clip group close");
+    assert!(
+        stroke_pos > clip_close,
+        "outer stroke must be outside the content clip group: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn exports_text_with_multiple_solid_fills() {
     let mut pool = ShapesPool::new();
     let id = uid(1);
@@ -265,6 +306,45 @@ fn exports_rect_with_solid_inner_stroke() {
 }
 
 #[test]
+fn exports_rect_with_per_side_solid_inner_stroke() {
+    // Regression: solid Inner/Outer SVG expansion used stroke_to_path with a
+    // uniform width and ignored stroke.widths. Per-side must use the GPU
+    // evenodd band (top/right/bottom/left).
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = solid_stroke(
+        StrokeKind::Inner,
+        20.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([4.0, 12.0, 24.0, 40.0]); // top, right, bottom, left
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 140.0, 100.0), stroke);
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_fills(vec![Fill::Solid(SolidColor(skia::Color::from_rgb(
+            0xff, 0xd4, 0x00,
+        )))]);
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "per-side inner stroke must emit an evenodd band: {svg}"
+    );
+    // Inner hole for (0,0)-(140,100) with [4,12,24,40]: (40,4)-(128,76).
+    // Uniform width=20 would incorrectly hole at (20,20)-(120,80).
+    assert!(
+        svg.contains("40") && svg.contains("128") && svg.contains("76"),
+        "per-side hole must reflect left=40 / right=12 / bottom=24, got: {svg}"
+    );
+    assert!(
+        !svg.contains("M20 20") && !svg.contains("L20 20"),
+        "must not use uniform width=20 inset: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn exports_rect_with_solid_center_stroke() {
     let mut pool = ShapesPool::new();
     let id = uid(1);
@@ -313,6 +393,65 @@ fn exports_rect_with_solid_outer_stroke() {
 }
 
 #[test]
+fn exports_rotated_rect_with_solid_outer_stroke() {
+    // Regression: outline strokes must use local selrect geometry. Baking
+    // `centered_transform` into the path (via rect_segments) while the leaf
+    // canvas also concatenates it double-rotates the stroke.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 140.0, 100.0),
+        solid_stroke(
+            StrokeKind::Outer,
+            12.0,
+            skia::Color::from_rgb(0x10, 0x40, 0xff),
+        ),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        // 30° rotation (cos≈0.866, sin=0.5), matching a workspace export case.
+        let c = 0.866_025_4_f32;
+        let s = 0.5_f32;
+        shape.set_transform(c, s, -s, c, 0.0, 0.0);
+        shape.set_rotation(30.0);
+        shape.set_fills(vec![Fill::Solid(SolidColor(skia::Color::from_rgb(
+            0xff, 0xd4, 0x00,
+        )))]);
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "rotated outer stroke must emit an evenodd outline: {svg}"
+    );
+    // Fill rect + stroke path should both carry the same leaf CTM (one rotation).
+    assert!(
+        svg.matches("matrix(0.866025").count() >= 2,
+        "fill and stroke must each use the rotation matrix once: {svg}"
+    );
+    // Outline path data must stay in local selrect space (roughly [-stroke, w+stroke]).
+    // Double rotation bakes world-space points into `d` before the CTM is applied.
+    let d_attr = svg
+        .split("d=\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .unwrap_or("");
+    let first_num = d_attr
+        .trim_start_matches(|c: char| !c.is_ascii_digit() && c != '-' && c != '.')
+        .split(|c: char| !c.is_ascii_digit() && c != '-' && c != '.')
+        .find(|s| !s.is_empty())
+        .and_then(|s| s.parse::<f32>().ok());
+    assert!(
+        matches!(first_num, Some(n) if (-40.0..180.0).contains(&n)),
+        "stroke path d= should start in local coords, got {first_num:?} from {d_attr}: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn exports_closed_path_with_solid_inner_stroke() {
     let mut pool = ShapesPool::new();
     let id = uid(1);
@@ -332,6 +471,73 @@ fn exports_closed_path_with_solid_inner_stroke() {
     assert!(
         svg.contains("fill-rule=\"evenodd\""),
         "aligned stroke outline should use evenodd: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rotated_closed_path_with_solid_inner_stroke() {
+    // Regression: path content is stored in parent space; stroke outlines must
+    // apply `to_path_transform` (like fills via get_skia_path) before drawing
+    // under the leaf `centered_transform`, or the stroke double-rotates.
+    use crate::shapes::Type;
+
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 140.0, 100.0),
+        solid_stroke(
+            StrokeKind::Inner,
+            12.0,
+            skia::Color::from_rgb(0x10, 0x40, 0xff),
+        ),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        let c = 0.866_025_4_f32;
+        let s = 0.5_f32;
+        shape.set_transform(c, s, -s, c, 0.0, 0.0);
+        shape.set_rotation(30.0);
+        shape.set_fills(vec![Fill::Solid(SolidColor(skia::Color::from_rgb(
+            0xff, 0xd4, 0x00,
+        )))]);
+
+        // Bake rotation into path points (Penpot path storage model).
+        let bake = shape.centered_transform();
+        if let Type::Path(ref mut path) = shape.shape_type {
+            path.transform(&bake);
+            let b = path.bounds();
+            shape.set_selrect(b.min_x(), b.min_y(), b.max_x(), b.max_y());
+        }
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill-rule=\"evenodd\""),
+        "rotated path inner stroke must emit an evenodd outline: {svg}"
+    );
+    assert!(
+        svg.matches("matrix(0.866025").count() >= 2,
+        "fill and stroke must each use the rotation matrix once: {svg}"
+    );
+    // Stroke outline `d` must stay in local (unrotated) space like the fill.
+    let stroke_d = svg
+        .split("fill-rule=\"evenodd\"")
+        .next()
+        .and_then(|before| before.rsplit("d=\"").next())
+        .and_then(|s| s.split('"').next())
+        .unwrap_or("");
+    let first_num = stroke_d
+        .trim_start_matches(|c: char| !c.is_ascii_digit() && c != '-' && c != '.')
+        .split(|c: char| !c.is_ascii_digit() && c != '-' && c != '.')
+        .find(|s| !s.is_empty())
+        .and_then(|s| s.parse::<f32>().ok());
+    assert!(
+        matches!(first_num, Some(n) if (-40.0..180.0).contains(&n)),
+        "stroke path d= should start in local coords, got {first_num:?} from {stroke_d}: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -597,6 +803,35 @@ fn exports_open_path_with_dotted_center_stroke() {
     assert!(
         svg.contains("fill=\"red\"") || svg.to_ascii_lowercase().contains("fill=\"#ff0000\""),
         "open path dotted stroke must emit filled geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_dotted_stroke_and_caps() {
+    // Regression: dotted/dashed SVG expansion used stroke_to_path and returned
+    // before draw_stroke_geometry, so open-path caps (triangle/circle/…) were
+    // dropped. Caps must be overlaid after the expanded outline.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dotted_stroke(
+        StrokeKind::Center,
+        12.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.cap_start = Some(StrokeCap::TriangleArrow);
+    stroke.cap_end = Some(StrokeCap::CircleMarker);
+    add_stroked_open_path(&mut pool, id, Uuid::nil(), (0.0, 0.0, 140.0, 90.0), stroke);
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("fill=\"#1040FF\"") || svg.to_ascii_lowercase().contains("fill=\"#1040ff\""),
+        "dotted stroke with caps must emit filled geometry: {svg}"
+    );
+    // Caps are separate filled draws (triangle + circle), not only the dotted outline.
+    assert!(
+        svg.matches("<path ").count() >= 2 || svg.contains("<circle"),
+        "expected separate cap geometry besides the dotted outline: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
