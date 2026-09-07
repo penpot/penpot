@@ -5,6 +5,16 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.rpc.management.jobs
+  "Generic job management API for external workers (media and future
+  subsystems). External workers never touch the database: this API is
+  the ledger. The methods are family-agnostic (they operate on any row
+  of the `job` table) and use the plain JSON schemas of `app.jobs`.
+
+  Auth: every method declares ::rpc/auth false because these endpoints
+  do not require a profile. Actual authentication is enforced by the
+  management route resolver (resolve-management-methods in app.rpc),
+  which mandates a valid shared-key before dispatching to these methods.
+  If the route resolver changes, these methods must be updated accordingly."
   (:require
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -12,15 +22,6 @@
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]))
-
-;; Generic job management API for external workers (media and future
-;; subsystems). External workers never touch the database: this API is
-;; the ledger. The methods are family-agnostic (they operate on any row
-;; of the `job` table) and use the plain JSON schemas of `app.jobs`.
-;;
-;; Authentication is enforced at the route level (shared-key mandatory,
-;; Bearer optional); no method here needs a profile, hence ::rpc/auth
-;; false.
 
 ;; ---- RPC METHOD: CLAIM-JOB
 
@@ -39,7 +40,7 @@
   {::doc/added "2.19"
    ::sm/params schema:claim-job-params
    ::sm/result schema:claim-job-result
-   ::rpc/auth false}
+   ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id scheduled-at]}]
   (let [row (jobs/get-job cfg job-id)]
     ;; Race condition: if the job is claimed between get-job and claim! by
@@ -65,7 +66,7 @@
   {::doc/added "2.19"
    ::sm/params schema:report-job-progress-params
    ::sm/result schema:report-job-progress-result
-   ::rpc/auth false}
+   ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id progress]}]
   (jobs/progress! cfg job-id progress)
   {})
@@ -84,7 +85,7 @@
   {::doc/added "2.19"
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
-   ::rpc/auth false}
+   ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id result]}]
   (jobs/complete! cfg job-id result)
   {})
@@ -103,7 +104,7 @@
   {::doc/added "2.19"
    ::sm/params schema:fail-job-params
    ::sm/result schema:fail-job-result
-   ::rpc/auth false}
+   ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id error]}]
   (jobs/fail! cfg job-id error)
   {})

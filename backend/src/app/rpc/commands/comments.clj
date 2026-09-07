@@ -115,7 +115,7 @@
         (when (mention-email? props)
           (eml/send!
            cfg
-           {::eml/conn conn
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-mention
             :public-uri (cf/get :public-uri)
             :to email
@@ -131,7 +131,7 @@
         (when (mention-email? props)
           (eml/send!
            cfg
-           {::eml/conn conn
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-thread
             :public-uri (cf/get :public-uri)
             :to email
@@ -147,7 +147,7 @@
         (when (notification-email? id (:owner-id thread) props)
           (eml/send!
            cfg
-           {::eml/conn conn
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-notification
             :public-uri (cf/get :public-uri)
             :to email

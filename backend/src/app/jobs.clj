@@ -306,6 +306,15 @@
                    (assoc m job-id now))))))
     @decision))
 
+(defn cleanup-throttle!
+  "Remove `job-id` from the heartbeat and progress throttle atoms.
+  Called by the runner after a job completes (success or failure) to
+  prevent completed job IDs from accumulating in memory. The prune
+  fallback in `should-write?` remains as defense-in-depth."
+  [job-id]
+  (swap! heartbeats dissoc job-id)
+  (swap! progresses dissoc job-id))
+
 (defn heartbeat!
   "Touch `modified_at` on the running job (throttled: does not write when
   the last beat is more recent than ~60s). Handlers call it on every

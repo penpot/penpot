@@ -50,10 +50,13 @@
       (db/get-update-count)))
 
 (defn- encode-result
-  [result]
+  [job-name result]
   (try
     (db/json result)
-    (catch Throwable _cause
+    (catch Throwable cause
+      (l/err :hint "unable to serialize job result to JSON"
+             :job-name job-name
+             :cause cause)
       nil)))
 
 (defn- get-exception-type
@@ -98,7 +101,7 @@
            :retry (:retry-num job))
 
     (if (zero? (claim-job! cfg (:id job)))
-      (l/wrn :hint "skiping job, not claimable"
+      (l/wrn :hint "skipping job, not claimable"
              :id (str (:id job))
              :name (:name job)
              :status (:status job))
@@ -149,7 +152,9 @@
                    :cause cause)
             (if (>= (:retry-num job) (:max-retries job))
               {:status "failed" :error cause}
-              {:status "retry" :error cause})))))))
+              {:status "retry" :error cause})))))
+    (finally
+      (jobs/cleanup-throttle! (:id job)))))
 
 (defn- run-job!
   [{:keys [::id ::timeout] :as cfg} job-id scheduled-at]
@@ -178,7 +183,7 @@
 
       (not= (inst-ms scheduled-at)
             (inst-ms (:scheduled-at job)))
-      (l/wrn :hint "skiping job, rescheduled"
+      (l/wrn :hint "skipping job, rescheduled"
              :job-id (str job-id)
              :runner-id id
              :scheduled-at (ct/format-inst (:scheduled-at job))
@@ -221,7 +226,7 @@
                             [jobs/sql:complete-job
                              (ct/now)
                              (ct/now)
-                             (encode-result (:result result))
+                             (encode-result (:name job) (:result result))
                              (:id job)])
               nil))
 

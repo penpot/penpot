@@ -297,24 +297,22 @@
   (email-factory params))
 
 (defn send!
-  "Schedule an already defined email to be sent using asynchronously
+  "Schedule an already defined email to be sent asynchronously
   using the unified jobs machinery. The first `cfg` parameter is the
   connectable context that provides the `::jobs/defs` registry (an RPC
   method cfg or the system) and can provide a default connection; the
-  second `params` provides the email data and optionally the dedicated
-  `::conn` and `::factory` overrides."
-  [cfg {:keys [::conn ::factory] :as params}]
-  (assert (or (nil? conn) (db/connectable? conn))
-          "expected a valid database connection or pool")
-
+  second `params` provides the email data and optionally `::factory`
+  and `::reuse-conn`. When `::reuse-conn` is true the submission
+  reuses the caller's existing `::db/conn` (from cfg) instead of
+  acquiring a fresh one from the pool."
+  [cfg {:keys [::reuse-conn ::factory] :as params}]
   (let [email (if factory
                 (factory params)
                 (-> params
-                    (dissoc ::conn ::factory)
+                    (dissoc ::reuse-conn ::factory)
                     (check-params)))]
-    (jobs/submit! (-> cfg
-                      (dissoc ::db/conn)
-                      (cond-> conn (assoc ::db/conn conn)))
+    (jobs/submit! (cond-> (dissoc cfg ::db/conn)
+                    reuse-conn (assoc ::db/conn (::db/conn cfg)))
                   {::jobs/name :sendmail
                    ::jobs/delay 0
                    ::jobs/max-retries 4

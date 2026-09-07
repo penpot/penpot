@@ -418,7 +418,7 @@
 
 (defn send-email-verification!
   ([cfg profile] (send-email-verification! cfg profile nil))
-  ([{:keys [::db/conn] :as cfg} profile invitation-token]
+  ([cfg profile invitation-token]
    (let [vclaims (cond-> {:iss :verify-email
                           :exp (ct/in-future "72h")
                           :profile-id (:id profile)
@@ -436,7 +436,7 @@
                                   {:iss :profile-identity
                                    :profile-id (:id profile)
                                    :exp (ct/in-future {:days 30})})]
-     (eml/send! cfg {::eml/conn conn
+     (eml/send! cfg {::eml/reuse-conn true
                      ::eml/factory eml/register
                      :public-uri (cf/get :public-uri)
                      :to (:email profile)
@@ -609,12 +609,12 @@
                                           :profile-id id})]
               (assoc profile :token token)))
 
-          (send-email-notification [conn profile]
+          (send-email-notification [profile]
             (let [ptoken (tokens/generate cfg
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (ct/in-future {:days 30})})]
-              (eml/send! cfg {::eml/conn conn
+              (eml/send! cfg {::eml/reuse-conn true
                               ::eml/factory eml/password-recovery
                               :public-uri (cf/get :public-uri)
                               :to (:email profile)
@@ -658,7 +658,7 @@
                       {:id (:id profile)})
           (->> profile
                (create-recovery-token)
-               (send-email-notification conn)))))))
+               (send-email-notification)))))))
 
 (def schema:request-profile-recovery
   [:map {:title "request-profile-recovery"}

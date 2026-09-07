@@ -452,7 +452,7 @@
                 :email (:email profile)
                 :hint "looks like the email has spam complaint reports"))
 
-    (eml/send! cfg {::eml/conn conn
+    (eml/send! cfg {::eml/reuse-conn true
                     ::eml/factory eml/change-email
                     :public-uri (cf/get :public-uri)
                     :to (:email profile)

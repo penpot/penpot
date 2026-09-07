@@ -55,7 +55,7 @@
   [cfg conn organization-name {:keys [email profile]}]
   (when (or (nil? profile)
             (eml/allow-send-emails? conn profile))
-    (eml/send! cfg {::eml/conn conn
+    (eml/send! cfg {::eml/reuse-conn true
                     ::eml/factory eml/organization-setup-sso
                     :public-uri (cf/get :public-uri)
                     :to email

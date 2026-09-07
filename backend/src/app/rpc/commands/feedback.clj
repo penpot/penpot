@@ -42,11 +42,11 @@
 
   (let [pool    (::db/pool cfg)
         profile (profile/get-profile pool profile-id)]
-    (send-user-feedback! cfg pool profile params)
+    (send-user-feedback! cfg profile params)
     nil))
 
 (defn- send-user-feedback!
-  [cfg pool profile params]
+  [cfg profile params]
   (let [destination
         (or (cf/get :user-feedback-destination)
             ;; LEGACY
@@ -56,7 +56,7 @@
         (d/without-nils
          {"error-report.txt" (:error-report params)})]
 
-    (eml/send! cfg {::eml/conn pool
+    (eml/send! cfg {::eml/reuse-conn true
                     ::eml/factory eml/user-feedback
                     :to       destination
                     :reply-to (:email profile)

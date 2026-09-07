@@ -267,7 +267,7 @@
                      (not recent?))
             (if organization
               (when (contains? cf/flags :admin-console)
-                (eml/send! cfg {::eml/conn conn
+                (eml/send! cfg {::eml/reuse-conn true
                                 ::eml/factory eml/invite-to-organization
                                 :public-uri (cf/get :public-uri)
                                 :to email
@@ -276,7 +276,7 @@
                                 :organization organization
                                 :token itoken
                                 :extra-data ptoken}))
-              (eml/send! cfg {::eml/conn conn
+              (eml/send! cfg {::eml/reuse-conn true
                               ::eml/factory eml/invite-to-team
                               :public-uri (cf/get :public-uri)
                               :to email
@@ -329,7 +329,7 @@
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to (:email member)})
 
-    (eml/send! cfg {::eml/conn conn
+    (eml/send! cfg {::eml/reuse-conn true
                     ::eml/factory eml/join-team
                     :public-uri (cf/get :public-uri)
                     :to (:email member)
@@ -789,7 +789,7 @@
                     :else
                     eml/request-team-access)]
 
-      (eml/send! cfg {::eml/conn conn
+      (eml/send! cfg {::eml/reuse-conn true
                       ::eml/factory factory
                       :public-uri (cf/get :public-uri)
                       :to (:email team-owner)

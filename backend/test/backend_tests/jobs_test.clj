@@ -384,3 +384,50 @@
       ;; The result will be the params map (echo-handler returns params)
       (t/is (some? result)))))
 
+(t/deftest heartbeat-and-progress-noop-when-job-id-nil
+  "When *job-id* is nil (in-process invoke! without a job row),
+  heartbeat! and progress! are no-ops — they do not write to the
+  database or update the throttle atoms."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit! cfg {::jobs/name   :echo
+                                  ::jobs/params (make-params)})]
+
+    (t/testing "heartbeat! is a no-op when *job-id* is nil"
+      (let [row-before (jobs/get-job cfg job-id)]
+        (binding [jobs/*job-id* nil]
+          (jobs/heartbeat! cfg))
+        (let [row-after (jobs/get-job cfg job-id)]
+          (t/is (= (inst-ms (:modified-at row-before))
+                   (inst-ms (:modified-at row-after)))
+                "modified-at should not change"))))
+
+    (t/testing "progress! is a no-op when *job-id* is nil"
+      (let [row-before (jobs/get-job cfg job-id)]
+        (binding [jobs/*job-id* nil]
+          (jobs/progress! cfg {:step "should-not-write"}))
+        (let [row-after (jobs/get-job cfg job-id)]
+          (t/is (nil? (:progress row-after))
+                "progress should remain nil"))))))
+
+(t/deftest progress-noop-on-terminal-states
+  "progress! should not update the job row when the job is in a terminal
+  state (failed, cancelled). The existing test covers 'completed'; this
+  test covers the other two terminal states."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit! cfg {::jobs/name   :echo
+                                  ::jobs/params (make-params)})]
+
+    (doseq [status ["failed" "cancelled"]]
+      (t/testing (str "progress! is no-op on " status " status")
+        ;; Mark job as terminal
+        (th/db-update! :job {:status status} {:id job-id})
+        ;; Reset throttle state so should-write? would allow the write
+        (swap! jobs/progresses dissoc job-id)
+        ;; Call progress — should be a no-op
+        (binding [jobs/*job-id* job-id]
+          (jobs/progress! cfg {:step 1}))
+        ;; Verify progress was NOT updated
+        (let [row (jobs/get-job cfg job-id)]
+          (t/is (nil? (:progress row))
+                (str "progress should be nil on " status " status")))))))
+

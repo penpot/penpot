@@ -7,9 +7,10 @@
 (ns app.rpc.commands.demo
   "A demo specific mutations."
   (:require
-   [app.auth :refer [derive-password-weak]]
+   [app.auth :refer [derive-password]]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -19,7 +20,6 @@
    [app.rpc.commands.auth :as auth]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
@@ -37,7 +37,7 @@
    ::doc/changes [["1.15" "This method is migrated from mutations to commands."]
                   ["2.18" "Add optional `skip-onboarding` param. When true, the profile is created with `onboarding-viewed` and `release-notes-viewed` (current version) set, skipping the onboarding flow."]]
    ::sm/params schema:create-demo-profile}
-  [cfg {:keys [skip-onboarding]}]
+  [cfg _params]
 
   (when-not (contains? cf/flags :demo-users)
     (ex/raise :type :validation
@@ -59,7 +59,7 @@
                   :deleted-at (ct/in-future (cf/get-deletion-delay))
                   :password (derive-password password)
                   :props {}}
-         profile  (db/tx-run! cfg (fn [cfg]
+        profile  (db/tx-run! cfg (fn [cfg]
                                    (->> (auth/create-profile cfg params)
                                         (auth/create-profile-rels cfg))))]
 
