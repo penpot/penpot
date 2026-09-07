@@ -51,13 +51,20 @@ export const loadPlugin = async function (
 
     closeAllPlugins();
 
-    // Do NOT harden the host-created context here. `ses.harden` performs a
-    // deep freeze, so hardening the context would permanently freeze
-    // host-owned objects and functions reachable through it (e.g. plugin API
-    // listeners and proxies the host still needs to modify on page
-    // navigation). Sandbox isolation is enforced at the compartment boundary
-    // instead (see `create-sandbox.ts`: hardened sandbox-owned globals and
-    // `ses.safeReturn` on values crossing into the sandbox).
+    // The host context is not deeply frozen at this load stage.
+    //
+    // The context still contains host-internal function objects and shared
+    // prototypes that the host may legitimately extend after plugin load
+    // (for example, by assigning custom properties). Deep-freezing here
+    // would freeze those prototypes before SES override taming completes,
+    // preventing later host-side mutations with a "Cannot assign to read
+    // only property" TypeError.
+    //
+    // Responsibility boundary: this function forwards the context to the
+    // sandbox layer without deep-freezing it. The public API that plugins
+    // consume is constructed and returned by the API module, which applies
+    // its own return-value protection (safeReturn). Compartment isolation
+    // and intrinsics hardening are performed by createSandbox, not here.
     const plugin = await createPlugin(
       context,
       manifest,
