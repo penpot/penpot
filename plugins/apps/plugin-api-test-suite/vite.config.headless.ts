@@ -1,4 +1,4 @@
-import { iifeConfig } from './vite.config.iife';
+import { iifeConfig } from './vite.config.iife.ts';
 
 // Builds the CI test entry as a single self-executing (IIFE) bundle, evaluated
 // inside the Penpot plugin sandbox via `globalThis.ɵloadPlugin({ code })` by the

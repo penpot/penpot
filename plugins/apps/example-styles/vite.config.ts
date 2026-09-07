@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 export default defineConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   server: {
     port: 4202,
     host: '0.0.0.0',
