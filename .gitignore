@@ -99,6 +99,7 @@ opencode.json
 /.idea
 *.iml
 /.claude
+/CLAUDE.md
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
