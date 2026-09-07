@@ -16,6 +16,14 @@ This is the full list of types/interfaces in the Penpot API: $api_types
 You use the `storage` object extensively to store data and utility functions you define across tool calls.
 This allows you to inspect intermediate results while still being able to build on them in subsequent code executions.
 
+## Asynchronous Updates
+
+Changes made to a design may take effect asynchronously. 
+So if you need to read the result of your executions/observe properties affected by a change in the same `execude_code` call, use 
+`await penpot.waitForLayoutUpdate();`
+before trying to observe changes.
+Every `execude_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
+
 # The Structure of Penpot Designs
 
 A Penpot design ultimately consists of shapes.
@@ -144,7 +152,7 @@ Boards can have layout systems that automatically control the positioning and sp
     it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
   * Property `bounds` is sized automatically (in one dimension) if the `growType` property is set to "auto-width" or "auto-height".
     `resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-width" or "auto-height" if you want automatic sizing!
-    The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
+    The auto-sizing is asynchronous; use `waitForLayoutUpdate` before reading the updated bounding box.
   * Method `getRange(start, end): TextRange` to reference a range of characters as a `TextRange` object, which can be styled separately from the rest of the text; `start` index inclusive, `end` exclusive
   * Other Writable font properties: `fontId`, `fontFamily`, `fontWeight`, `fontVariant`, `fontStyle`
      - To discover valid values, check available fonts in `penpot.fonts: FontContext`
@@ -391,7 +399,7 @@ Applying tokens:
     - TokenTextDecorationProps: "textDecoration"
     - TokenTypographyProps: "typography"
   * `token.applyToShapes(shapes, properties)` - Apply from token
-  * Application is **asynchronous** (wait for ~100ms to see the effects)
+  * Application is **asynchronous** (use `waitForLayoutUpdate`)
   * After application:
      - `shape.tokens` returns a mapping `{ propertyName: "token.name" }` from `TokenProperty` to token name
      - The actual shape properties that the tokens control will reflect the token's resolved value.

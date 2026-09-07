@@ -6,7 +6,7 @@ Backend (`app.config`, `PENPOT_*` env vars) is parameterized; deployments choose
 
 - **PostgreSQL**: durable store. Profiles, teams, files, sessions, audit, `storage_object` metadata, the `task` queue, `scheduled_task` cron registry, migrations. File-data also lives here when the file-data backend is `legacy-db`/`db`. One shared DB across all backends.
 - **Redis (Valkey-compatible)**: per-backend message bus and cache. Concrete uses: msgbus Pub/Sub for collaborative-editing broadcasts and team/profile-org notifications fired by RPC handlers (`app.rpc.notifications`, `files_update`, `teams`, `websocket`); file-summary cache gated by `enable-redis-cache`; rate-limit counters; and the dispatcher→runner work hand-off list `penpot.worker.queue:<tenant>:<queue>`. `PENPOT_REDIS_URI`.
-- **Object storage**: backends `:s3` and `:fs`. S3 in prod; devenv uses MinIO. Holds uploaded media, file-data when the file-data backend is `storage`, exports. Backend-side details (resolve, dedup, bucket set, file-data backends): `mem:backend/http-storage-filedata-subtleties`.
+- **Object storage**: backends `:s3` and `:fs`. S3 in prod; devenv uses MinIO. Holds uploaded media, file-data when the file-data backend is `storage`, exports. Backend-side details (resolve, dedup, bucket set, object lifecycle, and file-data backends): `mem:backend/storage`.
 - **SMTP mailer**: invitations, password resets, email verification (sent via the `:sendmail` worker task).
 - **LDAP** (optional auth provider): helpers in `app.auth.*`, gated by `enable-login-with-ldap`.
 
@@ -30,4 +30,4 @@ Penpot in production lives with both: horizontal-scale deployments accept "exact
 ## See also
 
 - Devenv composition and the ws0-only worker placement: `mem:devenv/core`.
-- Storage backend resolution, dedup, file-data lifecycle: `mem:backend/http-storage-filedata-subtleties`.
+- Storage backend resolution, dedup, bucket behavior, object lifecycle, and file-data lifecycle: `mem:backend/storage`.

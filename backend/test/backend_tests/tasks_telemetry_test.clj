@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.tasks-telemetry-test
   (:require
@@ -709,6 +709,19 @@
     ;; Strings are stripped
     (t/is (not (contains? (:props result) :route)))
     (t/is (not (contains? (:props result) :label)))))
+
+(t/deftest test-filter-telemetry-props-organization-sso-failure-keeps-reason
+  (let [ftp             (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        organization-id (uuid/next)
+        result          (ftp {:source "backend"
+                              :name "organization-sso-auth-failed"
+                              :type "action"
+                              :props {:organization-id organization-id
+                                      :failure-reason "access-denied"
+                                      :unsafe-label "should-be-stripped"}})]
+    (t/is (= {:organization-id organization-id
+              :failure-reason "access-denied"}
+             (:props result)))))
 
 (t/deftest test-filter-telemetry-props-navigate-keeps-route-and-ids
   ;; Frontend navigate events keep specific routing keys: :route,

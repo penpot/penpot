@@ -7,6 +7,12 @@ test.beforeEach(async ({ page }) => {
     "enable-feature-render-wasm",
     "enable-render-wasm-dpr",
   ]);
+  // Opening a wasm workspace backfills :position-data for text shapes, persisting the file.
+  await WasmWorkspacePage.mockRPC(
+    page,
+    "update-file?id=*",
+    "text-editor/update-file.json",
+  );
 });
 
 async function mockGetEmojiFont(workspace) {

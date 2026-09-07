@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.management
   "A collection of RPC methods for manage the files, projects and team organization."
@@ -425,8 +425,11 @@
         cfg      (-> cfg
                      (assoc ::bfc/project-id project-id)
                      (assoc ::bfc/profile-id profile-id)
+                     (assoc ::bfc/team-id (:id team))
                      (assoc ::bfc/input template)
-                     (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team)))
+                     (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
+                     (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
+                     (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
 
         result   (if (= format :binfile-v3)
                    (bf.v3/import-files! cfg)

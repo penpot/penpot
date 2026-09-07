@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.comments
   (:require-macros [app.main.style :as stl])
@@ -1063,6 +1063,14 @@
          (fn [content]
            (st/emit! (dcm/add-comment thread content))))
 
+        on-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/esc? event)
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (st/emit! (dcm/close-thread)))))
+
         on-cancel
         (mf/use-fn #(st/emit! (dcm/close-thread)))]
 
@@ -1086,6 +1094,7 @@
               :style {:left (str pos-x "px")
                       :top (str pos-y "px")
                       "--comment-height" (str max-height "px")}
+              :on-key-down on-key-down
               :on-click dom/stop-propagation}
 
         [:div {:class (stl/css :floating-thread-header)}

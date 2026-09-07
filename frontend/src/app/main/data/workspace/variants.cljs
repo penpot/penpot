@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.variants
   (:require
@@ -335,14 +335,15 @@
       (let [page-id   (:current-page-id state)
             objects   (dsh/lookup-page-objects state page-id)
             shape     (get objects shape-id)
-            container (get objects (:parent-id shape))
-            width     (+ (:width container) (:width shape) 20) ;; 20 is the default gap for variants
-            x         (- width (+ (:width shape) 30))]         ;; 30 is the default margin for variants
-        (rx/of
-         (dwt/update-dimensions [(:parent-id shape)] :width width)
-         (dwt/update-position shape-id
-                              {:x x}
-                              {:absolute? false}))))))
+            container (get objects (:parent-id shape))]
+        (when (and (some? shape) (some? container))
+          (let [width (+ (:width container) (:width shape) 20) ;; 20 is the default gap for variants
+                x     (- width (+ (:width shape) 30))]         ;; 30 is the default margin for variants
+            (rx/of
+             (dwt/update-dimensions [(:parent-id shape)] :width width)
+             (dwt/update-position shape-id
+                                  {:x x}
+                                  {:absolute? false}))))))))
 
 (defn add-new-variant
   "Create a new variant and add it to the variant-container"
@@ -359,39 +360,40 @@
              shape               (get objects shape-id)
              shape               (if (ctc/is-variant-container? shape)
                                    (get objects (last (:shapes shape)))
-                                   shape)
-             component-id        (:component-id shape)
-             component           (ctkl/get-component data component-id)
+                                   shape)]
+         (when (some? shape)
+           (let [component-id        (:component-id shape)
+                 component           (ctkl/get-component data component-id)
 
-             container-id        (:parent-id shape)
-             variant-container   (get objects container-id)
-             has-layout?         (ctsl/any-layout? variant-container)
+                 container-id        (:parent-id shape)
+                 variant-container   (get objects container-id)
+                 has-layout?         (ctsl/any-layout? variant-container)
 
-             new-component-id    (uuid/next)
-             new-shape-id        (uuid/next)
+                 new-component-id    (uuid/next)
+                 new-shape-id        (uuid/next)
 
-             prop-num            (dec (count (:variant-properties component)))
+                 prop-num            (dec (count (:variant-properties component)))
 
-             changes             (-> (pcb/empty-changes it page-id)
-                                     (pcb/with-library-data data)
-                                     (pcb/with-objects objects)
-                                     (pcb/with-page-id page-id)
-                                     (clv/generate-add-new-variant shape (:variant-id component) new-component-id new-shape-id prop-num))
+                 changes             (-> (pcb/empty-changes it page-id)
+                                         (pcb/with-library-data data)
+                                         (pcb/with-objects objects)
+                                         (pcb/with-page-id page-id)
+                                         (clv/generate-add-new-variant shape (:variant-id component) new-component-id new-shape-id prop-num))
 
-             undo-id             (js/Symbol)]
-         (rx/concat
-          (rx/of
-           (dwu/start-undo-transaction undo-id)
-           (dch/commit-changes changes)
-           (when-not has-layout?
-             (resposition-and-resize-variant new-shape-id))
-           (dwu/commit-undo-transaction undo-id)
-           (ptk/data-event :layout/update {:ids [(:parent-id shape)]})
-           (if multiselect?
-             (dws/shift-select-shapes new-shape-id)
-             (dws/select-shape new-shape-id)))
-          (->> (rx/of (focus-property (:id variant-container)))
-               (rx/delay 250))))))))
+                 undo-id             (js/Symbol)]
+             (rx/concat
+              (rx/of
+               (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (when-not has-layout?
+                 (resposition-and-resize-variant new-shape-id))
+               (dwu/commit-undo-transaction undo-id)
+               (ptk/data-event :layout/update {:ids [(:parent-id shape)]})
+               (if multiselect?
+                 (dws/shift-select-shapes new-shape-id)
+                 (dws/select-shape new-shape-id)))
+              (->> (rx/of (focus-property (:id variant-container)))
+                   (rx/delay 250))))))))))
 
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
@@ -539,9 +541,10 @@
       (let [objects               (dsh/lookup-page-objects state)
             selected-ids          (dsh/lookup-selected state)
             selected-shapes       (map (d/getf objects) selected-ids)
-            add-new-variant?      (every? ctc/is-variant? selected-shapes)
+            add-new-variant?      (and (seq selected-shapes) (every? ctc/is-variant? selected-shapes))
             undo-id              (js/Symbol)]
-        (if add-new-variant?
+        (cond
+          add-new-variant?
           (rx/concat
            (rx/of
             (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:shortcut-duplicate"})
@@ -549,7 +552,12 @@
             (add-new-variant (first selected-ids) false))
            (rx/from (map #(add-new-variant % true) (rest selected-ids)))
            (rx/of (dwu/commit-undo-transaction undo-id)))
-          (rx/of (dws/duplicate-selected true)))))))
+
+          (seq selected-ids)
+          (rx/of (dws/duplicate-selected true))
+
+          :else
+          (rx/empty))))))
 
 (defn rename-variant
   "Rename the variant container and all components belonging to this variant"

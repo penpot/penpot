@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-file-test
   (:require
@@ -140,6 +140,31 @@
 
         (let [result (:result out)]
           (t/is (= 0 (count result))))))))
+
+(t/deftest create-file-with-duplicate-id
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)]
+
+    (t/testing "create file with specific id"
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "first-file"}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "create file with duplicate id returns normalized error"
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "duplicate-file"}
+            out  (th/command! data)
+            err  (:error out)]
+        (t/is (th/ex-info? err))
+        (t/is (th/ex-of-type? err :not-found))))))
 
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
@@ -708,7 +733,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows))))
         (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
-                 (-> rows first :object-id))))
+                 (->> rows (remove (comp some? :deleted-at)) first :object-id))))
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
@@ -982,6 +1007,38 @@
     (t/is (some? rel))
     (t/is (some? sync))
     (t/is (some? (:synced-at sync)))))
+
+(t/deftest link-file-to-library-rejects-cross-team
+  ;; N1-08: A file in team2 must not be linked to a library in team1,
+  ;; even when the user has edit permissions on both (BOLA / CWE-639).
+  (let [prof1  (th/create-profile* 1)
+        prof2  (th/create-profile* 2)
+        team1  (th/create-team* 1 {:profile-id (:id prof1)})
+        team2  (th/create-team* 2 {:profile-id (:id prof2)})
+        proj1  (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:id team1)})
+        proj2  (th/create-project* 2 {:profile-id (:id prof2)
+                                      :team-id (:id team2)})
+        lib    (th/create-file* 1 {:project-id (:id proj1)
+                                   :profile-id (:id prof1)
+                                   :is-shared true})
+        file2  (th/create-file* 2 {:project-id (:id proj2)
+                                   :profile-id (:id prof2)})]
+
+    ;; Add prof2 as editor to team1 so they have edit access to the library
+    (th/db-insert! :team-profile-rel {:team-id (:id team1)
+                                      :profile-id (:id prof2)
+                                      :is-owner false
+                                      :is-admin false
+                                      :can-edit true})
+
+    ;; prof2 tries to link file2 (team2) to lib (team1) — must fail
+    (let [data {::th/type :link-file-to-library
+                ::rpc/profile-id (:id prof2)
+                :file-id (:id file2)
+                :library-id (:id lib)}
+          out  (th/command! data)]
+      (t/is (some? (:error out))))))
 
 (t/deftest update-file-library-sync-status-updates-sync-row
   (let [profile  (th/create-profile* 1)
@@ -2320,8 +2377,6 @@
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
 
-;; --- Security Fix Tests ---
-
 (t/deftest link-file-to-library-circular-reference
   (let [profile (th/create-profile* 1)
         file1   (th/create-file* 1 {:profile-id (:id profile)
@@ -2391,3 +2446,251 @@
     (t/is (th/ex-info? (:error out)))
     (let [edata (-> out :error ex-data)]
       (t/is (= :validation (:type edata))))))
+
+(t/deftest get-file-libraries-nonexistent-file
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-file-libraries
+                           ::rpc/profile-id (:id prof)
+                           :file-id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-file-libraries-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)})
+        out   (th/command! {::th/type :get-file-libraries
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest share-link-deletion-idor
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        admin   (th/create-profile* 3 {:is-active true})
+        proj-id (:default-project-id owner)
+        team-id (:default-team-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        ;; Invite editor to the team with edit permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id editor)
+                                       :role :editor})
+
+        ;; Invite admin to the team with admin permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id admin)
+                                       :role :admin})
+
+        ;; Owner creates a share-link
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{(get-in file [:data :pages 0])}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "owner can delete their own share-link"
+      (let [out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id owner)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "editor CANNOT delete owner's share-link (IDOR)"
+      ;; Recreate the share-link for this test
+      (let [slink2 (th/command! {::th/type :create-share-link
+                                 ::rpc/profile-id (:id owner)
+                                 :file-id (:id file)
+                                 :pages #{}
+                                 :who-comment "team"
+                                 :who-inspect "team"})
+            slink2-id (get-in slink2 [:result :id])
+
+            ;; Editor tries to delete owner's share-link
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id editor)
+                              :id slink2-id})
+            err (:error out)
+            edata (ex-data err)]
+
+        ;; Should be denied with authorization error
+        (t/is (th/ex-info? err))
+        (t/is (= :authorization (:type edata)))
+
+        ;; Verify the share-link still exists
+        (let [check (th/command! {::th/type :get-view-only-bundle
+                                  ::rpc/profile-id (:id owner)
+                                  :file-id (:id file)})
+              share-links (:share-links (:result check))]
+          (t/is (some #(= slink2-id (:id %)) share-links)))))))
+
+(t/deftest share-link-page-scope-enforcement
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        viewer  (th/create-profile* 2 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        page-a  (get-in file [:data :pages 0])
+        page-b  (uuid/random)
+
+        ;; Add a second page to the file
+        _       (th/command! {::th/type :update-file
+                              ::rpc/profile-id (:id owner)
+                              :id (:id file)
+                              :session-id (uuid/random)
+                              :revn 0
+                              :vern 0
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Page B"
+                                                :options {}
+                                                :objects {}}}]})
+
+        ;; Create share-link scoped to page A only
+        share   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        share-id (get-in share [:result :id])]
+
+    (t/testing "share-link holder can access authorized page"
+      (let [out (th/command! {::th/type :get-page
+                              ::rpc/profile-id (:id viewer)
+                              :file-id (:id file)
+                              :page-id page-a
+                              :share-id share-id})]
+        (t/is (nil? (:error out)))
+        (t/is (some? (:result out)))))
+
+    (t/testing "share-link holder cannot access out-of-scope page"
+      (let [out (th/command! {::th/type :get-page
+                              ::rpc/profile-id (:id viewer)
+                              :file-id (:id file)
+                              :page-id page-b
+                              :share-id share-id})
+            err (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))
+        (t/is (= :object-not-found (:code edata)))))
+
+    (t/testing "team member can access all pages"
+      (let [out-a (th/command! {::th/type :get-page
+                                ::rpc/profile-id (:id owner)
+                                :file-id (:id file)
+                                :page-id page-a})
+            out-b (th/command! {::th/type :get-page
+                                ::rpc/profile-id (:id owner)
+                                :file-id (:id file)
+                                :page-id page-b})]
+        (t/is (nil? (:error out-a)))
+        (t/is (nil? (:error out-b)))))))
+
+(t/deftest share-link-deletion-escape-hatches
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        admin   (th/create-profile* 3 {:is-active true})
+        proj-id (:default-project-id owner)
+        team-id (:default-team-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        ;; Invite editor to the team with edit permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id editor)
+                                       :role :editor})
+
+        ;; Invite admin to the team with admin permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id admin)
+                                       :role :admin})]
+
+    (t/testing "editor CAN delete their own share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id editor)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "admin CAN delete editor's share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id admin)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "owner CAN delete editor's share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id owner)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))))
+
+(t/deftest share-link-fragment-access-denied
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        viewer  (th/create-profile* 2 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        page-a  (get-in file [:data :pages 0])
+
+        ;; Create share-link
+        share   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        share-id (get-in share [:result :id])]
+
+    (t/testing "share-link holder cannot access file fragments"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id viewer)
+                              :file-id (:id file)
+                              :fragment-id (uuid/random)
+                              :share-id share-id})
+            err (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))
+        (t/is (= :object-not-found (:code edata)))))))

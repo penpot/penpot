@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-media-test
   (:require
@@ -380,8 +380,41 @@
         (t/is (= :validation (:type (ex-data err))))
         (t/is (= :unable-to-download-image (:code (ex-data err))))))))
 
-;; --------------------------------------------------------------------
-;; Helpers for chunked-upload tests
+
+(t/deftest download-image-closes-stream
+  (t/testing "response body stream is closed on success"
+    (let [closed? (atom false)
+          ;; Minimal valid PNG (1x1 pixel, red)
+          png-data (byte-array [0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A 0x00 0x00 0x00 0x0D 0x49 0x48 0x44 0x52 0x00 0x00 0x00 0x01 0x00 0x00 0x00 0x01 0x08 0x02 0x00 0x00 0x00 0x90 0x77 0x53 0xDE 0x00 0x00 0x00 0x0C 0x49 0x44 0x41 0x54 0x08 0xD7 0x63 0xF8 0xCF 0xC0 0x00 0x00 0x00 0x02 0x00 0x01 0xE2 0x21 0xBC 0x33 0x00 0x00 0x00 0x00 0x49 0x45 0x4E 0x44 0xAE 0x42 0x60 0x82])
+          body     (proxy [java.io.ByteArrayInputStream] [png-data]
+                     (close [] (reset! closed? true)))]
+      (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                              :return {:status 200
+                                       :headers {"content-type" "image/png"
+                                                 "content-length" (str (alength png-data))}
+                                       :body body}}]
+        (let [cfg    {::http/client :mock-client}
+              result (media/download-image cfg "https://example.com/image.png")]
+          (t/is (some? result))
+          (t/is @closed? "body stream should be closed after successful download")))))
+
+  (t/testing "response body stream is closed on validation error"
+    (let [closed? (atom false)
+          body    (proxy [java.io.ByteArrayInputStream] [(byte-array 100)]
+                    (close [] (reset! closed? true)))]
+      (with-mocks [http-mock {:target 'app.http.client/req-with-redirects
+                              :return {:status 404
+                                       :headers {"content-type" "text/html"
+                                                 "content-length" "100"}
+                                       :body body}}]
+        (let [cfg {::http/client :mock-client}
+              err (try
+                    (media/download-image cfg "https://example.com/not-found.png")
+                    nil
+                    (catch clojure.lang.ExceptionInfo e e))]
+          (t/is (some? err))
+          (t/is (= :unable-to-download-image (:code (ex-data err))))
+          (t/is @closed? "body stream should be closed even on validation error"))))))
 ;; --------------------------------------------------------------------
 
 (defn- split-file-into-chunks
@@ -548,6 +581,41 @@
     (t/is (some? (:error out)))
     (t/is (= :not-found (-> out :error ex-data :type)))))
 
+(t/deftest chunked-upload-other-profile-cannot-assemble
+  ;; assemble-chunks must scope the session lookup to the requesting
+  ;; profile so that a different profile cannot assemble chunks from
+  ;; a session they do not own (BOLA / CWE-639).
+  (let [prof1      (th/create-profile* 1)
+        prof2      (th/create-profile* 2)
+        session-id (create-session! prof1 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}]
+
+    ;; prof1 uploads a chunk into their own session
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof1)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile})]
+      (t/is (nil? (:error out))))
+
+    ;; prof2 tries to assemble prof1's session via create-font-variant
+    ;; (which calls assemble-chunks without ownership check)
+    (let [out (th/command! {::th/type        :create-font-variant
+                            ::rpc/profile-id (:id prof2)
+                            :team-id         (:default-team-id prof2)
+                            :font-id         (uuid/next)
+                            :font-family     "TestFont"
+                            :font-weight     400
+                            :font-style      "normal"
+                            :uploads         {"font/ttf" session-id}})]
+      (t/is (some? (:error out)))
+      (t/is (= :not-found (-> out :error ex-data :type)))
+      (t/is (= :object-not-found (-> out :error ex-data :code))))))
+
 (t/deftest chunked-upload-invalid-media-type
   (let [prof       (th/create-profile* 1)
         _          (th/create-project* 1 {:profile-id (:id prof)
@@ -650,6 +718,24 @@
       (t/is (= :max-quote-reached (-> out :error ex-data :code)))
       (t/is (= "upload-chunks-per-session" (-> out :error ex-data :target))))))
 
+(t/deftest chunked-upload-invalid-total-chunks
+  ;; total-chunks must be at least 1; zero and negative values are rejected
+  ;; with a :validation error.
+  (let [prof (th/create-profile* 1)]
+    ;; zero total-chunks
+    (let [out (th/command! {::th/type        :create-upload-session
+                            ::rpc/profile-id (:id prof)
+                            :total-chunks    0})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type))))
+
+    ;; negative total-chunks
+    (let [out (th/command! {::th/type        :create-upload-session
+                            ::rpc/profile-id (:id prof)
+                            :total-chunks    -1})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type))))))
+
 (t/deftest chunked-upload-invalid-chunk-index
   ;; Both a negative index and an index >= total-chunks must be
   ;; rejected with a :validation / :invalid-chunk-index error.
@@ -701,3 +787,98 @@
         (t/is (some? (:error out)))
         (t/is (= :restriction (-> out :error ex-data :type)))
         (t/is (= :max-quote-reached (-> out :error ex-data :code)))))))
+
+;; --- Clone File Media Object BOLA tests ---
+
+(defn- create-storage-object!
+  [content content-type]
+  (let [storage (:app.storage/storage th/*system*)]
+    (sto/put-object! storage {::sto/content (sto/content content)
+                              :content-type content-type})))
+
+(t/deftest clone-file-media-object-success
+  (let [prof1  (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:default-team-id prof1)})
+        file1  (th/create-file* 1 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        sobj   (create-storage-object! "image-content" "image/png")
+        mobj   (th/create-file-media-object* {:file-id (:id file1)
+                                              :name "test-media"
+                                              :width 100
+                                              :height 100
+                                              :mtype "image/png"
+                                              :media-id (:id sobj)})
+        file2  (th/create-file* 2 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof1)
+                :file-id         (:id file2)
+                :is-local        true
+                :id              (:id mobj)}
+        out    (th/command! params)]
+
+    (t/is (nil? (:error out)))
+    (let [result (:result out)]
+      (t/is (= (:id file2) (:file-id result)))
+      (t/is (= (:name mobj) (:name result)))
+      (t/is (= (:media-id mobj) (:media-id result)))
+      (t/is (uuid? (:id result)))
+      (t/is (not= (:id mobj) (:id result))))))
+
+(t/deftest clone-file-media-object-no-read-access
+  (let [prof1  (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:default-team-id prof1)})
+        file1  (th/create-file* 1 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        sobj   (create-storage-object! "private-content" "image/png")
+        mobj   (th/create-file-media-object* {:file-id (:id file1)
+                                              :name "private-media"
+                                              :width 100
+                                              :height 100
+                                              :mtype "image/png"
+                                              :media-id (:id sobj)})
+
+        prof2  (th/create-profile* 2)
+        _      (th/create-project* 2 {:profile-id (:id prof2)
+                                      :team-id (:default-team-id prof2)})
+        file2  (th/create-file* 2 {:profile-id (:id prof2)
+                                   :project-id (:default-project-id prof2)
+                                   :is-shared false})
+
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof2)
+                :file-id         (:id file2)
+                :is-local        true
+                :id              (:id mobj)}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :not-found (:type error-data)))
+      (t/is (= :object-not-found (:code error-data))))))
+
+(t/deftest clone-file-media-object-source-not-found
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id         (:id file)
+                :is-local        true
+                :id              (uuid/random)}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :not-found (:type error-data)))
+      (t/is (= :object-not-found (:code error-data))))))

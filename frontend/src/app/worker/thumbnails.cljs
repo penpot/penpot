@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.worker.thumbnails
   (:require
@@ -11,6 +11,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.types.color :as cc]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
@@ -18,7 +19,6 @@
    [app.main.fonts :as fonts]
    [app.main.render :as render]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
    [app.worker.impl :as impl]
    [beicon.v2.core :as rx]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.settings.password
   (:require-macros [app.main.style :as stl])
@@ -27,6 +27,14 @@
       :email-as-password
       (swap! form assoc-in [:extra-errors :password-1]
              {:message (tr "errors.email-as-password")})
+
+      :weak-password
+      (let [details (:details data)
+            options (when (seq details)
+                      (mapv tr details))]
+        (swap! form assoc-in [:extra-errors :password-1]
+               {:message (tr "errors.weak-password")
+                :options options}))
 
       (let [msg (tr "generic.error")]
         (st/emit! (ntf/error msg))))))

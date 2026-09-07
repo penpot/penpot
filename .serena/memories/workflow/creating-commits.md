@@ -14,6 +14,8 @@ automatically pull the identity from the local git config `user.name` and `user.
 :emoji: Subject line (imperative, capitalized, no period, <=70 chars)
 
 Body explaining what changed and why.
+Wrap lines at 72 characters — git log and tooling
+render long lines poorly. Keep each line concise.
 
 AI-assisted-by: model-name
 ```
@@ -25,3 +27,7 @@ AI-assisted-by: model-name
 ## Commit Type Emojis
 
 `:bug:` bug fix · `:sparkles:` enhancement · `:tada:` new feature · `:recycle:` refactor · `:lipstick:` cosmetic · `:ambulance:` critical fix · `:books:` docs · `:construction:` WIP · `:boom:` breaking · `:wrench:` config · `:zap:` perf · `:whale:` docker · `:paperclip:` other · `:arrow_up:` dep upgrade · `:arrow_down:` dep downgrade · `:fire:` removal · `:globe_with_meridians:` translations · `:rocket:` epic/highlight
+
+## Referencing Issues
+
+Use `Closes #NNNN` (not `Fixes #NNNN`) to link a commit to a GitHub issue.

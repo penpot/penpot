@@ -212,6 +212,37 @@ superseded it:
 
 Replace the reference in the changelog entry with the correct merged PR number.
 
+### 5b. Security advisory (GHSA) entries
+
+Security advisories fixed in a release are documented in the changelog even
+though they are **neither milestone issues nor PRs**. The GHSA ID and its
+description are supplied by the user or the release notes — they never come
+from the milestone fetch in step 2.
+
+**Format** (matches the existing precedent in `CHANGES.md`, e.g. the
+`create-font-variant` arbitrary file read advisory):
+
+```markdown
+- Fix <user-facing description> (https://github.com/penpot/penpot/security/advisories/GHSA-XXXX-XXXX-XXXX)
+```
+
+Rules:
+- Place the entry under `### :bug: Bugs fixed`, with **no issue or PR link** —
+  only the advisory URL.
+- The advisory may be **draft/unpublished** at changelog time (the URL 404s
+  publicly). Do **not** web-fetch or verify the URL, and do **not** drop the
+  entry because of that. Rely on the GHSA ID provided by the user.
+- Derive the description from the supplied advisory title, imperative mood and
+  user-facing (e.g. `Fix command injection in SVG exporter via legacy fill-color`).
+- These entries are **invisible to the automation**: they are not returned by
+  `gh.py issues`, not matched by `--compare` (step 3), not part of the PR
+  cross-reference (step 10), and not scanned by the anomaly-report regexes
+  (step 11, which only match `issues/` and `pull/` links). Add them manually.
+- During pre-flight checks (step 6a) apply only the **backport/duplicate**
+  check: if the same GHSA already appears in an earlier version section, remove
+  it from the current section. Their absence from milestone cross-references
+  is expected, not an anomaly.
+
 ### 6. Read the current CHANGES.md
 
 Read the top of `CHANGES.md` to understand the existing format and find the
@@ -400,6 +431,8 @@ if closed:
 - ✅ Every merged milestone PR is either in the changelog or excluded by label
 - ✅ PR and issue counts are internally consistent
 - ✅ No false-positive PR-to-issue associations
+- ✅ Advisory (GHSA) entries are not milestone PRs — their absence from the
+  cross-reference is intentional (see step 5b)
 
 ## Version section template
 
@@ -410,7 +443,11 @@ if closed:
 
 - <fix description> [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 - <fix description> (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- <fix description> (https://github.com/penpot/penpot/security/advisories/GHSA-XXXX-XXXX-XXXX)
 ```
+
+Advisory (GHSA) entries have no issue or PR link — just the advisory URL. See
+step 5b.
 
 ### 11. Generate anomaly report and save to CHANGES-ISSUES.md
 
@@ -440,9 +477,15 @@ There are exactly two types:
    release, but the PR is being released elsewhere — the fix may not
    actually ship here.
 2. **PR is in the milestone, but the issue it closes is in a different
-   milestone (or has no milestone).** The PR is being released here, but
-   the issue it fixes is being released in a different version (or never
-   tracked in a milestone) — the changelog pairing is misleading.
+   milestone.** The PR is being released here, but the issue it fixes is
+   being released in a different version — the changelog pairing is
+   misleading.
+
+   **Exception — issue with no milestone is NOT an anomaly.** Milestones
+   are only required for issues tracked in the "Main" project. A milestone
+   PR that closes an issue with no milestone references an issue from
+   another (probably private) project; that is expected and the issue is
+   not part of this changelog. Do not report it.
 
 **Anything else is not an anomaly.** Other discrepancies (exclusion
 labels on in-changelog issues, missing valid issues, unmerged PR
@@ -598,6 +641,10 @@ for pr_num in sorted(changelog_prs):
     if get_pr_milestone(pr_num) != MILESTONE: continue
     for issue_num in pr.get('closing_issues', []):
         issue_ms = get_issue_milestone(issue_num)
+        # No milestone = issue from another (probably private) project —
+        # milestones are only required for the "Main" project. Not an
+        # anomaly, and the issue never belongs in this changelog.
+        if issue_ms is None: continue
         if issue_ms != MILESTONE:
             anomalies_b.append({
                 'pr': pr_num,
@@ -620,7 +667,7 @@ with open(OUTPUT, 'w') as f:
 
     f.write('## Summary\n\n')
     f.write(f'- **Issue in {MILESTONE}, referenced PR in different milestone or no milestone:** {n_a}\n')
-    f.write(f'- **PR in {MILESTONE}, closing issue in different milestone or no milestone:** {n_b}\n')
+    f.write(f'- **PR in {MILESTONE}, closing issue in a different milestone:** {n_b}\n')
     f.write(f'- **Total anomalies:** {n_a + n_b}\n\n')
 
     # --- Anomalies section ---
@@ -649,7 +696,7 @@ with open(OUTPUT, 'w') as f:
                 f.write('\n')
 
         if n_b:
-            f.write(f'\n### PR in {MILESTONE}, closing issue in different milestone or no milestone\n\n')
+            f.write(f'\n### PR in {MILESTONE}, closing issue in a different milestone\n\n')
             by_pr = {}
             for b in anomalies_b:
                 by_pr.setdefault(b['pr'], []).append(b)
@@ -684,8 +731,11 @@ milestone mismatches between issues and their referenced PRs:
 
 1. **Issue in milestone, referenced PR in different milestone or no milestone** —
    the changelog claims a fix here, but the PR is released elsewhere.
-2. **PR in milestone, closing issue in different milestone or no milestone** —
+2. **PR in milestone, closing issue in a different milestone** —
    the PR is released here, but the issue it fixes belongs to another version.
+   (An issue with *no* milestone belongs to another, probably private,
+   project — milestones are only required on the "Main" project — so it is
+   neither an anomaly nor a changelog candidate.)
 
 **Rule violations are not in the report** — they are workflow errors the
 LLM must fix directly in `CHANGES.md` during step 6a (pre-flight checks).
@@ -732,6 +782,14 @@ self-contained and clickable in any Markdown viewer.
   Taiga description text or by searching GitHub PRs that reference the Taiga
   URL. Replace the Taiga reference with the GitHub issue link and add the PR
   reference if applicable.
+- **Security advisory (GHSA) entries.** Advisories fixed in the release are
+  listed under `### :bug: Bugs fixed` with the advisory URL and **no issue or
+  PR link**, even though they are not in the milestone. The GHSA ID and
+  description come from the user — do **not** fetch or verify the URL, and do
+  not drop a draft (unpublished) advisory. Precedent:
+  `- Fix arbitrary file read security issue on create-font-variant rpc method
+  (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)`.
+  See step 5b.
 - **Re-fetch before editing.** Milestones can change — always re-fetch issues
   before making edits, don't rely on cached data.
 - **Use `scripts/gh.py`.** Prefer the helper script over raw `gh api` calls for
@@ -754,8 +812,11 @@ self-contained and clickable in any Markdown viewer.
 - **Anomaly = milestone mismatch only.** The report contains only milestone
   mismatches: (1) the issue is in this milestone but the referenced PR is
   in a different milestone (or unassigned), and (2) the PR is in this
-  milestone but the issue it closes is in a different milestone (or
-  unassigned). These are anomalies because the changelog pairing is
+  milestone but the issue it closes is in a different milestone. An
+  *unassigned* (milestone-less) issue closed by a milestone PR is **not**
+  an anomaly: milestones are required only for the "Main" project, so such
+  issues come from another (probably private) project and are not changelog
+  candidates. These anomalies are reported because the changelog pairing is
   *misleading* — the human needs to decide whether the milestone or the
   changelog is wrong. All other discrepancies (exclusion labels, missing
   valid issues, unmerged PR references, duplicates, stale milestone

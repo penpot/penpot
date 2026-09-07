@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.utils
   "RPC for plugins runtime."
@@ -282,22 +282,13 @@
   [code value]
   (if (some? value)
     (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
-    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code))))
-  nil)
+    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code)))))
 
 (defn not-valid
   [plugin-id code value]
   (if (throw-validation-errors? plugin-id)
     (throw-not-valid code value)
     (display-not-valid code value)))
-
-(defn valid-timeout?
-  "A plugin timeout argument: omitted, or a finite positive number of msecs."
-  [value]
-  (or (nil? value)
-      (and (number? value)
-           (pos? value)
-           (js/Number.isFinite value))))
 
 (defn reject-not-valid
   [reject code value]

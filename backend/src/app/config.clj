@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
@@ -52,7 +52,7 @@
 
    :redis-uri "redis://redis/0"
 
-   :file-data-backend "legacy-db"
+   :file-data-backend "db"
 
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
@@ -94,7 +94,11 @@
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}})
+   :ssrf-extra-blocked-cidrs #{}
+
+   ;; Binfile import limits
+   :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
+   :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
 
 (def schema:config
   (do #_sm/optional-keys
@@ -121,6 +125,7 @@
     [:exporter-shared-key {:optional true} :string]
     [:admin-console-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
+    [:media-processor-shared-key {:optional true} :string]
     [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
@@ -146,6 +151,13 @@
     [:imagemagick-time-limit {:optional true} :string]
     [:imagemagick-width-limit {:optional true} :string]
     [:imagemagick-height-limit {:optional true} :string]
+
+    [:media-processing-service-uri {:optional true} ::sm/uri]
+    [:media-processing-service-timeout {:optional true} ::sm/int]
+
+    ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
+    [:binfile-import-max-object-size {:optional true} ::sm/int]
+    [:binfile-import-max-zip-entries {:optional true} ::sm/int]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
@@ -190,6 +202,7 @@
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
     [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
     [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
+    [:quotes-media-storage-bytes-per-team {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]

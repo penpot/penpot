@@ -8,6 +8,17 @@ export NODE_ENV=production;
 corepack enable;
 corepack install || exit 1;
 pnpm install || exit 1;
+pnpm run build:wasm;
+
+WASM_SRC="resources/wasm";
+WASM_SHARED="src/app/wasm/shared.js";
+if [ ! -f "$WASM_SRC/render-wasm.wasm" ] || [ ! -f "$WASM_SHARED" ]; then
+    echo "ERROR: the render-wasm build did not produce:" >&2;
+    echo "  $WASM_SRC/render-wasm.wasm" >&2;
+    echo "  $WASM_SHARED" >&2;
+    exit 1;
+fi
+
 rm -rf target
 
 # Build the application
@@ -17,6 +28,9 @@ cp pnpm-lock.yaml target/;
 cp pnpm-workspace.yaml target/;
 cp package.json target/;
 touch target/pnpm-workspace.yaml;
+
+mkdir -p target/$WASM_SRC;
+cp "$WASM_SRC/render-wasm.js" "$WASM_SRC/render-wasm.wasm" target/$WASM_SRC/;
 
 cat <<EOF | tee target/setup
 #/usr/bin/env bash

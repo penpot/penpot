@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.teams
   (:require
@@ -22,7 +22,7 @@
    [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
-   [app.media :as media]
+   [app.media.validation :as media.v]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -196,11 +196,11 @@
    ::sm/params schema:get-teams}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (cond->> (get-teams conn profile-id)
-      (contains? cf/flags :admin-console)
-      (map #(nitrate/add-organization-info-to-team cfg % params))
-      (contains? cf/flags :admin-console)
-      (remove #(get-in % [:organization :expired-license])))))
+    (let [teams (get-teams conn profile-id)]
+      (if (contains? cf/flags :admin-console)
+        (->> (nitrate/add-organization-info-to-teams cfg teams params)
+             (remove #(get-in % [:organization :expired-license])))
+        teams))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -538,6 +538,9 @@
   ;; When creating inside an organization, verify the user has permission to do so.
   ;; Fail closed: if organization permissions cannot be fetched, deny the operation.
   (when (and organization-id (contains? cf/flags :admin-console))
+    ;; Verify caller is a member of the organization
+    (nitrate/assert-membership cfg profile-id organization-id)
+
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
                                            {:organization-id organization-id})]
       (if (nil? organization-perms)
@@ -572,7 +575,7 @@
                      (set/difference cfeat/frontend-only-features)
                      (set/difference cfeat/no-team-inheritable-features))
         params   {:profile-id profile-id
-                  :name "Your Penpot"
+                  :name "Personal Projects"
                   :features features
                   :organization-id organization-id
                   :is-default true}
@@ -652,6 +655,7 @@
   (let [id         (or id (uuid/next))
         is-default (if (boolean? is-default) is-default false)
         features   (db/create-array conn "text" features)
+        name       (d/normalize-string name)
         team       (db/insert! conn :team
                                {:id id
                                 :name name
@@ -688,6 +692,7 @@
   [conn {:keys [id team-id name is-default created-at modified-at]}]
   (let [id         (or id (uuid/next))
         is-default (if (boolean? is-default) is-default false)
+        name       (d/normalize-string name)
         params     {:id id
                     :name name
                     :team-id team-id
@@ -718,9 +723,10 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
   (check-edition-permissions! conn profile-id id)
-  (db/update! conn :team
-              {:name name}
-              {:id id})
+  (let [name (d/normalize-string name)]
+    (db/update! conn :team
+                {:name name}
+                {:id id}))
   nil)
 
 
@@ -823,7 +829,7 @@
                 :code :only-owner-can-delete-team))
 
     ;; Protect the user's personal default team from deletion.
-    ;; Organization-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    ;; Organization-scoped default teams ("Personal Projects") are allowed to be deleted when they have no files.
     (when (and (:is-default team) (not in-organization?))
       (ex/raise :type :validation
                 :code :non-deletable-team
@@ -938,8 +944,10 @@
    ::sm/params schema:delete-team-member
    ::db/transaction true}
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
-  (let [team  (get-team conn :profile-id profile-id :team-id team-id)
-        perms (get-permissions conn profile-id team-id)]
+  (let [team    (get-team conn :profile-id profile-id :team-id team-id)
+        perms   (get-permissions conn profile-id team-id)
+        members (get-team-members conn team-id)
+        member  (d/seek #(= member-id (:id %)) members)]
     (when-not (or (:is-owner perms)
                   (:is-admin perms))
       (ex/raise :type :validation
@@ -948,6 +956,15 @@
     (when (= member-id profile-id)
       (ex/raise :type :validation
                 :code :cant-remove-yourself))
+
+    (when-not member
+      (ex/raise :type :not-found
+                :code :member-does-not-exist))
+
+    (when (and (:is-owner member)
+               (not (:is-owner perms)))
+      (ex/raise :type :validation
+                :code :cant-remove-owner))
 
     (db/delete! conn :team-profile-rel {:profile-id member-id
                                         :team-id team-id})
@@ -979,7 +996,7 @@
 (def ^:private schema:update-team-photo
   [:map {:title "update-team-photo"}
    [:team-id ::sm/uuid]
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"
@@ -987,8 +1004,8 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

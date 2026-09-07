@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-font-test
   (:require
@@ -24,111 +24,80 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest ttf-font-upload-1
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof    (th/create-profile* 1 {:is-active true})
-          team-id (:default-team-id prof)
-          proj-id (:default-project-id prof)
-          font-id (uuid/custom 10 1)
+;; -----------------------------------------------------------------------
+;; Helpers for chunked-upload font tests
+;; -----------------------------------------------------------------------
 
-          ttfdata (-> (io/resource "backend_tests/test_files/font-1.ttf")
-                      (io/read*))
+(defn- split-bytes-into-chunks
+  "Splits `data` (byte array) into chunks of at most `chunk-size` bytes.
+  Returns a vector of byte arrays."
+  [^bytes data chunk-size]
+  (let [length (alength data)]
+    (loop [offset 0 chunks []]
+      (if (>= offset length)
+        chunks
+        (let [remaining (- length offset)
+              size      (min chunk-size remaining)
+              buf       (byte-array size)]
+          (System/arraycopy data offset buf 0 size)
+          (recur (+ offset size) (conj chunks buf)))))))
 
-          params  {::th/type :create-font-variant
-                   ::rpc/profile-id (:id prof)
-                   :team-id team-id
-                   :font-id font-id
-                   :font-family "somefont"
-                   :font-weight 400
-                   :font-style "normal"
-                   :data {"font/ttf" ttfdata}}
-          out     (th/command! params)]
+(defn- make-chunk-mfile
+  "Writes `data` (byte array) to a tempfile and returns a map
+  compatible with the upload-chunk :content parameter."
+  [^bytes data mtype]
+  (let [tmp (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-font-chunk-")]
+    (io/write* tmp data)
+    {:filename "chunk"
+     :path     tmp
+     :mtype    mtype
+     :size     (alength data)}))
 
-      (t/is (= 1 (:call-count @mock)))
+(defn- create-upload-session!
+  "Creates an upload session for `prof` with `total-chunks`. Returns the session-id UUID."
+  [prof total-chunks]
+  (let [out (th/command! {::th/type        :create-upload-session
+                          ::rpc/profile-id (:id prof)
+                          :total-chunks    total-chunks})]
+    (let [session-id (:session-id (:result out))]
+      (t/is (nil? (:error out))
+            (str "create-upload-session failed: "
+                 (some-> (:error out) ex-data)))
+      (t/is (uuid? session-id)
+            (str "create-upload-session returned an invalid session-id: " session-id))
+      session-id)))
 
-      ;; (th/print-result! out)
-      (t/is (nil? (:error out)))
-      (let [result (:result out)]
-        (t/is (uuid? (:id result)))
-        (t/is (uuid? (:ttf-file-id result)))
-        (t/is (uuid? (:otf-file-id result)))
-        (t/is (uuid? (:woff1-file-id result)))
-        (t/are [k] (= (get params k)
-                      (get result k))
-          :team-id
-          :font-id
-          :font-family
-          :font-weight
-          :font-style)))))
+(defn- upload-font-chunked!
+  "Splits `font-bytes` into chunks of `chunk-size` bytes, creates an upload
+  session, uploads all chunks, and returns the session-id UUID."
+  [prof ^bytes font-bytes mtype chunk-size]
+  (let [chunks     (split-bytes-into-chunks font-bytes chunk-size)
+        session-id (create-upload-session! prof (count chunks))]
+    (when (uuid? session-id)
+      (doseq [[idx chunk-data] (map-indexed vector chunks)]
+        (let [mfile (make-chunk-mfile chunk-data mtype)
+              out   (th/command! {::th/type        :upload-chunk
+                                  ::rpc/profile-id (:id prof)
+                                  :session-id      session-id
+                                  :index           idx
+                                  :content         mfile})]
+          (t/is (nil? (:error out))))))
+    session-id))
 
-(t/deftest ttf-font-upload-2
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        team-id (:default-team-id prof)
-        proj-id (:default-project-id prof)
-        font-id (uuid/custom 10 1)
-
-        data    (-> (io/resource "backend_tests/test_files/font-1.woff")
-                    (io/read*))
-
-        params  {::th/type :create-font-variant
-                 ::rpc/profile-id (:id prof)
-                 :team-id team-id
-                 :font-id font-id
-                 :font-family "somefont"
-                 :font-weight 400
-                 :font-style "normal"
-                 :data {"font/woff" data}}
-        out     (th/command! params)]
-
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (let [result (:result out)]
-      (t/is (uuid? (:id result)))
-      (t/is (uuid? (:ttf-file-id result)))
-      (t/is (uuid? (:otf-file-id result)))
-      (t/is (uuid? (:woff1-file-id result)))
-      (t/are [k] (= (get params k)
-                    (get result k))
-        :team-id
-        :font-id
-        :font-family
-        :font-weight
-        :font-style))))
-
-(t/deftest woff2-font-upload-1
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        team-id (:default-team-id prof)
-        proj-id (:default-project-id prof)
-        font-id (uuid/custom 10 1)
-
-        data    (-> (io/resource "backend_tests/test_files/font-1.woff2")
-                    (io/read*))
-
-        params  {::th/type :create-font-variant
-                 ::rpc/profile-id (:id prof)
-                 :team-id team-id
-                 :font-id font-id
-                 :font-family "somefont"
-                 :font-weight 400
-                 :font-style "normal"
-                 :data {"font/woff2" data}}
-        out     (th/command! params)]
-
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (let [result (:result out)]
-      (t/is (uuid? (:id result)))
-      (t/is (uuid? (:ttf-file-id result)))
-      (t/is (uuid? (:otf-file-id result)))
-      (t/is (uuid? (:woff1-file-id result)))
-      (t/is (uuid? (:woff2-file-id result)))
-      (t/are [k] (= (get params k)
-                    (get result k))
-        :team-id
-        :font-id
-        :font-family
-        :font-weight
-        :font-style))))
+(defn- assert-font-variant-result
+  "Checks that a successful create-font-variant result has valid UUIDs and
+  the expected scalar fields matching `params`."
+  [params result]
+  (t/is (uuid? (:id result)))
+  (t/is (uuid? (:ttf-file-id result)))
+  (t/is (uuid? (:otf-file-id result)))
+  (t/is (uuid? (:woff1-file-id result)))
+  (t/are [k] (= (get params k) (get result k))
+    :team-id
+    :font-id
+    :font-family
+    :font-weight
+    :font-style))
 
 (t/deftest font-deletion-1
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -142,27 +111,29 @@
         data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
                     (io/read*))]
 
-    ;; Create front variant
-    (let [params  {::th/type :create-font-variant
+    ;; Create font variant
+    (let [session-id (upload-font-chunked! prof data1 "font/woff" (* 4 1024 1024))
+          params  {::th/type :create-font-variant
                    ::rpc/profile-id (:id prof)
                    :team-id team-id
                    :font-id font-id
                    :font-family "somefont"
                    :font-weight 400
                    :font-style "normal"
-                   :data {"font/woff" data1}}
+                   :uploads {"font/woff" session-id}}
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (let [params  {::th/type :create-font-variant
+    (let [session-id (upload-font-chunked! prof data2 "font/woff" (* 4 1024 1024))
+          params  {::th/type :create-font-variant
                    ::rpc/profile-id (:id prof)
                    :team-id team-id
                    :font-id font-id
                    :font-family "somefont"
                    :font-weight 500
                    :font-style "normal"
-                   :data {"font/woff" data2}}
+                   :uploads {"font/woff" session-id}}
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
@@ -206,27 +177,29 @@
         data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
                     (io/read*))]
 
-    ;; Create front variant
-    (let [params  {::th/type :create-font-variant
+    ;; Create font variant
+    (let [session-id (upload-font-chunked! prof data1 "font/woff" (* 4 1024 1024))
+          params  {::th/type :create-font-variant
                    ::rpc/profile-id (:id prof)
                    :team-id team-id
                    :font-id font-id
                    :font-family "somefont"
                    :font-weight 400
                    :font-style "normal"
-                   :data {"font/woff" data1}}
+                   :uploads {"font/woff" session-id}}
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (let [params  {::th/type :create-font-variant
+    (let [session-id (upload-font-chunked! prof data2 "font/woff" (* 4 1024 1024))
+          params  {::th/type :create-font-variant
                    ::rpc/profile-id (:id prof)
                    :team-id team-id
                    :font-id (uuid/custom 10 2)
                    :font-family "somefont"
                    :font-weight 400
                    :font-style "normal"
-                   :data {"font/woff" data2}}
+                   :uploads {"font/woff" session-id}}
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
@@ -265,12 +238,14 @@
         font-id (uuid/custom 10 1)
         data1   (-> (io/resource "backend_tests/test_files/font-1.woff") (io/read*))
         data2   (-> (io/resource "backend_tests/test_files/font-2.woff") (io/read*))
+        sid1    (upload-font-chunked! prof data1 "font/woff" (* 4 1024 1024))
+        sid2    (upload-font-chunked! prof data2 "font/woff" (* 4 1024 1024))
         params1 {::th/type :create-font-variant ::rpc/profile-id (:id prof)
                  :team-id team-id :font-id font-id :font-family "somefont"
-                 :font-weight 400 :font-style "normal" :data {"font/woff" data1}}
+                 :font-weight 400 :font-style "normal" :uploads {"font/woff" sid1}}
         params2 {::th/type :create-font-variant ::rpc/profile-id (:id prof)
                  :team-id team-id :font-id font-id :font-family "somefont"
-                 :font-weight 500 :font-style "normal" :data {"font/woff" data2}}
+                 :font-weight 500 :font-style "normal" :uploads {"font/woff" sid2}}
         out1    (th/command! params1)
         out2    (th/command! params2)]
     (t/is (nil? (:error out1)))
@@ -313,6 +288,7 @@
           ttfdata (-> (io/resource "backend_tests/test_files/font-1.ttf")
                       (io/read*))
 
+          session-id (upload-font-chunked! prof ttfdata "font/ttf" (* 4 1024 1024))
           params  {::th/type :create-font-variant
                    ::rpc/profile-id (:id prof)
                    :team-id team-id
@@ -320,198 +296,14 @@
                    :font-family "somefont"
                    :font-weight 400
                    :font-style "normal"
-                   :data {"font/ttf" "/etc/passwd"}}
+                   :uploads {"font/ttf" session-id}}
           out     (th/command! params)]
 
-      (t/is (= 0 (:call-count @mock)))
       ;; (th/print-result! out)
-
-      (let [error      (:error out)
-            error-data (ex-data error)]
-        (t/is (th/ex-info? error))))))
+      (t/is (nil? (:error out))))))
 
 ;; -----------------------------------------------------------------------
-;; Helpers for chunked-upload font tests
-;; -----------------------------------------------------------------------
-
-(defn- split-bytes-into-chunks
-  "Splits `data` (byte array) into chunks of at most `chunk-size` bytes.
-  Returns a vector of byte arrays."
-  [^bytes data chunk-size]
-  (let [length (alength data)]
-    (loop [offset 0 chunks []]
-      (if (>= offset length)
-        chunks
-        (let [remaining (- length offset)
-              size      (min chunk-size remaining)
-              buf       (byte-array size)]
-          (System/arraycopy data offset buf 0 size)
-          (recur (+ offset size) (conj chunks buf)))))))
-
-(defn- make-chunk-mfile
-  "Writes `data` (byte array) to a tempfile and returns a map
-  compatible with the upload-chunk :content parameter."
-  [^bytes data mtype]
-  (let [tmp (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-font-chunk-")]
-    (io/write* tmp data)
-    {:filename "chunk"
-     :path     tmp
-     :mtype    mtype
-     :size     (alength data)}))
-
-(defn- create-upload-session!
-  "Creates an upload session for `prof` with `total-chunks`. Returns the session-id UUID."
-  [prof total-chunks]
-  (let [out (th/command! {::th/type        :create-upload-session
-                          ::rpc/profile-id (:id prof)
-                          :total-chunks    total-chunks})]
-    (t/is (nil? (:error out)))
-    (:session-id (:result out))))
-
-(defn- upload-font-chunked!
-  "Splits `font-bytes` into chunks of `chunk-size` bytes, creates an upload
-  session, uploads all chunks, and returns the session-id UUID."
-  [prof ^bytes font-bytes mtype chunk-size]
-  (let [chunks     (split-bytes-into-chunks font-bytes chunk-size)
-        session-id (create-upload-session! prof (count chunks))]
-    (doseq [[idx chunk-data] (map-indexed vector chunks)]
-      (let [mfile (make-chunk-mfile chunk-data mtype)
-            out   (th/command! {::th/type        :upload-chunk
-                                ::rpc/profile-id (:id prof)
-                                :session-id      session-id
-                                :index           idx
-                                :content         mfile})]
-        (t/is (nil? (:error out)))))
-    session-id))
-
-(defn- assert-font-variant-result
-  "Checks that a successful create-font-variant result has valid UUIDs and
-  the expected scalar fields matching `params`."
-  [params result]
-  (t/is (uuid? (:id result)))
-  (t/is (uuid? (:ttf-file-id result)))
-  (t/is (uuid? (:otf-file-id result)))
-  (t/is (uuid? (:woff1-file-id result)))
-  (t/are [k] (= (get params k) (get result k))
-    :team-id
-    :font-id
-    :font-family
-    :font-weight
-    :font-style))
-
-;; -----------------------------------------------------------------------
-;; Path 1 – Normal (direct :data bytes)
-;; -----------------------------------------------------------------------
-
-(t/deftest create-font-variant-normal-ttf
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof    (th/create-profile* 1 {:is-active true})
-          team-id (:default-team-id prof)
-          font-id (uuid/custom 10 10)
-          data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
-          params  {::th/type    :create-font-variant
-                   ::rpc/profile-id (:id prof)
-                   :team-id     team-id
-                   :font-id     font-id
-                   :font-family "chunked-test"
-                   :font-weight 400
-                   :font-style  "normal"
-                   :data        {"font/ttf" data}}
-          out     (th/command! params)]
-      (t/is (= 1 (:call-count @mock)))
-      (t/is (nil? (:error out)))
-      (assert-font-variant-result params (:result out)))))
-
-(t/deftest create-font-variant-normal-otf
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof    (th/create-profile* 1 {:is-active true})
-          team-id (:default-team-id prof)
-          font-id (uuid/custom 10 11)
-          data    (-> (io/resource "backend_tests/test_files/font-1.otf") (io/read*))
-          params  {::th/type    :create-font-variant
-                   ::rpc/profile-id (:id prof)
-                   :team-id     team-id
-                   :font-id     font-id
-                   :font-family "chunked-test"
-                   :font-weight 400
-                   :font-style  "normal"
-                   :data        {"font/otf" data}}
-          out     (th/command! params)]
-      (t/is (= 1 (:call-count @mock)))
-      (t/is (nil? (:error out)))
-      (assert-font-variant-result params (:result out)))))
-
-(t/deftest create-font-variant-normal-woff
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof    (th/create-profile* 1 {:is-active true})
-          team-id (:default-team-id prof)
-          font-id (uuid/custom 10 12)
-          data    (-> (io/resource "backend_tests/test_files/font-1.woff") (io/read*))
-          params  {::th/type    :create-font-variant
-                   ::rpc/profile-id (:id prof)
-                   :team-id     team-id
-                   :font-id     font-id
-                   :font-family "chunked-test"
-                   :font-weight 400
-                   :font-style  "normal"
-                   :data        {"font/woff" data}}
-          out     (th/command! params)]
-      (t/is (= 1 (:call-count @mock)))
-      (t/is (nil? (:error out)))
-      (assert-font-variant-result params (:result out)))))
-
-;; -----------------------------------------------------------------------
-;; Path 2 – Legacy chunking (:data with vector of byte-arrays per mtype)
-;; -----------------------------------------------------------------------
-
-(t/deftest create-font-variant-legacy-chunked-ttf
-  "Upload a TTF via the legacy :data path where each mtype value is a
-   vector of byte-array chunks (4 MiB each) instead of a single byte-array."
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof       (th/create-profile* 1 {:is-active true})
-          team-id    (:default-team-id prof)
-          font-id    (uuid/custom 10 20)
-          full-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
-          ;; Simulate 4 MiB legacy chunks – font is small so a single chunk suffices
-          chunks     (split-bytes-into-chunks full-bytes (* 4 1024 1024))
-          params     {::th/type    :create-font-variant
-                      ::rpc/profile-id (:id prof)
-                      :team-id     team-id
-                      :font-id     font-id
-                      :font-family "legacy-chunked"
-                      :font-weight 700
-                      :font-style  "italic"
-                      :data        {"font/ttf" (vec chunks)}}
-          out        (th/command! params)]
-      (t/is (= 1 (:call-count @mock)))
-      (t/is (nil? (:error out)))
-      (assert-font-variant-result params (:result out)))))
-
-(t/deftest create-font-variant-legacy-chunked-woff
-  "Upload a WOFF via the legacy :data path with multiple sub-4 KiB chunks
-   to exercise the SequenceInputStream concatenation path."
-  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof       (th/create-profile* 1 {:is-active true})
-          team-id    (:default-team-id prof)
-          font-id    (uuid/custom 10 21)
-          full-bytes (-> (io/resource "backend_tests/test_files/font-1.woff") (io/read*))
-          ;; Split into small chunks to exercise the SequenceInputStream path
-          chunks     (split-bytes-into-chunks full-bytes 512)
-          params     {::th/type    :create-font-variant
-                      ::rpc/profile-id (:id prof)
-                      :team-id     team-id
-                      :font-id     font-id
-                      :font-family "legacy-chunked-woff"
-                      :font-weight 400
-                      :font-style  "normal"
-                      :data        {"font/woff" (vec chunks)}}
-          out        (th/command! params)]
-      (t/is (= 1 (:call-count @mock)))
-      (t/is (nil? (:error out)))
-      (assert-font-variant-result params (:result out)))))
-
-;; -----------------------------------------------------------------------
-;; Path 3 – New standardized chunked upload (:uploads map)
+;; Chunked upload (:uploads map)
 ;; -----------------------------------------------------------------------
 
 (t/deftest create-font-variant-chunked-upload-ttf
@@ -606,8 +398,8 @@
 ;; Error cases
 ;; -----------------------------------------------------------------------
 
-(t/deftest create-font-variant-missing-data-and-uploads
-  "Neither :data nor :uploads is present — schema validation must reject it."
+(t/deftest create-font-variant-missing-uploads
+  "Missing :uploads — schema validation must reject it."
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         font-id (uuid/custom 10 40)
@@ -674,49 +466,6 @@
 ;; Font size validation tests
 ;; -----------------------------------------------------------------------
 
-(t/deftest create-font-variant-size-exceeded-normal
-  "Direct :data upload exceeding font-max-file-size must be rejected."
-  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
-    (with-redefs [app.config/config (assoc app.config/config :font-max-file-size 1)]
-      (let [prof    (th/create-profile* 1 {:is-active true})
-            team-id (:default-team-id prof)
-            font-id (uuid/custom 10 50)
-            data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
-            params  {::th/type    :create-font-variant
-                     ::rpc/profile-id (:id prof)
-                     :team-id     team-id
-                     :font-id     font-id
-                     :font-family "size-exceeded"
-                     :font-weight 400
-                     :font-style  "normal"
-                     :data        {"font/ttf" data}}
-            out     (th/command! params)]
-        (t/is (some? (:error out)))
-        (t/is (= :restriction (-> out :error ex-data :type)))
-        (t/is (= :font-max-file-size-reached (-> out :error ex-data :code)))))))
-
-(t/deftest create-font-variant-size-exceeded-legacy-chunked
-  "Legacy :data chunk-vector upload exceeding font-max-file-size must be rejected."
-  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
-    (with-redefs [app.config/config (assoc app.config/config :font-max-file-size 1)]
-      (let [prof       (th/create-profile* 1 {:is-active true})
-            team-id    (:default-team-id prof)
-            font-id    (uuid/custom 10 51)
-            full-bytes (-> (io/resource "backend_tests/test_files/font-1.woff") (io/read*))
-            chunks     (split-bytes-into-chunks full-bytes (* 4 1024 1024))
-            params     {::th/type    :create-font-variant
-                        ::rpc/profile-id (:id prof)
-                        :team-id     team-id
-                        :font-id     font-id
-                        :font-family "size-exceeded-legacy"
-                        :font-weight 400
-                        :font-style  "normal"
-                        :data        {"font/woff" (vec chunks)}}
-            out        (th/command! params)]
-        (t/is (some? (:error out)))
-        (t/is (= :restriction (-> out :error ex-data :type)))
-        (t/is (= :font-max-file-size-reached (-> out :error ex-data :code)))))))
-
 (t/deftest create-font-variant-size-exceeded-chunked-upload
   "New :uploads path exceeding font-max-file-size must be rejected after assembly."
   (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
@@ -738,71 +487,9 @@
           (t/is (= :restriction (-> out :error ex-data :type)))
           (t/is (= :font-max-file-size-reached (-> out :error ex-data :code))))))))
 
-(t/deftest create-font-variant-size-within-limit
-  "Upload exactly at the limit must succeed."
-  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof       (th/create-profile* 1 {:is-active true})
-          team-id    (:default-team-id prof)
-          font-id    (uuid/custom 10 53)
-          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
-          font-size  (alength ^bytes font-bytes)]
-      (with-redefs [app.config/config (assoc app.config/config :font-max-file-size font-size)]
-        (let [params {::th/type    :create-font-variant
-                      ::rpc/profile-id (:id prof)
-                      :team-id     team-id
-                      :font-id     font-id
-                      :font-family "size-at-limit"
-                      :font-weight 400
-                      :font-style  "normal"
-                      :data        {"font/ttf" font-bytes}}
-              out    (th/command! params)]
-          (t/is (nil? (:error out)))
-          (assert-font-variant-result params (:result out)))))))
-
 ;; -----------------------------------------------------------------------
-;; Font media-type validation tests
+;; Font media-type validation
 ;; -----------------------------------------------------------------------
-
-(t/deftest create-font-variant-invalid-type-normal
-  "Direct :data upload with a disallowed mtype must be rejected."
-  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof    (th/create-profile* 1 {:is-active true})
-          team-id (:default-team-id prof)
-          font-id (uuid/custom 10 60)
-          data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
-          params  {::th/type    :create-font-variant
-                   ::rpc/profile-id (:id prof)
-                   :team-id     team-id
-                   :font-id     font-id
-                   :font-family "invalid-type"
-                   :font-weight 400
-                   :font-style  "normal"
-                   :data        {"application/octet-stream" data}}
-          out     (th/command! params)]
-      (t/is (some? (:error out)))
-      (t/is (= :validation (-> out :error ex-data :type)))
-      (t/is (= :media-type-not-allowed (-> out :error ex-data :code))))))
-
-(t/deftest create-font-variant-invalid-type-legacy-chunked
-  "Legacy :data chunk-vector upload with a disallowed mtype must be rejected."
-  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
-    (let [prof       (th/create-profile* 1 {:is-active true})
-          team-id    (:default-team-id prof)
-          font-id    (uuid/custom 10 61)
-          full-bytes (-> (io/resource "backend_tests/test_files/font-1.woff") (io/read*))
-          chunks     (split-bytes-into-chunks full-bytes (* 4 1024 1024))
-          params     {::th/type    :create-font-variant
-                      ::rpc/profile-id (:id prof)
-                      :team-id     team-id
-                      :font-id     font-id
-                      :font-family "invalid-type-legacy"
-                      :font-weight 400
-                      :font-style  "normal"
-                      :data        {"image/png" (vec chunks)}}
-          out        (th/command! params)]
-      (t/is (some? (:error out)))
-      (t/is (= :validation (-> out :error ex-data :type)))
-      (t/is (= :media-type-not-allowed (-> out :error ex-data :code))))))
 
 (t/deftest create-font-variant-invalid-type-chunked-upload
   "New :uploads path with a disallowed mtype must be rejected after assembly."
@@ -836,46 +523,50 @@
           data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))]
 
       ;; name with < should fail
-      (let [params {::th/type :create-font-variant
+      (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id font-id
                     :font-family "evil<script>alert(1)</script>"
                     :font-weight 400 :font-style "normal"
-                    :data {"font/ttf" data}}
+                    :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (not (th/success? out)))
         (t/is (th/ex-of-type? (:error out) :validation))
         (t/is (th/ex-of-code? (:error out) :params-validation)))
 
       ;; name with ' should fail
-      (let [params {::th/type :create-font-variant
+      (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id font-id
                     :font-family "evil'name"
                     :font-weight 400 :font-style "normal"
-                    :data {"font/ttf" data}}
+                    :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (not (th/success? out)))
         (t/is (th/ex-of-type? (:error out) :validation)))
 
       ;; name with } should fail
-      (let [params {::th/type :create-font-variant
+      (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id font-id
                     :font-family "evil}name"
                     :font-weight 400 :font-style "normal"
-                    :data {"font/ttf" data}}
+                    :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (not (th/success? out)))
         (t/is (th/ex-of-type? (:error out) :validation)))
 
       ;; valid name should succeed
-      (let [params {::th/type :create-font-variant
+      (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id (uuid/custom 10 101)
                     :font-family "Source Sans Pro"
                     :font-weight 400 :font-style "normal"
-                    :data {"font/ttf" data}}
+                    :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (th/success? out))))))
 
@@ -887,12 +578,13 @@
           data    (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))]
 
       ;; Create a valid font first
-      (let [params {::th/type :create-font-variant
+      (let [session-id (upload-font-chunked! prof data "font/ttf" (* 4 1024 1024))
+            params {::th/type :create-font-variant
                     ::rpc/profile-id (:id prof)
                     :team-id team-id :font-id font-id
                     :font-family "ValidFont"
                     :font-weight 400 :font-style "normal"
-                    :data {"font/ttf" data}}
+                    :uploads {"font/ttf" session-id}}
             out    (th/command! params)]
         (t/is (th/success? out)))
 
@@ -922,3 +614,65 @@
                     :name "Valid Font Name"}
             out    (th/command! params)]
         (t/is (th/success? out))))))
+
+(t/deftest create-font-variant-rejects-foreign-font-id
+  ;; N2-07: A user with edit permissions on their own team must not be
+  ;; able to create a font variant using a font-id that already belongs
+  ;; to another team (BOLA / CWE-639).
+  (let [prof1   (th/create-profile* 1 {:is-active true})
+        prof2   (th/create-profile* 2 {:is-active true})
+        team1   (:default-team-id prof1)
+        team2   (:default-team-id prof2)
+        font-id (uuid/custom 10 999)
+        data    (-> (io/resource "backend_tests/test_files/font-1.ttf")
+                    (io/read*))]
+
+    ;; prof1 creates a font variant in team1 with font-id
+    (let [session-id (upload-font-chunked! prof1 data "font/ttf" (* 4 1024 1024))
+          params {::th/type :create-font-variant
+                  ::rpc/profile-id (:id prof1)
+                  :team-id     team1
+                  :font-id     font-id
+                  :font-family "SharedFont"
+                  :font-weight 400
+                  :font-style  "normal"
+                  :uploads     {"font/ttf" session-id}}
+          out    (th/command! params)]
+      (t/is (nil? (:error out))))
+
+    ;; prof2 tries to create a variant using the same font-id but
+    ;; in team2, which must be rejected because font-id belongs to team1
+    (let [session-id (upload-font-chunked! prof2 data "font/ttf" (* 4 1024 1024))
+          params {::th/type :create-font-variant
+                  ::rpc/profile-id (:id prof2)
+                  :team-id     team2
+                  :font-id     font-id
+                  :font-family "SharedFont"
+                  :font-weight 700
+                  :font-style  "normal"
+                  :uploads     {"font/ttf" session-id}}
+          out    (th/command! params)]
+      (t/is (some? (:error out)))
+      (t/is (= :not-found (-> out :error ex-data :type)))
+      (t/is (= :object-not-found (-> out :error ex-data :code))))))
+
+(t/deftest get-font-variants-nonexistent-file
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-font-variants
+                           ::rpc/profile-id (:id prof)
+                           :file-id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-font-variants-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)})
+        out   (th/command! {::th/type :get-font-variants
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))

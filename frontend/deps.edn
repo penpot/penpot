@@ -1,9 +1,10 @@
 {:paths ["src" "vendor" "resources" "test"]
  :deps
- {penpot/common
+ {;; Carries `app.common.render-wasm.*`, shared with the headless exporter.
+  penpot/common
   {:local/root "../common"}
 
-  org.clojure/clojure {:mvn/version "1.12.2"}
+  org.clojure/clojure {:mvn/version "1.12.5"}
   binaryage/devtools {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.10.1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
@@ -20,8 +21,8 @@
    :exclusions [funcool/beicon2]}
 
   funcool/beicon2
-  {:git/tag "v2.2"
-   :git/sha "8744c66"
+  {:git/tag "v2.3"
+   :git/sha "df7058a"
    :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext
@@ -50,7 +51,7 @@
               "--enable-native-access=ALL-UNNAMED"]
 
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "3.4.11"}
+   {thheller/shadow-cljs {:mvn/version "3.5.0"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "0.4.6"}}}

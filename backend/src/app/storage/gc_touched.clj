@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.storage.gc-touched
   "This task is part of the garbage collection process of storage
@@ -23,7 +23,6 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.time :as ct]
-   [app.config :as cf]
    [app.db :as db]
    [app.storage :as sto]
    [app.storage.impl :as impl]
@@ -108,10 +107,9 @@
     WHERE id = ANY(?::uuid[])")
 
 (defn- mark-delete-in-bulk!
-  [conn deletion-delay ids]
-  (let [ids (db/create-array conn "uuid" ids)
-        now (ct/plus (ct/now) deletion-delay)]
-    (db/exec-one! conn [sql:mark-delete-in-bulk now ids])))
+  [conn ids]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:mark-delete-in-bulk (ct/now) ids])))
 
 ;; NOTE: A getter that retrieves the key which will be used for group
 ;; ids; previously we have no value, then we introduced the
@@ -149,24 +147,23 @@
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (let [deletion-delay (if (= "tempfile" bucket)
-                             (ct/duration {:hours 2})
-                             (cf/get-deletion-delay))]
+      (do
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
-        (some->> (seq to-delete) (mark-delete-in-bulk! conn deletion-delay))
+        (some->> (seq to-delete) (mark-delete-in-bulk! conn))
         [(count to-freeze) (count to-delete)]))))
 
 (defn- process-bucket!
   [conn bucket objects]
-  (case bucket
-    "file-media-object"     (process-objects! conn has-file-media-object-refs? bucket objects)
-    "team-font-variant"     (process-objects! conn has-team-font-variant-refs? bucket objects)
-    "file-object-thumbnail" (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
-    "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? bucket objects)
-    "profile"               (process-objects! conn has-profile-refs? bucket objects)
-    "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
-    "tempfile"              (process-objects! conn (constantly false) bucket objects)
-    "organization"          (process-objects! conn (constantly false) bucket objects)
+  (cond
+    (= bucket "file-media-object")     (process-objects! conn has-file-media-object-refs? bucket objects)
+    (= bucket "team-font-variant")     (process-objects! conn has-team-font-variant-refs? bucket objects)
+    (= bucket "file-object-thumbnail") (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
+    (= bucket "file-thumbnail")        (process-objects! conn has-file-thumbnails-refs? bucket objects)
+    (= bucket "profile")               (process-objects! conn has-profile-refs? bucket objects)
+    (= bucket "file-data")             (process-objects! conn has-file-data-refs? bucket objects)
+    (= bucket sto/tempfile-bucket)     (process-objects! conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket "organization")          (process-objects! conn (constantly false) bucket objects)
+    :else
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
@@ -185,6 +182,7 @@
      FROM storage_object AS so
     WHERE so.touched_at IS NOT NULL
       AND so.touched_at <= ?
+      AND so.status = 'valid'
     ORDER BY touched_at ASC
       FOR UPDATE
      SKIP LOCKED
@@ -220,7 +218,9 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::min-age] :as cfg}]
-  (fn [_]
-    (let [threshold (ct/minus (ct/now) min-age)]
+  (fn [{:keys [props]}]
+    (let [threshold (if (:skip-delay props)
+                      (ct/now)
+                      (ct/minus (ct/now) min-age))]
       (process-touched! (assoc cfg ::timestamp threshold)))))
 

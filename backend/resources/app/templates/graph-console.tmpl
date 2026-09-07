@@ -1,0 +1,1758 @@
+{% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+Graph Console
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div class="title">
+    <h1>GRAPH CONSOLE (VERSION: {{version}})</h1>
+  </div>
+</nav>
+<main class="dashboard">
+  <!-- flex: 1 1 0 + min-width: 0: size this .dashboard flex item from the
+       viewport, never from content — content-driven growth (e.g. the G6
+       canvas) would otherwise feed back into column width. -->
+  <section class="widget" style="max-width: none; flex: 1 1 0; min-width: 0;">
+    <p><a href="/dbg">&larr; Back to debug</a></p>
+
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+    <div style="flex: 0 0 350px; min-width: 300px;">
+
+    <fieldset>
+      <legend>Load graph from Penpot</legend>
+      <desc>
+        Click file or paste UUID to load Penpot file into an in-memory
+        Ladybug database. Loading a new file replaces the previous one.
+      </desc>
+      <div id="graph-files-tree" style="font-size: 13px; margin-bottom: 6px;">Loading&hellip;</div>
+      <form id="graph-load-form" method="post" action="/dbg/actions/graph-load">
+        <div class="row" style="display: flex; gap: 8px;">
+          <input type="text" style="flex: 1; min-width: 0; font-size: 11px;" name="file-id"
+                 placeholder="file-id"
+                 value="{% if session %}{{session.file-id}}{% endif %}" />
+          {% if session %}
+          <input type="submit" value="Reload"
+                 title="Re-ingests the file in the box from scratch — the recovery fallback when live sync drifted or skipped changes. Paste a different UUID to switch files." />
+          <input type="submit" value="Unload" form="graph-unload-form"
+                 title="Drop the in-memory session and free its memory" />
+          {% else %}
+          <input type="submit" value="Load" />
+          {% endif %}
+        </div>
+      </form>
+      {% if session %}
+      <form id="graph-unload-form" method="post" action="/dbg/actions/graph-unload"></form>
+      {% endif %}
+    </fieldset>
+
+    {% if session %}
+    <fieldset>
+      <legend>Loaded session (<span id="graph-loaded-at">{{session.loaded-at}}</span>)</legend>
+      <desc>
+        <p style="margin: 0 0 4px;">
+          File: <span id="graph-file-crumbs"></span><b><a id="graph-penpot-link"
+                      data-file-id="{{session.file-id}}"
+                      target="_blank">{{session.name}}</a></b>
+          <span id="graph-bm" style="color: #666;"
+                title="resident memory of the session's in-memory DB (buffer manager)"></span><br />
+          <span title="The file's revision when it was ingested vs the revision of the last live change applied to the graph. They start equal; a graph value behind the workspace means missed changes — use Reload.">
+            Revisions: ingested at <b>{{session.revn}}</b> · graph now
+            <b id="graph-sync-revn">{% if session.graph-revn %}{{session.graph-revn}}{% else %}{{session.revn}}{% endif %}</b>
+          </span><br />
+          Graph size: <b id="graph-size">…</b><br />
+          Schema: <b>{{session.schema-version}}</b>
+        </p>
+        <p id="graph-sync-status" style="margin: 0;">
+          Feed: <b id="graph-ws-status">connecting…</b>
+          <span id="graph-sync-error" style="display:none; margin-left: 1em; color: #b91c1c;"></span>
+        </p>
+      </desc>
+    </fieldset>
+
+    <fieldset id="graph-changelog-box" style="display: none;">
+      <legend>Live changes</legend>
+      <desc>Latest changes applied to the backend graph.</desc>
+      <table id="graph-changelog" border="1" cellpadding="4" cellspacing="0"
+             style="border-collapse: collapse; width: 100%;">
+        <thead>
+          <tr>
+            <th>revn</th>
+            <th>op</th>
+            <th>id</th>
+          </tr>
+        </thead>
+        <tbody id="graph-changelog-body"></tbody>
+      </table>
+    </fieldset>
+
+    <fieldset>
+      <legend>Query graph, read-only (<a href="https://docs.ladybugdb.com/cypher/"
+                                         target="_blank">LadybugDB Cypher</a>)</legend>
+      <form id="graph-query-form" method="post" action="/dbg/actions/graph-query">
+        <div class="row">
+          <textarea name="query" rows="8" style="width:100%; font-family: monospace;"
+                    data-default-query="{{default-query}}">{{query}}</textarea>
+        </div>
+        <div class="row">
+          <input type="submit" value="Run query" />
+        </div>
+      </form>
+    </fieldset>
+
+    <div id="graph-query-output">
+      {% if error %}
+      <fieldset>
+        <legend>Error</legend>
+        <pre>{{error}}</pre>
+      </fieldset>
+      {% endif %}
+
+      {% if query-result %}
+      <fieldset>
+        <legend>Results ({{query-result.row-count}} rows{% if query-result.truncated? %}, truncated{% endif %})</legend>
+        <div style="max-height: 45vh; overflow: auto;">
+        <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+          <thead>
+            <tr>
+              {% for column in query-result.columns %}
+              <th>{{column}}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in query-result.rows %}
+            <tr>
+              {% for cell in row %}
+              <td><code>{{cell}}</code></td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </fieldset>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    </div><!-- left column -->
+
+    {% if session %}
+    <div id="graph-view-column"
+         style="flex: 1 1 auto; min-width: 0;">
+      <fieldset id="graph-view-panel">
+        <legend>Graph view
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;">
+            layout: <select id="graph-layout-select"></select>
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When checked, graphs up to 100 nodes render with entrance animation.">
+            <input type="checkbox" id="graph-animate-toggle" /> animate
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When set, added/removed marks fade out over this many display steps (0 disables diff marks).">
+            fade: <input type="number" id="graph-diff-steps" min="0" max="20"
+                         style="width: 1.8em;" /> steps
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When checked, containers render as foldable boxes (combos); double-click folds/unfolds. When unchecked, plain nodes only — the fold controls to the right go dormant.">
+            <input type="checkbox" id="graph-fold-toggle" /> foldable containers
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When checked, every container without changed elements collapses, so changes stand out (overrides manual folds).">
+            <input type="checkbox" id="graph-diff-fold" /> fold unchanged
+          </label>
+          <label style="margin-left: 1em; font-size: 12px; font-weight: normal;"
+                 title="When set, overview mode: 0 expands every container, n ≥ 1 collapses every container at depth ≥ n from the root (overrides manual folds; empty = manual folding).">
+            fold ≥ depth: <input type="number" id="graph-depth-fold" min="0" max="99"
+                                 style="width: 2.2em;" />
+          </label>
+        </legend>
+        <desc>
+          Live view of the in-memory Ladybug graph (AntV G6). Double-click
+          folds containers when folding is on.
+        </desc>
+        <div id="graph-legend" style="font-size: 12px; margin: 4px 0;"></div>
+        <div id="graph-canvas"
+             style="width: 100%; height: 600px; border: 1px solid #ccc; background: #fff; overflow: hidden;"></div>
+        <div id="graph-view-status" style="color: #666; font-size: 12px;"></div>
+        <div id="graph-node-inspector"
+             style="display: none; font-size: 12px; margin-top: 4px; border: 1px solid #ccc;
+                    padding: 6px; max-height: 40vh; overflow: auto;"></div>
+        <button type="button" id="graph-render-anyway" style="display: none;">Render anyway</button>
+        <button type="button" id="graph-filter-reset" style="display: none;">Show full graph</button>
+      </fieldset>
+    </div>
+    {% endif %}
+
+    </div><!-- flex row -->
+  </section>
+</main>
+
+<style>
+  #graph-view-column {
+    position: sticky;
+    top: 8px;
+  }
+  /* Fieldsets default to min-inline-size: min-content, so the panel could
+     never shrink below its content and grew with the G6 canvas instead
+     (content -> fieldset -> column -> canvas feedback). Let it shrink;
+     the legend wraps and the canvas clips. */
+  #graph-view-panel {
+    min-inline-size: 0;
+  }
+  #graph-view-column.graph-view-expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #fff;
+    overflow: auto;
+    padding: 12px;
+    margin: 0;
+  }
+  #graph-view-column.graph-view-expanded #graph-canvas {
+    height: calc(100vh - 160px) !important;
+  }
+  /* Eye-guiding pulse on just-changed elements: DOM overlay rings over the
+     canvas, independent of the G6 animation gate (big graphs render with
+     animation off). Two quick beats, then gone. */
+  #graph-canvas { position: relative; }
+  .graph-pulse {
+    position: absolute;
+    border: 3px solid;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: graph-pulse 0.6s ease-out 2;
+    opacity: 0;
+  }
+  @keyframes graph-pulse {
+    0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
+  }
+  #graph-files-tree summary { cursor: pointer; }
+  #graph-files-tree ul { margin: 2px 0 4px 0; padding-left: 2em; }
+  #graph-files-tree a { text-decoration: none; }
+  #graph-files-tree a:hover { text-decoration: underline; }
+</style>
+
+<script>
+(function () {
+  const tree = document.getElementById("graph-files-tree");
+  const loadForm = document.getElementById("graph-load-form");
+  const loadInput = loadForm ? loadForm.querySelector("input[name=file-id]") : null;
+  const penpotLink = document.getElementById("graph-penpot-link");
+  if (!tree) return;
+
+  // Make the loaded-session file name a link into the Penpot workspace.
+  // The legacy /#/workspace/<project-id>/<file-id> route resolves the team
+  // itself, and project-id is already in the files-tree payload; same
+  // origin as this page, so no base URL to configure.
+  function linkLoadedFile(teams) {
+    if (!penpotLink || !penpotLink.dataset.fileId) return;
+    const fileId = penpotLink.dataset.fileId;
+    teams.forEach(function (team) {
+      (team.projects || []).forEach(function (project) {
+        (project.files || []).forEach(function (file) {
+          if (file.id === fileId) {
+            penpotLink.href = "/#/workspace/" + project.id + "/" + file.id;
+            penpotLink.title = "Open in Penpot";
+            const crumbs = document.getElementById("graph-file-crumbs");
+            if (crumbs) crumbs.textContent = team.name + " › " + project.name + " › ";
+          }
+        });
+      });
+    });
+  }
+
+  function fileLink(file) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = file.name;
+    a.title = file.id;
+    a.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      if (loadInput) {
+        loadInput.value = file.id;
+        loadForm.submit();
+      }
+    });
+    li.appendChild(a);
+    return li;
+  }
+
+  fetch("/dbg/actions/graph-files")
+    .then(function (resp) {
+      if (!resp.ok) throw new Error("graph-files HTTP " + resp.status);
+      return resp.json();
+    })
+    .then(function (data) {
+      tree.textContent = "";
+      const teams = data.teams || [];
+      linkLoadedFile(teams);
+      if (!teams.length) {
+        tree.textContent = "No files found.";
+        return;
+      }
+      teams.forEach(function (team) {
+        const teamEl = document.createElement("details");
+        const teamSummary = document.createElement("summary");
+        teamSummary.textContent = team.name;
+        teamEl.appendChild(teamSummary);
+        (team.projects || []).forEach(function (project) {
+          const projEl = document.createElement("details");
+          projEl.style.marginLeft = "1em";
+          const projSummary = document.createElement("summary");
+          projSummary.textContent = project.name;
+          projEl.appendChild(projSummary);
+          const list = document.createElement("ul");
+          (project.files || []).forEach(function (file) {
+            list.appendChild(fileLink(file));
+          });
+          projEl.appendChild(list);
+          teamEl.appendChild(projEl);
+        });
+        tree.appendChild(teamEl);
+      });
+    })
+    .catch(function (err) {
+      tree.textContent = "Failed to load file tree: " + err;
+    });
+})();
+</script>
+
+{% if session %}
+<script src="https://cdn.jsdelivr.net/npm/@antv/g6@5.1.1/dist/g6.min.js"></script>
+<script>
+(function () {
+  const fileId = "{{session.file-id}}";
+  const sessionId = crypto.randomUUID();
+  const wsScheme = location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = wsScheme + "//" + location.host
+    + "/ws/notifications?session-id=" + sessionId;
+
+  const wsStatus = document.getElementById("graph-ws-status");
+  const syncRevnEl = document.getElementById("graph-sync-revn");
+  const syncErrorEl = document.getElementById("graph-sync-error");
+  const changelogBox = document.getElementById("graph-changelog-box");
+  const changelogBody = document.getElementById("graph-changelog-body");
+
+  let ws = null;
+
+  // --- G6 graph view -------------------------------------------------
+  // Monochrome entity scheme: chroma = change. All entities share one
+  // slate hue; *lightness* separates within-glyph siblings (validated:
+  // worst within-glyph pair ΔE 17.5; the chroma floor is deliberately
+  // violated — saturated color is reserved for diff marks and would
+  // otherwise compete with them). Glyph class carries type identity,
+  // direct labels relieve the light-step contrast; SVGRaw is the hollow
+  // hexagon instead of a fourth lightness step.
+  const NODE_STYLES = {
+    "Document":  { color: "#14202e", glyph: "diamond",  size: 28 },
+    "Page":      { color: "#2e415a", glyph: "rect",     size: 22 },
+    "Frame":     { color: "#22344a", glyph: "hexagon",  size: 18 },
+    "Group":     { color: "#5b7089", glyph: "hexagon",  size: 18 },
+    "Boolean":   { color: "#93a4b8", glyph: "hexagon",  size: 18 },
+    "SVGRaw":    { color: "#8b98a9", glyph: "hexagon",  size: 18, hollow: true },
+    "Rectangle": { color: "#93a4b8", glyph: "rect",     size: 14 },
+    "Circle":    { color: "#3b5069", glyph: "circle",   size: 14 },
+    "Path":      { color: "#5b7089", glyph: "triangle", size: 14 },
+    "Text":      { color: "#8b9cb1", glyph: "circle",   size: 14 },
+    "Image":     { color: "#5b7089", glyph: "star",     size: 14 },
+    "Component": { color: "#8195ab", glyph: "diamond",  size: 20 }
+  };
+  const FALLBACK_STYLE = { color: "#5b7089", glyph: "circle", size: 14 };
+  // Edge style keyed on rel (wire field since slice-3); future edge
+  // attributes can feed styling the same way. All rels stay grey (chroma
+  // belongs to diff marks); identity comes from `sym`, a compact unicode
+  // rel label rendered mid-edge (abacus viewer EDGE_SYM convention) —
+  // dash variants alone cannot carry the growing rel roster. IsChildOf
+  // is the unlabeled default (the background tree structure).
+  // `sym` may be a full rel name: no compact glyph reads as "derived from
+  // a template" (∈ wrongly connotes membership), so IsInstanceOf spells
+  // itself out; the legend falls back to an arrow for long syms. No
+  // dashed edges — the label alone carries rel identity.
+  const EDGE_STYLES = {
+    "IsChildOf":    { stroke: "#b3b0a8" },
+    "IsInstanceOf": { stroke: "#8b98a9", sym: "IsInstanceOf" }
+  };
+  const FALLBACK_EDGE_STYLE = { stroke: "#b3b0a8" };
+  // --- graph diff: add/remove marks with step fade --------------------
+  // A "step" is a display-changing refetch (no-op skips age nothing).
+  // Added elements get a green halo; removed ones stay in the display as
+  // ghosts with a dashed crimson halo and fading opacity (dash + fade
+  // carry the added/removed distinction for red-green CVD; the pair
+  // validates at deutan ΔE 17.4). Marks fade linearly with age and drop
+  // after N steps; N comes from the "fade" box (0 disables the feature).
+  // The diff is vs the previous display step, not between arbitrary
+  // revisions — true version-to-version diffs await server deltas / the
+  // graph-based-VCS work.
+  const DIFF_ADDED_COLOR = "#40c057";
+  const DIFF_REMOVED_COLOR = "#c2255c";
+  let diffMarks = { nodes: {}, edges: {} };
+
+  function diffSteps() {
+    const v = parseInt(localStorage.getItem("graph-diff-steps"), 10);
+    return Number.isFinite(v) && v >= 0 && v <= 20 ? v : 3;
+  }
+
+  function diffEdgeKey(source, rel, target) {
+    return source + "|" + (rel || "IsChildOf") + "|" + target;
+  }
+
+  function liveMark(marks, key) {
+    const m = marks[key];
+    return m && m.age < diffSteps() ? m : null;
+  }
+
+  // 1.0 at age 0 down to 1/N at age N-1; the mark drops at age N.
+  function diffFade(mark) {
+    return 1 - mark.age / diffSteps();
+  }
+
+  function markDiff(prev, next) {
+    if (!diffSteps() || !prev) {
+      diffMarks = { nodes: {}, edges: {} };
+      return;
+    }
+    [diffMarks.nodes, diffMarks.edges].forEach(function (marks) {
+      Object.keys(marks).forEach(function (k) {
+        marks[k].age += 1;
+        if (marks[k].age >= diffSteps()) delete marks[k];
+      });
+    });
+    const prevNodes = {};
+    prev.nodes.forEach(function (n) { prevNodes[n.id] = n; });
+    const nextNodes = {};
+    next.nodes.forEach(function (n) { nextNodes[n.id] = n; });
+    next.nodes.forEach(function (n) {
+      if (!prevNodes[n.id]) diffMarks.nodes[n.id] = { kind: "added", age: 0 };
+    });
+    prev.nodes.forEach(function (n) {
+      if (!nextNodes[n.id]) diffMarks.nodes[n.id] = { kind: "removed", age: 0, node: n };
+    });
+    const prevEdges = {};
+    prev.edges.forEach(function (e) { prevEdges[diffEdgeKey(e.source, e.rel, e.target)] = e; });
+    const nextEdges = {};
+    next.edges.forEach(function (e) { nextEdges[diffEdgeKey(e.source, e.rel, e.target)] = e; });
+    Object.keys(nextEdges).forEach(function (k) {
+      if (!prevEdges[k]) diffMarks.edges[k] = { kind: "added", age: 0 };
+    });
+    Object.keys(prevEdges).forEach(function (k) {
+      if (!nextEdges[k]) diffMarks.edges[k] = { kind: "removed", age: 0, edge: prevEdges[k] };
+    });
+  }
+
+  // Removed elements stay displayed as fading ghosts until their mark
+  // expires. Ghosts respect the query filter and re-enter layout and
+  // combo derivation through their ghost IsChildOf edges, so they keep
+  // their old place in the tree while fading.
+  function withGhosts(data) {
+    const nodes = data.nodes.slice();
+    const present = {};
+    nodes.forEach(function (n) { present[n.id] = true; });
+    Object.keys(diffMarks.nodes).forEach(function (id) {
+      const m = liveMark(diffMarks.nodes, id);
+      if (m && m.kind === "removed" && m.node && !present[id]
+          && !hiddenTables.has(m.node.table)
+          && (!graphFilterIds || graphFilterIds.has(id))) {
+        nodes.push(m.node);
+        present[id] = true;
+      }
+    });
+    const edges = data.edges.slice();
+    const have = {};
+    edges.forEach(function (e) { have[diffEdgeKey(e.source, e.rel, e.target)] = true; });
+    Object.keys(diffMarks.edges).forEach(function (k) {
+      const m = liveMark(diffMarks.edges, k);
+      if (m && m.kind === "removed" && m.edge && !have[k]
+          && present[m.edge.source] && present[m.edge.target]) {
+        edges.push(m.edge);
+      }
+    });
+    return { nodes: nodes, edges: edges, revn: data.revn, truncated: data.truncated };
+  }
+
+  function nodeMark(id) {
+    return liveMark(diffMarks.nodes, id);
+  }
+
+  function edgeMark(d) {
+    return liveMark(diffMarks.edges, diffEdgeKey(d.source, d.data.rel, d.target));
+  }
+
+  function diffColor(m) {
+    return m.kind === "added" ? DIFF_ADDED_COLOR : DIFF_REMOVED_COLOR;
+  }
+
+  function anyLiveMarks() {
+    return Object.keys(diffMarks.nodes).some(function (k) { return liveMark(diffMarks.nodes, k); })
+      || Object.keys(diffMarks.edges).some(function (k) { return liveMark(diffMarks.edges, k); });
+  }
+
+  // Node ids touched by live marks: marked nodes plus the endpoints of
+  // marked edges (edge keys are "src|rel|tgt").
+  function liveMarkedNodeIds() {
+    const ids = new Set();
+    Object.keys(diffMarks.nodes).forEach(function (id) {
+      if (liveMark(diffMarks.nodes, id)) ids.add(id);
+    });
+    Object.keys(diffMarks.edges).forEach(function (k) {
+      if (liveMark(diffMarks.edges, k)) {
+        const parts = k.split("|");
+        ids.add(parts[0]);
+        ids.add(parts[2]);
+      }
+    });
+    return ids;
+  }
+
+  function diffFoldEnabled() {
+    return localStorage.getItem("graph-diff-fold") === "1";
+  }
+
+  // Overview mode: null = off, else collapse containers at depth ≥ value
+  // (root = depth 0, so e.g. 2 folds the containers hanging from a Page).
+  function depthFoldValue() {
+    const raw = localStorage.getItem("graph-depth-fold");
+    if (raw == null || raw === "") return null;
+    const v = parseInt(raw, 10);
+    return Number.isFinite(v) && v >= 0 ? v : null;
+  }
+
+  // One-shot pulse rings on age-0 marks, placed ~post-render (positions
+  // are sampled once; pulses don't track pan/zoom during their ~1.2 s).
+  function pulseAt(canvasPoint, color, sizePx) {
+    const host = document.getElementById("graph-canvas");
+    if (!host || !g6graph) return;
+    const vp = g6graph.getViewportByCanvas(canvasPoint);
+    const el = document.createElement("div");
+    el.className = "graph-pulse";
+    el.style.borderColor = color;
+    el.style.left = vp[0] + "px";
+    el.style.top = vp[1] + "px";
+    el.style.width = sizePx + "px";
+    el.style.height = sizePx + "px";
+    host.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1400);
+  }
+
+  function schedulePulses() {
+    if (!diffSteps()) return;
+    setTimeout(function () {
+      if (!g6graph) return;
+      let zoom = 1;
+      try { zoom = g6graph.getZoom() || 1; } catch (_err) {}
+      Object.keys(diffMarks.nodes).forEach(function (id) {
+        const m = diffMarks.nodes[id];
+        if (!m || m.age !== 0) return;
+        try {
+          const p = g6graph.getElementPosition(id);
+          pulseAt([p[0], p[1]], diffColor(m),
+                  Math.max(18, Math.min(64, 26 * zoom)));
+        } catch (_err) { /* hidden in a collapsed combo or gone */ }
+      });
+      Object.keys(diffMarks.edges).forEach(function (k) {
+        const m = diffMarks.edges[k];
+        if (!m || m.age !== 0) return;
+        const parts = k.split("|");
+        try {
+          const a = g6graph.getElementPosition(parts[0]);
+          const b = g6graph.getElementPosition(parts[2]);
+          pulseAt([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], diffColor(m),
+                  Math.max(14, Math.min(48, 18 * zoom)));
+        } catch (_err) { /* endpoint hidden or gone */ }
+      });
+    }, 300);
+  }
+  // --- end graph diff --------------------------------------------------
+  // Legend glyph characters mirroring the G6 node types above.
+  const GLYPH_CHARS = { diamond: "◆", rect: "■", hexagon: "⬢",
+                        circle: "●", triangle: "▲", star: "★" };
+  // Above this many nodes/edges the view is not rendered automatically;
+  // the "Render anyway" button forces it (~1.5 s per 2k nodes, measured;
+  // edges gate the guard too since plugin/combo cost scales with them).
+  // Escape hatch: /dbg/graph?safe disables auto-render entirely, so a
+  // page that hung on render can always be re-entered.
+  const RENDER_GUARD_NODES = 4000;
+  const RENDER_GUARD_EDGES = 8000;
+  // G6's entrance/update animation is nice didactics on small graphs but
+  // the performance killer at scale (>2 min at 1700 nodes vs ~1.5 s off);
+  // keep it only below this node count.
+  const ANIMATE_MAX_NODES = 100;
+  const LAYOUT_XS = 40;   // horizontal leaf slot spacing
+  const LAYOUT_YS = 70;   // vertical rank (depth) spacing
+
+  // Layout dropdown source of truth: name -> G6 layout config, or null for
+  // the built-in O(n) tree layout (preset positions from treePositions,
+  // fastest, exploits IsChildOf being a tree). The <select> is populated
+  // from these keys; add/remove/tune entries here. Pruned 2026-07-16:
+  // grid/random/force/fruchterman/force-atlas2 added nothing over this
+  // set. combo-combined is the only combo-aware layout: it lays out each
+  // combo's members internally, then treats every combo as one super-node
+  // in an outer force pass. Non-hierarchical layouts carry overlap
+  // parameters (preventOverlap ignores label extents — see
+  // DENSE_LABEL_LAYOUTS).
+  const LAYOUTS = {
+    "tree":          null,
+    "antv-dagre":    { type: "antv-dagre", rankdir: "BT", nodesep: 10, ranksep: 40, sortByCombo: true },
+    "dagre":         { type: "dagre", rankdir: "BT" },
+    "circular":      { type: "circular" },
+    "concentric":    { type: "concentric", preventOverlap: true, nodeSize: 32, nodeSpacing: 12 },
+    "radial":        { type: "radial", preventOverlap: true, nodeSize: 32, unitRadius: 90 },
+    "d3-force":      { type: "d3-force", collide: { radius: 26 } },
+    "combo-combined": { type: "combo-combined" }
+  };
+  // Tried and rejected 2026-07-17: fishbone (renders nothing on graph
+  // data — it is a category layout) and compact-box (degenerates into an
+  // overlapped chain: G6 tree layouts traverse parent→child while our
+  // IsChildOf edges point child→parent; revisit with a reversed-edge feed
+  // if a compact tree view is wanted).
+  const DEFAULT_LAYOUT = "tree";
+  // Always-on labels are the residual overlap driver on ring/stress
+  // layouts (their collision handling ignores label extents), so these
+  // get smaller labels; the node inspector carries full identity.
+  const DENSE_LABEL_LAYOUTS = {
+    "concentric": true, "radial": true, "d3-force": true
+  };
+
+  const graphViewStatus = document.getElementById("graph-view-status");
+  let g6graph = null;
+  let g6graphLayout = null;
+  let g6graphAnimated = null;
+  let refetchTimer = null;
+  let lastGraphData = null;
+  let lastGraphSig = null;
+  let renderForced = false;
+  let graphFilterIds = null;
+  // The query that produced the filter, kept so the filter can follow the
+  // graph. A filter is a set of node ids, and live sync creates ids the set
+  // has never seen, so a frozen set hides every node created after the query
+  // ran. Re-running the query on each repaint is what keeps a filtered view
+  // honest; the cadence is the repaint's, and a repaint is skipped when the
+  // projection is unchanged.
+  let graphFilterQuery = null;
+  // Node tables hidden via legend clicks (session-local, not persisted).
+  const hiddenTables = new Set();
+
+  function currentLayoutName() {
+    const stored = localStorage.getItem("graph-layout");
+    return Object.prototype.hasOwnProperty.call(LAYOUTS, stored) ? stored : DEFAULT_LAYOUT;
+  }
+
+  function nodeStyle(table) {
+    return NODE_STYLES[table] || FALLBACK_STYLE;
+  }
+
+  function edgeStyle(rel) {
+    return EDGE_STYLES[rel] || FALLBACK_EDGE_STYLE;
+  }
+
+  function comboIdFor(nodeId) {
+    return "combo:" + nodeId;
+  }
+
+  function foldEnabled() {
+    return localStorage.getItem("graph-fold-containers") !== "0";
+  }
+
+  // Off ⇒ animation disabled unconditionally, incl. small graphs (the
+  // adaptive ≤ ANIMATE_MAX_NODES rule only applies when this is on).
+  function animateEnabled() {
+    return localStorage.getItem("graph-animate") !== "0";
+  }
+
+  // IsChildOf is a tree, so an O(n) tidy layout replaces a generic DAG
+  // layout: depth = rank (y), post-order leaf slots = x, parents centered
+  // over their children. antv-dagre needed ~7 s at 1700 nodes; this is free.
+  function treePositions(nodes, parentOf, childrenOf) {
+    const pos = {};
+    let slot = 0;
+    function place(id, depth) {
+      const kids = childrenOf[id] || [];
+      if (!kids.length) {
+        pos[id] = { x: slot * LAYOUT_XS, y: depth * LAYOUT_YS };
+        slot += 1;
+        return;
+      }
+      kids.forEach(function (k) { place(k, depth + 1); });
+      const xs = kids.map(function (k) { return pos[k].x; });
+      pos[id] = { x: (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2,
+                  y: depth * LAYOUT_YS };
+      slot += 1; // breathing room between adjacent subtrees
+    }
+    nodes.forEach(function (n) {
+      if (!parentOf[n.id]) place(n.id, 0);
+    });
+    return pos;
+  }
+
+  function toG6Data(data, collapsedIds, withCombos, presetPositions, diffFold) {
+    const nodes = data.nodes || [];
+    const edges = (data.edges || [])
+      .slice()
+      .sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    // Hierarchy (tree ranking, combo derivation, fold-ability) comes from
+    // IsChildOf only — still a tree by construction. Other rels
+    // (IsInstanceOf, …) are overlay edges drawn between positioned nodes.
+    const parentOf = {};
+    const childrenOf = {};
+    edges.forEach(function (e) {
+      if ((e.rel || "IsChildOf") !== "IsChildOf") return;
+      parentOf[e.source] = e.target;
+      (childrenOf[e.target] = childrenOf[e.target] || []).push(e.source);
+    });
+    // Preset positions only for the built-in tree layout; under a G6
+    // layout they would make animated renders flash tree-then-layout.
+    const pos = presetPositions ? treePositions(nodes, parentOf, childrenOf) : null;
+    // Foldable = has children and has a parent: the IsChildOf root of the
+    // loaded graph (today a Document, later maybe a Project or Team) is
+    // never a combo — folding the whole graph is useless. Empty containers
+    // stay plain nodes.
+    const hasCombo = {};
+    if (withCombos) {
+      nodes.forEach(function (n) {
+        if ((childrenOf[n.id] || []).length && parentOf[n.id]) hasCombo[n.id] = true;
+      });
+    }
+    // Derived fold state (overrides manual double-click folds while on):
+    // overview mode collapses every combo at depth ≥ the limit — except
+    // 0, which expands everything (saves hunting for the max depth) —
+    // and all of them when only diff-fold is on; diff-fold then re-opens
+    // the ancestor paths of changed elements — combined, that reads as
+    // "overview, with changes drilled open".
+    const depthLimit = depthFoldValue();
+    if (withCombos && (diffFold || depthLimit != null)) {
+      const depthOf = {};
+      const depth = function (id) {
+        if (depthOf[id] != null) return depthOf[id];
+        const p = parentOf[id];
+        depthOf[id] = p ? depth(p) + 1 : 0;
+        return depthOf[id];
+      };
+      collapsedIds = new Set();
+      Object.keys(hasCombo).forEach(function (id) {
+        if (depthLimit === 0) return;
+        if (depthLimit == null || depth(id) >= depthLimit) {
+          collapsedIds.add(comboIdFor(id));
+        }
+      });
+      if (diffFold) {
+        liveMarkedNodeIds().forEach(function (id) {
+          if (hasCombo[id]) collapsedIds.delete(comboIdFor(id));
+          let p = parentOf[id];
+          while (p) {
+            if (hasCombo[p]) collapsedIds.delete(comboIdFor(p));
+            p = parentOf[p];
+          }
+        });
+      }
+    }
+    const combos = [];
+    nodes.forEach(function (n) {
+      if (!hasCombo[n.id]) return;
+      const combo = { id: comboIdFor(n.id), data: { label: n.label, table: n.table } };
+      const p = parentOf[n.id];
+      if (p && hasCombo[p]) combo.combo = comboIdFor(p);
+      // Explicit boolean both ways: setData merges datum props by id on a
+      // live instance, so omitting `collapsed` would retain a previous
+      // `true` — a change inside a folded combo could then never expand it
+      // (the fold-unchanged bug).
+      combo.style = { collapsed: !!(collapsedIds && collapsedIds.has(combo.id)) };
+      combos.push(combo);
+    });
+    const g6nodes = nodes.map(function (n) {
+      const out = { id: n.id,
+                    data: { label: n.label, table: n.table } };
+      if (pos) {
+        const p = pos[n.id] || { x: 0, y: 0 };
+        out.style = { x: p.x, y: p.y };
+      }
+      if (hasCombo[n.id]) {
+        out.combo = comboIdFor(n.id);
+      } else if (parentOf[n.id] && hasCombo[parentOf[n.id]]) {
+        out.combo = comboIdFor(parentOf[n.id]);
+      }
+      return out;
+    });
+    const g6edges = edges.map(function (e) {
+      return { source: e.source, target: e.target,
+               data: { position: e.position, rel: e.rel || "IsChildOf" } };
+    });
+    return { nodes: g6nodes, edges: g6edges, combos: combos };
+  }
+
+  function collapsedComboIds() {
+    if (!g6graph) return new Set();
+    try {
+      return new Set(g6graph.getComboData()
+        .filter(function (c) { return c.style && c.style.collapsed; })
+        .map(function (c) { return c.id; }));
+    } catch (_err) {
+      return new Set();
+    }
+  }
+
+  function renderGraph(g6data) {
+    const layoutName = currentLayoutName();
+    const animate = animateEnabled() && g6data.nodes.length <= ANIMATE_MAX_NODES;
+    if (g6graph && (g6graphLayout !== layoutName || g6graphAnimated !== animate)) {
+      // Layout or animation-mode switch: recreate the graph (cheap);
+      // neither is swappable on a live instance.
+      try { g6graph.destroy(); } catch (_err) {}
+      g6graph = null;
+    }
+    if (g6graph) {
+      g6graph.setData(g6data);
+      return g6graph.render().catch(function (_err) {
+        /* instance may be destroyed mid-render on rapid toggle/layout switches */
+      });
+    }
+    g6graphLayout = layoutName;
+    g6graphAnimated = animate;
+    const layoutCfg = LAYOUTS[layoutName];
+    const opts = {
+      container: "graph-canvas",
+      data: g6data,
+      autoFit: "view",
+      animation: animate,
+      padding: 20,
+      node: {
+        type: function (d) { return nodeStyle(d.data.table).glyph; },
+        style: {
+          size: function (d) { return nodeStyle(d.data.table).size; },
+          fill: function (d) {
+            const s = nodeStyle(d.data.table);
+            return s.hollow ? "#ffffff" : s.color;
+          },
+          // Unmarked nodes carry no stroke (hollow ones keep a thin one as
+          // their identity); the stroke channel belongs to diff marks:
+          // thick colored ring, dashed for removals (the CVD-safe cue).
+          stroke: function (d) {
+            const m = nodeMark(d.id);
+            return m ? diffColor(m) : nodeStyle(d.data.table).color;
+          },
+          lineWidth: function (d) {
+            if (nodeMark(d.id)) return 2.5;
+            return nodeStyle(d.data.table).hollow ? 1.5 : 0;
+          },
+          lineDash: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? [3, 3] : 0;
+          },
+          labelText: function (d) { return d.data.label; },
+          labelFontSize: function () {
+            return DENSE_LABEL_LAYOUTS[currentLayoutName()] ? 7 : 9;
+          },
+          labelFill: "#0b0b0b",
+          labelPlacement: "bottom",
+          halo: function (d) { return !!nodeMark(d.id); },
+          haloStroke: function (d) {
+            const m = nodeMark(d.id);
+            return m ? diffColor(m) : "#ffffff";
+          },
+          haloLineWidth: 12,
+          haloStrokeOpacity: function (d) {
+            const m = nodeMark(d.id);
+            return m ? 0.35 * diffFade(m) : 0;
+          },
+          opacity: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? diffFade(m) : 1;
+          },
+          labelOpacity: function (d) {
+            const m = nodeMark(d.id);
+            return m && m.kind === "removed" ? diffFade(m) : 1;
+          }
+        },
+        state: {
+          selected: { stroke: "#0b0b0b", lineWidth: 2 },
+          active:   {},
+          inactive: { opacity: 0.2, labelOpacity: 0.2 }
+        }
+      },
+      edge: {
+        style: {
+          stroke: function (d) {
+            const m = edgeMark(d);
+            return m ? diffColor(m) : edgeStyle(d.data.rel).stroke;
+          },
+          lineDash: function (d) { return edgeStyle(d.data.rel).lineDash; },
+          lineWidth: function (d) {
+            const m = edgeMark(d);
+            return m ? (m.kind === "removed" ? 2.5 : 2) : 1;
+          },
+          strokeOpacity: function (d) {
+            const m = edgeMark(d);
+            return m ? Math.max(diffFade(m), 0.15) : 1;
+          },
+          labelText: function (d) { return edgeStyle(d.data.rel).sym || ""; },
+          labelFontSize: 7,
+          labelFill: "#52514e",
+          labelBackground: true,
+          labelBackgroundFill: "#ffffff",
+          labelBackgroundOpacity: 0.75,
+          endArrow: true,
+          endArrowSize: 6
+        },
+        state: {
+          selected: { lineWidth: 2 },
+          active:   {},
+          inactive: { strokeOpacity: 0.1, labelOpacity: 0.1 }
+        }
+      },
+      combo: {
+        type: "rect",
+        style: {
+          labelText: function (d) { return d.data.label; },
+          labelFontSize: 9,
+          labelFill: "#52514e",
+          labelPlacement: "top",
+          stroke: function (d) { return nodeStyle(d.data.table).color; },
+          lineWidth: 1,
+          fillOpacity: 0.03,
+          radius: 4
+        }
+      },
+      behaviors: ["zoom-canvas", "drag-canvas", "drag-element", "collapse-expand",
+        // Click highlights the 1-degree neighborhood (selected node black
+        // ring, neighbors keep full strength, the rest dims); clicking
+        // empty canvas clears. Runs alongside the node:click inspector.
+        { type: "click-select", degree: 1,
+          state: "selected", neighborState: "active", unselectedState: "inactive" }],
+      plugins: [{
+        key: "toolbar",
+        type: "toolbar",
+        position: "top-left",
+        getItems: function () {
+          return [
+            { id: "auto-fit", value: "auto-fit" },
+            { id: "request-fullscreen", value: "expand" },
+            { id: "exit-fullscreen", value: "restore" },
+            { id: "export", value: "export-png" }
+          ];
+        },
+        onClick: function (value) {
+          if (value === "auto-fit") {
+            if (g6graph) g6graph.fitView();
+          } else if (value === "expand") {
+            setExpanded(true);
+          } else if (value === "restore") {
+            setExpanded(false);
+          } else if (value === "export-png") {
+            exportGraphPng();
+          }
+        }
+      }]
+    };
+    if (layoutCfg) opts.layout = layoutCfg;
+    g6graph = new G6.Graph(opts);
+    // Re-attached on every instance creation (layout/animation switches
+    // destroy and recreate the graph).
+    g6graph.on("node:click", function (e) {
+      const id = e.target && e.target.id;
+      if (id) showNodeInspector(String(id));
+    });
+    return g6graph.render().catch(function (_err) {
+      /* see above */
+    });
+  }
+
+  // Hand-rolled on purpose: the G6 legend plugin substitutes its own
+  // marker set (hexagon→circle, star→cross), breaking glyph identity.
+  // Entries reflect the *displayed* data only: node tables in roster
+  // order (unknown tables appended with the fallback style), then rels.
+  // Clean graph-only capture (no page chrome): the whole laid-out graph
+  // regardless of viewport, downloaded as PNG. Also the fast path for
+  // agents debugging the console — no full-page screenshot needed.
+  function exportGraphPng() {
+    if (!g6graph) return;
+    g6graph.toDataURL({ mode: "overall" })
+      .then(function (dataUrl) {
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = "graph-" + (lastGraphData ? lastGraphData.revn : "view") + ".png";
+        a.click();
+      })
+      .catch(function (err) {
+        graphViewStatus.textContent = "export error: " + err;
+      });
+  }
+
+  // Legend entries are clickable: toggling one hides/shows that table's
+  // nodes (struck-through while hidden; hidden tables stay listed so they
+  // can be re-enabled).
+  function renderGraphLegend(data) {
+    const el = document.getElementById("graph-legend");
+    if (!el) return;
+    const tables = {};
+    (data.nodes || []).forEach(function (n) { tables[n.table] = true; });
+    if (lastGraphData) {
+      lastGraphData.nodes.forEach(function (n) {
+        if (hiddenTables.has(n.table)) tables[n.table] = true;
+      });
+    }
+    const rels = {};
+    (data.edges || []).forEach(function (e) { rels[e.rel || "IsChildOf"] = true; });
+    function nodeItem(table, s) {
+      const off = hiddenTables.has(table);
+      return '<span data-table="' + escapeHtml(table) + '"'
+        + ' title="click to ' + (off ? "show" : "hide") + " " + escapeHtml(table) + ' nodes"'
+        + ' style="margin-right: 1em; white-space: nowrap; cursor: pointer;'
+        + (off ? " opacity: 0.35; text-decoration: line-through;" : "") + '">'
+        + '<span style="color: ' + s.color + '; font-size: 14px;">'
+        + (s.hollow ? "⬡" : (GLYPH_CHARS[s.glyph] || "●")) + '</span> '
+        + escapeHtml(table) + "</span>";
+    }
+    const items = Object.keys(NODE_STYLES)
+      .filter(function (t) { return tables[t]; })
+      .map(function (t) { return nodeItem(t, NODE_STYLES[t]); });
+    Object.keys(tables).sort().forEach(function (t) {
+      if (!NODE_STYLES[t]) items.push(nodeItem(t, FALLBACK_STYLE));
+    });
+    Object.keys(rels).sort().forEach(function (rel) {
+      const s = edgeStyle(rel);
+      const glyph = (s.sym && s.sym.length <= 2) ? s.sym : (s.lineDash ? "⇢" : "→");
+      items.push('<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + s.stroke + '; font-size: 14px;">'
+        + escapeHtml(glyph) + '</span> '
+        + escapeHtml(rel) + "</span>");
+    });
+    if (anyLiveMarks()) {
+      items.push('<span style="margin-right: 1em; white-space: nowrap;">'
+        + '<span style="color: ' + DIFF_ADDED_COLOR + '; font-size: 14px;">+</span>'
+        + ' added</span>');
+      items.push('<span style="white-space: nowrap;">'
+        + '<span style="color: ' + DIFF_REMOVED_COLOR + '; font-size: 14px;">−</span>'
+        + ' removed</span>');
+    }
+    // join with a space: the spans are nowrap, so the separator is the
+    // only soft-wrap opportunity in the legend row
+    el.innerHTML = items.join(" ");
+  }
+
+  function graphStatusText(data) {
+    return data.nodes.length + " nodes, " + data.edges.length + " edges"
+      + " (graph revn " + data.revn + ")"
+      + (data.truncated ? " — WARNING: truncated at row cap, view is partial" : "");
+  }
+
+  // Query filter: induced subgraph of the already-exported graph, selected
+  // by node ids found in the last Cypher result. No reconstruction from the
+  // query result is needed — ids are enough to slice the cached export.
+  function filteredGraphData() {
+    if (!graphFilterIds && !hiddenTables.size) return lastGraphData;
+    const keep = {};
+    const nodes = lastGraphData.nodes.filter(function (n) {
+      if (hiddenTables.has(n.table)) return false;
+      if (graphFilterIds && !graphFilterIds.has(n.id)) return false;
+      keep[n.id] = true;
+      return true;
+    });
+    const edges = lastGraphData.edges.filter(function (e) {
+      return keep[e.source] && keep[e.target];
+    });
+    return { nodes: nodes, edges: edges,
+             revn: lastGraphData.revn, truncated: lastGraphData.truncated };
+  }
+
+  const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+  function idsInResult(result) {
+    const ids = new Set();
+    (result.rows || []).forEach(function (row) {
+      row.forEach(function (cell) {
+        const found = String(cell).match(UUID_RE);
+        if (found) found.forEach(function (m) { ids.add(m.toLowerCase()); });
+      });
+    });
+    return ids;
+  }
+
+  function presentIds(ids) {
+    const present = new Set();
+    lastGraphData.nodes.forEach(function (n) { if (ids.has(n.id)) present.add(n.id); });
+    return present;
+  }
+
+  function applyQueryFilter(ids, query) {
+    if (!lastGraphData) return;
+    const present = presentIds(ids);
+    if (!present.size) {
+      graphViewStatus.textContent = "query result matches no nodes in the loaded graph";
+      return;
+    }
+    graphFilterIds = present;
+    graphFilterQuery = query || null;
+    renderCurrent();
+  }
+
+  function renderCurrentRefiltered() {
+    if (!graphFilterQuery) {
+      renderCurrent();
+      return;
+    }
+    // A stale filter is worse than a slow one: it hides the very node the
+    // change created. Re-run, and on failure keep the ids in hand and say so
+    // rather than pass a filtered-out graph off as current.
+    runConsoleQuery(graphFilterQuery)
+      .then(function (data) {
+        if (data && data.error) throw new Error(data.error);
+        const result = data && data["query-result"];
+        if (result) graphFilterIds = presentIds(idsInResult(result));
+        renderCurrent();
+      })
+      .catch(function (err) {
+        renderCurrent();
+        graphViewStatus.textContent +=
+          " — filter query failed, ids are from its last run: " + err;
+      });
+  }
+
+  function renderCurrent() {
+    if (!lastGraphData) return;
+    const data = filteredGraphData();
+    const shown = withGhosts(data);
+    renderGraphLegend(shown);
+    const anywayBtn = document.getElementById("graph-render-anyway");
+    const filterBtn = document.getElementById("graph-filter-reset");
+    if (filterBtn) filterBtn.style.display = graphFilterIds ? "inline" : "none";
+    const filterNote = graphFilterIds
+      ? " — query filter: " + data.nodes.length + " of "
+        + lastGraphData.nodes.length + " nodes"
+      : "";
+    const safeMode = new URLSearchParams(location.search).has("safe");
+    if ((safeMode
+         || shown.nodes.length > RENDER_GUARD_NODES
+         || shown.edges.length > RENDER_GUARD_EDGES) && !renderForced) {
+      graphViewStatus.textContent =
+        graphStatusText(data) + filterNote
+        + (safeMode ? " — safe mode (?safe): auto-render off"
+                    : " — too large to render automatically");
+      if (anywayBtn) anywayBtn.style.display = "inline";
+      return;
+    }
+    if (anywayBtn) anywayBtn.style.display = "none";
+    graphViewStatus.textContent = graphStatusText(data) + filterNote;
+    // "fold containers" is the master gate for combo rendering; the
+    // derived fold rules (fold-unchanged, depth) are dormant without it.
+    renderGraph(toG6Data(shown, collapsedComboIds(), foldEnabled(),
+                         LAYOUTS[currentLayoutName()] == null, diffFoldEnabled()));
+  }
+
+  function refetchGraph() {
+    if (typeof G6 === "undefined") {
+      graphViewStatus.textContent = "G6 failed to load (CDN unreachable)";
+      return;
+    }
+    fetch("/dbg/actions/graph-data")
+      .then(function (resp) {
+        if (resp.status === 404) {
+          throw new Error("no graph session (backend restarted?) — reload a file");
+        }
+        if (!resp.ok) throw new Error("graph-data HTTP " + resp.status);
+        return resp.json();
+      })
+      .then(function (data) {
+        // Session-fieldset size line stays live even through skipped
+        // repaints (unlike the status line under the canvas); hover
+        // shows per-table counts.
+        // bm-bytes = the session DB's buffer-manager usage (CALL
+        // bm_info()), i.e. actual resident memory; shown next to the
+        // file name. Floor-dominated: the wide slice-3 schema costs
+        // ~115 MiB before any data.
+        const bmEl = document.getElementById("graph-bm");
+        if (bmEl && data["bm-bytes"]) {
+          bmEl.textContent = "(" + (data["bm-bytes"] / 1048576).toFixed(1) + " MiB)";
+        }
+        const sizeEl = document.getElementById("graph-size");
+        if (sizeEl) {
+          sizeEl.textContent = data.nodes.length + " nodes, "
+            + data.edges.length + " edges";
+          const counts = {};
+          data.nodes.forEach(function (n) {
+            counts[n.table] = (counts[n.table] || 0) + 1;
+          });
+          sizeEl.title = Object.keys(counts).sort().map(function (t) {
+            return t + "=" + counts[t];
+          }).join(", ");
+        }
+        // Skip the repaint when the display projection is unchanged: a
+        // change burst that only touches non-projected attrs (e.g. moving
+        // shapes around) bumps revn but not the picture.
+        const sig = JSON.stringify([data.nodes, data.edges, data.truncated]);
+        if (sig === lastGraphSig) {
+          lastGraphData = data;
+          return;
+        }
+        markDiff(lastGraphData, data);
+        lastGraphData = data;
+        lastGraphSig = sig;
+        renderCurrentRefiltered();
+        schedulePulses();
+      })
+      .catch(function (err) {
+        graphViewStatus.textContent = "graph view error: " + err;
+      });
+  }
+
+  // --- node inspector --------------------------------------------------
+  // Click a node → its full attribute row from the graph DB, rendered in
+  // a panel under the canvas. Panel over tooltip: the projected tables
+  // carry ~80 columns — too much for a tooltip, and the panel persists
+  // for side-by-side reading without obstructing the graph.
+  function runConsoleQuery(query) {
+    const formData = new FormData();
+    formData.append("query", query);
+    return fetch("/dbg/actions/graph-query", {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+      body: formData
+    })
+      .then(function (resp) { return resp.text(); })
+      .then(function (text) { return parseTransitMap(JSON.parse(text)); });
+  }
+
+  function showNodeInspector(id) {
+    const panel = document.getElementById("graph-node-inspector");
+    if (!panel || !g6graph) return;
+    let datum = null;
+    try { datum = g6graph.getNodeData(id); } catch (_err) { return; }
+    const table = datum && datum.data && datum.data.table;
+    const label = (datum && datum.data && datum.data.label) || "";
+    // Both values are interpolated into Cypher — accept only what our own
+    // export produces (bare table names, UUID ids).
+    if (!table || !/^[A-Za-z]+$/.test(table)) return;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+    panel.style.display = "block";
+    panel.textContent = "loading " + id + "…";
+    runConsoleQuery("MATCH (n:`" + table + "` {id: uuid('" + id + "')}) RETURN n.*;")
+      .then(function (data) {
+        if (data.error) {
+          panel.textContent = "inspector error: " + data.error;
+          return;
+        }
+        const result = data["query-result"];
+        const rows = (result && result.rows) || [];
+        let html = '<div style="display: flex; justify-content: space-between;">'
+          + "<b>" + escapeHtml(table) + " " + escapeHtml(label) + "</b>"
+          + '<button type="button" id="graph-inspector-close">close</button></div>'
+          + '<div style="color: #666;">' + escapeHtml(id) + "</div>";
+        if (!rows.length) {
+          html += "<div>not in the graph DB (removed?)</div>";
+        } else {
+          const columns = result.columns || [];
+          let hidden = 0;
+          // Two-column flow; JSON-like values fold behind the same
+          // disclosure triangle the file tree uses.
+          html += '<div style="column-count: 2; column-gap: 16px; margin-top: 4px;">';
+          columns.forEach(function (col, i) {
+            const val = rows[0][i];
+            // Ladybug's value->clj fallback renders SQL nulls as "NULL".
+            if (val === null || val === undefined || val === "" || val === "NULL") {
+              hidden += 1;
+              return;
+            }
+            const key = escapeHtml(col.replace(/^n\./, ""));
+            const sval = String(val);
+            // Fold structured values ({…}) and walls of text (long arrays
+            // like migrations) behind a disclosure triangle.
+            if (sval.indexOf("{") !== -1 || sval.length > 120) {
+              html += '<details style="break-inside: avoid;">'
+                + '<summary style="cursor: pointer;"><code>' + key + '</code></summary>'
+                + '<pre style="white-space: pre-wrap; word-break: break-all; margin: 2px 0 4px 1.2em;">'
+                + escapeHtml(sval) + "</pre></details>";
+            } else {
+              html += '<div style="break-inside: avoid;"><code>' + key
+                + '</code>: <code>' + escapeHtml(sval) + "</code></div>";
+            }
+          });
+          html += "</div>";
+          if (hidden) {
+            html += '<div style="color: #666;">' + hidden + " empty attrs hidden</div>";
+          }
+        }
+        panel.innerHTML = html;
+        document.getElementById("graph-inspector-close")
+          .addEventListener("click", function () { panel.style.display = "none"; });
+      })
+      .catch(function (err) {
+        panel.textContent = "inspector error: " + err;
+      });
+  }
+  // --- end node inspector ----------------------------------------------
+
+  function scheduleGraphRefetch() {
+    if (refetchTimer) clearTimeout(refetchTimer);
+    refetchTimer = setTimeout(function () {
+      refetchTimer = null;
+      refetchGraph();
+    }, 400);
+  }
+  // --- end G6 graph view ---------------------------------------------
+
+  function encodeTransitUuid(uuid) {
+    return "~u" + uuid;
+  }
+
+  function encodeSubscribe(fileId) {
+    return JSON.stringify({
+      "~:type": "~:subscribe-file",
+      "~:file-id": encodeTransitUuid(fileId)
+    });
+  }
+
+  function encodeUnsubscribe(fileId) {
+    return JSON.stringify({
+      "~:type": "~:unsubscribe-file",
+      "~:file-id": encodeTransitUuid(fileId)
+    });
+  }
+
+  function parseTransitValue(value) {
+    if (typeof value === "string") {
+      if (value.startsWith("~:")) return value.slice(2);
+      if (value.startsWith("~u")) return value.slice(2);
+    }
+    if (Array.isArray(value)) return value.map(parseTransitValue);
+    if (value && typeof value === "object") return parseTransitMap(value);
+    return value;
+  }
+
+  function parseTransitMap(obj) {
+    const out = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const name = key.startsWith("~:") ? key.slice(2) : key;
+      out[name] = parseTransitValue(value);
+    }
+    return out;
+  }
+
+  function changeDetail(change) {
+    const parts = [];
+    if (change.obj && change.obj.type) parts.push("shape=" + change.obj.type);
+    if (change.operations && change.operations.length) {
+      const attrs = change.operations
+        .map(function (op) { return op.attr; })
+        .filter(Boolean);
+      if (attrs.length) parts.push("attrs=" + attrs.join(","));
+    }
+    return parts.join(" ");
+  }
+
+  function summarizeSkipped(skipped) {
+    if (!skipped) return "";
+    const items = Array.isArray(skipped) ? skipped : [skipped];
+    return items.map(function (item) {
+      if (!item || typeof item !== "object") return String(item);
+      const type = item.type || "unknown";
+      const reason = item.reason ? " (" + item.reason + ")" : "";
+      return String(type) + reason;
+    }).join("; ");
+  }
+
+  function refreshSyncStatus() {
+    fetch("/dbg/actions/graph-sync-status")
+      .then(function (resp) { return resp.text(); })
+      .then(function (text) {
+        const status = parseTransitMap(JSON.parse(text));
+        if (status["graph-revn"] !== undefined) {
+          syncRevnEl.textContent = String(status["graph-revn"]);
+        }
+        if (status.sync && status.sync.error) {
+          syncErrorEl.style.display = "inline";
+          syncErrorEl.textContent = "sync error: " + status.sync.error;
+        } else if (status.sync && status.sync["last-skipped"]
+                   && summarizeSkipped(status.sync["last-skipped"])) {
+          syncErrorEl.style.display = "inline";
+          syncErrorEl.textContent =
+            "some changes skipped: "
+            + summarizeSkipped(status.sync["last-skipped"])
+            + " (use full reload if needed)";
+        } else {
+          syncErrorEl.style.display = "none";
+          syncErrorEl.textContent = "";
+        }
+      })
+      .catch(function () {});
+  }
+
+  // One row per operation (revn repeats across a batch); op wears the
+  // canvas diff colors, id shows the uuid's last group with the full
+  // uuid on hover, or N/A for ops without a subject id.
+  function appendChanges(revn, changes) {
+    // The whole box stays hidden until the first change arrives; feed
+    // state lives in the session fieldset.
+    changelogBox.style.display = "block";
+    let lastRow = null;
+    (changes && changes.length ? changes : [{}]).forEach(function (change) {
+      const row = document.createElement("tr");
+      const revnCell = document.createElement("td");
+      revnCell.textContent = String(revn);
+      const opCell = document.createElement("td");
+      const op = change.type || "?";
+      opCell.textContent = op;
+      const detail = changeDetail(change);
+      if (detail) opCell.title = detail;
+      if (op === "add-obj") opCell.style.color = DIFF_ADDED_COLOR;
+      if (op === "del-obj") opCell.style.color = DIFF_REMOVED_COLOR;
+      const idCell = document.createElement("td");
+      const id = change.id ? String(change.id) : null;
+      const groups = id ? id.split("-") : null;
+      idCell.textContent = groups ? groups[groups.length - 1] : "N/A";
+      if (id) idCell.title = id;
+      row.appendChild(revnCell);
+      row.appendChild(opCell);
+      row.appendChild(idCell);
+      changelogBody.appendChild(row);
+      lastRow = row;
+    });
+    if (lastRow) lastRow.scrollIntoView({ block: "nearest" });
+  }
+
+  function handleMessage(raw) {
+    let msg;
+    try {
+      msg = parseTransitMap(JSON.parse(raw));
+    } catch (_err) {
+      return;
+    }
+
+    if (msg.type !== "file-change" || msg["file-id"] !== fileId) return;
+
+    appendChanges(msg.revn, msg.changes);
+    setTimeout(refreshSyncStatus, 150);
+    scheduleGraphRefetch();
+  }
+
+  function subscribe() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(encodeSubscribe(fileId));
+    }
+  }
+
+  let wsClosing = false;
+  let wsReconnectTimer = null;
+
+  function scheduleReconnect() {
+    if (wsClosing || wsReconnectTimer) return;
+    wsReconnectTimer = setTimeout(function () {
+      wsReconnectTimer = null;
+      connect();
+    }, 3000);
+  }
+
+  function connect() {
+    ws = new WebSocket(wsUrl);
+    wsStatus.textContent = "connecting…";
+
+    ws.addEventListener("open", function () {
+      wsStatus.textContent = "subscribed";
+      subscribe();
+      // catch up on anything missed while disconnected
+      refreshSyncStatus();
+      scheduleGraphRefetch();
+    });
+
+    ws.addEventListener("message", function (event) {
+      handleMessage(event.data);
+    });
+
+    ws.addEventListener("close", function () {
+      wsStatus.textContent = wsClosing ? "disconnected" : "disconnected — retrying…";
+      scheduleReconnect();
+    });
+
+    ws.addEventListener("error", function () {
+      wsStatus.textContent = "error";
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderQueryOutput(data) {
+    const output = document.getElementById("graph-query-output");
+    if (!output) return;
+
+    if (data.error) {
+      output.innerHTML =
+        "<fieldset><legend>Error</legend>"
+        + "<pre>" + escapeHtml(data.error) + "</pre></fieldset>";
+      return;
+    }
+
+    const result = data["query-result"];
+    if (!result) {
+      output.innerHTML = "";
+      return;
+    }
+
+    const truncated = result["truncated?"] ? ", truncated" : "";
+    // Actions bar sits above the table so a long result cannot push the
+    // "Show result in graph view" button out of sight; the table itself
+    // scrolls inside a capped container.
+    let html =
+      "<fieldset><legend>Results ("
+      + escapeHtml(String(result["row-count"]))
+      + " rows" + truncated + ")</legend>"
+      + "<div id=\"graph-result-actions\" style=\"margin-bottom: 4px;\"></div>"
+      + "<div style=\"max-height: 45vh; overflow: auto;\">"
+      + "<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\""
+      + " style=\"border-collapse: collapse; width: 100%;\">"
+      + "<thead><tr>";
+
+    // filter_* columns feed node ids to the graph-view filter below but
+    // are hidden from the table (convention; see default query).
+    const columns = result.columns || [];
+    const visibleIdx = [];
+    columns.forEach(function (column, i) {
+      if (!/^filter_/.test(column)) visibleIdx.push(i);
+    });
+    visibleIdx.forEach(function (i) {
+      html += "<th>" + escapeHtml(columns[i]) + "</th>";
+    });
+    html += "</tr></thead><tbody>";
+
+    (result.rows || []).forEach(function (row) {
+      html += "<tr>";
+      visibleIdx.forEach(function (i) {
+        html += "<td><code>" + escapeHtml(row[i]) + "</code></td>";
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody></table></div></fieldset>";
+    output.innerHTML = html;
+
+    // Offer to view the result as an induced subgraph: any UUID appearing
+    // in any result cell selects that node in the loaded graph. The query
+    // goes with the ids, so the view can re-run it and follow the graph.
+    const ids = idsInResult(result);
+    if (ids.size) {
+      const queryEl = document.querySelector("#graph-query-form textarea[name=query]");
+      const query = queryEl ? queryEl.value : null;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Show result in graph view (" + ids.size + " ids)";
+      btn.addEventListener("click", function () { applyQueryFilter(ids, query); });
+      document.getElementById("graph-result-actions").appendChild(btn);
+    }
+  }
+
+  const queryForm = document.getElementById("graph-query-form");
+  if (queryForm) {
+    // Keep the query text across page reloads (load/unload/full-reload all
+    // re-render the page with the default query). Only restore over the
+    // default, never over a server-rendered non-default query.
+    const queryInput = queryForm.querySelector("textarea[name=query]");
+    const defaultQuery = (queryInput.dataset.defaultQuery || "").trim();
+    const storedQuery = localStorage.getItem("graph-query");
+    if (storedQuery && storedQuery.trim() !== defaultQuery
+        && queryInput.value.trim() === defaultQuery) {
+      queryInput.value = storedQuery;
+    }
+    queryInput.addEventListener("input", function () {
+      localStorage.setItem("graph-query", queryInput.value);
+    });
+    queryForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const formData = new FormData(queryForm);
+      fetch("/dbg/actions/graph-query", {
+        method: "POST",
+        headers: { "Accept": "application/json" },
+        body: formData
+      })
+        .then(function (resp) { return resp.text(); })
+        .then(function (text) {
+          renderQueryOutput(parseTransitMap(JSON.parse(text)));
+        })
+        .catch(function (err) {
+          renderQueryOutput({ error: String(err) });
+        });
+    });
+  }
+
+  // In-page expand (no Fullscreen API): keeps browser chrome and window
+  // manager splits usable while the graph takes the whole page. Entered
+  // via the toolbar's expand icon; exited via its exit icon or Esc.
+  const graphColumn = document.getElementById("graph-view-column");
+
+  function resizeGraphSoon() {
+    setTimeout(function () {
+      if (g6graph) {
+        const canvas = document.getElementById("graph-canvas");
+        try {
+          g6graph.setSize(canvas.clientWidth, canvas.clientHeight);
+          g6graph.fitView();
+        } catch (_err) { /* autoResize covers most cases */ }
+      }
+    }, 120);
+  }
+
+  function setExpanded(expanded) {
+    graphColumn.classList.toggle("graph-view-expanded", expanded);
+    resizeGraphSoon();
+  }
+
+  // Follow container size (G6's autoResize is inert on this build).
+  // Safe only because the container's width is viewport-driven and can
+  // never follow the canvas: the fieldset's min-content floor is removed
+  // (#graph-view-panel min-inline-size: 0) and #graph-canvas clips
+  // (overflow: hidden). Without both, observer -> setSize -> wider canvas
+  // -> wider column -> observer is a runaway growth loop that also wipes
+  // the painted canvas on every step.
+  const canvasEl = document.getElementById("graph-canvas");
+  if (typeof ResizeObserver !== "undefined" && canvasEl) {
+    let resizeRaf = null;
+    new ResizeObserver(function () {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(function () {
+        resizeRaf = null;
+        if (!g6graph) return;
+        try {
+          const cur = g6graph.getSize();
+          const w = canvasEl.clientWidth;
+          const h = canvasEl.clientHeight;
+          if (!cur || cur[0] !== w || cur[1] !== h) g6graph.setSize(w, h);
+        } catch (_err) { /* instance mid-recreate */ }
+      });
+    }).observe(canvasEl);
+  }
+
+  if (graphColumn) {
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape"
+          && graphColumn.classList.contains("graph-view-expanded")) {
+        setExpanded(false);
+      }
+    });
+  }
+
+  const foldToggle = document.getElementById("graph-fold-toggle");
+  if (foldToggle) {
+    foldToggle.checked = foldEnabled();
+    foldToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-fold-containers", foldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const animateToggle = document.getElementById("graph-animate-toggle");
+  if (animateToggle) {
+    animateToggle.checked = animateEnabled();
+    animateToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-animate", animateToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const diffStepsInput = document.getElementById("graph-diff-steps");
+  if (diffStepsInput) {
+    diffStepsInput.value = String(diffSteps());
+    diffStepsInput.addEventListener("change", function () {
+      localStorage.setItem("graph-diff-steps", diffStepsInput.value);
+      renderCurrent();
+    });
+  }
+
+  const legendEl = document.getElementById("graph-legend");
+  if (legendEl) {
+    legendEl.addEventListener("click", function (ev) {
+      const item = ev.target.closest("[data-table]");
+      if (!item) return;
+      const t = item.getAttribute("data-table");
+      if (hiddenTables.has(t)) hiddenTables.delete(t); else hiddenTables.add(t);
+      renderCurrent();
+    });
+  }
+
+  const diffFoldToggle = document.getElementById("graph-diff-fold");
+  if (diffFoldToggle) {
+    diffFoldToggle.checked = diffFoldEnabled();
+    diffFoldToggle.addEventListener("change", function () {
+      localStorage.setItem("graph-diff-fold", diffFoldToggle.checked ? "1" : "0");
+      renderCurrent();
+    });
+  }
+
+  const depthFoldInput = document.getElementById("graph-depth-fold");
+  if (depthFoldInput) {
+    const v = depthFoldValue();
+    depthFoldInput.value = v == null ? "" : String(v);
+    depthFoldInput.addEventListener("change", function () {
+      localStorage.setItem("graph-depth-fold", depthFoldInput.value);
+      // A positive depth is meaningless without combos — switch them on.
+      if (parseInt(depthFoldInput.value, 10) > 0 && foldToggle && !foldToggle.checked) {
+        foldToggle.checked = true;
+        localStorage.setItem("graph-fold-containers", "1");
+      }
+      renderCurrent();
+    });
+  }
+
+  const layoutSelect = document.getElementById("graph-layout-select");
+  if (layoutSelect) {
+    Object.keys(LAYOUTS).forEach(function (name) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      layoutSelect.appendChild(opt);
+    });
+    layoutSelect.value = currentLayoutName();
+    layoutSelect.addEventListener("change", function () {
+      localStorage.setItem("graph-layout", layoutSelect.value);
+      renderCurrent();
+    });
+  }
+
+  const renderAnywayBtn = document.getElementById("graph-render-anyway");
+  if (renderAnywayBtn) {
+    renderAnywayBtn.addEventListener("click", function () {
+      renderForced = true;
+      renderCurrent();
+    });
+  }
+
+  const filterResetBtn = document.getElementById("graph-filter-reset");
+  if (filterResetBtn) {
+    filterResetBtn.addEventListener("click", function () {
+      graphFilterIds = null;
+      graphFilterQuery = null;
+      renderCurrent();
+    });
+  }
+
+  // Compact the loaded-at timestamp to local HH:MM; full instant on hover.
+  const loadedAtEl = document.getElementById("graph-loaded-at");
+  if (loadedAtEl) {
+    const d = new Date(loadedAtEl.textContent.trim());
+    if (!isNaN(d.getTime())) {
+      loadedAtEl.title = loadedAtEl.textContent.trim();
+      loadedAtEl.textContent = String(d.getHours()).padStart(2, "0")
+        + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+  }
+
+  connect();
+  refreshSyncStatus();
+  refetchGraph();
+
+  window.addEventListener("beforeunload", function () {
+    wsClosing = true;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(encodeUnsubscribe(fileId));
+      ws.close();
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

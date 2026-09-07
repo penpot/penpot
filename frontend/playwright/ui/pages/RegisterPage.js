@@ -29,6 +29,42 @@ export class RegisterPage extends BasePage {
     );
   }
 
+  /**
+   * Mocks a successful email-verification token exchange (the link the
+   * user clicks from the verification email) and every RPC the dashboard
+   * needs to render right after landing on it, so the flow can be
+   * exercised end-to-end without a real backend.
+   */
+  async setupEmailVerificationSuccess() {
+    await this.mockConfigFlags(["disable-onboarding"]);
+    await this.mockRPC(
+      "verify-token",
+      "register/verify-token-email-verified.json",
+    );
+    await this.mockRPCs({
+      "get-teams": "logged-in-user/get-teams-default.json",
+      "get-font-variants?team-id=*":
+        "logged-in-user/get-font-variants-empty.json",
+      "get-projects?team-id=*": "logged-in-user/get-projects-default.json",
+      "get-team-members?team-id=*":
+        "logged-in-user/get-team-members-your-penpot.json",
+      "get-team-users?team-id=*":
+        "logged-in-user/get-team-users-single-user.json",
+      "get-unread-comment-threads?team-id=*":
+        "logged-in-user/get-team-users-single-user.json",
+      "get-team-recent-files?team-id=*":
+        "logged-in-user/get-team-recent-files-empty.json",
+      "get-profiles-for-file-comments":
+        "logged-in-user/get-profiles-for-file-comments-empty.json",
+      "get-builtin-templates":
+        "logged-in-user/get-built-in-templates-empty.json",
+    });
+  }
+
+  async goToVerifyToken(token = "verify-email-token") {
+    await this.page.goto(`/#/auth/verify-token?token=${token}`);
+  }
+
   static async init(page) {
     await BasePage.init(page);
   }

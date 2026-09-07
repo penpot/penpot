@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.test-helpers.variants
   (:require
@@ -13,6 +13,11 @@
    [app.common.types.text :as txt]))
 
 (defn add-variant
+  "Add a variant component to a file with two variants, each with a root shape.
+    :variant-label [:name Board]                            
+        {:root2-label} [:name Board]  # [Component :component2-label]
+        {:root1-label} [:name Board]  # [Component :component1-label]
+  "
   [file variant-label component1-label root1-label component2-label root2-label
    & {:keys [variant1-params variant2-params]
       :or   {variant1-params {} variant2-params {}}}]

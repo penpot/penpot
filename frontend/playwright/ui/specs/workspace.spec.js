@@ -171,10 +171,12 @@ test("Selection size badge shows dimensions for path shapes", async ({ page }) =
   // Workaround: hover viewport first to avoid nil mouse position crash
   await workspacePage.viewport.hover();
 
-  // Draw a path
+  // Draw a path with two segments; a single straight segment shows
+  // endpoint controls instead of the size badge
   await workspacePage.pathButton.click();
   await workspacePage.clickAt(779, 163);
   await workspacePage.clickAt(951, 258);
+  await workspacePage.clickAt(1050, 163);
 
   // Finish drawing (commits path, path enters edition mode)
   await page.keyboard.press("Escape");
@@ -185,6 +187,36 @@ test("Selection size badge shows dimensions for path shapes", async ({ page }) =
   const badgeText = page.locator(".selection-size-badge text");
   await expect(badgeText).toBeVisible();
   await expect(badgeText).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
+});
+
+test("Selection size badge is hidden for straight line paths", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace();
+
+  // Workaround: hover viewport first to avoid nil mouse position crash
+  await workspacePage.viewport.hover();
+
+  // Draw a path with a single straight segment
+  await workspacePage.pathButton.click();
+  await workspacePage.clickAt(779, 163);
+  await workspacePage.clickAt(951, 258);
+
+  // Finish drawing (commits path, path enters edition mode)
+  await page.keyboard.press("Escape");
+
+  // Exit edition mode (path stays selected)
+  await page.keyboard.press("Escape");
+
+  await expect(page.locator(".line-controls")).toBeVisible();
+  await expect(page.locator(".selection-size-badge")).toHaveCount(0);
 });
 
 test("User makes a group", async ({ page }) => {

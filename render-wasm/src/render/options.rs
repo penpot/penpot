@@ -11,6 +11,10 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
+/// Soft-drain GPU every N walker nodes on progressive Partials. Keeps ops
+/// buffers bounded when many shapes paint cheaply to Current (release packs
+/// far more per budget than debug).
+const PARTIAL_GPU_DRAIN_EVERY_N: i32 = 64;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 const ANTIALIAS_THRESHOLD: f32 = 7.0;
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -29,6 +33,9 @@ pub struct RenderOptions {
     pub dpr_viewport_interest_area_threshold: i32,
     pub max_blocking_time_ms: i32,
     pub node_batch_threshold: i32,
+    /// Soft-flush GPU every N nodes during progressive tile walks (see
+    /// [`PARTIAL_GPU_DRAIN_EVERY_N`]).
+    pub partial_gpu_drain_every_n: i32,
     pub blur_downscale_threshold: f32,
     pub capture_frames: i32,
 }
@@ -45,6 +52,7 @@ impl Default for RenderOptions {
             dpr_viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
             max_blocking_time_ms: MAX_BLOCKING_TIME_MS,
             node_batch_threshold: NODE_BATCH_THRESHOLD,
+            partial_gpu_drain_every_n: PARTIAL_GPU_DRAIN_EVERY_N,
             blur_downscale_threshold: BLUR_DOWNSCALE_THRESHOLD,
             capture_frames: 0,
         }
@@ -112,46 +120,5 @@ impl RenderOptions {
 
     pub fn show_wasm_info(&self) -> bool {
         self.flags & SHOW_WASM_INFO == SHOW_WASM_INFO
-    }
-
-    pub fn set_antialias_threshold(&mut self, value: f32) -> bool {
-        if value.is_finite() && value > 0.0 {
-            self.antialias_threshold = value;
-            return true;
-        }
-        false
-    }
-
-    pub fn set_blur_downscale_threshold(&mut self, value: f32) -> bool {
-        if value.is_finite() && value > 0.0 {
-            self.blur_downscale_threshold = value;
-            return true;
-        }
-        false
-    }
-
-    pub fn set_viewport_interest_area_threshold(&mut self, value: i32) -> bool {
-        if value >= 0 && self.viewport_interest_area_threshold != value {
-            self.viewport_interest_area_threshold = value;
-            self.update_dpr_viewport_interest_area_threshold();
-            return true;
-        }
-        false
-    }
-
-    pub fn set_node_batch_threshold(&mut self, value: i32) -> bool {
-        if value > 0 {
-            self.node_batch_threshold = value;
-            return true;
-        }
-        false
-    }
-
-    pub fn set_max_blocking_time_ms(&mut self, value: i32) -> bool {
-        if value > 0 {
-            self.max_blocking_time_ms = value;
-            return true;
-        }
-        false
     }
 }

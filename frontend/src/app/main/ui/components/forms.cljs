@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.components.forms
   (:require-macros [app.main.style :as stl])
@@ -180,11 +180,17 @@
 
       (cond
         (and touched? (:message error) show-error)
-        (let [message (:message error)]
+        (let [message (:message error)
+              options (:options error)]
           [:div {:id (dm/str "error-" input-name)
                  :class (stl/css :error)
                  :data-testid (dm/str data-testid "-error")}
-           message])
+           message
+           (when (seq options)
+             [:ul {:class (stl/css :error-options)}
+              (for [opt options]
+                [:li {:key opt
+                      :class (stl/css :error-option)} opt])])])
 
         ;; FIXME: DEPRECATED
         (and touched? (:code error) show-error)

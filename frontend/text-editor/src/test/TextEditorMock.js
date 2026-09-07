@@ -4,7 +4,10 @@ import {
   createEmptyTextSpan,
   createTextSpan,
 } from "../editor/content/dom/TextSpan.js";
-import { createLineBreak } from "../editor/content/dom/LineBreak.js";
+import {
+  createLineBreak,
+  isLineBreak,
+} from "../editor/content/dom/LineBreak.js";
 
 export class TextEditorMock extends EventTarget {
   /**
@@ -135,6 +138,7 @@ export class TextEditorMock extends EventTarget {
     this.#element = element;
     this.#root = options?.root;
     this.#selectionImposterElement = options?.selectionImposterElement;
+    this.#element.dataset.itype = "editor";
     this.#element.appendChild(options?.root);
   }
 
@@ -144,6 +148,14 @@ export class TextEditorMock extends EventTarget {
 
   get root() {
     return this.#root;
+  }
+
+  get isEmpty() {
+    return (
+      this.#root.children.length === 1 &&
+      this.#root.firstElementChild.children.length === 1 &&
+      isLineBreak(this.#root.firstElementChild.firstElementChild.firstChild)
+    );
   }
 }
 

@@ -2,6 +2,7 @@ use macros::ToJs;
 
 use crate::mem;
 use crate::shapes::{self, StrokeCap, StrokeStyle};
+use crate::utils::decode_optional_f32;
 use crate::with_current_shape_mut;
 
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
@@ -68,17 +69,6 @@ impl TryFrom<RawStrokeCap> for StrokeCap {
     }
 }
 
-// A negative value means "unset" — the renderer falls back to its default
-// dash pattern. We use a sentinel instead of passing a bool because adding
-// two f32 params keeps the FFI signature flat and allocation-free.
-fn decode_optional(value: f32) -> Option<f32> {
-    if value.is_finite() && value >= 0.0 {
-        Some(value)
-    } else {
-        None
-    }
-}
-
 #[no_mangle]
 pub extern "C" fn add_shape_center_stroke(
     width: f32,
@@ -98,8 +88,8 @@ pub extern "C" fn add_shape_center_stroke(
             stroke_style.into(),
             cap_start.try_into().ok(),
             cap_end.try_into().ok(),
-            decode_optional(dash),
-            decode_optional(gap),
+            decode_optional_f32(dash),
+            decode_optional_f32(gap),
         ));
     });
 }
@@ -123,8 +113,8 @@ pub extern "C" fn add_shape_inner_stroke(
             stroke_style.into(),
             cap_start.try_into().ok(),
             cap_end.try_into().ok(),
-            decode_optional(dash),
-            decode_optional(gap),
+            decode_optional_f32(dash),
+            decode_optional_f32(gap),
         ));
     });
 }
@@ -148,8 +138,8 @@ pub extern "C" fn add_shape_outer_stroke(
             stroke_style.into(),
             cap_start.try_into().ok(),
             cap_end.try_into().ok(),
-            decode_optional(dash),
-            decode_optional(gap),
+            decode_optional_f32(dash),
+            decode_optional_f32(gap),
         ));
     });
 }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.clipboard
   (:require
@@ -40,6 +40,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.path.clipboard :as path-cp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
@@ -292,8 +293,9 @@
              (rx/mapcat
               (fn [pdata]
                 (case (:type pdata)
-                  :copied-props  (rx/of (paste-transit-props pdata))
-                  :copied-shapes (rx/of (paste-transit-shapes pdata))
+                  :copied-props        (rx/of (paste-transit-props pdata))
+                  :copied-shapes       (rx/of (paste-transit-shapes pdata))
+                  :copied-path-content (rx/of (path-cp/paste-nodes-as-shape (:content pdata)))
                   (rx/empty)))))
 
         :else
@@ -1217,7 +1219,7 @@
               (rx/mapcat (fn [blob]
                            ;; Resolve the deferred with the fetched blob; the browser
                            ;; will now complete the clipboard write it started earlier.
-                           (p/resolve! deferred blob)
+                           (p/resolve deferred blob)
                            (rx/from write-promise)))
               (rx/map (fn [_]
                         (ntf/success (tr "workspace.clipboard.image-copied"))))
@@ -1225,5 +1227,5 @@
                           (js/console.error "clipboard error:" e)
                           ;; Reject the deferred in case the error occurred before the
                           ;; blob was fetched, so the pending clipboard write is cancelled.
-                          (p/reject! deferred e)
+                          (p/reject deferred e)
                           (rx/of (ntf/error (tr "workspace.clipboard.image-copy-failed")))))))))))

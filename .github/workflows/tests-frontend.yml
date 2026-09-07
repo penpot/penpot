@@ -34,7 +34,7 @@ jobs:
   test-frontend:
     if: ${{ !github.event.pull_request.draft }}
     name: "Frontend Tests"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:

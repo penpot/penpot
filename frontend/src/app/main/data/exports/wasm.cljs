@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.exports.wasm
   (:require
@@ -41,6 +41,20 @@
   (let [url (export-pdf-uri params)
         filename (str name (or suffix "") ".pdf")]
     (dom/trigger-download-uri filename "application/pdf" url)
+    (js/queueMicrotask #(wapi/revoke-uri url))
+    nil))
+
+(defn export-svg-uri
+  [{:keys [scale object-id]}]
+  (let [bytes (wasm.api/render-shape-svg object-id (or scale 1))
+        blob (wapi/create-blob bytes "image/svg+xml")]
+    (wapi/create-uri blob)))
+
+(defn export-svg
+  [{:keys [suffix name] :as params}]
+  (let [url (export-svg-uri params)
+        filename (str name (or suffix "") ".svg")]
+    (dom/trigger-download-uri filename "image/svg+xml" url)
     (js/queueMicrotask #(wapi/revoke-uri url))
     nil))
 

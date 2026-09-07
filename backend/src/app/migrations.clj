@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.migrations
   (:require
@@ -499,7 +499,10 @@
     :fn (mg/resource "app/migrations/sql/0152-improve-uuid-defaults-and-drop-extension.sql")}
 
    {:name "0152-rename-version-and-add-indexes-to-server-error-report"
-    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}])
+    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}
+
+   {:name "0153-add-storage-object-status-and-deletion-attempts"
+    :fn (mg/resource "app/migrations/sql/0153-add-storage-object-status-and-deletion-attempts.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

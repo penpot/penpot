@@ -2,16 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.profile
   (:require
    [app.auth :as auth]
+   [app.auth.passwords :as passwords]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.plugins :refer [schema:plugin-registry]]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -21,6 +22,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -52,11 +54,11 @@
 
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
-  #{:subscription})
+  #{:subscription :plugins})
 
 (def schema:props
   [:map {:title "ProfileProps" :closed true}
-   [:plugins {:optional true} schema:plugin-registry]
+   [:plugins {:optional true} ctp/schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
@@ -75,6 +77,10 @@
    [:custom-shortcuts {:optional true}
     [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
    [:nudge {:optional true} schema:nudge]])
+
+(def schema:props-writeable
+  "Props schema for user-writable fields (excludes system-managed keys)."
+  (reduce sm/dissoc-key schema:props system-managed-props))
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -139,9 +145,7 @@
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
   [conn id & {:as opts}]
-  ;; NOTE: We need to set ::db/remove-deleted to false because demo profiles
-  ;; are created with a set deleted-at value
-  (-> (db/get-by-id conn :profile id (assoc opts ::db/remove-deleted false))
+  (-> (db/get-by-id conn :profile id opts)
       (decode-row)))
 
 ;; --- MUTATION: Update Profile (own)
@@ -163,6 +167,13 @@
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
   (let [profile (get-profile conn profile-id ::db/for-update true)
+        fullname (d/normalize-string fullname)
+        lang     (if (contains? params :lang)
+                   (d/normalize-string lang)
+                   (:lang profile))
+        theme    (if (contains? params :theme)
+                   (d/normalize-string theme)
+                   (:theme profile))
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)
@@ -207,6 +218,9 @@
       (ex/raise :type :validation
                 :code :email-as-password
                 :hint "you can't use your email as password"))
+
+    ;; Validate password strength against common password dictionary
+    (passwords/validate-password (:password params))
 
     (update-profile-password! cfg (assoc profile :password password))
 
@@ -280,7 +294,7 @@
 (def ^:private
   schema:update-profile-photo
   [:map {:title "update-profile-photo"}
-   [:file media/schema:upload]])
+   [:file media.v/schema:upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -288,8 +302,8 @@
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
-  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media/validate-media-size! file)
+  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/validate-media-size! file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
@@ -453,7 +467,7 @@
 (def ^:private
   schema:update-profile-props
   [:map {:title "update-profile-props"}
-   [:props schema:props]])
+   [:props schema:props-writeable]])
 
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
@@ -512,7 +526,7 @@
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
     ;; (during delete-owned-organizations) and ::notify-organization-deletion.
     ;; Both preserve organization teams unchanged and only prefix or delete
-    ;; imported "Your Penpot" teams according to whether they still have files.
+    ;; imported "Personal Projects" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
     (when (contains? cf/flags :admin-console)
@@ -525,6 +539,10 @@
                   ::wrk/params {:object :profile
                                 :deleted-at deleted-at
                                 :id profile-id}})
+
+    ;; Invalidate all sessions for this profile to ensure immediate
+    ;; access revocation across all devices
+    (session/invalidate-all cfg profile-id)
 
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))

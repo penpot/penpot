@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.helpers
   (:require
@@ -189,7 +189,7 @@
    (let [params (merge {:id (mk-uuid "profile" i)
                         :fullname (str "Profile " i)
                         :email (str "profile" i ".test@nodomain.com")
-                        :password "123123"
+                        :password "Test123!"
                         :is-demo false}
                        params)]
      (db/run! system

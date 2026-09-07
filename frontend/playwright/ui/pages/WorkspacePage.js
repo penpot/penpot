@@ -600,6 +600,12 @@ export class WorkspacePage extends BaseWebSocketPage {
       .getByRole("button", { name: "Comments (C)" })
       .click(clickOptions);
   }
+
+  async toggleCommentsVisibilityFromMenu(clickOptions = {}) {
+    await this.page.getByRole("button", { name: "Main menu" }).click();
+    await this.page.getByText("view").last().click();
+    await this.page.locator("#file-menu-comments").click(clickOptions);
+  }
 }
 
 export default WorkspacePage;

@@ -27,13 +27,8 @@ export class OpAssert extends Operation {
     }
 
     async applyTo(situation: Situation): Promise<void> {
-        try {
-            this.assertion(situation);
-        } catch {
-            // a read may have raced propagation; let it settle and check once more
-            await PenpotSync.awaitPropagation();
-            this.assertion(situation);
-        }
+        await PenpotSync.awaitPropagation();
+        this.assertion(situation);
     }
 
     toString(): string {

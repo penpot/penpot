@@ -1,0 +1,900 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.graph.sync
+  "Incremental Ladybug graph updates from Penpot file-change events."
+  (:require
+   [app.common.logging :as l]
+   [app.common.uuid :as uuid]
+   [app.graph.ladybug :as ladybug]
+   [app.graph.projection.document :as projection.document]
+   [app.graph.schema.nodes :as nodes]
+   [clojure.string :as str])
+  (:import
+   com.ladybugdb.Connection))
+
+(set! *warn-on-reflection* true)
+
+(def ^:private supported-change-types
+  #{:add-obj :mod-obj :del-obj
+    :add-page :del-page :mod-page :mov-objects
+    :add-component :mod-component :del-component
+    :restore-component :purge-component})
+
+(defn- shape-table
+  [shape]
+  (nodes/table-for-type (:type shape)))
+
+(defn- build-parent-map
+  [edges]
+  (into {}
+        (map (fn [{:keys [from-id to-id to-table]}]
+               [from-id {:parent-id to-id :parent-table to-table}]))
+        edges))
+
+(defn- build-children-map
+  [edges]
+  (reduce (fn [acc {:keys [from-id to-id]}]
+            (update acc to-id (fnil conj #{}) from-id))
+          {}
+          edges))
+
+(defn- resolve-page-id
+  [shape-id parents pages]
+  (loop [id shape-id]
+    (cond
+      (contains? pages id) id
+      (get parents id) (recur (:parent-id (parents id)))
+      :else nil)))
+
+(defn- node-attrs-id
+  [attrs]
+  (cond
+    (map? attrs) (or (:id attrs) (get attrs "id"))
+    (and (vector? attrs) (= 2 (count attrs)))
+    (let [[k v] attrs]
+      (when (or (= k :id) (= k "id")) v))))
+
+(defn- table-rows
+  "Normalize a projection table value to a vector of attribute maps."
+  [nodes table]
+  (let [rows (or (get nodes table) (get nodes (keyword table)))]
+    (cond
+      (nil? rows) []
+      (map? rows) [rows]
+      (sequential? rows) (vec rows)
+      :else [])))
+
+(defn- document-id-from-nodes
+  [nodes file-id]
+  (or (some node-attrs-id (table-rows nodes "Document"))
+      file-id))
+
+(defn- page-index-entry
+  [attrs]
+  (let [id (node-attrs-id attrs)]
+    [id {:id    id
+         :name  (:name attrs)
+         :index (long (:index attrs 0))}]))
+
+(defn- index-pages
+  [nodes]
+  (into {} (map page-index-entry (table-rows nodes "Page"))))
+
+(defn- component-index-entry
+  [attrs]
+  (let [id (node-attrs-id attrs)]
+    [id {:id      id
+         :name    (:name attrs)
+         :deleted (boolean (:deleted attrs))}]))
+
+(defn- index-components
+  [nodes]
+  (into {} (map component-index-entry (table-rows nodes "Component"))))
+
+(defn- shape-index-table?
+  [table]
+  (not (contains? #{"Document" "Page" "Component"
+                    :Document :Page :Component}
+                  table)))
+
+(defn- shape-index-entry
+  [table attrs parents pages edges]
+  (let [shape-id (node-attrs-id attrs)
+        {:keys [parent-id parent-table]} (parents shape-id)
+        edge (first (filter #(= shape-id (:from-id %)) edges))]
+    [shape-id {:id            shape-id
+               :name          (:name attrs)
+               :table         table
+               :parent-id     parent-id
+               :parent-table  parent-table
+               :position      (long (:position edge 0))
+               :frame-id      (:frame-id attrs)
+               ;; The projection already denormalized these; re-deriving
+               ;; page-id from the parent chain would only be a second way to
+               ;; get the same answer. `:component-ctx` is what later
+               ;; `:add-obj` children inherit — it is the shape's effective
+               ;; component-id, which loses the barrier case of a *non-Frame*
+               ;; carrying its own `component-id` (indistinguishable once
+               ;; denormalized). Cold projection keeps the distinction. Only a
+               ;; graph synced across such a shape can drift, and a Reload
+               ;; rebuilds it.
+               :component-ctx (:component-id attrs)
+               :page-id       (or (:page-id attrs)
+                                  (resolve-page-id shape-id parents pages))}]))
+
+(defn- index-shapes
+  [nodes edges parents pages]
+  (reduce
+   (fn [acc [table _]]
+     (into acc (map #(shape-index-entry table % parents pages edges)
+                    (table-rows nodes table))))
+   {}
+   (filter (fn [[table _]] (shape-index-table? table)) nodes)))
+
+(defn build-index
+  "Build a sync index from a full graph projection."
+  [file-id revn {:keys [nodes edges]}]
+  (let [doc-id         (document-id-from-nodes nodes file-id)
+        pages          (index-pages nodes)
+        components     (index-components nodes)
+        parents        (build-parent-map edges)
+        children-index (build-children-map edges)
+        shapes         (index-shapes nodes edges parents pages)]
+    {:file-id    file-id
+     :doc-id     doc-id
+     :revn       (long revn)
+     :pages      pages
+     :components components
+     :shapes     shapes
+     :children   children-index}))
+
+
+(defn- format-node-value
+  [table k v]
+  (nodes/format-column-value table k v))
+
+(defn- create-node-statement
+  [table attrs]
+  (let [label (nodes/match-label table)
+        pairs (for [k (nodes/column-keys table)
+                    :let [v (get attrs k)]
+                    :when (some? v)]
+                (str (nodes/cypher-property-key table k) ": "
+                     (format-node-value table k v)))]
+    (str "CREATE (:" label " {" (str/join ", " pairs) "});")))
+
+(defn- delete-node-statement
+  [table shape-id]
+  (str "MATCH (n:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
+       "DETACH DELETE n;"))
+
+(defn- create-edge-statement
+  [{:keys [from-table from-id to-table to-id position]}]
+  (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "}), "
+       "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+       "CREATE (s)-[:IsChildOf {position: " (ladybug/format-int position) "}]->(p);"))
+
+(defn- create-instance-of-statement
+  "Link a Frame instance head to its Component.
+
+  No-op when the Component is absent (e.g. library component not ingested)."
+  [frame-id component-id]
+  (str "MATCH (f:Frame {id: " (ladybug/format-uuid frame-id) "}), "
+       "(c:Component {id: " (ladybug/format-uuid component-id) "}) "
+       "WHERE NOT COALESCE(c.deleted, false) "
+       "MERGE (f)-[:IsInstanceOf]->(c);"))
+
+(defn- delete-instance-of-statement
+  [frame-id]
+  (str "MATCH (f:Frame {id: " (ladybug/format-uuid frame-id) "})"
+       "-[r:IsInstanceOf]->(:Component) "
+       "DELETE r;"))
+
+(defn- instance-of-statements
+  "Cypher to (re)link `IsInstanceOf` after add/mod of a Frame's component-id."
+  [table shape-id component-id]
+  (when (= table "Frame")
+    (cond-> [(delete-instance-of-statement shape-id)]
+      (some? component-id)
+      (conj (create-instance-of-statement shape-id component-id)))))
+
+(defn- delete-edge-statement
+  [{:keys [from-table from-id to-table to-id]}]
+  (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
+       "-[r:IsChildOf]->"
+       "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+       "DELETE r;"))
+
+(defn- set-edge-position-statement
+  [{:keys [from-table from-id to-table to-id position]}]
+  (str "MATCH (s:" (nodes/match-label from-table) " {id: " (ladybug/format-uuid from-id) "})"
+       "-[r:IsChildOf]->"
+       "(p:" (nodes/match-label to-table) " {id: " (ladybug/format-uuid to-id) "}) "
+       "SET r.position = " (ladybug/format-int position) ";"))
+
+(defn- set-node-attr-statement
+  [table shape-id attr value]
+  (str "MATCH (s:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
+       "SET s." (nodes/cypher-property-key table attr) " = "
+       (format-node-value table attr value) ";"))
+
+(defn- set-page-name-statement
+  [page-id name]
+  (str "MATCH (p:Page {id: " (ladybug/format-uuid page-id) "}) "
+       "SET p.name = " (ladybug/format-string name) ";"))
+
+(defn- remove-node-attr-statement
+  "Clear a property. Ladybug has no Neo4j-style REMOVE; SET to NULL."
+  [table shape-id attr]
+  (str "MATCH (s:" (nodes/match-label table) " {id: " (ladybug/format-uuid shape-id) "}) "
+       "SET s." (nodes/cypher-property-key table attr) " = NULL;"))
+
+(defn- index-add-component!
+  [index {:keys [id name doc-id]}]
+  (-> index
+      (assoc-in [:components id] {:id id :name name :deleted false})
+      (update :children update doc-id (fnil conj #{}) id)))
+
+(defn- index-remove-component!
+  [index component-id]
+  (let [doc-id (:doc-id index)]
+    (-> index
+        (update :components dissoc component-id)
+        (update :children update doc-id #(disj (or % #{}) component-id)))))
+
+
+(defn- set-document-revision-statement
+  "Set the Document's revision number.
+
+  `app.graph.schema.contract` names the column `revision`, not `revn`. The name
+  is produced by `nodes/cypher-property-key`, so this statement and the DDL
+  cannot disagree."
+  [doc-id revn]
+  (str "MATCH (d:Document {id: " (ladybug/format-uuid doc-id) "}) "
+       "SET d." (nodes/cypher-property-key "Document" :revn) " = "
+       (ladybug/format-int revn) ";"))
+
+(defn- resolve-parent-for-add
+  [index {:keys [parent-id frame-id page-id]}]
+  (let [pid (or parent-id frame-id)]
+    (if (or (nil? pid) (uuid/zero? pid))
+      (when page-id
+        {:parent-id page-id :parent-table "Page"})
+      (if-let [shape (get-in index [:shapes pid])]
+        {:parent-id pid :parent-table (:table shape)}
+        (when (get-in index [:pages pid])
+          {:parent-id pid :parent-table "Page"})))))
+
+(defn- index-add-shape!
+  [index {:keys [id name table parent-id parent-table position page-id
+                 frame-id component-ctx]}]
+  (-> index
+      (assoc-in [:shapes id]
+                {:id            id
+                 :name          name
+                 :table         table
+                 :parent-id     parent-id
+                 :parent-table  parent-table
+                 :position      position
+                 :frame-id      frame-id
+                 :component-ctx component-ctx
+                 :page-id       page-id})
+      (update :children update parent-id (fnil conj #{}) id)))
+
+(defn- index-remove-shape!
+  [index shape-id]
+  (if-let [shape (get-in index [:shapes shape-id])]
+    (-> index
+        (update :shapes dissoc shape-id)
+        (update :children update (:parent-id shape)
+                #(disj (or % #{}) shape-id))
+        (update :children dissoc shape-id))
+    index))
+
+(defn- index-add-page!
+  [index {:keys [id name doc-id] page-index :index}]
+  (-> index
+      (assoc-in [:pages id] {:id id :name name :index page-index})
+      (update :children update doc-id (fnil conj #{}) id)))
+
+(defn- index-move-shape!
+  [index shape-id {:keys [parent-id parent-table position page-id frame-id]}]
+  (let [old-parent (get-in index [:shapes shape-id :parent-id])]
+    (-> index
+        (assoc-in [:shapes shape-id :parent-id] parent-id)
+        (assoc-in [:shapes shape-id :parent-table] parent-table)
+        (assoc-in [:shapes shape-id :position] position)
+        (assoc-in [:shapes shape-id :frame-id] frame-id)
+        (cond-> page-id (assoc-in [:shapes shape-id :page-id] page-id))
+        (update :children update old-parent #(disj (or % #{}) shape-id))
+        (update :children update parent-id (fnil conj #{}) shape-id))))
+
+;; --- the columns that restate parenthood
+;;
+;; A shape carries `parent_id` and `frame_id`, and a container carries the
+;; ordered `shapes` list. All three restate what `IsChildOf` already says, and
+;; the cold projection writes them from the file, so this path has to keep
+;; them in step or a synced graph stops matching a rebuilt one.
+
+(defn- shape-parent-id
+  "The `parent_id` a shape's own column holds.
+
+  A top-level shape's parent in the file is the page's root frame, which the
+  graph does not materialize, so `IsChildOf` points at the Page while the
+  column holds `uuid/zero`."
+  [parent-id parent-table]
+  (if (= "Page" parent-table) uuid/zero parent-id))
+
+(defn- frame-id-under
+  "The `frame_id` a shape gets when its parent is `parent-id`.
+
+  Penpot's rule, from `app.common.files.changes` `:mov-objects`: the parent
+  itself when the parent is a Frame, the parent's own frame otherwise."
+  [index parent-id parent-table]
+  (cond
+    (= "Page" parent-table)  uuid/zero
+    (= "Frame" parent-table) parent-id
+    :else                    (get-in index [:shapes parent-id :frame-id] uuid/zero)))
+
+(defn- frame-id-updates
+  "`[shape-id frame-id]` for a moved shape and everything that follows it.
+
+  A Frame keeps its descendants pointing at itself, so the walk stops there.
+  Any other shape carries its subtree onto the new frame."
+  [index shape-id frame-id]
+  (into [[shape-id frame-id]]
+        (when (not= "Frame" (get-in index [:shapes shape-id :table]))
+          (mapcat #(frame-id-updates index % frame-id)
+                  (get-in index [:children shape-id] #{})))))
+
+(defn- child-shapes-value
+  "A container's stored `shapes` list, rebuilt from the index.
+
+  `IsChildOf.position` counts from the last entry of that list
+  (`app.graph.projection.document/child-shape-ids` reverses it), so reversing the
+  children ordered by position gives the list back."
+  [index parent-id]
+  (->> (get-in index [:children parent-id] #{})
+       (sort-by #(get-in index [:shapes % :position] 0))
+       reverse
+       vec))
+
+(defn- insert-position
+  "The graph position the lowest of `k` shapes takes when they are inserted
+  into a parent that already holds `n-before` children.
+
+  A container's stored `:shapes` list runs bottom to top, and the graph
+  numbers children in Penpot z-order, so the two run opposite ways. An append
+  to the stored list, which is what `:add-obj` does without an `:index`, is
+  therefore position 0 and pushes every sibling up by one. The block occupies
+  the result and the `k - 1` positions above it, the first shape highest."
+  [n-before {:keys [index]} after-position]
+  (cond
+    (some? after-position) (long after-position)
+    (some? index)          (max 0 (- n-before (long index)))
+    :else                  0))
+
+(defn- renumber-siblings
+  "Shift `parent-id`'s children at or above `from` by `delta`.
+
+  Returns `[index statements]`. `except` names children the caller is placing
+  itself."
+  [index parent-id parent-table from delta except]
+  (reduce
+   (fn [[idx stmts] child-id]
+     (let [pos (get-in idx [:shapes child-id :position])]
+       (if (and (some? pos) (not (contains? except child-id)) (>= (long pos) (long from)))
+         (let [pos' (+ (long pos) (long delta))]
+           [(assoc-in idx [:shapes child-id :position] pos')
+            (conj stmts (set-edge-position-statement
+                         {:from-table (get-in idx [:shapes child-id :table])
+                          :from-id    child-id
+                          :to-table   parent-table
+                          :to-id      parent-id
+                          :position   pos'}))])
+         [idx stmts])))
+   [index []]
+   (vec (get-in index [:children parent-id] #{}))))
+
+(defn- set-children-statements
+  "Refresh the `shapes` column of every container in `parent-ids`.
+
+  A Page has no such column: its top-level shapes hang off a root frame the
+  graph never materializes."
+  [index parent-ids]
+  (into []
+        (comp (distinct)
+              (keep (fn [parent-id]
+                      (let [table (get-in index [:shapes parent-id :table])]
+                        (when (contains? nodes/container-tables table)
+                          (set-node-attr-statement
+                           table parent-id :shapes
+                           (child-shapes-value index parent-id)))))))
+        parent-ids))
+
+(defn- mov-object-ids
+  [shapes]
+  (let [coll (cond
+               (nil? shapes) []
+               (sequential? shapes) shapes
+               (uuid? shapes) [shapes]
+               (map? shapes) (if-let [id (or (:id shapes) (get shapes "id"))]
+                               [id]
+                               [])
+               :else [])]
+    (into []
+          (keep (fn [shape]
+                  (when shape
+                    (if (uuid? shape) shape (:id shape)))))
+          coll)))
+
+(defn- detach-shape
+  "Take `shape-id` out of its current parent and close the gap it leaves.
+
+  Returns `[index statements]`. The edge itself is left alone: the caller
+  either replaces it or deletes it."
+  [index shape-id]
+  (let [{:keys [parent-id parent-table position]} (get-in index [:shapes shape-id])
+        index (update-in index [:children parent-id] #(disj (or % #{}) shape-id))
+        [index stmts] (renumber-siblings index parent-id parent-table
+                                         (inc (long (or position 0))) -1 #{})]
+    [(assoc-in index [:shapes shape-id :position] nil) stmts]))
+
+(defn- apply-mov-objects
+  [index {:keys [shapes page-id] :as change}]
+  (let [shape-ids (mov-object-ids shapes)
+        parent    (resolve-parent-for-add index
+                                          (assoc change
+                                                 :frame-id (:parent-id change)
+                                                 :page-id page-id))]
+    (cond
+      (empty? shape-ids)
+      {:index index :statements [] :applied? true}
+
+      (not parent)
+      {:index index :statements [] :applied? false :reason :missing-parent}
+
+      :else
+      (let [parent-id    (:parent-id parent)
+            parent-table (:parent-table parent)
+            page-id'     (or page-id
+                             (when (= parent-table "Page") parent-id)
+                             (get-in index [:shapes (first shape-ids) :page-id]))
+            known        (filterv #(get-in index [:shapes %]) shape-ids)
+            old-parents  (mapv #(get-in index [:shapes % :parent-id]) known)
+            ;; Penpot removes the shapes from wherever they were, then inserts
+            ;; the block into the target, so the target's width is measured
+            ;; after the removals.
+            [index detach-stmts]
+            (reduce (fn [[idx stmts] shape-id]
+                      (let [[idx' s] (detach-shape idx shape-id)]
+                        [idx' (into stmts s)]))
+                    [index []]
+                    known)
+            n-before     (count (get-in index [:children parent-id] #{}))
+            after-pos    (get-in index [:shapes (:after-shape change) :position])
+            lowest       (insert-position n-before change after-pos)
+            k            (count known)
+            [index shift-stmts]
+            (renumber-siblings index parent-id parent-table lowest k #{})]
+        (loop [index      index
+               statements (into detach-stmts shift-stmts)
+               entries    (map-indexed vector known)]
+          (if-let [[offset shape-id] (first entries)]
+            (let [shape        (get-in index [:shapes shape-id])
+                  position     (+ lowest (- k 1 (long offset)))
+                  frame-id     (frame-id-under index parent-id parent-table)
+                  frame-writes (frame-id-updates index shape-id frame-id)
+                  edge         {:from-table   (:table shape)
+                                :from-id      shape-id
+                                :to-table     parent-table
+                                :to-id        parent-id
+                                :position     position}
+                  moved?       (not= parent-id (:parent-id shape))
+                  statements   (-> statements
+                                   (cond-> moved?
+                                     (conj (delete-edge-statement
+                                            {:from-table (:table shape)
+                                             :from-id    shape-id
+                                             :to-table   (:parent-table shape)
+                                             :to-id      (:parent-id shape)})))
+                                   (conj (if moved?
+                                           (create-edge-statement edge)
+                                           (set-edge-position-statement edge))))
+                  ;; The shape's own columns restate the edge, and the frame
+                  ;; follows the whole subtree the shape carries with it.
+                  statements   (if-not moved?
+                                 statements
+                                 (into (conj statements
+                                             (set-node-attr-statement
+                                              (:table shape) shape-id :parent-id
+                                              (shape-parent-id parent-id parent-table)))
+                                       (map (fn [[sid fid]]
+                                              (set-node-attr-statement
+                                               (get-in index [:shapes sid :table])
+                                               sid :frame-id fid)))
+                                       frame-writes))
+                  index        (index-move-shape! index shape-id
+                                                  {:parent-id    parent-id
+                                                   :parent-table parent-table
+                                                   :position     position
+                                                   :frame-id     frame-id
+                                                   :page-id      page-id'})
+                  index        (reduce (fn [idx [sid fid]]
+                                         (assoc-in idx [:shapes sid :frame-id] fid))
+                                       index
+                                       frame-writes)]
+              (recur index statements (rest entries)))
+            {:index      index
+             :statements (into statements
+                               (set-children-statements index (conj old-parents parent-id)))
+             :applied?   true}))))))
+
+(defn- index-remove-page!
+  [index page-id]
+  (let [doc-id (:doc-id index)]
+    (-> index
+        (update :pages dissoc page-id)
+        (update :children update doc-id #(disj (or % #{}) page-id))
+        (update :children dissoc page-id))))
+
+(defn- mod-attrs-for-table
+  [table]
+  (disj (set (nodes/column-keys table)) :id))
+
+(defn- apply-add-obj
+  [index change]
+  (let [{:keys [id obj page-id]} change
+        table (shape-table obj)]
+    (if-not table
+      {:index index :statements [] :applied? false :reason :unsupported-shape-type}
+      (let [parent (resolve-parent-for-add index change)]
+        (if-not parent
+          {:index index :statements [] :applied? false :reason :missing-parent}
+          (let [parent-id    (:parent-id parent)
+                parent-table (:parent-table parent)
+                n-before     (count (get-in index [:children parent-id] #{}))
+                position     (insert-position n-before change nil)
+                [index shift-stmts]
+                (renumber-siblings index parent-id parent-table position 1 #{})
+                ;; The same denormalizations the cold projection performs, so
+                ;; a live-synced graph and a rebuilt one carry equal columns.
+                resolved-page-id
+                (or page-id
+                    (when (= parent-table "Page") parent-id)
+                    (get-in index [:shapes parent-id :page-id]))
+                parent-ctx (get-in index [:shapes parent-id :component-ctx])
+                shape    (projection.document/denormalized-shape
+                          (assoc obj :id id) resolved-page-id parent-ctx)
+                attrs    (nodes/project-attrs table shape)
+                edge     {:from-table table
+                          :from-id    id
+                          :to-table   parent-table
+                          :to-id      parent-id
+                          :position   position}
+                stmts    (-> shift-stmts
+                             (conj (create-node-statement table attrs))
+                             (conj (create-edge-statement edge))
+                             (into (instance-of-statements table id (:component-id attrs))))
+                index'   (index-add-shape! index
+                                           {:id            id
+                                            :name          (:name attrs)
+                                            :table         table
+                                            :parent-id     parent-id
+                                            :parent-table  parent-table
+                                            :position      position
+                                            :frame-id      (:frame-id attrs)
+                                            :component-ctx (projection.document/descend-component-ctx
+                                                            table shape parent-ctx)
+                                            :page-id       resolved-page-id})]
+            {:index      index'
+             :statements (into stmts (set-children-statements index' [parent-id]))
+             :applied?   true}))))))
+
+(defn- apply-mod-obj
+  [index {:keys [id operations]}]
+  (if-let [shape (get-in index [:shapes id])]
+    (let [table    (:table shape)
+          syncable (mod-attrs-for-table table)
+          set-ops  (filter #(and (= :set (:type %))
+                                 (contains? syncable (:attr %)))
+                           operations)]
+      (if (empty? set-ops)
+        {:index index :statements [] :applied? false :reason :unsupported-operations}
+        (let [updates (into {} (map (juxt :attr :val) set-ops))
+              statements
+              (into (vec (for [[attr value] updates]
+                           (set-node-attr-statement table id attr value)))
+                    ;; Relink when component-id is among the synced attrs.
+                    (when (contains? updates :component-id)
+                      (instance-of-statements table id (:component-id updates))))
+              index' (reduce (fn [idx [attr value]]
+                               (assoc-in idx [:shapes id attr] value))
+                             index
+                             updates)]
+          {:index      index'
+           :statements statements
+           :applied?   true})))
+    {:index index :statements [] :applied? false :reason :missing-shape}))
+
+(defn- delete-order-deepest-first
+  [children root-id]
+  (letfn [(post-order [id]
+            (into (mapcat post-order (get children id #{}))
+                  [id]))]
+    (post-order root-id)))
+
+(defn- apply-del-obj
+  [index {:keys [id]}]
+  (if-let [root (get-in index [:shapes id])]
+    (let [to-delete (delete-order-deepest-first (:children index) id)
+          statements
+          (vec (mapcat (fn [shape-id]
+                         (let [{:keys [table parent-id parent-table]}
+                               (get-in index [:shapes shape-id])]
+                           [(delete-edge-statement
+                             {:from-table   table
+                              :from-id      shape-id
+                              :to-table     parent-table
+                              :to-id        parent-id})
+                            (delete-node-statement table shape-id)]))
+                       to-delete))
+          index'    (reduce index-remove-shape! index to-delete)
+          ;; Only the deleted subtree's own parent survives to be renumbered:
+          ;; every other parent in `to-delete` goes with it.
+          [index' shift-stmts]
+          (renumber-siblings index' (:parent-id root) (:parent-table root)
+                             (inc (long (or (:position root) 0))) -1 #{})]
+      {:index      index'
+       :statements (-> statements
+                       (into shift-stmts)
+                       (into (set-children-statements index' [(:parent-id root)])))
+       :applied?   true})
+    ;; Penpot emits one :del-obj per selected shape; an earlier change in the
+    ;; same batch may have already removed this node (e.g. parent + child).
+    {:index index :statements [] :applied? true}))
+
+(defn- apply-add-page
+  [index {:keys [id name page]}]
+  (let [page-id  (or id (:id page))
+        page     (or page {:id page-id :name name})
+        page     (nodes/project-attrs "Page" {:id page-id
+                                              :name (or (:name page) "Page")
+                                              :index (count (:pages index))})
+        doc-id   (:doc-id index)
+        position (count (:pages index))
+        edge     {:from-table "Page"
+                  :from-id    page-id
+                  :to-table   "Document"
+                  :to-id      doc-id
+                  :position   position}]
+    {:index      (index-add-page! index
+                                  {:id      page-id
+                                   :name    (:name page)
+                                   :index   (:index page)
+                                   :doc-id  doc-id})
+     :statements [(create-node-statement "Page" page)
+                  (create-edge-statement edge)]
+     :applied?   true}))
+
+(defn- apply-del-page
+  [index {:keys [id]}]
+  (if (get-in index [:pages id])
+    (let [shape-ids (into #{}
+                          (comp (filter #(= id (get-in index [:shapes % :page-id])))
+                                (filter #(= "Page" (get-in index [:shapes % :parent-table]))))
+                          (keys (:shapes index)))
+          del-shapes
+          (reduce (fn [acc shape-id]
+                    (let [result (apply-del-obj acc {:type :del-obj :id shape-id})]
+                      (if (:applied? result)
+                        (-> acc
+                            (assoc :index (:index result))
+                            (update :statements into (:statements result)))
+                        acc)))
+                  {:index index :statements []}
+                  shape-ids)
+          statements
+          (conj (:statements del-shapes)
+                (delete-edge-statement {:from-table "Page"
+                                        :from-id    id
+                                        :to-table   "Document"
+                                        :to-id      (:doc-id index)})
+                (delete-node-statement "Page" id))]
+      {:index      (-> (:index del-shapes) (index-remove-page! id))
+       :statements statements
+       :applied?   true})
+    {:index index :statements [] :applied? false :reason :missing-page}))
+
+(defn- apply-mod-page
+  [index {:keys [id name]}]
+  (if (and (string? name) (get-in index [:pages id]))
+    {:index      (assoc-in index [:pages id :name] name)
+     :statements [(set-page-name-statement id name)]
+     :applied?   true}
+    {:index index :statements [] :applied? false :reason :unsupported-page-change}))
+
+(defn- component-syncable-attrs
+  "Projected Component columns that sync may SET (everything but :id)."
+  []
+  (disj (set (nodes/column-keys "Component")) :id))
+
+(defn- component-attrs-from-change
+  "Build CREATE attrs for `:add-component` (objects are not projected)."
+  [{:keys [id name path main-instance-id main-instance-page
+           annotation variant-id variant-properties]}]
+  (cond-> {:id                 id
+           :name               (or name "Component")
+           :path               (or path "")
+           :main-instance-id   main-instance-id
+           :main-instance-page main-instance-page}
+    (some? annotation) (assoc :annotation annotation)
+    (some? variant-id) (assoc :variant-id variant-id)
+    (seq variant-properties) (assoc :variant-properties variant-properties)))
+
+(defn- apply-add-component
+  [index {:keys [id] :as change}]
+  (if (get-in index [:components id])
+    {:index index :statements [] :applied? true}
+    (let [doc-id   (:doc-id index)
+          position (count (:components index))
+          attrs    (nodes/project-attrs "Component" (component-attrs-from-change change))
+          edge     {:from-table "Component"
+                    :from-id    id
+                    :to-table   "Document"
+                    :to-id      doc-id
+                    :position   position}]
+      {:index      (index-add-component! index
+                                         {:id     id
+                                          :name   (:name attrs)
+                                          :doc-id doc-id})
+       :statements [(create-node-statement "Component" attrs)
+                    (create-edge-statement edge)]
+       :applied?   true})))
+
+(defn- apply-mod-component
+  "Update projected Component attrs from a `:mod-component` change.
+
+  Nil optional values clear the property (Penpot dissocs them). `:objects`
+  is never projected — shape trees live on pages."
+  [index {:keys [id] :as change}]
+  (let [syncable (component-syncable-attrs)
+        sets     (into {}
+                       (keep (fn [[k v]]
+                               (when (and (contains? syncable k) (some? v))
+                                 [k v])))
+                       (dissoc change :type :id :objects))
+        removes  (into []
+                       (keep (fn [[k v]]
+                               (when (and (contains? syncable k) (nil? v))
+                                 k)))
+                       (dissoc change :type :id :objects))
+        stmts    (into (mapv (fn [[k v]]
+                               (set-node-attr-statement "Component" id k v))
+                             sets)
+                       (map #(remove-node-attr-statement "Component" id %) removes))
+        index'   (if (get-in index [:components id])
+                   (cond-> index
+                     (contains? sets :name)
+                     (assoc-in [:components id :name] (:name sets)))
+                   (assoc-in index [:components id]
+                             {:id      id
+                              :name    (:name sets)
+                              :deleted false}))]
+    (if (empty? stmts)
+      {:index index :statements [] :applied? true}
+      {:index index' :statements stmts :applied? true})))
+
+(defn- apply-del-component
+  [index {:keys [id skip-undelete?]}]
+  (cond
+    (not (get-in index [:components id]))
+    {:index index :statements [] :applied? true}
+
+    skip-undelete?
+    {:index      (index-remove-component! index id)
+     :statements [(delete-edge-statement {:from-table "Component"
+                                          :from-id    id
+                                          :to-table   "Document"
+                                          :to-id      (:doc-id index)})
+                  (delete-node-statement "Component" id)]
+     :applied?   true}
+
+    :else
+    {:index      (assoc-in index [:components id :deleted] true)
+     :statements [(set-node-attr-statement "Component" id :deleted true)]
+     :applied?   true}))
+
+(defn- apply-restore-component
+  [index {:keys [id page-id]}]
+  (let [stmts (cond-> [(set-node-attr-statement "Component" id :deleted false)]
+                page-id
+                (conj (set-node-attr-statement "Component" id :main-instance-page page-id)))
+        index (if (get-in index [:components id])
+                (-> index
+                    (assoc-in [:components id :deleted] false)
+                    (cond-> page-id
+                      (assoc-in [:components id :main-instance-page] page-id)))
+                (assoc-in index [:components id]
+                          {:id id :name nil :deleted false}))]
+    {:index index :statements stmts :applied? true}))
+
+(defn- apply-purge-component
+  [index {:keys [id]}]
+  (if-not (get-in index [:components id])
+    ;; Still attempt delete in case the node exists but was not indexed.
+    {:index      index
+     :statements [(delete-edge-statement {:from-table "Component"
+                                          :from-id    id
+                                          :to-table   "Document"
+                                          :to-id      (:doc-id index)})
+                  (delete-node-statement "Component" id)]
+     :applied?   true}
+    {:index      (index-remove-component! index id)
+     :statements [(delete-edge-statement {:from-table "Component"
+                                          :from-id    id
+                                          :to-table   "Document"
+                                          :to-id      (:doc-id index)})
+                  (delete-node-statement "Component" id)]
+     :applied?   true}))
+
+(defn- apply-change
+  [index change]
+  (case (:type change)
+    :add-obj            (apply-add-obj index change)
+    :mod-obj            (apply-mod-obj index change)
+    :del-obj            (apply-del-obj index change)
+    :add-page           (apply-add-page index change)
+    :del-page           (apply-del-page index change)
+    :mod-page           (apply-mod-page index change)
+    :mov-objects        (apply-mov-objects index change)
+    :add-component      (apply-add-component index change)
+    :mod-component      (apply-mod-component index change)
+    :del-component      (apply-del-component index change)
+    :restore-component  (apply-restore-component index change)
+    :purge-component    (apply-purge-component index change)
+    {:index index :statements [] :applied? false :reason :unsupported-type}))
+
+(defn apply-changes!
+  "Apply Penpot `changes` to an open Ladybug `conn` and return the updated index.
+
+  Returns `{:index ... :revn ... :applied [...] :skipped [...]}`."
+  [^Connection conn index changes revn]
+  (when (> (long revn) (:revn index))
+    (l/wrn :hint "graph sync revn gap"
+           :file-id (str (:file-id index))
+           :index-revn (:revn index)
+           :change-revn revn))
+  (loop [index   index
+         applied []
+         skipped []
+         stmts   []
+         changes (seq changes)]
+    (if-let [change (first changes)]
+      (let [{:keys [index statements applied? reason]}
+            (apply-change index change)]
+        (recur index
+               (cond-> applied applied? (conj (:type change)))
+               (cond-> skipped (not applied?) (conj {:type (:type change) :reason reason}))
+               (cond-> stmts applied? (into statements))
+               (rest changes)))
+      (let [final-stmts (cond-> stmts
+                          (and (seq applied) (:doc-id index))
+                          (conj (set-document-revision-statement (:doc-id index) revn)))
+            index'      (if (seq applied)
+                          (assoc index :revn (long revn))
+                          index)]
+        (when (seq final-stmts)
+          (ladybug/exec-on-connection! conn final-stmts))
+        {:index   index'
+         :revn    (if (seq applied) (long revn) (:revn index'))
+         :applied applied
+         :skipped skipped}))))
+
+(defn supported-change?
+  [change]
+  (contains? supported-change-types (:type change)))

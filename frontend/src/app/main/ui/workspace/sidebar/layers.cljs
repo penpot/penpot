@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.layers
   (:require-macros [app.main.style :as stl])
@@ -438,7 +438,7 @@
 
         navigate-next
         (mf/use-fn
-         (mf/deps text-match-count)
+         (mf/deps text-match-ids text-match-count)
          (fn [_]
            (when (pos? text-match-count)
              (let [ids      (mf/ref-val text-match-ids-ref)
@@ -447,11 +447,11 @@
                (mf/set-ref-val! match-idx-ref next-idx)
                (swap! state* assoc :current-match-idx next-idx)
                (st/emit! (dw/select-shape id)
-                         dw/zoom-to-selected-shape)))))
+                         (dw/center-on-shape id))))))
 
         navigate-prev
         (mf/use-fn
-         (mf/deps text-match-count)
+         (mf/deps text-match-ids text-match-count)
          (fn [_]
            (when (pos? text-match-count)
              (let [ids      (mf/ref-val text-match-ids-ref)
@@ -460,7 +460,7 @@
                (mf/set-ref-val! match-idx-ref prev-idx)
                (swap! state* assoc :current-match-idx prev-idx)
                (st/emit! (dw/select-shape id)
-                         dw/zoom-to-selected-shape)))))
+                         (dw/center-on-shape id))))))
 
         handle-replace
         (mf/use-fn

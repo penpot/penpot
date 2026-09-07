@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.fressian-test
   "Exhaustive unit tests for app.common.fressian encode/decode functions.
@@ -21,7 +21,8 @@
   (:import
    java.time.Instant
    java.time.OffsetDateTime
-   java.time.ZoneOffset))
+   java.time.ZoneOffset
+   java.util.UUID))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -524,3 +525,18 @@
     (t/is (d/ordered-map? rt))
     (t/is (= om rt))
     (t/is (= (keys om) (keys rt)))))
+
+(t/deftest decode-rejects-excessive-recursion-depth
+  ;; N2-01: deeply nested structures must be rejected before stack overflow
+  (let [depth  (+ fres/max-read-depth 50)
+        data   (reduce (fn [acc _i] [acc])
+                       :leaf
+                       (range depth))
+        encoded (fres/encode data)]
+    (try
+      (fres/decode encoded)
+      (t/is false "expected exception for excessive recursion depth")
+      (catch clojure.lang.ExceptionInfo e
+        (let [d (ex-data e)]
+          (t/is (= :validation (:type d)))
+          (t/is (= :max-read-depth-reached (:code d))))))))

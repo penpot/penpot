@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.main-menu
   (:require-macros [app.main.style :as stl])
@@ -344,7 +344,7 @@
 (mf/defc view-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout toggle-flag on-close]}]
+  [{:keys [layout toggle-flag on-close on-close-all]}]
   (let [read-only?   (mf/use-ctx ctx/workspace-read-only?)
 
         toggle-color-palette
@@ -365,11 +365,11 @@
 
         toggle-comments-visibility
         (mf/use-fn
-         (mf/deps on-close)
+         (mf/deps on-close-all)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwcm/toggle-comments-visibility {:origin "workspace:menu"}))
-           (on-close)))]
+           (on-close-all)))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :base-menu :sub-menu :pos-3)
@@ -927,13 +927,6 @@
                           (keyword))]
              (reset! selected-sub-menu* menu))))
 
-        on-power-up-click
-        (mf/use-fn
-         (fn []
-           (st/emit! (ev/event {::ev/name "explore-pricing-click"
-                                ::ev/origin "workspace:menu"}))
-           (dom/open-new-window "https://penpot.app/pricing")))
-
         toggle-flag
         (mf/use-fn
          (fn [event]
@@ -1130,21 +1123,10 @@
        [:> icon* {:icon-id i/arrow-right
                   :class (stl/css :item-arrow)}]]
 
-      (when (and (contains? cf/flags :subscriptions)
-                 (not= "enterprise" subscription-type))
-        [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])
-
-      ;; TODO remove this block when subscriptions is full implemented
-      (when (contains? cf/flags :subscriptions-old)
-        [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
-                                 :on-click    on-power-up-click
-                                 :on-key-down (fn [event]
-                                                (when (kbd/enter? event)
-                                                  (on-power-up-click)))
-                                 :on-pointer-enter close-sub-menu
-                                 :id          "file-menu-power-up"}
-         [:span {:class (stl/css :item-name)}
-          (tr "subscription.workspace.header.menu.option.power-up")]])]
+      (when (or (and (contains? cf/flags :subscriptions)
+                     (not= "enterprise" subscription-type))
+                (contains? cf/flags :admin-console))
+        [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])]
 
      (case selected-sub-menu
        :file
@@ -1157,7 +1139,8 @@
        :view
        [:> view-menu* {:layout layout
                        :toggle-flag toggle-flag
-                       :on-close close-sub-menu}]
+                       :on-close close-sub-menu
+                       :on-close-all close-all-menus}]
 
        :preferences
        [:> preferences-menu* {:layout layout

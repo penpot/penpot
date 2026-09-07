@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -ex
+corepack enable;
+corepack install;
+pnpm install;
+pnpm run test;

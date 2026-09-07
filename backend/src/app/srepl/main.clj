@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.srepl.main
   #_:clj-kondo/ignore
@@ -399,8 +399,51 @@
                         (ex/print-throwable cause))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PROCESSING
+;; GRAPH / LADYBUG
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The graph namespaces resolve at call time, never at the top of this
+;; namespace. `app.graph.ladybug` imports `com.ladybugdb.*`, and this namespace
+;; loads with the REPL server on every boot, so a top-level require would link
+;; the Ladybug native library into every backend, graph or not. Calling one of
+;; the functions below loads the library at that point: the operator has asked
+;; for it explicitly. The `:graph` flag gates the request path
+;; (`app.http.debug`), not the REPL.
+
+(defn graph-smoke-test!
+  "Execute a basic Ladybug smoke test (CREATE + count).
+
+  Uses the embedded Ladybug Java API. Use :db-path \":memory:\" (default)
+  or a filesystem path such as /tmp/test.lbug."
+  [& {:keys [db-path] :or {db-path ":memory:"}}]
+  ((requiring-resolve 'app.graph.ladybug/smoke-test!) :db-path db-path))
+
+(defn graph-query-test!
+  "Query Document count for a file's graph db (REPL diagnostic)."
+  [file-id & {:keys [db-path]}]
+  (let [file-id       (h/parse-uuid file-id)
+        db-path       (or db-path ((requiring-resolve 'app.graph.ladybug/db-path-for-file) file-id))
+        query-scalar! (requiring-resolve 'app.graph.ladybug/query-scalar!)
+        stmt          "MATCH (n:Document) RETURN count(n) AS Document_c;"]
+    (query-scalar! db-path stmt)))
+
+(defn ingest-file-to-graph!
+  "Project a Penpot file into a per-file Ladybug database.
+
+  Loads and realizes the file from the database, ensures the slice schema,
+  projects Document/Page/shape nodes, and returns graph stats.
+
+  Options:
+  - `:db-path` path or `:memory:`
+  - `:reset-db?` delete any existing db first (default true)
+  - `:skip-stats?` skip post-ingest MATCH count queries (default false)"
+  [file-id & opts]
+  (let [ingest-file!  (requiring-resolve 'app.graph.ingest/ingest-file!)
+        print-ingest! (requiring-resolve 'app.graph.report/print-ingest!)
+        result        (apply ingest-file! sys/system file-id opts)]
+    (print-ingest! result)
+    result))
+
 
 (defn repair-file!
   "Repair the list of errors detected by validation."
@@ -409,6 +452,10 @@
         file-id (h/parse-uuid file-id)
         options (assoc options ::h/with-libraries? true)]
     (db/tx-run! system h/process-file! file-id procs.file-repair/repair-file options)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROCESSING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-file!
   "Apply a function to the file. Optionally save the changes or not.

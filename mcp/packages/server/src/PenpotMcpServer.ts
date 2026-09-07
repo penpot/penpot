@@ -57,6 +57,30 @@ export class PenpotMcpServer {
     private static readonly SESSION_TIMEOUT_MINUTES = 60;
 
     /**
+     * Determines whether the server is running in a Penpot development
+     * environment, based on the given environment variables.
+     *
+     * Returns ``true`` only when ``PENPOT_MCP_DEVENV`` is ``"true"``.
+     */
+    public static isDevEnvEnabled(env: Record<string, string | undefined>): boolean {
+        return env.PENPOT_MCP_DEVENV === "true";
+    }
+
+    /**
+     * Determines whether the REPL server should be enabled.
+     *
+     * If ``PENPOT_MCP_REPL_ENABLE`` is set, its value controls the result
+     * (``"true"`` enables, any other value disables). When the variable is
+     * not set, the result falls back to {@link isDevEnvEnabled}.
+     */
+    public static isReplEnabled(env: Record<string, string | undefined>): boolean {
+        if (env.PENPOT_MCP_REPL_ENABLE !== undefined) {
+            return env.PENPOT_MCP_REPL_ENABLE === "true";
+        }
+        return PenpotMcpServer.isDevEnvEnabled(env);
+    }
+
+    /**
      * Returns a short, non-reversible fingerprint of a user token, suitable for
      * correlating log lines without exposing the full credential.
      *
@@ -83,7 +107,7 @@ export class PenpotMcpServer {
     public readonly configLoader: ConfigurationLoader;
     private app: any;
     public readonly pluginBridge: PluginBridge;
-    private readonly replServer: ReplServer;
+    private readonly replServer: ReplServer | null;
     private apiDocs: ApiDocs;
     private readonly penpotHighLevelOverview: string;
     private readonly connectionInstructions: string;
@@ -149,7 +173,12 @@ export class PenpotMcpServer {
         }
 
         this.pluginBridge = new PluginBridge(this, this.webSocketPort, toolTimeoutSecs, this.redisBridge);
-        this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host);
+
+        if (PenpotMcpServer.isReplEnabled(process.env)) {
+            this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host);
+        } else {
+            this.replServer = null;
+        }
     }
 
     /**
@@ -190,7 +219,18 @@ export class PenpotMcpServer {
      * additional developer tools such as ClojureScript expression evaluation are exposed.
      */
     public isDevEnv(): boolean {
-        return process.env.PENPOT_MCP_DEVENV === "true";
+        return PenpotMcpServer.isDevEnvEnabled(process.env);
+    }
+
+    /**
+     * Indicates whether the REPL server was created.
+     *
+     * The REPL server is created when {@link isReplEnabled} returns true,
+     * which means either ``PENPOT_MCP_REPL_ENABLE=true`` or, when that
+     * variable is unset, ``PENPOT_MCP_DEVENV=true``.
+     */
+    public hasReplServer(): boolean {
+        return this.replServer !== null;
     }
 
     /**
@@ -421,8 +461,14 @@ export class PenpotMcpServer {
                 this.logger.info(`Legacy SSE endpoint: http://${this.host}:${this.port}/sse`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
 
-                // start the REPL server and session timeout checker
-                await this.replServer.start();
+                // start the REPL server (devenv only) and session timeout checker
+                if (this.replServer) {
+                    await this.replServer.start();
+                } else {
+                    this.logger.info(
+                        "REPL server disabled (set PENPOT_MCP_REPL_ENABLE=true or PENPOT_MCP_DEVENV=true to enable)"
+                    );
+                }
                 this.startSessionTimeoutChecker();
 
                 resolve();
@@ -438,8 +484,11 @@ export class PenpotMcpServer {
     public async stop(): Promise<void> {
         this.logger.info("Stopping Penpot MCP Server...");
         clearInterval(this.sessionTimeoutInterval);
+        await this.pluginBridge.close();
         await this.redisBridge?.close();
-        await this.replServer.stop();
+        if (this.replServer) {
+            await this.replServer.stop();
+        }
         this.logger.info("Penpot MCP Server stopped");
     }
 }

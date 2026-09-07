@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.data
   "A collection of helpers for working with data structures and other
@@ -1173,6 +1173,15 @@
   [key coll]
   (sort-by key natural-compare coll))
 
+(defn normalize-string
+  "Normalizes a string by trimming leading/trailing whitespace.
+   Returns empty string for nil input. Non-string input is returned unchanged."
+  [s]
+  (cond
+    (nil? s) ""
+    (string? s) (str/trim s)
+    :else s))
+
 (defn sanitize-string [s]
   (if s
     (-> s
@@ -1181,6 +1190,15 @@
         (str/replace #"[^\w\s\-_()]+" "")
         (str/replace #"\s+" " ")
         str/trim)
+    ""))
+
+(defn escape-markdown
+  "Escapes Markdown special characters by prefixing them with backslash.
+  Intended for user-controlled values embedded in Markdown messages
+  (e.g. Mattermost notifications)."
+  [s]
+  (if s
+    (str/replace (str s) #"([*_~`\[\]()>#+=\-|{}.!@\\])" (fn [[_ c]] (str "\\" c)))
     ""))
 
 (defn get-initials

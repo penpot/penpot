@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.settings.integrations
   (:require-macros [app.main.style :as stl])
@@ -79,13 +79,19 @@
          (mf/deps token-created)
          (fn [event]
            (dom/prevent-default event)
-           (clipboard/to-clipboard (:token token-created))
-           (st/emit! (ntf/show {:level :info
-                                :type :toast
-                                :content (if is-mcp
-                                           (tr "integrations.notification.success.mcp-key-copied")
-                                           (tr "integrations.notification.success.token-copied"))
-                                :timeout notification-timeout}))))]
+           (-> (clipboard/to-clipboard (:token token-created))
+               (.then (fn [_]
+                        (st/emit! (ntf/show {:level :info
+                                             :type :toast
+                                             :content (if is-mcp
+                                                        (tr "integrations.notification.success.mcp-key-copied")
+                                                        (tr "integrations.notification.success.token-copied"))
+                                             :timeout notification-timeout}))))
+               (.catch (fn [_]
+                         (st/emit! (ntf/show {:level :error
+                                              :type :toast
+                                              :content (tr "errors.clipboard-api-unavailable")
+                                              :timeout notification-timeout})))))))]
 
     [:div {:class (stl/css :modal-form)}
      [:> text* {:as "h2"

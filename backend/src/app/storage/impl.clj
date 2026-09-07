@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.storage.impl
   "Storage backends abstraction layer."
@@ -71,9 +71,20 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti del-objects-in-bulk (fn [cfg _] (::sto/type cfg)))
+(defmulti del-objects-in-bulk
+  "Delete multiple objects in bulk. Returns #{fail-ids} — the set of ids
+  whose blob deletion failed. Empty set = all succeeded."
+  (fn [cfg _] (::sto/type cfg)))
 
 (defmethod del-objects-in-bulk :default
+  [cfg _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
+(defmulti exists-object? (fn [cfg _] (::sto/type cfg)))
+
+(defmethod exists-object? :default
   [cfg _]
   (ex/raise :type :internal
             :code :invalid-storage-backend

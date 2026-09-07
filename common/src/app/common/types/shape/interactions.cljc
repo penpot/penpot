@@ -2,14 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.shape.interactions
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.bounds :as gsb]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]))
 
@@ -482,7 +481,13 @@
 
     (if (nil? dest-frame)
       [(gpt/point 0 0) [:top :left]]
-      (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
+      (let [;; Use the destination frame selrect (the visible frame box) to compute
+            ;; the overlay position, not its full object bounds. Bounds include
+            ;; padding for shadows, blur, strokes and overflowing children, which
+            ;; would make centered/right/bottom positions off by half that padding
+            ;; (the visible frame ends up shifted). The viewer reserves the bounds
+            ;; size and re-aligns the selrect separately (see viewer/calculate-delta).
+            overlay-size           (:selrect dest-frame)
             base-frame-size        (:selrect base-frame)
             relative-to-shape-size (:selrect relative-to-shape)
             relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))

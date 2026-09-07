@@ -143,6 +143,35 @@ nav > div:not(:last-child) {
   height: fit-content;
 }
 
+/* A widget that holds a table rather than a form: full width, and tall
+   enough to be worth scrolling inside. */
+.dashboard.wide {
+  margin-top: 0px;
+}
+
+.widget.wide {
+  max-width: none;
+  width: 100%;
+}
+
+.widget.wide .scroll-box {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+
+.widget.wide table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.widget.wide th {
+  text-align: left;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
 .widget input[type=submit] {
   outline: none;
   border: 1px solid gray;

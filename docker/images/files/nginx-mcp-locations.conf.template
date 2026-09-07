@@ -1,16 +1,19 @@
 location /mcp/ws {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';
-    proxy_pass $PENPOT_MCP_URI_WS;
+    set $mcp_ws_backend $PENPOT_MCP_URI_WS;
+    proxy_pass $mcp_ws_backend;
     proxy_http_version 1.1;
 }
 
 location /mcp/stream {
-    proxy_pass $PENPOT_MCP_URI/mcp;
+    set $mcp_stream_backend $PENPOT_MCP_URI/mcp$is_args$args;
+    proxy_pass $mcp_stream_backend;
     proxy_http_version 1.1;
 }
 
 location /mcp/sse {
-    proxy_pass $PENPOT_MCP_URI/sse;
+    set $mcp_sse_backend $PENPOT_MCP_URI/sse$is_args$args;
+    proxy_pass $mcp_sse_backend;
     proxy_http_version 1.1;
 }

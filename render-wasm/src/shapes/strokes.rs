@@ -7,6 +7,14 @@ use super::StrokeLineCap;
 use super::StrokeLineJoin;
 use super::SvgAttrs;
 
+/// Soft floor in device pixels for dropping dash/dotted PathEffects when the
+/// pattern period is effectively invisible.
+pub const STROKE_MIN_DEVICE_PX: f32 = 0.75;
+
+/// When Inner/Outer doubled-width footprint is below this (device px), paint
+/// as Center to avoid save_layer / Clear paths.
+pub const STROKE_INNER_OUTER_SIMPLIFY_DEVICE_PX: f32 = 2.0;
+
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum StrokeStyle {
     Solid,
@@ -67,6 +75,62 @@ impl Stroke {
             Some(widths) => widths.into_iter().reduce(f32::max).unwrap_or(self.width),
             None => self.width,
         }
+    }
+
+    /// Inner/Outer use a doubled-width Center stroke plus clip/clear. When that
+    /// footprint is thin on screen, fall back to a plain Center stroke.
+    #[inline]
+    pub fn simplified_kind_at_scale(&self, is_open: bool, scale: f32) -> StrokeKind {
+        let kind = self.render_kind(is_open);
+        match kind {
+            StrokeKind::Inner | StrokeKind::Outer
+                if 2.0 * self.max_width() * scale < STROKE_INNER_OUTER_SIMPLIFY_DEVICE_PX =>
+            {
+                StrokeKind::Center
+            }
+            other => other,
+        }
+    }
+
+    /// Drop dash/dotted PathEffects when the pattern period is subpixel.
+    #[inline]
+    pub fn style_at_scale(&self, scale: f32) -> StrokeStyle {
+        if self.style == StrokeStyle::Solid {
+            return StrokeStyle::Solid;
+        }
+        let period = match self.style {
+            StrokeStyle::Dotted => self.width + 5.0,
+            StrokeStyle::Dashed => {
+                let dash = self.dash.unwrap_or(self.width + 10.);
+                let gap = self.gap.unwrap_or(self.width + 10.);
+                dash.min(gap)
+            }
+            StrokeStyle::Mixed => self.width + 1.0,
+            StrokeStyle::Solid => return StrokeStyle::Solid,
+        };
+        if period * scale < STROKE_MIN_DEVICE_PX {
+            StrokeStyle::Solid
+        } else {
+            self.style
+        }
+    }
+
+    /// Path/Bool overview LOD: simplify Inner/Outer and dash/dotted at low
+    /// scale. Never skips painting; stroke-only icons would otherwise go blank.
+    pub fn path_lod_at_scale(&self, is_open: bool, scale: f32) -> Stroke {
+        let kind = self.simplified_kind_at_scale(is_open, scale);
+        let style = self.style_at_scale(scale);
+        let kind_unchanged = kind == self.render_kind(is_open);
+        let style_unchanged = style == self.style;
+        if kind_unchanged && style_unchanged {
+            return self.clone();
+        }
+        let mut stroke = self.clone();
+        if !is_open {
+            stroke.kind = kind;
+        }
+        stroke.style = style;
+        stroke
     }
 
     /// Per-side widths [top, right, bottom, left] when they actually differ.
@@ -492,5 +556,49 @@ mod tests {
         stroke.scale_content(2.0);
         assert_eq!(stroke.widths, Some([2.0, 4.0, 6.0, 8.0]));
         assert_eq!(stroke.width, 4.0);
+    }
+
+    fn solid_center(width: f32) -> Stroke {
+        Stroke::new_center_stroke(width, StrokeStyle::Solid, None, None, None, None)
+    }
+
+    #[test]
+    fn inner_outer_simplify_to_center_when_thin() {
+        let inner = Stroke::new_inner_stroke(8.0, StrokeStyle::Solid, None, None, None, None);
+        // 2 * 8 * 0.1 = 1.6 < 2.0, simplify to Center
+        assert_eq!(
+            inner.simplified_kind_at_scale(false, 0.1),
+            StrokeKind::Center
+        );
+        // 2 * 8 * 0.2 = 3.2 >= 2.0, keep Inner
+        assert_eq!(
+            inner.simplified_kind_at_scale(false, 0.2),
+            StrokeKind::Inner
+        );
+    }
+
+    #[test]
+    fn dash_becomes_solid_when_period_subpixel() {
+        let dashed =
+            Stroke::new_center_stroke(2.0, StrokeStyle::Dashed, None, None, Some(20.0), Some(20.0));
+        // period 20 * 0.03 = 0.6 < 0.75, solid
+        assert_eq!(dashed.style_at_scale(0.03), StrokeStyle::Solid);
+        // period 20 * 0.05 = 1.0 >= 0.75, keep dashed
+        assert_eq!(dashed.style_at_scale(0.05), StrokeStyle::Dashed);
+    }
+
+    #[test]
+    fn path_lod_never_drops_thin_stroke() {
+        // Hairline strokes must still paint (stroke-only icons).
+        let thin = solid_center(1.0).path_lod_at_scale(false, 0.5);
+        assert_eq!(thin.width, 1.0);
+        assert_eq!(thin.kind, StrokeKind::Center);
+    }
+
+    #[test]
+    fn path_lod_simplifies_inner_at_overview() {
+        let inner = Stroke::new_inner_stroke(8.0, StrokeStyle::Solid, None, None, None, None);
+        let lod = inner.path_lod_at_scale(false, 0.1);
+        assert_eq!(lod.kind, StrokeKind::Center);
     }
 }

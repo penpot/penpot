@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.files.changes-builder
   (:require
@@ -73,6 +73,12 @@
   (cond-> changes
     translation?
     (assoc :translation? true)))
+
+(defn set-skip-component-sync?
+  [changes skip-component-sync?]
+  (cond-> changes
+    skip-component-sync?
+    (assoc :skip-component-sync? true)))
 
 (defn with-page
   [changes page]

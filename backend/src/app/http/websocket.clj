@@ -2,11 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.websocket
   "A penpot notification service for file cooperative edition."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
@@ -133,15 +134,15 @@
       (mbus/pub! msgbus :topic topic :message msg))))
 
 (defmethod handle-message :subscribe-team
-  [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [team-id] :as params}]
+  [{:keys [::mbus/msgbus ::db/pool]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [team-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
-  (teams/check-read-permissions! cfg profile-id team-id)
+  (teams/check-read-permissions! pool profile-id team-id)
   (let [prev-subs (get @state ::team-subscription)
         channel   (sp/chan :buf (sp/dropping-buffer 64)
                            :xf  (remove #(= (:session-id %) session-id)))]
 
     (sp/pipe channel output-ch false)
-    (mbus/sub! (::mbus/msgbus cfg) :topic team-id :chan channel)
+    (mbus/sub! msgbus :topic team-id :chan channel)
 
     (let [subs {:team-id team-id :channel channel :topic team-id}]
       (swap! state assoc ::team-subscription subs))
@@ -149,13 +150,14 @@
     ;; Close previous subscription if exists
     (when-let [ch (:channel prev-subs)]
       (sp/close! ch)
-      (mbus/purge! (::mbus/msgbus cfg) [ch]))))
+      (mbus/purge! msgbus [ch]))))
 
 
 (defmethod handle-message :subscribe-file
-  [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [{:keys [::mbus/msgbus ::db/pool]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
-  (files/check-read-permissions! cfg profile-id file-id)
+  (bfc/check-file-exists pool file-id)
+  (files/check-read-permissions! pool profile-id file-id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
                       :xf  (remove #(= (:session-id %) session-id)))]
@@ -166,7 +168,7 @@
     ;; Close previous subscription if exists
     (when-let [ch (:channel psub)]
       (sp/close! ch)
-      (mbus/purge! (::mbus/msgbus cfg) [ch]))
+      (mbus/purge! msgbus [ch]))
 
     (sp/go-loop []
       (when-let [{:keys [type] :as message} (sp/take! fch)]
@@ -178,20 +180,20 @@
                          :file-id file-id
                          :session-id session-id
                          :profile-id profile-id}]
-            (mbus/pub! (::mbus/msgbus cfg)
+           (mbus/pub! msgbus
                        :topic file-id
                        :message message)))
         (recur)))
 
     ;; Subscribe to file topic
-    (mbus/sub! (::mbus/msgbus cfg) :topic file-id :chan fch)
+    (mbus/sub! msgbus :topic file-id :chan fch)
 
     ;; Notifify the rest of participants of the new connection.
     (let [message {:type :join-file
                    :file-id file-id
                    :session-id session-id
                    :profile-id profile-id}]
-      (mbus/pub! (::mbus/msgbus cfg) :topic file-id :message message))))
+      (mbus/pub! msgbus :topic file-id :message message))))
 
 (defmethod handle-message :unsubscribe-file
   [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id] :as params}]

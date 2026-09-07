@@ -39,6 +39,7 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 - `plugins/`: TypeScript plugin runtime/examples and Plugin API types; core conventions: `mem:plugins/core`.
 - `library/`: design library workflows; core conventions: `mem:library/core`.
 - `docs/`: documentation site; core workflow and conventions: `mem:docs/core`.
+- `media-processor/`: TypeScript/Node.js HTTP service for image (sharp) and font (FontForge) processing; core conventions: `mem:media-processor/core`.
 
 The memory is structured in a way that you can get the critical information about the
 module. You can read it from `mem:<MODULE>/core`

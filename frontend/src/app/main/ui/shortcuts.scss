@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_borders.scss" as *;
@@ -21,7 +21,7 @@
 
 .section-title,
 .subsection-title {
-  @include t.use-typography("title-small");
+  @include t.use-typography("headline-small");
 
   display: flex;
   align-items: center;
@@ -43,6 +43,7 @@
 }
 
 .subsection-title {
+  block-size: $sz-32;
   text-transform: none;
   padding-inline-start: var(--sp-m);
 }
@@ -75,6 +76,10 @@
   flex: 1;
   min-inline-size: 0;
   text-align: start;
+}
+
+.not-customizable-label {
+  padding-inline-start: px2rem(6);
 }
 
 // Editable rows

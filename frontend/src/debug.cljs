@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns debug
   (:require
@@ -15,6 +15,9 @@
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.render-wasm.helpers :as wasm.h]
+   [app.common.render-wasm.mem :as wasm.mem]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -36,9 +39,6 @@
    [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.render-wasm.helpers :as wasm.h]
-   [app.render-wasm.mem :as wasm.mem]
-   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.http :as http]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.blur
   (:require-macros [app.main.style :as stl])
@@ -296,7 +296,7 @@
         (if mixed-state
           [:div  {:class (stl/css :first-row)}
            [:span {:class (stl/css :mixed-label)}
-            (tr "labels.mixed-values")]
+            (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.blur-options.remove-blur")
                              :on-click handle-delete-all

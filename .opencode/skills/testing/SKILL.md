@@ -34,7 +34,8 @@ Before writing any test, read:
 2. Module-specific testing memory for the affected module:
    - `mem:common/testing` — CLJC unit tests
    - `mem:frontend/testing` — CLJS unit tests, Playwright E2E
-   - `mem:backend/core` — JVM clojure.test conventions
+   - `mem:backend/testing` — JVM clojure.test conventions
+   - `mem:exporter/testing` — exporter unit tests
 
 ## Key Rules
 

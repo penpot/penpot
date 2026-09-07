@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace
   (:require
@@ -17,11 +17,14 @@
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
+   [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -77,7 +80,6 @@
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -242,7 +244,8 @@
                    {:redo-changes changes :undo-changes []
                     :save-undo? false
                     :origin it
-                    :tags #{:position-data}}))
+                    :tags #{:position-data}
+                    :skip-component-sync? true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -265,6 +268,59 @@
          (->> (rx/from (preg/wait-for-runtime))
               (rx/map (fn [_] (mcp/init))))
          (rx/empty))))))
+
+(defn- compute-shape-stats
+  "Compute shape statistics in a single pass over pages-index.
+   Returns {:num-shapes N :max-shapes-per-page M}"
+  [pages-index]
+  (reduce-kv
+   (fn [acc _page-id page]
+     (let [n (count (:objects page))]
+       (-> acc
+           (update :num-shapes + n)
+           (update :max-shapes-per-page max n))))
+   {:num-shapes 0
+    :max-shapes-per-page 0}
+   pages-index))
+
+(defn compute-file-stats
+  "Compute file statistics. Returns a map of stats without event keys."
+  [state file-id]
+  (let [file         (dsh/lookup-file state file-id)
+        file-data    (:data file)
+        libraries    (refs/select-libraries (:files state) file-id)
+        pages-index  (:pages-index file-data)
+        {:keys [num-shapes max-shapes-per-page]} (compute-shape-stats pages-index)
+        n-pages      (count (:pages file-data))
+        n-components (reduce-kv (fn [n _ c] (if (:deleted c) n (inc n)))
+                                0 (:components file-data))
+        n-linked-libs (dec (count libraries))
+        tokens-lib   (:tokens-lib file-data)
+        n-tokens     (if (some? tokens-lib)
+                       (count (ctob/get-all-tokens tokens-lib))
+                       0)]
+    {:num-pages n-pages
+     :num-shapes num-shapes
+     :avg-shapes-per-page (if (pos? n-pages)
+                            (mth/round (/ num-shapes n-pages))
+                            0)
+     :max-shapes-per-page max-shapes-per-page
+     :num-components n-components
+     :num-linked-libraries (max 0 n-linked-libs)
+     :is-library (:is-shared file)
+     :num-tokens n-tokens}))
+
+(defn- emit-workspace-file-stats
+  [file-id team-id]
+  (ptk/reify ::emit-workspace-file-stats
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [stats (compute-file-stats state file-id)]
+        (rx/of (ev/event (assoc stats
+                                ::ev/name "open-workspace-file"
+                                ::ev/origin "workspace"
+                                :file-id file-id
+                                :team-id team-id)))))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -346,7 +402,8 @@
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})))
+          (assoc :workspace-presence {})
+          (update :workspace-global dissoc :default-font)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -420,6 +477,12 @@
                     (rx/take 1)
                     (rx/map dwc/set-workspace-visited))
 
+               ;; Emit audit event with file statistics once all libraries are resolved
+               (->> stream
+                    (rx/filter (ptk/type? ::all-libraries-resolved))
+                    (rx/take 1)
+                    (rx/map #(emit-workspace-file-stats file-id team-id)))
+
                (when-let [component-id (some-> rparams :component-id uuid/parse)]
                  (->> stream
                       (rx/filter (ptk/type? ::workspace-initialized))
@@ -449,7 +512,7 @@
                     (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
                     (rx/map deref)
                     (rx/map (fn [{:keys [ids]}]
-                              (dwwt/resize-wasm-text-all ids))))
+                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
 
                (let [local-commits-s
                      (->> stream
@@ -503,7 +566,8 @@
                              (dch/commit-changes
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
-                               :tags #{:position-data}})))))
+                               :tags #{:position-data}
+                               :skip-component-sync? true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream
@@ -544,7 +608,7 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only?)
+          (update :workspace-global dissoc :read-only? :default-font)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
@@ -1551,9 +1615,12 @@
 (dm/export dwt/trigger-bounding-box-cloaking)
 (dm/export dwt/start-resize)
 (dm/export dwt/update-dimensions)
+(dm/export dwt/update-dimensions-coalesced)
 (dm/export dwt/change-orientation)
 (dm/export dwt/start-rotate)
+(dm/export dwt/start-move-line-point)
 (dm/export dwt/increase-rotation)
+(dm/export dwt/increase-rotation-coalesced)
 (dm/export dwt/start-move-selected)
 (dm/export dwt/move-selected)
 (dm/export dwt/update-position)
@@ -1634,6 +1701,7 @@
 (dm/export dwgu/set-hover-guide)
 
 ;; Zoom
+(dm/export dwz/center-on-shape)
 (dm/export dwz/reset-zoom)
 (dm/export dwz/zoom-to-selected-shape)
 (dm/export dwz/start-zooming)

@@ -1,5 +1,6 @@
 (ns app.main.data.nitrate
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.organization :as cto]
    [app.common.uri :as u]
@@ -42,15 +43,25 @@
     (swap! storage/storage dissoc
            nitrate-entry-pending-popup-key)))
 
+(def ^:private offline-connectivity
+  {:licenses false})
+
+(defn- air-gapped?
+  []
+  (contains? cf/flags :air-gapped-conf))
+
 (defn show-nitrate-popup
   ([popup-type] (show-nitrate-popup popup-type {}))
   ([popup-type extra-props]
    (ptk/reify ::show-nitrate-popup
      ptk/WatchEvent
      (watch [_ _ _]
-       (->> (rp/cmd! ::get-nitrate-connectivity {})
-            (rx/map (fn [connectivity]
-                      (modal/show popup-type (merge (or connectivity {}) extra-props)))))))))
+       (if (air-gapped?)
+         (rx/of (modal/show popup-type (merge offline-connectivity extra-props)))
+         (->> (rp/cmd! ::get-nitrate-connectivity {})
+              (rx/map (fn [connectivity]
+                        (modal/show popup-type
+                                    (merge (or connectivity {}) extra-props))))))))))
 
 (defn build-admin-console-url
   ([path]
@@ -351,6 +362,35 @@
                      (rx/empty)))))))))))
 
 
+(defn check-organization-sso
+  "Asks the backend whether the organization SSO gate can be satisfied for
+  `dest-url`, returning an observable of the raw `:check-nitrate-sso`
+  result: `:authorized` with a `:reason` of `:sso-satisfied` or
+  `:no-team-access`, or `:authorized false` with a `:redirect-uri` (nil
+  when SSO is required but the provider is unusable). Failures are not
+  caught, so a network blip stays a network error for the caller to
+  handle instead of masquerading as an answer."
+  [{:keys [team-id organization-id dest-url]}]
+  (rp/cmd! :check-nitrate-sso (d/without-nils {:team-id team-id
+                                               :organization-id organization-id
+                                               :url dest-url})))
+
+(defn retry-organization-sso
+  "Retries the organization SSO login flow after a failed attempt, reusing
+  the same check-nitrate-sso RPC used elsewhere to move the user through
+  the organization's identity provider. Passing `team-id` enables the
+  backend's non-member short-circuit. Falls back to navigating straight
+  to `dest-url` when no fresh SSO redirect is needed or available."
+  [{:keys [dest-url] :as params}]
+  (ptk/reify ::retry-organization-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (check-organization-sso params)
+           (rx/map (fn [{:keys [redirect-uri]}]
+                     (rt/nav-raw :uri (or redirect-uri dest-url))))
+           (rx/catch (fn [_]
+                       (rx/of (rt/nav-raw :uri dest-url))))))))
+
 (defn- fetch-organizations-allowed
   "Returns an rx observable of an `organizations-allowed` map (organization-id -> boolean).
    Organizations where :add-anybody-to-team is permitted are pre-approved;
@@ -385,6 +425,7 @@
                                                         is-own? (= profile-id (:owner-id organization))]
                                                     (or (= perm "any") is-own?))) all-organizations)
                       team     (first (filter #(= (:id %) team-id) teams))
+                      current-organization (:organization team)
                       on-confirm (fn [organization-id]
                                    (st/emit! (add-team-to-organization {:team-id team-id
                                                                         :organization-id organization-id})))
@@ -392,11 +433,11 @@
                       (fn [organizations-allowed]
                         (let [has-filtered? (< (count organizations) (count all-organizations))
                               extra-props   (when has-filtered?
-                                              {:info-message-key "dashboard.select-organization-modal.permission-info"})]
+                                              {:info-message-key "dashboard.select-organization-modal.permission-info-add"})]
                           (modal/show :select-organization-modal
                                       (merge {:organizations organizations
                                               :organizations-allowed organizations-allowed
-                                              :current-organization-id (dm/get-in team [:organization :id])
+                                              :current-organization current-organization
                                               :on-confirm on-confirm
                                               :team-id team-id
                                               :title-key "dashboard.select-organization-modal.title"
@@ -479,11 +520,12 @@
                                    :title (tr "dashboard.change-organization-modal.title")})
                                  (modal/show :select-organization-modal
                                              (merge {:organizations           selectable-organizations
-                                                     :organizations-allowed            organizations-allowed
-                                                     :current-organization-id current-organization-id
+                                                     :organizations-allowed   organizations-allowed
+                                                     :current-organization    source-organization
                                                      :on-confirm              on-confirm
                                                      :team-id                 team-id
                                                      :title-key               "dashboard.change-organization-modal.title"
+                                                     :description-key         "dashboard.change-organization-modal.description"
                                                      :choose-key              "dashboard.change-organization-modal.choose"
                                                      :placeholder-key         "dashboard.change-organization-modal.select"
                                                      :accept-key              "dashboard.change-organization-modal.accept"

@@ -2,14 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.fonts
   "Fonts management and loading logic."
-  (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.types.text :as txt]
    [app.common.uri :as u]
@@ -18,33 +18,13 @@
    [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.object :as obj]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [promesa.core :as p]))
 
 (log/set-level! :warn)
-
-(def google-fonts
-  (preload-gfonts "fonts/gfonts.2025.11.28.json"))
-
-(def local-fonts
-  [{:id "sourcesanspro"
-    :name "Source Sans Pro"
-    :family "sourcesanspro"
-    :variants
-    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight" :ttf-url "sourcesanspro-extralight.ttf"}
-     {:id "200italic" :name "200 Italic" :weight "200" :style "italic" :suffix "extralightitalic" :ttf-url "sourcesanspro-extralightitalic.ttf"}
-     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light" :ttf-url "sourcesanspro-light.ttf"}
-     {:id "300italic" :name "300 Italic"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
-     {:id "regular" :name "400" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
-     {:id "italic" :name "400 Italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
-     {:id "600" :name "600" :weight "600" :style "normal" :suffix "semibold" :ttf-url "sourcesanspro-semibold.ttf"}
-     {:id "600italic" :name "600 Italic" :weight "600" :style "italic" :suffix "semibolditalic" :ttf-url "sourcesanspro-semibolditalic.ttf"}
-     {:id "bold" :name "700" :weight "700" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
-     {:id "bolditalic" :name "700 Italic" :weight "700" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
-     {:id "black" :name "900" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
-     {:id "blackitalic" :name "900 Italic" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
 
 (defonce fontsdb (l/atom {}))
 (defonce fonts (l/atom []))
@@ -65,10 +45,10 @@
                  fonts (map #(assoc % :backend backend) fonts)]
              (merge db (d/index-by :id fonts))))))
 
-(register! :builtin local-fonts)
+(register! :builtin cfnt/local-fonts)
 
 (when (contains? cf/flags :google-fonts-provider)
-  (register! :google google-fonts))
+  (register! :google cfnt/catalog))
 
 (defn get-font-data [id]
   (get @fontsdb id))
@@ -137,10 +117,11 @@
 ;; uploads, ones that fail to bake) use the runtime fallback.
 ;;
 ;; The sprite is heavy (~2000 nodes), so we DON'T keep it in the DOM: the fetched
-;; markup is cached here as a string (`:svg`) and the nodes are materialized only
-;; while the picker is open (attach/detach below). `:ids` are the font ids it
-;; covers, so the UI can pick sprite vs fallback.
-(defonce preview-sprite (l/atom {:status :idle :ids #{} :svg nil}))
+;; markup is parsed once eagerly into a cached node (`:node`) so attaching is a
+;; cheap appendChild. `:ids` are the font ids it covers (also pre-computed), so
+;; the UI can pick sprite vs fallback. `:refs` counts open dropdowns sharing the
+;; node, so the last one to close is the one that detaches it.
+(defonce preview-sprite (l/atom {:status :idle :ids #{} :node nil :refs 0}))
 
 ;; Id prefix shared with the generator and the UI's `<use href>`; referenced here
 ;; rather than re-declared so the contract stays in one place.
@@ -162,7 +143,7 @@
   []
   ;; :error → the UI shows plain names (no previews, no per-font load storm); a
   ;; later `prefetch-preview-sprite!` call can retry.
-  (reset! preview-sprite {:status :error :ids #{} :svg nil}))
+  (reset! preview-sprite {:status :error :ids #{} :node nil :refs 0}))
 
 (defn- parse-sprite-svg
   "Parse the cached sprite markup as SVG (not HTML, so no innerHTML injection
@@ -176,10 +157,10 @@
       root)))
 
 (defn prefetch-preview-sprite!
-  "Fetch the font-preview sprite markup and cache it in memory (no DOM yet — see
-  `attach-preview-sprite!`). Idempotent: fetches only when nothing is cached yet
-  (`:idle`) or a previous attempt failed (`:error`); no-op while `:loading` or
-  `:ready`."
+  "Fetch the font-preview sprite markup, pre-parse it on idle, and cache the
+  parsed DOM node with the font ids it covers. Idempotent: fetches only when
+  nothing is cached yet (`:idle`) or a previous attempt failed (`:error`); no-op
+  while `:loading` or `:ready`."
   []
   (when (and (globals/browser?)
              (contains? #{:idle :error} (:status @preview-sprite)))
@@ -191,9 +172,24 @@
          (rx/subs!
           (fn [response]
             ;; http/send! doesn't reject on non-2xx; guard so an error body isn't
-            ;; cached as the sprite.
+            ;; cached as the sprite. The parse is deferred to idle so the
+            ;; ~2000-node import doesn't spike the main thread at load time;
+            ;; `:status` stays `:loading` until it's done.
             (if (http/success? response)
-              (swap! preview-sprite assoc :status :ready :svg (:body response))
+              (let [svg (:body response)]
+                (tm/schedule-on-idle
+                 (fn []
+                   (if-let [node (some-> (parse-sprite-svg svg) (dom/import-node))]
+                     (do
+                       (dom/set-attribute! node "id" "font-preview-sprite")
+                       (let [ids (collect-preview-ids node)]
+                         (swap! preview-sprite assoc
+                                :status :ready
+                                :node node
+                                :ids ids)))
+                     (do
+                       (log/wrn :hint "cannot parse font preview sprite")
+                       (reset-preview-sprite-error!))))))
               (do
                 (log/wrn :hint "cannot load font preview sprite" :status (:status response))
                 (reset-preview-sprite-error!))))
@@ -202,34 +198,30 @@
             (reset-preview-sprite-error!))))))
 
 (defn attach-preview-sprite!
-  "Materialize the cached sprite into the DOM (hidden) so rows can reference its
-  glyph groups via `<use>`, and record the covered font ids. Returns the injected
-  node (pass it to `detach-preview-sprite!` on close), or nil if not ready / the
-  markup is invalid. Parsing happens here, not on prefetch, so the cost is paid
-  only while the picker is open."
+  "Append the pre-parsed sprite node into the DOM (hidden) so rows can reference
+  its glyph groups via `<use>`. Returns the node (pass it to
+  `detach-preview-sprite!` on close), or nil if not ready. Parsing and id
+  collection happen once during `prefetch-preview-sprite!`, so this is just a
+  cheap appendChild. Multiple dropdowns may share the node; each attach
+  increments `:refs` so the node is only detached when the last one closes."
   []
-  (let [{:keys [status svg]} @preview-sprite]
-    (when (and (globals/browser?) (= :ready status) (some? svg))
-      (if-let [node (some-> (parse-sprite-svg svg) (dom/import-node))]
-        ;; The node already carries display:none + aria-hidden from the generator.
-        (do
-          (dom/set-attribute! node "id" "font-preview-sprite")
-          (when-let [body-el (unchecked-get globals/document "body")]
-            (dom/append-child! body-el node))
-          (swap! preview-sprite assoc :ids (collect-preview-ids node))
-          node)
-        (do
-          (log/wrn :hint "cannot parse font preview sprite")
-          (reset-preview-sprite-error!)
-          nil)))))
+  (let [{:keys [status node]} @preview-sprite]
+    (when (and (globals/browser?) (= :ready status) (some? node))
+      (when-let [body-el (unchecked-get globals/document "body")]
+        (dom/append-child! body-el node))
+      (swap! preview-sprite update :refs inc)
+      node)))
 
 (defn detach-preview-sprite!
-  "Remove the sprite node injected by `attach-preview-sprite!` from the DOM. The
-  cached markup and `:ids` stay, so reopening re-attaches without a refetch."
+  "Remove the sprite node injected by `attach-preview-sprite!` from the DOM when
+  the last open dropdown closes. The cached node and `:ids` stay, so reopening
+  re-attaches without a refetch or re-parse."
   [node]
-  (dom/remove! node))
+  (let [new-state (swap! preview-sprite update :refs #(max 0 (dec %)))]
+    (when (zero? (:refs new-state))
+      (dom/remove! node))))
 
-(defn- add-font-css!
+(defn- add-font-css
   "Creates a style element and attaches it to the dom."
   [id css]
   (let [node (dom/create-element "style")]
@@ -243,8 +235,10 @@
 (defmulti ^:private load-font :backend)
 
 (defmethod load-font :default
-  [{:keys [backend] :as font}]
-  (log/wrn :msg "no implementation found for" :backend backend))
+  [{:keys [backend ::on-failed] :as font}]
+  (log/wrn :msg "no implementation found for" :backend backend)
+  (when (fn? on-failed)
+    (on-failed (ex-info "unsupported font backend" {:backend backend}))))
 
 (defmethod load-font :builtin
   [{:keys [id ::on-loaded] :as font}]
@@ -266,26 +260,32 @@
 
 (defn- process-gfont-css
   [css]
-  (let [base (u/join cf/public-uri "internal/gfonts/font")]
-    (str/replace css "https://fonts.gstatic.com/s" (dm/str base))))
+  (cfnt/gstatic->proxy-url css (u/join cf/public-uri "internal/gfonts/font")))
+
+(defn- request-gfont-css
+  [url]
+  (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
+       (rx/map :body)))
 
 (defn- fetch-gfont-css
   [url]
-  (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
-       (rx/map :body)
-       (rx/catch (fn [err]
-                   (log/wrn :hint "cannot find the font" :cause err)
+  (->> (request-gfont-css url)
+       (rx/catch (fn [cause]
+                   ;; Keep CSS streams alive when a font cannot load.
+                   (log/wrn :hint "cannot find the font" :cause cause)
                    (rx/empty)))))
 
 (defmethod load-font :google
-  [{:keys [id ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded ::on-failed] :as font}]
   (when (globals/browser?)
     (log/dbg :hint "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
-      (->> (fetch-gfont-css url)
+      ;; Keep raw errors so the loader can use its fallback.
+      (->> (request-gfont-css url)
            (rx/map process-gfont-css)
            (rx/tap #(on-loaded id))
-           (rx/subs! (partial add-font-css! id)))
+           (rx/subs! (partial add-font-css id)
+                     #(when (fn? on-failed) (on-failed %))))
       nil)))
 
 ;; --- LOADER: CUSTOM
@@ -324,7 +324,7 @@
   (when (globals/browser?)
     (log/dbg :hint "load-font" :font-id id :backend "custom")
     (let [css (generate-custom-font-css font)]
-      (add-font-css! id css)
+      (add-font-css id css)
       (when (fn? on-loaded)
         (on-loaded)))))
 
@@ -358,15 +358,30 @@
 
          ;; First caller, we create the promise and then wait
          :else
-         (let [on-load (fn [resolve]
-                         (swap! loaded conj font-id)
-                         (swap! loading dissoc font-id)
-                         (resolve font-id))
+         (let [settle! (fn [resolve loaded?]
+                         ;; Defer cleanup until a synchronous load is cached.
+                         (tm/schedule
+                          #(do
+                             (when loaded?
+                               (swap! loaded conj font-id))
+                             (swap! loading dissoc font-id)
+                             (resolve font-id))))
+
+               on-load (fn [resolve]
+                         (settle! resolve true))
+
+               on-failed
+               (fn [resolve cause]
+                 (log/wrn :hint "font load failed; using fallback"
+                          :font-id font-id
+                          :cause cause)
+                 (settle! resolve false))
 
                load-p (-> (p/create
                            (fn [resolve _]
                              (-> font
                                  (assoc ::on-loaded (partial on-load resolve))
+                                 (assoc ::on-failed (partial on-failed resolve))
                                  (load-font))))
                           ;; We need to wait for the font to be loaded
                           (p/then (partial p/delay 120)))]
@@ -397,42 +412,12 @@
 
 (defn find-closest-variant
   "Find the closest font weight variant in `font` for `target-weight` with optional `target-style` match.
-  When exactly between two weights, choose the higher one."
+  When exactly between two weights, choose the higher one.
+
+  The algorithm lives in `app.common.fonts` so the headless exporter resolves the
+  same variant for the same text."
   [font target-weight target-style]
-  (when-let [target-weight (d/parse-integer target-weight)]
-    (let [variants (:variants font [])
-          result
-          (reduce
-           (fn [closest-match variant]
-             (let [weight (d/parse-integer (:weight variant))
-                   distance (abs (- target-weight weight))
-                   matches-style? (= target-style (:style variant))
-                   current {:variant variant
-                            :weight weight
-                            :distance distance}]
-               (cond
-                 ;; Exact match found
-                 (and (zero? distance)
-                      (if target-style matches-style? true))
-                 (reduced current)
-
-                 (nil? closest-match) current
-
-                 ;; Update best match if this variant is closer or equal distance but higher weight
-                 (or (< distance (:distance closest-match))
-                     (and (= distance (:distance closest-match))
-                          (> weight (:weight closest-match))))
-                 current
-
-                 ;; Same weight as the `closest-match` but the style matches `target-style`
-                 (and (= weight (:weight closest-match)) matches-style?)
-                 current
-
-                 :else
-                 closest-match)))
-           nil
-           variants)]
-      (:variant result))))
+  (cfnt/closest-variant (:variants font []) target-weight target-style))
 
 ;; Font embedding functions
 (defn get-node-fonts

@@ -2,13 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.render-wasm.api.webgl
   "WebGL utilities for pixel capture and rendering"
   (:require
    [app.common.logging :as log]
-   [app.render-wasm.wasm :as wasm]
+   [app.common.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
 
 (defn get-webgl-context

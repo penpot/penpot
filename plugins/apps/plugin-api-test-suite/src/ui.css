@@ -60,13 +60,39 @@ body {
   background-color: var(--background-secondary);
 }
 
-.group-summary {
+.group-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-8, 8px);
   padding: var(--spacing-8, 8px);
+}
+
+/* Makes the full header row toggle the group. */
+.group-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--spacing-8, 8px);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
   cursor: pointer;
   user-select: none;
+}
+
+.group-chevron {
+  flex: 0 0 auto;
+  color: var(--foreground-secondary);
+  transition: transform 0.15s ease;
+}
+
+.group-toggle[aria-expanded='true'] .group-chevron {
+  transform: rotate(90deg);
 }
 
 .group-name {
@@ -142,6 +168,11 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+/* Keeps hidden test lists out of the layout. */
+.test-list[hidden] {
+  display: none;
 }
 
 .test-row {

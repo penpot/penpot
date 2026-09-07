@@ -14,21 +14,63 @@ use skia_safe::{
     textlayout::Affinity,
     textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
+    textlayout::PlaceholderAlignment,
+    textlayout::PlaceholderStyle,
     textlayout::PositionWithAffinity,
+    textlayout::TextBaseline,
     Contains,
 };
 
+use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use super::FontFamily;
 use crate::math::Point;
-use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
+use crate::shapes::{self, merge_fills, Shape, Type, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
 // TODO: maybe move this to the wasm module?
 pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
+
+/// True when the modifier changes the text layout container (resize), as opposed
+/// to rotation/move where glyph layout can be reused.
+pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
+    let Type::Text(text_content) = &base.shape_type else {
+        return false;
+    };
+    let before = oriented_container_bounds(base);
+    let after = before.transform(modifier);
+    match text_content.grow_type() {
+        GrowType::AutoWidth => !crate::math::is_close_to(before.height(), after.height()),
+        GrowType::AutoHeight | GrowType::Fixed => {
+            !crate::math::is_close_to(before.width(), after.width())
+        }
+    }
+}
+
+fn oriented_container_bounds(shape: &Shape) -> Bounds {
+    let selrect = shape.selrect();
+    let mut bounds = Bounds::new(
+        Point::new(selrect.x(), selrect.y()),
+        Point::new(selrect.x() + selrect.width(), selrect.y()),
+        Point::new(
+            selrect.x() + selrect.width(),
+            selrect.y() + selrect.height(),
+        ),
+        Point::new(selrect.x(), selrect.y() + selrect.height()),
+    );
+    if !shape.transform.is_identity() {
+        let mut matrix = shape.transform;
+        let center = shape.center();
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+        bounds.transform_mut(&matrix);
+    }
+    bounds
+}
 
 #[repr(u8)]
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
@@ -47,6 +89,11 @@ pub struct TextContentSize {
 }
 
 const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
+
+/// Matches `marginRight: "1px"` on `.paragraph-set` in the HTML text renderer
+/// (`frontend/src/app/main/ui/shapes/text/styles.cljs`). DOM `getBoundingClientRect`
+/// includes that margin in auto-width measurements; Skia `longest_line()` does not.
+const PARAGRAPH_SET_MARGIN_RIGHT: f32 = 1.0;
 
 impl TextContentSize {
     pub fn default() -> Self {
@@ -150,11 +197,22 @@ impl TextPositionWithAffinity {
         }
     }
 
-    pub fn new_without_affinity(paragraph: usize, offset: usize) -> Self {
+    pub fn new_downstream_affinity(paragraph: usize, offset: usize) -> Self {
         Self {
             position_with_affinity: PositionWithAffinity {
                 position: offset as i32,
                 affinity: Affinity::Downstream,
+            },
+            paragraph,
+            offset,
+        }
+    }
+
+    pub fn new_upstream_affinity(paragraph: usize, offset: usize) -> Self {
+        Self {
+            position_with_affinity: PositionWithAffinity {
+                position: offset as i32,
+                affinity: Affinity::Upstream,
             },
             paragraph,
             offset,
@@ -193,7 +251,9 @@ struct CachedExtrect {
 #[derive(Debug)]
 pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
-    pub paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+    /// Shared across shape clones (e.g. modifier transforms) so rotation/pan
+    /// can paint without rebuilding Skia layout. Cleared builders on clone are OK.
+    pub paragraphs: Rc<Vec<Vec<skia::textlayout::Paragraph>>>,
     cached_extrect: Cell<Option<CachedExtrect>>,
 }
 
@@ -207,8 +267,8 @@ impl Clone for TextContentLayout {
     fn clone(&self) -> Self {
         Self {
             paragraph_builders: vec![],
-            paragraphs: vec![],
-            cached_extrect: Cell::new(None),
+            paragraphs: Rc::clone(&self.paragraphs),
+            cached_extrect: Cell::new(self.cached_extrect.get()),
         }
     }
 }
@@ -223,7 +283,7 @@ impl TextContentLayout {
     pub fn new() -> Self {
         Self {
             paragraph_builders: vec![],
-            paragraphs: vec![],
+            paragraphs: Rc::new(Vec::new()),
             cached_extrect: Cell::new(None),
         }
     }
@@ -234,12 +294,18 @@ impl TextContentLayout {
         paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
     ) {
         self.paragraph_builders = paragraph_builders;
-        self.paragraphs = paragraphs;
+        self.paragraphs = Rc::new(paragraphs);
+        self.cached_extrect.set(None);
+    }
+
+    pub fn clear(&mut self) {
+        self.paragraph_builders.clear();
+        self.paragraphs = Rc::new(Vec::new());
         self.cached_extrect.set(None);
     }
 
     pub fn needs_update(&self) -> bool {
-        self.paragraph_builders.is_empty() || self.paragraphs.is_empty()
+        self.paragraphs.is_empty()
     }
 }
 
@@ -387,6 +453,20 @@ impl TextContent {
         self.bounds
     }
 
+    /// Text content for paint when [`Rect`] size may differ from stored bounds
+    /// (e.g. modifier transform). Reuses `self` when width/height match; otherwise
+    /// clones paragraphs into a rebound copy with an empty layout cache.
+    pub fn paint_content_for_selrect<'a>(&'a self, selrect: Rect) -> Cow<'a, Self> {
+        let stored_bounds = self.bounds();
+        if (stored_bounds.width() - selrect.width()).abs() < 0.01
+            && (stored_bounds.height() - selrect.height()).abs() < 0.01
+        {
+            Cow::Borrowed(self)
+        } else {
+            Cow::Owned(self.new_bounds(selrect))
+        }
+    }
+
     pub fn set_xywh(&mut self, x: f32, y: f32, w: f32, h: f32) {
         self.bounds = Rect::from_xywh(x, y, w, h);
     }
@@ -405,9 +485,17 @@ impl TextContent {
         seen
     }
 
-    pub fn add_paragraph(&mut self, paragraph: Paragraph) {
+    pub fn add_paragraph(&mut self, mut paragraph: Paragraph) {
+        let index = self.paragraphs.len() as u32;
+        paragraph.set_span_positions(index);
         self.paragraphs.push(paragraph);
         self.content_version = self.content_version.wrapping_add(1);
+    }
+
+    pub fn reset_span_positions(&mut self) {
+        for (index, paragraph) in self.paragraphs.iter_mut().enumerate() {
+            paragraph.set_span_positions(index as u32);
+        }
     }
 
     pub fn paragraphs(&self) -> &[Paragraph] {
@@ -468,7 +556,7 @@ impl TextContent {
         let mut has_lines = false;
         let mut y_accum = base_y + vertical_offset;
 
-        for group in paragraphs {
+        for group in paragraphs.iter() {
             if let Some(paragraph) = group.first() {
                 let line_metrics = paragraph.get_line_metrics();
                 for line in &line_metrics {
@@ -518,7 +606,11 @@ impl TextContent {
             return self.content_rect(selrect, valign);
         }
 
-        let tight = if !self.layout.paragraphs.is_empty() {
+        let layout_matches_container = self
+            .layout_width
+            .is_some_and(|w| w.ceil() == self.get_width(selrect.width()).ceil());
+
+        let tight = if !self.layout.paragraphs.is_empty() && layout_matches_container {
             self.rect_from_paragraphs(selrect, valign)
         } else {
             let mut text_content = self.clone();
@@ -653,38 +745,14 @@ impl TextContent {
                 let position_with_affinity =
                     layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
-                    // Computed position keeps the current position in terms
-                    // of number of characters of text. This is used to know
-                    // in which span we are.
-                    let mut computed_position: usize = 0;
-
-                    // If paragraph has no spans, default to span 0, offset 0
-                    if !paragraph.children().is_empty() {
-                        for span in paragraph.children() {
-                            let length = span.text.chars().count();
-                            let start_position = computed_position;
-                            let end_position = computed_position + length;
-                            let current_position = position_with_affinity.position as usize;
-
-                            // Handle empty spans: if the span is empty and current position
-                            // matches the start, this is the right span
-                            if length == 0 && current_position == start_position {
-                                break;
-                            }
-
-                            if start_position <= current_position
-                                && end_position >= current_position
-                            {
-                                break;
-                            }
-                            computed_position += length;
-                        }
-                    }
+                    // Skia reports UTF-16 code units, the model counts characters.
+                    let offset =
+                        paragraph.utf16_offset_to_char(position_with_affinity.position as usize);
 
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
                         paragraph_index,
-                        position_with_affinity.position as usize,
+                        offset,
                     ));
                 }
             }
@@ -728,62 +796,68 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
-        let fonts = get_font_collection();
-        let fallback_fonts = get_fallback_fonts();
-        let mut paragraph_group = Vec::new();
-
-        for paragraph in self.paragraphs() {
-            let paragraph_style = paragraph.paragraph_to_style();
-            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-            let mut has_text = false;
-            for span in paragraph.children() {
-                let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
-                let text_style = span.to_style(
-                    &self.bounds(),
-                    fallback_fonts,
-                    remove_alpha,
-                    paragraph.line_height(),
-                );
-                let text: String = span.apply_text_transform();
-                if !text.is_empty() {
-                    has_text = true;
-                }
-                builder.push_style(&text_style);
-                builder.add_text(&text);
-            }
-            if !has_text {
-                builder.add_text(" ");
-            }
-            paragraph_group.push(vec![builder]);
-        }
-
-        paragraph_group
+        self.paragraph_builders(use_shadow, false, None, None)
     }
 
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
     pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(None, true, None, None)
+    }
+
+    /// Maximum number of stacked fills across every span in this text block.
+    pub fn max_fill_layers(&self) -> usize {
+        self.paragraphs()
+            .iter()
+            .flat_map(|p| p.children())
+            .map(|s| s.fills.len())
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Builds paragraph builders that paint a single fill layer per span for SVG
+    /// export. `layer_from_bottom` is 0 for the bottommost fill (fills[last]).
+    pub fn paragraph_builder_group_for_fill_layer(
+        &self,
+        layer_from_bottom: usize,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(None, false, None, Some(layer_from_bottom))
+    }
+
+    fn paragraph_builders(
+        &self,
+        use_shadow: Option<bool>,
+        opaque: bool,
+        align_override: Option<skia::textlayout::TextAlign>,
+        fill_layer: Option<usize>,
+    ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
 
         for paragraph in self.paragraphs() {
-            let paragraph_style = paragraph.paragraph_to_style();
+            let mut paragraph_style = paragraph.paragraph_to_style();
+            if let Some(align) = align_override {
+                paragraph_style.set_text_align(align);
+            }
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let text_style = span.to_style(
+                let remove_alpha =
+                    opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                let text_style = span.to_style_with_paint(
                     &self.bounds(),
                     fallback_fonts,
-                    true, // always opaque
+                    remove_alpha,
                     paragraph.line_height(),
+                    fill_layer,
                 );
                 let text: String = span.apply_text_transform();
                 if !text.is_empty() {
                     has_text = true;
                 }
                 builder.push_style(&text_style);
-                builder.add_text(&text);
+                add_text_with_tabs(&mut builder, &text, span.font_size);
             }
             if !has_text {
                 builder.add_text(" ");
@@ -796,29 +870,40 @@ impl TextContent {
 
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
+        let mut measure_builders =
+            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left), None);
 
         let normalized_line_height =
-            calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
+            calculate_normalized_line_height(&mut measure_builders, f32::MAX);
 
+        let measure_paragraphs =
+            build_paragraphs_from_paragraph_builders(&mut measure_builders, f32::MAX);
+
+        let content_width = measure_paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0_f32, |auto_width, paragraph| {
+                f32::max(paragraph.longest_line(), auto_width)
+            })
+            .ceil();
+
+        // Re-layout at the intrinsic width (without the HTML margin slack).
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
-            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, content_width);
+        let height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0_f32, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
 
-        let (width, height) =
-            paragraphs
-                .iter()
-                .flatten()
-                .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
-                    (
-                        f32::max(paragraph.longest_line(), auto_width),
-                        auto_height + paragraph.height(),
-                    )
-                });
-
+        let reported_width = content_width + PARAGRAPH_SET_MARGIN_RIGHT;
         let size = TextContentSize::new_with_normalized_line_height(
-            width.ceil(),
+            reported_width,
             height.ceil(),
-            width.ceil(),
+            reported_width,
             normalized_line_height,
         );
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
@@ -898,6 +983,41 @@ impl TextContent {
         self.layout.needs_update()
     }
 
+    /// True when cached Skia paragraphs can be painted as-is (no rebuild/layout).
+    pub fn has_usable_paint_layout(&self, shape: &Shape) -> bool {
+        if self.layout.needs_update() || self.layout_version != self.content_version {
+            return false;
+        }
+        self.layout_matches_paint_container(shape)
+    }
+
+    pub(crate) fn layout_cache_versions_match(&self) -> bool {
+        !self.layout.needs_update() && self.layout_version == self.content_version
+    }
+
+    pub(crate) fn layout_matches_paint_container(&self, shape: &Shape) -> bool {
+        if self.grow_type() == GrowType::AutoWidth {
+            return true;
+        }
+        let Some(layout_w) = self.layout_width else {
+            return false;
+        };
+        let container_w = self.get_width(shape.selrect().width());
+        (layout_w - container_w).abs() < f32::EPSILON
+    }
+
+    /// True when any span requests underline/overline/line-through (custom draw path).
+    pub fn has_text_decorations(&self) -> bool {
+        self.paragraphs().iter().any(|paragraph| {
+            paragraph.children().iter().any(|span| {
+                matches!(
+                    span.text_decoration,
+                    Some(d) if d != skia::textlayout::TextDecoration::NO_DECORATION
+                )
+            })
+        })
+    }
+
     pub fn set_layout_from_result(
         &mut self,
         result: TextContentLayoutResult,
@@ -912,14 +1032,22 @@ impl TextContent {
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
         self.layout.cached_extrect.set(None);
+        // Bump the content version so update_layout can't early-return: auto-width
+        // shapes always match their container and clearing the cache above doesn't
+        // flip needs_update(), so a late font resolution would otherwise be skipped.
+        self.content_version = self.content_version.wrapping_add(1);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        // Auto-width ignores selrect width so get-text-dimensions can reuse the cached layout.
+        let layout_matches_container = self.grow_type() == GrowType::AutoWidth
+            || self
+                .layout_width
+                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
-            && self
-                .layout_width
-                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON)
+            && layout_matches_container
         {
             return self.size;
         }
@@ -1160,6 +1288,59 @@ impl Paragraph {
         &mut self.children
     }
 
+    fn set_span_positions(&mut self, index: u32) {
+        for (span_index, span) in self.children.iter_mut().enumerate() {
+            span.set_position(index, span_index as u32);
+        }
+    }
+
+    fn char_count(&self) -> usize {
+        self.children
+            .iter()
+            .map(|span| span.text.chars().count())
+            .sum()
+    }
+
+    /// Translate a character offset into the UTF-16 offset Skia indexes by.
+    /// Both differ on astral-plane characters (emoji) and whenever a text
+    /// transform changes the length of the laid out text (`ß` -> `SS`).
+    pub fn char_offset_to_utf16(&self, char_offset: usize) -> usize {
+        let mut remaining = char_offset;
+        let mut utf16 = 0;
+        for span in &self.children {
+            if remaining == 0 {
+                break;
+            }
+            let span_len = span.text.chars().count();
+            let take = remaining.min(span_len);
+            let prefix: String = span.text.chars().take(take).collect();
+            utf16 += span.transform_text(&prefix).encode_utf16().count();
+            remaining -= take;
+        }
+        utf16
+    }
+
+    /// Translate a UTF-16 offset coming from Skia into a character offset.
+    /// An offset inside a character rounds up, so it never splits a glyph.
+    pub fn utf16_offset_to_char(&self, utf16_offset: usize) -> usize {
+        let (mut low, mut high) = (0, self.char_count());
+        while low < high {
+            let middle = (low + high) / 2;
+            if self.char_offset_to_utf16(middle) < utf16_offset {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        low
+    }
+
+    /// UTF-16 length of the character at `char_offset`, so a caret range covers
+    /// the whole glyph.
+    pub fn char_utf16_len_at(&self, char_offset: usize) -> usize {
+        self.char_offset_to_utf16(char_offset + 1) - self.char_offset_to_utf16(char_offset)
+    }
+
     pub fn line_height(&self) -> f32 {
         self.line_height
     }
@@ -1190,7 +1371,7 @@ impl Paragraph {
         style.set_height(self.line_height);
         style.set_text_align(self.text_align);
         style.set_text_direction(self.text_direction);
-        style.set_replace_tab_characters(true);
+        style.set_replace_tab_characters(false);
         style.set_apply_rounding_hack(true);
         style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
@@ -1226,12 +1407,30 @@ fn capitalize_words(text: &str) -> String {
     result
 }
 
-/// Filter control characters below U+0020, preserving line breaks.
+/// Add `text`, pushing every '\t' as a one em wide placeholder.
+pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size: f32) {
+    let tab = PlaceholderStyle::new(
+        font_size,
+        0.0,
+        PlaceholderAlignment::Baseline,
+        TextBaseline::Alphabetic,
+        0.0,
+    );
+
+    for (index, segment) in text.split('\t').enumerate() {
+        if index > 0 {
+            builder.add_placeholder(&tab);
+        }
+        builder.add_text(segment);
+    }
+}
+
+/// Filter control characters below U+0020, preserving tabs and line breaks.
 /// Browser-dependent: Firefox drops them, others replace with space.
 fn process_ignored_chars(text: &str, browser: u8) -> String {
     text.chars()
         .filter_map(|c| {
-            if c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
+            if c == '\t' || c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
                 return Some(c);
             }
             if c < '\u{0020}' {
@@ -1260,6 +1459,8 @@ pub struct TextSpan {
     pub text_transform: Option<TextTransform>,
     pub text_direction: TextDirection,
     pub fills: Vec<shapes::Fill>,
+    pub paragraph_position: u32,
+    pub span_position: u32,
 }
 
 impl TextSpan {
@@ -1289,11 +1490,18 @@ impl TextSpan {
             font_weight,
             font_variant_id,
             fills,
+            paragraph_position: u32::MAX,
+            span_position: u32::MAX,
         }
     }
 
     pub fn set_text(&mut self, text: String) {
         self.text = text;
+    }
+
+    pub fn set_position(&mut self, paragraph: u32, span: u32) {
+        self.paragraph_position = paragraph;
+        self.span_position = span;
     }
 
     pub fn to_style(
@@ -1303,15 +1511,41 @@ impl TextSpan {
         remove_alpha: bool,
         paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
-        let mut style = skia::textlayout::TextStyle::default();
-        let mut paint = paint::Paint::default();
+        self.to_style_with_paint(
+            content_bounds,
+            fallback_fonts,
+            remove_alpha,
+            paragraph_line_height,
+            None,
+        )
+    }
 
-        if remove_alpha {
+    fn to_style_with_paint(
+        &self,
+        content_bounds: &Rect,
+        fallback_fonts: &HashSet<String>,
+        remove_alpha: bool,
+        paragraph_line_height: f32,
+        fill_layer_from_bottom: Option<usize>,
+    ) -> skia::textlayout::TextStyle {
+        let mut style = skia::textlayout::TextStyle::default();
+        let paint = if remove_alpha {
+            let mut paint = paint::Paint::default();
             paint.set_color(skia::Color::BLACK);
             paint.set_alpha(255);
+            paint
+        } else if let Some(layer) = fill_layer_from_bottom {
+            if layer < self.fills.len() {
+                let fill_idx = self.fills.len() - 1 - layer;
+                self.fills[fill_idx].to_paint(content_bounds, true)
+            } else {
+                let mut paint = paint::Paint::default();
+                paint.set_color(skia::Color::TRANSPARENT);
+                paint
+            }
         } else {
-            paint = merge_fills(&self.fills, *content_bounds);
-        }
+            merge_fills(&self.fills, *content_bounds)
+        };
 
         let max_line_height = f32::max(paragraph_line_height, self.line_height);
         style.set_height(max_line_height);
@@ -1377,15 +1611,18 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
-    pub fn apply_text_transform(&self) -> String {
-        let browser = crate::with_state!(state, { state.current_browser });
-        let text = process_ignored_chars(&self.text, browser);
+    pub fn transform_text(&self, text: &str) -> String {
+        let text = process_ignored_chars(text, crate::globals::current_browser());
         match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
             Some(TextTransform::Capitalize) => capitalize_words(&text),
             None => text,
         }
+    }
+
+    pub fn apply_text_transform(&self) -> String {
+        self.transform_text(&self.text)
     }
 
     pub fn scale_content(&mut self, value: f32) {
@@ -1717,6 +1954,15 @@ mod tests {
     }
 
     #[test]
+    fn process_ignored_chars_preserves_tabs() {
+        assert_eq!(process_ignored_chars("hello\tworld", 0), "hello\tworld");
+        assert_eq!(
+            process_ignored_chars("hello\tworld", Browser::Firefox as u8),
+            "hello\tworld"
+        );
+    }
+
+    #[test]
     fn process_ignored_chars_replaces_control_chars_chrome() {
         // U+0001 (SOH) should become space in non-Firefox
         assert_eq!(
@@ -1731,5 +1977,212 @@ mod tests {
             process_ignored_chars("a\x01b", Browser::Firefox as u8),
             "ab"
         );
+    }
+
+    fn test_paragraph(texts: &[&str]) -> Paragraph {
+        let spans = texts
+            .iter()
+            .map(|text| {
+                TextSpan::new(
+                    text.to_string(),
+                    FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+                    14.0,
+                    1.2,
+                    0.0,
+                    None,
+                    None,
+                    TextDirection::LTR,
+                    400,
+                    Uuid::nil(),
+                    vec![],
+                )
+            })
+            .collect();
+
+        Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            spans,
+        )
+    }
+
+    #[test]
+    fn char_offsets_match_utf16_offsets_for_bmp_text() {
+        let para = test_paragraph(&["Añadir"]);
+        for offset in 0..=6 {
+            assert_eq!(para.char_offset_to_utf16(offset), offset);
+            assert_eq!(para.utf16_offset_to_char(offset), offset);
+        }
+    }
+
+    #[test]
+    fn char_offsets_account_for_astral_characters() {
+        let para = test_paragraph(&["a", "😀b"]);
+
+        assert_eq!(para.char_offset_to_utf16(0), 0);
+        assert_eq!(para.char_offset_to_utf16(1), 1);
+        assert_eq!(para.char_offset_to_utf16(2), 3);
+        assert_eq!(para.char_offset_to_utf16(3), 4);
+
+        assert_eq!(para.utf16_offset_to_char(0), 0);
+        assert_eq!(para.utf16_offset_to_char(1), 1);
+        assert_eq!(para.utf16_offset_to_char(3), 2);
+        assert_eq!(para.utf16_offset_to_char(4), 3);
+    }
+
+    #[test]
+    fn utf16_offset_inside_a_surrogate_pair_rounds_to_a_char_boundary() {
+        let para = test_paragraph(&["a😀b"]);
+        assert_eq!(para.utf16_offset_to_char(2), 2);
+    }
+
+    #[test]
+    fn char_offsets_account_for_text_transforms() {
+        // Skia lays out the transformed text, where "Straße" is "STRASSE".
+        let mut para = test_paragraph(&["Straße"]);
+        para.children_mut()[0].text_transform = Some(TextTransform::Uppercase);
+
+        assert_eq!(para.char_offset_to_utf16(4), 4);
+        assert_eq!(para.char_offset_to_utf16(6), 7);
+        assert_eq!(para.char_utf16_len_at(4), 2);
+        assert_eq!(para.utf16_offset_to_char(7), 6);
+    }
+
+    #[test]
+    fn char_utf16_len_at_covers_the_whole_glyph() {
+        let para = test_paragraph(&["a😀b"]);
+        assert_eq!(para.char_utf16_len_at(0), 1);
+        assert_eq!(para.char_utf16_len_at(1), 2);
+        assert_eq!(para.char_utf16_len_at(2), 1);
+    }
+
+    fn sample_text_content() -> TextContent {
+        let bounds = Rect::from_xywh(0.0, 0.0, 200.0, 100.0);
+        let mut content = TextContent::new(bounds, GrowType::Fixed);
+        content.add_paragraph(test_paragraph(&["hello"]));
+        content
+    }
+
+    #[test]
+    fn has_usable_paint_layout_false_when_paragraphs_empty() {
+        let content = TextContent::new(Rect::from_xywh(0.0, 0.0, 100.0, 50.0), GrowType::Fixed);
+        let shape = Shape::new(Uuid::nil());
+        assert!(!content.has_usable_paint_layout(&shape));
+    }
+
+    #[test]
+    fn has_usable_paint_layout_false_when_versions_mismatch() {
+        let mut content = sample_text_content();
+        content.layout.paragraphs = Rc::new(vec![vec![]]);
+        content.layout_width = Some(200.0);
+        content.layout_version = 1;
+        content.content_version = 2;
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        assert!(!content.has_usable_paint_layout(&shape));
+    }
+
+    #[test]
+    fn has_usable_paint_layout_true_when_cached_and_versions_match() {
+        let mut content = sample_text_content();
+        content.layout.paragraphs = Rc::new(vec![vec![]]);
+        content.layout_width = Some(200.0);
+        content.layout_version = 3;
+        content.content_version = 3;
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        assert!(content.has_usable_paint_layout(&shape));
+    }
+
+    #[test]
+    fn has_usable_paint_layout_false_when_selrect_width_changed() {
+        let mut content = sample_text_content();
+        content.layout.paragraphs = Rc::new(vec![vec![]]);
+        content.layout_width = Some(200.0);
+        content.layout_version = 3;
+        content.content_version = 3;
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_selrect(0.0, 0.0, 300.0, 100.0);
+        assert!(!content.has_usable_paint_layout(&shape));
+    }
+
+    fn text_shape_with_cached_layout(content: TextContent) -> Shape {
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        shape
+    }
+
+    #[test]
+    fn has_usable_paint_layout_false_when_rotated_and_resized() {
+        let mut content = sample_text_content();
+        content.layout.paragraphs = Rc::new(vec![vec![]]);
+        content.layout_width = Some(200.0);
+        content.layout_version = 3;
+        content.content_version = 3;
+        let base_shape = text_shape_with_cached_layout(content);
+        let rotate = Matrix::rotate_deg(45.0);
+        let resize = Matrix::scale((1.5, 1.0));
+        let mut modifier = rotate;
+        modifier.pre_concat(&resize);
+        assert!(modifier_changes_text_layout(&base_shape, &modifier));
+    }
+
+    #[test]
+    fn has_text_decorations_detects_underline() {
+        let mut content = sample_text_content();
+        content.paragraphs_mut()[0].children_mut()[0].text_decoration =
+            Some(skia::textlayout::TextDecoration::UNDERLINE);
+        assert!(content.has_text_decorations());
+    }
+
+    #[test]
+    fn has_text_decorations_false_for_plain_text() {
+        let content = sample_text_content();
+        assert!(!content.has_text_decorations());
+    }
+
+    #[test]
+    fn paint_content_for_selrect_borrows_when_bounds_match() {
+        let content = sample_text_content();
+        let selrect = Rect::from_xywh(10.0, 20.0, 200.0, 100.0);
+        match content.paint_content_for_selrect(selrect) {
+            Cow::Borrowed(_) => {}
+            Cow::Owned(_) => panic!("expected borrowed content"),
+        }
+    }
+
+    #[test]
+    fn paint_content_for_selrect_rebounds_when_size_differs() {
+        let content = sample_text_content();
+        let selrect = Rect::from_xywh(0.0, 0.0, 300.0, 100.0);
+        match content.paint_content_for_selrect(selrect) {
+            Cow::Owned(rebound) => {
+                assert_eq!(rebound.bounds().width(), 300.0);
+                assert!(rebound.layout.needs_update());
+            }
+            Cow::Borrowed(_) => panic!("expected rebound content"),
+        }
+    }
+
+    #[test]
+    fn layout_clone_shares_skia_paragraphs() {
+        let mut layout = TextContentLayout::new();
+        layout.paragraphs = Rc::new(vec![vec![]]);
+        let cloned = layout.clone();
+        assert!(Rc::ptr_eq(&layout.paragraphs, &cloned.paragraphs));
+        assert!(cloned.paragraph_builders.is_empty());
+    }
+
+    #[test]
+    fn layout_clear_empties_paragraphs() {
+        let mut layout = TextContentLayout::new();
+        layout.paragraphs = Rc::new(vec![vec![]]);
+        layout.clear();
+        assert!(layout.needs_update());
     }
 }

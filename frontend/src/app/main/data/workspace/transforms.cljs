@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.transforms
   "Events related with shapes transformations"
@@ -23,6 +23,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -362,6 +364,71 @@
                    (rx/of
                     (dwm/apply-modifiers)
                     (finish-transform))))))))))))
+
+(defn start-move-line-point
+  "Drags one endpoint of a straight path while keeping the other fixed."
+  [shape index]
+  (ptk/reify ::start-move-line-point
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id          (dm/get-prop shape :id)
+            page-id     (:current-page-id state)
+            objects     (dsh/lookup-page-objects state page-id)
+            zoom        (dm/get-in state [:workspace-local :zoom] 1)
+            layout      (:workspace-layout state)
+            focus       (:workspace-focus-selected state)
+
+            content     (dm/get-prop shape :content)
+            start-point (path.helpers/segment->point (nth content index))
+            other-point (path.helpers/segment->point (nth content (if (zero? index) 1 0)))
+
+            stopper     (mse/drag-stopper stream)
+
+            ;; Shift constrains the endpoint around the fixed point.
+            position-stream
+            (->> ms/mouse-position
+                 (rx/filter some?)
+                 (rx/with-latest-from ms/mouse-position-shift)
+                 (rx/switch-map
+                  (fn [[pos shift?]]
+                    (if ^boolean shift?
+                      (rx/of (path.helpers/position-fixed-angle pos other-point))
+                      (snap/closest-snap-point page-id [shape] objects layout zoom focus pos))))
+                 (rx/share))
+
+            move-endpoint
+            (fn [pos save-undo?]
+              (let [delta (gpt/to-vec start-point pos)]
+                (dwsh/update-shapes
+                 [id]
+                 (fn [_]
+                   (-> shape
+                       (assoc :content (path/apply-content-modifiers
+                                        content
+                                        {index {:x (dm/get-prop delta :x)
+                                                :y (dm/get-prop delta :y)}}))
+                       (path/update-geometry)))
+                 {:reg-objects? true :save-undo? save-undo?})))]
+
+        ;; Hide selection controls during the drag.
+        (rx/concat
+         (rx/of #(assoc-in % [:workspace-local :transform] :move))
+         ;; Subscribe the preview and commit branches together.
+         (rx/merge
+          ;; Preview without creating undo entries.
+          (->> position-stream
+               (rx/sample mconst/move-sample-time)
+               (rx/map #(move-endpoint % false))
+               (rx/take-until stopper))
+          ;; Commit the final position as one undo step.
+          (->> position-stream
+               (rx/take-until stopper)
+               (rx/last)
+               (rx/mapcat
+                (fn [pos]
+                  (rx/of (move-endpoint start-point false)
+                         (move-endpoint pos true))))))
+         (rx/of #(assoc-in % [:workspace-local :transform] nil)))))))
 
 (defn trigger-bounding-box-cloaking
   "Trigger the bounding box cloaking (with default timer of 1sec)
@@ -1125,19 +1192,169 @@
                                         :ignore-touched (:ignore-touched options)
                                         :ignore-snap-pixel true}))))))))
 
+;; -- Sidebar measures transform coalescing ----------------------------
+
+;; The sidebar measures panel numeric inputs emit one event per DOM
+;; gesture tick (held arrow keys, mouse wheel, scrub drags). Committing
+;; each tick would run a full `apply-modifiers` per DOM event and starve
+;; the renderer (React error #185). The events in this section coalesce
+;; those bursts at the data layer: the first event of a burst commits
+;; immediately (leading edge, so single edits stay synchronous), further
+;; ticks commit at most once per `mconst/sidebar-transform-sample-time`
+;; (throttle), and a trailing debounced flush guarantees the exact final
+;; value lands. All payloads are absolute values, so keeping only the
+;; latest queued value per shape/attribute is lossless.
+
+(defn- sidebar-commit-events
+  "Build the real commit events for a drained pending entry of `kind`,
+  skipping shapes that no longer exist on the queued page."
+  [state kind entry]
+  (let [options  (:options entry)
+        page-id  (or (:page-id options) (:current-page-id state))
+        objects  (dsh/lookup-page-objects state page-id)
+        options  (assoc options :page-id page-id)
+        live-ids (fn [ids] (into [] (filter #(contains? objects %)) ids))]
+    (case kind
+      ::positions
+      (keep (fn [[id position]]
+              (when (contains? objects id)
+                (update-position id position options)))
+            (:positions entry))
+
+      ::dimensions
+      (let [ids (live-ids (:ids entry))]
+        (when (seq ids)
+          (map (fn [[attr value]]
+                 (update-dimensions ids attr value options))
+               (:values entry))))
+
+      ::rotation
+      (let [ids (live-ids (:ids entry))]
+        (when (seq ids)
+          [(increase-rotation ids (:value entry) nil :page-id page-id)])))))
+
+(defn- flush-sidebar-transforms
+  "Internal: atomically drain the pending sidebar transform payloads and
+  emit their commit events. No-op when nothing is pending."
+  []
+  (ptk/reify ::flush-sidebar-transforms
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pending (::pending-sidebar-transforms state)]
+        (-> state
+            (dissoc ::pending-sidebar-transforms)
+            (assoc ::flushing-sidebar-transforms pending))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [pending (::flushing-sidebar-transforms state)]
+        (rx/concat
+         (if (empty? pending)
+           (rx/empty)
+           (->> pending
+                (mapcat (fn [[kind entry]] (sidebar-commit-events state kind entry)))
+                (rx/from)))
+         (rx/of (fn [state] (dissoc state ::flushing-sidebar-transforms))))))))
+
+(defn- queue-sidebar-transform
+  "Internal: accumulate the latest payload of `kind` with `update-entry`
+  (a fn from the previous pending entry to the new one).
+
+  The very first queued event of the workspace session also installs the
+  drain stream that commits pending payloads: a leading flush for the
+  first event, at most one flush per
+  `mconst/sidebar-transform-sample-time` while a burst is ongoing
+  (throttle), and a trailing flush (debounce) that guarantees the exact
+  final value lands. The drain stream lives until the workspace is
+  finalized, so subsequent bursts reuse it."
+  [kind update-entry]
+  (let [cur-event (js/Symbol)]
+    (ptk/reify ::queue-sidebar-transform
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [state (update-in state [::pending-sidebar-transforms kind]
+                               (fn [entry] (update-entry (or entry {}))))]
+          (if (nil? (::sidebar-transform-drain state))
+            (assoc state ::sidebar-transform-drain cur-event)
+            state)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= cur-event (::sidebar-transform-drain state))
+          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+            (rx/merge
+             ;; Leading edge: commit the payload this first event queued.
+             (rx/of (flush-sidebar-transforms))
+             ;; At most one commit per window while a burst is ongoing.
+             (->> stream
+                  (rx/filter (ptk/type? ::queue-sidebar-transform))
+                  (rx/throttle mconst/sidebar-transform-sample-time)
+                  (rx/map (fn [_] (flush-sidebar-transforms)))
+                  (rx/take-until stopper))
+             ;; Trailing edge: guarantee the exact final value lands.
+             (->> stream
+                  (rx/filter (ptk/type? ::queue-sidebar-transform))
+                  (rx/debounce mconst/sidebar-transform-sample-time)
+                  (rx/map (fn [_] (flush-sidebar-transforms)))
+                  (rx/take-until stopper))))
+          (rx/empty))))))
+
 (defn update-positions
-  "Move multiple shapes to a new position."
+  "Move multiple shapes to a new position, from the sidebar options form.
+
+  Burst-coalesced (see `queue-sidebar-transform`): rapid successive calls
+  from the sidebar numeric inputs commit at most once per
+  `mconst/sidebar-transform-sample-time`, and the trailing flush commits
+  the exact final position. A single call still commits synchronously."
   ([ids position] (update-positions ids position nil))
   ([ids position options]
    (assert (every? uuid? ids)
            "expected valid coll of uuids")
    (assert (map? position) "expected a valid map for `position`")
-   (ptk/reify ::update-positions
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (->> ids
-            (map (fn [id] (update-position id position options)))
-            (rx/from))))))
+   (queue-sidebar-transform
+    ::positions
+    (fn [entry]
+      (-> entry
+          (update :positions
+                  (fn [positions]
+                    (reduce (fn [positions id]
+                              (update positions id merge position))
+                            (or positions {})
+                            ids)))
+          (assoc :options options))))))
+
+(defn update-dimensions-coalesced
+  "Like `update-dimensions`, but burst-coalesced (see
+  `queue-sidebar-transform`); used by the sidebar measures panel numeric
+  inputs. The latest queued value per attribute wins."
+  ([ids attr value] (update-dimensions-coalesced ids attr value nil))
+  ([ids attr value options]
+   (assert (number? value))
+   (assert (every? uuid? ids)
+           "expected valid coll of uuids")
+   (assert (contains? #{:width :height} attr)
+           "expected valid attr")
+   (queue-sidebar-transform
+    ::dimensions
+    (fn [entry]
+      (-> entry
+          (assoc-in [:values attr] value)
+          (assoc :ids ids :options options))))))
+
+(defn increase-rotation-coalesced
+  "Like `increase-rotation` with an absolute rotation value, but
+  burst-coalesced (see `queue-sidebar-transform`); used by the sidebar
+  measures panel rotation input. The latest queued absolute value wins;
+  the delta is recomputed from the current rotation when the burst
+  commits."
+  [ids rotation]
+  (assert (every? uuid? ids)
+          "expected valid coll of uuids")
+  (assert (number? rotation))
+  (queue-sidebar-transform
+   ::rotation
+   (fn [entry]
+     (assoc entry :value rotation :ids ids :options nil))))
 
 (defn position-shapes
   [shapes]

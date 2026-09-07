@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.session
   (:refer-clojure :exclude [read])
@@ -204,7 +204,7 @@
   [{:keys [::manager]}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request response]
-    (some->> (get request ::id) (delete-session manager))
+    (some->> (get request ::session) :id (delete-session manager))
     (clear-session-cookie response)))
 
 (defn decode-token
@@ -224,6 +224,14 @@
   [cfg session]
   (let [sql "delete from http_session_v2 where profile_id = ? and id != ?"]
     (-> (db/exec-one! cfg [sql (:profile-id session) (:id session)])
+        (db/get-update-count))))
+
+(defn invalidate-all
+  "Delete all sessions for a given profile. Used when a profile is deleted
+  to ensure immediate access revocation across all devices."
+  [cfg profile-id]
+  (let [sql "delete from http_session_v2 where profile_id = ?"]
+    (-> (db/exec-one! cfg [sql profile-id])
         (db/get-update-count))))
 
 (def ^:private sql:clear-organization-sso-sessions

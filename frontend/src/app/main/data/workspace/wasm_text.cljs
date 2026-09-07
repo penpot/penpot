@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.wasm-text
   "Helpers/events to resize wasm text shapes without depending on workspace.texts.
@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
@@ -93,48 +94,55 @@
               (rx/empty))]
         (wrf/with-pending :text-resize [id] resize-stream)))))
 
+(defn- merge-resize-debounce-opts
+  [prev {:keys [undo-group undo-id skip-component-sync?]}]
+  (cond-> (or prev {})
+    (some? undo-group) (assoc :undo-group undo-group)
+    (some? undo-id) (assoc :undo-id undo-id)
+    skip-component-sync? (assoc :skip-component-sync? true)))
+
 (defn resize-wasm-text-debounce-commit
-  ([]
-   (resize-wasm-text-debounce-commit nil nil))
-  ([undo-group undo-id]
-   (ptk/reify ::resize-wasm-text-debounce-commit
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [ids (get state ::resize-wasm-text-debounce-ids)
-             objects (dsh/lookup-page-objects state)
+  []
+  (ptk/reify ::resize-wasm-text-debounce-commit
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ids (get state ::resize-wasm-text-debounce-ids)
+            {:keys [undo-group undo-id skip-component-sync?]} (get state ::resize-wasm-text-debounce-opts)
+            objects (dsh/lookup-page-objects state)
 
-             modifiers
-             (reduce
-              (fn [modifiers id]
-                (let [shape (get objects id)]
-                  (cond-> modifiers
-                    (and (some? shape)
-                         (cfh/text-shape? shape)
-                         (not= :fixed (:grow-type shape)))
-                    (merge (resize-wasm-text-modifiers shape)))))
-              {}
-              ids)
+            modifiers
+            (reduce
+             (fn [modifiers id]
+               (let [shape (get objects id)]
+                 (cond-> modifiers
+                   (and (some? shape)
+                        (cfh/text-shape? shape)
+                        (not= :fixed (:grow-type shape)))
+                   (merge (resize-wasm-text-modifiers shape)))))
+             {}
+             ids)
 
-             ;; When undo-id is present, extend the current undo transaction instead of
-             ;; creating a new one, and commit it after the resize (single undo action).
-             extend-tx? (some? undo-id)
-             apply-opts (cond-> {}
-                          (some? undo-group) (assoc :undo-group undo-group)
-                          extend-tx? (assoc :undo-transation? false))]
-         (cond
-           (not (empty? modifiers))
-           (if extend-tx?
-             (rx/concat
-              (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts))
-              (rx/of (dwu/commit-undo-transaction undo-id)))
-             (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts)))
+            ;; When undo-id is present, extend the current undo transaction instead of
+            ;; creating a new one, and commit it after the resize (single undo action).
+            extend-tx? (some? undo-id)
+            apply-opts (cond-> {}
+                         (some? undo-group) (assoc :undo-group undo-group)
+                         extend-tx? (assoc :undo-transation? false)
+                         skip-component-sync? (assoc :skip-component-sync? true))]
+        (cond
+          (not (empty? modifiers))
+          (if extend-tx?
+            (rx/concat
+             (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts))
+             (rx/of (dwu/commit-undo-transaction undo-id)))
+            (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts)))
 
-           extend-tx?
-           ;; No resize needed (e.g. :fixed grow-type) but we must commit the add
-           (rx/of (dwu/commit-undo-transaction undo-id))
+          extend-tx?
+          ;; No resize needed (e.g. :fixed grow-type) but we must commit the add
+          (rx/of (dwu/commit-undo-transaction undo-id))
 
-           :else
-           (rx/empty)))))))
+          :else
+          (rx/empty))))))
 
 ;; This event will debounce the resize events so, if there are many, they
 ;; are processed at the same time and not one-by-one. This will improve
@@ -143,7 +151,7 @@
 (defn resize-wasm-text-debounce-inner
   ([id]
    (resize-wasm-text-debounce-inner id nil))
-  ([id {:keys [undo-group undo-id]}]
+  ([id opts]
    (let [cur-event   (js/Symbol)
          reflow-task (wrf/task :text-resize [id])]
      (ptk/reify ::resize-wasm-text-debounce-inner
@@ -152,6 +160,8 @@
          (-> state
              (update ::resize-wasm-text-debounce-ids (fnil conj []) id)
              (update ::resize-wasm-text-reflow-tasks (fnil conj []) reflow-task)
+             (cond-> (seq opts)
+               (update ::resize-wasm-text-debounce-opts merge-resize-debounce-opts opts))
              (cond-> (nil? (::resize-wasm-text-debounce-event state))
                (assoc ::resize-wasm-text-debounce-event cur-event))))
 
@@ -159,37 +169,33 @@
        (watch [_ state stream]
          (wrf/start! reflow-task)
          (if (= (::resize-wasm-text-debounce-event state) cur-event)
-           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+           (let [stopper (->> stream (rx/filter (ptk/type? ::dw/finalize-workspace)))]
              (rx/concat
               (rx/merge
                (->> stream
                     (rx/filter (ptk/type? ::resize-wasm-text-debounce-inner))
                     (rx/debounce debounce-resize-text-time)
                     (rx/take 1)
-                    (rx/map (fn [evt]
-                              (resize-wasm-text-debounce-commit
-                               (some-> evt meta :undo-group)
-                               (some-> evt meta :undo-id))))
+                    (rx/map (fn [_] (resize-wasm-text-debounce-commit)))
                     (rx/take-until stopper))
-               (rx/of (with-meta
-                        (resize-wasm-text-debounce-inner id)
-                        {:undo-group undo-group :undo-id undo-id})))
+               (rx/of (resize-wasm-text-debounce-inner id opts)))
               ;; Cleanup, reached both after the commit and when the stopper
               ;; cancels the debounce, so the batch always drains and stays
               ;; pending until the resize is applied. All exact tasks in the
               ;; batch are retained in state and finished by the cleanup.
               (rx/of (fn [state]
-                       (run! wrf/finish! (::resize-wasm-text-reflow-tasks state))
+                       (wrf/finish-tasks! (::resize-wasm-text-reflow-tasks state))
                        (dissoc state
                                ::resize-wasm-text-debounce-ids
                                ::resize-wasm-text-reflow-tasks
+                               ::resize-wasm-text-debounce-opts
                                ::resize-wasm-text-debounce-event)))))
            (rx/empty)))))))
 
 (defn resize-wasm-text-debounce
   ([id]
    (resize-wasm-text-debounce id nil))
-  ([id {:keys [undo-group undo-id] :as opts}]
+  ([id {:keys [undo-group undo-id skip-component-sync?] :as opts}]
    (ptk/reify ::resize-wasm-text-debounce
      ptk/WatchEvent
      (watch [_ state _]
@@ -198,19 +204,20 @@
              content (dm/get-in objects [id :content])
              fonts   (wasm.fonts/get-content-fonts content)
 
-             fonts-loaded?
+             fonts-ready?
              (->> fonts
                   (every?
                    (fn [font]
                      (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))
+                       (wasm.fonts/font-ready? font-data)))))
 
              resize-wasm-stream
-             (if fonts-loaded?
-               (let [pass-opts (when (or (some? undo-group) (some? undo-id))
+             (if fonts-ready?
+               (let [pass-opts (when (or (some? undo-group) (some? undo-id) skip-component-sync?)
                                  (cond-> {}
                                    (some? undo-group) (assoc :undo-group undo-group)
-                                   (some? undo-id) (assoc :undo-id undo-id)))]
+                                   (some? undo-id) (assoc :undo-id undo-id)
+                                   skip-component-sync? (assoc :skip-component-sync? true)))]
                  (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
 
                ;; Fonts not loaded; retry after 20 msecs
@@ -232,15 +239,32 @@
      (watch [_ state stream]
        (let [resize-stream
              (->> (rx/from ids)
-                  (rx/map #(resize-wasm-text-debounce % opts)))]
+                  (rx/map #(resize-wasm-text-debounce % opts)))
+
+             buffer-finished-stream
+             (->> (rx/merge
+                   (->> stream
+                        (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+                        (rx/map (constantly :commit)))
+                   ;; Let a buffered commit beat the stop signal.
+                   (->> stream
+                        (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-stop))
+                        (rx/observe-on :async)
+                        (rx/map (constantly :stop)))
+                   (->> stream
+                        (rx/filter (ptk/type? ::dw/finalize-workspace))
+                        (rx/map (constantly :finalize))))
+                  (rx/take 1))]
          (if (::dwsh/update-shapes-buffer state)
            ;; If we're in the middle of a token propagation we wait until is finished to
            ;; recalculate the text sizes. The shapes stay pending for that whole wait,
            ;; since the per-shape debounce only marks them once dispatched.
            (wrf/with-pending
              :text-resize ids
-             (->> stream
-                  (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
-                  (rx/take 1)
-                  (rx/mapcat (constantly resize-stream))))
+             (->> buffer-finished-stream
+                  (rx/mapcat
+                   (fn [reason]
+                     (if (= reason :finalize)
+                       (rx/empty)
+                       resize-stream)))))
            resize-stream))))))

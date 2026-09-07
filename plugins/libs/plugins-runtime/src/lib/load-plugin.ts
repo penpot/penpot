@@ -30,8 +30,10 @@ const closeAllPlugins = () => {
 
 window.addEventListener('message', (event) => {
   try {
-    for (const it of plugins) {
-      it.plugin.sendMessage(event.data);
+    const senderPlugin = plugins.find((it) => it.iframeWindow === event.source);
+
+    if (senderPlugin) {
+      senderPlugin.plugin.sendMessage(event.data);
     }
   } catch (err) {
     console.error(err);

@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.projects
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -259,7 +260,8 @@
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id name] :as params}]
   (check-edition-permissions! conn profile-id id)
-  (let [project (db/get-by-id conn :project id ::sql/for-update true)]
+  (let [project (db/get-by-id conn :project id ::sql/for-update true)
+        name    (d/normalize-string name)]
     (db/update! conn :project
                 {:name name}
                 {:id id})

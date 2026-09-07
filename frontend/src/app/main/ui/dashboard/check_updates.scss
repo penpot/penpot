@@ -1,0 +1,175 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-set);
+  background-color: var(--color-overlay-default);
+}
+
+.modal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-inline-size: $sz-364;
+  max-inline-size: $sz-512;
+}
+
+.modal-container-available {
+  max-inline-size: $sz-480;
+  max-block-size: min(90vh, $sz-712);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-m);
+  padding-inline-end: var(--sp-xl);
+}
+
+.modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.modal-title-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-primary);
+}
+
+.modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.modal-close-btn {
+  position: absolute;
+  inset-block-start: var(--sp-m);
+  inset-inline-end: var(--sp-m);
+}
+
+.version-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-m);
+  padding: var(--sp-m) var(--sp-l);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+}
+
+.version-bar-side {
+  @include use-typography("body-large");
+}
+
+.version-bar-arrow {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-block-size: 0;
+}
+
+.modal-msg {
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.version {
+  color: var(--color-foreground-primary);
+  font-weight: 700;
+}
+
+.version-accent {
+  color: var(--color-accent-primary);
+}
+
+.highlights-title {
+  margin: var(--sp-m) 0 0;
+  color: var(--color-foreground-secondary);
+  text-transform: uppercase;
+}
+
+.highlights-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  margin-block-start: var(--sp-s);
+  padding-inline-end: var(--sp-s);
+  max-block-size: $sz-284;
+  overflow-y: auto;
+}
+
+.highlights-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.highlights-version {
+  @include use-typography("headline-small");
+
+  color: var(--color-foreground-primary);
+  font-weight: 700;
+}
+
+.highlights-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.highlights-item {
+  @include use-typography("body-large");
+
+  position: relative;
+  padding-inline-start: var(--sp-l);
+  color: var(--color-foreground-secondary);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0.55em;
+    inset-inline-start: 0;
+    inline-size: $sz-6;
+    block-size: $sz-6;
+    border-radius: $br-circle;
+    background-color: var(--color-accent-primary);
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+.modal-footer-available {
+  flex-shrink: 0;
+}

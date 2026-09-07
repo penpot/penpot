@@ -8,7 +8,7 @@ mod gradient;
 mod image;
 mod solid;
 
-const RAW_FILL_DATA_SIZE: usize = std::mem::size_of::<RawFillData>();
+pub(crate) const RAW_FILL_DATA_SIZE: usize = std::mem::size_of::<RawFillData>();
 
 #[repr(C, u8, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]

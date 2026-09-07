@@ -1,4 +1,5 @@
 mod base_props;
+mod upload_batch;
 
 use macros::ToJs;
 
