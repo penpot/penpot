@@ -1,6 +1,6 @@
 use super::fixtures::*;
 
-use crate::shapes::{BlendMode, Fill, SolidColor, StrokeCap, StrokeKind};
+use crate::shapes::{BlendMode, Fill, ImageFill, SolidColor, StrokeCap, StrokeKind};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 
@@ -959,6 +959,232 @@ fn exports_solid_text_with_font_face() {
     assert!(
         svg.contains("width=\"560\" height=\"240\""),
         "fixed text should export at selrect size: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_on_text() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_image_text(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        image_id,
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "text image fill must emit a linked <image>: {svg}"
+    );
+    assert!(
+        svg.contains("clip-path=\"url(#"),
+        "text image fill must be clipped to glyph silhouette: {svg}"
+    );
+    assert!(
+        svg.contains("<clipPath ") && svg.contains("<text"),
+        "clipPath must contain text glyphs: {svg}"
+    );
+    assert!(
+        !svg.contains("data:image"),
+        "must not base64-embed the image: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_as_linked_image() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_image_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        image_id,
+        true,
+        255,
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains("<image"),
+        "image fill must emit an <image> element: {svg}"
+    );
+    assert!(
+        svg.contains(TEST_IMAGE_URL),
+        "image href must use the registered URL: {svg}"
+    );
+    assert!(
+        svg.contains("preserveAspectRatio=\"xMidYMid slice\""),
+        "keep-aspect image fill must slice: {svg}"
+    );
+    assert!(
+        svg.contains("clip-path=\"url(#"),
+        "image fill must be clipped to shape geometry: {svg}"
+    );
+    assert!(
+        !svg.contains("data:image"),
+        "must not base64-embed the image: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_mixed_solid_and_image_fills_in_order() {
+    // Image under a translucent solid; stretch (keep-aspect off); partial image
+    // opacity; shape not at the page origin (page translate in CTM).
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_rect_with_fills(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (100.0, 50.0, 508.0, 178.0),
+        vec![
+            // fills[0] topmost — solid blue @ 50%
+            Fill::Solid(SolidColor(skia::Color::from_argb(128, 0, 63, 255))),
+            // fills[1] underneath — linked image, stretch, ~50% opacity
+            Fill::Image(ImageFill::new(image_id, 128, 400, 300, false)),
+        ],
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    let image_pos = svg.find("<image");
+    let blue_pos = svg.to_ascii_lowercase().find("fill=\"#003fff\"");
+    assert!(image_pos.is_some(), "missing image fill: {svg}");
+    assert!(blue_pos.is_some(), "missing top solid fill: {svg}");
+    assert!(
+        image_pos.unwrap() < blue_pos.unwrap(),
+        "image (bottom) must appear before solid (top): {svg}"
+    );
+    assert!(
+        svg.contains("preserveAspectRatio=\"none\""),
+        "mixed image fill should stretch when keep-aspect is off: {svg}"
+    );
+    // 128/255 → ~0.50196 as f32 (not a rounded "0.5").
+    assert!(
+        svg.contains("opacity=\"0.5019608\""),
+        "image fill opacity must be emitted: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_on_closed_path() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_image_path(&mut pool, id, Uuid::nil(), true, image_id);
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "closed path must emit a linked image fill: {svg}"
+    );
+    assert!(
+        svg.contains("clip-path=\"url(#"),
+        "image fill must be clipped to the path: {svg}"
+    );
+    // Clip geometry should be a path (triangle), not a plain rect.
+    assert!(
+        svg.contains("<path") || svg.contains(" d=\""),
+        "closed-path clip must use path geometry: {svg}"
+    );
+    assert!(
+        svg.contains("preserveAspectRatio=\"xMidYMid slice\""),
+        "keep-aspect image fill on path: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_on_open_path() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_image_path(&mut pool, id, Uuid::nil(), false, image_id);
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "open path must still emit a linked image fill: {svg}"
+    );
+    assert!(
+        svg.contains("clip-path=\"url(#"),
+        "image fill must be clipped to the open path geometry: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_on_frame() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_image_frame(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        image_id,
+        false,
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "frame background must emit a linked image fill: {svg}"
+    );
+    assert!(
+        svg.contains("clip-path=\"url(#"),
+        "frame image fill must be clipped to the frame: {svg}"
+    );
+    assert!(
+        svg.contains("preserveAspectRatio=\"xMidYMid slice\""),
+        "frame image fill should keep aspect: {svg}"
+    );
+    // No nested board clip when clip_content is off.
+    assert!(
+        !svg.contains("id=\"clip0\""),
+        "unclipped frame should not wrap children in a board clip: {svg}"
     );
     insta::assert_snapshot!(svg);
 }

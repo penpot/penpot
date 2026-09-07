@@ -5,7 +5,7 @@ use skia_safe as skia;
 use crate::globals::TestRenderResourcesGuard;
 use crate::render::{FontStore, RenderResources};
 use crate::shapes::{
-    Fill, FontFamily, FontStyle, Frame, Group, GrowType, Paragraph, Path, Rect, Segment,
+    Fill, FontFamily, FontStyle, Frame, Group, GrowType, ImageFill, Paragraph, Path, Rect, Segment,
     SolidColor, Stroke, StrokeKind, StrokeStyle, TextAlign, TextContent, TextDirection, TextSpan,
     Type,
 };
@@ -18,6 +18,10 @@ use super::render_tree_to_svg;
 /// Font URL referenced in exported SVG `@font-face` rules.
 pub(super) const TEST_FONT_URL: &str = "fonts/sourcesanspro-regular.ttf";
 
+/// Media URL referenced by linked `<image href>` fills in SVG export tests.
+/// Relative path so `./preview-snapshots` can resolve it under `target/svg-preview/`.
+pub(super) const TEST_IMAGE_URL: &str = "images/test-fill.svg";
+
 fn register_test_font_urls(fonts: &mut FontStore) {
     let family = FontFamily::new(Uuid::nil(), 400, FontStyle::Normal);
     fonts.set_source_url(&family.alias(), TEST_FONT_URL.to_string());
@@ -26,6 +30,31 @@ fn register_test_font_urls(fonts: &mut FontStore) {
 /// Deterministic UUID from a small integer, keeping snapshots stable.
 pub(super) fn uid(n: u32) -> Uuid {
     uuid_from_u32_quartet(0, 0, 0, n)
+}
+
+/// Adds a rectangle filled with a linked image (must call `render_with` / register URL).
+pub(super) fn add_image_rect(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    image_id: Uuid,
+    keep_aspect_ratio: bool,
+    opacity: u8,
+) {
+    add_rect_with_fills(
+        pool,
+        id,
+        parent,
+        (l, t, r, b),
+        vec![Fill::Image(ImageFill::new(
+            image_id,
+            opacity,
+            200,
+            100,
+            keep_aspect_ratio,
+        ))],
+    );
 }
 
 /// Adds a solid-filled rectangle to the pool.
@@ -69,12 +98,98 @@ pub(super) fn add_frame(
     color: skia::Color,
     clip: bool,
 ) {
+    add_frame_with_fills(
+        pool,
+        id,
+        parent,
+        (l, t, r, b),
+        vec![Fill::Solid(SolidColor(color))],
+        clip,
+    );
+}
+
+fn add_frame_with_fills(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    fills: Vec<Fill>,
+    clip: bool,
+) {
     let shape = pool.add_shape(id);
     shape.set_parent(parent);
     shape.set_shape_type(Type::Frame(Frame::default()));
     shape.set_selrect(l, t, r, b);
-    shape.set_fills(vec![Fill::Solid(SolidColor(color))]);
+    shape.set_fills(fills);
     shape.set_clip(clip);
+}
+
+/// Frame whose background is a linked image fill.
+pub(super) fn add_image_frame(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    image_id: Uuid,
+    clip: bool,
+) {
+    add_frame_with_fills(
+        pool,
+        id,
+        parent,
+        (l, t, r, b),
+        vec![test_image_fill(image_id)],
+        clip,
+    );
+}
+
+fn triangle_segments(closed: bool) -> Vec<Segment> {
+    let mut segments = vec![
+        Segment::MoveTo((10.0, 90.0)),
+        Segment::LineTo((50.0, 10.0)),
+        Segment::LineTo((90.0, 90.0)),
+    ];
+    if closed {
+        segments.push(Segment::Close);
+    }
+    segments
+}
+
+fn add_path_with_fills(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    segments: Vec<Segment>,
+    fills: Vec<Fill>,
+) {
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_shape_type(Type::Path(Path::new(segments)));
+    shape.set_selrect(l, t, r, b);
+    shape.set_fills(fills);
+}
+
+fn test_image_fill(image_id: Uuid) -> Fill {
+    Fill::Image(ImageFill::new(image_id, 255, 200, 100, true))
+}
+
+/// Triangle path (open or closed) with a linked image fill.
+pub(super) fn add_image_path(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    closed: bool,
+    image_id: Uuid,
+) {
+    add_path_with_fills(
+        pool,
+        id,
+        parent,
+        (0.0, 0.0, 100.0, 100.0),
+        triangle_segments(closed),
+        vec![test_image_fill(image_id)],
+    );
 }
 
 /// Adds an empty (unmasked) group.
@@ -249,9 +364,39 @@ fn stroke_with_style(
     stroke
 }
 
+/// Text with a linked image fill (register URL via `render_with`).
+pub(super) fn add_image_text(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    bounds: (f32, f32, f32, f32),
+    text: &str,
+    font_size: f32,
+    image_id: Uuid,
+) {
+    add_text_with_fills(
+        pool,
+        id,
+        bounds,
+        text,
+        font_size,
+        vec![test_image_fill(image_id)],
+    );
+}
+
 pub(super) fn render(pool: &ShapesPool, root: Uuid) -> String {
+    render_with(pool, root, |_resources| {})
+}
+
+/// Like [`render`], but lets the test register extra resources (e.g. image URLs)
+/// before export.
+pub(super) fn render_with(
+    pool: &ShapesPool,
+    root: Uuid,
+    setup: impl FnOnce(&mut RenderResources),
+) -> String {
     let mut resources = RenderResources::try_new_headless().expect("headless resources");
     register_test_font_urls(&mut resources.fonts);
+    setup(&mut resources);
     let _guard = TestRenderResourcesGuard::install(&mut resources);
     let bytes = render_tree_to_svg(&mut resources, &root, pool, 1.0).expect("svg export");
     String::from_utf8(bytes).expect("utf8 svg")

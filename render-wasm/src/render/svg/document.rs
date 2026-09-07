@@ -16,7 +16,7 @@ use crate::render::vector::draw_shape_geometry;
 
 /// Accumulates the SVG document body while drawing.
 pub(crate) struct SvgLayerCanvas {
-    pub(super) scale: f32,
+    scale: f32,
     page_rect: skia::Rect,
     tx: f32,
     ty: f32,
@@ -95,6 +95,28 @@ impl SvgLayerCanvas {
     pub(super) fn close_group(&mut self) {
         self.flush();
         self.out.push_str("</g>");
+    }
+
+    /// Appends raw SVG markup to the body (flushes any pending Skia fragment first).
+    pub(super) fn push_raw(&mut self, markup: &str) {
+        self.flush();
+        self.out.push_str(markup);
+    }
+
+    /// CTM for leaf content placed in page space: Scale * Translate * Centered.
+    pub(super) fn page_shape_matrix_attr(&self, shape: &Shape) -> String {
+        let mut ctm = skia::Matrix::scale((self.scale, self.scale));
+        ctm = ctm * skia::Matrix::translate((self.tx, self.ty));
+        ctm = ctm * shape.centered_transform();
+        format!(
+            "matrix({} {} {} {} {} {})",
+            ctm.scale_x(),
+            ctm.skew_y(),
+            ctm.skew_x(),
+            ctm.scale_y(),
+            ctm.translate_x(),
+            ctm.translate_y()
+        )
     }
 
     /// Emits a `<clipPath>` from a shape's geometry (in device/page space).
