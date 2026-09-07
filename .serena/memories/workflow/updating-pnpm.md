@@ -14,6 +14,15 @@ file (never pipe tool output through filters).
   workspace. Members must not carry their own `pnpm-workspace.yaml` or
   `pnpm-lock.yaml`; their dependencies resolve through the parent
   workspace's lockfile.
+- One shared pnpm store for the whole repo: `<repo>/.pnpm-store`. Every
+  workspace yaml sets it explicitly: `storeDir: .pnpm-store` at the root,
+  `storeDir: ../.pnpm-store` in each module. pnpm resolves the value
+  against the workspace root, so all workspaces land on the same store.
+  Do not remove these lines: nested workspaces do not inherit settings,
+  and without them each workspace may resolve a different store.
+- The store survives `node_modules` cleans. It is content-addressed and
+  integrity-verified, so it cannot go stale; staleness lives in
+  node_modules. Only `scripts/clean-node-modules --store` removes it.
 - Every `package.json` (about 35 of them) must carry a `packageManager` field
   with the identical `pnpm@<version>+sha512.<hash>` value. Do not let them drift.
 - CI pins no pnpm version; workflows rely on corepack reading
@@ -63,3 +72,18 @@ file (never pipe tool output through filters).
 - `pnpm --version` in each workspace prints the target version.
 - `pnpm install --frozen-lockfile` succeeds in each of the 11 workspaces.
 - `git diff` on lockfiles matches the expectations above.
+
+## Cleaning stale node_modules
+
+- `scripts/clean-node-modules` removes every workspace `node_modules`: the
+  repo root, all module workspaces, and all member packages. Use it when
+  installs misbehave after dependency changes: clean, reinstall, done.
+- Flags: `-n/--dry-run` lists without deleting; `--store` also removes the
+  shared pnpm store at `<repo>/.pnpm-store` (the next install re-downloads
+  what it held). `external/` (vendored dependency trees with their own
+  lifecycles) and `.opencode/` are always ignored.
+- The script never touches the pnpm store by default, so the reinstall
+  after cleaning reuses cached packages (zero downloads).
+- After cleaning, run `pnpm install` in each workspace root to restore the
+  development environment; `frontend` postinstall also reinstalls and
+  builds `plugins-runtime`.

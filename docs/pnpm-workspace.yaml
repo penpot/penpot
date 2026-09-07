@@ -1,3 +1,5 @@
+storeDir: ../.pnpm-store
+
 minimumReleaseAgeExclude:
   - undici@7.28.0 || 7.29.0
   - js-yaml@3.15.0 || 4.3.0
