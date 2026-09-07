@@ -603,3 +603,20 @@ test("Renders background blur under strokes on rects, paths and texts", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders background blur clipped by a board with clip content", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-background-blur-clip.json");
+
+  await workspace.goToWorkspace({
+    id: "77d38721-22c1-81f4-8008-9a2a3e7ce674",
+    pageId: "77d38721-22c1-81f4-8008-9a2a3e7ce675",
+    pageName: "bg-blur-clip",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
