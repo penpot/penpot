@@ -8,6 +8,7 @@
   (:require
    [app.auth :as auth]
    [app.config :as cf]
+   [app.rpc.commands.profile :as profile]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -38,3 +39,38 @@
   (with-redefs [cf/flags (disj cf/flags :demo-users)]
     (let [{:keys [error]} (th/command! {::th/type :create-demo-profile})]
       (t/is (th/ex-of-code? error :demo-users-not-allowed)))))
+
+(t/deftest create-demo-profile-keeps-onboarding-by-default
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (nil? (get-in decoded [:props :onboarding-viewed])))))))
+
+(t/deftest create-demo-profile-skips-onboarding-when-requested
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                               :skip-onboarding true})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (true? (get-in decoded [:props :onboarding-viewed])))
+        (t/is (= (:main cf/version)
+                 (get-in decoded [:props :release-notes-viewed])))))))
+
+(t/deftest create-demo-profile-explicit-false-keeps-onboarding
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                               :skip-onboarding false})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (nil? (get-in decoded [:props :onboarding-viewed])))))))
+
+(t/deftest create-demo-profile-rejects-non-boolean-skip-onboarding
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
+                                        :skip-onboarding "yes"})]
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :params-validation)))))
