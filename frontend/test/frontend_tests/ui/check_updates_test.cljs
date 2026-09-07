@@ -91,6 +91,16 @@
   (t/is (= [] (dcu/parse-highlights nil)))
   (t/is (= [] (dcu/parse-highlights 42))))
 
+(t/deftest parse-highlights-extracts-multiple-versions
+  (let [input (str "## 2.17.0\n\n### :rocket: Epics and highlights\n\n"
+                   "- Feature A [#1](https://github.com/penpot/penpot/issues/1)\n\n"
+                   "## 2.16.0\n\n### :rocket: Epics and highlights\n\n"
+                   "- Feature B [#2](https://github.com/penpot/penpot/issues/2)\n")
+        result (dcu/parse-highlights input)]
+    (t/is (= 2 (count result)))
+    (t/is (= "2.17.0" (:version (first result))))
+    (t/is (= "2.16.0" (:version (second result))))))
+
 ;; --- version-compare ---
 
 (t/deftest version-compare

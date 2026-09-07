@@ -64,7 +64,7 @@
   extract its bullet items. Returns nil if no :rocket: or empty."
   [version-body]
   (when-let [[_ rocket-body] (str/split version-body rocket-heading-re 2)]
-    (let [subsection (-> (cstr/split rocket-body #"(?m)(?=^#{2,3}\s)") first)]
+    (let [subsection (-> (str/split rocket-body #"(?m)(?=^#{2,3}\s)") first)]
       (when subsection
         (let [items (parse-section-items subsection)]
           (when (seq items) items))))))
