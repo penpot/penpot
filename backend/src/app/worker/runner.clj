@@ -73,9 +73,26 @@
     (catch Throwable _cause
       nil)))
 
+(defn- get-exception-type
+  "Extract a human-readable exception type for observability."
+  [error]
+  (cond
+    (and (ex/exception? error) (instance? clojure.lang.ExceptionInfo error))
+    (or (:type (ex-data error)) :ex-info)
+
+    (instance? java.util.concurrent.TimeoutException error)
+    :timeout
+
+    (instance? java.sql.SQLTimeoutException error)
+    :timeout
+
+    :else
+    (keyword (str/lower (.getSimpleName (class error))))))
+
 (defn- encode-error
   [error]
-  (db/json {:code  "failed"
+  (db/json {:code    "failed"
+            :ex-type (get-exception-type error)
             :message (or (when (ex/exception? error)
                            (ex-message error))
                          (str error))}))

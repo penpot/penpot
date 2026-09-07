@@ -87,6 +87,10 @@
   "SELECT EXISTS (SELECT 1 FROM job WHERE resource_id = ?) AS has_refs")
 
 (defn- has-job-resource-refs?
+  "Checks if ANY job row (any status) references the object. Terminal states
+  (completed, failed, cancelled) also freeze the object because the jobs GC
+  hasn't run yet to clean them up. Once the jobs GC deletes the row, the
+  object becomes eligible for storage GC."
   [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-job-resource-refs id])
       (get :has-refs)))

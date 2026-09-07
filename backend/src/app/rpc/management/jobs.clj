@@ -42,6 +42,9 @@
    ::rpc/auth false}
   [cfg {:keys [job-id scheduled-at]}]
   (let [row (jobs/get-job cfg job-id)]
+    ;; Race condition: if the job is claimed between get-job and claim! by
+    ;; another worker, claim! returns 0 and we return :skip. The conditional
+    ;; claim (UPDATE ... WHERE status='new') handles this correctly.
     (if (and row (pos? (jobs/claim! cfg job-id scheduled-at)))
       {:action :run
        :name   (:name row)

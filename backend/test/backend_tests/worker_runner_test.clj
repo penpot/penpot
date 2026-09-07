@@ -189,7 +189,7 @@
       (let [row (get-row job-id)]
         (t/is (= "retry" (:status row)))
         (t/is (= 1 (:retry-num row)))
-        (t/is (= {:code "failed" :message "transient failure"} (:error row)))
+        (t/is (= {:code "failed" :ex-type "retry" :message "transient failure"} (:error row)))
         (t/testing "scheduled_at respects the backoff delay"
           (t/is (> (inst-ms (:scheduled-at row)) (inst-ms (ct/now)))))))
 
@@ -199,7 +199,7 @@
       (let [row (get-row job-id)]
         (t/is (= "failed" (:status row)))
         (t/is (= 1 (:retry-num row)))
-        (t/is (= {:code "failed" :message "transient failure"} (:error row)))))))
+        (t/is (= {:code "failed" :ex-type "retry" :message "transient failure"} (:error row)))))))
 
 (t/deftest runner-unhandled-exception-fails-when-no-retries-left
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
@@ -212,7 +212,7 @@
     (run-one! (mk-cfg {:defs defs}))
     (let [row (get-row job-id)]
       (t/is (= "failed" (:status row)))
-      (t/is (= {:code "failed" :message "fatal"} (:error row))))))
+      (t/is (= {:code "failed" :ex-type "ex-info" :message "fatal"} (:error row))))))
 
 (t/deftest runner-terminal-write-does-not-overwrite-orphan-failure
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)

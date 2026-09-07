@@ -177,6 +177,10 @@
         job-name     (d/name name)
         queue        (str/ffmt "%:%" tenant (d/name queue))
         conn         (db/get-connectable cfg)
+        ;; Dedupe is non-atomic: we delete not-started jobs with the same
+        ;; name/queue/label, then insert. A race between backends could create
+        ;; duplicates, but this is acceptable: cross-backend races are rare,
+        ;; jobs are idempotent, and dedupe is best-effort.
         deleted      (when dedupe
                        (-> (db/exec-one! conn [sql:remove-not-started-jobs
                                                job-name queue label now])
@@ -276,7 +280,9 @@
 (defn- should-write?
   "Throttle gate: true when the last recorded write for `job-id` is older
   than `interval` (or when there is none). Maintains a bounded in-memory
-  registry of the last write time per job."
+  registry of the last write time per job. Uses a volatile inside swap! to
+  communicate the decision — the volatile is dereferenced after the swap
+  completes, which is safe."
   [state-ref job-id now interval]
   (let [decision (volatile! false)]
     (swap! state-ref

@@ -92,6 +92,12 @@
                                         {:id id}
                                         {::db/return-keys false})
 
+                            ;; The count query is not locked, so a job could
+                            ;; transition from running to completed between the
+                            ;; count and the submit. This is acceptable: the
+                            ;; next tick will submit if needed. The FOR UPDATE
+                            ;; SKIP LOCKED on the scheduled_task row prevents
+                            ;; race conditions between nodes.
                             (let [active (get (db/exec-one! conn
                                                             [sql:count-active-jobs task (str id)])
                                               :n)]

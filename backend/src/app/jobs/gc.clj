@@ -87,7 +87,10 @@
 (defn execute-jobs-gc!
   "Plain job handler: delete expired rows (expires_at) and retained
   internal terminal rows, marking the storage resources of the deleted
-  rows as touched (same transaction)."
+  rows as touched (same transaction).
+
+  The `:rollback?` param (default false) forces the transaction to rollback
+  instead of commit. Used for testing transactional code without side effects."
   [cfg params]
   (let [min-age (or (:min-age params)
                     (cf/get-jobs-retention))]

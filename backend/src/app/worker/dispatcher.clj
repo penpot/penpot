@@ -96,7 +96,7 @@ RETURNING job.id, job.queue")
   (let [cutoff (ct/minus timestamp (or lease (cf/get-jobs-lease)))]
     (doseq [{:keys [id queue]} (db/exec! conn [sql:mark-orphan timestamp cutoff]
                                          {:return-keys true})]
-      (l/wrn :hint "mark as orphan failed"
+      (l/wrn :hint "marked job as orphan"
              :id (str id)
              :queue queue))))
 

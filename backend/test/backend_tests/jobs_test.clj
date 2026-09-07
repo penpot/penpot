@@ -30,7 +30,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn echo-handler
-  "Plain handler function, importable and testable without integrant."
+  "Plain handler function, importable and testable without integrant.
+  Dual behavior: when invoked in-process (no job-id in cfg), heartbeat/progress
+  are no-ops. When invoked via the runner (with job-id in cfg), they write to
+  the job row. This allows the same handler to be tested both ways."
   [cfg params]
   (when (::jobs/job-id cfg)
     (jobs/heartbeat! cfg)
