@@ -421,17 +421,11 @@
                                           :bucket "tempfile"
                                           :content-type "text/plain"})]
 
-    ;; too recent: not processed without skip-delay
+    ;; too recent: not processed (skip-delay no longer supported)
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 0 (:delete res)))))
-
-    ;; processed immediately with skip-delay
-    (binding [ct/*clock* (ct/fixed-clock now)]
-      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
-        (t/is (= 0 (:freeze res)))
-        (t/is (= 1 (:delete res)))))
 
     ;; and marked for deletion without any additional delay
     (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
@@ -486,11 +480,7 @@
 
       ;; without skip-delay the future deleted row is not processed
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 0 (:processed res))))
-
-      ;; with skip-delay it is processed immediately
-      (let [res (th/run-task! :objects-gc {:skip-delay true})]
-        (t/is (= 1 (:processed res)))))))
+        (t/is (= 0 (:processed res)))))))
 
 (t/deftest put-object-write-failure-leaves-pending-row
   (let [storage (-> (:app.storage/storage th/*system*)

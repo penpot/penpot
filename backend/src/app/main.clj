@@ -383,6 +383,7 @@
     :objects-gc            (ig/ref :app.tasks.objects-gc/objects-gc-job-def)
     :storage-gc-deleted    (ig/ref ::sto.gc-deleted/storage-gc-deleted-job-def)
     :storage-gc-touched    (ig/ref ::sto.gc-touched/storage-gc-touched-job-def)
+    :storage-pending-gc    (ig/ref ::sto.pending-gc/storage-pending-gc-job-def)
     :jobs-gc               (ig/ref :app.jobs.gc/jobs-gc-job-def)
     :tasks-gc              (ig/ref :app.tasks.tasks-gc/tasks-gc-job-def)
     :telemetry             (ig/ref :app.tasks.telemetry/telemetry-job-def)
@@ -431,6 +432,10 @@
 
    :app.storage.gc-touched/storage-gc-touched-job-def
    {::db/pool (ig/ref ::db/pool)}
+
+   :app.storage.pending-gc/storage-pending-gc-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
 
    :app.jobs.gc/jobs-gc-job-def
    {::db/pool (ig/ref ::db/pool)}
