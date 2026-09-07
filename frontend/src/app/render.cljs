@@ -126,7 +126,7 @@
                :skip-children skip-children}]]))))))
 
 (defn- fetch-objects-bundle
-  [& {:keys [file-id page-id share-id object-id] :as options}]
+  [& {:keys [file-id page-id share-id object-id embed?] :as options}]
   (ptk/reify ::fetch-objects-bundle
     ptk/WatchEvent
     (watch [_ state _]
@@ -146,8 +146,18 @@
              (rx/observe-on :async)
              (rx/map (comp :objects second))
              (rx/map (fn [objects]
-                       (let [objects (render/adapt-objects-for-shape objects object-id)]
-                         #(assoc % :objects objects)))))))))
+                       (render/adapt-objects-for-shape objects object-id)))
+             (rx/merge-map (fn [objects]
+                             (if-not embed?
+                               (rx/of #(assoc % :objects objects))
+
+                               ;; Populate the images cache before rendering so
+                               ;; data-uri substitutions are instantly available
+                               ;; on the first paint.
+                               (rx/concat
+                                (->> (render/populate-images-cache objects)
+                                     (rx/ignore))
+                                (rx/of #(assoc % :objects objects)))))))))))
 
 (def ^:private schema:render-objects
   [:map {:title "render-objets"}
@@ -172,7 +182,11 @@
   (try
     (let [{:keys [file-id page-id embed share-id object-id skip-children wasm scale] :as params}
           (coerce-render-objects-params params)]
-      (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
+      (st/emit! (fetch-objects-bundle :file-id file-id
+                                      :page-id page-id
+                                      :share-id share-id
+                                      :object-id object-id
+                                      :embed? embed))
       (if (uuid? object-id)
         (mf/html
          [:& object-svg
