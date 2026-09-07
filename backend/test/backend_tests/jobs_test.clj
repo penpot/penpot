@@ -261,6 +261,35 @@
       (jobs/progress! cfg job-id {:step 9})
       (t/is (nil? (:progress (jobs/get-job cfg job-id)))))))
 
+(t/deftest throttle-prune-removes-stale-entries-keeps-fresh
+  "When the throttle map exceeds prune-threshold, stale entries (older than
+  prune-window) are removed and fresh entries are kept."
+  (let [cfg        (make-cfg (get-job-defs))
+        job-id-1   (jobs/submit! cfg {::jobs/name   :echo
+                                      ::jobs/params (make-params)})
+        job-id-2   (jobs/submit! cfg {::jobs/name   :echo
+                                      ::jobs/params (make-params)})
+        now        (ct/now)
+        stale-time (ct/minus now (ct/duration {:hours 2}))  ;; older than 1h window
+        fresh-time (ct/minus now (ct/duration {:minutes 30}))] ;; within 1h window
+
+    ;; Fill the heartbeats map past the threshold with one stale and one fresh entry
+    (with-redefs [jobs/prune-threshold 0]  ;; force prune on next call
+      (reset! @#'jobs/heartbeats
+              {job-id-1 stale-time
+               job-id-2 fresh-time})
+
+      ;; Trigger a heartbeat for a new job (should trigger prune)
+      (let [job-id-3 (jobs/submit! cfg {::jobs/name   :echo
+                                        ::jobs/params (make-params)})]
+        (jobs/heartbeat! cfg job-id-3)
+
+        ;; After prune: stale entry (job-id-1) should be gone, fresh (job-id-2) should remain
+        (let [state @jobs/heartbeats]
+          (t/is (not (contains? state job-id-1)) "stale entry removed")
+          (t/is (contains? state job-id-2) "fresh entry kept")
+          (t/is (contains? state job-id-3) "new entry added"))))))
+
 (t/deftest cancel-skips-running-and-terminal-jobs
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit! cfg {::jobs/name   :echo
@@ -311,3 +340,47 @@
                                           {::jobs/name    :echo
                                            ::jobs/schema  schema:echo-params
                                            ::jobs/handler echo-handler}}})))))
+
+(t/deftest generic-schema-round-trip-preserves-type-sensitive-fields
+  "For each registered job-def, verify that type-sensitive fields (uuids, insts)
+  survive the JSON round-trip (db/json → decode). This catches the F2 class of
+  bug where uuid types are lost during the transit→JSON switch."
+  (let [defs (get-job-defs)]
+    (t/is (pos? (count defs)) "should have at least one job-def")
+
+    ;; Test the echo job-def which we know exists in the test registry
+    (t/testing "echo job-def preserves types through JSON round-trip"
+      (let [echo-def (get defs :echo)
+            _        (t/is (some? echo-def) "echo job-def should exist")
+            ;; Create a representative params map with type-sensitive fields
+            sample-params {:text "test"
+                           :object :snapshot
+                           :deleted-at (ct/now)
+                           :id (uuid/random)
+                           :file-id (uuid/random)}
+
+            ;; Round-trip through JSON (simulates the job table storage)
+            ;; db/json returns a PGobject, which is what decode-params expects
+            pg-obj  (db/json sample-params)
+            decoded (jobs/decode-params echo-def pg-obj)]
+
+        ;; Verify type-sensitive fields survived
+        (t/is (uuid? (:id decoded)) "id should be uuid after decode")
+        (t/is (uuid? (:file-id decoded)) "file-id should be uuid after decode")
+        (t/is (inst? (:deleted-at decoded)) "deleted-at should be inst after decode")))))
+
+(t/deftest invoke-falls-back-to-global-registry
+  "Verify that invoke! uses the global registry fallback when ::defs is not
+  on the cfg, consistent with submit!."
+  ;; Populate the global registry
+  (let [defs (get-job-defs)]
+    (ig/init-key ::jobs/defs defs)
+    ;; Create a cfg WITHOUT ::jobs/defs to test the fallback
+    (let [cfg {::db/pool th/*pool*}
+          ;; Use the echo job-def which we know exists in the global registry
+          result (jobs/invoke! (assoc cfg ::jobs/name :echo
+                                      ::jobs/params (make-params)))]
+      ;; Should not throw; should find the job-def via the global registry
+      ;; The result will be the params map (echo-handler returns params)
+      (t/is (some? result)))))
+

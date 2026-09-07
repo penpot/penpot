@@ -261,8 +261,9 @@
 (def ^:private prune-threshold 10000)
 (def ^:private prune-window (ct/duration {:hours 1}))
 
-(def ^:private heartbeats (atom {}))
-(def ^:private progresses (atom {}))
+;; Throttle state atoms (public for testing)
+(def heartbeats (atom {}))
+(def progresses (atom {}))
 
 (def ^:dynamic *job-id*
   "Job id of the job being executed on the current thread. The runner
@@ -288,8 +289,9 @@
     (swap! state-ref
            (fn [m]
              (let [m (if (> (count m) prune-threshold)
+                       ;; Remove stale entries (older than prune-window)
                        (into {}
-                             (filter (fn [[_ last-inst]]
+                             (remove (fn [[_ last-inst]]
                                        (> (- (inst-ms now) (inst-ms last-inst))
                                           (inst-ms prune-window))))
                              m)
@@ -354,13 +356,13 @@
       AND scheduled_at=?
       AND status IN ('new','scheduled','retry')")
 
-(def ^:private sql:complete-job
+(def sql:complete-job
   "UPDATE job
       SET status='completed', completed_at=?, modified_at=?, result=?, error=NULL
     WHERE id=?
       AND status IN ('running','retry')")
 
-(def ^:private sql:fail-job
+(def sql:fail-job
   "UPDATE job
       SET status='failed', modified_at=?, error=?
     WHERE id=?
@@ -540,7 +542,7 @@
 
   Returns the handler result."
   [cfg]
-  (let [job-def (get-job-def (get cfg ::defs) (get cfg ::name))
+  (let [job-def (get-job-def (get-defs cfg nil) (get cfg ::name))
         decoded (decode-params job-def (get cfg ::params))]
     (binding [*job-id* (get cfg ::job-id)]
       ((::handler job-def) decoded))))

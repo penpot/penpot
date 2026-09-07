@@ -60,7 +60,7 @@
                  " WHERE id=? FOR UPDATE SKIP LOCKED")]
     (some? (db/exec-one! conn [sql (d/name id)]))))
 
-(defn- submit-cron-job!
+(defn submit-cron-job!
   "Submit the system job for the entry to the `:cron` queue. Uses the
   entry id as the job label (stable per entry) and returns the created
   job-id. No-overlap pre-check lives in the caller."
@@ -68,9 +68,9 @@
   (jobs/submit!
    cfg
    {::jobs/name   task
-    ::jobs/params props
+    ::jobs/params (or props {})  ;; entries don't carry props; default to empty map
     ::jobs/queue  :cron
-    ::jobs/label  (str id)}))
+    ::jobs/label  (name id)}))
 
 (declare ^:private schedule-cron-task)
 

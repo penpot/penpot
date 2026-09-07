@@ -105,3 +105,31 @@
         (t/is (= "unexpected-status:400" (:error-code whk')))
         (t/is (= 3 (:error-count whk')))
         (t/is (false? (:is-active whk')))))))
+
+(t/deftest webhook-json-round-trip-preserves-uuid-types
+  "Integration test: drives process-webhook-event through the real pipeline
+  (submit → decode → handler) to verify uuid types survive the JSON round-trip."
+  (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+    (let [prof (th/create-profile* 1 {:is-active true})
+          whk  (th/create-webhook* {:team-id (:default-team-id prof)})
+          evt  {:type "command"
+                :name "create-project"
+                :props {:team-id (:default-team-id prof)}}]
+
+      ;; Submit the job through the real pipeline (this creates a job row)
+      (th/run-task! :process-webhook-event evt)
+
+      ;; Now run the pending jobs (simulates dispatcher + runner)
+      ;; This will decode the params from JSON and invoke the handler
+      (th/run-pending-jobs!)
+
+      ;; The handler should have been invoked and created a webhook_delivery row
+      ;; If uuid types were lost, the lookup would fail with a type error
+      (let [rows (th/db-query :webhook-delivery {:webhook-id (:id whk)})]
+        (t/is (= 1 (count rows)))
+        (t/is (nil? (-> rows first :error-code))))
+
+      ;; Refresh webhook
+      (let [whk' (th/db-get :webhook {:id (:id whk)})]
+        (t/is (nil? (:error-code whk')))))))
+

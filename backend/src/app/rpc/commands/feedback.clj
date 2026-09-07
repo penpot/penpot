@@ -40,8 +40,8 @@
               :code :feedback-disabled
               :hint "feedback not enabled"))
 
-  (let [pool   (::db/pool cfg)
-        profile (profile/get-profile (::db/pool cfg) profile-id)]
+  (let [pool    (::db/pool cfg)
+        profile (profile/get-profile pool profile-id)]
     (send-user-feedback! cfg pool profile params)
     nil))
 

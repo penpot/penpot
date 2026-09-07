@@ -141,21 +141,6 @@
               {::db/return-keys false})
 
   (doseq [team (profile/get-owned-teams conn id)]
-    (delete-object cfg (assoc team
-                              :object :team
-                              :deleted-at deleted-at))))
-
-(defmethod delete-object :profile
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :obj "profile" :id (str id)
-         :deleted-at (ct/format-inst deleted-at))
-
-  (db/update! conn :profile
-              {:deleted-at deleted-at}
-              {:id id}
-              {::db/return-keys false})
-
-  (doseq [team (profile/get-owned-teams conn id)]
     (jobs/heartbeat! cfg)
     (delete-object cfg (assoc team
                               :object :team

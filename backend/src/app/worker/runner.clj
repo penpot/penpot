@@ -32,19 +32,7 @@
   "UPDATE job
       SET status='running', started_at=now(), modified_at=now()
     WHERE id=?
-      AND status IN ('new','scheduled','retry')")
-
-(def ^:private sql:complete-job
-  "UPDATE job
-      SET status='completed', completed_at=?, modified_at=?, result=?, error=NULL
-    WHERE id=?
-      AND status IN ('running','retry')")
-
-(def ^:private sql:fail-job
-  "UPDATE job
-      SET status='failed', modified_at=?, error=?
-    WHERE id=?
-      AND status IN ('running','retry')")
+       AND status IN ('new','scheduled','retry')")
 
 (def ^:private sql:retry-job
   "UPDATE job
@@ -60,11 +48,6 @@
   (-> (db/exec-one! (db/get-connectable cfg)
                     [sql:claim-job job-id])
       (db/get-update-count)))
-
-(defn get-error-context
-  [_ item]
-  (-> (cf/logging-context)
-      (assoc :params item)))
 
 (defn- encode-result
   [result]
@@ -226,7 +209,7 @@
           (handle-job-failure [{:keys [error] :as result}]
             (let [job (-> result meta ::job)]
               (db/exec-one! (db/get-connectable cfg)
-                            [sql:fail-job
+                            [jobs/sql:fail-job
                              (ct/now)
                              (encode-error error)
                              (:id job)])
@@ -235,7 +218,7 @@
           (handle-job-completion [result]
             (let [job (-> result meta ::job)]
               (db/exec-one! (db/get-connectable cfg)
-                            [sql:complete-job
+                            [jobs/sql:complete-job
                              (ct/now)
                              (ct/now)
                              (encode-result (:result result))

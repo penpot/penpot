@@ -392,6 +392,10 @@
     :audit-log-archive     (ig/ref :app.loggers.audit.archive-task/audit-log-archive-job-def)
     :audit-log-gc          (ig/ref :app.loggers.audit.gc-task/audit-log-gc-job-def)}
 
+   ::jobs/request-pool
+   {::rds/client  (ig/ref ::rds/client)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
    :app.email/job-def
    {::email/sendmail (ig/ref ::email/sendmail)}
 

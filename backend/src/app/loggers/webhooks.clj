@@ -92,9 +92,17 @@
 
 
 (def schema:process-webhook-event-params
-  "Lax schema: the event map is the audit event payload (dynamic shape,
-  produced by the audit logger submit)."
-  [:map-of :keyword :any])
+  "Schema declares the uuid fields the handler consumes so the JSON
+  decoder restores their types after the transit→JSON round-trip."
+  [:map
+   [:id {:optional true} ::sm/uuid]
+   [:profile-id {:optional true} ::sm/uuid]
+   [:name {:optional true} ::sm/text]
+   [:props {:optional true}
+    [:map
+     [:team-id {:optional true} ::sm/uuid]
+     [:project-id {:optional true} ::sm/uuid]
+     [:file-id {:optional true} ::sm/uuid]]]])
 
 (defmethod ig/init-key ::process-webhook-event-job-def
   [_ cfg]
@@ -186,11 +194,14 @@
 
 
 (def schema:run-webhook-params
-  "Lax schema: :event is the audit event payload (dynamic shape) and
-  :config is the webhook row (db row, dynamic)."
+  "Schema declares the uuid fields the handler consumes so the JSON
+  decoder restores their types after the transit→JSON round-trip."
   [:map
    [:event [:map-of :keyword :any]]
-   [:config [:map-of :keyword :any]]])
+   [:config [:map
+             [:id ::sm/uuid]
+             [:uri ::sm/text]
+             [:mtype ::sm/text]]]])
 
 (defmethod ig/init-key ::run-webhook-job-def
   [_ cfg]
