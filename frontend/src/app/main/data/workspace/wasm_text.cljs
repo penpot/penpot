@@ -79,20 +79,26 @@
 
 (defn resize-wasm-text
   "Resize a single text shape (auto-width/auto-height) by id.
-  No-op if the id is not a text shape or is :fixed."
-  [id]
-  (ptk/reify ::resize-wasm-text
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shape   (get objects id)
-            resize-stream
-            (if (and (some? shape)
-                     (cfh/text-shape? shape)
-                     (not= :fixed (:grow-type shape)))
-              (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape)))
-              (rx/empty))]
-        (wrf/with-pending :text-resize [id] resize-stream)))))
+  No-op if the id is not a text shape or is :fixed.
+  `opts` are forwarded to `apply-wasm-modifiers`, so a caller whose undo
+  transaction is already closed when the resize lands can still get the
+  geometry into the right undo entry."
+  ([id]
+   (resize-wasm-text id nil))
+  ([id opts]
+   (ptk/reify ::resize-wasm-text
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects (dsh/lookup-page-objects state)
+             shape   (get objects id)
+             apply-opts (or opts {})
+             resize-stream
+             (if (and (some? shape)
+                      (cfh/text-shape? shape)
+                      (not= :fixed (:grow-type shape)))
+               (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape) apply-opts))
+               (rx/empty))]
+         (wrf/with-pending :text-resize [id] resize-stream))))))
 
 (defn resize-wasm-text-debounce-commit
   ([]
