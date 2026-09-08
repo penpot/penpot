@@ -327,7 +327,7 @@
         (mf/with-memo [filters library]
           (as-> (into [] (ctkl/components-seq library)) $
             (cmm/apply-filters $ filters)
-            (remove #(cfv/is-secondary-variant? % library) $)))
+            (remove #(cfv/is-secondary-variant? library %) $)))
 
         filtered-typographies
         (mf/with-memo [filters typographies]
