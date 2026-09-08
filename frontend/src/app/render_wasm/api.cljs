@@ -880,6 +880,25 @@
            (h/call wasm/internal-module "_store_image")
            true)))))
 
+(defn- store-image-url!
+  "Registers the public URL an image was loaded from so SVG export can emit a
+   linked `<image href>` instead of a Skia base64 embed."
+  [image-id url]
+  (when (and (wasm/live?) (some? url) (not (str/blank? url)))
+    (let [buffer (uuid/get-u32 image-id)
+          encoder (js/TextEncoder.)
+          encoded (.encode encoder url)
+          size (.-byteLength encoded)
+          offset (mem/alloc size)
+          heap (mem/get-heap-u8)]
+      (.set heap encoded offset)
+      (h/call wasm/internal-module "_store_image_url"
+              (aget buffer 0)
+              (aget buffer 1)
+              (aget buffer 2)
+              (aget buffer 3))
+      true)))
+
 (defn- store-image-texture
   "Creates a WebGL texture from a decoded image and passes the texture ID to
    WASM. This avoids decoding the image twice (once in browser, once in WASM)."
@@ -922,6 +941,7 @@
    so Skia rasterizes them."
   [shape-id image-id thumbnail?]
   (let [url (cf/resolve-file-media {:id image-id} thumbnail?)]
+    (store-image-url! image-id url)
     {:key url
      :thumbnail? thumbnail?
      :callback
@@ -959,6 +979,8 @@
                                 (aget buffer 2)
                                 (aget buffer 3)
                                 thumbnail?)]
+      ;; Always register the URL (SVG export needs it even when bytes are cached).
+      (store-image-url! id (cf/resolve-file-media {:id id} thumbnail?))
       (when (zero? cached-image?)
         (fetch-image shape-id id thumbnail?)))))
 
@@ -993,6 +1015,7 @@
                                            (aget buffer 2)
                                            (aget buffer 3)
                                            thumbnail?)]
+                 (store-image-url! id (cf/resolve-file-media {:id id} thumbnail?))
                  (when (zero? cached-image?)
                    (fetch-image shape-id id thumbnail?))))
              (types.fills/get-image-ids fills))))))
@@ -1021,6 +1044,7 @@
                                          (aget buffer 2)
                                          (aget buffer 3)
                                          thumbnail?)]
+               (store-image-url! image-id (cf/resolve-file-media {:id image-id} thumbnail?))
                (when (zero? cached-image?)
                  (fetch-image shape-id image-id thumbnail?))))
            image-ids))))

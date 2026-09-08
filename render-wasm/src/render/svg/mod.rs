@@ -8,7 +8,8 @@ use crate::shapes::{Shape, Type};
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
-use super::vector::{render_leaf_content, VectorRenderer};
+use super::shape_renderer::ShapeRenderer;
+use super::vector::VectorRenderer;
 use super::RenderResources;
 
 /// Collects the registered font aliases used by every text span in the subtree
@@ -125,6 +126,7 @@ pub(crate) fn render_tree_to_svg(
 mod document;
 mod frames;
 mod groups;
+mod images;
 mod text;
 
 use document::SvgLayerCanvas;
@@ -133,6 +135,7 @@ use groups::render_group;
 use text::render_text_fill;
 
 use document::effect_attrs;
+use images::emit_fills;
 
 /// Renders `id`'s subtree to an SVG body, returning `(defs, body)`.
 fn render_body(
@@ -172,7 +175,7 @@ fn render_tree(
         | Type::Path(_)
         | Type::Bool(_)
         | Type::Text(_)
-        | Type::SVGRaw(_) => render_leaf(builder, shared, element, scale),
+        | Type::SVGRaw(_) => render_leaf(builder, shared, element, tree, scale),
     }
 }
 
@@ -180,6 +183,7 @@ fn render_leaf(
     builder: &mut SvgLayerCanvas,
     shared: &mut RenderResources,
     element: &Shape,
+    tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
     let effects = effect_attrs(element);
@@ -189,14 +193,26 @@ fn render_leaf(
 
     {
         if matches!(element.shape_type, Type::Text(_)) {
-            render_text_fill(builder, element)?;
+            render_text_fill(builder, shared, element)?;
         } else {
+            emit_fills(builder, shared, element, &element.fills, tree, scale)?;
+
             let matrix = element.centered_transform();
             let canvas = builder.canvas();
             canvas.save();
             canvas.concat(&matrix);
             let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
-            render_leaf_content(&mut renderer, element)?;
+            renderer.draw_fill_inner_shadows(element)?;
+
+            let visible_strokes: Vec<_> = element.visible_strokes().collect();
+            if !visible_strokes.is_empty() {
+                renderer.draw_strokes(element, &visible_strokes)?;
+                if !element.has_fills() {
+                    for stroke in &visible_strokes {
+                        renderer.draw_stroke_inner_shadows(element, stroke)?;
+                    }
+                }
+            }
             canvas.restore();
         }
     }

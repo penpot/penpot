@@ -140,6 +140,22 @@ pub extern "C" fn store_image() -> Result<()> {
     Ok(())
 }
 
+/// Registers the public URL an image was loaded from for SVG export.
+///
+/// Layout: UTF-8 URL bytes in the alloc buffer. The image UUID is passed as
+/// the four u32 arguments (same quartet as `store_image` / `is_image_cached`).
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn store_image_url(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let url_bytes = mem::bytes();
+    let url = String::from_utf8(url_bytes)
+        .map_err(|_| Error::CriticalError("Invalid UTF-8 in image source URL".to_string()))?;
+    mem::free_bytes()?;
+    get_resources().images.set_source_url(id, url);
+    Ok(())
+}
+
 /// Stores an image from an existing WebGL texture, avoiding re-decoding
 /// Expected memory layout:
 /// - bytes 0-15: shape UUID
