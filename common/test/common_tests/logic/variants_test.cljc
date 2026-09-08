@@ -42,10 +42,7 @@
                     (clvp/generate-update-property-name v-id 0 "NewName1")
                     (clvp/generate-update-property-name v-id 1 "NewName2"))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -57,8 +54,6 @@
     (t/is (= (-> comp02' :variant-properties first :name) "NewName1"))
     (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))))
 
-
-
 (t/deftest test-add-new-property-without-values
   (let [;; ==== Setup
         file    (-> (thf/sample-file :file1)
@@ -69,7 +64,6 @@
         comp01  (thc/get-component file :c01)
         comp02  (thc/get-component file :c02)
 
-
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
                     (pcb/with-page-id (:id page))
@@ -77,10 +71,7 @@
                     (pcb/with-objects (:objects page))
                     (clvp/generate-add-new-property v-id))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -93,8 +84,6 @@
     (t/is (= (count (:variant-properties comp02')) 2))
     (t/is (= (-> comp01' :variant-properties last :value) ""))))
 
-
-
 (t/deftest test-add-new-property-with-values
   (let [;; ==== Setup
         file    (-> (thf/sample-file :file1)
@@ -105,7 +94,6 @@
         comp01  (thc/get-component file :c01)
         comp02  (thc/get-component file :c02)
 
-
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
                     (pcb/with-page-id (:id page))
@@ -113,10 +101,7 @@
                     (pcb/with-objects (:objects page))
                     (clvp/generate-add-new-property v-id {:fill-values? true}))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -130,8 +115,6 @@
     (t/is (= (-> comp01' :variant-properties last :value) "Value 1"))
     (t/is (= (-> comp02' :variant-properties last :value) "Value 2"))))
 
-
-
 (t/deftest test-add-new-property-with-the-same-value
   (let [;; ==== Setup
         file    (-> (thf/sample-file :file1)
@@ -142,7 +125,6 @@
         comp01  (thc/get-component file :c01)
         comp02  (thc/get-component file :c02)
 
-
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
                     (pcb/with-page-id (:id page))
@@ -150,10 +132,7 @@
                     (pcb/with-objects (:objects page))
                     (clvp/generate-add-new-property v-id {:property-value "Value 1"}))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -166,8 +145,6 @@
     (t/is (= (count (:variant-properties comp02')) 2))
     (t/is (= (-> comp01' :variant-properties last :value) "Value 1"))
     (t/is (= (-> comp02' :variant-properties last :value) "Value 1"))))
-
-
 
 (t/deftest test-remove-property
   (let [;; ==== Setup
@@ -182,13 +159,11 @@
                     (pcb/with-objects (:objects page))
                     (clvp/generate-add-new-property v-id))
 
-
         file    (thf/apply-changes file changes)
         page    (thf/current-page file)
 
         comp01  (thc/get-component file :c01)
         comp02  (thc/get-component file :c02)
-
 
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
@@ -197,10 +172,7 @@
                     (pcb/with-objects (:objects page))
                     (clvp/generate-remove-property v-id 0))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -518,7 +490,6 @@
     (t/is (= "Value 2" (:variant-name (ths/get-shape file' :m02))))
     (t/is (= "Value 3" (:variant-name (ths/get-shape file' :m03))))))
 
-
 (t/deftest test-duplicate-variant-container
   (let [;; ==== Setup
         file    (-> (thf/sample-file :file1)
@@ -528,9 +499,6 @@
         objects (:objects page)
 
         variant-container (ths/get-shape file :v01)
-
-
-
 
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
@@ -558,7 +526,6 @@
     (t/is (= (count objects) 4))
     (t/is (= (count objects') 7))))
 
-
 (t/deftest test-delete-variant
   ;; When a variant container becomes empty, it id automatically deleted
   (let [;; ==== Setup
@@ -572,7 +539,7 @@
 
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
-                    (pcb/with-page-id (:id page))
+                    (pcb/with-page page)
                     (pcb/with-library-data (:data file))
                     (pcb/with-objects (:objects page))
                     (#(second (cls/generate-delete-shapes % #{m01-id m02-id} {}))))
@@ -587,7 +554,6 @@
     (t/is (not (nil? container)))
     ;; The variant containew is nil after the deletion
     (t/is (nil? container'))))
-
 
 (t/deftest test-instantiate-component-over-variant-container
   ;; When a component is instantiated at a position over a variant container,

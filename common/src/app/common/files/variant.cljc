@@ -6,12 +6,16 @@
 (ns app.common.files.variant
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.component :as ctc]
-   [app.common.types.components-list :as ctcl]
+   [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.variant :as ctv]))
 
 (defn find-variant-components
-  "Find a list of the components that belongs to this variant-id"
+  "Find the components that belong to the variant container identified by `variant-id`,
+   preserving the order defined by the container's shapes.
+
+   Example return:
+   (<component1> <component2> ...)"
   ([data variant-id]
    (let [page-id (->> data
                       :components
@@ -22,11 +26,15 @@
          objects (dm/get-in data [:pages-index page-id :objects])]
      (find-variant-components data objects variant-id)))
   ([data objects variant-id]
+   (assert (or (uuid? variant-id) (nil? variant-id)))
    ;; We can't simply filter components, because we need to maintain the order
-   (->> (dm/get-in objects [variant-id :shapes])
-        (map #(dm/get-in objects [% :component-id]))
-        (map #(ctcl/get-component data % true))
-        reverse)))
+   (let [container (get objects variant-id)]
+     (if (ctv/variant-container? container)
+       (->> (:shapes container)
+            (map #(dm/get-in objects [% :component-id]))
+            (map #(ctkl/get-component data % true))
+            reverse)
+       []))))
 
 (defn collect-variant-properties
   "Map of component-id → variant-properties for clipboard copy.
@@ -34,13 +42,13 @@
    component only. Anything else: empty map."
   [data objects shape]
   (cond
-    (ctc/is-variant-container? shape)
+    (ctk/is-variant-container? shape)
     (into {}
           (map (juxt :id :variant-properties))
           (find-variant-components data objects (:id shape)))
 
-    (ctc/is-variant-main? shape)
-    (if-let [component (ctcl/get-component data (:component-id shape) true)]
+    (ctk/is-variant-main? shape)
+    (if-let [component (ctkl/get-component data (:component-id shape) true)]
       {(:id component) (:variant-properties component)}
       {})
 
@@ -50,13 +58,18 @@
 (defn extract-properties-names
   [shape data]
   (->> shape
-       (#(ctcl/get-component data (:component-id %) true))
+       (#(ctkl/get-component data (:component-id %) true))
        :variant-properties
        (map :name)))
 
 (defn extract-properties-values
-  "Get a map of properties associated to their possible values"
+  "Get a map of variant property names to their distinct possible values,
+   collected from all components that belong to the variant container.
+
+   Example return:
+   [{:name 'Property 1' :value ('Value1' 'Value2')}]"
   [data objects variant-id]
+  (assert (or (uuid? variant-id) (nil? variant-id)))
   (->> (find-variant-components data objects variant-id)
        (mapcat :variant-properties)
        (ctv/group-properties-by-name)
@@ -66,9 +79,13 @@
                              :value (->> v (map :value) distinct)}
                    mdata))))))
 
-(defn get-variant-mains
-  [component data]
-  (assert (ctv/valid-variant-component? component) "expected valid component variant")
+(defn- get-variant-mains
+  "Return the ids of the main instance shapes of the variant this component belongs to,
+   in the order they appear in the container.
+
+   Example return:
+   [<main-shape-a-id> <main-shape-b-id>]"
+  [data component]
   (when-let [variant-id (:variant-id component)]
     (let [page-id (:main-instance-page component)
           objects (-> (dm/get-in data [:pages-index page-id])
@@ -76,29 +93,32 @@
       (dm/get-in objects [variant-id :shapes]))))
 
 (defn is-secondary-variant?
-  [component data]
-  (let [shapes  (get-variant-mains component data)]
+  "Return true if the component is a secondary variant in its variant container.
+   The primary variant is the last one in the container's children list.
+   Return false if the component is the primary variant or if it's not part of a variant."
+  [data component]
+  (let [shapes (get-variant-mains data component)]
     (and (seq shapes)
          (not= (:main-instance-id component) (last shapes)))))
 
 (defn get-primary-variant
+  "Return the main instance of the primary variant (the last one) in the variant container."
   [data component]
-  (let [page-id    (:main-instance-page component)
-        objects    (-> (dm/get-in data [:pages-index page-id])
-                       (get :objects))
-        variant-id (:variant-id component)]
-    (->> (dm/get-in objects [variant-id :shapes])
+  (let [page-id (:main-instance-page component)
+        objects (-> (dm/get-in data [:pages-index page-id])
+                    (get :objects))]
+    (->> (get-variant-mains data component)
          peek
          (get objects))))
 
 (defn get-primary-component
   [data component-id]
-  (when-let [component (ctcl/get-component data component-id)]
-    (if (ctc/is-variant? component)
+  (when-let [component (ctkl/get-component data component-id)]
+    (if (ctk/is-variant? component)
       (->> component
            (get-primary-variant data)
            :component-id
-           (ctcl/get-component data))
+           (ctkl/get-component data))
       component)))
 
 (defn- variant-main-shape-path
@@ -137,7 +157,7 @@
   [data objects container child-id]
   (when-let [child (get objects child-id)]
     (let [component (get-in data [:components (:component-id child)])]
-      (when (and (ctc/is-variant? child)
+      (when (and (ctk/is-variant? child)
                  (= (:id container) (:variant-id child))
                  (some? component)
                  (= (:id container) (:variant-id component)))

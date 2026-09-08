@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
-   [app.common.files.variant :as cfv]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
@@ -280,6 +279,8 @@
                   "Shape expected to be main instance"
                   shape file page))
   (when-not (= (:component-file shape) (:id file))
+    (prn "shape" (:id shape) (:name shape) (:component-file shape))
+    (prn "file" (:id file) (:name file))
     (report-error :component-main-external
                   "Main instance should refer to a component in the same file"
                   shape file page))
@@ -588,16 +589,27 @@
         objects        (:objects page)
         file-data      (:data file)
         first-child    (get objects (first shapes))
-        prop-names     (cfv/extract-properties-names first-child file-data)
         clean-path     (cpn/clean-path container-name)
         clean-path     (if (str/blank? clean-path)
                          "(empty)" ;; this may occur if the name contains only separators
-                         clean-path)]
+                         clean-path)
+
+        extract-properties-names
+        (fn [shape]
+          ;; Get the names of the properties of the shape's component
+          (->> shape
+               (#(ctkl/get-component file-data (:component-id %) true))
+               :variant-properties
+               (map :name)))
+
+        prop-names  (extract-properties-names first-child)]
+
     (when-not (= container-name clean-path)
       (report-error :variant-container-bad-name
                     (str/ffmt "Variant container % has a bad name %" shape-id container-name)
                     shape file page
                     :clean-name clean-path))
+
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
               (if (not (ctk/is-variant? child))
@@ -611,7 +623,7 @@
                                   (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
                                   child file page
                                   :variant-id shape-id))
-                  (when (not= prop-names (cfv/extract-properties-names child file-data))
+                  (when (not= prop-names (extract-properties-names child))
                     (report-error :invalid-variant-properties
                                   (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
                                   child file page

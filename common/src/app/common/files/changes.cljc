@@ -1148,7 +1148,7 @@
       (cfo/update-tokens-status ctos/set-tokens-status theme-ids set-ids)))
 
 (defmethod process-change :set-own-tokens-status
-  [data {:keys [theme-ids set-ids]}]
+  [data {:keys [theme-ids set-ids]} _]
   (cfo/set-own-tokens-status data
                              (when (or (some? theme-ids) (some? set-ids))
                                (ctos/make-tokens-status :active-theme-ids theme-ids
@@ -1189,12 +1189,13 @@
 #?(:cljs
    (defmethod process-change :validate-shapes
      [data {:keys [page-id shape-ids context]} libraries]
-     (if libraries
+     (when libraries
        (println "Validating shapes: \n"
+                "  file-id:" (str (:id data)) "\n"
                 "  page-id:" (str page-id) "\n"
                 "  shape-ids:" (str shape-ids) "\n"
                 "  context:" context)
-       (let [file {:data data :id uuid/zero}
+       (let [file {:id (:id data) :data data}
              errors (reduce (fn [acc shape-id]
                               (if-let [page (ctpl/get-page data page-id)]
                                 (let [page-errors (val/validate-shape shape-id file page libraries)]
@@ -1208,8 +1209,7 @@
            (ex/raise :type :validation
                      :code :referential-integrity
                      :hint (str "error on validating shapes: " context)
-                     :details errors))
-         data))
+                     :details errors))))
      data))
 
 ;; === Operations
