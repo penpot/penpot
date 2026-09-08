@@ -9,6 +9,13 @@ Resolve conflicts in the local repository. The user handles finishing the
 rebase themselves — you must **never** run `git rebase --continue`,
 `git rebase --skip`, `git merge --continue`, or anything similar.
 
+## When to use
+
+- The repository has unresolved conflicts — during a rebase, merge, or
+  cherry-pick — whether the user asks about them or not.
+- The user asks to resolve conflicts, in any phrasing: "fix the merge
+  conflicts", "resolve these", "what's conflicting here?".
+
 ## Phase 1 — Understand the problem (read-only)
 
 1. Run `git status` to detect the conflict state (rebase, merge, cherry-pick, etc.) and list conflicted files.

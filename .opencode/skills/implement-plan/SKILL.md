@@ -9,6 +9,16 @@ This flow is run once a plan is ready (for example, from plan mode). Execute
 the plan already prepared in the current session context. This flow ends
 with exactly one commit. It never pushes — the user pushes.
 
+## When to use
+
+- The user asks to implement or execute a plan, in any phrasing:
+  "implement the plan", "execute it", "go build it" — or runs
+  `/implement-plan`.
+- A ready, reviewed plan is in the session context or a plan file path
+  was given (typically after `/make-a-plan` or `/review-plan`).
+
+Do not use it to produce plans — that is the `make-a-plan` flow.
+
 ## 1. Detect the flow (no questions)
 
 Inspect the current branch with `git rev-parse --abbrev-ref HEAD`, pick the

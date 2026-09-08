@@ -13,11 +13,10 @@ Multi-dimensional code review with quality gates. Every change gets reviewed bef
 
 ## When to Use
 
-- Before merging any PR or change
-- After completing a feature implementation
-- When another agent or model produced code you need to evaluate
-- When refactoring existing code
-- After any bug fix (review both the fix and the regression test)
+- The reviewer subagent of the `review-code` flow loads this skill to perform
+  the review of a code change.
+- To review code, always go through the `review-code` flow — never load this
+  skill directly for that. This is the criteria reference, not the flow.
 
 ## Core Principles
 

@@ -9,6 +9,11 @@ metadata: {"clawdbot":{"emoji":"📂","requires":{"bins":["fd"]},"install":[{"id
 
 User-friendly alternative to `find` with smart defaults.
 
+## When to use
+
+- Locating files or directories by name or pattern — prefer it over
+  plain `find`: simpler syntax, smart defaults, respects `.gitignore`.
+
 ## Quick Start
 
 ### Basic search

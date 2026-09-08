@@ -8,6 +8,14 @@ description: Plan review flow — evaluate an implementation plan before it is e
 Act as a senior software engineer and perform a thorough review of an
 implementation plan.
 
+## When to use
+
+- The user asks to review a plan, in any phrasing: "review this plan",
+  "does this plan look right?", "second opinion on the plan" — or runs
+  `/review-plan`.
+- A plan was just produced (typically by `/make-a-plan`) and the user
+  wants it evaluated before executing it.
+
 ## Instructions
 
 1. **Determine the plan under review** from the session context (for example, a

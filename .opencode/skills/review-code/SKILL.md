@@ -7,6 +7,14 @@ description: Code review flow — review a diff, PR, or code change, delegating 
 
 Act as a senior software engineer and perform a thorough code review.
 
+## When to use
+
+- The user asks to review code, in any phrasing: "review this diff",
+  "review the PR", "check my changes", "code review" — or runs
+  `/review-code`.
+- A commit, branch, PR, or diff is ready and the user wants it assessed
+  before merge.
+
 ## Instructions
 
 1. **Determine what is being reviewed** from the user context: a working-tree

@@ -10,6 +10,12 @@ Evaluate Clojure (or ClojureScript) code via a running nREPL server using
 
 Full documentation: `mem:scripts/nrepl-eval` (file: `.serena/memories/scripts/nrepl-eval.md`)
 
+## When to use
+
+- Evaluating Clojure or ClojureScript code against the running nREPL
+  sessions (backend 6064, frontend 3447) — live inspection, patching, or
+  debugging.
+
 ## Quick Reference
 
 ```bash

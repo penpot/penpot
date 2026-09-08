@@ -11,6 +11,16 @@ produce a well-grounded, actionable implementation plan.
 If the running agent cannot write (for example, the plan agent), say so and
 stop — this skill needs the build agent to save the plan.
 
+## When to use
+
+- The user asks to plan, design, or break down a task, in any phrasing:
+  "make a plan", "how would we build X", "design an approach for Y" —
+  or runs `/make-a-plan`.
+- The user asks to rework or extend an existing plan (for example, after
+  review findings) — revise the saved plan file in place.
+
+Do not use it to execute a plan — that is the `implement-plan` flow.
+
 ## Instructions
 
 1. **Produce the plan** with the `planner` skill. By default, research the

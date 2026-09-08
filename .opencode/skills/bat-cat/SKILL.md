@@ -9,6 +9,11 @@ metadata: {"clawdbot":{"emoji":"🦇","requires":{"bins":["bat"]},"install":[{"i
 
 `cat` with syntax highlighting, line numbers, and Git integration.
 
+## When to use
+
+- Reading or displaying a file in the terminal — prefer it over plain
+  `cat`: syntax highlighting, line numbers, git-side indicators.
+
 ## Quick Start
 
 ### Basic usage
