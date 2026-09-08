@@ -76,7 +76,7 @@ impl From<RawTransformEntry> for TransformEntry {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> Result<*mut u8> {
+pub extern "C" fn propagate_modifiers(pixel_precision: u8) -> Result<*mut u8> {
     let bytes = mem::bytes();
 
     let entries: Vec<TransformEntry> = bytes
@@ -85,7 +85,8 @@ pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> Result<*mut u8> 
         .collect::<Result<Vec<_>>>()?;
 
     with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision)?;
+        state.shapes.clear_transform_modifiers();
+        let result = shapes::propagate_modifiers(state, &entries, pixel_precision.into())?;
         Ok(mem::write_vec(result))
     })
 }

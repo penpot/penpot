@@ -592,12 +592,14 @@
            (rx/merge
             (->> angle-stream
                  (rx/sample mconst/rotation-sample-time)
-                 (rx/map #(dwm/set-wasm-modifiers (rotation-modifiers % shapes group-center)))
+                 (rx/map #(dwm/set-wasm-modifiers (rotation-modifiers % shapes group-center)
+                                                  :ignore-snap-pixel true))
                  (rx/take-until stopper))
             (->> angle-stream
                  (rx/take-until stopper)
                  (rx/last)
-                 (rx/map #(dwm/apply-wasm-modifiers (rotation-modifiers % shapes group-center)))))
+                 (rx/map #(dwm/apply-wasm-modifiers (rotation-modifiers % shapes group-center)
+                                                    :ignore-snap-pixel true))))
 
            (rx/of (finish-transform)))
 
@@ -638,7 +640,9 @@
                modif-tree
                (dwm/build-modif-tree ids objects get-modifier)]
 
-           (rx/of (dwm/apply-wasm-modifiers modif-tree :ignore-touched (:ignore-touched options))))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                            :ignore-touched (:ignore-touched options)
+                                            :ignore-snap-pixel true)))
 
          (let [page-id (or (:page-id options)
                            (:current-page-id state))
