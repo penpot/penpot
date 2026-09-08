@@ -324,14 +324,19 @@
   (let [objects   (-> (dsh/lookup-file-data state file-id)
                       (dsh/get-page page-id)
                       :objects)
-        frame-ids (ctt/get-root-frames-ids objects)]
-    (->> (rx/from frame-ids)
-         (rx/filter #(frame-has-text? objects %))
-         (rx/map (fn [frame-id] [frame-id (thc/fmt-object-id file-id page-id frame-id "frame")]))
-         (rx/filter (fn [[_ object-id]] (unhealed-text-thumbnail? state object-id)))
-         (rx/tap (fn [[_ object-id]] (mark-thumbnail-healed! object-id)))
-         (rx/map (fn [[frame-id _]]
-                   (update-thumbnail file-id page-id frame-id "frame" "heal-stale-text-thumbnails"))))))
+        frame-ids (ctt/get-root-frames-ids objects)
+        xf        (comp
+                   (filter #(frame-has-text? objects %))
+                   (keep
+                    (fn [frame-id]
+                      (let [object-id (thc/fmt-object-id file-id page-id frame-id "frame")]
+                        (when (unhealed-text-thumbnail? state object-id)
+                          [frame-id object-id])))))]
+    (->> (rx/from (eduction xf frame-ids))
+         (rx/map
+          (fn [[frame-id object-id]]
+            (mark-thumbnail-healed! object-id)
+            (update-thumbnail file-id page-id frame-id "frame" "heal-stale-text-thumbnails"))))))
 
 (defn watch-state-changes
   "Watch the state for changes inside frames. If a change is detected will force a rendering
