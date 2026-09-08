@@ -108,6 +108,33 @@ export const WithSubMenu = {
   },
 };
 
+export const WithDrilldownSubMenu = {
+  args: {
+    children: (
+      <>
+        <MenuItem id="rename">Rename</MenuItem>
+        <MenuItem id="duplicate">Duplicate</MenuItem>
+        <MenuSeparator />
+        <SubMenu trigger="Move to" variant="drilldown">
+          <MenuItem id="project-a">Project A</MenuItem>
+          <MenuItem id="project-b">Project B</MenuItem>
+          <SubMenu trigger="Other team" variant="drilldown">
+            <SubMenu trigger="Team 1" variant="drilldown">
+              <MenuItem id="team-1-project-a">Project A</MenuItem>
+              <MenuItem id="team-1-project-b">Project B</MenuItem>
+            </SubMenu>
+            <SubMenu trigger="Team 2" variant="drilldown">
+              <MenuItem id="team-2-project-a">Project A</MenuItem>
+            </SubMenu>
+          </SubMenu>
+        </SubMenu>
+        <MenuSeparator />
+        <MenuItem id="delete">Delete</MenuItem>
+      </>
+    ),
+  },
+};
+
 export const Placement = {
   args: {
     placement: "right",

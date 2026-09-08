@@ -68,19 +68,22 @@
    [:trigger {:optional true} [:maybe :any]]
    [:is-disabled {:optional true} [:maybe :boolean]]
    [:text-value {:optional true} [:maybe :string]]
-   [:on-action {:optional true} [:maybe fn?]]])
+   [:on-action {:optional true} [:maybe fn?]]
+   [:variant {:optional true} [:maybe [:enum "flyout" "drilldown"]]]])
 
 (mf/defc sub-menu*
   {::mf/schema schema:sub-menu}
-  [{:keys [id class trigger is-disabled text-value on-action children] :rest props}]
-  (let [props
+  [{:keys [id class trigger is-disabled text-value on-action variant children] :rest props}]
+  (let [variant (d/nilv variant "flyout")
+        props
         (mf/spread-props props
                          {:id id
                           :class class
                           :trigger trigger
                           :is-disabled is-disabled
                           :text-value text-value
-                          :on-action on-action})]
+                          :on-action on-action
+                          :variant variant})]
     [:> menu/SubMenu props
      children]))
 

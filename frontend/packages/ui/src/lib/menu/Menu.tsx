@@ -8,6 +8,7 @@ import {
 import type { Key } from "@react-types/shared";
 import {
   createContext,
+  Fragment,
   useCallback,
   useContext,
   useEffect,
@@ -54,6 +55,93 @@ interface MenuCloseController {
 }
 const MenuCloseContext = createContext<MenuCloseController | null>(null);
 
+// Lets a "drilldown" SubMenu (see below) replace the menu's own content with
+// its items instead of opening a nested flyout popover, for trees too deep
+// or too wide for a chain of flyouts (e.g. move-to-project, which nests
+// team -> project). Menu/ContextMenu each own one navigation stack and
+// provide this to their entire content tree, so a drilldown SubMenu nested
+// inside another drilldown SubMenu still drills into the same stack.
+interface MenuNavigationController {
+  drillIn: (label: ReactNode, content: ReactNode) => void;
+}
+const MenuNavigationContext =
+  createContext<MenuNavigationController | null>(null);
+
+interface NavigationLevel {
+  // Distinct per push, so switching levels always fully unmounts the
+  // previous level's items and mounts the new ones, rather than updating
+  // them in place — react-stately's Collection requires each item's id to
+  // stay stable across an update, but the back item's label and every item
+  // underneath it genuinely change identity between levels, so this forces
+  // a remount instead (React.Fragment key) rather than an update.
+  key: string;
+  label: ReactNode;
+  content: ReactNode;
+}
+
+// Renders the back item + separator for whatever level of the navigation
+// stack is current, and provides drillIn to the rest of `children`. Shared
+// between Menu and ContextMenu, which each keep their own stack (a
+// drilldown inside one popover has no bearing on the other).
+function useMenuNavigation(children: ReactNode, isOpen: boolean | undefined) {
+  const [stack, setStack] = useState<NavigationLevel[]>([]);
+  const nextLevelKey = useRef(0);
+
+  useEffect(() => {
+    if (!isOpen) setStack([]);
+  }, [isOpen]);
+
+  const drillIn = useCallback((label: ReactNode, content: ReactNode) => {
+    nextLevelKey.current += 1;
+    const key = `level-${nextLevelKey.current}`;
+    setStack((prev) => [...prev, { key, label, content }]);
+  }, []);
+
+  const drillBack = useCallback(() => {
+    setStack((prev) => prev.slice(0, -1));
+  }, []);
+
+  const current = stack[stack.length - 1];
+
+  const content = (
+    <MenuNavigationContext.Provider value={{ drillIn }}>
+      <Fragment key={current ? current.key : "root"}>
+        {current && (
+          <>
+            <MenuItem
+              id="__menu-back"
+              className={styles.backItem}
+              textValue={typeof current.label === "string" ? current.label : undefined}
+              shouldCloseOnSelect={false}
+              onAction={drillBack}
+            >
+              <svg
+                className={styles.subMenuChevron}
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <path
+                  d="M10 4l-4 4 4 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className={styles.backLabel}>{current.label}</span>
+            </MenuItem>
+            <MenuSeparator />
+          </>
+        )}
+        {current ? current.content : children}
+      </Fragment>
+    </MenuNavigationContext.Provider>
+  );
+
+  return content;
+}
+
 interface MenuProps {
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
@@ -83,6 +171,7 @@ export function Menu({
   const triggerRef = useRef<HTMLDivElement>(null);
   const triggerId = useId();
   const [shouldSkipAnimation, setShouldSkipAnimation] = useState(false);
+  const navigationContent = useMenuNavigation(children, isOpen);
 
   useEffect(() => {
     if (isOpen) setShouldSkipAnimation(false);
@@ -117,7 +206,7 @@ export function Menu({
           onClose={() => onOpenChange?.(false)}
           autoFocus="first"
         >
-          {children}
+          {navigationContent}
         </RACMenu>
       </Popover>
     </MenuCloseContext.Provider>
@@ -131,6 +220,10 @@ interface MenuItemProps {
   onAction?: () => void;
   className?: string;
   textValue?: string;
+  // False for an item that navigates (a drilldown SubMenu's own trigger row,
+  // the back item) instead of performing an action the menu should close
+  // after. Defaults to true, react-aria-components' own default.
+  shouldCloseOnSelect?: boolean;
 }
 
 export function MenuItem({
@@ -140,6 +233,7 @@ export function MenuItem({
   onAction,
   className,
   textValue,
+  shouldCloseOnSelect,
 }: MenuItemProps) {
   return (
     <RACMenuItem
@@ -147,10 +241,33 @@ export function MenuItem({
       isDisabled={isDisabled}
       onAction={onAction}
       textValue={textValue}
+      shouldCloseOnSelect={shouldCloseOnSelect}
       className={`${styles.menuItem} ${className ?? ""}`}
     >
       {children}
     </RACMenuItem>
+  );
+}
+
+function SubMenuTriggerContent({ trigger }: { trigger: ReactNode }) {
+  return (
+    <>
+      <span className={styles.subMenuLabel}>{trigger}</span>
+      <svg
+        className={styles.subMenuChevron}
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+      >
+        <path
+          d="M6 4l4 4-4 4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </>
   );
 }
 
@@ -162,6 +279,14 @@ interface SubMenuProps {
   textValue?: string;
   className?: string;
   onAction?: (key: Key) => void;
+  // "flyout" (default) opens a nested popover next to this item, like a
+  // desktop context menu. "drilldown" replaces the parent menu's own
+  // content with this submenu's items and adds a back item, for trees too
+  // deep/wide for a chain of flyouts (e.g. move-to-project's team ->
+  // project nesting). onAction is ignored in drilldown mode: its items sit
+  // in the same RACMenu as everything else, so the root Menu/ContextMenu's
+  // own onAction already sees them selected.
+  variant?: "flyout" | "drilldown";
 }
 
 // The submenu's own trigger is always a MenuItem, which — unlike the
@@ -178,8 +303,25 @@ export function SubMenu({
   textValue,
   className,
   onAction,
+  variant = "flyout",
 }: SubMenuProps) {
   const closeController = useContext(MenuCloseContext);
+  const navigation = useContext(MenuNavigationContext);
+
+  if (variant === "drilldown") {
+    return (
+      <MenuItem
+        id={id}
+        isDisabled={isDisabled}
+        textValue={textValue}
+        className={styles.subMenuItem}
+        shouldCloseOnSelect={false}
+        onAction={() => navigation?.drillIn(trigger, children)}
+      >
+        <SubMenuTriggerContent trigger={trigger} />
+      </MenuItem>
+    );
+  }
 
   return (
     <SubmenuTrigger>
@@ -189,21 +331,7 @@ export function SubMenu({
         textValue={textValue}
         className={styles.subMenuItem}
       >
-        <span className={styles.subMenuLabel}>{trigger}</span>
-        <svg
-          className={styles.subMenuChevron}
-          viewBox="0 0 16 16"
-          aria-hidden="true"
-        >
-          <path
-            d="M6 4l4 4-4 4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <SubMenuTriggerContent trigger={trigger} />
       </MenuItem>
       <Popover
         className={styles.popover}
@@ -262,6 +390,7 @@ export function ContextMenu({
   const anchorRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [shouldSkipAnimation, setShouldSkipAnimation] = useState(false);
+  const navigationContent = useMenuNavigation(children, isOpen);
 
   useEffect(() => {
     if (isOpen) setShouldSkipAnimation(false);
@@ -322,7 +451,7 @@ export function ContextMenu({
           onClose={() => setIsOpen(false)}
           autoFocus="first"
         >
-          {children}
+          {navigationContent}
         </RACMenu>
       </Popover>
     </MenuCloseContext.Provider>
