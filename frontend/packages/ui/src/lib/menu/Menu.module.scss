@@ -7,7 +7,6 @@
 
 .popover {
   z-index: var(--z-index-dropdown);
-  filter: drop-shadow(var(--el-shadow-dark));
 
   &[data-entering] {
     animation: popover-fade-in 0.15s ease-out;
@@ -25,19 +24,36 @@
   flex-direction: column;
   gap: var(--sp-xxs);
   min-inline-size: $sz-160;
-  max-block-size: px2rem(300);
+
+  // react-aria sets the Popover's own max-height (inline, on .popover, our
+  // direct parent) to whatever actually fits between the trigger and the
+  // viewport edge. A fixed px value here ignores that entirely: .popover
+  // has no overflow of its own, so once its computed space is smaller
+  // than our fixed cap we'd render straight past it (and off the edge of
+  // the viewport, with nothing left to scroll it back into view). inherit
+  // picks up .popover's own computed max-height instead, so we always
+  // fit — at the cost of no longer capping how tall the menu gets when
+  // there's plenty of room, since react-aria's own value is the only
+  // thing to inherit here.
+  max-block-size: inherit;
   padding: var(--sp-xxs);
   margin: 0;
   border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
   overflow-y: auto;
   outline: none;
+
+  // Matches the other DS dropdowns (options-dropdown.scss et al.), and the
+  // legacy context-menu-a11y menu this replaces.
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
 }
 
 .menuItem {
   @include use-typography("body-small");
 
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: var(--sp-s);
   block-size: $sz-32;
@@ -97,6 +113,7 @@
 }
 
 .separator {
+  flex: 0 0 auto;
   block-size: $b-1;
   margin-block: var(--sp-xxs);
   margin-inline: 0;
@@ -109,12 +126,11 @@
 // can't be display: contents. A flex/grid item is blockified and, by
 // default, stretched to fill its container's cross axis regardless of this
 // display value, which would inflate that box past the actual trigger and
-// throw off the Popover's position; align-self/justify-self: start opts
-// this out so the box always shrink-wraps its content instead.
+// throw off the Popover's position; place-self: start start opts this out
+// so the box always shrink-wraps its content instead.
 .menuTrigger {
   display: inline-block;
-  align-self: start;
-  justify-self: start;
+  place-self: start start;
 }
 
 .contextMenuTrigger {
