@@ -15,92 +15,127 @@
    [cuerdas.core :as str]))
 
 (defn generate-update-property-name
+  "Update the name of a variant property at position `pos` for all components in the variant.
+   The new name may be added a suffix to ensure it is unique among the other property names."
   [changes variant-id pos new-name]
-  (let [data               (pcb/get-library-data changes)
-        objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)
-
-        props              (-> related-components last :variant-properties)
-        prop-names         (mapv :name props)
-        prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
-        new-name           (ctv/update-number-in-repeated-item prop-names new-name)]
-    (reduce (fn [changes component]
-              (pcb/update-component
-               changes (:id component)
-               (fn [component]
-                 (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
-               {:apply-changes-local-library? true}))
+  (if (or (nil? variant-id) (nil? pos))
+    changes
+    (let [data               (pcb/get-library-data changes)
+          objects            (pcb/get-objects changes)
+          related-components (cfv/find-variant-components data objects variant-id)]
+      (if (empty? related-components)
+        changes
+        (let [props      (-> related-components last :variant-properties)
+              num-props  (count props)]
+          (if (or (< pos 0) (>= pos num-props))
             changes
-            related-components)))
-
+            (let [prop-names (mapv :name props)
+                  prop-names (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
+                  new-name   (ctv/update-number-in-repeated-item prop-names new-name)]
+              (reduce (fn [changes component]
+                        (pcb/update-component
+                         changes (:id component)
+                         (fn [component]
+                           (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
+                         {:apply-changes-local-library? true}))
+                      changes
+                      related-components))))))))
 
 (defn generate-remove-property
+  "Remove the variant property at position `pos` for all components in the variant and their
+   respective main instances."
   [changes variant-id pos]
-  (let [data               (pcb/get-library-data changes)
-        objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)
-        props              (-> related-components first :variant-properties)]
-    (if (and (seq props) (<= 0 pos) (< pos (count props)))
-      (reduce (fn [changes component]
-                (let [props   (:variant-properties component)
-                      props   (d/remove-at-index props pos)
-                      main-id (:main-instance-id component)
-                      name    (ctv/properties-to-name props)]
-                  (-> changes
-                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
-                                            {:apply-changes-local-library? true})
-                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-              changes
-              related-components)
-      changes)))
-
+  (if (nil? pos)
+    changes
+    (let [data               (pcb/get-library-data changes)
+          objects            (pcb/get-objects changes)
+          related-components (cfv/find-variant-components data objects variant-id)
+          props              (-> related-components first :variant-properties)]
+      (if (and (seq props) (<= 0 pos) (< pos (count props)))
+        (reduce (fn [changes component]
+                  (let [props   (:variant-properties component)
+                        props   (d/remove-at-index props pos)
+                        main-id (:main-instance-id component)
+                        name    (ctv/properties-to-name props)]
+                    (-> changes
+                        (pcb/update-component (:id component) #(assoc % :variant-properties props)
+                                              {:apply-changes-local-library? true})
+                        (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
+                changes
+                related-components)
+        changes))))
 
 (defn generate-update-property-value
+  "Update the value of the variant property at position 'pos' for the given component and its main instance."
   [changes component-id pos value]
-  (let [data      (pcb/get-library-data changes)
-        component (ctcl/get-component data component-id true)
-        main-id   (:main-instance-id component)
-        name      (-> (:variant-properties component)
-                      (update pos assoc :value value)
-                      ctv/properties-to-name)]
-    (-> changes
-        (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
-                              {:apply-changes-local-library? true})
-        (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-
+  (if (or (nil? component-id) (nil? pos))
+    changes
+    (let [data      (pcb/get-library-data changes)
+          component (ctcl/get-component data component-id true)]
+      (if (and component (< pos (count (:variant-properties component))))
+        (let [main-id   (:main-instance-id component)
+              props     (:variant-properties component)
+              name      (-> props
+                            (update pos assoc :value value)
+                            ctv/properties-to-name)]
+          (-> changes
+              (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
+                                    {:apply-changes-local-library? true})
+              (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+        changes))))
 
 (defn generate-set-variant-error
+  "Set an invalid property value as a :variant-error attribute in the main instance of the given component.
+   If value is nil, remove the :variant-error attribute."
   [changes component-id value]
-  (let [data      (pcb/get-library-data changes)
-        component (ctcl/get-component data component-id true)
-        main-id   (:main-instance-id component)]
-    (-> changes
-        (pcb/update-shapes [main-id] (if (nil? value)
-                                       #(dissoc % :variant-error)
-                                       #(assoc % :variant-error value))))))
-
+  (if (nil? component-id)
+    changes
+    (let [data      (pcb/get-library-data changes)
+          component (ctcl/get-component data component-id true)]
+      (if component
+        (let [main-id   (:main-instance-id component)]
+          (-> changes
+              (pcb/update-shapes [main-id] (if (nil? value)
+                                             #(dissoc % :variant-error)
+                                             #(assoc % :variant-error value)))))
+        changes))))
 
 (defn generate-reorder-variant-poperties
+  "Change the order of the variant properties for all components in the variant.
+   Move the property at the given position to some space between positions.
+   Clamp the positions to the valid range of property indexes."
   [changes variant-id from-pos to-space-between-pos]
-  (let [data               (pcb/get-library-data changes)
-        objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)]
-    (reduce (fn [changes component]
-              (let [props   (:variant-properties component)
-                    props   (d/reorder props from-pos to-space-between-pos)
-                    main-id (:main-instance-id component)
-                    name    (ctv/properties-to-name props)]
-                (-> changes
-                    (pcb/update-component (:id component)
-                                          #(assoc % :variant-properties props)
-                                          {:apply-changes-local-library? true})
-                    (pcb/update-shapes [main-id]
-                                       #(assoc % :variant-name name)))))
-            changes
-            related-components)))
-
+  (if (or (nil? variant-id) (nil? from-pos) (nil? to-space-between-pos))
+    changes
+    (let [data               (pcb/get-library-data changes)
+          objects            (pcb/get-objects changes)
+          related-components (cfv/find-variant-components data objects variant-id)]
+      (reduce (fn [changes component]
+                (let [props   (:variant-properties component)
+                      props'  (d/reorder props from-pos to-space-between-pos)
+                      main-id (:main-instance-id component)
+                      name    (ctv/properties-to-name props')]
+                  (if (not= props props')
+                    (-> changes
+                        (pcb/update-component (:id component)
+                                              #(assoc % :variant-properties props')
+                                              {:apply-changes-local-library? true})
+                        (pcb/update-shapes [main-id]
+                                           #(assoc % :variant-name name)))
+                    changes)))
+              changes
+              related-components))))
 
 (defn generate-add-new-property
+  "Add a new variant property to all components in the variant and their respective main instances.
+
+   The new property name may be given or it will be generated based on the next available property
+   number. In any case, it may be modified to be unique among the other property names.
+
+   The value may also be given, or else it will be an empty value, unless fill-values? is true, in
+   which case the value will be set to a default value based on the property number.
+
+   The editing? flag, if set, will be added to the metadata of the properties, for later use."
   [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
@@ -158,9 +193,10 @@
                                 (assoc :name new-name))))))
 
 (defn generate-make-shapes-no-variant
+  "Extract some components from a variant, removing the variant-id and variant-name from the 
+   main instances and the variant-id and variant-properties from the components."
   [changes shapes]
   (reduce generate-make-shape-no-variant changes shapes))
-
 
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
@@ -184,8 +220,9 @@
         shape-name (ctv/remove-prefix (:name shape) container-name)]
     (ctv/path-to-properties shape-name base-properties min-props)))
 
-
 (defn generate-make-shapes-variant
+  "Introduce some components into a variant, adding the variant-id and variant-name to the
+   main instances and the variant-id and variant-properties to the components."
   [changes shapes variant-container]
   (let [data           (pcb/get-library-data changes)
         objects        (pcb/get-objects changes)

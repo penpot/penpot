@@ -56,6 +56,10 @@
     :undo-changes '()
     :origin origin}))
 
+(defn empty-changes?
+  [changes]
+  (empty? (:redo-changes changes)))
+
 (defn set-save-undo?
   [changes save-undo?]
   (assoc changes :save-undo? save-undo?))
@@ -1210,18 +1214,22 @@
 
 (defn get-library-data
   [changes]
+  (assert-library! changes)
   (::library-data (meta changes)))
 
 (defn get-objects
   [changes]
+  (assert-objects! changes)
   (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))
 
 (defn get-page
   [changes]
+  (assert-page! changes)
   (::page (meta changes)))
 
 (defn get-page-id
   [changes]
+  (assert-page-id! changes)
   (::page-id (meta changes)))
 
 (defn set-text-content

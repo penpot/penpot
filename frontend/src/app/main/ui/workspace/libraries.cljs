@@ -58,7 +58,7 @@
         graphics     0
         typographies (count (:typographies data))
         components   (count (->> (ctkl/components-seq data)
-                                 (remove #(cfv/is-secondary-variant? % data))))
+                                 (remove #(cfv/is-secondary-variant? data %))))
         tokens-lib   (cfo/get-tokens-lib data)
         tokens       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
         token-sets   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
