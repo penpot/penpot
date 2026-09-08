@@ -45,7 +45,14 @@ pub(super) fn render_frame(
         render_tree(builder, shared, child_id, tree, scale)?;
     }
 
-    // Strokes over children (frame space).
+    // Close content clip before strokes. Outer (and half of center) strokes
+    // extend past the frame bounds; keeping them under clip-path hides them.
+    // Matches GPU: clipped-frame strokes render in exit without the frame clip.
+    if clipped {
+        builder.close_group();
+    }
+
+    // Strokes over children (frame space), outside the content clip.
     let visible_strokes: Vec<&Stroke> = element.visible_strokes().collect();
     if !visible_strokes.is_empty() {
         let canvas = builder.canvas();
@@ -56,9 +63,6 @@ pub(super) fn render_frame(
         canvas.restore();
     }
 
-    if clipped {
-        builder.close_group();
-    }
     if effects.is_some() {
         builder.close_group();
     }

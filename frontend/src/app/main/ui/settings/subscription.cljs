@@ -848,8 +848,8 @@
          [:div {:class (stl/css :modal-text)}
           (tr "nitrate.form.enterprise-intro" ".") " " (if nitrate-license (tr "nitrate.form.contact-us-upgrade") (tr "nitrate.form.contact-us-free-trial"))]
          [:div {:class (stl/css :modal-text)}
-          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.net"}
-           "sales@penpot.net"]]])]]))
+          [:a {:class (stl/css :cta-button) :href "mailto:sales@penpot.app"}
+           "sales@penpot.app"]]])]]))
 
 (mf/defc nitrate-contact-sales-dialog
   {::mf/register modal/components
@@ -898,7 +898,7 @@
                         :on-click handle-close-dialog} (tr "ds.confirm-cancel")]
            [:> button* {:variant "primary"
                         :type "button"
-                        :on-click #(dom/open-new-window (dm/str "mailto:sales@penpot.net?subject=Switch%20to%20the%20" subscription-type "%20plan"))} (tr "nitrate.contact-sales.button")]]])]]]))
+                        :on-click #(dom/open-new-window (dm/str "mailto:sales@penpot.app?subject=Switch%20to%20the%20" subscription-type "%20plan"))} (tr "nitrate.contact-sales.button")]]])]]]))
 
 (mf/defc nitrate-cancel-contact-sales-dialog
   {::mf/register modal/components
@@ -908,7 +908,7 @@
         (js/encodeURIComponent email)
 
         mailto-url
-        (dm/str "mailto:sales@penpot.net"
+        (dm/str "mailto:sales@penpot.app"
                 "?subject=Request%20to%20Cancel%20Enterprise%20Subscription"
                 "&body=Hello%2C%0A%0A"
                 "I%20would%20like%20to%20cancel%20my%20Enterprise%20subscription.%0A"
@@ -930,8 +930,8 @@
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :modal-text-medium)}
         (tr "nitrate.subscription.settings.manual-contact-us")]
-       [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.net"}
-        "sales@penpot.net"]
+       [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.app"}
+        "sales@penpot.app"]
        [:div {:class (stl/css :action-buttons)}
         [:> button* {:class (stl/css :button-full-width)
                      :variant "primary"

@@ -4,8 +4,23 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as *;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+// Shared by every disabled-looking control in the .hidden state below.
+@mixin hidden-control {
+  cursor: default;
+  pointer-events: none;
+  box-sizing: border-box;
+  color: var(--color-foreground-secondary);
+  stroke: var(--color-foreground-secondary);
+  background-color: transparent;
+}
 
 .element-set {
   @include sidebar.option-grid-structure;
@@ -16,15 +31,17 @@
 }
 
 .title-spacing-board-grid {
-  padding-left: deprecated.$s-2;
+  padding-inline-start: var(--sp-xxs);
   margin: 0;
 }
 
 .element-set-content {
-  @include deprecated.flex-column;
-
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   grid-column: span 8;
-  margin: deprecated.$s-4 0 deprecated.$s-8 0;
+  margin-block: var(--sp-xs) var(--sp-s);
+  margin-inline: 0;
 }
 
 .grid-title {
@@ -35,266 +52,388 @@
   grid-column: span 6;
   display: flex;
   align-items: center;
-  gap: deprecated.$s-1;
-  border-radius: deprecated.$br-8;
-  background-color: var(--input-details-color);
+  gap: px2rem(1);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+}
 
-  .show-options {
-    @extend %button-secondary;
+.show-options {
+  --show-options-background-color: var(--color-background-tertiary);
+  --show-options-border-color: var(--color-background-tertiary);
+  --show-options-color: var(--color-foreground-secondary);
 
-    height: deprecated.$s-32;
-    width: deprecated.$s-28;
-    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
-    box-sizing: border-box;
-    border: deprecated.$s-1 solid var(--input-border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: $sz-28;
+  border-radius: $br-8 0 0 $br-8;
+  box-sizing: border-box;
+  border: $b-1 solid var(--show-options-border-color);
+  background-color: var(--show-options-background-color);
+  color: var(--show-options-color);
 
-    svg {
-      @extend %button-icon;
-    }
+  &:focus-visible {
+    outline: none;
 
-    &.selected {
-      @extend %button-icon-selected;
-    }
+    --show-options-border-color: var(--color-accent-primary);
   }
 
-  .type-select-wrapper {
-    flex-grow: 1;
-    width: deprecated.$s-96;
-    padding: 0;
-    border-radius: 0;
-    height: deprecated.$s-32;
+  &:hover {
+    --show-options-background-color: var(--color-background-quaternary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-accent-primary);
 
-    .grid-type-select {
-      border-radius: 0;
-      height: 100%;
-      box-sizing: border-box;
-      border: deprecated.$s-1 solid var(--input-border-color);
-
-      &:hover {
-        border: deprecated.$s-1 solid var(--input-border-color-hover);
-      }
-    }
+    text-decoration: none;
   }
 
-  .grid-size {
-    @extend %asset-element;
+  &:active {
+    outline: none;
 
-    width: deprecated.$s-60;
-    margin: 0;
-    padding: 0;
-    padding-left: deprecated.$s-8;
-    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-
-    .numeric-input {
-      @extend %input-base;
-      @include deprecated.body-small-typography;
-    }
+    --show-options-background-color: var(--color-background-secondary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-accent-primary);
   }
 
-  .editable-select-wrapper {
-    @extend %asset-element;
+  &[disabled],
+  &:disabled {
+    --show-options-background-color: var(--color-background-quaternary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-foreground-disabled);
 
-    width: deprecated.$s-60;
-    margin: 0;
-    padding: 0;
-    position: relative;
-    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-
-    .column-select {
-      height: deprecated.$s-32;
-      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-      box-sizing: border-box;
-      border: deprecated.$s-1 solid var(--input-border-color);
-
-      .numeric-input {
-        @extend %input-base;
-        @include deprecated.body-small-typography;
-
-        margin: 0;
-        padding: 0;
-      }
-
-      span {
-        @include deprecated.flex-center;
-
-        svg {
-          @extend %button-icon;
-        }
-      }
-    }
+    cursor: unset;
   }
 
-  &.hidden {
-    .show-options {
-      @include deprecated.hidden-element;
+  &.selected {
+    outline: none;
 
-      border: deprecated.$s-1 solid var(--input-border-color-disabled);
-    }
-
-    .type-select-wrapper,
-    .editable-select-wrapper {
-      @include deprecated.hidden-element;
-
-      .column-select,
-      .grid-type-select {
-        @include deprecated.hidden-element;
-
-        border: deprecated.$s-1 solid var(--input-border-color-disabled);
-      }
-
-      .column-select {
-        @include deprecated.hidden-element;
-
-        border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-
-        .numeric-input {
-          @include deprecated.hidden-element;
-        }
-      }
-    }
-
-    .grid-size {
-      @include deprecated.hidden-element;
-
-      border: deprecated.$s-1 solid var(--input-border-color-disabled);
-
-      .icon {
-        stroke: var(--input-foreground-color-disabled);
-      }
-
-      .numeric-input {
-        color: var(--input-foreground-color-disabled);
-      }
-    }
-
-    .actions {
-      .hidden-btn,
-      .lock-btn {
-        background-color: transparent;
-
-        svg {
-          stroke: var(--input-foreground-color-disabled);
-        }
-      }
-    }
+    --show-options-background-color: var(--color-background-quaternary);
+    --show-options-border-color: var(--color-background-quaternary);
+    --show-options-color: var(--color-accent-primary);
   }
 }
 
-.actions {
-  @include deprecated.flex-row;
+.type-select-wrapper {
+  flex-grow: 1;
+  inline-size: $sz-96;
+  padding: 0;
+  border-radius: 0;
+  block-size: $sz-32;
+}
 
+.type-select-wrapper .grid-type-select {
+  --grid-type-select-border-color: var(--color-background-tertiary);
+
+  border-radius: 0;
+  block-size: 100%;
+  box-sizing: border-box;
+  border: $b-1 solid var(--grid-type-select-border-color);
+
+  &:hover {
+    --grid-type-select-border-color: var(--color-background-quaternary);
+  }
+}
+
+.grid-size {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  inline-size: px2rem(60);
+  margin: 0;
+  padding: 0;
+  padding-inline-start: var(--sp-s);
+  border-radius: 0 $br-8 $br-8 0;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+    color: var(--color-foreground-primary);
+  }
+}
+
+.grid-size .numeric-input {
+  --input-height: #{$sz-28};
+
+  flex-grow: 1;
+}
+
+.editable-select-wrapper {
+  inline-size: px2rem(60);
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.editable-select-wrapper .column-select {
+  block-size: $sz-32;
+  border-radius: 0 $br-8 $br-8 0;
+  box-sizing: border-box;
+  border: $b-1 solid var(--color-background-tertiary);
+}
+
+.column-select .numeric-input {
+  @include use-typography("body-small");
+
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  block-size: $sz-28;
+  inline-size: 100%;
+  flex-grow: 1;
+  border-radius: $br-8;
+  color: var(--color-foreground-primary);
+
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.hidden .show-options {
+  @include hidden-control;
+
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.hidden .type-select-wrapper,
+.hidden .editable-select-wrapper {
+  @include hidden-control;
+}
+
+.hidden .column-select,
+.hidden .grid-type-select {
+  @include hidden-control;
+
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.hidden .column-select {
+  border-radius: 0 $br-8 $br-8 0;
+}
+
+.hidden .column-select .numeric-input {
+  @include hidden-control;
+}
+
+.hidden .grid-size {
+  @include hidden-control;
+
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.hidden .grid-size .numeric-input {
+  --input-fg-color: var(--color-foreground-secondary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
   grid-column: span 2;
 }
 
 .grid-advanced-options {
-  @include deprecated.flex-column;
-
-  margin-top: deprecated.$s-4;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
 }
 
 .column-row,
 .square-row {
-  @include deprecated.flex-column;
-
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   position: relative;
 }
 
 .advanced-row {
   position: relative;
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
+}
 
-  .orientation-select-wrapper {
-    width: deprecated.$s-92;
-    padding: 0;
+.orientation-select-wrapper {
+  inline-size: px2rem(92);
+  padding: 0;
+}
+
+.color-wrapper {
+  inline-size: px2rem(156);
+}
+
+.show-more-options {
+  --show-more-options-background-color: transparent;
+  --show-more-options-border-color: transparent;
+  --show-more-options-color: var(--color-foreground-secondary);
+
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  border-radius: $br-8;
+  background-color: var(--show-more-options-background-color);
+  border: $b-2 solid var(--show-more-options-border-color);
+  color: var(--show-more-options-color);
+
+  &:focus-visible {
+    outline: none;
+    border: $b-1 solid var(--color-accent-primary);
+
+    --show-more-options-background-color: var(--color-background-tertiary);
+    --show-more-options-color: var(--color-foreground-primary);
   }
 
-  .color-wrapper {
-    width: deprecated.$s-156;
+  &:hover {
+    --show-more-options-background-color: var(--color-background-quaternary);
+    --show-more-options-border-color: var(--color-background-quaternary);
+    --show-more-options-color: var(--color-accent-primary);
   }
 
-  .show-more-options {
-    @extend %button-tertiary;
+  &:active {
+    outline: none;
 
-    height: deprecated.$s-32;
-    width: deprecated.$s-32;
-
-    svg {
-      @extend %button-icon;
-    }
-
-    &.selected {
-      @extend %button-icon-selected;
-    }
+    --show-more-options-background-color: var(--color-background-secondary);
+    --show-more-options-border-color: transparent;
+    --show-more-options-color: var(--color-accent-primary);
   }
 
-  .height {
-    @extend %input-element;
-    @include deprecated.body-small-typography;
+  &[disabled],
+  &:disabled {
+    --show-more-options-color: var(--color-foreground-disabled);
 
-    .icon-text {
-      padding-top: deprecated.$s-1;
-    }
+    cursor: unset;
+    pointer-events: none;
   }
 
-  .gutter,
-  .margin {
-    @extend %input-element;
-    @include deprecated.body-small-typography;
+  &.selected {
+    outline: none;
 
-    .icon {
-      &.rotated svg {
-        transform: rotate(90deg);
-      }
-    }
+    --show-more-options-background-color: var(--color-background-quaternary);
+    --show-more-options-border-color: var(--color-background-quaternary);
+    --show-more-options-color: var(--color-accent-primary);
+  }
+}
+
+.show-more-options svg {
+  stroke: var(--show-more-options-color);
+}
+
+.height,
+.gutter,
+.margin {
+  --grid-param-input-color: var(--color-foreground-secondary);
+  --grid-param-input-background-color: var(--color-background-tertiary);
+  --grid-param-input-border-color: var(--color-background-tertiary);
+
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  border-radius: $br-8;
+  background-color: var(--grid-param-input-background-color);
+  border: $b-1 solid var(--grid-param-input-border-color);
+  color: var(--grid-param-input-color);
+
+  &:hover {
+    --grid-param-input-color: var(--color-foreground-primary);
+    --grid-param-input-background-color: var(--color-background-quaternary);
+    --grid-param-input-border-color: var(--color-background-quaternary);
   }
 
-  .more-options {
-    @include deprecated.menu-shadow;
-    @include deprecated.flex-column;
+  &:active,
+  &:focus,
+  &:focus-within {
+    --grid-param-input-color: var(--color-foreground-primary);
+    --grid-param-input-background-color: var(--color-background-primary);
+    --grid-param-input-border-color: var(--color-accent-primary);
+  }
 
-    position: absolute;
-    top: calc(deprecated.$s-2 + deprecated.$s-28);
-    right: 0;
-    width: deprecated.$s-156;
-    max-height: deprecated.$s-300;
-    padding: deprecated.$s-2;
-    margin: 0 0 deprecated.$s-40 0;
-    margin-top: deprecated.$s-4;
-    border-radius: deprecated.$br-8;
-    z-index: deprecated.$z-index-4;
-    overflow-y: auto;
-    background-color: var(--menu-background-color);
+  &:focus,
+  &:focus-within {
+    --grid-param-input-background-color: var(--color-background-tertiary);
+  }
+}
 
-    .option-btn {
-      @include deprecated.button-style;
+.height .numeric-input,
+.gutter .numeric-input,
+.margin .numeric-input {
+  --input-height: #{$sz-28};
 
-      display: flex;
-      align-items: center;
-      height: deprecated.$s-32;
-      padding: 0 deprecated.$s-8;
-      border-radius: deprecated.$br-6;
-      color: var(--menu-foreground-color);
+  flex-grow: 1;
+  margin-block: var(--sp-xxs);
+  margin-inline: 0;
+  padding-inline-start: $sz-6;
+}
 
-      &:hover {
-        background-color: var(--menu-background-color-hover);
-        color: var(--menu-foreground-color-hover);
-      }
-    }
+.more-options {
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  position: absolute;
+  inset-block-start: calc(var(--sp-xxs) + $sz-28);
+  inset-inline-end: 0;
+  inline-size: px2rem(156);
+  max-block-size: px2rem(300); // TODO: when this gets addressed in the DS, use a token
+  padding: var(--sp-xxs);
+  margin-block: var(--sp-xs) $sz-40;
+  margin-inline: 0;
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  overflow-y: auto;
+  background-color: var(--color-background-tertiary);
+}
+
+.option-btn {
+  @include use-typography("body-small");
+
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border-radius: $br-6;
+  color: var(--color-foreground-primary);
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-background-quaternary);
+    color: var(--color-foreground-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
   }
 }
 
 .second-row {
-  @extend %dropdown-wrapper;
-
-  left: unset;
-  right: 0;
-  width: deprecated.$s-108;
-
-  .btn-options {
-    @include deprecated.button-style;
-    @extend %dropdown-element-base;
-
-    width: 100%;
-  }
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  position: absolute;
+  inset-block-start: $sz-32;
+  inset-inline-start: unset;
+  inset-inline-end: 0;
+  inline-size: px2rem(108);
+  max-block-size: var(--menu-max-height, px2rem(300));
+  padding: var(--sp-xxs);
+  margin: 0;
+  margin-block-start: px2rem(1);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  overflow: hidden auto;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }
