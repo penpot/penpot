@@ -82,6 +82,20 @@
   color: var(--color-foreground-secondary);
 }
 
+// The item a drilldown SubMenu (see Menu.tsx) shows at the top of its
+// content, above a separator, to return to the level it was entered from.
+.backItem {
+  color: var(--color-foreground-secondary);
+}
+
+.backLabel {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .separator {
   block-size: $b-1;
   margin-block: var(--sp-xxs);
