@@ -714,8 +714,10 @@
 (defn remove-interaction
   [interactions index]
   (let [interactions (or interactions [])]
-    (into (subvec interactions 0 index)
-          (subvec interactions (inc index)))))
+    (if (and (>= index 0) (< index (count interactions)))
+      (into (subvec interactions 0 index)
+            (subvec interactions (inc index)))
+      interactions)))
 
 (defn update-interaction
   [interactions index update-fn]

@@ -861,6 +861,37 @@
         (t/is (= (:action-type (last new-interactions)) :open-url))))))
 
 
+(t/deftest remove-interaction-bounds-check
+  (let [i1 (ctsi/set-action-type ctsi/default-interaction :open-overlay)
+        i2 (ctsi/set-action-type ctsi/default-interaction :close-overlay)
+        i3 (ctsi/set-action-type ctsi/default-interaction :prev-screen)
+        interactions [i1 i2 i3]]
+
+    (t/testing "Remove interaction with valid index"
+      (let [new-interactions (ctsi/remove-interaction interactions 1)]
+        (t/is (= 2 (count new-interactions)))
+        (t/is (= :open-overlay (:action-type (first new-interactions))))
+        (t/is (= :prev-screen (:action-type (second new-interactions))))))
+
+    (t/testing "Remove interaction with index out of bounds (too high)"
+      (let [new-interactions (ctsi/remove-interaction interactions 10)]
+        (t/is (= 3 (count new-interactions)))
+        (t/is (= interactions new-interactions))))
+
+    (t/testing "Remove interaction with negative index"
+      (let [new-interactions (ctsi/remove-interaction interactions -1)]
+        (t/is (= 3 (count new-interactions)))
+        (t/is (= interactions new-interactions))))
+
+    (t/testing "Remove interaction from empty vector"
+      (let [new-interactions (ctsi/remove-interaction [] 0)]
+        (t/is (= 0 (count new-interactions)))))
+
+    (t/testing "Remove interaction from nil"
+      (let [new-interactions (ctsi/remove-interaction nil 0)]
+        (t/is (= 0 (count new-interactions)))))))
+
+
 (t/deftest remap-interactions
   (let [frame1 (cts/setup-shape {:type :frame})
         frame2 (cts/setup-shape {:type :frame})
