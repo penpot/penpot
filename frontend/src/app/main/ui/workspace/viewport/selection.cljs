@@ -18,6 +18,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -307,11 +308,14 @@
                                :bottom :auto-height
                                nil)]
                (when (some? grow-type)
-                 (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type grow-type)))
-                 ;; The WASM renderer needs an explicit reflow after the grow-type change
-                 (when (features/active-feature? @st/state "render-wasm/v1")
-                   (st/emit! (dwwt/resize-wasm-text-all [shape-id])
-                             (ptk/data-event :layout/update {:ids [shape-id]}))))))))]
+                 (let [uid (js/Symbol)]
+                   (st/emit! (dwu/start-undo-transaction uid)
+                             (dwsh/update-shapes [shape-id] #(assoc % :grow-type grow-type)))
+                   ;; The WASM renderer needs an explicit reflow after the grow-type change
+                   (if (features/active-feature? @st/state "render-wasm/v1")
+                     (st/emit! (dwwt/resize-wasm-text-all [shape-id] {:undo-id uid})
+                               (ptk/data-event :layout/update {:ids [shape-id]}))
+                     (st/emit! (dwu/commit-undo-transaction uid)))))))))]
 
     [:g.resize-handler
      (when ^boolean show-handler
