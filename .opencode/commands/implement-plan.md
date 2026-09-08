@@ -1,5 +1,5 @@
 ---
-description: Execute a ready plan — create issue + branch when on a base branch, or continue on the current branch; implement and commit — loads and follows the implement-plan skill
+description: Execute a ready plan — task checklist, your confirmation, then all tasks with one commit (default) or step by step with a commit and a pause per task; creates issue + branch when on a base branch — loads and follows the implement-plan skill
 agent: build
 ---
 
