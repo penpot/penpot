@@ -333,6 +333,8 @@
   [:stroke-style
    :stroke-alignment
    :stroke-width
+   :stroke-dash
+   :stroke-gap
    :stroke-per-side
    :stroke-width-top
    :stroke-width-right
