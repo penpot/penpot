@@ -351,5 +351,5 @@ gh issue view <NUMBER> --repo penpot/penpot --json title
 ## See Also
 
 - End-to-end orchestration entry point: the `create-issue` skill at
-  `.opencode/skills/create-issue/SKILL.md`. The skill is a thin entry
+  `.agents/skills/create-issue/SKILL.md`. The skill is a thin entry
   point; this memory is the canonical home for all issue-creation rules.

@@ -1,6 +1,6 @@
 ---
 name: make-a-plan
-description: Planning flow — research the subject of this session, produce an implementation plan with the planner skill, resolve open questions with the user in plain language, and save the final plan to .opencode/plans/. Use it when the user asks to plan, design, or break down a task, in any phrasing.
+description: Planning flow — research the subject of this session, produce an implementation plan with the planner skill, resolve open questions with the user in plain language, and save the final plan to .agents/plans/. Use it when the user asks to plan, design, or break down a task, in any phrasing.
 ---
 
 # Make a Plan
@@ -32,7 +32,7 @@ Do not use it to execute a plan — that is the `implement-plan` flow.
    plain language. Assume I know only the high-level project goal, not the codebase,
    architecture, implementation terms, or the problem this task solves.
 3. Once all decisions are answered and the plan is final, save it verbatim to the
-   announced path under `.opencode/plans/` (create the directory if it does not
+   announced path under `.agents/plans/` (create the directory if it does not
    exist). This step is the flow's explicit authorization to write the plan
    file — the only write allowed here. If I later ask for changes, update the
    saved file directly.

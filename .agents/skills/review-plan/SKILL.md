@@ -20,7 +20,7 @@ implementation plan.
 
 1. **Determine the plan under review** from the session context (for example, a
    plan just produced by `/make-a-plan`) or from a plan file path given by the
-   user (typically under `.opencode/plans/`). If a file path is given, read the
+   user (typically under `.agents/plans/`). If a file path is given, read the
    file first so the complete plan is in context.
 2. Delegate the review to the `general` subagent (via the task tool), unless the
    user specifies another agent. Include in the prompt the
