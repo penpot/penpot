@@ -198,6 +198,15 @@ $thumbnail-default-height: px2rem(168);
   &.is-force-display {
     opacity: 1;
   }
+
+  // The DS Menu component wraps its trigger in its own div with
+  // align-self: start (so it shrink-wraps instead of stretching in an
+  // arbitrary parent) — override that back to center here, since this
+  // container's own align-items: center above has no effect on a child
+  // that sets its own align-self.
+  > div {
+    align-self: center;
+  }
 }
 
 .project-thumbnail-icon {
