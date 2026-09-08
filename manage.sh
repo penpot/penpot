@@ -1231,6 +1231,22 @@ function build-mcp-bundle {
 }
 
 
+function build-media-processor-bundle {
+    echo ">> bundle media-processor start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/media-processor";
+
+    build "media-processor";
+
+    rm -rf $bundle_dir;
+    mv ./media-processor/target $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle media-processor end";
+}
+
 function build-backend-bundle {
     echo ">> bundle backend start";
 
@@ -1346,6 +1362,10 @@ function build-mcp-docker-image {
     _build-release-docker-image mcp bundle-mcp Dockerfile.mcp "$@"
 }
 
+function build-media-processor-docker-image {
+    _build-release-docker-image media-processor bundle-media-processor Dockerfile.media-processor "$@"
+}
+
 function build-storybook-docker-image {
     _build-release-docker-image storybook bundle-storybook Dockerfile.storybook "$@"
 }
@@ -1424,6 +1444,7 @@ function usage {
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
     echo "- build-mcp-bundle                 Build mcp bundle."
+    echo "- build-media-processor-bundle     Build media-processor bundle."
     echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
@@ -1435,6 +1456,7 @@ function usage {
     echo "- build-backend-docker-image [--tag TAG]    Build backend docker image."
     echo "- build-exporter-docker-image [--tag TAG]   Build exporter docker image."
     echo "- build-mcp-docker-image [--tag TAG]         Build mcp docker image."
+    echo "- build-media-processor-docker-image [--tag TAG]  Build media-processor docker image."
     echo "- build-storybook-docker-image [--tag TAG]  Build storybook docker image."
     echo "- build-imagemagick-docker-image [--tag TAG] [--push]"
     echo "                                   Build the imagemagick docker image. Local-only by default (single-"
@@ -1490,6 +1512,7 @@ case $1 in
     build-bundle)
         build-frontend-bundle;
         build-mcp-bundle;
+        build-media-processor-bundle;
         build-backend-bundle;
         build-exporter-bundle;
         build-storybook-bundle;
@@ -1501,6 +1524,10 @@ case $1 in
 
     build-mcp-bundle)
         build-mcp-bundle;
+        ;;
+
+    build-media-processor-bundle)
+        build-media-processor-bundle;
         ;;
 
     build-backend-bundle)
@@ -1524,6 +1551,7 @@ case $1 in
         build-backend-docker-image "${@:2}"
         build-exporter-docker-image "${@:2}"
         build-mcp-docker-image "${@:2}"
+        build-media-processor-docker-image "${@:2}"
         build-storybook-docker-image "${@:2}"
         ;;
 
@@ -1541,6 +1569,10 @@ case $1 in
 
     build-mcp-docker-image)
         build-mcp-docker-image "${@:2}"
+        ;;
+
+    build-media-processor-docker-image)
+        build-media-processor-docker-image "${@:2}"
         ;;
 
     build-storybook-docker-image)

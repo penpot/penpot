@@ -92,6 +92,7 @@ opencode.json
 /playwright/.cache/
 /render-wasm/target/
 /media-processor/dist/
+/media-processor/target/
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
