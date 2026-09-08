@@ -10,6 +10,7 @@
 
 - **plugins-runtime**: `Library.createComponent()` now rejects invalid input (an empty shape list, or a shape inside a component copy) with a validation error instead of returning a component proxy pointing at nothing.
 - **plugins-runtime**: Setting an individual padding/margin side (`leftPadding`, `topMargin`, …) now re-derives the padding/margin type, switching to `multiple` when the four sides stop being symmetric (so the value is actually painted) and back to `simple` once top/bottom and left/right are mirrored again.
+- **plugins-runtime**: Removed the premature deep-hardening of the host plugin context, which froze shared host functions (including `Function.prototype`) before SES override taming, causing `TypeError: Cannot assign to read only property 'toString'` on later host-side function extension. Related to #11001.
 
 ## 1.5.0 (2026-07-08)
 
