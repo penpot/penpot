@@ -120,7 +120,7 @@ fn draw_image_fill(
         canvas.draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-            &dest_rect,
+            dest_rect,
             sampling,
             paint,
         );
@@ -135,7 +135,7 @@ fn draw_image_fill(
         canvas.draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-            &dest_rect,
+            dest_rect,
             sampling,
             &draw_paint,
         );
@@ -147,7 +147,7 @@ fn draw_image_fill(
     canvas.draw_image_rect_with_sampling_options(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-        &dest_rect,
+        dest_rect,
         sampling,
         &draw_paint,
     );
