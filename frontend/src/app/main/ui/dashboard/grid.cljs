@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.config :as cf]
@@ -26,12 +25,12 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
-   [app.main.ui.components.portal :refer [portal-on-document*]]
-   [app.main.ui.dashboard.file-menu :refer [file-menu*]]
+   [app.main.ui.dashboard.file-menu :refer [file-menu* file-menu-items*]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.placeholder :refer [empty-grid-placeholder* loading-placeholder*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
    [app.main.worker :as mw]
@@ -269,9 +268,16 @@
 
         file-id       (get file :id)
 
-        menu-pos      (get state :menu-pos)
-        menu-open?    (and (get state :menu-open)
-                           (= file-id (:file-id state)))
+        menu-open*    (mf/use-state false)
+        menu-open?    (deref menu-open*)
+
+        ;; The menu can open before this file has actually been added to
+        ;; selected-files yet (the very first click/right-click on it both
+        ;; selects it and opens the menu in the same event, but selection is
+        ;; applied via a store dispatch that only lands on the next render)
+        ;; — fall back to just this file so file-menu-items* never sees an
+        ;; empty list.
+        menu-files    (if (seq selected-files) (vals selected-files) [file])
 
         selected?     (contains? selected-files file-id)
         selected-num  (count selected-files)
@@ -282,10 +288,6 @@
                            (:edition state))
 
         library-view? (= origin :libraries)
-
-        on-menu-close
-        (mf/use-fn
-         #(st/emit! (dd/hide-file-menu)))
 
         on-select
         (mf/use-fn
@@ -312,7 +314,7 @@
         (mf/use-fn
          (mf/deps selected? selected-num)
          (fn [event]
-           (st/emit! (dd/hide-file-menu))
+           (reset! menu-open* false)
            (when can-edit
              (let [offset     (dom/get-offset-position (dom/event->native-event event))
                    item-el    (mf/ref-val node-ref)
@@ -341,39 +343,23 @@
 
         on-menu-click
         (mf/use-fn
-         (mf/deps file selected? menu-open?)
+         (mf/deps file selected?)
          (fn [event]
            (dom/stop-propagation event)
-
-           (if menu-open?
-             (st/emit! (dd/hide-file-menu))
-
-             (do
-               (when-not selected?
-                 (when-not (kbd/shift? event)
-                   (st/emit! (dd/clear-selected-files)))
-                 (st/emit! (dd/toggle-file-select file)))
-
-               (let [client-position
-                     (dom/get-client-position event)
-
-                     position
-                     (if (and (nil? (:y client-position)) (nil? (:x client-position)))
-                       (let [target-element (dom/get-target event)
-                             points         (dom/get-bounding-rect target-element)
-                             y              (:top points)
-                             x              (:left points)]
-                         (gpt/point x y))
-                       client-position)]
-
-                 (st/emit! (dd/show-file-menu-with-position file-id position)))))))
+           (when-not selected?
+             (when-not (kbd/shift? event)
+               (st/emit! (dd/clear-selected-files)))
+             (st/emit! (dd/toggle-file-select file)))
+           (swap! menu-open* not)))
 
         on-context-menu
         (mf/use-fn
-         (mf/deps on-menu-click)
+         (mf/deps file selected?)
          (fn [event]
-           (dom/prevent-default event)
-           (on-menu-click event)))
+           (when-not selected?
+             (when-not (kbd/shift? event)
+               (st/emit! (dd/clear-selected-files)))
+             (st/emit! (dd/toggle-file-select file)))))
 
         edit
         (mf/use-fn
@@ -386,9 +372,8 @@
 
         on-edit
         (mf/use-fn
-         (mf/deps file)
-         (fn [event]
-           (dom/stop-propagation event)
+         (mf/deps file-id)
+         (fn []
            (st/emit! (dd/start-edit-file-name file-id))))
 
         on-key-down
@@ -422,104 +407,116 @@
         (mf/html
          [:div {:class (stl/css-case :project-thumbnail-actions true
                                      :is-force-display menu-open?)}
-          [:div {:class (stl/css :project-thumbnail-icon :menu)
-                 :tab-index "0"
-                 :role "button"
-                 :aria-label (tr "dashboard.options")
-                 :ref menu-ref
-                 :id (dm/str file-id "-action-menu")
-                 :on-click on-menu-click
-                 :on-key-down on-menu-key-down}
-
-           [:> icon* {:icon-id i/menu
-                      :class (stl/css :menu-icon)}]
-
-           (when (and selected? menu-open?)
-             ;; When the menu is open we disable events in the dashboard. We need to force pointer events
-             ;; so the menu can be handled
-             [:> portal-on-document* {}
-              [:> file-menu* {:files (vals selected-files)
-                              :left (+ 24 (:x menu-pos))
-                              :top (:y menu-pos)
-                              :can-edit can-edit
-                              :navigate true
-                              :on-edit on-edit
-                              :on-close on-menu-close
-                              :origin origin
-                              :parent-id (dm/str file-id "-action-menu")
-                              :can-restore can-restore}]])]])]
+          [:> file-menu* {:files menu-files
+                          :is-open menu-open?
+                          :on-open-change #(reset! menu-open* %)
+                          :can-edit can-edit
+                          :navigate true
+                          :on-edit on-edit
+                          :origin origin
+                          :can-restore can-restore
+                          :trigger
+                          (mf/html
+                           [:div {:class (stl/css :project-thumbnail-icon :menu)
+                                  :tab-index "0"
+                                  :role "button"
+                                  :aria-label (tr "dashboard.options")
+                                  :ref menu-ref
+                                  :id (dm/str file-id "-action-menu")
+                                  :on-click on-menu-click
+                                  :on-key-down on-menu-key-down}
+                            [:> icon* {:icon-id i/menu
+                                       :class (stl/css :menu-icon)}]])}]])]
 
     (if ^boolean list?
       [:li {:class (stl/css-case :grid-item true
                                  :list-item true
                                  :library-item library-view?)}
-       [:div
-        {:class (stl/css-case :list-item-row true
-                              :is-selected selected?)
-         :ref node-ref
-         :role "button"
-         :title (:name file)
-         :aria-label (:name file)
-         :draggable (dm/str can-edit)
-         :on-click on-select
-         :on-key-down on-key-down
-         :on-double-click on-navigate
-         :on-drag-start on-drag-start
-         :on-context-menu on-context-menu}
+       [:> context-menu* {:aria-label (tr "dashboard.options")
+                          :trigger
+                          (mf/html
+                           [:div
+                            {:class (stl/css-case :list-item-row true
+                                                  :is-selected selected?)
+                             :ref node-ref
+                             :role "button"
+                             :title (:name file)
+                             :aria-label (:name file)
+                             :draggable (dm/str can-edit)
+                             :on-click on-select
+                             :on-key-down on-key-down
+                             :on-double-click on-navigate
+                             :on-drag-start on-drag-start
+                             :on-context-menu on-context-menu}
 
-        (if ^boolean editing?
-          [:& inline-edition {:content (:name file)
-                              :on-end edit
-                              :max-length 250}]
-          [:h3 {:class (stl/css :list-item-name)} (:name file)])
+                            (if ^boolean editing?
+                              [:& inline-edition {:content (:name file)
+                                                  :on-end edit
+                                                  :max-length 250}]
+                              [:h3 {:class (stl/css :list-item-name)} (:name file)])
 
-        (when (and (:is-shared file) (not library-view?))
-          [:span {:class (stl/css :list-item-badge)
-                  :aria-label (tr "workspace.assets.shared-library")
-                  :title (tr "workspace.assets.shared-library")}
-           [:> icon* {:icon-id i/library}]])
+                            (when (and (:is-shared file) (not library-view?))
+                              [:span {:class (stl/css :list-item-badge)
+                                      :aria-label (tr "workspace.assets.shared-library")
+                                      :title (tr "workspace.assets.shared-library")}
+                               [:> icon* {:icon-id i/library}]])
 
-        [:> grid-item-metadata* {:file file :layout :list}]
+                            [:> grid-item-metadata* {:file file :layout :list}]
 
-        menu-element]]
+                            menu-element])}
+        [:> file-menu-items* {:files menu-files
+                              :can-edit can-edit
+                              :navigate true
+                              :on-edit on-edit
+                              :origin origin
+                              :can-restore can-restore}]]]
 
       [:li {:class (stl/css-case :grid-item true
                                  :project-thumbnail true
                                  :library-item library-view?)}
-       [:div {:class (stl/css-case :is-selected selected?
-                                   :grid-item-button true)
-              :ref node-ref
-              :role "button"
-              :title (:name file)
-              :aria-label (:name file)
-              :draggable (dm/str can-edit)
-              :on-click on-select
-              :on-key-down on-key-down
-              :on-double-click on-navigate
-              :on-drag-start on-drag-start
-              :on-context-menu on-context-menu}
+       [:> context-menu* {:aria-label (tr "dashboard.options")
+                          :trigger
+                          (mf/html
+                           [:div {:class (stl/css-case :is-selected selected?
+                                                       :grid-item-button true)
+                                  :ref node-ref
+                                  :role "button"
+                                  :title (:name file)
+                                  :aria-label (:name file)
+                                  :draggable (dm/str can-edit)
+                                  :on-click on-select
+                                  :on-key-down on-key-down
+                                  :on-double-click on-navigate
+                                  :on-drag-start on-drag-start
+                                  :on-context-menu on-context-menu}
 
-        (if ^boolean library-view?
-          [:> grid-item-library* {:file file
-                                  :can-restore can-restore}]
-          [:> grid-item-thumbnail* {:file file
-                                    :can-edit can-edit
-                                    :can-restore can-restore}])
+                            (if ^boolean library-view?
+                              [:> grid-item-library* {:file file
+                                                      :can-restore can-restore}]
+                              [:> grid-item-thumbnail* {:file file
+                                                        :can-edit can-edit
+                                                        :can-restore can-restore}])
 
-        (when (and (:is-shared file) (not library-view?))
-          [:div {:class (stl/css :grid-item-badge)}
-           [:> icon* {:icon-id i/library}]])
+                            (when (and (:is-shared file) (not library-view?))
+                              [:div {:class (stl/css :grid-item-badge)}
+                               [:> icon* {:icon-id i/library}]])
 
-        [:div {:class (stl/css :grid-item-info)}
-         [:div {:class (stl/css :grid-item-meta)}
-          (if ^boolean editing?
-            [:& inline-edition {:content (:name file)
-                                :on-end edit
-                                :max-length 250}]
-            [:h3 {:class (stl/css :grid-item-title)} (:name file)])
-          [:> grid-item-metadata* {:file file :layout :grid}]]
+                            [:div {:class (stl/css :grid-item-info)}
+                             [:div {:class (stl/css :grid-item-meta)}
+                              (if ^boolean editing?
+                                [:& inline-edition {:content (:name file)
+                                                    :on-end edit
+                                                    :max-length 250}]
+                                [:h3 {:class (stl/css :grid-item-title)} (:name file)])
+                              [:> grid-item-metadata* {:file file :layout :grid}]]
 
-         menu-element]]])))
+                             menu-element]])}
+        [:> file-menu-items* {:files menu-files
+                              :can-edit can-edit
+                              :navigate true
+                              :on-edit on-edit
+                              :origin origin
+                              :can-restore can-restore}]]])))
 
 (mf/defc grid*
   [{:keys [files project origin limit create-fn can-edit selected-files can-restore layout]}]
@@ -540,9 +537,6 @@
 
         import-files
         (use-import-file project-id on-finish-import)
-
-        on-scroll
-        (mf/use-fn #(st/emit! (dd/hide-file-menu)))
 
         on-drag-enter
         (mf/use-fn
@@ -585,7 +579,6 @@
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
            :on-drop on-drop
-           :on-scroll on-scroll
            :ref node-ref}
      (cond
        (nil? files)
