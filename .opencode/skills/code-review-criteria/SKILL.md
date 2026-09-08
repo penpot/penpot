@@ -1,9 +1,9 @@
 ---
-name: code-review
-description: Conducts multi-axis code review. Use before merging any change. Use when reviewing code written by yourself, another agent, or a human. Use when you need to assess code quality across multiple dimensions before it enters the main branch.
+name: code-review-criteria
+description: Code review criteria — the five review axes, core principles, severity format, and verdict for reviewing code changes. Loaded by the reviewer subagent of the review-code flow. Not a user-facing flow — to review code, use the review-code flow.
 ---
 
-# Code Review and Quality
+# Code Review Criteria and Quality
 
 ## Overview
 

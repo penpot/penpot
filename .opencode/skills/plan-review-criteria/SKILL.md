@@ -1,9 +1,9 @@
 ---
-name: plan-review
-description: Reviews implementation plans for quality, completeness, and actionability. Use after a plan is produced by the planner skill, before starting implementation. Use when evaluating a plan written by yourself, another agent, or a human.
+name: plan-review-criteria
+description: Plan review criteria — the six review axes, severity rubric, approval standard, and output format for reviewing implementation plans. Loaded by the reviewer subagent of the review-plan flow. Not a user-facing flow — to review a plan, use the review-plan flow.
 ---
 
-# Plan Review
+# Plan Review Criteria
 
 ## Overview
 
@@ -13,10 +13,10 @@ Multi-dimensional plan review with quality gates. Every plan gets reviewed befor
 
 ## When to Use
 
-- After the planner skill produces a plan
-- Before starting implementation on any non-trivial task
-- When reviewing a plan written by another agent or a human
-- When a plan feels too large, vague, or risky to start
+- The reviewer subagent of the `review-plan` flow loads this skill to perform
+  the review of a plan.
+- To review a plan, always go through the `review-plan` flow — never load this
+  skill directly for that. This is the criteria reference, not the flow.
 
 **Do NOT use for:** Single-file changes with obvious scope, or when the task is trivial enough to just do.
 
@@ -87,7 +87,7 @@ Can an implementer actually execute this?
 
 ### 6. Proposed Code Quality *(when the plan includes implementation details)*
 
-If the plan proposes code shapes, function signatures, data structures, or API designs, evaluate those proposals against `code-review` criteria:
+If the plan proposes code shapes, function signatures, data structures, or API designs, evaluate those proposals against `code-review-criteria`:
 
 - **Correctness:** Do the proposed types/signatures handle edge cases (null, empty, boundaries)?
 - **Readability:** Are proposed names descriptive and consistent with project conventions?
@@ -215,7 +215,7 @@ Check that the plan can actually confirm it worked:
 If the plan includes code snippets, types, or API designs:
 
 ```
-- Load code-review skill for criteria
+- Load code-review-criteria skill for criteria
 - Check proposed signatures for edge cases
 - Verify naming follows project conventions
 - Confirm abstractions follow existing patterns
@@ -310,6 +310,6 @@ If the plan includes code snippets, types, or API designs:
 ## See Also
 
 - For producing plans, use the `planner` skill
-- For reviewing implemented code, use `code-review` — also the criteria source for axis 6
+- For reviewing implemented code, use `code-review-criteria` — also the criteria source for axis 6
 - For security-specific concerns, see `security-and-hardening`
 - For testing strategy guidance, see `testing`
