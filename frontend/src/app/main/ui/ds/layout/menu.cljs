@@ -21,7 +21,8 @@
    [:placement {:optional true}
     [:maybe [:enum "top" "top start" "top end"
              "bottom" "bottom start" "bottom end"
-             "left" "right"]]]
+             "left" "left top" "left bottom"
+             "right" "right top" "right bottom"]]]
    [:on-action {:optional true} [:maybe fn?]]])
 
 (mf/defc menu*
@@ -101,7 +102,8 @@
    [:placement {:optional true}
     [:maybe [:enum "top" "top start" "top end"
              "bottom" "bottom start" "bottom end"
-             "left" "right"]]]
+             "left" "left top" "left bottom"
+             "right" "right top" "right bottom"]]]
    [:is-disabled {:optional true} [:maybe :boolean]]
    [:on-action {:optional true} [:maybe fn?]]])
 
