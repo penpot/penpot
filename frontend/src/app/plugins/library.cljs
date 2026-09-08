@@ -698,21 +698,37 @@
 
     :addVariant
     (fn []
-      (st/emit!
-       (se/event plugin-id "add-new-variant")
-       (dwv/add-new-variant id)))
+      (cond
+        (not (r/check-permission plugin-id "library:write"))
+        (u/not-valid plugin-id :addVariant "Plugin doesn't have 'library:write' permission")
+
+        :else
+        (st/emit!
+         (se/event plugin-id "add-new-variant")
+         (dwv/add-new-variant id))))
 
     :addProperty
     (fn []
-      (st/emit!
-       (se/event plugin-id "add-new-property")
-       (dwv/add-new-property id {:property-value "Value 1"})))
+      (cond
+        (not (r/check-permission plugin-id "library:write"))
+        (u/not-valid plugin-id :addProperty "Plugin doesn't have 'library:write' permission")
+
+        :else
+        (st/emit!
+         (se/event plugin-id "add-new-property")
+         (dwv/add-new-property id {:property-value "Value 1"}))))
 
     :removeProperty
     (fn [pos]
       (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
-        (if (or (not (nat-int? pos)) (>= pos nprops))
+        (cond
+          (or (not (nat-int? pos)) (>= pos nprops))
           (u/not-valid plugin-id :pos pos)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :removeProperty "Plugin doesn't have 'library:write' permission")
+
+          :else
           (st/emit!
            (se/event plugin-id "remove-property")
            (dwv/remove-property id pos)))))
@@ -726,6 +742,9 @@
 
           (not (string? name))
           (u/not-valid plugin-id :name name)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :renameProperty "Plugin doesn't have 'library:write' permission")
 
           :else
           (st/emit!
@@ -923,8 +942,15 @@
     :transformInVariant
     (fn []
       (let [component (u/locate-library-component file-id id)]
-        (when (and component
-                   (not (ctk/is-variant? component)))
+        (cond
+          (or (nil? component)
+              (ctk/is-variant? component))
+          nil
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :transformInVariant "Plugin doesn't have 'library:write' permission")
+
+          :else
           (st/emit!
            (se/event plugin-id "transform-in-variant")
            (dwv/transform-in-variant (:main-instance-id component))))))
@@ -932,8 +958,15 @@
     :addVariant
     (fn []
       (let [component (u/locate-library-component file-id id)]
-        (when (and component
-                   (ctk/is-variant? component))
+        (cond
+          (or (nil? component)
+              (not (ctk/is-variant? component)))
+          nil
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :addVariant "Plugin doesn't have 'library:write' permission")
+
+          :else
           (st/emit!
            (se/event plugin-id "add-new-variant")
            (dwv/add-new-variant (:main-instance-id component))))))
@@ -947,6 +980,9 @@
 
           (not (string? value))
           (u/not-valid plugin-id :name value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :setVariantProperty "Plugin doesn't have 'library:write' permission")
 
           :else
           (st/emit!
