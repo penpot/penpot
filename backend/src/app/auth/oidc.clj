@@ -1037,7 +1037,7 @@
             provider        (prepare-organization-sso-provider cfg sso)
             _info           (get-info cfg provider state code)
             session         (session/get-session request)
-            exp             (ct/in-future {:minutes 15})]
+            exp             (ct/in-future {:hours 4})]
         (when (and session organization-id)
           (let [props (-> (or (:props session) {})
                           (update :sso assoc organization-id exp))]

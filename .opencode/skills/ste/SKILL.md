@@ -9,6 +9,13 @@ Apply the ASD-STE100 standard to all prose you produce in this task. Do not anno
 
 Compliance note (for you, not for output): the official specification and its dictionary are copyright ASD. This skill encodes paraphrased rules and a publicly sourced word list. For certified aerospace/defense deliverables, tell the user that full compliance requires the free official specification (asd-ste100.org) and a human sign-off. Never claim certified compliance.
 
+## When to use
+
+Only when the user explicitly invokes it: they type `/ste`, or say "use
+the ste skill" / "apply ASD-STE100". Requests like "simplify this",
+"make it clearer", or "shorter sentences" do NOT invoke it — respond
+normally unless it is named.
+
 ## Step 0 — Classify the text
 
 Before writing a single sentence, decide: is this **procedural** text (instructions someone follows) or **descriptive** text (explanation, background, description)? Every limit below depends on this. Mixed documents get classified section by section.

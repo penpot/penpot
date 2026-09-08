@@ -11,6 +11,12 @@ Fetch information from Taiga public API for the **Penpot** project
 
 **No authentication required** — only public project data is accessed.
 
+## When to use
+
+- The user asks about Penpot issues, user stories, or tasks tracked in
+  Taiga — fetch them via the public API (project id 345963), no
+  authentication needed.
+
 ## Prerequisites
 
 - `python3` — the `scripts/taiga.py` CLI script is self-contained (stdlib only)

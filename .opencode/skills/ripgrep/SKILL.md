@@ -9,6 +9,11 @@ metadata: {"clawdbot":{"emoji":"🔎","requires":{"bins":["rg"]},"install":[{"id
 
 Fast, smart recursive search. Respects `.gitignore` by default.
 
+## When to use
+
+- Searching file contents across the repo for regex patterns — the
+  default code search, respects `.gitignore`.
+
 ## Quick Start
 
 ### Basic search

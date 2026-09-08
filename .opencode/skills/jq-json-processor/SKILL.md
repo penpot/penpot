@@ -9,6 +9,11 @@ metadata: {"clawdbot":{"emoji":"🔍","requires":{"bins":["jq"]},"install":[{"id
 
 Process, filter, and transform JSON data with jq.
 
+## When to use
+
+- Parsing, filtering, or transforming JSON from commands, files, or API
+  responses — slicing, reshaping, or validating JSON output.
+
 ## Quick Examples
 
 ### Basic filtering
