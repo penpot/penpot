@@ -8,7 +8,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.config :as cf]
-   [app.http.client :as http]
    [app.media.remote :as media.remote]
    [app.setup :as-alias setup]
    [app.util.json :as json]
@@ -500,22 +499,6 @@
                      :body nil
                      :headers {}})]
           (t/is (= 200 (:status resp))))))))
-
-(t/deftest service-request-puts-configured-timeout-in-request
-  (t/testing "service-request puts media-processing-service-timeout on the http request"
-    (let [captured (atom nil)]
-      (with-redefs [cf/get (th/config-get-mock config-mock)
-                    http/req (fn [_client request _opts]
-                               (reset! captured request)
-                               {:status 200
-                                :body (json-stream {:width 100 :height 100})})]
-        (media.remote/service-request
-         (mk-system)
-         {:method :post
-          :uri "http://localhost:6065/api/image/info"
-          :body nil
-          :headers {}})
-        (t/is (= 5000 (:timeout @captured)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Shared key

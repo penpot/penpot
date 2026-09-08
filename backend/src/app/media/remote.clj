@@ -75,10 +75,10 @@
                            {:method method
                             :uri uri
                             :body body
-                            :headers headers
-                            :timeout timeout}
+                            :headers headers}
                            {:response-type :input-stream
-                            :skip-ssrf-check? true})
+                            :skip-ssrf-check? true
+                            :timeout timeout})
             status (:status resp)]
         (when (not (<= 200 status 299))
           (let [body (:body resp)]

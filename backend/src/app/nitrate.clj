@@ -68,7 +68,8 @@
                                  "x-profile-id" (str profile-id)}
                        :uri uri
                        :version :http1.1}
-                (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
+                (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key)))
+              {:skip-ssrf-check? true})))
 
 (defn- with-retries
   [handler max-retries]
