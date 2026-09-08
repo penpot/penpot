@@ -10,7 +10,6 @@
    [app.auth :refer [derive-password-weak]]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
-   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -56,7 +55,6 @@
                   :fullname fullname
                   :is-active true
                   :is-demo true
-                  :deleted-at (ct/in-future (cf/get-deletion-delay))
                   :password (derive-password-weak password)
                   :props (cond-> {}
                            skip-onboarding (assoc :onboarding-viewed true
