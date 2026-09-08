@@ -796,13 +796,13 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(use_shadow, false, None, None)
+        self.paragraph_builders(use_shadow, false, None, None, None, None)
     }
 
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
     pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, true, None, None)
+        self.paragraph_builders(None, true, None, None, None, None)
     }
 
     /// Maximum number of stacked fills across every span in this text block.
@@ -821,7 +821,42 @@ impl TextContent {
         &self,
         layer_from_bottom: usize,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, false, None, Some(layer_from_bottom))
+        self.paragraph_builders(None, false, None, Some(layer_from_bottom), None, None)
+    }
+
+    /// Like [`paragraph_builder_group_for_fill_layer`], but spans whose fill at
+    /// this layer is an image in `skip_image_ids` get transparent paint (those
+    /// fills are re-emitted as linked SVG `<image>` elements).
+    pub fn paragraph_builder_group_for_fill_layer_skipping_images(
+        &self,
+        layer_from_bottom: usize,
+        skip_image_ids: &HashSet<Uuid>,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(
+            None,
+            false,
+            None,
+            Some(layer_from_bottom),
+            None,
+            Some(skip_image_ids),
+        )
+    }
+
+    /// Opaque black glyphs only for spans whose fill at `layer_from_bottom` is
+    /// the given image — used as an SVG `<clipPath>` for linked image fills.
+    pub fn paragraph_builder_group_opaque_for_image_layer(
+        &self,
+        layer_from_bottom: usize,
+        image_id: Uuid,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(
+            None,
+            false,
+            None,
+            None,
+            Some((layer_from_bottom, image_id)),
+            None,
+        )
     }
 
     fn paragraph_builders(
@@ -830,6 +865,8 @@ impl TextContent {
         opaque: bool,
         align_override: Option<skia::textlayout::TextAlign>,
         fill_layer: Option<usize>,
+        opaque_image_layer: Option<(usize, Uuid)>,
+        skip_image_ids: Option<&HashSet<Uuid>>,
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
@@ -843,15 +880,63 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let remove_alpha =
-                    opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
-                let text_style = span.to_style_with_paint(
-                    &self.bounds(),
-                    fallback_fonts,
-                    remove_alpha,
-                    paragraph.line_height(),
-                    fill_layer,
-                );
+                let text_style = if let Some((layer, image_id)) = opaque_image_layer {
+                    let mut style = span.to_style(
+                        &self.bounds(),
+                        fallback_fonts,
+                        false,
+                        paragraph.line_height(),
+                    );
+                    let mut paint = paint::Paint::default();
+                    match span.fills_from_bottom(layer) {
+                        Some(shapes::Fill::Image(img)) if img.id() == image_id => {
+                            paint.set_color(skia::Color::BLACK);
+                            paint.set_alpha(255);
+                        }
+                        _ => {
+                            paint.set_color(skia::Color::TRANSPARENT);
+                        }
+                    }
+                    style.set_foreground_paint(&paint);
+                    style
+                } else if let (Some(layer), Some(skip)) = (fill_layer, skip_image_ids) {
+                    let skip_span = matches!(
+                        span.fills_from_bottom(layer),
+                        Some(shapes::Fill::Image(img)) if skip.contains(&img.id())
+                    );
+                    if skip_span {
+                        let mut style = span.to_style(
+                            &self.bounds(),
+                            fallback_fonts,
+                            false,
+                            paragraph.line_height(),
+                        );
+                        let mut paint = paint::Paint::default();
+                        paint.set_color(skia::Color::TRANSPARENT);
+                        style.set_foreground_paint(&paint);
+                        style
+                    } else {
+                        let remove_alpha =
+                            opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                        span.to_style_with_paint(
+                            &self.bounds(),
+                            fallback_fonts,
+                            remove_alpha,
+                            paragraph.line_height(),
+                            fill_layer,
+                        )
+                    }
+                } else {
+                    let remove_alpha =
+                        opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                    span.to_style_with_paint(
+                        &self.bounds(),
+                        fallback_fonts,
+                        remove_alpha,
+                        paragraph.line_height(),
+                        fill_layer,
+                    )
+                };
                 let text: String = span.apply_text_transform();
                 if !text.is_empty() {
                     has_text = true;
@@ -871,8 +956,14 @@ impl TextContent {
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
-        let mut measure_builders =
-            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left), None);
+        let mut measure_builders = self.paragraph_builders(
+            None,
+            false,
+            Some(skia::textlayout::TextAlign::Left),
+            None,
+            None,
+            None,
+        );
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut measure_builders, f32::MAX);
@@ -1464,6 +1555,15 @@ pub struct TextSpan {
 }
 
 impl TextSpan {
+    /// Fill at `layer` counting from the bottom (`0` = last / bottommost fill).
+    pub fn fills_from_bottom(&self, layer: usize) -> Option<&shapes::Fill> {
+        if layer < self.fills.len() {
+            Some(&self.fills[self.fills.len() - 1 - layer])
+        } else {
+            None
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         text: String,

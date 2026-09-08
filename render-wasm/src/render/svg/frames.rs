@@ -5,6 +5,7 @@ use crate::shapes::{Shape, Stroke};
 use crate::state::ShapesPoolRef;
 
 use super::document::{effect_attrs, SvgLayerCanvas};
+use super::images::emit_fills;
 use super::render_tree;
 use crate::render::RenderResources;
 
@@ -29,14 +30,9 @@ pub(super) fn render_frame(
         builder.open_group(&format!("clip-path=\"url(#{clip_id})\""));
     }
 
-    // Frame background (frame space).
+    // Frame background (frame space), with linked `<image>` for image fills.
     if !element.fills.is_empty() {
-        let canvas = builder.canvas();
-        canvas.save();
-        canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
-        renderer.draw_fills(element, &element.fills)?;
-        canvas.restore();
+        emit_fills(builder, shared, element, &element.fills, tree, scale)?;
     }
 
     // Children (absolute coords).
