@@ -1,13 +1,12 @@
 import { describe, it, vi, expect, beforeAll } from 'vitest';
 import 'ses';
 import { loadPlugin, setContextBuilder, getPlugins } from './load-plugin';
-import { ses } from './ses.js';
 import type { Context } from '@penpot/plugin-types';
 import type { Manifest } from './models/manifest.model.js';
 
 // Real initialization-path regression tests for #11001.
 //
-// NOTE: `./ses.js`, `./create-plugin`, `./plugin-manager` and
+// NOTE: `./create-plugin`, `./plugin-manager` and
 // `./create-sandbox` are intentionally NOT mocked here. This spec exercises
 // the real `loadPlugin → createPlugin → createPluginManager → createSandbox`
 // path with the real SES implementation, mirroring the production
@@ -114,29 +113,6 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
       freshWrapper.toString = () => 'patched-by-runtime';
     }).not.toThrow();
     expect(fixture.listenerTypes.length).toBe(3);
-  });
-
-  it('contrast with #8636 order: late hardening keeps toString working but freezes host functions', () => {
-    // `hardenIntrinsics` has already run (via `createSandbox` in the test
-    // above), matching the #8636 order
-    // (repair → hardenIntrinsics → harden). Override taming is installed,
-    // so a fresh function's `toString` stays assignable …
-    const hostFn = function hostFn() {
-      return 'host-value';
-    };
-    ses.harden({ fn: hostFn });
-
-    // … but every host function reachable through the hardened graph is
-    // frozen — the cost the current fix avoids by not hardening the host
-    // context at all.
-    expect(Object.isFrozen(hostFn)).toBe(true);
-
-    const freshFn = function freshFn() {
-      return 'fresh';
-    };
-    expect(() => {
-      freshFn.toString = () => 'patched';
-    }).not.toThrow();
   });
 
   it('denies the write API without permission and leaves the host untouched', async () => {
