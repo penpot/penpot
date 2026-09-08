@@ -370,6 +370,13 @@
                      (.-type ^ShapeProxy self)
                      delegate')))))
 
+(def ^:private base-fields
+  "Fields of the `Shape` record this proxy stands in for (see `cr/defrecord
+   Shape`). The record empties them on dissoc instead of removing them, and the
+   schema requires them."
+  #{:name :x :y :width :height :rotation :selrect :points
+    :transform :transform-inverse :parent-id :frame-id :flip-x :flip-y})
+
 (defn- impl-dissoc
   [self k]
   (when shape/*shape-changes*
@@ -385,7 +392,9 @@
                  nil
                  (.-delegate ^ShapeProxy self))
     (let [delegate  (.-delegate ^ShapeProxy self)
-          delegate' (dissoc delegate k)]
+          delegate' (if (contains? base-fields k)
+                      (assoc delegate k nil)
+                      (dissoc delegate k))]
       (if (identical? delegate delegate')
         self
         (ShapeProxy. (.-id ^ShapeProxy self)

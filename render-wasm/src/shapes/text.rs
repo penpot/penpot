@@ -332,7 +332,7 @@ impl TextDecorationSegment {
     }
 }
 
-fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
     match valign {
         VerticalAlign::Center => (container_h - content_h) / 2.0,
         VerticalAlign::Bottom => container_h - content_h,
@@ -1827,11 +1827,8 @@ pub fn calculate_text_layout_data(
 
     // 2. Position each built paragraph using the heights from step 1.
     let total_text_height: f32 = paragraph_heights.iter().sum();
-    let vertical_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
-        VerticalAlign::Bottom => selrect_height - total_text_height,
-        _ => 0.0,
-    };
+    let vertical_offset =
+        vertical_align_offset(selrect_height, total_text_height, shape.vertical_align());
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
