@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Read-only planning and architecture analysis for Penpot — produce a structured implementation plan with task breakdown, acceptance criteria, sizing, and checkpoints. Always output to the user and save to .opencode/plans/YYYY-MM-DD-<title>.md.
+description: Read-only planning and architecture analysis for Penpot — produce a structured implementation plan with task breakdown, acceptance criteria, sizing, and checkpoints. Always output to the user with the plan's save path (saved or suggested) and the next steps.
 ---
 
 # Planner
@@ -215,9 +215,9 @@ Add explicit checkpoints with the relevant module commands:
 
 ## Constraints
 
-- You are **analysis-only** — never create, edit, or delete source code.
-- The only file write you may attempt is the plan itself, saved to
-  `.opencode/plans/`.
+- You are **analysis-only** — never create, edit, or delete source code. The
+  only file you may write is the plan itself, and only when the command or
+  user explicitly instructs you to save it.
 - You do **not** run builds, tests, linters, or any commands that modify state.
 - You do **not** create git commits or interact with version control.
 - You do **not** execute shell commands beyond read-only searches (`rg`, `ls`,
@@ -228,9 +228,11 @@ Add explicit checkpoints with the relevant module commands:
 ## Output Format
 
 The plan is always delivered in the response so the user sees it regardless
-of which agent is running the skill.
+of which agent is running the skill. By default you never write the plan file;
+announce the path instead. Write the file only when the command or user
+explicitly instructs you to save it — and then only that file.
 
-Additionally, save the plan to:
+Announce the suggested save path:
 
 ```
 .opencode/plans/YYYY-MM-DD-<plan-one-line-title>.md
@@ -238,12 +240,11 @@ Additionally, save the plan to:
 
 Use today's date in the user's local timezone. The `<plan-one-line-title>`
 slug is lowercase, hyphen-separated, and a short summary of the task
-(e.g. `add-batch-get-profiles-for-file-comments`). Create the
-`.opencode/plans/` directory if it does not exist.
+(e.g. `add-batch-get-profiles-for-file-comments`). If the user explicitly
+provides a target file path, announce that path instead of the default.
 
-IMPORTANT: The plan agent has write permission specifically for
-`.opencode/plans/` — always attempt the write. If the user explicitly provides
-a target file path, use that path instead of the default.
+End the response by suggesting the next steps: `/review-plan` to get a second
+opinion on the plan and `/implement-plan` to execute it.
 
 ### Plan Document Template
 
@@ -374,4 +375,6 @@ Before delivering the plan, confirm:
 - [ ] Task dependencies are identified and ordered correctly
 - [ ] No task is XL or larger — break it down instead
 - [ ] Checkpoints exist after every 2-3 tasks
+- [ ] The response states the plan's path (saved or suggested) and suggests
+      `/review-plan` and `/implement-plan`
 - [ ] The plan is ready for human review
