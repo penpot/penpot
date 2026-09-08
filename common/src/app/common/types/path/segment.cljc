@@ -940,18 +940,21 @@
                              (not= :close-path (:command c))))]
     (loop [i      0
            k      0
+           start  nil
            result (transient [])]
       (if (>= i n)
         (persistent! result)
         (let [cmd   (nth content i)
               nxt   (nth content (inc i) nil)
+              move? (= :move-to (:command cmd))
+              start (if move? (helpers/segment->point cmd) start)
               at-p? (and (not= :close-path (:command cmd))
                          (gpt/close? point (helpers/segment->point cmd)))]
           (cond
             ;; Offset a subpath start.
-            (and at-p? (= :move-to (:command cmd)))
+            (and at-p? move?)
             (let [off (gpt/point (* k ox) (* k oy))]
-              (recur (inc i) (inc k)
+              (recur (inc i) (inc k) start
                      (conj! result (-> cmd
                                        (update-in [:params :x] + (:x off))
                                        (update-in [:params :y] + (:y off))))))
@@ -972,7 +975,7 @@
                          (= :curve-to (:command nxt))
                          (-> (update-in [:params :c1x] + (:x off2))
                              (update-in [:params :c1y] + (:y off2))))]
-              (recur (+ i 2) (inc k2)
+              (recur (+ i 2) (inc k2) start
                      (-> result (conj! cmd') (conj! mv) (conj! nxt'))))
 
             ;; Open and offset a closed seam.
@@ -985,12 +988,20 @@
                          (-> (update-in [:params :c2x] + (:x off))
                              (update-in [:params :c2y] + (:y off))))]
               ;; Drop the close command so the seam stays open.
-              (recur (+ i 2) (inc k) (conj! result cmd')))
+              (recur (+ i 2) (inc k) start (conj! result cmd')))
+
+            ;; Open the seam of a subpath that closes back onto the node.
+            (and (= :close-path (:command cmd))
+                 (some? start)
+                 (gpt/close? point start))
+            (let [off (gpt/point (* k ox) (* k oy))]
+              (recur (inc i) (inc k) start
+                     (conj! result (helpers/make-line-to (gpt/add point off)))))
 
             ;; Offset the end of an open subpath.
             (and at-p? (seg? cmd) (not= :close-path (:command nxt)))
             (let [off (gpt/point (* k ox) (* k oy))]
-              (recur (inc i) (inc k)
+              (recur (inc i) (inc k) start
                      (conj! result (cond-> (-> cmd
                                                (update-in [:params :x] + (:x off))
                                                (update-in [:params :y] + (:y off)))
@@ -999,7 +1010,7 @@
                                          (update-in [:params :c2y] + (:y off)))))))
 
             :else
-            (recur (inc i) k (conj! result cmd))))))))
+            (recur (inc i) k start (conj! result cmd))))))))
 
 (defn separate-nodes
   "Removes segments between points or splits one node into offset open ends."
@@ -1072,7 +1083,7 @@
 
             result (cond-> result
                      (and (nil? set-a) (nil? set-b))
-                     (conj #{point-a point-b})
+                     (conj (hash-set point-a point-b))
 
                      (and (some? set-a) (nil? set-b))
                      (add-to-set set-a point-b)
@@ -1108,6 +1119,46 @@
     (->> content
          (mapv replace-command))))
 
+(defn- remove-empty-segments
+  "Drops segments with no length whose ends are accepted by `at-point?`."
+  [content at-point?]
+  (loop [result    (transient [])
+         prev      nil
+         segments? false
+         pending   (seq content)]
+    (if-let [{:keys [command] :as segment} (first pending)]
+      (let [close?  (= :close-path command)
+            move?   (= :move-to command)
+            point   (when-not close? (helpers/segment->point segment))
+            ;; A close command on a subpath without segments draws nothing.
+            empty?  (if close?
+                      (not segments?)
+                      (and (not move?)
+                           (some? prev)
+                           (gpt/close? prev point)
+                           (at-point? point)))]
+        (if empty?
+          (recur result prev segments? (next pending))
+          (recur (conj! result segment)
+                 (if close? nil point)
+                 (not (or move? close?))
+                 (next pending))))
+      (persistent! result))))
+
+(defn merge-coincident-nodes
+  "Collapses the commands sharing a position at `points` into a single node.
+
+  Drops empty segments and stitches the subpath ends meeting at one of the
+  points, closing the resulting loops. A point where more than two segments
+  meet is left alone: the format needs one command per segment there."
+  [content points]
+  (let [at-point? (fn [point] (some #(gpt/close? point %) points))]
+    (-> (vec content)
+        (remove-empty-segments at-point?)
+        (subpath/close-subpaths at-point?)
+        ;; A subpath whose ends meet carries an explicit close command.
+        (subpath/close-loops))))
+
 (defn merge-nodes
   "Joins and merges `points` into one point."
   [content points]
@@ -1116,10 +1167,12 @@
     (if (seq segments)
       (let [point->merge-point (-> segments
                                    (group-segments)
-                                   (calculate-merge-points points))]
+                                   (calculate-merge-points points))
+            merge-points       (set (vals point->merge-point))]
         (-> content
             (separate-nodes points)
-            (replace-points point->merge-point)))
+            (replace-points point->merge-point)
+            (merge-coincident-nodes merge-points)))
       content)))
 
 (defn transform-content

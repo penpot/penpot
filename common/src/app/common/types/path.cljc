@@ -460,6 +460,13 @@
   (let [content (impl/path-data content)]
     (segment/merge-nodes content points)))
 
+(defn merge-coincident-nodes
+  "Collapses the nodes sharing a position at the given points into one node."
+  [content points]
+  (let [content (impl/path-data content)]
+    (-> (segment/merge-coincident-nodes content points)
+        (impl/from-plain))))
+
 (defn join-nodes
   "Creates new segments between points that weren't previously connected."
   [content points]

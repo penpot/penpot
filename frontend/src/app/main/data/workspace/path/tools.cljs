@@ -142,18 +142,22 @@
                      (make-curve point)))))))))
 
 (defn- update-path-content
-  "Updates path content, geometry, selection, and handler types."
-  [state new-content]
-  (let [id          (st/get-path-id state)
-        old-content (st/get-path state :content)]
-    (-> (cond-> (st/set-content state new-content)
-          (seq new-content)
-          (update-in (st/get-path-location state) path/update-geometry))
-        (update-in [:workspace-local :edit-path id :selection]
-                   #(helpers/remap-selection % old-content new-content))
-        (update-in [:workspace-local :edit-path id :handler-types]
-                   #(helpers/remap-handler-types % old-content new-content))
-        (update-in [:workspace-local :edit-path id] dissoc :edited-handler))))
+  "Updates path content, geometry, selection, and handler types.
+
+  The selection is remapped by position, so a tool that moves nodes before
+  changing the content structure passes the moved content as `old-content`."
+  ([state new-content]
+   (update-path-content state (st/get-path state :content) new-content))
+  ([state old-content new-content]
+   (let [id (st/get-path-id state)]
+     (-> (cond-> (st/set-content state new-content)
+           (seq new-content)
+           (update-in (st/get-path-location state) path/update-geometry))
+         (update-in [:workspace-local :edit-path id :selection]
+                    #(helpers/remap-selection % old-content new-content))
+         (update-in [:workspace-local :edit-path id :handler-types]
+                    #(helpers/remap-handler-types % old-content new-content))
+         (update-in [:workspace-local :edit-path id] dissoc :edited-handler)))))
 
 (defn remove-segments
   "Removes segments and opens the path at their endpoints."
@@ -234,6 +238,30 @@
 (defn merge-nodes []
   (process-path-tool path/merge-nodes))
 
+(defn- merge-coincident
+  "Collapses the nodes of `indices` sharing a position with another node."
+  [content indices]
+  (path/merge-coincident-nodes content (helpers/node-positions content indices)))
+
+(defn merge-coincident-nodes
+  "Merges the selected nodes sharing a position with another node.
+
+  Runs after a move, which leaves the nodes it brings together as one
+  command each."
+  []
+  (ptk/reify ::merge-coincident-nodes
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id          (st/get-path-id state)
+            content     (st/get-path state :content)
+            indices     (helpers/selected-node-indices content (st/get-selection state id))
+            new-content (when (and (some? content) (seq indices))
+                          (merge-coincident content indices))]
+        (if (and (some? new-content)
+                 (not= (vec new-content) (vec content)))
+          (update-path-content state new-content)
+          state)))))
+
 (defn join-nodes []
   (process-path-tool path/join-nodes))
 
@@ -288,9 +316,8 @@
             indices  (if (seq selected)
                        selected
                        (helpers/node-indices content))
-            content  (path/flip-content content indices axis)]
-        (-> (st/set-content state content)
-            (update-in (st/get-path-location state) path/update-geometry))))))
+            flipped  (path/flip-content content indices axis)]
+        (update-path-content state flipped (merge-coincident flipped indices))))))
 
 (defn align-nodes
   "Aligns selected nodes and their handles within their bounds."
@@ -301,9 +328,8 @@
       (let [id       (st/get-path-id state)
             content  (st/get-path state :content)
             selected (get (st/get-selection state id) :nodes #{})
-            content  (path/align-content content selected axis)]
-        (-> (st/set-content state content)
-            (update-in (st/get-path-location state) path/update-geometry))))))
+            aligned  (path/align-content content selected axis)]
+        (update-path-content state aligned (merge-coincident aligned selected))))))
 
 (defn distribute-nodes
   "Distributes selected nodes evenly along `axis`."
@@ -314,9 +340,8 @@
       (let [id       (st/get-path-id state)
             content  (st/get-path state :content)
             selected (get (st/get-selection state id) :nodes #{})
-            content  (path/distribute-content content selected axis)]
-        (-> (st/set-content state content)
-            (update-in (st/get-path-location state) path/update-geometry))))))
+            spread   (path/distribute-content content selected axis)]
+        (update-path-content state spread (merge-coincident spread selected))))))
 
 (defn- axis-point
   "Copy of `p` with `axis` (`:x`/`:y`) replaced by `value`."
@@ -386,8 +411,8 @@
                 (cond-> content
                   (seq node-idx) (path/set-nodes-coordinate node-idx axis value)
                   (seq pts)      (path/set-handler-points pts))))]
-        (-> (st/set-content state new-content)
-            (update-in (st/get-path-location state) path/update-geometry))))))
+        (update-path-content state new-content
+                             (merge-coincident new-content node-idx))))))
 
 (defn toggle-snap []
   (ptk/reify ::toggle-snap

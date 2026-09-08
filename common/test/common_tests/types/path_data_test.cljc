@@ -1373,6 +1373,20 @@
     (t/is (= {:c2x 4.0 :c2y 4.0}
              (select-keys (:params (peek result)) [:c2x :c2y])))))
 
+(t/deftest segment-separate-single-node-closed-subpath-start
+  ;; The seam of a closed subpath opens even when it is the subpath start.
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}
+                  {:command :close-path :params {}}])
+        result  (vec (path/separate-nodes content #{(gpt/point 0.0 0.0)}))]
+    ;; the close command becomes the second, offset, open end
+    (t/is (= [:move-to :line-to :line-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 0.0} {:x 10.0 :y 0.0}
+              {:x 10.0 :y 10.0} {:x 8.0 :y 8.0}]
+             (mapv #(select-keys (:params %) [:x :y]) result)))))
+
 (t/deftest segment-separate-single-node-endpoint-noop
   ;; an endpoint node has no following segment, so nothing is split
   (let [content (path/content
@@ -2092,7 +2106,7 @@
       (t/is (some? result)))))
 
 (t/deftest path-merge-disconnected-nodes
-  ;; Merging separate subpaths joins them at the shared midpoint.
+  ;; Merging separate subpaths stitches them into one at the shared midpoint.
   (let [content (path/content
                  [{:command :move-to :params {:x 0.0 :y 0.0}}
                   {:command :line-to :params {:x 10.0 :y 0.0}}
@@ -2100,9 +2114,106 @@
                   {:command :line-to :params {:x 10.0 :y 10.0}}])
         pts     #{(gpt/point 10.0 0.0) (gpt/point 0.0 10.0)}
         result  (vec (path/merge-nodes content pts))]
-    (t/is (= [{:x 0.0 :y 0.0} {:x 5.0 :y 5.0}
-              {:x 5.0 :y 5.0} {:x 10.0 :y 10.0}]
+    (t/is (= [:move-to :line-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 0.0} {:x 5.0 :y 5.0} {:x 10.0 :y 10.0}]
              (mapv :params result)))))
+
+(t/deftest path-merge-nodes-leaves-a-single-node
+  ;; The merged node exists once, so separating it yields a fresh split.
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}
+                  {:command :move-to :params {:x 20.0 :y 0.0}}
+                  {:command :line-to :params {:x 12.0 :y 12.0}}])
+        merged  (path/merge-nodes content #{(gpt/point 10.0 10.0)
+                                            (gpt/point 12.0 12.0)})
+        node    (gpt/point 11.0 11.0)]
+    (t/is (= 1 (count (path/point-indices merged node))))
+    ;; separating splits the node in two ends, none of them the merged nodes
+    (let [result (vec (path/separate-nodes merged #{node} (gpt/point 8.0 8.0)))]
+      (t/is (= [{:x 0.0 :y 0.0} {:x 11.0 :y 11.0}
+                {:x 19.0 :y 19.0} {:x 20.0 :y 0.0}]
+               (mapv #(select-keys (:params %) [:x :y]) result))))))
+
+(t/deftest path-merge-nodes-on-empty-segment
+  ;; Merging across an empty segment returns a content instead of throwing
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 20.0 :y 0.0}}])]
+    (t/is (some? (path/merge-nodes content #{(gpt/point 0.0 0.0)
+                                             (gpt/point 20.0 0.0)})))))
+
+(t/deftest path-merge-coincident-nodes-stitches-dragged-ends
+  ;; Two open ends left at the same position become one node
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}
+                  {:command :move-to :params {:x 20.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}])
+        result  (vec (path/merge-coincident-nodes content #{(gpt/point 10.0 10.0)}))]
+    (t/is (= [:move-to :line-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 0.0} {:x 10.0 :y 10.0} {:x 20.0 :y 0.0}]
+             (mapv :params result)))))
+
+(t/deftest path-merge-coincident-nodes-drops-empty-segment
+  ;; A node dragged onto its neighbour leaves no segment behind
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 20.0 :y 0.0}}])
+        result  (vec (path/merge-coincident-nodes content #{(gpt/point 0.0 0.0)}))]
+    (t/is (= [:move-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 0.0} {:x 20.0 :y 0.0}] (mapv :params result)))))
+
+(t/deftest path-merge-coincident-nodes-closes-the-loop
+  ;; Dragging both ends of a subpath together closes it
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 0.0}}
+                  {:command :line-to :params {:x 0.0 :y 0.0}}])
+        result  (vec (path/merge-coincident-nodes content #{(gpt/point 0.0 0.0)}))]
+    (t/is (= [:move-to :line-to :close-path] (mapv :command result)))))
+
+(t/deftest path-merge-coincident-nodes-only-at-given-points
+  ;; Subpaths touching somewhere else are left alone
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}
+                  {:command :move-to :params {:x 20.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}])
+        result  (path/merge-coincident-nodes content #{(gpt/point 20.0 0.0)})]
+    (t/is (= (vec content) (vec result)))))
+
+(t/deftest path-merge-coincident-nodes-keeps-closed-subpaths
+  ;; Closed subpaths keep their close command, wherever the merge happens
+  (let [rect  (path/content
+               [{:command :move-to :params {:x 0.0 :y 0.0}}
+                {:command :line-to :params {:x 10.0 :y 0.0}}
+                {:command :line-to :params {:x 10.0 :y 10.0}}
+                {:command :line-to :params {:x 0.0 :y 10.0}}
+                {:command :close-path :params {}}])
+        curve (path/content
+               [{:command :move-to :params {:x 0.0 :y 0.0}}
+                {:command :curve-to :params {:c1x 2.0 :c1y 2.0 :c2x 8.0 :c2y 8.0
+                                             :x 10.0 :y 10.0}}
+                {:command :curve-to :params {:c1x 8.0 :c1y -8.0 :c2x 2.0 :c2y -2.0
+                                             :x 0.0 :y 0.0}}
+                {:command :close-path :params {}}])]
+    (t/is (= (vec rect) (vec (path/merge-coincident-nodes rect #{(gpt/point 10.0 0.0)}))))
+    (t/is (= (vec rect) (vec (path/merge-coincident-nodes rect #{(gpt/point 0.0 0.0)}))))
+    (t/is (= (vec curve) (vec (path/merge-coincident-nodes curve #{(gpt/point 0.0 0.0)}))))))
+
+(t/deftest path-merge-coincident-nodes-keeps-junctions
+  ;; Four segments meeting at a point need one command per incoming segment
+  (let [content (path/content
+                 [{:command :move-to :params {:x 5.0 :y 5.0}}
+                  {:command :line-to :params {:x 10.0 :y 0.0}}
+                  {:command :line-to :params {:x 5.0 :y 5.0}}
+                  {:command :line-to :params {:x 0.0 :y 10.0}}
+                  {:command :close-path :params {}}])
+        result  (path/merge-coincident-nodes content #{(gpt/point 5.0 5.0)})]
+    (t/is (= (vec content) (vec result)))))
 
 (t/deftest path-duplicate-node-content
   ;; Duplicating a node copies its incident segments as subpaths.

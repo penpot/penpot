@@ -331,17 +331,33 @@
                 (remove nil?))
           (segment-entries content))))
 
+(defn coincident-node-indices
+  "Adds to `indices` every other command sharing one of their positions.
+
+  Commands at the same position are one node: they move together, so an
+  action cannot depend on which of them the selection holds."
+  [content indices]
+  (let [indices (into #{} (filter #(node? content %)) indices)]
+    (into indices
+          (mapcat #(path/point-indices content %))
+          (node-positions content indices))))
+
+(defn selected-node-count
+  "Number of nodes in the selection, counting coincident commands as one."
+  [content selection]
+  (count (node-positions content (get selection :nodes #{}))))
+
 (defn check-enabled
   "Returns path actions enabled for selected node indices."
   [content selected-nodes]
   (when content
-    (let [selected-nodes    (into #{} (filter #(node? content %)) selected-nodes)
+    (let [selected-nodes    (coincident-node-indices content selected-nodes)
           selected-segments (filter (fn [{:keys [from-index to-index]}]
                                       (and (contains? selected-nodes from-index)
                                            (contains? selected-nodes to-index)))
                                     (segment-entries content))
           num-segments      (count selected-segments)
-          num-nodes         (count selected-nodes)
+          num-nodes         (count (node-positions content selected-nodes))
           nodes-selected?   (seq selected-nodes)
           segments-selected? (seq selected-segments)
           max-segments      (/ (* num-nodes (dec num-nodes)) 2)
@@ -553,6 +569,12 @@
   (let [selection (or selection empty-selection)]
     (if (= (count old-content) (count new-content))
       (-> selection
+          ;; Drop indices that stopped being nodes.
+          (update :nodes
+                  (fn [nodes]
+                    (into #{}
+                          (filter #(node? new-content %))
+                          nodes)))
           (update :handlers
                   (fn [handlers]
                     (into #{}
