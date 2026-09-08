@@ -167,7 +167,7 @@
     (let [set-id    (cthi/new-id! :token-set)
           token-id  (cthi/new-id! :font-family-token)
           file      (-> (cthf/sample-file :file1 :page-label :page1)
-                        (ctho/add-frame :frame1 {:layout :flex})
+                        (ctho/add-text :text1 "Hello World!")
                         (ctht/add-tokens-lib)
                         (ctht/update-tokens-lib
                          #(-> %
@@ -189,7 +189,7 @@
           _         (set! st/stream (ptk/input-stream store))
           ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
           ^js page      (.-currentPage context)
-          ^js shape     (.getShapeById page (str (cthi/id :frame1)))
+          ^js shape     (.getShapeById page (str (cthi/id :text1)))
           ^js library   (.-library context)
           ^js local     (.-local library)
           ^js catalog   (.-tokens local)
@@ -198,7 +198,7 @@
       (.applyToken shape token #js ["fontFamilies"])
       (js/setTimeout
        (fn []
-         (let [shape-id (cthi/id :frame1)
+         (let [shape-id (cthi/id :text1)
                page-id  (cthf/current-page-id file)]
            ;; Plugin readback exposes the documented plural key.
            (t/is (= "font.primary" (.. shape -tokens -fontFamilies)))
