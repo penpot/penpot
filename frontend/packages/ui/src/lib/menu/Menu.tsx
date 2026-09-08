@@ -28,7 +28,11 @@ type Placement =
   | "bottom start"
   | "bottom end"
   | "left"
-  | "right";
+  | "left top"
+  | "left bottom"
+  | "right"
+  | "right top"
+  | "right bottom";
 
 // SubMenu needs a way to close the whole tree (not just its own level) when
 // one of its items is selected. MenuTrigger normally provides this via a
