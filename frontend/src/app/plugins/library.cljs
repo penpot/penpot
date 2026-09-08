@@ -1013,7 +1013,8 @@
               ids (into #{} (map #(obj/get % "$id")) shapes)]
           (st/emit! (-> (dwl/add-component id-ref ids)
                         (se/add-event plugin-id)))
-          (lib-component-proxy plugin-id file-id @id-ref))))
+          (when @id-ref
+            (lib-component-proxy plugin-id file-id @id-ref)))))
 
     ;; Plugin data
     :getPluginData
