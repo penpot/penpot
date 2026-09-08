@@ -18,6 +18,8 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -26,6 +28,7 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.object :as obj]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def rotation-handler-size 20)
@@ -295,13 +298,20 @@
         on-double-click
         (mf/use-fn
          (mf/deps shape-id position shape-type)
-         (fn [_event]
+         (fn [event]
            (when (= shape-type :text)
-             (cond
-               (= position :right)
-               (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-width)))
-               (= position :bottom)
-               (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-height)))))))]
+             ;; Prevent the viewport double-click handler from entering text editor
+             (dom/stop-propagation event)
+             (let [grow-type (case position
+                               :right :auto-width
+                               :bottom :auto-height
+                               nil)]
+               (when (some? grow-type)
+                 (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type grow-type)))
+                 ;; The WASM renderer needs an explicit reflow after the grow-type change
+                 (when (features/active-feature? @st/state "render-wasm/v1")
+                   (st/emit! (dwwt/resize-wasm-text-all [shape-id])
+                             (ptk/data-event :layout/update {:ids [shape-id]}))))))))]
 
     [:g.resize-handler
      (when ^boolean show-handler
@@ -321,6 +331,7 @@
              :height height
              :class cursor
              :data-position (name position)
+             :data-testid (dm/str "resize-side-handler-" (name position))
              :transform transform-str
              :on-pointer-down on-resize
              :on-double-click on-double-click
