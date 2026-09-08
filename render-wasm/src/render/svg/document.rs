@@ -136,13 +136,17 @@ impl SvgLayerCanvas {
     }
 
     /// Finalizes a fragment canvas as a `<clipPath>` def.
+    ///
+    /// Rewrite fill-rule to clip-rule: clipPaths ignore fill-rule, so evenodd
+    /// stroke rings would otherwise fill solid.
     pub(super) fn finish_clip_path_fragment(&mut self, id: &str, canvas: skia::svg::Canvas) {
         let data = canvas.end();
         let doc = String::from_utf8_lossy(data.as_bytes());
         let inner = extract_inner_svg(&doc);
         let prefix = format!("f{}_", self.frag_no);
         self.frag_no += 1;
-        let geometry = sanitize_skia_svg_fragment(&remap_ids(inner, &prefix));
+        let geometry = sanitize_skia_svg_fragment(&remap_ids(inner, &prefix))
+            .replace("fill-rule=", "clip-rule=");
         self.defs.push_str(&format!(
             "<clipPath id=\"{id}\" clipPathUnits=\"userSpaceOnUse\">{geometry}</clipPath>"
         ));

@@ -378,6 +378,24 @@ fn stroke_with_style(
     stroke
 }
 
+fn image_stroke(kind: StrokeKind, style: StrokeStyle, width: f32, image_id: Uuid) -> Stroke {
+    let mut stroke = match kind {
+        StrokeKind::Inner => Stroke::new_inner_stroke(width, style, None, None, None, None),
+        StrokeKind::Outer => Stroke::new_outer_stroke(width, style, None, None, None, None),
+        StrokeKind::Center => Stroke::new_center_stroke(width, style, None, None, None, None),
+    };
+    stroke.fill = test_image_fill(image_id);
+    stroke
+}
+
+pub(super) fn image_solid_stroke(kind: StrokeKind, width: f32, image_id: Uuid) -> Stroke {
+    image_stroke(kind, StrokeStyle::Solid, width, image_id)
+}
+
+pub(super) fn image_dotted_stroke(kind: StrokeKind, width: f32, image_id: Uuid) -> Stroke {
+    image_stroke(kind, StrokeStyle::Dotted, width, image_id)
+}
+
 /// Text with a linked image fill (register URL via `render_with`).
 pub(super) fn add_image_text(
     pool: &mut ShapesPool,

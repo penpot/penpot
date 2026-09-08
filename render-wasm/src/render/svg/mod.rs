@@ -60,9 +60,9 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// composed as native SVG `<g>` wrappers. Frame `clip content` uses a native
 /// `<clipPath>`.
 ///
-/// Special-case re-emission for shadows, layer blur, masks, text strokes, and
-/// image strokes is intentionally out of scope for this cut. Solid Inner/Outer
-/// and dotted/dashed strokes are emitted as filled outlines.
+/// Shadows, layer blur, masks, and text strokes still need dedicated SVG
+/// re-emission. Solid Inner/Outer and dotted/dashed strokes go out as filled
+/// outlines; image-filled strokes use a linked `<image>` clipped to the stroke.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,
@@ -135,7 +135,7 @@ use groups::render_group;
 use text::render_text_fill;
 
 use document::effect_attrs;
-use images::emit_fills;
+use images::{emit_fills, emit_strokes};
 
 /// Renders `id`'s subtree to an SVG body, returning `(defs, body)`.
 fn render_body(
@@ -211,17 +211,22 @@ fn render_leaf(
             canvas.concat(&matrix);
             let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
             renderer.draw_fill_inner_shadows(element)?;
+            canvas.restore();
 
             let visible_strokes: Vec<_> = element.visible_strokes().collect();
             if !visible_strokes.is_empty() {
-                renderer.draw_strokes(element, &visible_strokes)?;
+                emit_strokes(builder, shared, element, &visible_strokes, scale)?;
                 if !element.has_fills() {
+                    let canvas = builder.canvas();
+                    canvas.save();
+                    canvas.concat(&matrix);
+                    let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
                     for stroke in &visible_strokes {
                         renderer.draw_stroke_inner_shadows(element, stroke)?;
                     }
+                    canvas.restore();
                 }
             }
-            canvas.restore();
         }
     }
 
