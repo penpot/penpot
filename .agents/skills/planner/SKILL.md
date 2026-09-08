@@ -235,7 +235,7 @@ explicitly instructs you to save it — and then only that file.
 Announce the suggested save path:
 
 ```
-.opencode/plans/YYYY-MM-DD-<plan-one-line-title>.md
+.agents/plans/YYYY-MM-DD-<plan-one-line-title>.md
 ```
 
 Use today's date in the user's local timezone. The `<plan-one-line-title>`
