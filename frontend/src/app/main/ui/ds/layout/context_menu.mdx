@@ -73,6 +73,12 @@ Prevents the context menu from opening.
 
 Default: false
 
+## on-open-change
+
+Called whenever the menu opens or closes. The context menu owns its open state — unlike Menu, no `is-open` plumbing is required to use it — this is only a notification, e.g. to keep a trigger's own hover-only affordances visible for as long as the menu stays open.
+
+Type: function
+
 ## max-width
 
 Caps how wide the menu (and every flyout submenu nested in it) can grow. The existing minimum width still wins if it's larger than this.

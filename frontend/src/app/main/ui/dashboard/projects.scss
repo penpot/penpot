@@ -46,13 +46,20 @@
   position: relative;
 
   &:hover,
-  &:focus,
-  &:focus-within {
+  &:has(:focus-visible) {
     --actions-opacity: 1;
   }
 }
 
 .pinned-project {
+  --actions-opacity: 1;
+}
+
+// Set while either the "..." menu or the title's right-click menu is open —
+// its popover can portal outside .dashboard-project-row, so :hover/:focus-
+// within alone stop applying the moment the pointer leaves the row, even
+// though the menu itself is still open.
+.is-force-display {
   --actions-opacity: 1;
 }
 

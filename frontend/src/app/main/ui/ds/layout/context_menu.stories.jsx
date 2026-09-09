@@ -6,6 +6,14 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import {
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+  within,
+  expect,
+} from "storybook/test";
 
 const { ContextMenu, MenuItem, MenuSeparator } = Components;
 
@@ -81,5 +89,28 @@ export const Default = {};
 export const Disabled = {
   args: {
     isDisabled: true,
+  },
+};
+
+const openChangeCalls = [];
+
+export const TestOnOpenChangeReportsState = {
+  args: {
+    onOpenChange: (isOpen) => openChangeCalls.push(isOpen),
+  },
+  play: async ({ canvasElement, step }) => {
+    openChangeCalls.length = 0;
+    const trigger = within(canvasElement).getByText("Right click here");
+
+    await step("Right-clicking the trigger reports it open", async () => {
+      fireEvent.contextMenu(trigger);
+      await screen.findByRole("menu");
+      await waitFor(() => expect(openChangeCalls).toEqual([true]));
+    });
+
+    await step("Escape reports it closed", async () => {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(openChangeCalls).toEqual([true, false]));
+    });
   },
 };

@@ -564,6 +564,11 @@ interface ContextMenuProps {
   // See the same props on Menu above.
   maxWidth?: CssLength;
   isDense?: boolean;
+  // ContextMenu owns its open state (see the comment below on why it isn't
+  // controlled like Menu is) — this only notifies the caller when that state
+  // changes, e.g. to keep a trigger's own hover-only affordances visible for
+  // as long as this stays open.
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 // MenuTrigger's built-in press/context-menu detection only works when its
@@ -582,6 +587,7 @@ export function ContextMenu({
   onAction,
   maxWidth = 250,
   isDense = false,
+  onOpenChange,
 }: ContextMenuProps) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -597,6 +603,18 @@ export function ContextMenu({
     if (isOpen) setShouldSkipAnimation(false);
   }, [isOpen]);
 
+  // See the same handleOpenChange in Menu above: closing always skips the
+  // exit animation so a right-click landing while the previous instance is
+  // still mid exit-fade can't race it into failing to reopen.
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) setShouldSkipAnimation(true);
+      setIsOpen(open);
+      onOpenChange?.(open);
+    },
+    [onOpenChange],
+  );
+
   const handleContextMenu = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
       if (isDisabled) return;
@@ -606,26 +624,16 @@ export function ContextMenu({
         anchor.style.left = `${e.clientX}px`;
         anchor.style.top = `${e.clientY}px`;
       }
-      setIsOpen(true);
+      handleOpenChange(true);
     },
-    [isDisabled],
+    [isDisabled, handleOpenChange],
   );
 
   const closeController: MenuCloseController = {
-    closeAll: () => {
-      setShouldSkipAnimation(true);
-      setIsOpen(false);
-    },
+    // handleOpenChange already sets shouldSkipAnimation on close.
+    closeAll: () => handleOpenChange(false),
     shouldSkipAnimation,
   };
-
-  // See the same handleOpenChange in Menu above: closing always skips the
-  // exit animation so a right-click landing while the previous instance is
-  // still mid exit-fade can't race it into failing to reopen.
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) setShouldSkipAnimation(true);
-    setIsOpen(open);
-  }, []);
 
   const close = useCallback(() => handleOpenChange(false), [handleOpenChange]);
   useSoloOpen(isOpen, close);
