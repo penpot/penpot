@@ -64,7 +64,7 @@
    ::doc/added "1.15"
    ::doc/changes [["1.15" "This method is migrated from mutations to commands."]
                   ["2.18" "Add optional `skip-onboarding` param. When true, the profile is created with `onboarding-viewed` and `release-notes-viewed` (current version) set, skipping the onboarding flow."]
-                  ["2.20" "Add optional `expires-in` param. When set, the demo purge is scheduled that long after creation instead of the global deletion delay. Only values between 5 minutes and the global delay are accepted."]]
+                  ["2.18" "Add optional `expires-in` param. When set, the demo purge is scheduled that long after creation instead of the global deletion delay. Only values between 5 minutes and the global delay are accepted."]]
    ::sm/params schema:create-demo-profile}
   [cfg {:keys [skip-onboarding expires-in]}]
 
