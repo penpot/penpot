@@ -1267,7 +1267,7 @@
                           {:deleted-at request-at}
                           {:id id}
                           {::db/return-keys false})
-              (jobs/submit! (assoc cfg ::db/conn conn)
+              (jobs/submit! cfg
                             {::jobs/name :delete-object
                              ::jobs/params {:object :file
                                             :deleted-at request-at

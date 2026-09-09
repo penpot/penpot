@@ -46,7 +46,7 @@
                               {:deleted-at now}
                               {:id profile-id}
                               {::db/return-keys false})
-                  (jobs/submit! (assoc cfg ::db/conn conn)
+                  (jobs/submit! cfg
                                 {::jobs/name :delete-object
                                  ::jobs/params {:object :profile
                                                 :deleted-at now

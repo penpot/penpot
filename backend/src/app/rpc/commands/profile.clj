@@ -534,7 +534,7 @@
                     {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
-    (jobs/submit! (assoc cfg ::db/conn conn)
+    (jobs/submit! cfg
                   {::jobs/name :delete-object
                    ::jobs/params {:object :profile
                                   :deleted-at deleted-at

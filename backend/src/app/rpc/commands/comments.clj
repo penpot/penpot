@@ -83,7 +83,7 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [cfg conn profile comment thread file]
+  [{:keys [::db/conn] :as cfg} profile comment thread file]
   (let [team-users        (get-team-users conn (:team-id file))
         comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
@@ -533,7 +533,7 @@
     (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! cfg conn profile comment thread file)
+    (send-comment-emails! cfg profile comment thread file)
 
     (-> thread
         (add-owner profile)
@@ -643,7 +643,7 @@
       ;; Update the current profile status in relation to the current thread
       (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (send-comment-emails! cfg conn profile comment thread file)
+      (send-comment-emails! cfg profile comment thread file)
 
       (vary-meta comment assoc ::audit/props comment))))
 

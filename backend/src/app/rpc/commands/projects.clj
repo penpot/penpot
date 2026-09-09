@@ -272,7 +272,7 @@
 ;; --- MUTATION: Delete Project
 
 (defn- delete-project
-  [cfg conn team project-id]
+  [{:keys [::db/conn] :as cfg} team project-id]
   (let [delay   (ldel/get-deletion-delay team)
         project (db/update! conn :project
                             {:deleted-at (ct/in-future delay)}
@@ -284,7 +284,7 @@
                 :code :non-deletable-project
                 :hint "impossible to delete default project"))
 
-    (jobs/submit! (assoc cfg ::db/conn conn)
+    (jobs/submit! cfg
                   {::jobs/name :delete-object
                    ::jobs/params {:object :project
                                   :deleted-at (:deleted-at project)
@@ -307,7 +307,7 @@
   (let [team    (teams/get-team conn
                                 :profile-id profile-id
                                 :project-id id)
-        project (delete-project cfg conn team id)]
+        project (delete-project cfg team id)]
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:team-id project)
                       :name (:name project)

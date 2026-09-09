@@ -845,7 +845,7 @@
       (when (contains? cf/flags :admin-console)
         (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
 
-      (jobs/submit! (assoc cfg ::db/conn conn)
+      (jobs/submit! cfg
                     {::jobs/name :delete-object
                      ::jobs/params {:object :team
                                     :deleted-at (:deleted-at team)
