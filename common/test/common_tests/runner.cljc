@@ -29,6 +29,7 @@
    [common-tests.geom-flex-layout-test]
    [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
+   [common-tests.geom-image-bounds-resize-test]
    [common-tests.geom-line-test]
    [common-tests.geom-modif-tree-test]
    [common-tests.geom-modifiers-test]
@@ -108,6 +109,7 @@
    'common-tests.geom-flex-layout-test
    'common-tests.geom-grid-layout-test
    'common-tests.geom-grid-test
+   'common-tests.geom-image-bounds-resize-test
    'common-tests.geom-line-test
    'common-tests.geom-modif-tree-test
    'common-tests.geom-modifiers-test
