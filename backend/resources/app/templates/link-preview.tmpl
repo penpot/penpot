@@ -17,6 +17,6 @@
     <meta name="twitter:image" content="{{image}}" />
   </head>
   <body>
-    <script>location.replace("/" + location.search + location.hash);</script>
+    <script>location.replace((location.pathname.replace(/link-preview\/?$/, "") || "/") + location.search + location.hash);</script>
   </body>
 </html>

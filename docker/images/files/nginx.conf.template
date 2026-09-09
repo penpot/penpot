@@ -61,7 +61,7 @@ http {
     # are served with dynamic Open Graph metadata from the backend.
     map $http_user_agent $penpot_link_preview_agent {
         default 0;
-        ~*(slackbot|discordbot|twitterbot|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|linkedinbot|skypeuripreview|pinterestbot|redditbot|embedly|iframely|mastodon|bluesky) 1;
+        ~*(slackbot|discordbot|twitterbot|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|linkedinbot|skypeuripreview|pinterestbot|redditbot|embedly|iframely|mastodon|bluesky|applebot|googlebot|bingbot|bingpreview|duckduckbot) 1;
     }
 
     proxy_cache_path /tmp/cache/ levels=2:2 keys_zone=penpot:20m;

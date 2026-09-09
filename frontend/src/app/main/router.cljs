@@ -103,8 +103,10 @@
       ;; the effect always runs after the update. The sharing-context ids
       ;; are synced into the pre-fragment query (the fragment never reaches
       ;; the server, so shared links need them there); every other param is
-      ;; left untouched. The backend applies its own file > project > team
-      ;; priority, so no filtering is needed here.
+      ;; left untouched, except valueless ones (`?flag`), which the query
+      ;; codec cannot round-trip and are dropped. The backend applies its
+      ;; own file > project > team priority, so no filtering is needed
+      ;; here.
       (let [params (:query-params (:route state))
             uri    (u/uri (.-href globals/location))
             search (reduce (fn [m k]

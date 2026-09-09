@@ -385,6 +385,8 @@
   a trailing slash; segments must not start with `/` (a leading slash
   would resolve against the host root and drop the subpath)."
   [base & segments]
+  (assert (not (some #(str/starts-with? % "/") segments))
+          "URI segments must be relative (no leading slash)")
   (str (apply u/join (u/ensure-path-slash base) segments)))
 
 (defn get-public-uri

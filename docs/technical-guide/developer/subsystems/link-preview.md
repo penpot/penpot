@@ -86,7 +86,7 @@ A `map` block classifies the request by `User-Agent`:
 ```nginx
 map $http_user_agent $penpot_link_preview_agent {
     default 0;
-    ~*(slackbot|discordbot|twitterbot|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|linkedinbot|skypeuripreview|pinterestbot|redditbot|embedly|iframely|mastodon|bluesky) 1;
+    ~*(slackbot|discordbot|twitterbot|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|linkedinbot|skypeuripreview|pinterestbot|redditbot|embedly|iframely|mastodon|bluesky|applebot|googlebot|bingbot|bingpreview|duckduckbot) 1;
 }
 ```
 
@@ -163,12 +163,14 @@ equivalent `twitter:*` card tags and `<meta name="robots" content="noindex">`.
 The body contains a single script:
 
 ```html
-<script>location.replace("/" + location.search + location.hash);</script>
+<script>location.replace((location.pathname.replace(/link-preview\/?$/, "") || "/") + location.search + location.hash);</script>
 ```
 
 so that if a *human* somehow lands on `/link-preview` (e.g. some clients let users
 click through to the fetched URL), the browser bounces back to the SPA root
-keeping the query string and the fragment, and the app loads normally. Crawlers do not execute
+keeping the query string and the fragment, and the app loads normally. The
+redirect strips only the trailing `link-preview` segment so subpath
+deployments keep their prefix. Crawlers do not execute
 JavaScript, so they just read the meta tags.
 
 ### Making file thumbnails publicly accessible

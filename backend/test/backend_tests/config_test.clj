@@ -33,3 +33,8 @@
              (cf/join-uri "https://nitrate.example.com" "api/teams/123")))
     (t/is (= "https://nitrate.example.com/api/teams/123"
              (cf/join-uri "https://nitrate.example.com/" "api/teams/123")))))
+
+(t/deftest join-uri-rejects-leading-slash
+  (t/testing "a leading slash would drop the subpath, so it fails fast"
+    (t/is (thrown? AssertionError
+                   (cf/join-uri "https://example.com/penpot" "/assets/by-id/123")))))
