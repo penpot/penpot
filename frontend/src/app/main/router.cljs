@@ -80,20 +80,28 @@
 
   They are mirrored on the query string (before the fragment) because
   the fragment is never sent to the server; this way shared links
-  carry enough context for rendering link preview metadata."
+  carry enough context for rendering link preview metadata.
+  Only fragment query params are considered: non-legacy routes are
+  static screens and carry their ids exclusively there."
   [match]
-  (let [path-params  (dm/get-in match [:params :path])
-        query-params (get match :query-params)
-        file-id      (or (get-query-param query-params :file-id)
-                         (get-query-param path-params :file-id))
-        team-id      (or (get-query-param query-params :team-id)
-                         (get-query-param path-params :team-id))
-        project-id   (or (get-query-param query-params :project-id)
-                         (get-query-param path-params :project-id))]
+  (let [query-params (get match :query-params)
+        file-id      (get-query-param query-params :file-id)
+        team-id      (get-query-param query-params :team-id)
+        project-id   (get-query-param query-params :project-id)]
     (cond
       (some? file-id)    {:file-id file-id}
       (some? project-id) {:team-id team-id :project-id project-id}
       (some? team-id)    {:team-id team-id})))
+
+(defn mirrored-href
+  "Build the path-relative href carrying the mirrored context query
+  before the fragment. Pure helper around the `navigated` effect so
+  the URL surgery stays testable without DOM."
+  [context-params hash base-path]
+  (let [query (some-> context-params u/map->query-string)]
+    (dm/str base-path
+            (if (some? query) (dm/str "?" query) "")
+            hash)))
 
 (defn navigated
   [match send-event-info?]
@@ -118,12 +126,15 @@
           (dissoc :exception)))
 
     ptk/EffectEvent
-    (effect [_ _ _]
-      (let [query   (some-> (match->context-params match)
-                            (u/map->query-string))
-            href    (dm/str (.-pathname globals/location)
-                            (if (some? query) (dm/str "?" query) "")
-                            (.-hash globals/location))
+    (effect [_ state _]
+      ;; The route is read from the state the `update` above just stored,
+      ;; not from the closed-over `match`: the effect always runs after
+      ;; the update. The base comes from the canonical `cf/public-uri`
+      ;; instead of the address bar.
+      (let [context (match->context-params (:route state))
+            href    (mirrored-href context
+                                   (.-hash globals/location)
+                                   (:path cf/public-uri))
             current (dm/str (.-pathname globals/location)
                             (.-search globals/location)
                             (.-hash globals/location))]

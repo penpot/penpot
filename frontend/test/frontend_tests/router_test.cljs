@@ -6,6 +6,8 @@
 
 (ns frontend-tests.router-test
   (:require
+   [app.common.uri :as u]
+   [app.config :as cf]
    [app.main.router :as rt]
    [app.util.globals :as globals]
    [cljs.test :as t :include-macros true]
@@ -16,13 +18,6 @@
   (let [match {:query-params {:team-id "team-1"
                               :file-id "file-1"
                               :page-id "page-1"}}]
-    (t/is (= {:file-id "file-1"}
-             (rt/match->context-params match)))))
-
-(t/deftest match-context-params-file-link-path-params
-  ;; Legacy routes carry the ids as path params.
-  (let [match {:params {:path {:project-id "project-1"
-                               :file-id "file-1"}}}]
     (t/is (= {:file-id "file-1"}
              (rt/match->context-params match)))))
 
@@ -91,14 +86,34 @@
         (set! (.-href loc) old-href)
         (set! (.-history js/globalThis) old-history)))))
 
+(t/deftest mirrored-href-subpath-base
+  ;; The base comes from cf/public-uri, so subpath deployments keep
+  ;; their prefix.
+  (t/is (= "/penpot/?file-id=file-1#/workspace?file-id=file-1"
+           (rt/mirrored-href {:file-id "file-1"} "#/workspace?file-id=file-1" "/penpot/"))))
+
+(t/deftest mirrored-href-no-context
+  ;; Routes without context clear the pre-fragment query.
+  (t/is (= "/#/auth/login"
+           (rt/mirrored-href nil "#/auth/login" "/"))))
+
+(defn- emit-navigated
+  "Run the `navigated` effect with `match` stored as the state route,
+  pinning `cf/public-uri` so the test does not depend on the test-env
+  globals. The closed-over match is deliberately empty to prove the
+  effect reads the route from the state, not from the closure."
+  [match public-uri]
+  (with-redefs [cf/public-uri (u/uri public-uri)]
+    (ptk/effect (rt/navigated {} false) {:route match} nil)))
+
 (t/deftest navigated-mirrors-context-on-change
-  ;; New context in the match triggers exactly one mirrored write.
+  ;; New context in the state route triggers exactly one mirrored write.
   (let [calls (atom [])]
     (with-stubbed-browser
       {:pathname "/" :search "" :hash "#/workspace?file-id=file-1" :href "http://localhost/"}
       calls
       (fn []
-        (ptk/effect (rt/navigated {:query-params {:file-id "file-1"}} false) nil nil)
+        (emit-navigated {:query-params {:file-id "file-1"}} "http://localhost/")
         (t/is (= ["/?file-id=file-1#/workspace?file-id=file-1"] @calls))))))
 
 (t/deftest navigated-skips-write-when-mirrored
@@ -108,7 +123,7 @@
       {:pathname "/" :search "?file-id=file-1" :hash "#/workspace?file-id=file-1" :href "http://localhost/?file-id=file-1#/workspace?file-id=file-1"}
       calls
       (fn []
-        (ptk/effect (rt/navigated {:query-params {:file-id "file-1"}} false) nil nil)
+        (emit-navigated {:query-params {:file-id "file-1"}} "http://localhost/")
         (t/is (= [] @calls))))))
 
 (t/deftest navigated-strips-stale-context
@@ -118,5 +133,26 @@
       {:pathname "/" :search "?file-id=old" :hash "#/dashboard/recent?team-id=team-1" :href "http://localhost/?file-id=old#/dashboard/recent?team-id=team-1"}
       calls
       (fn []
-        (ptk/effect (rt/navigated {:query-params {:team-id "team-1"}} false) nil nil)
+        (emit-navigated {:query-params {:team-id "team-1"}} "http://localhost/")
         (t/is (= ["/?team-id=team-1#/dashboard/recent?team-id=team-1"] @calls))))))
+
+(t/deftest navigated-clears-query-without-context
+  ;; Routes without context clear a stale pre-fragment query.
+  (let [calls (atom [])]
+    (with-stubbed-browser
+      {:pathname "/" :search "?file-id=old" :hash "#/auth/login" :href "http://localhost/?file-id=old#/auth/login"}
+      calls
+      (fn []
+        (emit-navigated {:query-params {:token "some-token"}} "http://localhost/")
+        (t/is (= ["/#/auth/login"] @calls))))))
+
+(t/deftest navigated-keeps-subpath-base
+  ;; Under a subpath deployment the mirrored href keeps the prefix
+  ;; from cf/public-uri.
+  (let [calls (atom [])]
+    (with-stubbed-browser
+      {:pathname "/penpot/" :search "" :hash "#/workspace?file-id=file-1" :href "http://localhost/penpot/"}
+      calls
+      (fn []
+        (emit-navigated {:query-params {:file-id "file-1"}} "http://localhost/penpot/")
+        (t/is (= ["/penpot/?file-id=file-1#/workspace?file-id=file-1"] @calls))))))
