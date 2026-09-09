@@ -53,7 +53,7 @@
    {:id :jobs-gc-with-props
     :task :jobs-gc
     :cron "0 0 * * *"
-    :props {:min-age "1h"}}])
+    :props {:min-age 3600000}}])
 
 (t/deftest cron-submits-job-with-empty-params-when-entry-has-no-props
   (let [cfg     (make-cfg)
@@ -94,7 +94,7 @@
         (t/is (= "jobs-gc-with-props" (:label row)))
         ;; Props should be decoded to the original map
         (let [props (db/decode-json-pgobject (:props row))]
-          (t/is (= {:min-age "1h"} props)))))))
+          (t/is (= {:min-age 3600000} props)))))))
 
 (t/deftest cron-no-overlap-check-prevents-duplicate-submission
   (let [cfg     (make-cfg)

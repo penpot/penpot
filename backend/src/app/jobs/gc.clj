@@ -71,11 +71,10 @@
 (declare execute-jobs-gc!)
 
 (def schema:jobs-gc-params
-  "min-age: duration object, integer millis or pg-interval text
-  in-process; integer millis or text over the job pipeline (a duration
-  object does not survive JSON encoding)."
+  "min-age: duration object or integer millis in-process; integer millis
+  over the job pipeline (a duration object does not survive JSON encoding)."
   [:map
-   [:min-age {:optional true} [:or :int :string ::ct/duration]]])
+   [:min-age {:optional true} [:or :int ::ct/duration]]])
 
 (defmethod ig/init-key ::jobs-gc-job-def
   [_ cfg]
@@ -93,11 +92,8 @@
   The `:rollback?` param (default false) forces the transaction to rollback
   instead of commit. Used for testing transactional code without side effects."
   [cfg params]
-  (let [min-age (or (:min-age params)
-                    (cf/get-jobs-retention))
-        ;; Normalize to a duration, keeping pg-interval text as-is
-        ;; (understood by db/interval, but not by ct/duration).
-        min-age (if (string? min-age) min-age (ct/duration min-age))]
+  (let [min-age (ct/duration (or (:min-age params)
+                                 (cf/get-jobs-retention)))]
     (db/tx-run! (assoc cfg ::db/rollback (:rollback? params))
                 (fn [{:keys [::db/conn]}]
                   (let [[deleted-expired touched-expired]
