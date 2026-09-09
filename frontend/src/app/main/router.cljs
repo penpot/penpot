@@ -65,6 +65,16 @@
 
 ;; --- Navigate (Event)
 
+(defn get-query-param
+  "Safely extracts a scalar value for a query param key from a params
+  map. When the same key appears multiple times in a URL,
+  query-string->map returns a vector for that key; this function
+  always returns a single (last) element in that case, so downstream
+  consumers such as parse-long always receive a plain string or nil."
+  [params k]
+  (let [v (get params k)]
+    (if (sequential? v) (peek v) v)))
+
 (defn match->context-params
   "Extract the params that give sharing context to the current URL.
 
@@ -74,9 +84,12 @@
   [match]
   (let [path-params  (dm/get-in match [:params :path])
         query-params (get match :query-params)
-        file-id      (or (get query-params :file-id) (get path-params :file-id))
-        team-id      (or (get query-params :team-id) (get path-params :team-id))
-        project-id   (or (get query-params :project-id) (get path-params :project-id))]
+        file-id      (or (get-query-param query-params :file-id)
+                         (get-query-param path-params :file-id))
+        team-id      (or (get-query-param query-params :team-id)
+                         (get-query-param path-params :team-id))
+        project-id   (or (get-query-param query-params :project-id)
+                         (get-query-param path-params :project-id))]
     (cond
       (some? file-id)    {:file-id file-id}
       (some? project-id) {:team-id team-id :project-id project-id}
@@ -106,15 +119,18 @@
 
     ptk/EffectEvent
     (effect [_ _ _]
-      (let [query (some-> (match->context-params match)
-                          (u/map->query-string))
-            href  (dm/str (.-pathname globals/location)
-                          (if (some? query) (dm/str "?" query) "")
-                          (.-hash globals/location))]
+      (let [query   (some-> (match->context-params match)
+                            (u/map->query-string))
+            href    (dm/str (.-pathname globals/location)
+                            (if (some? query) (dm/str "?" query) "")
+                            (.-hash globals/location))
+            current (dm/str (.-pathname globals/location)
+                            (.-search globals/location)
+                            (.-hash globals/location))]
         ;; The pre-fragment query string is owned by this mirroring: skip
         ;; the write when nothing changed to avoid URL churn and dropping
-        ;; unrelated params set by other code.
-        (when (not= href (.-href globals/location))
+        ;; unrelated params set by other code. Both sides are path-relative.
+        (when (not= href current)
           (.replaceState js/history nil "" href))))))
 
 (defn navigate
@@ -164,16 +180,6 @@
 (defn get-params
   [state]
   (dm/get-in state [:route :params :query]))
-
-(defn get-query-param
-  "Safely extracts a scalar value for a query param key from a params
-  map. When the same key appears multiple times in a URL,
-  query-string->map returns a vector for that key; this function
-  always returns a single (last) element in that case, so downstream
-  consumers such as parse-long always receive a plain string or nil."
-  [params k]
-  (let [v (get params k)]
-    (if (sequential? v) (peek v) v)))
 
 (defn nav-back
   []

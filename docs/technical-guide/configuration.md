@@ -730,6 +730,9 @@ __Since version 2.0.0__
 - <code class="language-bash">enable-webhooks</code>: enables webhooks. More detail about this configuration in [webhooks section][6].
 - <code class="language-bash">enable-access-tokens</code>: enables access tokens. More detail about this configuration in [access tokens section][7].
 - <code class="language-bash">disable-google-fonts-provider</code>: disables the google fonts provider.
+- <code class="language-bash">enable-link-preview</code>: enables Open Graph link previews for shared links.
+  File names and dashboard thumbnails become readable by anyone holding the link, so only enable
+  it if you accept that trade-off. More detail in the [link previews page][9].
 
 [1]: /technical-guide/getting-started#configure-penpot-with-elestio
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
@@ -739,3 +742,4 @@ __Since version 2.0.0__
 [6]: /technical-guide/integration/#webhooks
 [7]: /technical-guide/integration/#access-tokens
 [8]: /mcp/
+[9]: /technical-guide/developer/subsystems/link-preview/

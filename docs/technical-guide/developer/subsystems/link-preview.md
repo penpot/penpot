@@ -225,7 +225,9 @@ indexing these preview pages, and responses are marked non-cacheable.
 1. Make sure the devenv nginx picked up the config (restart the devenv, or
    `nginx -s reload` inside the container, if it predates these changes).
 
-2. Enable the flag before starting the backend REPL:
+2. The flag already ships enabled in devenv via `backend/scripts/_env`, so
+   no export is needed there; outside devenv, enable it before starting
+   the backend:
 
    ```bash
    export PENPOT_FLAGS="$PENPOT_FLAGS enable-link-preview"
