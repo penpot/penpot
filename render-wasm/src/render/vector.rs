@@ -44,6 +44,18 @@ impl<'a> VectorRenderer<'a> {
             compose_fills,
         }
     }
+
+    /// Layer-blur paint filter for this backend.
+    ///
+    /// SVG export (`compose_fills == false`) returns `None`: `SkSVGDevice` drops
+    /// paint image-filters (the shape would vanish). Layer blur is re-emitted as
+    /// a native SVG `<filter>` wrapper instead.
+    fn layer_blur_filter(&self, shape: &Shape) -> Option<skia::ImageFilter> {
+        if !self.compose_fills {
+            return None;
+        }
+        shape.image_filter(1.)
+    }
 }
 
 impl ShapeRenderer for VectorRenderer<'_> {
@@ -52,17 +64,24 @@ impl ShapeRenderer for VectorRenderer<'_> {
             return Ok(());
         }
 
+        let blur_filter = self.layer_blur_filter(shape);
         let has_image_fills = fills.iter().any(|f| matches!(f, Fill::Image(_)));
         if !self.compose_fills || has_image_fills {
             // fills[0] is the topmost layer; draw bottom → top (matches GPU + classic SVG).
             for fill in fills.iter().rev() {
                 match fill {
                     Fill::Image(image_fill) => {
-                        draw_image_fill(self.shared, self.canvas, shape, image_fill)?;
+                        draw_image_fill(
+                            self.shared,
+                            self.canvas,
+                            shape,
+                            image_fill,
+                            blur_filter.as_ref(),
+                        )?;
                     }
                     _ => {
                         let mut paint = fill.to_paint(&shape.selrect, true);
-                        if let Some(filter) = shape.image_filter(1.) {
+                        if let Some(filter) = blur_filter.clone() {
                             paint.set_image_filter(filter);
                         }
                         draw_shape_geometry(self.canvas, shape, &paint);
@@ -75,7 +94,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let mut paint = merge_fills(fills, shape.selrect);
         paint.set_anti_alias(true);
 
-        if let Some(filter) = shape.image_filter(1.) {
+        if let Some(filter) = blur_filter {
             paint.set_image_filter(filter);
         }
 
@@ -124,7 +143,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
         }
         let layer_bounds = shape.layer_bounds();
         for shadow in shape.inner_shadows_visible() {
-            let paint = shadow.get_inner_shadow_paint(true, shape.image_filter(1.).as_ref());
+            let paint = shadow.get_inner_shadow_paint(true, self.layer_blur_filter(shape).as_ref());
             self.canvas.save_layer(
                 &skia::canvas::SaveLayerRec::default()
                     .bounds(&layer_bounds)
@@ -163,7 +182,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
 
         let text_content = text_content.new_bounds(shape.selrect());
         let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-        let blur_filter = shape.image_filter(1.);
+        let blur_filter = self.layer_blur_filter(shape);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).
@@ -353,6 +372,9 @@ impl ShapeRenderer for VectorRenderer<'_> {
     }
 
     fn apply_blur_layer(&mut self, shape: &Shape) -> bool {
+        if !self.compose_fills {
+            return false;
+        }
         let blur = match shape.blur {
             Some(b) if !b.hidden && b.blur_type == BlurType::LayerBlur && b.value > 0.0 => b,
             _ => return false,
@@ -1033,6 +1055,7 @@ fn draw_image_fill(
     canvas: &Canvas,
     shape: &Shape,
     image_fill: &crate::shapes::ImageFill,
+    blur_filter: Option<&skia::ImageFilter>,
 ) -> Result<()> {
     // Use a CPU-backed image copy — GPU-backed images can't be drawn
     // on the PDF canvas which has no GPU context.
@@ -1053,8 +1076,8 @@ fn draw_image_fill(
 
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    if let Some(filter) = shape.image_filter(1.) {
-        paint.set_image_filter(filter);
+    if let Some(filter) = blur_filter {
+        paint.set_image_filter(filter.clone());
     }
 
     canvas.draw_image_rect_with_sampling_options(

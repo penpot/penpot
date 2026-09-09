@@ -652,6 +652,13 @@ impl Shape {
         self.background_blur.filter(|blur| !blur.hidden)
     }
 
+    /// Visible layer blur (`!hidden`, `LayerBlur`, `value > 0`).
+    pub fn visible_layer_blur(&self) -> Option<Blur> {
+        self.blur.filter(|blur| {
+            !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+        })
+    }
+
     #[cfg(test)]
     pub fn add_child(&mut self, id: Uuid) {
         self.children.push(id);
@@ -2057,6 +2064,51 @@ mod tests {
         let mut shape = any_shape();
         shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, true, 8.0)));
         assert_eq!(shape.visible_background_blur(), None);
+    }
+
+    /// Cases mirrored from Penpot MCP board `layer-blur-cases` (file "blur"):
+    /// leaf-visible-blur, leaf-hidden-blur, leaf-zero-blur, leaf-background-blur,
+    /// group-with-blur.
+    #[test]
+    fn visible_layer_blur_requires_non_hidden_positive_layer_blur() {
+        let mut shape = any_shape();
+
+        // leaf-visible-blur / group-with-blur
+        let visible = Blur::new(BlurType::LayerBlur, false, 10.0);
+        shape.set_blur(Some(visible));
+        assert_eq!(shape.visible_layer_blur(), Some(visible));
+
+        let group_blur = Blur::new(BlurType::LayerBlur, false, 6.0);
+        shape.set_blur(Some(group_blur));
+        assert_eq!(shape.visible_layer_blur(), Some(group_blur));
+
+        // leaf-hidden-blur
+        shape.set_blur(Some(Blur::new(BlurType::LayerBlur, true, 10.0)));
+        assert_eq!(shape.visible_layer_blur(), None);
+
+        // leaf-zero-blur
+        shape.set_blur(Some(Blur::new(BlurType::LayerBlur, false, 0.0)));
+        assert_eq!(shape.visible_layer_blur(), None);
+
+        // no blur
+        shape.set_blur(None);
+        assert_eq!(shape.visible_layer_blur(), None);
+    }
+
+    #[test]
+    fn visible_layer_blur_ignores_background_blur() {
+        let mut shape = any_shape();
+        // leaf-background-blur: Plugin API uses `backgroundBlur`, not `blur`.
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 8.0)));
+        assert_eq!(shape.visible_layer_blur(), None);
+        assert_eq!(
+            shape.visible_background_blur(),
+            Some(Blur::new(BlurType::BackgroundBlur, false, 8.0))
+        );
+
+        let layer = Blur::new(BlurType::LayerBlur, false, 4.0);
+        shape.set_blur(Some(layer));
+        assert_eq!(shape.visible_layer_blur(), Some(layer));
     }
 
     #[test]
