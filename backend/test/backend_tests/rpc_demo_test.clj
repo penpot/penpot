@@ -7,8 +7,10 @@
 (ns backend-tests.rpc-demo-test
   (:require
    [app.auth :as auth]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.rpc.commands.profile :as profile]
+   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -74,3 +76,41 @@
                                         :skip-onboarding "yes"})]
       (t/is (th/ex-of-type? error :validation))
       (t/is (th/ex-of-code? error :params-validation)))))
+
+(t/deftest create-demo-profile-uses-global-delay-by-default
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [captured (atom nil)]
+      (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/delay]}]
+                                  (reset! captured {:task task :delay delay}))]
+        (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
+          (t/is (nil? error))
+          (t/is (some? (:email result)))
+          (t/is (= :demo-purge (:task @captured)))
+          (t/is (= (cf/get-deletion-delay) (:delay @captured))))))))
+
+(t/deftest create-demo-profile-accepts-short-expires-in
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [captured (atom nil)]
+      (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/delay]}]
+                                  (reset! captured {:task task :delay delay}))]
+        (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                                   :expires-in "10m"})]
+          (t/is (nil? error))
+          (t/is (some? (:email result)))
+          (t/is (= :demo-purge (:task @captured)))
+          (t/is (= (ct/duration "10m") (:delay @captured))))))))
+
+(t/deftest create-demo-profile-rejects-expires-in-below-minimum
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
+                                        :expires-in "1m"})]
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :invalid-expires-in)))))
+
+(t/deftest create-demo-profile-rejects-expires-in-above-global-delay
+  (with-redefs [cf/flags (conj cf/flags :demo-users)
+                cf/get-deletion-delay (fn [] (ct/duration {:days 7}))]
+    (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
+                                        :expires-in "200h"})]
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :invalid-expires-in)))))
