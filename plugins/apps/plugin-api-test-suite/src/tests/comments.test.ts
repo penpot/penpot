@@ -156,4 +156,23 @@ describe.skipIfMocked('Comments', () => {
       cleanup(thread);
     }
   });
+
+  for (const content of ['   ', '\n\t', '\u200b']) {
+    test(`blank comment content ${JSON.stringify(content)} rejects everywhere`, async (ctx) => {
+      const p = page(ctx);
+      await expectReject(() => p.addCommentThread(content, { x: 0, y: 0 }));
+
+      const thread = await p.addCommentThread('parent', { x: 12, y: 12 });
+      try {
+        await expectReject(() => thread.reply(content));
+        const comments = await thread.findComments();
+        expect(comments.length).toBeGreaterThan(0);
+        expect(() => {
+          comments[0].content = content;
+        }).toThrow();
+      } finally {
+        cleanup(thread);
+      }
+    });
+  }
 });
