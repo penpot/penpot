@@ -1,6 +1,8 @@
 use super::fixtures::*;
 
-use crate::shapes::{BlendMode, Fill, ImageFill, SolidColor, StrokeCap, StrokeKind};
+use crate::shapes::{
+    BlendMode, Fill, ImageFill, ImageFillTransform, SolidColor, StrokeCap, StrokeKind,
+};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 
@@ -1074,6 +1076,43 @@ fn exports_image_fill_as_linked_image() {
         "must not base64-embed the image: {svg}"
     );
     insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_bounds_transform() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_rect_with_fills(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        vec![Fill::Image(ImageFill::new_with_transform(
+            image_id,
+            255,
+            200,
+            100,
+            false,
+            Some(ImageFillTransform {
+                x: 0.25,
+                y: 0.5,
+                width: 0.5,
+                height: 0.25,
+            }),
+        ))],
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains(r#"x="25" y="40" width="50" height="20""#),
+        "linked image must keep the independent image bounds: {svg}"
+    );
 }
 
 #[test]

@@ -3,8 +3,7 @@ use skia_safe::{self as skia, Paint, RRect};
 use super::{filters, RenderState, SurfaceId};
 use crate::error::Result;
 use crate::get_resources;
-use crate::math::Rect as MathRect;
-use crate::render::get_source_rect;
+use crate::render::{get_image_dest_rect, get_source_rect};
 use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
 // Set the clipping area to the shape outline within the container bounds
@@ -94,15 +93,7 @@ fn draw_image_fill(
     let container = &shape.selrect;
     let sampling = get_resources().sampling_options;
 
-    let dest_rect = match image_fill.transform() {
-        Some(tf) => MathRect::from_xywh(
-            container.left + tf.x * container.width(),
-            container.top + tf.y * container.height(),
-            tf.width * container.width(),
-            tf.height * container.height(),
-        ),
-        None => *container,
-    };
+    let dest_rect = get_image_dest_rect(container, image_fill);
     let src_rect = get_source_rect(size, &dest_rect, image_fill);
     let needs_clip = image_fill.transform().is_some() || !is_axis_aligned_image_rect(shape);
 
@@ -189,16 +180,7 @@ fn draw_svg_image_fill(
     let fill_layer = skia::canvas::SaveLayerRec::default().paint(paint);
     canvas.save_layer(&fill_layer);
 
-    let dest_rect = match image_fill.transform() {
-        Some(tf) => MathRect::from_xywh(
-            container.left + tf.x * container.width(),
-            container.top + tf.y * container.height(),
-            tf.width * container.width(),
-            tf.height * container.height(),
-        ),
-        None => *container,
-    };
-
+    let dest_rect = get_image_dest_rect(container, image_fill);
     let src_rect = get_source_rect(size, &dest_rect, image_fill);
     if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
         canvas.restore();
