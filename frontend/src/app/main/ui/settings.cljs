@@ -7,6 +7,7 @@
 (ns app.main.ui.settings
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.profile :as types.profile]
    [app.main.data.dashboard.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -67,7 +68,9 @@
                               :error-href error-href}]
 
           :settings-password
-          [:> password-page*]
+          (if (types.profile/oidc? profile)
+            [:> profile-page*]
+            [:> password-page*])
 
           :settings-options
           [:> options-page*]
