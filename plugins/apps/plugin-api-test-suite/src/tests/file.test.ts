@@ -51,7 +51,9 @@ describe('File', () => {
       // The exporter service may be unavailable in the headless runner, so a
       // rejection here is treated as an environment limitation; when it does
       // run, the result must be a non-empty byte array.
-      const data = await file.export('penpot', 'detach').catch(() => null);
+      const data = await file
+        .export('penpot', 'detach-libraries')
+        .catch(() => null);
       if (data) {
         expect(data.length).toBeGreaterThan(0);
       }

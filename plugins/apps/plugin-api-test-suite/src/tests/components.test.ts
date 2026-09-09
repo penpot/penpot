@@ -222,13 +222,21 @@ describe('Component instances', () => {
     const inst = comp.instance();
     ctx.board.appendChild(inst);
 
-    const mainColor = main.fills?.[0]?.fillColor;
+    const mainFill = main.fills?.[0];
+    const mainColor =
+      typeof mainFill === 'string' ? mainFill : mainFill?.fillColor;
     inst.fills = [{ fillColor: '#FF0000', fillOpacity: 1 }];
     // The override applied (fill getter normalizes to lowercase).
-    expect(inst.fills?.[0]?.fillColor?.toLowerCase()).toBe('#ff0000');
+    const overrideFill = inst.fills?.[0];
+    const overrideColor =
+      typeof overrideFill === 'string' ? overrideFill : overrideFill?.fillColor;
+    expect(overrideColor?.toLowerCase()).toBe('#ff0000');
 
     inst.resetOverrides();
-    expect(inst.fills?.[0]?.fillColor).toBe(mainColor);
+    const resetFill = inst.fills?.[0];
+    expect(
+      typeof resetFill === 'string' ? resetFill : resetFill?.fillColor,
+    ).toBe(mainColor);
   });
 
   test('resetOverrides on a plain shape throws', (ctx) => {
@@ -264,6 +272,23 @@ describe('Component instances', () => {
     expect(() =>
       inst.swapComponent(rect as unknown as ReturnType<typeof makeComponent>),
     ).toThrow();
+  });
+
+  test('swapComponent rejects a component nesting loop', (ctx) => {
+    const leaf = ctx.penpot.createRectangle();
+    ctx.board.appendChild(leaf);
+    const inner = ctx.penpot.library.local.createComponent([leaf]);
+
+    const wrapper = ctx.penpot.createBoard();
+    ctx.board.appendChild(wrapper);
+    wrapper.appendChild(inner.instance());
+    const outer = ctx.penpot.library.local.createComponent([wrapper]);
+    const nested = (outer.mainInstance() as Board).children.find((child) =>
+      child.isComponentInstance(),
+    );
+
+    expect(nested).toBeDefined();
+    if (nested) expect(() => nested.swapComponent(outer)).toThrow();
   });
 
   test('two instances of one component are independent but share the source', (ctx) => {

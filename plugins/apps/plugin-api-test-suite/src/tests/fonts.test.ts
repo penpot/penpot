@@ -119,4 +119,17 @@ describe('Fonts', () => {
     expect(t.fontVariantId).toBe(variant.fontVariantId);
     expect(t.fontWeight).toBe(variant.fontWeight);
   });
+
+  test('a font rejects a variant owned by another font', (ctx) => {
+    const fonts = ctx.penpot.fonts.all;
+    const first = fonts[0];
+    const second = fonts.find((font) => font.fontId !== first.fontId);
+    if (second) {
+      const t = text(ctx);
+      expect(() => first.applyToText(t, second.variants[0])).toThrow();
+      expect(() =>
+        first.applyToRange(t.getRange(0, 5), second.variants[0]),
+      ).toThrow();
+    }
+  });
 });

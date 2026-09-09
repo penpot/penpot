@@ -1,5 +1,6 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
+import type { Group } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
 
 // Shapes & geometry.
@@ -254,6 +255,22 @@ describe('Shapes', () => {
       expect(r.borderRadiusBottomRight).toBeCloseTo(3.75, 2);
       expect(r.borderRadiusBottomLeft).toBeCloseTo(0.5, 2);
     });
+
+    test('individual corner radii reject negative values', (ctx) => {
+      const r = rect(ctx);
+      expect(() => {
+        r.borderRadiusTopLeft = -1;
+      }).toThrow();
+      expect(() => {
+        r.borderRadiusTopRight = -1;
+      }).toThrow();
+      expect(() => {
+        r.borderRadiusBottomRight = -1;
+      }).toThrow();
+      expect(() => {
+        r.borderRadiusBottomLeft = -1;
+      }).toThrow();
+    });
   });
 
   describe('Ordering', () => {
@@ -365,7 +382,7 @@ describe('Shapes', () => {
       expect(group).not.toBeNull();
       if (!group) return;
 
-      const copy = group.clone();
+      const copy = group.clone() as Group;
       ctx.board.appendChild(copy);
       expect(copy.id).not.toBe(group.id);
       expect(copy.children).toHaveLength(group.children.length);
@@ -444,6 +461,21 @@ describe('Shapes', () => {
       const r = rect(ctx);
       expect(() => {
         r.borderRadius = -8;
+      }).toThrow();
+    });
+
+    test('export scale must be positive', (ctx) => {
+      const r = rect(ctx);
+      expect(() => {
+        r.exports = [{ type: 'png', scale: 0, suffix: '' }];
+      }).toThrow();
+      expect(() => {
+        r.exports = [{ type: 'png', scale: -1, suffix: '' }];
+      }).toThrow();
+
+      r.exports = [{ type: 'png', scale: 1, suffix: '' }];
+      expect(() => {
+        r.exports[0].scale = 0;
       }).toThrow();
     });
 
