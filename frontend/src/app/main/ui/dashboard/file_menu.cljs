@@ -87,13 +87,6 @@
 ;; below (opened from the "..." button, via Menu) and by grid.cljs's own
 ;; right-click handling (via ContextMenu), so both triggers show the exact
 ;; same options.
-;; The popover this renders inside only mounts file-menu-items* while it's
-;; open, so a plain component-local fetch would re-run — and start every
-;; single open from an empty "Move to" state — every time. Caching the last
-;; response here means only the first open of a session (per tab) pays that
-;; cost; later opens render with the previous list immediately while a
-;; fresh fetch updates it in the background.
-(defonce ^:private teams-cache (atom nil))
 
 (mf/defc file-menu-items*
   [{:keys [files on-edit navigate origin can-edit can-restore]}]
@@ -110,7 +103,7 @@
         multi?           (> file-count 1)
 
         current-team-id  (mf/use-ctx ctx/current-team-id)
-        teams*           (mf/use-state #(deref teams-cache))
+        teams*           (mf/use-state nil)
         teams            (deref teams*)
 
         current-team     (get teams current-team-id)
@@ -256,10 +249,10 @@
                           :on-accept accept-fn}))))]
 
     (mf/with-effect []
-      (->> (rp/cmd! :get-all-projects)
-           (rx/map group-by-team)
-           (rx/subs! #(do (reset! teams-cache %)
-                          (reset! teams* %)))))
+      (let [subs (->> (rp/cmd! :get-all-projects)
+                      (rx/map group-by-team)
+                      (rx/subs! #(reset! teams* %)))]
+        #(rx/dispose! subs)))
 
     (cond
       can-restore
