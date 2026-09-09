@@ -140,7 +140,7 @@ Penpot allows you to decide if the fill of an artboard will be shown in exports,
 <h3 id="rectangles-ellipses">Rectangles and ellipses</h3>
 <p>Rectangle and ellipses are two basic “primitive” geometric shapes that are useful when starting
 a design.</p>
-<p>The shortcut keys are <kbd>E</kbd> for ellipses and <kbd>R</kbd> for rectangles.</p>
+<p>The shortcut keys are <kbd>E</kbd> for ellipses and <kbd>R</kbd> for rectangles. Both tools live in the shapes flyout of the toolbar, together with line and arrow.</p>
 <p>To find out more about how to edit and modify these shapes go to <a href="/user-guide/designing/layers/#layer-actions">Layer basics</a>.</p>
 <figure>
   <video title="Rectangles and ellipses" muted="" playsinline="" controls="" width="auto" poster="/img/objects/rectangles-ellipses.webp" height="auto">
@@ -151,13 +151,24 @@ a design.</p>
 <h3 id="text">Text</h3>
 <p>Text layers are how you add copy to your designs in Penpot. If you want to go deeper into fonts, typography and advanced text options, check the dedicated <a href="/user-guide/designing/text-typo/">Text & Typography</a> section.</p>
 
+<h3 id="lines-arrows">Lines and arrows</h3>
+<p>Use the Line and Arrow tools to draw a two-point path in one drag. They live in the shapes flyout of the toolbar, together with rectangle and ellipse.</p>
+<ul>
+  <li><strong>Line</strong> (<kbd>L</kbd>): click and drag. Hold <kbd>Shift/⇧</kbd> to snap the angle in 15 degree increments.</li>
+  <li><strong>Arrow</strong>: the same gesture, with a triangle arrow cap on the end. Pick it from the shapes flyout. You can change or remove the cap from the <a href="/user-guide/designing/color-stroke/#stroke-caps">stroke caps</a>.</li>
+</ul>
+<p>The result is a regular path, so you can edit its nodes and stroke like any other path.</p>
+<figure>
+  <img src="/img/objects/line-arrow-tools.webp" alt="Line and Arrow tools in the shapes flyout of the toolbar" />
+</figure>
+
 <h3 id="curves">Curves (freehand)</h3>
 <p>The curve tool allows a path to be created directly in a freehand mode.
-Select the curve tool by clicking on the icon at the toolbar or pressing <kbd>Shift/⇧</kbd> + <kbd>c</kbd>.
+Select the curve tool from the free-draw flyout in the toolbar or press <kbd>Shift/⇧</kbd> + <kbd>C</kbd>.</p>
 <p>The path created will contain a lot of points, but it is edited the same way as any other curve.</p>
 
 <h3 id="paths">Paths (bezier)</h3>
-<p>A path is composed of two or more nodes and the line segments between them, which may also be curved. To draw a new path you have to select the path tool by clicking on the icon at the toolbar or pressing <kbd>P</kbd>. Then you have two ways to create the path:</p>
+<p>A path is composed of two or more nodes and the line segments between them, which may also be curved. To draw a new path, select the path tool from the free-draw flyout in the toolbar or press <kbd>P</kbd>. Then you have two ways to create the path:</p>
 <ol>
   <li><strong>Click</strong> to create a new corner node.</li>
   <li><strong>Click and drag</strong> to create a curved node.</li>
@@ -211,7 +222,7 @@ You can choose to edit individual nodes or create new ones. Press <kbd>Esc</kbd>
 <h2 id="layer-actions">Layer actions</h2>
 
 <h3 id="creating-layers">Create</h3>
-<p>To create a layer you have to select the type of layer by clicking the selected tool (board, rectangle, ellipse, text, image, path or curve) at the toolbar. Then you usually have to click and drag your mouse on the viewport. </p>
+<p>To create a layer, pick a tool from the toolbar. Board, text, and image stay on the toolbar. Rectangle, ellipse, line, and arrow are in the shapes flyout. Path and curve are in the free-draw flyout. Then you usually click and drag on the viewport.</p>
 <p>Hold <kbd>Shift/⇧</kbd> while creating an ellipse or a rectangle to maintain equal width and height.</p>
 <figure>
   <video title="Layers create" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-create.webp" height="auto">

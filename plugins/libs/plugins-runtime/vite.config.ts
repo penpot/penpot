@@ -7,7 +7,7 @@ import * as path from 'path';
 import checker from 'vite-plugin-checker';
 
 export default defineConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   cacheDir: '../node_modules/.vite/plugins-runtime',
 
   resolve: {
@@ -17,7 +17,7 @@ export default defineConfig({
   plugins: [
     dts({
       entryRoot: 'src',
-      tsconfigPath: path.join(__dirname, 'tsconfig.lib.json'),
+      tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
     }),
     checker({
       typescript: {
