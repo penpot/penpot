@@ -1385,3 +1385,67 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest oidc-accounts-cannot-change-local-credentials
+  (doseq [[index attrs] (map-indexed vector
+                                     [{:backend "oidc" :password "!"}
+                                      {:backend "oidc"}
+                                      {:props {:oidc/email "linked@example.com"}}
+                                      {:props {:oidc/provider-id "organization-provider"}}])]
+    (let [account (th/create-profile* (+ 100 index) attrs)
+          id      (:id account)
+          before  (th/db-get :profile {:id id})]
+      (t/testing "profile exposes OIDC ownership without disclosing claims"
+        (let [out (th/command! {::th/type :get-profile ::rpc/profile-id id})]
+          (t/is (nil? (:error out)))
+          (t/is (true? (get-in out [:result :is-oidc])))
+          (t/is (not (contains? (get-in out [:result :props]) :oidc/email)))))
+      (t/testing "email changes are rejected with and without SMTP"
+        (doseq [flags [#{} #{:smtp}]]
+          (with-redefs [cf/flags flags]
+            (let [out (th/command! {::th/type :request-email-change
+                                    ::rpc/profile-id id
+                                    :email "replacement@example.com"})]
+              (t/is (th/ex-of-code? (:error out) :profile-managed-by-oidc))))))
+      (t/testing "password changes are rejected even with the old password"
+        (let [out (th/command! {::th/type :update-profile-password
+                                ::rpc/profile-id id
+                                :old-password "Test123!"
+                                :password "Foobar12!"})]
+          (t/is (th/ex-of-code? (:error out) :profile-managed-by-oidc))))
+      (t/testing "previously issued email-change tokens cannot bypass ownership"
+        (let [token (tokens/generate th/*system* {:iss :change-email
+                                                  :exp (ct/in-future "15m")
+                                                  :profile-id id
+                                                  :email "replacement@example.com"})
+              out   (th/command! {::th/type :verify-token :token token})]
+          (t/is (th/ex-of-code? (:error out) :profile-managed-by-oidc))))
+      (t/testing "previously issued recovery tokens cannot set a local password"
+        (let [token (tokens/generate th/*system* {:iss :password-recovery
+                                                  :exp (ct/in-future "15m")
+                                                  :profile-id id})
+              out   (th/command! {::th/type :recover-profile
+                                  :token token :password "Foobar12!"})]
+          (t/is (th/ex-of-code? (:error out) :profile-managed-by-oidc))))
+      (t/testing "credentials remain unchanged"
+        (let [after (th/db-get :profile {:id id})]
+          (t/is (= (:email before) (:email after)))
+          (t/is (= (:password before) (:password after))))))))
+
+(t/deftest local-account-is-not-managed-by-oidc
+  (let [account (th/create-profile* 100)
+        out     (th/command! {::th/type :get-profile
+                              ::rpc/profile-id (:id account)})]
+    (t/is (nil? (:error out)))
+    (t/is (false? (get-in out [:result :is-oidc])))))
+
+
+(t/deftest oidc-password-recovery-does-not-send-local-reset-mail
+  (let [account (th/create-profile* 100 {:backend "oidc" :is-active true})]
+    (with-mocks [mail {:target 'app.email/send! :return nil}]
+      (let [out (th/command! {::th/type :request-profile-recovery
+                              :email (:email account)})]
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))
+        (t/is (not (:called? @mail)))))))

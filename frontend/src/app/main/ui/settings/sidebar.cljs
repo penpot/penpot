@@ -7,6 +7,7 @@
 (ns app.main.ui.settings.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.profile :as types.profile]
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -95,10 +96,11 @@
              :on-click go-settings-profile}
         [:span {:class (stl/css :element-title)} (tr "labels.profile")]]
 
-       [:li {:class (stl/css-case :current password?
-                                  :settings-item true)
-             :on-click go-settings-password}
-        [:span {:class (stl/css :element-title)} (tr "labels.password")]]
+       (when-not (types.profile/oidc? profile)
+         [:li {:class (stl/css-case :current password?
+                                    :settings-item true)
+               :on-click go-settings-password}
+          [:span {:class (stl/css :element-title)} (tr "labels.password")]])
 
        [:li {:class (stl/css-case :current notifications?
                                   :settings-item true)
