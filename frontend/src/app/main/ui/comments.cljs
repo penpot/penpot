@@ -146,11 +146,7 @@
 
 (defn- blank-content?
   [content]
-  (let [content (str/trim content)]
-    (or (str/blank? content)
-        (str/empty? content)
-        (and (= (count content) 1)
-             (= (first content) zero-width-space)))))
+  (not (dcm/valid-comment-content? content)))
 
 (defn- composing-event?
   "True when a keydown belongs to an active IME composition. keyCode 229
