@@ -223,7 +223,9 @@
    :main/update-profile-notifications
    :main/delete-profile
    :main/delete-profile-photo
-   :main/request-email-change}
+   :main/request-email-change
+   :main/add-profile-plugin
+   :main/remove-profile-plugin}
  [[:profile-mutations :bucket "30/15/1m"]]
 
  ;; ═══════════════════════════════════════════════
