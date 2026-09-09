@@ -5,8 +5,6 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.ds.layout.menu
-  (:require-macros
-   [app.main.style :as stl])
   (:require
    ["@penpot/ui/menu" :as menu]
    [app.common.data :as d]
