@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-31 17:03+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-09-09 12:51+0000\n"
+"Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
 "Language: fr_CA\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.8.dev0\n"
+"X-Generator: Weblate 2026.9.1\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -4358,11 +4358,10 @@ msgid "nitrate.activation-success.enjoy"
 msgstr "Profite de ton abonnement!"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
-#, fuzzy
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
 "Gère ton abonnement en tout temps à partir de la page Abonnement dans les "
-"paramètres du compte."
+"détails du compte."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -4454,11 +4453,10 @@ msgstr ""
 "organisation a besoin"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
-#, fuzzy
 msgid "nitrate.form.enterprise-intro"
 msgstr ""
 "Tout ce dont les équipes ont besoin pour travailler de manière sécuritaire à "
-"grande échelle :"
+"grande échelle%s"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
@@ -10080,3 +10078,74 @@ msgstr "MCP connecté"
 #: src/app/main/ui/workspace/palette.cljs:166
 msgid "workspace.toolbar.palette-bar"
 msgstr "Barre de palettes"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Vue en grille"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "Vue en liste"
+
+msgid "dashboard.section.teams"
+msgstr "Équipes"
+
+msgid "dashboard.my-files"
+msgstr "Mes fichiers"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Le token {%s} n'est dans aucune collection active ou possède une valeur "
+"invalide."
+
+msgid "errors.circular-library-reference"
+msgstr ""
+"Impossible d'ajouter la bibliothèque : cela créerait une dépendance "
+"circulaire"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "errors.tokens.circular-reference"
+msgstr "Le token a une référence cirulaire"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:112
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "trait barré"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.current"
+msgstr "Valeur actuelle"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.default"
+msgstr "Valeur par défaut"
+
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "Vraiment supprimer les pages sélectionnées ?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Suppression de pages"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
+msgid "nitrate.modal-success.title"
+msgstr "Bienvenue à Entreprise!"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+msgid "nitrate.code-activation.footer-before"
+msgstr "Besoin d'un code ? Télécharge ton "
+
+msgid "nitrate.code-activation.footer-link"
+msgstr "requête de code d'activation"
+
+msgid "nitrate.code-activation.footer-after"
+msgstr " et contacte-nous :"
+
+msgid "nitrate.form.enterprise-description"
+msgstr ""
+"Tu ne seras pas chargé maintenant. Le paiement sera prélevé à la fin de la "
+"période d'essai. Annule à tout moment."
+
+msgid "nitrate.form.contact-us-free-trial"
+msgstr "Contacte-nous pour faire l'essai du forfait Entreprise pour 14 jours :"
