@@ -75,7 +75,7 @@
       (t/is (nil? (:stroke-cap-start shape)) "top-level cap removed even with no strokes")
       (t/is (nil? (:stroke-cap-end shape)) "top-level cap removed even with no strokes"))))
 
-(t/deftest migration-0027-normalizes-constrained-shape-values
+(t/deftest migration-0028-normalizes-constrained-shape-values
   (let [file-id  (uuid/next)
         page-id  (uuid/next)
         shape-id (uuid/next)
@@ -130,7 +130,7 @@
                    (ctf/check-file-data data))
           "new schemas reject legacy negative values")
 
-    (let [data'  (cfm/migrate-data data "0027-normalize-constrained-values")
+    (let [data'  (cfm/migrate-data data "0028-normalize-constrained-values")
           shape' (get-in data' [:pages-index page-id :objects shape-id])]
       (t/is (= data' (ctf/check-file-data data')) "migrated file data passes the schema")
       (t/is (every? zero? (map #(get shape' %) [:r1 :r2 :r3 :r4])) "corner radii clamped")
@@ -155,7 +155,7 @@
       (t/is (= 0.01 (get-in shape' [:grids 0 :params :size])) "square grid size clamped")
       (t/is (= 1 (get-in shape' [:grids 1 :params :size])) "column grid count clamped"))))
 
-(t/deftest migration-0027-normalizes-page-grids-and-variant-properties
+(t/deftest migration-0028-normalizes-page-grids-and-variant-properties
   (let [file-id      (uuid/next)
         page-id      (uuid/next)
         component-id (uuid/next)
@@ -174,7 +174,7 @@
                                      :name "Variant"
                                      :variant-properties [{:name long-name
                                                            :value long-value}]}))
-        data'         (cfm/migrate-data data "0027-normalize-constrained-values")]
+        data'         (cfm/migrate-data data "0028-normalize-constrained-values")]
 
     (t/is (= 0.01 (get-in data' [:pages-index page-id :default-grids :square :size]))
           "default square grid size clamped")
@@ -186,11 +186,11 @@
           "variant property name truncated")
     (t/is (= 60 (count (get-in data' [:components component-id :variant-properties 0 :value])))
           "variant property value truncated")
-    (t/is (= data' (cfm/migrate-data data' "0027-normalize-constrained-values"))
+    (t/is (= data' (cfm/migrate-data data' "0028-normalize-constrained-values"))
           "migration is idempotent")))
 
-(t/deftest migration-0027-runs-through-file-migration
-  (let [migration-id "0027-normalize-constrained-values"
+(t/deftest migration-0028-runs-through-file-migration
+  (let [migration-id "0028-normalize-constrained-values"
         shape-id     (uuid/next)
         file         (ctf/make-file {:name "Legacy constrained values"})
         page-id      (first (get-in file [:data :pages]))
