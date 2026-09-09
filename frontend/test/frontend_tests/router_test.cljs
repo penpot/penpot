@@ -39,3 +39,19 @@
 (t/deftest match-context-params-no-context
   (let [match {:query-params {:token "some-token"}}]
     (t/is (nil? (rt/match->context-params match)))))
+
+(t/deftest match-context-params-project-link-without-team
+  ;; Without a team-id the raw map keeps a nil team-id; the nil is dropped
+  ;; later by the query-string serialization, not here.
+  (let [match {:query-params {:project-id "project-1"}}]
+    (t/is (= {:team-id nil
+              :project-id "project-1"}
+             (rt/match->context-params match)))))
+
+(t/deftest match-context-params-file-beats-project-and-team
+  ;; With file, project and team ids present, only the file-id is mirrored.
+  (let [match {:query-params {:team-id "team-1"
+                              :project-id "project-1"
+                              :file-id "file-1"}}]
+    (t/is (= {:file-id "file-1"}
+             (rt/match->context-params match)))))

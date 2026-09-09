@@ -36,6 +36,14 @@
     "file-data-fragment"
     "organization"})
 
+(defn- public-bucket?
+  [bucket]
+  (or (contains? public-buckets bucket)
+      ;; Dashboard file thumbnails become public when link previews
+      ;; are enabled, so link preview crawlers can fetch them.
+      (and (= "file-thumbnail" bucket)
+           (contains? cf/flags :link-preview))))
+
 (defn get-id
   [{:keys [path-params]}]
   (or (some-> path-params :id d/parse-uuid)
@@ -57,7 +65,7 @@
   (let [sig-max-age (or signature-max-age default-signature-max-age)
         cch-max-age (or cache-max-age default-cache-max-age)
         bucket  (-> obj meta :bucket)
-        public? (contains? public-buckets bucket)
+        public? (public-bucket? bucket)
         ;; The disposition is also signed into the presigned url: this
         ;; response is a redirect, so the header below applies to the
         ;; redirect itself and not to the bytes the client then fetches
@@ -85,7 +93,7 @@
         headers (cond-> {"x-accel-redirect" (:path purl)
                          "content-type" (:content-type mdata)
                          "cache-control" (str "max-age=" (inst-ms cch-max-age))}
-                  (not (contains? public-buckets bucket))
+                  (not (public-bucket? bucket))
                   (assoc "content-disposition" "attachment"))]
     {::yres/status 204
      ::yres/headers headers}))
@@ -97,14 +105,6 @@
   (case backend
     (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
     (:fs :assets-fs) (serve-object-from-fs cfg obj)))
-
-(defn- public-bucket?
-  [bucket]
-  (or (contains? public-buckets bucket)
-      ;; Dashboard file thumbnails become public when link unfurling
-      ;; is enabled, so link preview crawlers can fetch them.
-      (and (= "file-thumbnail" bucket)
-           (contains? cf/flags :link-unfurl))))
 
 (defn- requires-auth?
   "Check if the storage object requires authentication based on its bucket."

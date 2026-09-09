@@ -190,7 +190,7 @@
     ;; Enables serving link preview (Open Graph) metadata for shared
     ;; links; exposes file names and dashboard thumbnails to anyone
     ;; that knows the file id.
-    :link-unfurl})
+    :link-preview})
 
 (def all-flags
   (set/union email login varia))
@@ -225,8 +225,7 @@
    :enable-available-viewer-wasm
    :enable-background-blur
    :enable-stroke-path
-   :enable-token-combobox
-   :enable-link-unfurl])
+   :enable-token-combobox])
 
 (defn parse
   [& flags]

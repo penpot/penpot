@@ -17,11 +17,11 @@
    [app.http.awsns :as-alias awsns]
    [app.http.debug :as-alias debug]
    [app.http.errors :as errors]
+   [app.http.link-preview :as-alias link-preview]
    [app.http.management :as mgmt]
    [app.http.middleware :as mw]
    [app.http.security :as sec]
    [app.http.session :as session]
-   [app.http.unfurl :as-alias unfurl]
    [app.http.websocket :as-alias ws]
    [app.main :as-alias main]
    [app.metrics :as mtx]
@@ -150,7 +150,7 @@
    [::rpc/routes schema:routes]
    [::oidc/routes schema:routes]
    [::assets/routes schema:routes]
-   [::unfurl/routes schema:routes]
+   [::link-preview/routes schema:routes]
    [::debug/routes schema:routes]
    [::mtx/routes schema:routes]
    [::awsns/routes schema:routes]
@@ -179,7 +179,7 @@
 
      (::mtx/routes cfg)
      (::assets/routes cfg)
-     (::unfurl/routes cfg)
+     (::link-preview/routes cfg)
      (::debug/routes cfg)
 
      ["/webhooks"

@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.http.unfurl
-  "Link unfurl (Open Graph metadata) related handlers.
+(ns app.http.link-preview
+  "Link preview (Open Graph metadata) related handlers.
 
   Serves a minimal HTML page with Open Graph metadata used by link
   preview crawlers (Slack, Discord, Twitter, ...). The reverse proxy
@@ -44,7 +44,7 @@
   (str (cf/get :public-uri) "/images/penpot-link-preview.png"))
 
 (defn- get-file-context
-  "Return the unfurl context for a file link: the file name as title
+  "Return the link preview context for a file link: the file name as title
   and, when available, the last dashboard thumbnail as image."
   [pool file-id]
   (when-let [{:keys [name media-id]} (db/exec-one! pool [sql:get-file file-id])]
@@ -54,24 +54,28 @@
 
 (defn- get-context
   [pool params]
-  (let [file-id    (some-> (:file-id params) d/parse-uuid)
-        project-id (some-> (:project-id params) d/parse-uuid)
+  (let [project-id (some-> (:project-id params) d/parse-uuid)
         team-id    (some-> (:team-id params) d/parse-uuid)]
-    (cond
-      (some? file-id)    (get-file-context pool file-id)
-      (some? project-id) (assoc default-context :title "Project | Penpot")
-      (some? team-id)    (assoc default-context :title "Team dashboard | Penpot"))))
+    ;; A present file-id is decisive: file links never fall through to the
+    ;; project/team card, even when the value is malformed or unknown (both
+    ;; yield nil and the handler falls back to the default context).
+    (if (contains? params :file-id)
+      (when-some [file-id (d/parse-uuid (:file-id params))]
+        (get-file-context pool file-id))
+      (cond
+        (some? project-id) (assoc default-context :title "Project | Penpot")
+        (some? team-id)    (assoc default-context :title "Team dashboard | Penpot")))))
 
 (defn- handler
   [{:keys [::db/pool]} request]
-  (let [context (when (contains? cf/flags :link-unfurl)
+  (let [context (when (contains? cf/flags :link-preview)
                   (get-context pool (:query-params request)))
         context (-> (or context default-context)
                     (update :image #(or % (resolve-default-image-uri))))]
     {::yres/status 200
      ::yres/headers {"content-type" "text/html; charset=utf-8"
                      "cache-control" "no-store, no-cache, max-age=0"}
-     ::yres/body (-> (io/resource "app/templates/unfurl.tmpl")
+     ::yres/body (-> (io/resource "app/templates/link-preview.tmpl")
                      (tmpl/render context))}))
 
 ;; --- Initialization
@@ -82,4 +86,5 @@
 
 (defmethod ig/init-key ::routes
   [_ cfg]
-  ["/unfurl" {:handler (partial handler cfg)}])
+  ["/link-preview" {:handler (partial handler cfg)
+                    :allowed-methods #{:get :head}}])

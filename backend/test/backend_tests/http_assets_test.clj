@@ -158,9 +158,9 @@
 ;; Tests: objects-handler — non-public buckets (auth required)
 ;; ----------------------------------------------------------------
 
-(t/deftest objects-handler-file-thumbnail-bucket-link-unfurl-flag
+(t/deftest objects-handler-file-thumbnail-bucket-link-preview-flag
   ;; Objects in the file-thumbnail bucket are public only when the
-  ;; link-unfurl flag is enabled.
+  ;; link-preview flag is enabled.
   (let [storage  (-> (:app.storage/storage th/*system*)
                      (configure-storage-backend))
         cfg      (make-handler-cfg storage)
@@ -168,13 +168,13 @@
         request  {:path-params {:id (str (:id object))}}]
 
     (t/testing "flag enabled"
-      (with-redefs [cf/flags (conj cf/flags :link-unfurl)]
+      (with-redefs [cf/flags (conj cf/flags :link-preview)]
         (let [response (assets/objects-handler cfg request)]
           (t/is (not= 401 (::yres/status response)))
           (t/is (not= 404 (::yres/status response))))))
 
     (t/testing "flag disabled"
-      (with-redefs [cf/flags (disj cf/flags :link-unfurl)]
+      (with-redefs [cf/flags (disj cf/flags :link-preview)]
         (let [response (assets/objects-handler cfg request)]
           (t/is (= 401 (::yres/status response))))))))
 
@@ -240,8 +240,8 @@
         profile  (th/create-profile* 1)]
 
     ;; NOTE: file-thumbnail is not included here because it is public
-    ;; when the link-unfurl flag is enabled; see
-    ;; objects-handler-file-thumbnail-bucket-link-unfurl-flag.
+    ;; when the link-preview flag is enabled; see
+    ;; objects-handler-file-thumbnail-bucket-link-preview-flag.
     (doseq [bucket ["profile"
                     "tempfile"
                     "file-data"

@@ -70,7 +70,7 @@
 
   They are mirrored on the query string (before the fragment) because
   the fragment is never sent to the server; this way shared links
-  carry enough context for rendering link preview (unfurl) metadata."
+  carry enough context for rendering link preview metadata."
   [match]
   (let [path-params  (dm/get-in match [:params :path])
         query-params (get match :query-params)
@@ -111,7 +111,11 @@
             href  (dm/str (.-pathname globals/location)
                           (if (some? query) (dm/str "?" query) "")
                           (.-hash globals/location))]
-        (.replaceState js/history nil "" href)))))
+        ;; The pre-fragment query string is owned by this mirroring: skip
+        ;; the write when nothing changed to avoid URL churn and dropping
+        ;; unrelated params set by other code.
+        (when (not= href (.-href globals/location))
+          (.replaceState js/history nil "" href))))))
 
 (defn navigate
   [id params & {:keys [::replace ::new-window] :as options}]
