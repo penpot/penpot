@@ -530,22 +530,13 @@ fn render_text_on_canvas(
     }
 }
 
-/// Paints text fill for vector SVG export. Skips `save_layer` wrappers that
-/// `SkSVGDevice` would drop.
-pub fn paint_text_fill(canvas: &Canvas, shape: &Shape) {
-    let text_content = shape.get_text_content();
-    let text_content = text_content.new_bounds(shape.selrect());
-    let max_layers = text_content.max_fill_layers();
-    if max_layers == 0 {
-        return;
-    }
-
-    // Each fill layer is painted separately so SkSVGDevice can emit `fill`
-    // attributes (merged shaders are dropped). Bottom layer first.
-    for layer in 0..max_layers {
-        let mut paragraph_builders = text_content.paragraph_builder_group_for_fill_layer(layer);
-        paint_text_with_emoji_overlay(canvas, shape, &mut paragraph_builders, false);
-    }
+/// Paints pre-built paragraph groups (SVG export path for selective fill layers).
+pub fn paint_text_paragraphs(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+) {
+    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
 }
 
 /// Lays out and paints paragraph builders without any layer management.

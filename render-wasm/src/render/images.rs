@@ -82,6 +82,9 @@ pub struct ImageStore {
     tick: Cell<u64>,
     /// gpu-only
     context: Option<Box<DirectContext>>,
+    /// Source URL registered when the image was fetched (SVG export references
+    /// this in linked `<image>` elements).
+    source_urls: HashMap<Uuid, String>,
 }
 
 /// Creates a Skia image from an existing WebGL texture.
@@ -227,6 +230,7 @@ impl ImageStore {
             total_bytes: 0,
             tick: Cell::new(0),
             context: Some(Box::new(context.clone())),
+            source_urls: HashMap::new(),
         }
     }
 
@@ -239,6 +243,7 @@ impl ImageStore {
             total_bytes: 0,
             tick: Cell::new(0),
             context: None,
+            source_urls: HashMap::new(),
         }
     }
 
@@ -475,5 +480,15 @@ impl ImageStore {
         } else {
             None
         }
+    }
+
+    pub(crate) fn set_source_url(&mut self, id: Uuid, url: String) {
+        if !url.is_empty() {
+            self.source_urls.insert(id, url);
+        }
+    }
+
+    pub(crate) fn source_url(&self, id: &Uuid) -> Option<&str> {
+        self.source_urls.get(id).map(String::as_str)
     }
 }

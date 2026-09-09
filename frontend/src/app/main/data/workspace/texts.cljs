@@ -124,7 +124,8 @@
 (defn- await-font-faces
   "Waits for missing WASM faces, then resizes the affected texts."
   [stream face-keys ids]
-  (let [resize-stream (->> (rx/from ids) (rx/map dwwt/resize-wasm-text))]
+  (let [resize-opts   {:stack-undo? true :undo-transation? false}
+        resize-stream (->> (rx/from ids) (rx/map #(dwwt/resize-wasm-text % resize-opts)))]
     (if (empty? face-keys)
       resize-stream
       (->> (rx/merge wasm.fonts/font-stored-stream
