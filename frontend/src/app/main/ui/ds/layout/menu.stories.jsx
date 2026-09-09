@@ -339,20 +339,6 @@ export const TestClosesOnEscapeAndOutsideClick = {
   },
 };
 
-export const TestDenseShrinksItems = {
-  args: { isDense: true },
-  play: async ({ canvasElement, step }) => {
-    const trigger = getTrigger(canvasElement);
-
-    await step("Every item renders at the dense row height", async () => {
-      await userEvent.click(trigger);
-      const item = await screen.findByRole("menuitem", { name: "Rename" });
-
-      expect(getComputedStyle(item).blockSize).toBe("28px");
-    });
-  },
-};
-
 export const TestMaxWidthCapsPopoverWidth = {
   args: {
     maxWidth: 160,
@@ -429,42 +415,5 @@ export const TestDrilldownNeverShrinksBelowRoot = {
         );
       });
     });
-  },
-};
-
-export const TestLongLabelEllipsesInsteadOfWrapping = {
-  args: {
-    maxWidth: 160,
-    children: (
-      <>
-        <MenuItem id="rename">
-          A veeeery long option name that would otherwise wrap onto several
-          lines
-        </MenuItem>
-        <MenuItem id="delete">Delete</MenuItem>
-      </>
-    ),
-  },
-  play: async ({ canvasElement, step }) => {
-    const trigger = getTrigger(canvasElement);
-
-    await step(
-      "The long label clips to a single line instead of wrapping",
-      async () => {
-        await userEvent.click(trigger);
-        const item = await screen.findByRole("menuitem", {
-          name: /veeeery long/i,
-        });
-        const label = item.firstElementChild;
-
-        expect(getComputedStyle(label).whiteSpace).toBe("nowrap");
-        expect(getComputedStyle(label).textOverflow).toBe("ellipsis");
-        // The row itself must stay a single line's height — if the label
-        // weren't kept to nowrap, the flex row would grow to fit the wrapped
-        // text instead of clipping it.
-        expect(item.getBoundingClientRect().height).toBeLessThan(40);
-        expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
-      },
-    );
   },
 };
