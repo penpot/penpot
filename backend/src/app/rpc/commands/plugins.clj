@@ -82,7 +82,11 @@
                     (update :data dissoc plugin-id-str))
         props   (assoc (:props profile) :plugins plugins)]
     ;; Removal only shrinks props, so this never raises; kept for uniformity
-    ;; so every write path to profile.props goes through the size check.
+    ;; so the user-facing profile.props RPC writes (update-profile-props,
+    ;; update-profile-notifications, add/remove-profile-plugin) all go
+    ;; through the size check. System writers (OIDC login merge,
+    ;; management subscription update) are exempt: they write fixed-key,
+    ;; non-accumulating shapes.
     (profile/check-props-size! (:props profile) props)
     (db/update! conn :profile
                 {:props (db/tjson props)}

@@ -98,6 +98,30 @@
           (done')))
       done)))
 
+(t/deftest install-validation-error-keeps-original-position
+  (t/async done
+    (mock/with-mocks
+      {rp/cmd! (record-cmd-mock
+                (fn [_ params]
+                  (if (= "v2" (get-in params [:plugin :name]))
+                    (rx/throw (ex-info "rejected" {:type :validation}))
+                    (rx/of {:ok true}))))}
+      (fn [done']
+        (let [own #{"reg-pos-a" "reg-pos-b" "reg-pos-c"}
+              v1  {:plugin-id "reg-pos-b" :name "v1"}
+              v2  {:plugin-id "reg-pos-b" :name "v2"}]
+          (preg/install-plugin! {:plugin-id "reg-pos-a"})
+          (preg/install-plugin! v1)
+          (preg/install-plugin! {:plugin-id "reg-pos-c"})
+          (preg/install-plugin! v2)
+          ;; installs prepend, so newest-first; the rejected update
+          ;; must preserve order and restore v1
+          (t/is (= ["reg-pos-c" "reg-pos-b" "reg-pos-a"]
+                   (filterv own (mapv :plugin-id (preg/plugins-list)))))
+          (t/is (= v1 (preg/get-plugin "reg-pos-b")))
+          (done')))
+      done)))
+
 (t/deftest install-persistent-failure-terminates
   (t/async done
     (mock/with-mocks

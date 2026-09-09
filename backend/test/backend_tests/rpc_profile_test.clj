@@ -1405,6 +1405,40 @@
         (t/is (nil? (:error out)))))))
 
 
+(t/deftest update-profile-notifications-rejects-growth-on-oversized-profile
+  ;; The notifications write path goes through the same size check:
+  ;; growing an oversized profile fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-notifications
+                  ::rpc/profile-id (:id profile)
+                  :dashboard-comments :all
+                  :email-comments :all
+                  :email-invites :all}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+(t/deftest update-profile-notifications-allows-steady-on-oversized-profile
+  ;; Same-size notifications write on an oversized profile passes
+  (let [profile (th/create-profile* 1)
+        notifications {:dashboard-comments :all
+                       :email-comments :all
+                       :email-invites :all}
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}
+                 :notifications notifications}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data (merge {::th/type :update-profile-notifications
+                         ::rpc/profile-id (:id profile)}
+                        notifications)
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))))))
+
+
 (t/deftest prepare-register-profile-password-too-short
   (let [data {::th/type :prepare-register-profile
               :email "user@example.com"
