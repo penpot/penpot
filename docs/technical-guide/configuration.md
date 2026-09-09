@@ -660,6 +660,48 @@ PENPOT_INTERNAL_URI: http://penpot-frontend:8080
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
 
+### MCP
+
+The MCP server lets AI agents read and edit Penpot files. It runs as a separate
+`penpot-mcp` container, and the frontend proxies the requests to it. Enable it with
+the corresponding flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-mcp
+```
+
+With the flag enabled, the frontend container uses these variables to locate the MCP
+server:
+
+```bash
+# Frontend
+PENPOT_MCP_URI: http://penpot-mcp:4401
+PENPOT_MCP_URI_WS: http://penpot-mcp:4402
+```
+
+- `PENPOT_MCP_URI`: The URI of the MCP server, used for the streamable HTTP and SSE
+  endpoints.
+- `PENPOT_MCP_URI_WS`: The URI of the MCP server used for the websocket connection.
+
+The defaults match the service name used in the official `docker-compose.yaml`. Change
+them only if your MCP service has a different name or listens on other ports. Both
+variables are ignored when the `enable-mcp` flag is not set.
+
+### Internal resolver
+
+The frontend container resolves the backend, exporter and MCP service names with the
+DNS servers listed in its `/etc/resolv.conf`. If that autodetection does not work for
+your setup, set the resolver explicitly:
+
+```bash
+# Frontend
+PENPOT_INTERNAL_RESOLVER: 127.0.0.11
+```
+
+- `PENPOT_INTERNAL_RESOLVER`: The DNS server nginx uses to resolve the internal service
+  names. Defaults to the nameservers found in `/etc/resolv.conf`. `127.0.0.11` is the
+  embedded Docker DNS server; use the address of your own resolver on other setups.
+
 ## Other flags
 
 There are other flags that are useful for a more customized Penpot experience. This section has the list of the flags meant
@@ -670,6 +712,9 @@ for the user:
 - <code class="language-bash">enable-backend-api-doc</code>: Enables the <code class="language-bash">/api/doc</code>
   endpoint that lists all rpc methods available on backend
 - <code class="language-bash">disable-login-with-password</code>: allows disable password based login form
+- <code class="language-bash">enable-mcp</code>: Enables the MCP server integration, so AI agents can
+  read and edit Penpot files. It also makes the frontend proxy the MCP endpoints to the
+  <code class="language-bash">penpot-mcp</code> service. Check the [MCP section][8] to get more detail.
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
   tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
 
@@ -693,3 +738,4 @@ __Since version 2.0.0__
 [5]: /technical-guide/getting-started/docker#using-the-cli-for-administrative-tasks
 [6]: /technical-guide/integration/#webhooks
 [7]: /technical-guide/integration/#access-tokens
+[8]: /mcp/
