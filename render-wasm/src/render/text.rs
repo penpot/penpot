@@ -3,15 +3,16 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
-        ParagraphLayout, Stroke, StrokeKind, TextContent, VerticalAlign,
+        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, Paragraph as TextParagraph,
+        ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
+        TextDecorationSegment, VerticalAlign,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
-    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration, TextStyle},
+    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration},
     Canvas, ImageFilter, Paint,
 };
 
@@ -374,82 +375,19 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
     };
 
     let mut y_accum = base_y + vertical_offset;
-    for group in paragraphs.iter() {
+    for (index, group) in paragraphs.iter().enumerate() {
         let Some(paragraph) = group.first() else {
             continue;
         };
         paragraph.paint(canvas, (x, y_accum));
         if draw_decorations {
-            paint_decorations_for_paragraph(canvas, paragraph, x, y_accum);
+            if let Some(text_paragraph) = text_content.paragraphs().get(index) {
+                for deco in decoration_segments(paragraph, text_paragraph, x, y_accum) {
+                    draw_decoration_segment(canvas, &deco);
+                }
+            }
         }
         y_accum += paragraph.height();
-    }
-}
-
-fn paint_decorations_for_paragraph(
-    canvas: &Canvas,
-    paragraph: &skia::textlayout::Paragraph,
-    x: f32,
-    y_accum: f32,
-) {
-    let line_metrics = paragraph.get_line_metrics();
-    for line in &line_metrics {
-        let style_metrics: Vec<_> = line
-            .get_style_metrics(line.start_index..line.end_index)
-            .into_iter()
-            .collect();
-        let line_baseline = y_accum + line.baseline as f32;
-        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-            calculate_decoration_metrics(&style_metrics, line_baseline);
-        for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-            let text_style = &style_metric.text_style;
-            let style_end = style_metrics
-                .get(i + 1)
-                .map(|(next_i, _)| *next_i)
-                .unwrap_or(line.end_index);
-            let seg_start = (*style_start).max(line.start_index);
-            let seg_end = style_end.min(line.end_index);
-            if seg_start >= seg_end {
-                continue;
-            }
-            let rects = paragraph.get_rects_for_range(
-                seg_start..seg_end,
-                skia::textlayout::RectHeightStyle::Tight,
-                skia::textlayout::RectWidthStyle::Tight,
-            );
-            let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                let skia_x_offset = rects
-                    .first()
-                    .map(|r| r.rect.left - line.left as f32)
-                    .unwrap_or(0.0);
-                (total_width, skia_x_offset)
-            } else {
-                (0.0, 0.0)
-            };
-            let text_left = x + line.left as f32 + actual_x_offset;
-            let text_width = segment_width;
-            if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                draw_text_decorations(
-                    canvas,
-                    text_style,
-                    Some(underline_y.unwrap_or(line_baseline)),
-                    max_underline_thickness,
-                    text_left,
-                    text_width,
-                );
-            }
-            if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                draw_text_decorations(
-                    canvas,
-                    text_style,
-                    Some(strike_y.unwrap_or(line_baseline)),
-                    max_strike_thickness,
-                    text_left,
-                    text_width,
-                );
-            }
-        }
     }
 }
 
@@ -584,14 +522,7 @@ fn paint_text_with_emoji_overlay(
         }
 
         for deco in &para.decorations {
-            draw_text_decorations(
-                canvas,
-                &deco.text_style,
-                Some(deco.y),
-                deco.thickness,
-                deco.left,
-                deco.width,
-            );
+            draw_decoration_segment(canvas, deco);
         }
     }
 }
@@ -811,17 +742,9 @@ fn paint_emoji_opaque(
         .paint(canvas, (emoji_para.x, emoji_para.y));
 
     for deco in &deco_para.decorations {
-        draw_text_decorations(
-            canvas,
-            &deco.text_style,
-            Some(deco.y),
-            deco.thickness,
-            deco.left,
-            deco.width,
-        );
-        let r = decoration_rect(deco.y, deco.thickness, deco.left, deco.width);
+        draw_decoration_segment(canvas, deco);
         for (kind, paint) in stroke_decos {
-            draw_decoration_stroke(canvas, *kind, paint, r);
+            draw_decoration_stroke(canvas, *kind, paint, deco.rect());
         }
     }
     canvas.restore();
@@ -1134,40 +1057,128 @@ pub fn render_outer_stroke(
     )
 }
 
-fn decoration_rect(y: f32, thickness: f32, text_left: f32, text_width: f32) -> skia_safe::Rect {
-    skia_safe::Rect::new(
-        text_left,
-        y - thickness / 2.0,
-        text_left + text_width,
-        y + thickness / 2.0,
-    )
+fn draw_decoration_segment(canvas: &Canvas, deco: &TextDecorationSegment) {
+    let mut decoration_paint = deco.text_style.foreground();
+    decoration_paint.set_anti_alias(true);
+    canvas.draw_rect(deco.rect(), &decoration_paint);
 }
 
-fn draw_text_decorations(
-    canvas: &Canvas,
-    text_style: &TextStyle,
-    y: Option<f32>,
-    thickness: f32,
-    text_left: f32,
-    text_width: f32,
-) {
-    if let Some(y) = y {
-        let r = decoration_rect(y, thickness, text_left, text_width);
-        let mut decoration_paint = text_style.foreground();
-        decoration_paint.set_anti_alias(true);
-        canvas.draw_rect(r, &decoration_paint);
+/// One decorated span clipped to a line: UTF-16 range, decoration and the
+/// Skia style run it falls in (paint + font metrics).
+type LineDecoration<'a> = (usize, usize, TextDecoration, &'a StyleMetrics<'a>);
+
+/// UTF-16 ranges of the spans that ask for a decoration we draw.
+fn decorated_span_ranges(text_paragraph: &TextParagraph) -> Vec<(usize, usize, TextDecoration)> {
+    let mut ranges = Vec::new();
+    let mut offset = 0;
+    for span in text_paragraph.children() {
+        let len = span.apply_text_transform().encode_utf16().count();
+        match span.text_decoration {
+            Some(kind)
+                if kind == TextDecoration::UNDERLINE || kind == TextDecoration::LINE_THROUGH =>
+            {
+                ranges.push((offset, offset + len, kind))
+            }
+            _ => {}
+        }
+        offset += len;
     }
+    ranges
 }
 
-pub fn calculate_decoration_metrics(
-    style_metrics: &Vec<(usize, &StyleMetrics)>,
+/// Style run covering `offset`; runs are keyed by their start index.
+fn style_metric_at<'a>(
+    style_metrics: &[(usize, &'a StyleMetrics<'a>)],
+    offset: usize,
+) -> Option<&'a StyleMetrics<'a>> {
+    style_metrics
+        .iter()
+        .rev()
+        .find(|(start, _)| *start <= offset)
+        .map(|(_, metrics)| *metrics)
+}
+
+/// Decoration bars for one laid out paragraph, in shape coordinates.
+///
+/// Segmented by the model's spans, so which spans get a bar never depends on
+/// how Skia grouped the line into style runs; the runs only supply the paint
+/// and font metrics covering each segment.
+pub fn decoration_segments(
+    skia_paragraph: &skia::textlayout::Paragraph,
+    text_paragraph: &TextParagraph,
+    x: f32,
+    y_accum: f32,
+) -> Vec<TextDecorationSegment> {
+    let decorated = decorated_span_ranges(text_paragraph);
+    if decorated.is_empty() {
+        return Vec::new();
+    }
+
+    let mut segments = Vec::new();
+    for line in &skia_paragraph.get_line_metrics() {
+        let style_metrics: Vec<_> = line
+            .get_style_metrics(line.start_index..line.end_index)
+            .into_iter()
+            .collect();
+        let line_baseline = y_accum + line.baseline as f32;
+
+        let line_decorations: Vec<LineDecoration<'_>> = decorated
+            .iter()
+            .filter_map(|&(start, end, kind)| {
+                let seg_start = start.max(line.start_index);
+                let seg_end = end.min(line.end_index);
+                if seg_start >= seg_end {
+                    return None;
+                }
+                let metrics = style_metric_at(&style_metrics, seg_start)?;
+                Some((seg_start, seg_end, kind, metrics))
+            })
+            .collect();
+
+        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+            calculate_decoration_metrics(&line_decorations, line_baseline);
+
+        for (seg_start, seg_end, kind, metrics) in line_decorations {
+            let rects = skia_paragraph.get_rects_for_range(
+                seg_start..seg_end,
+                skia::textlayout::RectHeightStyle::Tight,
+                skia::textlayout::RectWidthStyle::Tight,
+            );
+            let (width, x_offset) = match rects.first() {
+                Some(first) => {
+                    let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                    (total_width, first.rect.left - line.left as f32)
+                }
+                None => (0.0, 0.0),
+            };
+            let (y, thickness) = if kind == TextDecoration::LINE_THROUGH {
+                (strike_y, max_strike_thickness)
+            } else {
+                (underline_y, max_underline_thickness)
+            };
+            segments.push(TextDecorationSegment {
+                kind,
+                text_style: (*metrics.text_style).clone(),
+                y: y.unwrap_or(line_baseline),
+                thickness,
+                left: x + line.left as f32 + x_offset,
+                width,
+            });
+        }
+    }
+
+    segments
+}
+
+fn calculate_decoration_metrics(
+    line_decorations: &[LineDecoration<'_>],
     line_baseline: f32,
 ) -> (f32, Option<f32>, f32, Option<f32>) {
     let mut max_underline_thickness: f32 = 0.0;
     let mut underline_y = None;
     let mut max_strike_thickness: f32 = 0.0;
     let mut strike_y = None;
-    for (_style_start, style_metric) in style_metrics.iter() {
+    for (_seg_start, _seg_end, kind, style_metric) in line_decorations.iter() {
         let font_metrics = style_metric.font_metrics;
         let font_size = font_metrics
             .cap_height
@@ -1183,7 +1194,7 @@ pub fn calculate_decoration_metrics(
         let thickness = (font_metrics.underline_thickness().unwrap_or(1.0) * thickness_factor)
             .max(min_thickness);
 
-        if style_metric.text_style.decoration().ty == TextDecoration::UNDERLINE {
+        if *kind == TextDecoration::UNDERLINE {
             // Same gap from baseline to underline as in Chromium
             // (see https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/render_text.cc
             let gap_scaling = raw_font_size * 1.0 / 9.0;
@@ -1192,7 +1203,7 @@ pub fn calculate_decoration_metrics(
             max_underline_thickness = max_underline_thickness.max(thickness);
             underline_y = Some(y);
         }
-        if style_metric.text_style.decoration().ty == TextDecoration::LINE_THROUGH {
+        if *kind == TextDecoration::LINE_THROUGH {
             let y = line_baseline
                 + font_metrics
                     .strikeout_position()
@@ -1234,3 +1245,92 @@ pub fn calculate_decoration_metrics(
 
 //     shadows::render_text_inner_shadows(self, &shape, &paths, antialias);
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{FontFamily, FontStyle, TextAlign, TextDirection, TextSpan, TextTransform};
+    use crate::uuid::Uuid;
+
+    fn span(
+        text: &str,
+        decoration: Option<TextDecoration>,
+        transform: Option<TextTransform>,
+    ) -> TextSpan {
+        TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            decoration,
+            transform,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![],
+        )
+    }
+
+    fn paragraph(spans: Vec<TextSpan>) -> TextParagraph {
+        TextParagraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            spans,
+        )
+    }
+
+    #[test]
+    fn decorated_ranges_follow_spans_not_paint_runs() {
+        let para = paragraph(vec![
+            span("plain ", None, None),
+            span("under", Some(TextDecoration::UNDERLINE), None),
+            span(" plain ", None, None),
+            span("struck", Some(TextDecoration::LINE_THROUGH), None),
+        ]);
+
+        assert_eq!(
+            decorated_span_ranges(&para),
+            vec![
+                (6, 11, TextDecoration::UNDERLINE),
+                (18, 24, TextDecoration::LINE_THROUGH),
+            ]
+        );
+    }
+
+    #[test]
+    fn decorated_ranges_are_utf16_offsets_of_the_transformed_text() {
+        let para = paragraph(vec![
+            span("🎉", None, None),
+            span(
+                "straße",
+                Some(TextDecoration::UNDERLINE),
+                Some(TextTransform::Uppercase),
+            ),
+            span("x", Some(TextDecoration::UNDERLINE), None),
+        ]);
+
+        // The emoji takes two UTF-16 units and `ß` uppercases to `SS`.
+        assert_eq!(
+            decorated_span_ranges(&para),
+            vec![
+                (2, 9, TextDecoration::UNDERLINE),
+                (9, 10, TextDecoration::UNDERLINE),
+            ]
+        );
+    }
+
+    #[test]
+    fn undecorated_paragraphs_have_no_ranges() {
+        let para = paragraph(vec![
+            span("plain", None, None),
+            span("none", Some(TextDecoration::NO_DECORATION), None),
+        ]);
+
+        assert!(decorated_span_ranges(&para).is_empty());
+    }
+}

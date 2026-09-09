@@ -274,6 +274,25 @@ test("Renders a file with different text leaves decoration", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+// Both paragraphs decorate the same spans; the first one paints every span with
+// the same fill, which used to collapse the decorated spans into their
+// neighbours and drop their underline / line-through.
+test("Renders text spans decorated independently of their fill", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-span-decoration.json");
+
+  await workspace.goToWorkspace({
+    id: "1d0f6a4c-0000-8000-8006-000000000001",
+    pageId: "1d0f6a4c-0000-8000-8006-000000000002",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a file with different text shadows combinations", async ({
   page,
 }) => {
