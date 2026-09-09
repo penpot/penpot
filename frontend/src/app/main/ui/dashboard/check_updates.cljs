@@ -33,7 +33,7 @@
   "https://raw.githubusercontent.com/penpot/penpot/refs/heads/staging/CHANGES.md")
 
 (def ^:private changelog-url
-  "https://github.com/penpot/penpot/blob/staging/CHANGES.md")
+  "https://github.com/penpot/penpot/blob/main/CHANGES.md")
 
 (def ^:private release-notes-url
   "https://penpot.app/release-notes")
