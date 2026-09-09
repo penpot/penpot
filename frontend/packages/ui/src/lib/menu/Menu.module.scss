@@ -24,28 +24,15 @@
   flex-direction: column;
   gap: var(--sp-xxs);
   min-inline-size: $sz-160;
-
-  // react-aria sets the Popover's own max-height (inline, on .popover, our
-  // direct parent) to whatever actually fits between the trigger and the
-  // viewport edge. A fixed px value here ignores that entirely: .popover
-  // has no overflow of its own, so once its computed space is smaller
-  // than our fixed cap we'd render straight past it (and off the edge of
-  // the viewport, with nothing left to scroll it back into view). inherit
-  // picks up .popover's own computed max-height instead, so we always
-  // fit — at the cost of no longer capping how tall the menu gets when
-  // there's plenty of room, since react-aria's own value is the only
-  // thing to inherit here.
   max-block-size: inherit;
-  padding: var(--sp-xxs);
+  padding-block: var(--sp-xs);
+  padding-inline: var(--sp-xxs);
   margin: 0;
   border-radius: $br-8;
   border: $b-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
   overflow-y: auto;
   outline: none;
-
-  // Matches the other DS dropdowns (options-dropdown.scss et al.), and the
-  // legacy context-menu-a11y menu this replaces.
   box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
 }
 
@@ -68,8 +55,14 @@
     background-color: var(--color-background-quaternary);
   }
 
+  &[data-focus-visible] {
+    background-color: var(--color-background-tertiary);
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
   &[data-disabled] {
-    color: var(--color-foreground-disabled);
+    color: var(--color-foreground-secondary);
+    background-color: var(--color-background-tertiary);
     cursor: default;
   }
 }
@@ -93,13 +86,11 @@
 
 .subMenuChevron {
   flex: 0 0 auto;
-  inline-size: $sz-16;
-  block-size: $sz-16;
+  inline-size: $sz-12;
+  block-size: $sz-12;
   color: var(--color-foreground-secondary);
 }
 
-// The item a drilldown SubMenu (see Menu.tsx) shows at the top of its
-// content, above a separator, to return to the level it was entered from.
 .backItem {
   color: var(--color-foreground-secondary);
 }
@@ -121,13 +112,6 @@
   background-color: var(--color-background-quaternary);
 }
 
-// Unlike .contextMenuTrigger below, this needs its own real bounding box —
-// the Popover positions itself against this element's DOM rect — so it
-// can't be display: contents. A flex/grid item is blockified and, by
-// default, stretched to fill its container's cross axis regardless of this
-// display value, which would inflate that box past the actual trigger and
-// throw off the Popover's position; place-self: start start opts this out
-// so the box always shrink-wraps its content instead.
 .menuTrigger {
   display: inline-block;
   place-self: start start;
@@ -137,9 +121,6 @@
   display: contents;
 }
 
-// Invisible 0x0 anchor moved to the pointer position on right-click; the
-// Popover positions itself relative to this instead of the trigger's own
-// (possibly large) bounding box.
 .contextMenuAnchor {
   position: fixed;
   inset-block-start: 0;
