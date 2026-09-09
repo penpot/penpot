@@ -235,8 +235,8 @@
    (mark-file-deleted* *system* params))
   ([system {:keys [id] :as params}]
    (db/tx-run! system
-               (fn [{:keys [::db/conn]}]
-                 (#'files/mark-file-deleted system conn {} id)))))
+               (fn [cfg]
+                 (#'files/mark-file-deleted cfg {} id)))))
 
 (defn create-team*
   ([i params] (create-team* *system* i params))

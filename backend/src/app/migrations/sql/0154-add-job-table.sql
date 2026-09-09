@@ -41,11 +41,6 @@ CREATE TABLE job (
     expires_at   timestamptz
 );
 
-ALTER TABLE job
-  ALTER COLUMN name SET STORAGE external,
-  ALTER COLUMN queue SET STORAGE external,
-  ALTER COLUMN props SET STORAGE external;
-
 CREATE INDEX job__dispatcher__idx
     ON job (status, scheduled_at)
     WHERE status IN ('new', 'retry');

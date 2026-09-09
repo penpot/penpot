@@ -1045,7 +1045,7 @@
 ;; --- MUTATION COMMAND: delete-file
 
 (defn- mark-file-deleted
-  [cfg conn team file-id]
+  [{:keys [::db/conn] :as cfg} team file-id]
   (let [delay (ldel/get-deletion-delay team)
         file  (db/update! conn :file
                           {:deleted-at (ct/in-future delay)}
@@ -1057,7 +1057,7 @@
     (db/delete! conn :file-library-rel
                 {:library-file-id file-id})
 
-    (jobs/submit! (assoc cfg ::db/conn conn)
+    (jobs/submit! cfg
                   {::jobs/name :delete-object
                    ::jobs/params {:object :file
                                   :deleted-at (:deleted-at file)
@@ -1075,7 +1075,7 @@
   (let [team (teams/get-team conn
                              :profile-id profile-id
                              :file-id id)
-        file (mark-file-deleted cfg conn team id)
+        file (mark-file-deleted cfg team id)
         msgbus (::mbus/msgbus cfg)]
 
     (mbus/pub! msgbus
