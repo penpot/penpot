@@ -186,15 +186,24 @@ function useCloseOnOutsideClick(
   isOpen: boolean | undefined,
   popoverRef: RefObject<HTMLElement | null>,
   close: () => void,
+  ignoreRef?: RefObject<HTMLElement | null>,
 ) {
   useEffect(() => {
     if (!isOpen) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!popoverRef.current?.contains(e.target as Node)) close();
+      const target = e.target as Node;
+      // A root Popover wraps its own content in a display:contents div and
+      // portals every SubmenuTrigger's nested popover into that same div, so
+      // a flyout submenu is a *sibling* of this popover, not a descendant.
+      // Testing the parent instead treats the whole popover group as inside.
+      const group = popoverRef.current?.parentElement ?? popoverRef.current;
+      if (group?.contains(target)) return;
+      if (ignoreRef?.current?.contains(target)) return;
+      close();
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [isOpen, popoverRef, close]);
+  }, [isOpen, popoverRef, close, ignoreRef]);
 }
 
 interface MenuProps {
@@ -257,7 +266,10 @@ export function Menu({
 
   const close = useCallback(() => handleOpenChange(false), [handleOpenChange]);
   useSoloOpen(isOpen, close);
-  useCloseOnOutsideClick(isOpen, popoverRef, close);
+  // The trigger is excluded: it owns the open state, so closing here on the
+  // pointerdown of a click meant to toggle the menu shut would let that
+  // click's own handler read the already-false state and reopen it.
+  useCloseOnOutsideClick(isOpen, popoverRef, close, triggerRef);
 
   return (
     <MenuCloseContext.Provider value={closeController}>
