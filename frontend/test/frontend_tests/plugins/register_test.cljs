@@ -79,6 +79,39 @@
           (done')))
       done)))
 
+(t/deftest install-validation-error-restores-previous-version
+  (t/async done
+    (mock/with-mocks
+      {rp/cmd! (record-cmd-mock
+                (fn [_ params]
+                  (if (= "v2" (get-in params [:plugin :name]))
+                    (rx/throw (ex-info "rejected" {:type :validation}))
+                    (rx/of {:ok true}))))}
+      (fn [done']
+        (let [v1 {:plugin-id "reg-install-prev" :name "v1"}
+              v2 {:plugin-id "reg-install-prev" :name "v2"}]
+          (preg/install-plugin! v1)
+          (preg/install-plugin! v2)
+          (t/is (= 2 (count @mock/rpc-calls)))
+          (t/is (= v1 (preg/get-plugin "reg-install-prev"))
+                "the server-kept version is restored, not dropped")
+          (done')))
+      done)))
+
+(t/deftest install-persistent-failure-terminates
+  (t/async done
+    (mock/with-mocks
+      {rp/cmd! (record-cmd-mock
+                (fn [_ _] (rx/throw (ex-info "boom" {:type :other}))))}
+      (fn [done']
+        (let [plugin {:plugin-id "reg-install-hang"}]
+          (preg/install-plugin! plugin)
+          (t/is (= [:add-profile-plugin :remove-profile-plugin] (cmds))
+                "one-shot rollback: no further calls")
+          (t/is (nil? (preg/get-plugin "reg-install-hang")))
+          (done')))
+      done)))
+
 (t/deftest install-non-validation-error-rolls-back-via-rpc
   (t/async done
     (mock/with-mocks
@@ -170,5 +203,45 @@
           (preg/remove-plugin! plugin)
           (t/is (= [:add-profile-plugin :remove-profile-plugin :add-profile-plugin] (cmds)))
           (t/is (= plugin (preg/get-plugin "reg-remove-rollback")))
+          (done')))
+      done)))
+
+(t/deftest remove-persistent-failure-terminates
+  (t/async done
+    (mock/with-mocks
+      {rp/cmd! (record-cmd-mock
+                (fn [cmd _]
+                  (if (= cmd :add-profile-plugin)
+                    (rx/of {:ok true})
+                    (rx/throw (ex-info "boom" {:type :other})))))}
+      (fn [done']
+        (let [plugin {:plugin-id "reg-remove-hang"}]
+          (preg/install-plugin! plugin)
+          (preg/remove-plugin! plugin)
+          (t/is (= [:add-profile-plugin :remove-profile-plugin :add-profile-plugin] (cmds))
+                "one-shot rollback: no further calls")
+          (t/is (= plugin (preg/get-plugin "reg-remove-hang")))
+          (done')))
+      done)))
+
+(t/deftest remove-validation-error-keeps-original-position
+  (t/async done
+    (mock/with-mocks
+      {rp/cmd! (record-cmd-mock
+                (fn [cmd _]
+                  (if (= cmd :add-profile-plugin)
+                    (rx/of {:ok true})
+                    (rx/throw (ex-info "rejected" {:type :validation})))))}
+      (fn [done']
+        (let [own    #{"reg-idx-a" "reg-idx-b" "reg-idx-c"}
+              plugin {:plugin-id "reg-idx-b"}]
+          (preg/install-plugin! {:plugin-id "reg-idx-a"})
+          (preg/install-plugin! plugin)
+          (preg/install-plugin! {:plugin-id "reg-idx-c"})
+          (preg/remove-plugin! plugin)
+          ;; installs prepend, so the order is newest-first;
+          ;; the failed removal must preserve it exactly
+          (t/is (= ["reg-idx-c" "reg-idx-b" "reg-idx-a"]
+                   (filterv own (mapv :plugin-id (preg/plugins-list)))))
           (done')))
       done)))
