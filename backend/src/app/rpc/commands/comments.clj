@@ -83,7 +83,7 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [conn profile comment thread file]
+  [{:keys [::db/conn] :as cfg} profile comment thread file]
   (let [team-users        (get-team-users conn (:team-id file))
         comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
@@ -114,7 +114,8 @@
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
           (eml/send!
-           {::eml/conn conn
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-mention
             :public-uri (cf/get :public-uri)
             :to email
@@ -129,7 +130,8 @@
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
           (eml/send!
-           {::eml/conn conn
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-thread
             :public-uri (cf/get :public-uri)
             :to email
@@ -144,7 +146,8 @@
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
           (eml/send!
-           {::eml/conn conn
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-notification
             :public-uri (cf/get :public-uri)
             :to email
@@ -530,7 +533,7 @@
     (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! conn profile comment thread file)
+    (send-comment-emails! cfg profile comment thread file)
 
     (-> thread
         (add-owner profile)
@@ -640,7 +643,7 @@
       ;; Update the current profile status in relation to the current thread
       (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (send-comment-emails! conn profile comment thread file)
+      (send-comment-emails! cfg profile comment thread file)
 
       (vary-meta comment assoc ::audit/props comment))))
 

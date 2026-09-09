@@ -19,13 +19,13 @@
    [app.email :as email]
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
+   [app.jobs :as jobs]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]
    [yetti.request :as yreq]))
 
@@ -276,19 +276,19 @@
                           :else               label)
           dedupe?       (boolean (and batch-key batch-timeout))]
 
-      (wrk/submit! (-> cfg
-                       (assoc ::wrk/task :process-webhook-event)
-                       (assoc ::wrk/queue :webhooks)
-                       (assoc ::wrk/max-retries 0)
-                       (assoc ::wrk/delay (or batch-timeout 0))
-                       (assoc ::wrk/dedupe dedupe?)
-                       (assoc ::wrk/label label)
-                       (assoc ::wrk/params (-> event
-                                               (d/without-qualified)
-                                               (dissoc :source)
-                                               (dissoc :context)
-                                               (dissoc :ip-addr)
-                                               (dissoc :type)))))))
+      (jobs/submit! cfg
+                    {::jobs/name :process-webhook-event
+                     ::jobs/queue :webhooks
+                     ::jobs/max-retries 0
+                     ::jobs/delay (or batch-timeout 0)
+                     ::jobs/dedupe dedupe?
+                     ::jobs/label label
+                     ::jobs/params (-> event
+                                       (d/without-qualified)
+                                       (dissoc :source)
+                                       (dissoc :context)
+                                       (dissoc :ip-addr)
+                                       (dissoc :type))})))
   event)
 
 (defn submit*

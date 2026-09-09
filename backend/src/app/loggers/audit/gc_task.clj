@@ -7,7 +7,9 @@
 (ns app.loggers.audit.gc-task
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.db :as db]
+   [app.jobs :as jobs]
    [integrant.core :as ig]))
 
 (def ^:private sql:clean-archived
@@ -21,11 +23,22 @@
     (l/debug :hint "delete archived audit log entries" :deleted result)
     result))
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "valid database pool expected"))
+(declare execute-audit-log-gc!)
 
-(defmethod ig/init-key ::handler
+(def schema:audit-log-gc-params
+  "Params map (no params needed; config-derived only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::audit-log-gc-job-def
   [_ cfg]
-  (fn [_]
-    (clean-archived! cfg)))
+  {::jobs/name      :audit-log-gc
+   ::jobs/schema    schema:audit-log-gc-params
+   ::jobs/handler   (partial execute-audit-log-gc! cfg)
+   ::jobs/decoder   (sm/decoder schema:audit-log-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-gc-params)})
+
+(defn execute-audit-log-gc!
+  "Plain job handler: delete the archived audit log entries."
+  ([cfg] (execute-audit-log-gc! cfg nil))
+  ([cfg _params]
+   (clean-archived! cfg)))

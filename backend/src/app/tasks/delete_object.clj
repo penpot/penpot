@@ -8,9 +8,11 @@
   "A generic task for object deletion cascade handling"
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.jobs :as jobs]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [integrant.core :as ig]))
@@ -139,6 +141,7 @@
               {::db/return-keys false})
 
   (doseq [team (profile/get-owned-teams conn id)]
+    (jobs/heartbeat! cfg)
     (delete-object cfg (assoc team
                               :object :team
                               :deleted-at deleted-at))))
@@ -147,11 +150,27 @@
   [_cfg props]
   (l/wrn :obj (:object props) :hint "not implementation found"))
 
-(defmethod ig/assert-key ::handler
+(def schema:delete-object-params
+  [:map
+   [:object [:enum :snapshot :team :project :profile :file]]
+   [:deleted-at ::ct/inst]
+   [:id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]])
+
+(defn execute-delete-object!
+  "Plain job handler: run the delete-object multimethod on the provided
+  params inside a single transaction."
+  [cfg params]
+  (db/tx-run! cfg delete-object params))
+
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
-(defmethod ig/init-key ::handler
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (db/tx-run! cfg delete-object props)))
+  {::jobs/name      :delete-object
+   ::jobs/schema    schema:delete-object-params
+   ::jobs/handler   (partial execute-delete-object! cfg)
+   ::jobs/decoder   (sm/decoder schema:delete-object-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:delete-object-params)})

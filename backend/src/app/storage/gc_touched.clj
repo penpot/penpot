@@ -22,8 +22,10 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
@@ -67,13 +69,30 @@
   (-> (db/exec-one! conn [sql:has-file-object-thumbnail-refs id])
       (get :has-refs)))
 
-(def ^:private
-  sql:has-file-thumbnail-refs
+(def ^:private sql:has-file-thumbnail-refs
   "SELECT EXISTS (SELECT 1 FROM file_thumbnail WHERE media_id = ?) AS has_refs")
 
 (defn- has-file-thumbnails-refs?
   [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-file-thumbnail-refs id])
+      (get :has-refs)))
+
+;; Objects in the job-resource bucket are referenced by the resource_id
+;; column of job rows (the unified jobs substrate). A live job row of
+;; any status keeps the object frozen; once no row references it (the
+;; jobs GC deletes expiring/retained rows and marks the object as
+;; touched before/at the same time) the object becomes deletable.
+
+(def ^:private sql:has-job-resource-refs
+  "SELECT EXISTS (SELECT 1 FROM job WHERE resource_id = ?) AS has_refs")
+
+(defn- has-job-resource-refs?
+  "Checks if ANY job row (any status) references the object. Terminal states
+  (completed, failed, cancelled) also freeze the object because the jobs GC
+  hasn't run yet to clean them up. Once the jobs GC deletes the row, the
+  object becomes eligible for storage GC."
+  [conn {:keys [id]}]
+  (-> (db/exec-one! conn [sql:has-job-resource-refs id])
       (get :has-refs)))
 
 (def sql:exists-file-data-refs
@@ -162,6 +181,7 @@
     (= bucket "profile")               (process-objects! conn has-profile-refs? bucket objects)
     (= bucket "file-data")             (process-objects! conn has-file-data-refs? bucket objects)
     (= bucket sto/tempfile-bucket)     (process-objects! conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket sto/job-resource-bucket) (process-objects! conn has-job-resource-refs? bucket objects)
     (= bucket "organization")          (process-objects! conn (constantly false) bucket objects)
     :else
     (ex/raise :type :internal
@@ -200,6 +220,7 @@
          deleted 0]
     (if-let [chunk (get-chunk pool timestamp)]
       (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
+        (jobs/heartbeat! cfg)
         (recur (long (+ freezed nfo))
                (long (+ deleted ndo))))
       {:freeze freezed :delete deleted})))
@@ -208,19 +229,37 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::handler
+(declare execute-storage-gc-touched!)
+
+(defmethod ig/assert-key ::storage-gc-touched-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::storage-gc-touched-job-def
   [k v]
   {k (merge {::min-age (ct/duration {:hours 2})} v)})
 
-(defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props]}]
-    (let [threshold (if (:skip-delay props)
-                      (ct/now)
-                      (ct/minus (ct/now) min-age))]
-      (process-touched! (assoc cfg ::timestamp threshold)))))
+(def schema:storage-gc-touched-params
+  "Optional :skip-delay processes all touched objects immediately,
+  bypassing the min-age threshold (repl-driven deletion cascades)."
+  [:map {:closed true}
+   [:skip-delay {:optional true} :boolean]])
+
+(defmethod ig/init-key ::storage-gc-touched-job-def
+  [_ cfg]
+  {::jobs/name      :storage-gc-touched
+   ::jobs/schema    schema:storage-gc-touched-params
+   ::jobs/handler   (partial execute-storage-gc-touched! cfg)
+   ::jobs/decoder   (sm/decoder schema:storage-gc-touched-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:storage-gc-touched-params)})
+
+(defn execute-storage-gc-touched!
+  "Plain job handler: analyze the touched storage objects and freeze or
+  delete them depending on their references."
+  ([cfg] (execute-storage-gc-touched! cfg {}))
+  ([cfg params]
+   (let [threshold (if (:skip-delay params)
+                     (ct/now)
+                     (ct/minus (ct/now) (::min-age cfg)))]
+     (process-touched! (assoc cfg ::timestamp threshold)))))
 

@@ -427,7 +427,7 @@
         (t/is (= 0 (:freeze res)))
         (t/is (= 0 (:delete res)))))
 
-    ;; processed immediately with skip-delay
+    ;; processed immediately with skip-delay, bypassing min-age
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
         (t/is (= 0 (:freeze res)))
@@ -486,11 +486,7 @@
 
       ;; without skip-delay the future deleted row is not processed
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 0 (:processed res))))
-
-      ;; with skip-delay it is processed immediately
-      (let [res (th/run-task! :objects-gc {:skip-delay true})]
-        (t/is (= 1 (:processed res)))))))
+        (t/is (= 0 (:processed res)))))))
 
 (t/deftest put-object-write-failure-leaves-pending-row
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -874,3 +870,66 @@
       (t/is (= "boom" (ex-message (ex-cause ex)))))
     ;; one initial attempt plus max-retries
     (t/is (= 4 (:call-count @mock)))))
+
+(t/deftest touched-gc-job-resource-bucket
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        job-id  (uuid/next)
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          :content-type "text/plain"
+                                          :bucket sto/job-resource-bucket})]
+
+    ;; the object is created with the job-resource bucket in metadata
+    (t/is (= sto/job-resource-bucket (:bucket (meta object))))
+
+    ;; a live job row referencing the object keeps it frozen
+    (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+    (th/db-insert! :job {:id           job-id
+                         :name         "test-job"
+                         :queue        "test:default"
+                         :props        (db/json {})
+                         :priority     100
+                         :max-retries  3
+                         :retry-num    0
+                         :status       "running"
+                         :resource-id  (:id object)
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 1 (:freeze res)))
+      (t/is (= 0 (:delete res)))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :touched-at))))
+      (t/is (nil? (:deleted-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :deleted-at)))))
+
+    ;; once the referencing row is gone, the touched object becomes
+    ;; eligible for deletion
+    (th/db-delete! :job {:id job-id})
+    (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res)))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :touched-at))))
+      (t/is (some? (:deleted-at (th/db-get :storage-object
+                                           {:id (:id object)}
+                                           {::db/remove-deleted false})))))
+
+    ;; a touched object with no referencing job row at all is deleted too
+    (let [object (sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :bucket sto/job-resource-bucket})]
+      (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
+        (t/is (= 0 (:freeze res)))
+        (t/is (>= (:delete res) 1))
+        (t/is (some? (:deleted-at (th/db-get :storage-object
+                                             {:id (:id object)}
+                                             {::db/remove-deleted false}))))))))

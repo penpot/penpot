@@ -10,14 +10,15 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
-   [app.worker :as wrk]
    [clojure.data.json :as json]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
@@ -60,35 +61,56 @@
       (some->> (:project-id props) (lookup-webhooks-by-project pool))
       (some->> (:file-id props) (lookup-webhooks-by-file pool))))
 
-(defmethod ig/assert-key ::process-event-handler
+(defmethod ig/assert-key ::process-webhook-event-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (http/client? (::http/client params)) "expect valid http client"))
 
-(defmethod ig/init-key ::process-event-handler
+(defn process-event-impl!
+  [cfg props]
+
+  (let [items (lookup-webhooks cfg props)
+        event {:profile-id (:profile-id props)
+               :name "webhook"
+               :type "trigger"
+               :props {:name (get props :name)
+                       :event-id (get props :id)
+                       :total-affected (count items)}}]
+
+    (audit/insert cfg event)
+
+    (when items
+      (l/trc :hint "webhooks found for event" :total (count items))
+      (db/tx-run! cfg (fn [cfg]
+                        (doseq [item items]
+                          (jobs/submit! cfg
+                                        {::jobs/name :run-webhook
+                                         ::jobs/queue :webhooks
+                                         ::jobs/max-retries 3
+                                         ::jobs/params {:event props
+                                                        :config item}})))))))
+
+
+(def schema:process-webhook-event-params
+  "Schema declares the uuid fields the handler consumes so the JSON
+  decoder restores their types after the transit→JSON round-trip."
+  [:map
+   [:id {:optional true} ::sm/uuid]
+   [:profile-id {:optional true} ::sm/uuid]
+   [:name {:optional true} ::sm/text]
+   [:props {:optional true}
+    [:map
+     [:team-id {:optional true} ::sm/uuid]
+     [:project-id {:optional true} ::sm/uuid]
+     [:file-id {:optional true} ::sm/uuid]]]])
+
+(defmethod ig/init-key ::process-webhook-event-job-def
   [_ cfg]
-  (fn [{:keys [props] :as task}]
-
-    (let [items (lookup-webhooks cfg props)
-          event {:profile-id (:profile-id props)
-                 :name "webhook"
-                 :type "trigger"
-                 :props {:name (get props :name)
-                         :event-id (get props :id)
-                         :total-affected (count items)}}]
-
-      (audit/insert cfg event)
-
-      (when items
-        (l/trc :hint "webhooks found for event" :total (count items))
-        (db/tx-run! cfg (fn [cfg]
-                          (doseq [item items]
-                            (wrk/submit! (-> cfg
-                                             (assoc ::wrk/task :run-webhook)
-                                             (assoc ::wrk/queue :webhooks)
-                                             (assoc ::wrk/max-retries 3)
-                                             (assoc ::wrk/params {:event props
-                                                                  :config item}))))))))))
+  {::jobs/name      :process-webhook-event
+   ::jobs/schema    schema:process-webhook-event-params
+   ::jobs/handler   (partial process-event-impl! cfg)
+   ::jobs/decoder   (sm/decoder schema:process-webhook-event-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:process-webhook-event-params)})
 ;; --- RUN
 
 (declare interpret-exception)
@@ -98,17 +120,17 @@
   {:key-fn str/camel
    :indent true})
 
-(defmethod ig/assert-key ::run-webhook-handler
+(defmethod ig/assert-key ::run-webhook-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (http/client? (::http/client params)) "expect valid http client"))
 
-(defmethod ig/expand-key ::run-webhook-handler
+(defmethod ig/expand-key ::run-webhook-job-def
   [k v]
   {k (merge {::max-errors 3} (d/without-nils v))})
 
-(defmethod ig/init-key ::run-webhook-handler
-  [_ {:keys [::db/pool ::max-errors] :as cfg}]
+(defn run-webhook-impl!
+  [{:keys [::db/pool ::max-errors] :as cfg} props]
   (letfn [(update-webhook! [whook err]
             (if err
               (let [sql [(str "update webhook "
@@ -137,39 +159,63 @@
                          :req-data (db/tjson req)
                          :rsp-data (db/tjson rsp)}))]
 
-    (fn [{:keys [props] :as task}]
-      (let [event (:event props)
-            whook (:config props)
+    (let [event (:event props)
+          whook (:config props)
 
-            body  (case (:mtype whook)
-                    "application/json" (json/write-str event json-write-opts)
-                    "application/transit+json" (t/encode-str event)
-                    "application/x-www-form-urlencoded" (uri/map->query-string event))]
+          body  (case (:mtype whook)
+                  "application/json" (json/write-str event json-write-opts)
+                  "application/transit+json" (t/encode-str event)
+                  "application/x-www-form-urlencoded" (uri/map->query-string event))]
 
-        (l/dbg :hint "run webhook"
-               :event-name (:name event)
-               :webhook-id (str (:id whook))
-               :webhook-uri (:uri whook)
-               :webhook-mtype (:mtype whook))
+      (l/dbg :hint "run webhook"
+             :event-name (:name event)
+             :webhook-id (str (:id whook))
+             :webhook-uri (:uri whook)
+             :webhook-mtype (:mtype whook))
 
-        (let [req {:uri (:uri whook)
-                   :headers {"content-type" (:mtype whook)
-                             "user-agent" (str/ffmt "penpot/%" (:main cf/version))}
-                   :timeout (ct/duration "4s")
-                   :method :post
-                   :body body}]
-          (try
-            (let [rsp (http/req cfg req {:response-type :input-stream :sync? true})
-                  err (interpret-response rsp)]
-              (report-delivery! whook req rsp err)
-              (update-webhook! whook err))
-            (catch Throwable cause
-              (let [err (interpret-exception cause)]
-                (report-delivery! whook req nil err)
-                (update-webhook! whook err)
-                (when (= err "unknown")
-                  (l/err :hint "unknown error on webhook request"
-                         :cause cause))))))))))
+      (let [req {:uri (:uri whook)
+                 :headers {"content-type" (:mtype whook)
+                           "user-agent" (str/ffmt "penpot/%" (:main cf/version))}
+                 :timeout (ct/duration "4s")
+                 :method :post
+                 :body body}]
+        (try
+          (let [rsp (http/req cfg req {:response-type :input-stream :sync? true})
+                err (interpret-response rsp)]
+            (report-delivery! whook req rsp err)
+            (update-webhook! whook err))
+          (catch Throwable cause
+            (let [err (interpret-exception cause)]
+              (report-delivery! whook req nil err)
+              (update-webhook! whook err)
+              (when (= err "unknown")
+                (l/err :hint "unknown error on webhook request"
+                       :cause cause)))))))))
+
+
+(def schema:run-webhook-config
+  "Subset of the webhook row consumed by the run-webhook job. The uri
+  stays text on purpose: configs come straight from the database and
+  submit! validates raw params without coercion."
+  [:map
+   [:id ::sm/uuid]
+   [:uri ::sm/text]
+   [:mtype ::sm/text]])
+
+(def schema:run-webhook-params
+  "Schema declares the uuid fields the handler consumes so the JSON
+  decoder restores their types after the transit→JSON round-trip."
+  [:map
+   [:event [:map-of :keyword :any]]
+   [:config schema:run-webhook-config]])
+
+(defmethod ig/init-key ::run-webhook-job-def
+  [_ cfg]
+  {::jobs/name      :run-webhook
+   ::jobs/schema    schema:run-webhook-params
+   ::jobs/handler   (partial run-webhook-impl! cfg)
+   ::jobs/decoder   (sm/decoder schema:run-webhook-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:run-webhook-params)})
 
 (defn interpret-response
   [{:keys [status] :as response}]
