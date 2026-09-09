@@ -1042,6 +1042,17 @@
                  second)
             0)))))
 
+(defn component-swap-nesting-loop?
+  [objects shape library-data component-id]
+  (let [component (ctkl/get-component library-data component-id true)
+        page      (ctf/get-component-page library-data component)
+        root      (ctf/get-component-root library-data component)]
+    (and page
+         root
+         (cfh/components-nesting-loop?
+          (cfh/get-children-with-self (:objects page) (:id root))
+          (cfh/get-parents-with-self objects (:parent-id shape))))))
+
 (defn component-swap
   "Swaps a component with another one"
   [shape file-id id-new-component keep-touched?]

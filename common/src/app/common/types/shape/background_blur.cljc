@@ -12,5 +12,5 @@
   [:map {:title "BackgroundBlur"}
    [:id ::sm/uuid]
    [:type [:enum :background-blur]]
-   [:value ::sm/safe-number]
+   [:value ::sm/non-negative-safe-number]
    [:hidden :boolean]])

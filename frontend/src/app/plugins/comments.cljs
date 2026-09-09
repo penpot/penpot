@@ -61,7 +61,7 @@
        (fn [content]
          (let [profile (:profile @st/state)]
            (cond
-             (or (not (string? content)) (empty? content))
+             (not (dc/valid-comment-content? content))
              (u/not-valid plugin-id :content "Not valid")
 
              (not= (:id profile) (:owner-id data))
@@ -188,7 +188,7 @@
           (not (r/check-permission plugin-id "comment:write"))
           (u/not-valid plugin-id :reply "Plugin doesn't have 'comment:write' permission")
 
-          (or (not (string? content)) (empty? content))
+          (not (dc/valid-comment-content? content))
           (u/not-valid plugin-id :reply "Not valid")
 
           :else

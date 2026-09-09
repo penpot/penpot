@@ -245,17 +245,13 @@
          (fn [event]
            (let [target      (dom/get-target event)
                  value       (dom/get-value target)
-                 has-prefix? (or (str/starts-with? value "http://")
-                                 (str/starts-with? value "https://"))
-                 value       (if has-prefix?
-                               value
-                               (str "http://" value))]
-             (when-not has-prefix?
-               (dom/set-value! target value))
-             (if (dom/valid? target)
+                 normalized  (ctsi/normalize-url value)]
+             (when (and normalized (not= normalized value))
+               (dom/set-value! target normalized))
+             (if normalized
                (do
                  (dom/remove-class! target "error")
-                 (update-interaction index #(ctsi/set-url % value)))
+                 (update-interaction index #(ctsi/set-url % normalized)))
                (dom/add-class! target "error")))))
 
         change-overlay-pos-type

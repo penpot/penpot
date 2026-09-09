@@ -21,6 +21,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def ^:private schema:comment-thread
@@ -66,6 +67,13 @@
 (declare refresh-comment-thread)
 
 (def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
+
+(defn valid-comment-content?
+  [content]
+  (when (string? content)
+    (let [content (str/trim content)]
+      (and (not (str/blank? content))
+           (not= content "\u200b")))))
 
 (defn extract-mentions
   "Retrieves the mentions in the content as an array of uuids"
@@ -738,5 +746,4 @@
         (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id})
              (rx/map (fn [profiles]
                        #(update % :profiles merge (d/index-by :id profiles)))))))))
-
 

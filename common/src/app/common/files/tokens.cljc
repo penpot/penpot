@@ -76,15 +76,20 @@
    ::sm/text])  ;; Leave references or formulas to be checked by the resolver
 
 (def schema:token-value-typography-map
-  [:map
-   [:font-family {:optional true} schema:token-value-font-family]
-   [:font-size {:optional true} schema:token-value-numeric]
-   [:font-weight {:optional true} schema:token-value-font-weight]
-   [:line-height {:optional true} schema:token-value-percent]
-   [:letter-spacing {:optional true} schema:token-value-generic]
-   [:paragraph-spacing {:optional true} schema:token-value-generic]
-   [:text-decoration {:optional true} schema:token-value-generic]
-   [:text-case {:optional true} schema:token-value-generic]])
+  [:and
+   [:map
+    [:font-family {:optional true} schema:token-value-font-family]
+    [:font-size {:optional true} schema:token-value-numeric]
+    [:font-weight {:optional true} schema:token-value-font-weight]
+    [:line-height {:optional true} schema:token-value-percent]
+    [:letter-spacing {:optional true} schema:token-value-generic]
+    [:paragraph-spacing {:optional true} schema:token-value-generic]
+    [:text-decoration {:optional true} schema:token-value-generic]
+    [:text-case {:optional true} schema:token-value-generic]]
+   [:fn (fn [value]
+          (and (seq value)
+               (or (not (contains? value :line-height))
+                   (contains? value :font-size))))]])
 
 (def schema:token-value-typography
   [:or
@@ -92,7 +97,7 @@
    schema:token-value-composite-ref])
 
 (def schema:token-value-shadow-vector
-  [:vector
+  [:vector {:min 1}
    [:map
     [:offset-x :string]
     [:offset-y :string]
@@ -276,6 +281,7 @@
   [tokens-lib set-id]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
+   [:fn #(not (str/blank? (ctob/normalize-set-name %)))]
    [:fn {:error/fn #(tr "errors.token-set-already-exists")}
     (fn [name]
       (or (nil? tokens-lib)
@@ -316,6 +322,7 @@
   [tokens-lib group theme-id]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
+   [:fn #(not (str/blank? %))]
    [:fn {:error/fn #(tr "errors.token-theme-already-exists" (str group "/" (:value %)))}
     (fn [name]
       (or (nil? tokens-lib)

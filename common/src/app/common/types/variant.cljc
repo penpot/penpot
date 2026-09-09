@@ -16,10 +16,12 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def property-max-length 60)
+
 (def schema:variant-property
   [:map
-   [:name :string]
-   [:value :string]])
+   [:name [:string {:max property-max-length}]]
+   [:value [:string {:max property-max-length}]]])
 
 (def schema:variant-component
   "A component that is part of a variant set"
@@ -47,8 +49,28 @@
 
 (def property-prefix "Property ")
 (def property-regex (re-pattern (str property-prefix "(\\d+)")))
-(def property-max-length 60)
 (def value-prefix "Value ")
+
+(defn normalize-property-text
+  [value]
+  (some-> value str/trim))
+
+(defn valid-property-name?
+  [value]
+  (let [value (normalize-property-text value)]
+    (and (string? value)
+         (not (str/blank? value))
+         (<= (count value) property-max-length))))
+
+(defn valid-property-value?
+  [value]
+  (let [value (normalize-property-text value)]
+    (and (string? value)
+         (<= (count value) property-max-length))))
+
+(defn can-remove-property?
+  [properties]
+  (> (count properties) 1))
 
 (defn properties-to-name
   "Transform the properties into a name, with the values separated by comma"
@@ -124,8 +146,8 @@
        (mapv #(str/split % "=" 2))
        (every? #(and (= 2 (count %))
                      (not (str/blank? (first %)))
-                     (< (count (first %)) property-max-length)
-                     (< (count (second %)) property-max-length)))))
+                     (<= (count (first %)) property-max-length)
+                     (<= (count (second %)) property-max-length)))))
 
 (defn find-properties-to-remove
   "Compares two property maps to find which properties should be removed"
