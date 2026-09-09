@@ -78,6 +78,10 @@ module. You can read it from `mem:<MODULE>/core`
   workspaces (root, modules, member packages). Keeps the shared pnpm store
   at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and
   `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
+- `scripts/ci` — CI orchestration script: runs lint, tests, and format
+  checks per module (`frontend backend common render-wasm exporter mcp
+  plugins library`). Logs go to `.ci-logs/`; read the log file on failure.
+  See `mem:scripts/ci`.
 
 # Dependency graph
 

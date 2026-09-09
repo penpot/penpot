@@ -145,6 +145,6 @@ precision while maintaining a strong focus on maintainability and performance.
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure code via nREPL (backend + frontend).
 - `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
 - `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
-- `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `scripts/ci --help`.
+- `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `mem:scripts/ci`.
 - `scripts/gh.py` — Multi-purpose GitHub CLI helper. Subcommands: `issues` (list issues in a milestone), `prs` (fetch PR details), `advisories` (list/inspect security advisories). See `python3 scripts/gh.py --help`.
 

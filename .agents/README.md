@@ -34,7 +34,7 @@ JSON, REPL access, and so on.
 |---|---|---|
 | [`make-a-plan`](skills/make-a-plan/SKILL.md) | Researches the task, writes an implementation plan, asks you the open questions in plain language, and saves the plan to `.agents/plans/`. | "make a plan for the token refresh bug" |
 | [`review-plan`](skills/review-plan/SKILL.md) | Evaluates a plan before anyone writes code: completeness, ordering, risks. Approves it or asks for changes. | "review this plan before we start" |
-| [`implement-plan`](skills/implement-plan/SKILL.md) | Shows you the full flow first — the issue and branch it will create (or the branch it continues on), the execution style, and the task checklist — and, after your go-ahead, executes a ready plan. Default: every task, one commit. On request ("step by step"): one task, one commit, your confirmation between tasks. | "implement the plan" · "step by step, one commit per task" |
+| [`implement-plan`](skills/implement-plan/SKILL.md) | Shows you the full flow first — the issue and branch it will create (or the branch it continues on), the execution style, and the task checklist — and, after your go-ahead, executes a ready plan. Default: every task, one commit. On request ("step by step"): one task, one commit, your confirmation between tasks. On request ("direct"): no issue and no branch, commits on the current branch. | "implement the plan" · "step by step, one commit per task" · "direct, no branch" |
 | [`review-code`](skills/review-code/SKILL.md) | Reviews a diff, branch, or PR and returns findings ranked by impact. | "review my changes before I push" |
 | [`create-pr`](skills/create-pr/SKILL.md) | Opens a pull request for the current branch — with checks on base branch, commits, issue, and push state — or updates an existing PR's title and description. | "open a PR for this branch" |
 | [`resolve-git-conflicts`](skills/resolve-git-conflicts/SKILL.md) | Untangles merge or rebase conflicts: explains both sides, proposes a resolution, applies it after you approve. Never runs `git rebase --continue`. | "resolve these conflicts" |
@@ -65,6 +65,7 @@ JSON, REPL access, and so on.
 | [`nrepl-eval`](skills/nrepl-eval/SKILL.md) | Run Clojure or ClojureScript code in the live REPL sessions (backend and frontend). |
 | [`taiga`](skills/taiga/SKILL.md) | Look up Penpot issues, user stories, and tasks in Taiga. |
 | [`testing`](skills/testing/SKILL.md) | The repo's testing rules and TDD workflow, loaded before writing tests. |
+| [`local-ci`](skills/local-ci/SKILL.md) | Run CI-style lint, test, and format checks for the modules you touched with `scripts/ci`, and read the logs when they fail. |
 | [`security-and-hardening`](skills/security-and-hardening/SKILL.md) | Security checks for code that handles user input, auth, or external services. |
 | [`ste`](skills/ste/SKILL.md) | Rewrites prose in Simplified Technical English. Loads only when you name it. |
 | [`refine-prompt`](skills/refine-prompt/SKILL.md) | Rewrites a rough prompt into a clearer one. Never runs the prompt. |
