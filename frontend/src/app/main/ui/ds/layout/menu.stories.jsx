@@ -6,6 +6,14 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import {
+  userEvent,
+  fireEvent,
+  within,
+  screen,
+  waitFor,
+  expect,
+} from "storybook/test";
 
 const { Menu, MenuItem, MenuSeparator, SubMenu, Button } = Components;
 
@@ -22,7 +30,10 @@ const MenuWrapper = ({ children, ...props }) => {
       isOpen={open}
       onOpenChange={setOpen}
       trigger={
-        <Button variant="secondary" onClick={() => setOpen(true)}>
+        // Toggles rather than always opening, the way a real trigger does
+        // (the dashboard's own is a swap! on its open state) — an open menu
+        // that closes on the trigger's own pointerdown would reopen here.
+        <Button variant="secondary" onClick={() => setOpen((open) => !open)}>
           Open menu
         </Button>
       }
@@ -89,50 +100,49 @@ export const WithDisabledItem = {
   },
 };
 
-export const WithSubMenu = {
-  args: {
-    children: (
-      <>
-        <MenuItem id="rename">Rename</MenuItem>
-        <SubMenu
-          trigger="Share"
-          onAction={(key) => console.log("sub-menu action", key)}
-        >
-          <MenuItem id="share-link">Copy link</MenuItem>
-          <MenuItem id="share-email">Send by email</MenuItem>
+const subMenuActionCalls = [];
+
+const subMenuChildren = (
+  <>
+    <MenuItem id="rename">Rename</MenuItem>
+    <SubMenu trigger="Share" onAction={(key) => subMenuActionCalls.push(key)}>
+      <MenuItem id="share-link">Copy link</MenuItem>
+      <MenuItem id="share-email">Send by email</MenuItem>
+    </SubMenu>
+    <MenuSeparator />
+    <MenuItem id="delete">Delete</MenuItem>
+  </>
+);
+
+const drilldownChildren = (
+  <>
+    <MenuItem id="rename">Rename</MenuItem>
+    <MenuItem id="duplicate">Duplicate</MenuItem>
+    <MenuSeparator />
+    <SubMenu trigger="Move to" variant="drilldown">
+      <MenuItem id="project-a">Project A</MenuItem>
+      <MenuItem id="project-b">Project B</MenuItem>
+      <SubMenu trigger="Other team" variant="drilldown">
+        <SubMenu trigger="Team 1" variant="drilldown">
+          <MenuItem id="team-1-project-a">Project A</MenuItem>
+          <MenuItem id="team-1-project-b">Project B</MenuItem>
         </SubMenu>
-        <MenuSeparator />
-        <MenuItem id="delete">Delete</MenuItem>
-      </>
-    ),
-  },
+        <SubMenu trigger="Team 2" variant="drilldown">
+          <MenuItem id="team-2-project-a">Project A</MenuItem>
+        </SubMenu>
+      </SubMenu>
+    </SubMenu>
+    <MenuSeparator />
+    <MenuItem id="delete">Delete</MenuItem>
+  </>
+);
+
+export const WithSubMenu = {
+  args: { children: subMenuChildren },
 };
 
 export const WithDrilldownSubMenu = {
-  args: {
-    children: (
-      <>
-        <MenuItem id="rename">Rename</MenuItem>
-        <MenuItem id="duplicate">Duplicate</MenuItem>
-        <MenuSeparator />
-        <SubMenu trigger="Move to" variant="drilldown">
-          <MenuItem id="project-a">Project A</MenuItem>
-          <MenuItem id="project-b">Project B</MenuItem>
-          <SubMenu trigger="Other team" variant="drilldown">
-            <SubMenu trigger="Team 1" variant="drilldown">
-              <MenuItem id="team-1-project-a">Project A</MenuItem>
-              <MenuItem id="team-1-project-b">Project B</MenuItem>
-            </SubMenu>
-            <SubMenu trigger="Team 2" variant="drilldown">
-              <MenuItem id="team-2-project-a">Project A</MenuItem>
-            </SubMenu>
-          </SubMenu>
-        </SubMenu>
-        <MenuSeparator />
-        <MenuItem id="delete">Delete</MenuItem>
-      </>
-    ),
-  },
+  args: { children: drilldownChildren },
 };
 
 export const Placement = {
@@ -159,4 +169,148 @@ export const Placement = {
       </div>
     ),
   ],
+};
+
+// The popover portals out of the story root, so the menu itself is only
+// reachable through screen (document-wide); the trigger stays in the canvas.
+const getTrigger = (canvasElement) =>
+  within(canvasElement).getByRole("button", { name: /open menu/i });
+
+const expectMenuClosed = () =>
+  waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+
+export const TestTriggerTogglesMenuClosed = {
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step("Clicking the trigger opens the menu", async () => {
+      await userEvent.click(trigger);
+      await screen.findByRole("menu");
+    });
+
+    // The trigger sits outside the popover, so a naive outside-click dismiss
+    // closes on its pointerdown and lets the click reopen it.
+    await step("Clicking the trigger again closes the menu", async () => {
+      await userEvent.click(trigger);
+      await expectMenuClosed();
+    });
+  },
+};
+
+export const TestFlyoutSubMenuIsNotOutside = {
+  args: { children: subMenuChildren },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+    subMenuActionCalls.length = 0;
+
+    await step("Hovering the submenu trigger opens the flyout", async () => {
+      await userEvent.click(trigger);
+      await userEvent.hover(
+        await screen.findByRole("menuitem", { name: "Share" }),
+      );
+      await screen.findByRole("menuitem", { name: "Copy link" });
+    });
+
+    // react-aria portals a SubmenuTrigger's popover into the root popover's
+    // container, making the flyout a sibling of the root popover rather than
+    // a descendant. Testing containment against the root popover alone
+    // therefore counts a press anywhere in the flyout as an outside click and
+    // dismisses the whole menu.
+    await step("A press inside the flyout does not dismiss", async () => {
+      const [, flyout] = screen.getAllByRole("menu");
+      fireEvent.pointerDown(flyout);
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole("menuitem", { name: "Copy link" }),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    await step("Selecting a flyout item fires its action", async () => {
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "Copy link" }),
+      );
+      await waitFor(() => expect(subMenuActionCalls).toEqual(["share-link"]));
+    });
+
+    await step("Selecting it closes the whole tree", expectMenuClosed);
+  },
+};
+
+export const TestDrilldownNavigatesAndReturns = {
+  args: { children: drilldownChildren },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step("Drilling in replaces the menu's own content", async () => {
+      await userEvent.click(trigger);
+      await userEvent.click(
+        await screen.findByRole("menuitem", { name: "Move to" }),
+      );
+
+      await screen.findByRole("menuitem", { name: "Project A" });
+      expect(
+        screen.queryByRole("menuitem", { name: "Rename" }),
+      ).not.toBeInTheDocument();
+    });
+
+    await step("The back item returns to the level entered from", async () => {
+      await userEvent.click(screen.getByRole("menuitem", { name: /move to/i }));
+
+      await screen.findByRole("menuitem", { name: "Rename" });
+      expect(
+        screen.queryByRole("menuitem", { name: "Project A" }),
+      ).not.toBeInTheDocument();
+    });
+  },
+};
+
+export const TestDrilldownResetsBetweenOpens = {
+  args: { children: drilldownChildren },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step("Drill into a submenu, then close the menu", async () => {
+      await userEvent.click(trigger);
+      await userEvent.click(
+        await screen.findByRole("menuitem", { name: "Move to" }),
+      );
+      await screen.findByRole("menuitem", { name: "Project A" });
+
+      await userEvent.keyboard("{Escape}");
+      await expectMenuClosed();
+    });
+
+    await step("Reopening starts back at the root level", async () => {
+      await userEvent.click(trigger);
+
+      await screen.findByRole("menuitem", { name: "Rename" });
+      expect(
+        screen.queryByRole("menuitem", { name: "Project A" }),
+      ).not.toBeInTheDocument();
+    });
+  },
+};
+
+export const TestClosesOnEscapeAndOutsideClick = {
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step("Escape closes the menu", async () => {
+      await userEvent.click(trigger);
+      await screen.findByRole("menu");
+
+      await userEvent.keyboard("{Escape}");
+      await expectMenuClosed();
+    });
+
+    await step("A click outside closes the menu", async () => {
+      await userEvent.click(trigger);
+      await screen.findByRole("menu");
+
+      await userEvent.click(document.body);
+      await expectMenuClosed();
+    });
+  },
 };
