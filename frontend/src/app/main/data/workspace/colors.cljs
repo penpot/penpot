@@ -341,7 +341,8 @@
    :stroke-width-bottom
    :stroke-width-left
    :stroke-cap-start
-   :stroke-cap-end])
+   :stroke-cap-end
+   :hidden])
 
 ;; FIXME: this function initializes an empty stroke, maybe we can move
 ;; it to common.types

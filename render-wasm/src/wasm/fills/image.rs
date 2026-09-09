@@ -30,6 +30,7 @@ fn touch_shapes_with_image(state: &mut State, image_id: Uuid) {
 }
 
 const FLAG_KEEP_ASPECT_RATIO: u8 = 1 << 0;
+const FLAG_HAS_TRANSFORM: u8 = 1 << 1;
 const IMAGE_IDS_SIZE: usize = 32;
 const IMAGE_HEADER_SIZE: usize = 36; // 32 bytes for IDs + 4 bytes for is_thumbnail flag
 
@@ -43,19 +44,29 @@ pub struct RawImageFillData {
     d: u32,
     opacity: u8,
     flags: u8,
-    // 16-bit padding here, reserved for future use
+    _pad: u16,
     width: i32,
     height: i32,
+    transform_x: f32,
+    transform_y: f32,
+    transform_w: f32,
+    transform_h: f32,
 }
 
 impl From<&ImageFill> for RawImageFillData {
     fn from(image_fill: &ImageFill) -> Self {
         let id = image_fill.id();
         let (a, b, c, d) = crate::utils::uuid_to_u32_quartet(&id);
-        let flags = if image_fill.keep_aspect_ratio() {
+        let mut flags = if image_fill.keep_aspect_ratio() {
             FLAG_KEEP_ASPECT_RATIO
         } else {
             0
+        };
+        let (tx, ty, tw, th) = if let Some(tf) = image_fill.transform() {
+            flags |= FLAG_HAS_TRANSFORM;
+            (tf.x, tf.y, tf.width, tf.height)
+        } else {
+            (0.0, 0.0, 1.0, 1.0)
         };
 
         Self {
@@ -65,8 +76,13 @@ impl From<&ImageFill> for RawImageFillData {
             d,
             opacity: image_fill.opacity(),
             flags,
+            _pad: 0,
             width: image_fill.width(),
             height: image_fill.height(),
+            transform_x: tx,
+            transform_y: ty,
+            transform_w: tw,
+            transform_h: th,
         }
     }
 }
@@ -75,13 +91,24 @@ impl From<RawImageFillData> for ImageFill {
     fn from(value: RawImageFillData) -> Self {
         let id = uuid_from_u32_quartet(value.a, value.b, value.c, value.d);
         let keep_aspect_ratio = value.flags & FLAG_KEEP_ASPECT_RATIO != 0;
+        let transform = if value.flags & FLAG_HAS_TRANSFORM != 0 {
+            Some(crate::shapes::ImageFillTransform {
+                x: value.transform_x,
+                y: value.transform_y,
+                width: value.transform_w,
+                height: value.transform_h,
+            })
+        } else {
+            None
+        };
 
-        Self::new(
+        Self::new_with_transform(
             id,
             value.opacity,
             value.width,
             value.height,
             keep_aspect_ratio,
+            transform,
         )
     }
 }

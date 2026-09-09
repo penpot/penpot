@@ -80,44 +80,44 @@
   ;; Custom dash/gap on a dashed stroke describe stroke geometry, not color;
   ;; a stroke color change must preserve them (issue #11549).
   (t/async
-   done
-   (let [store (ths/setup-store
-                (-> (cthf/sample-file :file1 :page-label :page1)
-                    (cths/add-sample-shape :shape1 :strokes
-                                           [{:stroke-color "#000000"
-                                             :stroke-opacity 1
-                                             :stroke-width 2
-                                             :stroke-style :dashed
-                                             :stroke-dash 4
-                                             :stroke-gap 20}])
-                    (cths/add-sample-shape :shape2 :strokes
-                                           [{:stroke-color "#000000"
-                                             :stroke-opacity 1
-                                             :stroke-width 2
-                                             :stroke-style :dashed}])))
-         events [(dc/change-stroke-color #{(cthi/id :shape1)} {:color "#FABADA"} 0)
-                 (dc/change-stroke-color #{(cthi/id :shape2)} {:color "#FABADA"} 0)]]
-     (ths/run-store
-      store done events
-      (fn [new-state]
-        (let [objects (dsh/lookup-page-objects new-state)
-              shape1' (get objects (cthi/id :shape1))
-              stroke1' (first (:strokes shape1'))
-              shape2' (get objects (cthi/id :shape2))
-              stroke2' (first (:strokes shape2'))]
-          
-          ;; dashed stroke with custom dash/gap keeps them after color change
-          (t/is (some? shape1'))
-          (t/is (= (:stroke-color stroke1') "#FABADA"))
-          (t/is (= (:stroke-style stroke1') :dashed))
-          (t/is (= (:stroke-width stroke1') 2))
-          (t/is (= (:stroke-dash stroke1') 4))
-          (t/is (= (:stroke-gap stroke1') 20))
-          
-          ;; dashed stroke without explicit dash/gap stays unset:
-          ;; no implicit default is materialized into stored data
-          (t/is (some? shape2'))
-          (t/is (= (:stroke-color stroke2') "#FABADA"))
-          (t/is (= (:stroke-style stroke2') :dashed))
-          (t/is (nil? (:stroke-dash stroke2')))
-          (t/is (nil? (:stroke-gap stroke2')))))))))
+    done
+    (let [store (ths/setup-store
+                 (-> (cthf/sample-file :file1 :page-label :page1)
+                     (cths/add-sample-shape :shape1 :strokes
+                                            [{:stroke-color "#000000"
+                                              :stroke-opacity 1
+                                              :stroke-width 2
+                                              :stroke-style :dashed
+                                              :stroke-dash 4
+                                              :stroke-gap 20}])
+                     (cths/add-sample-shape :shape2 :strokes
+                                            [{:stroke-color "#000000"
+                                              :stroke-opacity 1
+                                              :stroke-width 2
+                                              :stroke-style :dashed}])))
+          events [(dc/change-stroke-color #{(cthi/id :shape1)} {:color "#FABADA"} 0)
+                  (dc/change-stroke-color #{(cthi/id :shape2)} {:color "#FABADA"} 0)]]
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [objects (dsh/lookup-page-objects new-state)
+               shape1' (get objects (cthi/id :shape1))
+               stroke1' (first (:strokes shape1'))
+               shape2' (get objects (cthi/id :shape2))
+               stroke2' (first (:strokes shape2'))]
+
+           ;; dashed stroke with custom dash/gap keeps them after color change
+           (t/is (some? shape1'))
+           (t/is (= (:stroke-color stroke1') "#FABADA"))
+           (t/is (= (:stroke-style stroke1') :dashed))
+           (t/is (= (:stroke-width stroke1') 2))
+           (t/is (= (:stroke-dash stroke1') 4))
+           (t/is (= (:stroke-gap stroke1') 20))
+
+           ;; dashed stroke without explicit dash/gap stays unset:
+           ;; no implicit default is materialized into stored data
+           (t/is (some? shape2'))
+           (t/is (= (:stroke-color stroke2') "#FABADA"))
+           (t/is (= (:stroke-style stroke2') :dashed))
+           (t/is (nil? (:stroke-dash stroke2')))
+           (t/is (nil? (:stroke-gap stroke2')))))))))
