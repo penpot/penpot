@@ -1,5 +1,7 @@
 //! GPU-free scene builders and render helpers for SVG export tests.
 
+use std::sync::{Mutex, OnceLock};
+
 use skia_safe as skia;
 
 use crate::globals::TestRenderResourcesGuard;
@@ -242,6 +244,52 @@ pub(super) fn add_solid_text(
     );
 }
 
+/// Solid text with an optional solid stroke (`kind`, width, color).
+pub(super) fn add_text_with_stroke(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    bounds: (f32, f32, f32, f32),
+    text: &str,
+    font_size: f32,
+    fill: skia::Color,
+    stroke: Option<(StrokeKind, f32, skia::Color)>,
+) {
+    add_text_with_fills(
+        pool,
+        id,
+        bounds,
+        text,
+        font_size,
+        vec![Fill::Solid(SolidColor(fill))],
+    );
+    if let Some((kind, width, color)) = stroke {
+        let shape = pool.get_mut(&id).expect("text shape");
+        shape.add_stroke(solid_stroke(kind, width, color));
+    }
+}
+
+/// Solid-filled text with a single image-filled stroke.
+pub(super) fn add_text_with_image_stroke(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    bounds: (f32, f32, f32, f32),
+    text: &str,
+    font_size: f32,
+    fill: skia::Color,
+    stroke: Stroke,
+) {
+    add_text_with_fills(
+        pool,
+        id,
+        bounds,
+        text,
+        font_size,
+        vec![Fill::Solid(SolidColor(fill))],
+    );
+    let shape = pool.get_mut(&id).expect("text shape");
+    shape.add_stroke(stroke);
+}
+
 /// Adds a single-line text shape with the given fill stack (top → bottom).
 pub(super) fn add_text_with_fills(
     pool: &mut ShapesPool,
@@ -419,6 +467,13 @@ pub(super) fn render(pool: &ShapesPool, root: Uuid) -> String {
     render_with(pool, root, |_resources| {})
 }
 
+/// SVG export installs a process-wide resources pointer; serialize tests that
+/// call this so parallel rustc threads do not race / SIGSEGV.
+fn svg_export_test_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
 /// Like [`render`], but lets the test register extra resources (e.g. image URLs)
 /// before export.
 pub(super) fn render_with(
@@ -426,6 +481,9 @@ pub(super) fn render_with(
     root: Uuid,
     setup: impl FnOnce(&mut RenderResources),
 ) -> String {
+    let _serial = svg_export_test_lock()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let mut resources = RenderResources::try_new_headless().expect("headless resources");
     register_test_font_urls(&mut resources.fonts);
     setup(&mut resources);

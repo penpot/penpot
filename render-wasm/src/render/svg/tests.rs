@@ -1106,6 +1106,282 @@ fn exports_solid_text_with_font_face() {
     insta::assert_snapshot!(svg);
 }
 
+/// Center text stroke: stroked `<text>` (SkSVGDevice keeps stroke style).
+#[test]
+fn exports_text_with_solid_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((StrokeKind::Center, 2.0, skia::Color::BLUE)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("stroke-width=\"2\"") && svg.contains("stroke=\"blue\""),
+        "center text stroke must be present: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Semi-transparent center stroke: paint is opaque; alpha is `<g opacity>`.
+#[test]
+fn exports_text_with_alpha_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((
+            StrokeKind::Center,
+            2.0,
+            skia::Color::from_argb(128, 0, 0, 255),
+        )),
+    );
+
+    let svg = render(&pool, id);
+    // 128/255 → Skia emits ~0.5019608, not a rounded 0.5.
+    assert!(
+        svg.contains("opacity=\"0.5"),
+        "alpha center stroke must wrap stroke in <g opacity>: {svg}"
+    );
+    assert!(
+        svg.contains("stroke=\"blue\"") || svg.contains("stroke=\"#0000ff\""),
+        "stroke paint must stay fully opaque: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Inner text stroke: double-width stroke clipped to the glyph silhouette.
+#[test]
+fn exports_text_with_solid_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((StrokeKind::Inner, 2.0, skia::Color::BLUE)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("<clipPath") && svg.contains("clip-path=\"url(#tclip"),
+        "inner text stroke must use a glyph-silhouette clip: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Outer text stroke: double-width stroke under an inverse-glyph luminance mask.
+#[test]
+fn exports_text_with_solid_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((StrokeKind::Outer, 6.0, skia::Color::BLUE)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("<mask") && svg.contains("mask=\"url(#tmask"),
+        "outer text stroke must use an exterior glyph mask: {svg}"
+    );
+    assert!(
+        svg.contains("stroke=\"blue\""),
+        "outer text stroke color must be present: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+fn assert_linked_text_image_stroke(svg: &str) {
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "text image stroke must emit a linked <image>: {svg}"
+    );
+    // SVG clipPath ignores strokes; the silhouette must be a luminance mask.
+    assert!(
+        svg.contains("<mask") && svg.contains("mask=\"url(#txtstrokemask"),
+        "text image stroke must mask to the stroke silhouette: {svg}"
+    );
+    assert!(
+        !svg.contains("data:image"),
+        "must not base64-embed the stroke image: {svg}"
+    );
+}
+
+#[test]
+fn exports_text_with_solid_center_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Center, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_with_solid_inner_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Inner, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    assert!(
+        svg.contains("clip-path=\"url(#tclip"),
+        "inner text image stroke must also clip to glyphs: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_with_solid_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Outer, 10.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    assert!(
+        svg.contains("mask=\"url(#tmask"),
+        "outer image stroke must nest inverse-glyph mask like solid outer: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+/// Regression: outer image stroke must remain aligned when the text is not at
+/// the page origin (page translate in CTM). Uses a luminance mask because SVG
+/// clipPath ignores strokes.
+#[test]
+fn exports_offset_text_with_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (165.0, 604.0, 246.0, 690.0),
+        "Aa",
+        72.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Outer, 10.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    // Cover-map onto selrect (GPU get_fill_shader), not selrect+delta stretch.
+    // ImageFill fixture is 200×100; selrect 81×86 → scale 0.86 → dest 172×86 at x=119.5.
+    assert!(
+        svg.contains(r#"x="119.5""#) && svg.contains(r#"y="604""#),
+        "image dest must cover-map onto selrect: {svg}"
+    );
+    assert!(
+        svg.contains("preserveAspectRatio=\"xMidYMid slice\""),
+        "text stroke images must cover like GPU shaders: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+#[test]
+fn exports_nofill_text_with_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    // No solid fill — only an outer image stroke (matches user report).
+    add_text_with_fills(
+        &mut pool,
+        id,
+        (165.0, 604.0, 246.0, 690.0),
+        "Aa",
+        72.0,
+        vec![],
+    );
+    {
+        let shape = pool.get_mut(&id).expect("text");
+        shape.add_stroke(image_solid_stroke(StrokeKind::Outer, 10.0, image_id));
+    }
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    assert!(
+        svg.contains("mask=\"url(#tmask"),
+        "nofill outer must nest inverse-glyph mask: {svg}"
+    );
+    // No fill <text> in the body — only the masked image.
+    let body = svg.split("</defs>").last().unwrap_or("");
+    assert!(
+        !body.contains("fill=\"#"),
+        "nofill text must not emit a solid fill: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
 #[test]
 fn exports_image_fill_on_text() {
     let mut pool = ShapesPool::new();
