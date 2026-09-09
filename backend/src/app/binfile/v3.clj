@@ -529,89 +529,85 @@
       (let [manifest (json/read reader :key-fn json/read-kebab-key)]
         (decode-manifest manifest)))))
 
-(defn- match-media-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/media/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+(def ^:private file-object-entry-categories
+  "Zip path segments that hold per-file object entries on the
+  `files/<file-id>/<category>/<object-id>.json` shape."
+  #{"media" "colors" "components" "typographies"})
 
-(defn- match-color-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/colors/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+(defn- index-entry-name
+  "Classify a single zip entry by the raw shape of its path and
+  accumulate it on the index.
 
-(defn- match-component-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/components/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+  It replaces the per-file regex matchers with a single
+  classification pass over all entries. The `.json` suffix is matched
+  literally: the previous regexes left the dot unescaped, so crafted
+  paths like `files/<file-id>/tokensXjson` or `objects/x-json` matched
+  by accident; requiring the literal suffix ignores them (legitimate
+  exports always write a literal `.json` suffix). Unknown paths are
+  ignored."
+  [index ^String name entry]
+  (if-not (and name (str/ends-with? name ".json"))
+    index
+    (let [base  (subs name 0 (- (count name) 5))
+          segs  (str/split base "/")
+          seg-n (count segs)
+          seg-1 (nth segs 0 nil)
+          seg-2 (nth segs 1 nil)
+          seg-3 (nth segs 2 nil)]
 
-(defn- match-typography-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/typographies/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+      (if-not (and (pos? seg-n) (every? #(pos? (count %)) segs))
+        index
+        (cond
+          ;; objects/<object-id>.json
+          (and (= seg-n 2) (= seg-1 "objects"))
+          (update index :objects bfc/conj-vec
+                  {:entry entry :id (parse-uuid seg-2)})
 
-(defn- match-tokens-lib-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/tokens.json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry}))))
+          ;; files/<file-id>/tokens.json
+          (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens"))
+          (update-in index [:tokens seg-2] bfc/conj-vec {:entry entry})
 
-(defn- match-thumbnail-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/thumbnails/([^/]+)/([^/]+)/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ tag page-id frame-id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :tag tag
-         :page-id (parse-uuid page-id)
-         :frame-id (parse-uuid frame-id)
-         :file-id file-id}))))
+          ;; files/<file-id>/thumbnails/<tag>/<page-id>/<frame-id>.json
+          (and (= seg-n 6) (= seg-1 "files") (= seg-3 "thumbnails"))
+          (update-in index [:thumbnails seg-2] bfc/conj-vec
+                     {:entry entry
+                      :tag (nth segs 3)
+                      :page-id (parse-uuid (nth segs 4))
+                      :frame-id (parse-uuid (nth segs 5))
+                      :file-id seg-2})
 
-(defn- match-page-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/pages/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+          ;; files/<file-id>/pages/<page-id>.json
+          (and (= seg-n 4) (= seg-1 "files") (= seg-3 "pages"))
+          (update-in index [:pages seg-2] bfc/conj-vec
+                     {:entry entry :id (parse-uuid (nth segs 3))})
 
-(defn- match-shape-entry-fn
-  [file-id page-id]
-  (let [pattern (str "^files/" file-id "/pages/" page-id "/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :page-id page-id
-         :id (parse-uuid id)}))))
+          ;; files/<file-id>/pages/<page-id>/<shape-id>.json
+          (and (= seg-n 5) (= seg-1 "files") (= seg-3 "pages"))
+          (update-in index [:shapes seg-2 (nth segs 3)] bfc/conj-vec
+                     {:entry entry
+                      :page-id (nth segs 3)
+                      :id (parse-uuid (nth segs 4))})
 
-(defn- match-storage-entry-fn
-  []
-  (let [pattern "^objects/([^/]+).json$"
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+          ;; files/<file-id>/<category>/<object-id>.json
+          (and (= seg-n 4)
+               (= seg-1 "files")
+               (contains? file-object-entry-categories seg-3))
+          (update-in index [(keyword seg-3) seg-2] bfc/conj-vec
+                     {:entry entry :id (parse-uuid (nth segs 3))})
+
+          :else
+          index)))))
+
+(defn- index-entries
+  "Classify all the provided zip entries in a single pass and group
+  them by their path shape, so import consumers can lookup their
+  entries per file (and per page) instead of rescanning the whole
+  entry collection for every file and page."
+  [entries]
+  (reduce (fn [index entry]
+            (index-entry-name index (zip-entry-name entry) entry))
+          {}
+          entries))
 
 (defn- read-entry
   [^ZipFile input entry]
@@ -644,8 +640,8 @@
              (validate-plugin-data))))
 
 (defn- read-file-media
-  [{:keys [::bfc/input ::entries]} file-id]
-  (->> (keep (match-media-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index]} file-id]
+  (->> (get-in entries-index [:media (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
                                    (decode-media)
@@ -664,8 +660,8 @@
        (not-empty)))
 
 (defn- read-file-colors
-  [{:keys [::bfc/input ::entries]} file-id]
-  (->> (keep (match-color-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index]} file-id]
+  (->> (get-in entries-index [:colors (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
                                    (decode-color)
@@ -678,7 +674,7 @@
        (not-empty)))
 
 (defn- read-file-components
-  [{:keys [::bfc/input ::entries]} file-id]
+  [{:keys [::bfc/input ::entries-index]} file-id]
   (let [clean-component-post-decode
         (fn [component]
           (d/update-when component :objects
@@ -696,7 +692,7 @@
                                       objects
                                       objects))))]
 
-    (->> (keep (match-component-entry-fn file-id) entries)
+    (->> (get-in entries-index [:components (str file-id)])
          (reduce (fn [result {:keys [id entry]}]
                    (let [object (->> (read-entry input entry)
                                      (clean-component-pre-decode)
@@ -710,8 +706,8 @@
          (not-empty))))
 
 (defn- read-file-typographies
-  [{:keys [::bfc/input ::entries]} file-id]
-  (->> (keep (match-typography-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index]} file-id]
+  (->> (get-in entries-index [:typographies (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
                                    (decode-typography)
@@ -724,16 +720,16 @@
        (not-empty)))
 
 (defn- read-file-tokens-lib
-  [{:keys [::bfc/input ::entries]} file-id]
-  (when-let [entry (d/seek (match-tokens-lib-entry-fn file-id) entries)]
+  [{:keys [::bfc/input ::entries-index]} file-id]
+  (when-let [{:keys [entry]} (first (get-in entries-index [:tokens (str file-id)]))]
     (events/tap :progress {:section :tokens-lib :file-id file-id})
     (->> (read-plain-entry input entry)
          (decode-tokens-lib)
          (validate-tokens-lib))))
 
 (defn- read-file-shapes
-  [{:keys [::bfc/input ::entries] :as cfg} file-id page-id]
-  (->> (keep (match-shape-entry-fn file-id page-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id page-id]
+  (->> (get-in entries-index [:shapes (str file-id) (str page-id)])
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
                                    (bfl/clean-shape-pre-decode)
@@ -746,8 +742,8 @@
        (not-empty)))
 
 (defn- read-file-pages
-  [{:keys [::bfc/input ::entries] :as cfg} file-id]
-  (->> (keep (match-page-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:pages (str file-id)])
        (keep (fn [{:keys [id entry]}]
                (let [page (->> (read-entry input entry)
                                (decode-page))
@@ -762,8 +758,8 @@
                (d/ordered-map))))
 
 (defn- read-file-thumbnails
-  [{:keys [::bfc/input ::entries] :as cfg} file-id]
-  (->> (keep (match-thumbnail-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:thumbnails (str file-id)])
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
                  (let [object (->> (read-entry input entry)
                                    (decode-file-thumbnail)
@@ -892,7 +888,7 @@
           (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))
 
 (defn- import-storage-objects
-  [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
+  [{:keys [::bfc/input ::entries-index ::bfc/timestamp] :as cfg}]
   (events/tap :progress {:section :storage-objects})
 
   ;; IMPORTANT: we strongly do not reuse the main connection that can
@@ -903,7 +899,7 @@
   ;; what the storage subsystem registers in other parallel
   ;; transaction
   (let [storage (sto/resolve cfg)
-        entries (keep (match-storage-entry-fn) entries)]
+        entries (:objects entries-index)]
 
     (doseq [{:keys [id entry]} entries]
       (let [object  (-> (read-entry input entry)
@@ -1058,7 +1054,7 @@
 
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-database-timeouts! cfg)
 
   (vswap! bfc/*state* update :index bfc/update-index (:files manifest) :id)
 
@@ -1126,7 +1122,7 @@
               :hint "unable to perform in-place update with binfile containing more than 1 file"
               :manifest manifest))
 
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-database-timeouts! cfg)
 
   (let [ref-file (bfc/get-minimal-file cfg file-id ::db/for-update true)
         file     (first (get manifest :files))
@@ -1165,7 +1161,7 @@
                                :found (count entries))))
 
         cfg      (-> cfg
-                     (assoc ::entries entries)
+                     (assoc ::entries-index (index-entries entries))
                      (assoc ::manifest manifest)
                      (assoc ::bfc/timestamp timestamp))]
 
