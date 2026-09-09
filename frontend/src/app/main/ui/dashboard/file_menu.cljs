@@ -265,7 +265,7 @@
       multi?
       [:*
        (when can-edit
-         [:> menu-item* {:id "duplicate-multi" :on-action on-duplicate}
+         [:> menu-item* {:id "duplicate-multi" :on-action on-duplicate :datatest-id "duplicate-multi"}
           (tr "dashboard.duplicate-multi" file-count)])
 
        (when (and (or (seq current-projects) (seq other-teams)) can-edit)
