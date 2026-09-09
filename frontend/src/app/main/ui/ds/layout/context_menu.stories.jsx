@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-import * as React from "react";
 import Components from "@target/components";
 import {
   fireEvent,
