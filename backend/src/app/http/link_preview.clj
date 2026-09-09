@@ -35,14 +35,6 @@
     ORDER BY ft.revn DESC NULLS LAST
     LIMIT 1")
 
-(defn- resolve-image-uri
-  [media-id]
-  (str (cf/get :public-uri) "/assets/by-id/" media-id))
-
-(defn- resolve-default-image-uri
-  []
-  (str (cf/get :public-uri) "/images/penpot-link-preview.png"))
-
 (defn- get-file-context
   "Return the link preview context for a file link: the file name as title
   and, when available, the last dashboard thumbnail as image."
@@ -50,7 +42,7 @@
   (when-let [{:keys [name media-id]} (db/exec-one! pool [sql:get-file file-id])]
     (cond-> (assoc default-context :title (str name " | Penpot"))
       (some? media-id)
-      (assoc :image (resolve-image-uri media-id)))))
+      (assoc :image (cf/get-public-uri (str "assets/by-id/" media-id))))))
 
 (defn- get-context
   [pool params]
@@ -71,7 +63,7 @@
   (let [context (when (contains? cf/flags :link-preview)
                   (get-context pool (:query-params request)))
         context (-> (or context default-context)
-                    (update :image #(or % (resolve-default-image-uri))))]
+                    (update :image #(or % (cf/get-public-uri "images/penpot-link-preview.png"))))]
     {::yres/status 200
      ::yres/headers {"content-type" "text/html; charset=utf-8"
                      "cache-control" "no-store, no-cache, max-age=0"}

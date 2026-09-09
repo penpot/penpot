@@ -379,6 +379,20 @@
   (or (c/get config :file-clean-delay)
       (ct/duration {:days 2})))
 
+(defn join-uri
+  "Join path segments onto a base URI, preserving a potential subpath
+  (same semantics as the frontend config). The base is normalized with
+  a trailing slash; segments must not start with `/` (a leading slash
+  would resolve against the host root and drop the subpath)."
+  [base & segments]
+  (str (apply u/join (u/ensure-path-slash base) segments)))
+
+(defn get-public-uri
+  "Canonical public URI builder: `join-uri` over the configured
+  :public-uri. With no segments, returns the normalized base."
+  [& segments]
+  (apply join-uri (c/get config :public-uri) segments))
+
 (defn get
   "A configuration getter. Helps code be more testable."
   ([key]
