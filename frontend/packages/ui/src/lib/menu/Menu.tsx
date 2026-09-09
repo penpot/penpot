@@ -293,6 +293,14 @@ export function Menu({
         // different row to open its own context menu) until this one
         // closes.
         isNonModal
+        // usePopover hardcodes shouldCloseOnBlur, and useOverlay honors it
+        // regardless of isNonModal: focus leaving the popover closes it. The
+        // trigger takes focus on its own pointerdown, so without this the
+        // menu closes there and the click that follows — reading an open
+        // state that is already false — reopens it, leaving a trigger wired
+        // to a toggle unable to ever close it. This is the one exception
+        // useOverlay consults before closing on blur.
+        shouldCloseOnInteractOutside={(el) => !triggerRef.current?.contains(el)}
       >
         <RACMenu
           aria-labelledby={triggerId}
