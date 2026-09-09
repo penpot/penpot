@@ -33,7 +33,7 @@
 (defn- create-file-thumbnail!
   [file-id]
   (let [storage (::sto/storage th/*system*)
-        object  (sto/put-object! storage {::sto/content (sto/content "thumbnail data")
+        object  (sto/put-object! storage {::sto/content (sto/content (th/tempfile "backend_tests/test_files/sample.png"))
                                           :bucket "file-thumbnail"
                                           :content-type "image/png"})]
     (db/insert! (:app.db/pool th/*system*) :file-thumbnail
@@ -138,10 +138,10 @@
                                     :project-id (:default-project-id profile)})
         pool    (:app.db/pool th/*system*)
         storage (::sto/storage th/*system*)
-        old     (sto/put-object! storage {::sto/content (sto/content "old thumbnail")
+        old     (sto/put-object! storage {::sto/content (sto/content (th/tempfile "backend_tests/test_files/sample.jpg"))
                                           :bucket "file-thumbnail"
-                                          :content-type "image/png"})
-        latest  (sto/put-object! storage {::sto/content (sto/content "latest thumbnail")
+                                          :content-type "image/jpeg"})
+        latest  (sto/put-object! storage {::sto/content (sto/content (th/tempfile "backend_tests/test_files/sample.png"))
                                           :bucket "file-thumbnail"
                                           :content-type "image/png"})]
     (db/insert! pool :file-thumbnail
