@@ -45,17 +45,17 @@
   [:map
    [:plugin-id :string]
    [:version {:optional true} :int]
-   [:name :string]
-   [:description {:optional true} :string]
-   [:host :string]
-   [:code :string]
-   [:icon {:optional true} :string]
+   [:name [:string {:max 500}]]
+   [:description {:optional true} [:string {:max 4096}]]
+   [:host [:string {:max 500}]]
+   [:code [:string {:max 1048576}]] ;; 1 MiB
+   [:icon {:optional true} [:string {:max 262144}]] ;; 256 KiB
    [:permissions schema:permissions]])
 
 (def schema:plugin-registry
   [:map
-   [:ids [:vector :string]]
+   [:ids [:vector {:max 50} :string]]
    [:data
-    [:map-of {:gen/max 5}
+    [:map-of {:gen/max 5 :max 50}
      :string
      schema:registry-entry]]])

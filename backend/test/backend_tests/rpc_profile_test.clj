@@ -1341,6 +1341,43 @@
     (t/is (th/ex-of-code? (:error out) :params-validation))))
 
 
+(t/deftest update-profile-props-rejects-oversized-props
+  ;; The merged props must not exceed :profile-props-max-size
+  (let [profile (th/create-profile* 1)]
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest update-profile-props-grandfathers-oversized-profile
+  ;; Profiles that already exceed the limit can shrink or hold steady,
+  ;; but cannot grow further
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    ;; Seed an already-oversized profile directly in DB (bypasses RPC validation)
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      ;; Shrinking update passes
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob "small"}}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out))))
+      ;; Growing update fails
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 300 "x"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
 (t/deftest prepare-register-profile-password-too-short
   (let [data {::th/type :prepare-register-profile
               :email "user@example.com"

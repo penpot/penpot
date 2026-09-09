@@ -469,6 +469,28 @@
   [:map {:title "update-profile-props"}
    [:props schema:props-writeable]])
 
+(defn- props-size
+  "Returns the serialized size in bytes of the props map."
+  [props]
+  (if-let [pg (db/tjson props)]
+    (count (.getValue ^org.postgresql.util.PGobject pg))
+    0))
+
+(defn check-props-size!
+  "Raises :props-too-large when the new props exceed the configured total
+  size limit *and* grow beyond the current size. Profiles that already
+  exceed the limit can still shrink or hold steady (grandfathered), but
+  cannot grow further."
+  [old-props new-props]
+  (let [limit    (cf/get :profile-props-max-size)
+        old-size (props-size old-props)
+        new-size (props-size new-props)]
+    (when (and (> new-size limit)
+               (> new-size old-size))
+      (ex/raise :type :validation
+                :code :props-too-large
+                :hint "profile props exceed maximum size"))))
+
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
   (let [profile (get-profile conn profile-id ::db/for-update true)
@@ -481,6 +503,8 @@
                                props))
                            (:props profile)
                            (apply dissoc props system-managed-props))]
+
+    (check-props-size! (:props profile) props)
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
