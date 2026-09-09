@@ -75,34 +75,6 @@
   (let [v (get params k)]
     (if (sequential? v) (peek v) v)))
 
-(defn match->context-params
-  "Extract the params that give sharing context to the current URL.
-
-  They are mirrored on the query string (before the fragment) because
-  the fragment is never sent to the server; this way shared links
-  carry enough context for rendering link preview metadata.
-  Only fragment query params are considered: non-legacy routes are
-  static screens and carry their ids exclusively there."
-  [match]
-  (let [query-params (get match :query-params)
-        file-id      (get-query-param query-params :file-id)
-        team-id      (get-query-param query-params :team-id)
-        project-id   (get-query-param query-params :project-id)]
-    (cond
-      (some? file-id)    {:file-id file-id}
-      (some? project-id) {:team-id team-id :project-id project-id}
-      (some? team-id)    {:team-id team-id})))
-
-(defn mirrored-href
-  "Build the path-relative href carrying the mirrored context query
-  before the fragment. Pure helper around the `navigated` effect so
-  the URL surgery stays testable without DOM."
-  [context-params hash base-path]
-  (let [query (some-> context-params u/map->query-string)]
-    (dm/str base-path
-            (if (some? query) (dm/str "?" query) "")
-            hash)))
-
 (defn navigated
   [match send-event-info?]
   (ptk/reify ::navigated
@@ -127,21 +99,23 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      ;; The route is read from the state the `update` above just stored,
-      ;; not from the closed-over `match`: the effect always runs after
-      ;; the update. The base comes from the canonical `cf/public-uri`
-      ;; instead of the address bar.
-      (let [context (match->context-params (:route state))
-            href    (mirrored-href context
-                                   (.-hash globals/location)
-                                   (:path cf/public-uri))
-            current (dm/str (.-pathname globals/location)
-                            (.-search globals/location)
-                            (.-hash globals/location))]
-        ;; The pre-fragment query string is owned by this mirroring: skip
-        ;; the write when nothing changed to avoid URL churn and dropping
-        ;; unrelated params set by other code. Both sides are path-relative.
-        (when (not= href current)
+      ;; The route is read from the state the `update` above just stored:
+      ;; the effect always runs after the update. The sharing-context ids
+      ;; are synced into the pre-fragment query (the fragment never reaches
+      ;; the server, so shared links need them there); every other param is
+      ;; left untouched. The backend applies its own file > project > team
+      ;; priority, so no filtering is needed here.
+      (let [params (:query-params (:route state))
+            uri    (u/uri (.-href globals/location))
+            search (reduce (fn [m k]
+                             (let [v (get-query-param params k)]
+                               (if (some? v)
+                                 (assoc m k v)
+                                 (dissoc m k))))
+                           (u/query-string->map (:query uri))
+                           [:file-id :team-id :project-id])
+            href   (str (assoc uri :query (u/map->query-string search)))]
+        (when (not= href (.-href globals/location))
           (.replaceState js/history nil "" href))))))
 
 (defn navigate

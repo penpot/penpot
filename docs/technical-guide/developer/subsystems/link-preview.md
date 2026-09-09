@@ -51,12 +51,13 @@ link points to. The feature is therefore built from three cooperating pieces:
 File: `frontend/src/app/main/router.cljs`
 
 On every navigation, the `navigated` event reads the freshly stored
-`(:route state)` and calls `match->context-params` to extract the
-identifiers that give sharing context to the current route, and mirrors
-them on the query string (before the fragment) using
-`history.replaceState`. The href base comes from the canonical
-`cf/public-uri`, so subpath deployments keep their prefix. The resulting
-URLs look like:
+`(:route state)` and syncs its `file-id`/`team-id`/`project-id` fragment
+params into the query string (before the fragment) using
+`history.replaceState`. Every other param in the URL is left untouched,
+so unrelated params owned by other code survive. The write is skipped
+when the resulting href already matches the address bar. The backend
+applies its own file > project > team priority, so no filtering happens
+on the frontend. The resulting URLs look like:
 
 ```text
 https://design.penpot.app/?file-id=<uuid>#/workspace?team-id=...&file-id=...&page-id=...
@@ -64,13 +65,9 @@ https://design.penpot.app/?team-id=<uuid>&project-id=<uuid>#/dashboard/recent?..
 https://design.penpot.app/?team-id=<uuid>#/dashboard/recent?team-id=...
 ```
 
-`match->context-params` implements a priority: if the route has a `file-id`
-only that is mirrored; otherwise `project-id` (together with its `team-id`);
-otherwise `team-id`. Routes without any of those ids (e.g. auth pages) mirror
-nothing; `replaceState` only writes when the computed href differs from the
-current one, so it strips a stale query string without churning the URL on
-every navigation. Ids are read from the fragment `:query-params` (routes
-are static screens; the only dynamic parts are the query ids).
+Routes without any of those ids (e.g. auth pages) clear them from the
+query string; `replaceState` only writes when the computed href differs
+from the current one, so no URL churn happens on navigation.
 
 This way, when the user copies the URL from the address bar and shares it, the
 context ids travel in a part of the URL that *does* reach the server.
@@ -288,10 +285,9 @@ indexing these preview pages, and responses are marked non-cacheable.
  * `backend/test/backend_tests/http_assets_test.clj`
    (`objects-handler-file-thumbnail-bucket-link-preview-flag`) — the
    `file-thumbnail` bucket is public only while the flag is enabled.
-  * `frontend/test/frontend_tests/router_test.cljs` — `match->context-params`
-    priority (file > project > team), project link without team, repeated-key
-    handling, and the `mirrored-href`/`navigated` URL surgery (mirror, skip,
-    stale-strip, clear, subpath base).
+  * `frontend/test/frontend_tests/router_test.cljs` — the `navigated` URL
+    surgery (mirror, skip, stale-strip, clear, unrelated-param
+    preservation, every-present-id, repeated-key, subpath base).
 
 ## Relevant files
 
