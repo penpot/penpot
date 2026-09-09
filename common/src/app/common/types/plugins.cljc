@@ -41,6 +41,10 @@
   "Schema for plugin permissions - a set of valid permission strings."
   [:set {:gen/max 11} (into [:enum] (sort valid-permissions))])
 
+(def max-plugins
+  "Maximum number of plugins a profile can hold."
+  50)
+
 (def schema:registry-entry
   [:map
    [:plugin-id :string]
@@ -54,8 +58,8 @@
 
 (def schema:plugin-registry
   [:map
-   [:ids [:vector {:max 50} :string]]
+   [:ids [:vector {:max max-plugins} :string]]
    [:data
-    [:map-of {:gen/max 5 :max 50}
+    [:map-of {:gen/max 5 :max max-plugins}
      :string
      schema:registry-entry]]])

@@ -45,16 +45,21 @@
   (let [profile (profile/get-profile conn profile-id ::db/for-update true)
         plugins (get-in profile [:props :plugins] {:ids [] :data {}})
         plugin-id (:plugin-id plugin)
-        plugins (-> plugins
-                    (update :ids #(vec (distinct (conj % plugin-id))))
-                    (assoc-in [:data plugin-id] plugin))
-        props   (assoc (:props profile) :plugins plugins)]
-    (profile/check-props-size! (:props profile) props)
-    (db/update! conn :profile
-                {:props (db/tjson props)}
-                {:id profile-id}
-                {::db/return-keys false})
-    plugin))
+        exists? (contains? (set (:ids plugins)) plugin-id)]
+    (when (and (not exists?) (>= (count (:ids plugins)) ctp/max-plugins))
+      (ex/raise :type :validation
+                :code :too-many-plugins
+                :hint "plugin registry exceeds maximum size"))
+    (let [plugins (-> plugins
+                      (update :ids #(vec (distinct (conj % plugin-id))))
+                      (assoc-in [:data plugin-id] plugin))
+          props   (assoc (:props profile) :plugins plugins)]
+      (profile/check-props-size! (:props profile) props)
+      (db/update! conn :profile
+                  {:props (db/tjson props)}
+                  {:id profile-id}
+                  {::db/return-keys false})
+      plugin)))
 
 (def ^:private
   schema:remove-profile-plugin

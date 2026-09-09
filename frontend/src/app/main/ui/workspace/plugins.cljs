@@ -56,7 +56,7 @@
           icon))
 
 (mf/defc plugin-entry*
-  [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin]}]
+  [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin remove-disabled]}]
 
   (let [{:keys [plugin-id host icon name description permissions]} manifest
         plugins-permissions-peek (deref refs/plugins-permissions-peek)
@@ -100,6 +100,7 @@
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "workspace.plugins.remove-plugin")
                        :on-click handle-delete-click
+                       :disabled remove-disabled
                        :icon i/delete}]]))
 
 (mf/defc plugin-management-dialog
@@ -125,6 +126,11 @@
 
         fetching-manifest?
         (mf/use-state false)
+
+        ;; Ids with a persist request in flight; their remove button
+        ;; is disabled until the request completes.
+        in-flight*
+        (mf/use-state #{})
 
         on-url-change
         (mf/use-fn
@@ -189,6 +195,10 @@
                             (reset! plugins-state* (preg/plugins-list))
                             (modal/show! :plugin-management {}))}))))]
 
+    (mf/with-effect []
+      (let [listener (preg/subscribe-in-flight! #(reset! in-flight* %))]
+        (partial preg/unsubscribe-in-flight! listener)))
+
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}
       [:button {:class (stl/css :close-btn) :on-click modal/hide!} close-icon]
@@ -243,6 +253,7 @@
                                 :index idx
                                 :manifest manifest
                                 :user-can-edit user-can-edit?
+                                :remove-disabled (contains? @in-flight* (:plugin-id manifest))
                                 :on-open-plugin on-open-plugin
                                 :on-remove-plugin on-remove-plugin}])]])]]]))
 

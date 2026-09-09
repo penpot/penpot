@@ -470,10 +470,10 @@
    [:props schema:props-writeable]])
 
 (defn- props-size
-  "Returns the serialized size in bytes of the props map."
+  "Returns the serialized size in UTF-8 bytes of the props map."
   [props]
   (if-let [pg (db/tjson props)]
-    (count (.getValue ^org.postgresql.util.PGobject pg))
+    (alength (.getBytes ^String (.getValue ^org.postgresql.util.PGobject pg) "UTF-8"))
     0))
 
 (defn check-props-size!

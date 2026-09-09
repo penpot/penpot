@@ -1378,6 +1378,33 @@
         (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
 
+(t/deftest check-props-size-measures-bytes-not-chars
+  ;; The limit is in UTF-8 bytes: multibyte content that fits in chars
+  ;; but exceeds the byte limit must be rejected
+  (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 200})]
+    ;; 70 ASCII chars (~87 bytes serialized) passes
+    (t/is (nil? (profile/check-props-size! {} {:blob (apply str (repeat 70 "x"))})))
+    ;; 70 CJK chars (~227 bytes serialized, still 70 chars) raises
+    (try
+      (profile/check-props-size! {} {:blob (apply str (repeat 70 "日"))})
+      (t/is false "should have thrown")
+      (catch clojure.lang.ExceptionInfo e
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :props-too-large (:code (ex-data e))))))))
+
+(t/deftest update-profile-props-allows-steady-size-on-oversized-profile
+  ;; Same size (not smaller) on an oversized profile passes
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 200 "y"))}}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))))))
+
+
 (t/deftest prepare-register-profile-password-too-short
   (let [data {::th/type :prepare-register-profile
               :email "user@example.com"

@@ -126,13 +126,44 @@
 ;; install/remove clicks on the same plugin cannot stack RPC writes.
 (defonce ^:private in-flight (atom #{}))
 
-(defn- validation-error?
-  [err]
-  (= :validation (:type (ex-data err))))
+(defonce ^:private in-flight-listeners (atom #{}))
+
+(defn subscribe-in-flight!
+  "Subscribes f, called with the in-flight id set on every change.
+  Calls f immediately with the current set. Returns f."
+  [f]
+  (swap! in-flight-listeners conj f)
+  (f @in-flight)
+  f)
+
+(defn unsubscribe-in-flight!
+  [f]
+  (swap! in-flight-listeners disj f)
+  nil)
+
+(defn plugin-persisting?
+  [plugin-id]
+  (contains? @in-flight plugin-id))
+
+(defn- notify-in-flight!
+  []
+  (let [ids @in-flight]
+    (doseq [f @in-flight-listeners]
+      (f ids))))
+
+(defn- track!
+  [plugin-id]
+  (swap! in-flight conj plugin-id)
+  (notify-in-flight!))
 
 (defn- release!
   [plugin-id]
-  (swap! in-flight disj plugin-id))
+  (swap! in-flight disj plugin-id)
+  (notify-in-flight!))
+
+(defn- validation-error?
+  [err]
+  (= :validation (:type (ex-data err))))
 
 (defn- drop-local!
   [{:keys [plugin-id]}]
@@ -144,7 +175,7 @@
   [plugin]
   (let [plugin-id (:plugin-id plugin)]
     (when-not (contains? @in-flight plugin-id)
-      (swap! in-flight conj plugin-id)
+      (track! plugin-id)
       (letfn [(update-ids [ids]
                 (conj
                  (->> ids (remove #(= % (:plugin-id plugin))))
@@ -169,7 +200,7 @@
   [{:keys [plugin-id]}]
   (let [stored (get-plugin plugin-id)]
     (when-not (contains? @in-flight plugin-id)
-      (swap! in-flight conj plugin-id)
+      (track! plugin-id)
       (letfn [(update-ids [ids]
                 (->> ids
                      (remove #(= % plugin-id))))]
