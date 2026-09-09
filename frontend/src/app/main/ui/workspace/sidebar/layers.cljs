@@ -371,6 +371,22 @@
                (st/emit! dw/close-layers-search)
                (st/emit! (dw/open-layers-search :find {:force? true}))))))
 
+        ;; Escape is handled here, on the panel itself, rather than in the
+        ;; document listener above: it must only close the search when the
+        ;; focus is already inside the panel, and leave it untouched
+        ;; otherwise. A still open filters dropdown is dismissed first.
+        on-search-key-down
+        (mf/use-fn
+         (mf/deps show-menu? hide-menu)
+         (fn [event]
+           (when (kbd/esc? event)
+             (dom/stop-propagation event)
+             (if ^boolean show-menu?
+               (hide-menu)
+               (do
+                 (some-> (dom/get-target event) (dom/blur!))
+                 (st/emit! dw/close-layers-search))))))
+
         remove-filter
         (mf/use-fn
          (fn [event]
@@ -569,7 +585,8 @@
      #(mf/html
        (if show-search?
          [:*
-          [:div {:class (stl/css :tool-window-bar)}
+          [:div {:class (stl/css :tool-window-bar)
+                 :on-key-down on-search-key-down}
            [:> search-bar* {:input-ref search-input-ref
                             :class (stl/css :search-item)
                             :on-change update-search-text
@@ -593,7 +610,8 @@
                              :on-click toggle-search
                              :icon i/close}]]
 
-          [:div {:class (stl/css :replace-wrapper)}
+          [:div {:class (stl/css :replace-wrapper)
+                 :on-key-down on-search-key-down}
            (when ^boolean find-replace-mode?
              [:div {:class (stl/css :replace-row)}
               [:> input* {:type "text"
