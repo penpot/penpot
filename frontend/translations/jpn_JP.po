@@ -11,6 +11,92 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 2026.6.dev0\n"
 
+#: src/app/main/ui/settings/instance_users.cljs:84
+msgid "admin.users.add"
+msgstr "所属を追加"
+
+#: src/app/main/ui/settings/instance_users.cljs:138
+msgid "admin.users.email"
+msgstr "メールアドレス"
+
+#: src/app/main/ui/settings/instance_users.cljs:67
+msgid "admin.users.find-target"
+msgstr "チーム・プロジェクトを検索"
+
+#: src/app/main/ui/settings.cljs:65
+msgid "admin.users.forbidden"
+msgstr "ユーザー管理はインスタンス管理者のみ利用できます。"
+
+#: src/app/main/ui/settings/instance_users.cljs:159
+msgid "admin.users.inheritance"
+msgstr ""
+"チームのメンバーはそのプロジェクトにもアクセスできます。直接の所属を削除しても、チーム経由のアクセスは残ります。Ownerと個人領域はここでは変更できま"
+"せん。"
+
+#: src/app/main/ui/settings/instance_users.cljs:62
+msgid "admin.users.kind"
+msgstr "所属の種類"
+
+#: src/app/main/ui/settings/instance_users.cljs:83, src/app/main/ui/settings/instance_users.cljs:116
+msgid "admin.users.load-error"
+msgstr "ユーザーまたは所属を取得できませんでした。再試行してください。"
+
+#: src/app/main/ui/settings/instance_users.cljs:140, src/app/main/ui/settings/instance_users.cljs:148
+msgid "admin.users.manage"
+msgstr "所属を管理"
+
+#: src/app/main/ui/settings/instance_users.cljs:138
+msgid "admin.users.name"
+msgstr "名前"
+
+#: src/app/main/ui/settings/instance_users.cljs:78, src/app/main/ui/settings/instance_users.cljs:155
+msgid "admin.users.next"
+msgstr "次へ"
+
+#: src/app/main/ui/settings/instance_users.cljs:77, src/app/main/ui/settings/instance_users.cljs:152
+msgid "admin.users.previous"
+msgstr "前へ"
+
+#: src/app/main/ui/settings/instance_users.cljs:66, src/app/main/ui/settings/instance_users.cljs:139, src/app/main/ui/settings/instance_users.cljs:162
+msgid "admin.users.projects"
+msgstr "プロジェクトへの直接の所属"
+
+#: src/app/main/ui/settings/instance_users.cljs:28, src/app/main/ui/settings/instance_users.cljs:79
+msgid "admin.users.role"
+msgstr "ロール"
+
+#: src/app/main/ui/settings/instance_users.cljs:110
+msgid "admin.users.save-error"
+msgstr "所属を変更できませんでした。権限を確認して再試行してください。"
+
+#: src/app/main/ui/settings/instance_users.cljs:125, src/app/main/ui/settings/instance_users.cljs:126
+msgid "admin.users.search"
+msgstr "名前・メールアドレスで検索"
+
+#: src/app/main/ui/settings/instance_users.cljs:129
+msgid "admin.users.search-action"
+msgstr "検索"
+
+#: src/app/main/ui/settings/instance_users.cljs:72
+msgid "admin.users.select-target"
+msgstr "チームまたはプロジェクトを選択"
+
+#: src/app/main/ui/settings/instance_users.cljs:70
+msgid "admin.users.target"
+msgstr "追加先"
+
+#: src/app/main/ui/settings/instance_users.cljs:109
+msgid "admin.users.team-required"
+msgstr "まず対象プロジェクトのチームにこのユーザーを追加してください。チームの閲覧権限に、プロジェクト単位の編集権限を追加できます。"
+
+#: src/app/main/ui/settings/instance_users.cljs:65, src/app/main/ui/settings/instance_users.cljs:139, src/app/main/ui/settings/instance_users.cljs:160
+msgid "admin.users.teams"
+msgstr "チーム"
+
+#: src/app/main/ui/settings/instance_users.cljs:119, src/app/main/ui/settings/sidebar.cljs:97
+msgid "admin.users.title"
+msgstr "ユーザー管理"
+
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "アカウントをお持ちですか？"
@@ -515,10 +601,6 @@ msgstr "Eメール"
 msgid "dashboard.your-name"
 msgstr "名前"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "あなたのPenpot"
-
 #: src/app/main/ui/comments.cljs:693, src/app/main/ui/confirm.cljs:42, src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:336, src/app/main/ui/settings/subscription.cljs:776, src/app/main/ui/settings/subscription.cljs:823, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
 msgid "ds.confirm-cancel"
 msgstr "キャンセル"
@@ -647,10 +729,6 @@ msgstr "題名"
 #: src/app/main/ui/settings/feedback.cljs:155
 msgid "feedback.twitter-title"
 msgstr "Xサポートアカウント"
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "共有ライブラリとしてエクスポート"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

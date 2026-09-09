@@ -310,6 +310,31 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
+## User administration
+
+Self-hosted instance administrators can open **User administration** from account
+settings, or go to `/#/admin/users`. Configure their existing, verified account
+email addresses in the backend:
+
+```bash
+PENPOT_ADMINS="admin@example.com second-admin@example.com"
+```
+
+Only active, unblocked accounts in this list can use the administration API.
+Team owners and team administrators do not receive instance administration
+rights automatically. The page lists users, their team memberships and their
+direct project memberships, with search and pagination. Administrators can add,
+change or remove memberships without sending invitation emails.
+
+Team membership also grants access to the team's projects. Removing a direct
+project membership does not revoke access inherited from a team. Personal
+workspaces and owner memberships cannot be changed on this page. Use the team's
+ownership transfer flow before removing an owner.
+
+Project grants require membership in the enclosing team so the user can open
+its workspace. Add the user as a team viewer, then grant editor access to the
+chosen project when they should edit only that project.
+
 ## Penpot URI
 
 You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;

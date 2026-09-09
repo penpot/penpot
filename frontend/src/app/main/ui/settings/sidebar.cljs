@@ -90,6 +90,11 @@
      [:nav {:class (stl/css :sidebar-content-section)
             :aria-label (tr "labels.settings")}
       [:ul {:class (stl/css :sidebar-nav-settings)}
+       (when (:is-instance-admin profile)
+         [:li {:class (stl/css-case :current (= section :settings-instance-users)
+                                    :settings-item true)
+                :on-click #(st/emit! (rt/nav :settings-instance-users))}
+          [:span {:class (stl/css :element-title)} (tr "admin.users.title")]])
        [:li {:class (stl/css-case :current profile?
                                   :settings-item true)
              :on-click go-settings-profile}
