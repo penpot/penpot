@@ -505,10 +505,7 @@
     :fn (mg/resource "app/migrations/sql/0153-add-storage-object-status-and-deletion-attempts.sql")}
 
    {:name "0154-add-job-table"
-    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}
-
-   {:name "0155-add-job-precheck-index"
-    :fn (mg/resource "app/migrations/sql/0155-add-job-precheck-index.sql")}])
+    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

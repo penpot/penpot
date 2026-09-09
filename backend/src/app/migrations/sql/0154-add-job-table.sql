@@ -57,3 +57,9 @@ CREATE INDEX job__orphan__idx
 CREATE INDEX job__profile__idx
     ON job (profile_id, created_at DESC)
     WHERE profile_id IS NOT NULL;
+
+-- Partial index for the cron no-overlap precheck: the scheduler counts
+-- active jobs with the same name+label before submitting a new instance.
+CREATE INDEX job__name-label__idx
+    ON job (name, label)
+    WHERE status IN ('new', 'scheduled', 'running', 'retry');

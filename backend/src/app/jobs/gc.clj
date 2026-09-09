@@ -65,8 +65,7 @@
 (defn- delete-jobs!
   [conn sql & params]
   (let [rows         (db/exec! conn (into [sql] params))
-        resource-ids (into [] (comp (map :resource-id) (filter some?))
-                           rows)]
+        resource-ids (into [] (keep :resource-id) rows)]
     [(count rows) (touch-resources! conn resource-ids)]))
 
 (declare execute-jobs-gc!)
