@@ -35,6 +35,7 @@
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1998,6 +1999,108 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0027-normalize-constrained-values"
+  ;; Existing files can contain values outside the limits now shared by the UI
+  ;; and file schemas. Normalize them before checking the migrated file.
+  [data _]
+  (letfn [(clamp-minimum [value minimum]
+            (if (number? value)
+              (max value minimum)
+              value))
+
+          (positive-or-default [value default]
+            (if (and (number? value) (not (pos? value)))
+              default
+              value))
+
+          (clamp-attrs [value attrs]
+            (reduce #(d/update-when %1 %2 clamp-minimum 0) value attrs))
+
+          (repair-vector [value repair-item]
+            (if (vector? value)
+              (mapv repair-item value)
+              value))
+
+          (repair-grid-params [params type]
+            (cond
+              (= type :square)
+              (d/update-when params :size clamp-minimum 0.01)
+
+              (#{:row :column} type)
+              (d/update-when params :size clamp-minimum 1)
+
+              :else
+              params))
+
+          (repair-grid [grid]
+            (d/update-when grid :params repair-grid-params (:type grid)))
+
+          (repair-default-grids [grids]
+            (-> grids
+                (d/update-when :square repair-grid-params :square)
+                (d/update-when :row repair-grid-params :row)
+                (d/update-when :column repair-grid-params :column)))
+
+          (repair-grid-track [track]
+            (d/update-when track :value clamp-minimum 0))
+
+          (repair-export [export]
+            (d/update-when export :scale positive-or-default 1))
+
+          (repair-stroke [stroke]
+            (clamp-attrs stroke [:stroke-width
+                                 :stroke-width-top
+                                 :stroke-width-right
+                                 :stroke-width-bottom
+                                 :stroke-width-left]))
+
+          (repair-shadow [shadow]
+            (d/update-when shadow :blur clamp-minimum 0))
+
+          (repair-blur [blur]
+            (d/update-when blur :value clamp-minimum 0))
+
+          (repair-shape [shape]
+            (-> shape
+                (clamp-attrs [:r1 :r2 :r3 :r4
+                              :layout-item-min-w :layout-item-max-w
+                              :layout-item-min-h :layout-item-max-h])
+                (d/update-when :layout-gap clamp-attrs [:row-gap :column-gap])
+                (d/update-when :layout-padding clamp-attrs [:p1 :p2 :p3 :p4])
+                (d/update-when :layout-grid-rows repair-vector repair-grid-track)
+                (d/update-when :layout-grid-columns repair-vector repair-grid-track)
+                (d/update-when :strokes repair-vector repair-stroke)
+                (d/update-when :shadow repair-vector repair-shadow)
+                (d/update-when :blur repair-blur)
+                (d/update-when :background-blur repair-blur)
+                (d/update-when :exports repair-vector repair-export)
+                (d/update-when :grids repair-vector repair-grid)))
+
+          (truncate-property-text [value]
+            (if (and (string? value)
+                     (> (count value) ctv/property-max-length))
+              (subs value 0 ctv/property-max-length)
+              value))
+
+          (repair-variant-property [property]
+            (-> property
+                (d/update-when :name truncate-property-text)
+                (d/update-when :value truncate-property-text)))
+
+          (repair-container [container]
+            (-> container
+                (d/update-when :objects d/update-vals repair-shape)
+                (d/update-when :variant-properties repair-vector repair-variant-property)))
+
+          (repair-page [page]
+            (-> page
+                (repair-container)
+                (d/update-when :default-grids repair-default-grids)))]
+
+    (-> data
+        (update :pages-index d/update-vals repair-page)
+        (d/update-when :components d/update-vals repair-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2081,4 +2184,5 @@
          "0023-repair-token-themes-with-inexistent-sets"
          "0024b-fix-stroke-cap-placement"
          "0025-repair-empty-text-content"
-         "0026-fix-svg-raw-shapes-uuids"]))
+         "0026-fix-svg-raw-shapes-uuids"
+         "0027-normalize-constrained-values"]))
