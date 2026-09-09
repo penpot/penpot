@@ -209,6 +209,20 @@ pub(super) fn add_group(
     }
 }
 
+/// SVG-raw leaf with markup (same form `get-static-markup` uploads to WASM).
+pub(super) fn add_svg_raw(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    content: &str,
+) {
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_svg_raw_content(content.to_string());
+    shape.set_selrect(l, t, r, b);
+}
+
 /// Adds a single-line text shape using the embedded default font.
 pub(super) fn add_solid_text(
     pool: &mut ShapesPool,

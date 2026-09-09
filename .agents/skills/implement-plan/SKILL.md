@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: Implementation flow — execute a ready plan from the session context: read the plan, detect the flow, then present the full picture (issue and branch to create or the branch to continue on, execution style, task checklist) and wait for confirmation. Default is every task with one final commit; on request ("step by step"), one task and one commit at a time with a pause after each. Use it when the user asks to implement or execute a plan, in any phrasing.
+description: Implementation flow — execute a ready plan from the session context: read the plan, detect the flow, then present the full picture (issue and branch to create or the branch to continue on, execution style, task checklist) and wait for confirmation. Default is every task with one final commit; on request ("step by step"), one task and one commit at a time with a pause after each; on request ("direct"), no issue and no branch — the commit lands on the current branch. Use it when the user asks to implement or execute a plan, in any phrasing.
 ---
 
 # Implement Plan
@@ -45,9 +45,14 @@ read-only: nothing is created until the user confirms (step 3).
   No issue or branch is created. The branch name provides the issue
   reference when it follows the `issue-NNNN` pattern.
 
-Arguments override detection: `standalone`, `continue`,
-`no issue` / `without issue`, or an explicit base such as
-`from origin/develop`.
+Arguments override detection: `standalone`, `continue`, `direct`
+(`no branch` / `direct commit`), `no issue` / `without issue`, or an
+explicit base such as `from origin/develop`.
+
+**Direct mode** (`direct`, `no branch`, `direct commit`): no issue and
+no branch — the implementation and the commit land on the current branch
+as it is, even when it is a base branch. Best for small or tooling-only
+changes the user wants committed in place.
 
 **Standalone while already on a feature branch:** stop and explain that this
 would stack branches. Ask the user to re-run with an explicit base, for
@@ -59,8 +64,10 @@ Before touching the repository, show the user the full picture:
 
 - **The flow**: whether the GitHub issue and the branch will be created
   (standalone mode — give the planned branch name, `issue-NNNN` or
-  `plan-<slug>`), or whether you continue on the current branch
-  (continue mode — name it).
+  `plan-<slug>`), whether you continue on the current branch
+  (continue mode — name it), or whether everything lands on the current
+  branch as it is (direct mode — name it, and say so when it is a base
+  branch).
 - **The execution style**: batch or step-by-step (see *Execution modes*).
 - A checklist (todolist) of the plan's tasks, in order.
 
@@ -83,6 +90,11 @@ git checkout -b issue-NNNN
 If the arguments say `no issue` / `without issue`, skip the issue and
 create a branch named `plan-<slug>` instead, where `<slug>` is the plan
 title, lowercase and hyphen-separated.
+
+If the arguments say `direct` / `no branch` / `direct commit`, skip the
+issue and the branch: implement and commit on the current branch as it
+is. If it is a base branch, the checklist presentation already said so —
+no further confirmation is needed.
 
 ### Batch mode (default)
 
@@ -126,7 +138,7 @@ instruction from me overrides them):
 
 Extra context in the user's invocation (the message that triggered this
 skill) plays the role command arguments play elsewhere: `standalone`,
-`continue`, `no issue` / `without issue`, an explicit base such as
-`from origin/develop`, or `step by step` / `one commit per task` for the
-step-by-step execution mode. Modes combine freely, for example
-"standalone step by step".
+`continue`, `direct` (`no branch` / `direct commit`), `no issue` /
+`without issue`, an explicit base such as `from origin/develop`, or
+`step by step` / `one commit per task` for the step-by-step execution
+mode. Modes combine freely, for example "standalone step by step".

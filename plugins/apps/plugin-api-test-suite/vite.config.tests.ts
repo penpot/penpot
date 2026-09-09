@@ -1,4 +1,4 @@
-import { iifeConfig } from './vite.config.iife';
+import { iifeConfig } from './vite.config.iife.ts';
 
 // Builds the test cases as a single self-executing (IIFE) bundle that publishes
 // the discovered tests on `globalThis.__penpotReloadedTests`. The UI "Reload"

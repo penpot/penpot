@@ -2122,13 +2122,34 @@
 
       (h/call wasm/internal-module "_set_structure_modifiers"))))
 
+;; Axes the pixel grid rounds, as `propagate_modifiers` expects them.
+(def ^:private pixel-precision
+  {:disabled 0
+   :both     1
+   :only-x   2
+   :only-y   3})
+
+(defn- pixel-precision-mode
+  "Encodes the pixel grid snapping for the renderer. `snap-ignore-axis`
+  names the axis to leave alone (`:x`, `:y` or nil)."
+  [snap-pixel? snap-ignore-axis]
+  (pixel-precision
+   (cond
+     (not snap-pixel?)       :disabled
+     (= :x snap-ignore-axis) :only-y
+     (= :y snap-ignore-axis) :only-x
+     :else                   :both)))
+
 (defn propagate-modifiers
   "Propagates geometry modifiers through the WASM shape tree.
+
+  Rounds the resulting geometry to the pixel grid when `snap-pixel?` is set,
+  skipping the axis named by `snap-ignore-axis` (`:x`, `:y` or nil).
 
   Always returns a vector. When the context is not ready (lost / mid-reload)
   or `entries` is empty, returns `[]` so callers never receive `nil` (which
   would trip `set-modifiers`' vector assert)."
-  [entries pixel-precision]
+  [entries snap-pixel? snap-ignore-axis]
   (if-not (and (initialized?) (not ^boolean (empty? entries)))
     []
     (let [heapf32 (mem/get-heap-f32)
@@ -2146,7 +2167,8 @@
               offset
               entries)
 
-      (let [offset     (-> (h/call wasm/internal-module "_propagate_modifiers" pixel-precision)
+      (let [precision  (pixel-precision-mode snap-pixel? snap-ignore-axis)
+            offset     (-> (h/call wasm/internal-module "_propagate_modifiers" precision)
                            (mem/->offset-32))
             length     (aget heapu32 offset)
             max-offset (+ offset 1 (* length MODIFIER-U32-SIZE))

@@ -12,7 +12,7 @@ use super::shape_renderer::ShapeRenderer;
 use super::text;
 use super::RenderResources;
 use super::RenderState;
-use super::{get_dest_rect, get_source_rect};
+use super::{get_dest_rect, get_image_dest_rect, get_source_rect};
 
 // ---------------------------------------------------------------------------
 // VectorRenderer — implements ShapeRenderer for canvas-based vector export
@@ -1043,8 +1043,8 @@ fn draw_image_fill(
     let size = image.dimensions();
     let container = &shape.selrect;
 
-    let src_rect = get_source_rect(size, container, image_fill);
-    let dest_rect = container;
+    let dest_rect = get_image_dest_rect(container, image_fill);
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
 
     canvas.save();
 
