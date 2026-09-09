@@ -11,6 +11,7 @@
    [app.common.types.plugins :as ctp]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]))
@@ -33,6 +34,8 @@
 
 (sv/defmethod ::add-profile-plugin
   {::doc/added "2.18"
+   ::climit/id [[:profile-plugin-ops/by-profile ::rpc/profile-id]
+                [:profile-plugin-ops/global]]
    ::sm/params schema:add-profile-plugin
    ::sm/result ctp/schema:registry-entry
    ::db/transaction true}
@@ -44,9 +47,11 @@
         plugin-id (:plugin-id plugin)
         plugins (-> plugins
                     (update :ids #(vec (distinct (conj % plugin-id))))
-                    (assoc-in [:data plugin-id] plugin))]
+                    (assoc-in [:data plugin-id] plugin))
+        props   (assoc (:props profile) :plugins plugins)]
+    (profile/check-props-size! (:props profile) props)
     (db/update! conn :profile
-                {:props (db/tjson (assoc (:props profile) :plugins plugins))}
+                {:props (db/tjson props)}
                 {:id profile-id}
                 {::db/return-keys false})
     plugin))
@@ -58,6 +63,8 @@
 
 (sv/defmethod ::remove-profile-plugin
   {::doc/added "2.18"
+   ::climit/id [[:profile-plugin-ops/by-profile ::rpc/profile-id]
+                [:profile-plugin-ops/global]]
    ::sm/params schema:remove-profile-plugin
    ::sm/result :nil
    ::db/transaction true}
@@ -67,9 +74,13 @@
         plugin-id-str (str plugin-id)
         plugins (-> plugins
                     (update :ids #(vec (remove (partial = plugin-id-str) %)))
-                    (update :data dissoc plugin-id-str))]
+                    (update :data dissoc plugin-id-str))
+        props   (assoc (:props profile) :plugins plugins)]
+    ;; Removal only shrinks props, so this never raises; kept for uniformity
+    ;; so every write path to profile.props goes through the size check.
+    (profile/check-props-size! (:props profile) props)
     (db/update! conn :profile
-                {:props (db/tjson (assoc (:props profile) :plugins plugins))}
+                {:props (db/tjson props)}
                 {:id profile-id}
                 {::db/return-keys false})
     nil))

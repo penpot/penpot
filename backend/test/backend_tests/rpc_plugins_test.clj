@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-plugins-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [backend-tests.helpers :as th]
@@ -144,6 +145,36 @@
       (t/is (contains? (set (:ids plugins)) plugin-id-2))
       (t/is (= "Test Plugin" (get-in plugins [:data plugin-id-1 :name])))
       (t/is (= "Second Plugin" (get-in plugins [:data plugin-id-2 :name]))))))
+
+(t/deftest add-profile-plugin-rejects-oversized-code
+  ;; The merged props must not exceed :profile-props-max-size
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin :code (apply str (repeat 200 "x")))
+        data    {::th/type :add-profile-plugin
+                 ::rpc/profile-id (:id profile)
+                 :plugin plugin}]
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [out (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+(t/deftest remove-profile-plugin-allowed-on-oversized-profile
+  ;; Removal shrinks props, so it passes even under a tight limit
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin :code (apply str (repeat 200 "x")))]
+    ;; Seed an oversized registry while the limit is high
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100000})]
+      (let [out (th/command! {::th/type :add-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin plugin})]
+        (t/is (nil? (:error out)))))
+    ;; Removal under a tight limit still passes
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [out (th/command! {::th/type :remove-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin-id (uuid/uuid plugin-id-1)})]
+        (t/is (nil? (:error out)))))))
 
 (t/deftest update-profile-props-rejects-plugins
   (let [profile (th/create-profile* 1)

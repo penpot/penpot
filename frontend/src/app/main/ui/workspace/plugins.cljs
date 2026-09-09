@@ -175,12 +175,19 @@
          (fn [plugin-index]
            (let [plugins-list (preg/plugins-list)
                  plugin (nth plugins-list plugin-index)]
-             (st/emit! (ev/event {::ev/name "remove-plugin"
-                                  :name (:name plugin)
-                                  :host (:host plugin)}))
-             (dp/close-plugin! plugin)
-             (preg/remove-plugin! plugin)
-             (reset! plugins-state* (preg/plugins-list)))))]
+             (modal/show!
+              {:type :confirm
+               :title (tr "workspace.plugins.remove-confirmation.title")
+               :message (tr "workspace.plugins.remove-confirmation.message" (:name plugin))
+               :accept-label (tr "workspace.plugins.remove-plugin")
+               :on-accept (fn [_]
+                            (st/emit! (ev/event {::ev/name "remove-plugin"
+                                                 :name (:name plugin)
+                                                 :host (:host plugin)}))
+                            (dp/close-plugin! plugin)
+                            (preg/remove-plugin! plugin)
+                            (reset! plugins-state* (preg/plugins-list))
+                            (modal/show! :plugin-management {}))}))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}

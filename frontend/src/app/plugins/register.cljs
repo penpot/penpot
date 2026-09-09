@@ -122,36 +122,75 @@
 
 (declare remove-plugin!)
 
+;; Tracks plugin ids with a persist request in flight, so rapid repeated
+;; install/remove clicks on the same plugin cannot stack RPC writes.
+(defonce ^:private in-flight (atom #{}))
+
+(defn- validation-error?
+  [err]
+  (= :validation (:type (ex-data err))))
+
+(defn- release!
+  [plugin-id]
+  (swap! in-flight disj plugin-id))
+
+(defn- drop-local!
+  [{:keys [plugin-id]}]
+  (swap! registry #(-> %
+                       (update :ids (fn [ids] (vec (remove (partial = plugin-id) ids))))
+                       (update :data dissoc plugin-id))))
+
 (defn install-plugin!
   [plugin]
-  (letfn [(update-ids [ids]
-            (conj
-             (->> ids (remove #(= % (:plugin-id plugin))))
-             (:plugin-id plugin)))]
-    (swap! registry #(-> %
-                         (update :ids update-ids)
-                         (update :data assoc (:plugin-id plugin) plugin)))
-    (->> (rp/cmd! :add-profile-plugin {:plugin plugin})
-         (rx/subs! identity
-                   (fn [err]
-                     (remove-plugin! plugin)
-                     (.error js/console "Failed to install plugin:" err))))))
+  (let [plugin-id (:plugin-id plugin)]
+    (when-not (contains? @in-flight plugin-id)
+      (swap! in-flight conj plugin-id)
+      (letfn [(update-ids [ids]
+                (conj
+                 (->> ids (remove #(= % (:plugin-id plugin))))
+                 (:plugin-id plugin)))]
+        (swap! registry #(-> %
+                             (update :ids update-ids)
+                             (update :data assoc (:plugin-id plugin) plugin)))
+        (->> (rp/cmd! :add-profile-plugin {:plugin plugin})
+             (rx/subs! (fn [_]
+                         (release! plugin-id))
+                       (fn [err]
+                         ;; Release first so the rollback below is not skipped.
+                         (release! plugin-id)
+                         ;; A rejected install leaves nothing on the server,
+                         ;; so only clean the local registry without a second write.
+                         (if (validation-error? err)
+                           (drop-local! plugin)
+                           (remove-plugin! plugin))
+                         (.error js/console "Failed to install plugin:" err))))))))
 
 (defn remove-plugin!
   [{:keys [plugin-id]}]
-  (let [plugin (get-plugin plugin-id)]
-    (letfn [(update-ids [ids]
-              (->> ids
-                   (remove #(= % plugin-id))))]
-      (swap! registry #(-> %
-                           (update :ids update-ids)
-                           (update :data dissoc plugin-id)))
-      (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
-           (rx/subs! identity
-                     (fn [err]
-                       (when plugin
-                         (install-plugin! plugin))
-                       (.error js/console "Failed to remove plugin:" err)))))))
+  (let [stored (get-plugin plugin-id)]
+    (when-not (contains? @in-flight plugin-id)
+      (swap! in-flight conj plugin-id)
+      (letfn [(update-ids [ids]
+                (->> ids
+                     (remove #(= % plugin-id))))]
+        (swap! registry #(-> %
+                             (update :ids update-ids)
+                             (update :data dissoc plugin-id)))
+        (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
+             (rx/subs! (fn [_]
+                         (release! plugin-id))
+                       (fn [err]
+                         ;; Release first so the rollback below is not skipped.
+                         (release! plugin-id)
+                         (when stored
+                           ;; A rejected removal changed nothing on the server,
+                           ;; so restore only the local registry.
+                           (if (validation-error? err)
+                             (swap! registry #(-> %
+                                                  (update :ids conj plugin-id)
+                                                  (update :data assoc plugin-id stored)))
+                             (install-plugin! stored)))
+                         (.error js/console "Failed to remove plugin:" err))))))))
 
 (defn check-permission
   [plugin-id permission]
