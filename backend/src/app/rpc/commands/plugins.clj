@@ -76,20 +76,24 @@
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id plugin-id]}]
   (let [profile (profile/get-profile conn profile-id ::db/for-update true)
         plugins (get-in profile [:props :plugins] {:ids [] :data {}})
-        plugin-id-str (str plugin-id)
-        plugins (-> plugins
-                    (update :ids #(vec (remove (partial = plugin-id-str) %)))
-                    (update :data dissoc plugin-id-str))
-        props   (assoc (:props profile) :plugins plugins)]
-    ;; Removal only shrinks props, so this never raises; kept for uniformity
-    ;; so the user-facing profile.props RPC writes (update-profile-props,
-    ;; update-profile-notifications, add/remove-profile-plugin) all go
-    ;; through the size check. System writers (OIDC login merge,
-    ;; management subscription update) are exempt: they write fixed-key,
-    ;; non-accumulating shapes.
-    (profile/check-props-size! (:props profile) props)
-    (db/update! conn :profile
-                {:props (db/tjson props)}
-                {:id profile-id}
-                {::db/return-keys false})
-    nil))
+        plugin-id-str (str plugin-id)]
+    (if-not (or (some #(= % plugin-id-str) (:ids plugins))
+                (contains? (:data plugins) plugin-id-str))
+      ;; Nothing to remove: skip the write (and the size check) entirely.
+      nil
+      (let [plugins (-> plugins
+                        (update :ids #(vec (remove (partial = plugin-id-str) %)))
+                        (update :data dissoc plugin-id-str))
+            props   (assoc (:props profile) :plugins plugins)]
+        ;; Removal only shrinks props, so this never raises; kept for uniformity
+        ;; so the user-facing profile.props RPC writes (update-profile-props,
+        ;; update-profile-notifications, add/remove-profile-plugin) all go
+        ;; through the size check. System writers (OIDC login merge,
+        ;; management subscription update) are exempt: they write fixed-key,
+        ;; non-accumulating shapes.
+        (profile/check-props-size! (:props profile) props)
+        (db/update! conn :profile
+                    {:props (db/tjson props)}
+                    {:id profile-id}
+                    {::db/return-keys false})
+        nil))))

@@ -8,6 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [backend-tests.helpers :as th]
@@ -249,6 +250,22 @@
     (let [saved (th/db-get :profile {:id (:id profile)})
           props (profile/decode-row saved)]
       (t/is (= 50 (count (get-in props [:props :plugins :ids])))))))
+
+(t/deftest remove-profile-plugin-noop-on-oversized-profile-without-plugins
+  ;; Removing an absent id changes nothing: no write, no size failure,
+  ;; and no :plugins key is manufactured
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [out (th/command! {::th/type :remove-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin-id (uuid/next)})]
+        (t/is (nil? (:error out)))))
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (nil? (get-in props [:props :plugins])))
+      (t/is (= big (get props :props))))))
 
 (t/deftest update-profile-props-rejects-plugins
   (let [profile (th/create-profile* 1)
