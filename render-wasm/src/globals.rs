@@ -124,14 +124,21 @@ macro_rules! with_current_shape {
 #[cfg(test)]
 pub(crate) struct TestRenderResourcesGuard {
     prev: *mut RenderResources,
+    _lock: std::sync::MutexGuard<'static, ()>,
 }
+
+#[cfg(test)]
+static TEST_RENDER_RESOURCES_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 #[cfg(test)]
 impl TestRenderResourcesGuard {
     pub(crate) fn install(resources: &mut RenderResources) -> Self {
+        let lock = TEST_RENDER_RESOURCES_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let prev = unsafe { RENDER_RESOURCES };
         unsafe { RENDER_RESOURCES = resources as *mut _ };
-        Self { prev }
+        Self { prev, _lock: lock }
     }
 }
 
