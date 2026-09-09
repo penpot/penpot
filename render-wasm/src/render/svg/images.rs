@@ -5,7 +5,8 @@ use crate::shapes::{Fill, ImageFill, Shape};
 use crate::state::ShapesPoolRef;
 
 use super::document::SvgLayerCanvas;
-use crate::render::RenderResources;
+use crate::math::Rect as MathRect;
+use crate::render::{get_image_dest_rect, RenderResources};
 
 /// Emits fills bottom -> top for SVG export.
 ///
@@ -63,19 +64,20 @@ fn emit_image_fill(
     let clip_id = builder.unique("imgclip");
     builder.push_clip_path(&clip_id, shape, tree);
     let href = xml_escape_attr(url);
-    emit_linked_image_element(builder, shape, image_fill, &href, &clip_id);
+    let dest_rect = get_image_dest_rect(&shape.selrect(), image_fill);
+    emit_linked_image_element(builder, shape, image_fill, dest_rect, &href, &clip_id);
     Ok(())
 }
 
-/// Emits `<g clip-path>` + `<image href>` using the shape selrect and page CTM.
+/// Emits `<g clip-path>` + `<image href>` at `dest_rect`, under the page CTM.
 pub(super) fn emit_linked_image_element(
     builder: &mut SvgLayerCanvas,
     shape: &Shape,
     image_fill: &ImageFill,
+    dest_rect: MathRect,
     href: &str,
     clip_id: &str,
 ) {
-    let selrect = shape.selrect();
     let opacity = image_fill.opacity() as f32 / 255.0;
     let preserve = if image_fill.keep_aspect_ratio() {
         "xMidYMid slice"
@@ -93,10 +95,10 @@ pub(super) fn emit_linked_image_element(
     builder.open_group(&format!("clip-path=\"url(#{clip_id})\""));
     builder.push_raw(&format!(
         r#"<image href="{href}" x="{}" y="{}" width="{}" height="{}" preserveAspectRatio="{preserve}"{opacity_attr} transform="{transform}"/>"#,
-        selrect.left(),
-        selrect.top(),
-        selrect.width(),
-        selrect.height(),
+        dest_rect.left(),
+        dest_rect.top(),
+        dest_rect.width(),
+        dest_rect.height(),
     ));
     builder.close_group();
 }

@@ -58,7 +58,7 @@
   This effectively tells the caller \"apply exactly the transform that
   was requested\", which is what the real WASM engine does for simple
   moves / resizes without constraints."
-  [entries _pixel-precision]
+  [entries _snap-pixel? _snap-ignore-axis]
   (track! :propagate-modifiers)
   (when (d/not-empty? entries)
     (into []

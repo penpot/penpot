@@ -194,6 +194,14 @@ fn render_leaf(
     {
         if matches!(element.shape_type, Type::Text(_)) {
             render_text_fill(builder, shared, element)?;
+        } else if matches!(element.shape_type, Type::SVGRaw(_)) {
+            let matrix = element.centered_transform();
+            let canvas = builder.canvas();
+            canvas.save();
+            canvas.concat(&matrix);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
+            renderer.draw_svg(element)?;
+            canvas.restore();
         } else {
             emit_fills(builder, shared, element, &element.fills, tree, scale)?;
 

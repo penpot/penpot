@@ -36,6 +36,9 @@
 ;; Default age for automatic session renewal
 (def default-renewal-max-age (ct/duration {:hours 6}))
 
+;; Default absolute maximum session duration
+(def default-cookie-max-age-absolute (ct/duration {:days 30}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROTOCOLS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -169,15 +172,19 @@
 
 (defn- assign-token
   [cfg session]
-  (let [claims {:iss "authentication"
-                :aud "penpot"
-                :sid (:id session)
-                :iat (:modified-at session)
-                :uid (:profile-id session)
-                :sso-provider-id (:sso-provider-id session)
-                :sso-session-id (:sso-session-id session)}
-        header {:kid 1 :ver 1}
-        token  (tokens/generate cfg claims header)]
+  (let [absolute-max-age (cf/get :auth-token-cookie-max-age-absolute default-cookie-max-age-absolute)
+        claims            {:iss "authentication"
+                           :aud "penpot"
+                           :sid (:id session)
+                           :iat (:modified-at session)
+                           :uid (:profile-id session)
+                           :sso-provider-id (:sso-provider-id session)
+                           :sso-session-id (:sso-session-id session)}
+        claims            (if (:created-at session)
+                            (assoc claims :exp (ct/plus (:created-at session) absolute-max-age))
+                            claims)
+        header            {:kid 1 :ver 1}
+        token             (tokens/generate cfg claims header)]
     (assoc session :token token)))
 
 (defn create-fn
@@ -353,15 +360,23 @@
        or (updated_at is null and
            created_at < ?::timestamptz)")
 
+(def ^:private
+  sql:delete-expired-v2
+  "DELETE FROM http_session_v2
+    WHERE created_at < ?::timestamptz")
+
 (defn- collect-expired-tasks
   [{:keys [::db/conn ::tasks/max-age]}]
   (let [threshold (ct/minus (ct/now) max-age)
-        result    (-> (db/exec-one! conn [sql:delete-expired threshold threshold])
-                      (db/get-update-count))]
+        result-legacy (-> (db/exec-one! conn [sql:delete-expired threshold threshold])
+                          (db/get-update-count))
+        result-v2     (-> (db/exec-one! conn [sql:delete-expired-v2 threshold])
+                          (db/get-update-count))]
     (l/dbg :task "gc"
            :hint "clean http sessions"
-           :deleted result)
-    result))
+           :deleted-legacy result-legacy
+           :deleted-v2 result-v2)
+    (+ result-legacy result-v2)))
 
 (defmethod ig/init-key ::tasks/gc
   [_ {:keys [::tasks/max-age] :as cfg}]

@@ -1,6 +1,8 @@
 use super::fixtures::*;
 
-use crate::shapes::{BlendMode, Fill, ImageFill, SolidColor, StrokeCap, StrokeKind};
+use crate::shapes::{
+    BlendMode, Fill, ImageFill, ImageFillTransform, SolidColor, StrokeCap, StrokeKind,
+};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 
@@ -123,6 +125,36 @@ fn exports_a_group_with_two_rects_and_group_opacity() {
         "missing group opacity wrapper: {svg}"
     );
     insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn loads_svg_raw_dom_like_wasm_upload() {
+    // Production paints svg-raw via Dom::render after set_shape_svg_raw_content.
+    // Native SkSVGCanvas does not serialize those draws, so the export string
+    // stays empty here; we assert Dom parse + that export does not panic.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_svg_raw(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 307.0, 243.0),
+        concat!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg">"#,
+            r#"<text x="10" y="24" fill="black">HOLA</text>"#,
+            r#"</svg>"#,
+        ),
+    );
+
+    let resources = crate::render::RenderResources::try_new_headless().expect("headless");
+    let font_manager = skia::FontMgr::from(resources.fonts.font_provider().clone());
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.update_svg_raw_content(font_manager);
+        assert!(shape.svg.is_some(), "Dom must parse like WASM upload");
+    }
+
+    let _svg = render(&pool, id);
 }
 
 #[test]
@@ -1044,6 +1076,43 @@ fn exports_image_fill_as_linked_image() {
         "must not base64-embed the image: {svg}"
     );
     insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_image_fill_bounds_transform() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_rect_with_fills(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        vec![Fill::Image(ImageFill::new_with_transform(
+            image_id,
+            255,
+            200,
+            100,
+            false,
+            Some(ImageFillTransform {
+                x: 0.25,
+                y: 0.5,
+                width: 0.5,
+                height: 0.25,
+            }),
+        ))],
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert!(
+        svg.contains(r#"x="25" y="40" width="50" height="20""#),
+        "linked image must keep the independent image bounds: {svg}"
+    );
 }
 
 #[test]
