@@ -139,7 +139,7 @@
   (let [cfg    {::db/pool th/*pool*}
         job-id (mk-job! {})
         _      (jobs/claim! cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
-        out    (mgmt! :complete-job {:job-id job-id})]
+        out    (mgmt! :complete-job {:job-id job-id :result nil})]
     (t/is (nil? (:error out)))
     (let [row (get-row job-id)]
       (t/is (= "completed" (:status row)))
@@ -166,8 +166,17 @@
         job-id (mk-job! {})
         _      (jobs/claim! cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         out    (mgmt! :fail-job {:job-id job-id
-                                 :error  {:code "processing-error" :hint "bad image"}})]
+                                 :error  {:type :internal
+                                          :code "processing-error"
+                                          :hint "bad image"}})]
     (t/is (nil? (:error out)))
     (let [row (get-row job-id)]
       (t/is (= "failed" (:status row)))
-      (t/is (= {:code "processing-error" :hint "bad image"} (:error row))))))
+      (t/is (= {:type "internal"
+                :code "processing-error"
+                :hint "bad image"}
+               (:error row))))))
+
+(t/deftest fail-job-validates-params
+  (let [job-id (mk-job! {})]
+    (t/is (= :validation (th/ex-type (:error (mgmt! :fail-job {:job-id job-id})))))))

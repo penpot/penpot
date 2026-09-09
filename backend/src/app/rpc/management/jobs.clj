@@ -80,9 +80,9 @@
 (def ^:private schema:complete-job-params
   [:map {:title "complete-job-params"}
    [:job-id ::sm/uuid]
-   ;; Opaque per-job result blob (nil when the job returns nothing);
-   ;; intentionally untyped.
-   [:result {:optional true} :any]])
+   ;; Per-job result blob, nil when the job returns nothing; the key is
+   ;; always present, the shapes intentionally vary per job.
+   [:result [:maybe [:map-of :keyword :any]]]])
 
 (def ^:private schema:complete-job-result
   [:map {:title "complete-job-result"}])
@@ -101,10 +101,12 @@
 (def ^:private schema:fail-job-params
   [:map {:title "fail-job-params"}
    [:job-id ::sm/uuid]
-   ;; Error object with at least a code; open to worker-defined details
-   ;; such as :hint (see jobs/fail!).
+   ;; Rich error report: type/code/hint are required, the map stays
+   ;; open to worker-defined details (see jobs/fail!).
    [:error [:map
-            [:code ::sm/text]]]])
+            [:type :keyword]
+            [:code ::sm/text]
+            [:hint ::sm/text]]]])
 
 (def ^:private schema:fail-job-result
   [:map {:title "fail-job-result"}])
