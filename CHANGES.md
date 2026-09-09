@@ -2,6 +2,12 @@
 
 ## 2.18.0 (Unreleased)
 
+### :rocket: Epics and highlights
+
+- Group toolbar drawing tools into shape and free-draw flyouts [#9316](https://github.com/penpot/penpot/issues/9316) (PR: [#9480](https://github.com/penpot/penpot/pull/9480), [#10354](https://github.com/penpot/penpot/pull/10354))
+- Add dedicated Line and Arrow drawing tools (by @davidv399) [#9145](https://github.com/penpot/penpot/issues/9145) (PR: [#9146](https://github.com/penpot/penpot/pull/9146))
+- Show and manage comments while designing in the workspace [#10239](https://github.com/penpot/penpot/issues/10239) (PR: [#10275](https://github.com/penpot/penpot/pull/10275))
+
 ### :bug: Bugs fixed
 
 - Fix MCP integration hanging when the Penpot tab is backgrounded or frozen by the browser [#10323](https://github.com/penpot/penpot/issues/10323) (PR: [#10392](https://github.com/penpot/penpot/pull/10392))
