@@ -220,6 +220,36 @@
         (t/is (= 50 (count (get-in props [:props :plugins :ids]))))
         (t/is (= "Renamed" (get-in props [:props :plugins :data (first ids) :name])))))))
 
+(t/deftest add-profile-plugin-full-registry-reports-too-many-before-size
+  ;; A full registry plus oversized content reports the count guard,
+  ;; which runs before the size check
+  (let [profile (th/create-profile* 1)]
+    ;; Seed 50 plugins under a generous limit
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 1000000})]
+      (doseq [i (range 50)]
+        (let [plugin (assoc valid-plugin
+                            :plugin-id (str (uuid/next))
+                            :name (str "Plugin " i))
+              out    (th/command! {::th/type :add-profile-plugin
+                                   ::rpc/profile-id (:id profile)
+                                   :plugin plugin})]
+          (t/is (nil? (:error out)) (str "seed plugin " i " should install")))))
+    ;; Tight limit + 51st small plugin: count wins over size
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [extra (assoc valid-plugin
+                         :plugin-id (str (uuid/next))
+                         :name "One Too Many")
+            out   (th/command! {::th/type :add-profile-plugin
+                                ::rpc/profile-id (:id profile)
+                                :plugin extra})]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :too-many-plugins))))
+    ;; And nothing extra was persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (= 50 (count (get-in props [:props :plugins :ids])))))))
+
 (t/deftest update-profile-props-rejects-plugins
   (let [profile (th/create-profile* 1)
         data    {::th/type :update-profile-props

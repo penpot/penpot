@@ -8821,15 +8821,15 @@ msgstr "Leer la información del usuario actual."
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Lista de extensiones"
 
-#: src/app/main/ui/workspace/plugins.cljs:181
+#: src/app/main/ui/workspace/plugins.cljs:187
 msgid "workspace.plugins.remove-confirmation.message"
 msgstr "¿Seguro que quieres eliminar la extensión %s? Puedes instalarla de nuevo en cualquier momento."
 
-#: src/app/main/ui/workspace/plugins.cljs:180
+#: src/app/main/ui/workspace/plugins.cljs:186
 msgid "workspace.plugins.remove-confirmation.title"
 msgstr "Eliminar extensión"
 
-#: src/app/main/ui/workspace/plugins.cljs:101
+#: src/app/main/ui/workspace/plugins.cljs:101, src/app/main/ui/workspace/plugins.cljs:188
 msgid "workspace.plugins.remove-plugin"
 msgstr "Eliminar extensión"
 

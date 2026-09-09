@@ -141,10 +141,6 @@
   (swap! in-flight-listeners disj f)
   nil)
 
-(defn plugin-persisting?
-  [plugin-id]
-  (contains? @in-flight plugin-id))
-
 (defn- notify-in-flight!
   []
   (let [ids @in-flight]
@@ -171,9 +167,16 @@
                        (update :ids (fn [ids] (vec (remove (partial = plugin-id) ids))))
                        (update :data dissoc plugin-id))))
 
+(defn- insert-at
+  [ids idx id]
+  (let [v   (vec ids)
+        idx (max 0 (min idx (count v)))]
+    (vec (concat (subvec v 0 idx) [id] (subvec v idx)))))
+
 (defn install-plugin!
   [plugin]
-  (let [plugin-id (:plugin-id plugin)]
+  (let [plugin-id (:plugin-id plugin)
+        previous  (get-plugin plugin-id)]
     (when-not (contains? @in-flight plugin-id)
       (track! plugin-id)
       (letfn [(update-ids [ids]
@@ -187,18 +190,27 @@
              (rx/subs! (fn [_]
                          (release! plugin-id))
                        (fn [err]
-                         ;; Release first so the rollback below is not skipped.
                          (release! plugin-id)
-                         ;; A rejected install leaves nothing on the server,
-                         ;; so only clean the local registry without a second write.
                          (if (validation-error? err)
-                           (drop-local! plugin)
-                           (remove-plugin! plugin))
+                           ;; The server kept the previous version (if any):
+                           ;; restore it instead of dropping the entry.
+                           (if previous
+                             (swap! registry assoc-in [:data plugin-id] previous)
+                             (drop-local! plugin))
+                           ;; One-shot compensating write with terminal
+                           ;; callbacks: never re-arms tracking or rollback.
+                           (do
+                             (drop-local! plugin)
+                             (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
+                                  (rx/subs! (fn [_] nil)
+                                            (fn [err2]
+                                              (.error js/console "Rollback remove failed:" err2))))))
                          (.error js/console "Failed to install plugin:" err))))))))
 
 (defn remove-plugin!
   [{:keys [plugin-id]}]
-  (let [stored (get-plugin plugin-id)]
+  (let [stored   (get-plugin plugin-id)
+        prev-idx (.indexOf (vec (:ids @registry)) plugin-id)]
     (when-not (contains? @in-flight plugin-id)
       (track! plugin-id)
       (letfn [(update-ids [ids]
@@ -211,16 +223,20 @@
              (rx/subs! (fn [_]
                          (release! plugin-id))
                        (fn [err]
-                         ;; Release first so the rollback below is not skipped.
                          (release! plugin-id)
                          (when stored
-                           ;; A rejected removal changed nothing on the server,
-                           ;; so restore only the local registry.
-                           (if (validation-error? err)
-                             (swap! registry #(-> %
-                                                  (update :ids conj plugin-id)
-                                                  (update :data assoc plugin-id stored)))
-                             (install-plugin! stored)))
+                           ;; Restore at the original position; the server
+                           ;; still holds the entry on validation errors.
+                           (swap! registry #(-> %
+                                                (update :ids insert-at prev-idx plugin-id)
+                                                (update :data assoc plugin-id stored)))
+                           ;; One-shot compensating write with terminal
+                           ;; callbacks on any other failure.
+                           (when-not (validation-error? err)
+                             (->> (rp/cmd! :add-profile-plugin {:plugin stored})
+                                  (rx/subs! (fn [_] nil)
+                                            (fn [err2]
+                                              (.error js/console "Rollback install failed:" err2))))))
                          (.error js/console "Failed to remove plugin:" err))))))))
 
 (defn check-permission
