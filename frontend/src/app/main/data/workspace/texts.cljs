@@ -193,30 +193,50 @@
   #{:font-family :font-size :font-style :font-weight
     :direction :text-direction :text-decoration :text-transform :key})
 
-(defn- remove-nil-style-attrs
-  "Strip nil-valued non-nilable style attrs from every node in a content tree.
-  Repairs content already corrupted with e.g. nil :font-family/:font-weight/
-  :font-style (from an unloaded font) so it can pass the backend schema again."
+(defn- repair-nodes
+  "Walk a content tree once, repairing every node so it can pass the backend
+  `validate-shape` schema: nil-valued non-nilable style attrs are stripped
+  (e.g. nil :font-family/:font-weight/:font-style from an unloaded font) and a
+  level with no children is seeded with the default paragraph/span."
   [content]
-  (txt/transform-nodes
-   (fn [node]
-     (reduce (fn [node k]
-               (if (and (contains? node k) (nil? (get node k)))
-                 (dissoc node k)
-                 node))
-             node
-             non-nilable-style-attrs))
-   content))
+  (let [;; Seeding only makes sense inside a root tree: a bare node handed over
+        ;; as content is not ours to complete.
+        seed?        (= "root" (:type content))
+        default-para (delay (-> (tc/v2-default-text-content) :children first :children first))]
+    (txt/transform-nodes
+     (fn [node]
+       (let [node (reduce (fn [node k]
+                            (if (and (contains? node k) (nil? (get node k)))
+                              (dissoc node k)
+                              node))
+                          node
+                          non-nilable-style-attrs)]
+         (if seed?
+           (case (:type node)
+             "paragraph-set"
+             (cond-> node
+               (empty? (:children node))
+               (assoc :children [@default-para]))
+
+             "paragraph"
+             (cond-> node
+               (empty? (:children node))
+               (assoc :children (:children @default-para)))
+
+             node)
+           node)))
+     content)))
 
 (defn ensure-valid-text-content
   "Repair structurally incomplete text :content to a canonical
   root -> paragraph-set -> paragraph -> span tree. Returns the
   content unchanged when it is already well-formed.
 
-  A `nil` content, a root with no :children, or a root with an empty
-  :children vector all fail the backend `validate-shape` schema
-  (children must contain at least one paragraph-set). This helper
-  is the defensive normalizer used by content-commit paths.
+  A `nil` content, a root with no :children, a paragraph-set with no
+  paragraphs, or a paragraph with no spans all fail the backend
+  `validate-shape` schema (every level requires at least one child).
+  This helper is the defensive normalizer used by content-commit paths;
+  it mirrors the `0025-repair-empty-text-content` migration.
 
   It also scrubs nil-valued non-nilable style attrs (e.g. nil
   :font-family/:font-weight/:font-style left over from an unloaded font),
@@ -228,7 +248,7 @@
                (empty? (:children content))))
     (let [base (tc/v2-default-text-content)]
       (d/txt-merge base (select-keys content txt/root-attrs)))
-    (remove-nil-style-attrs content)))
+    (repair-nodes content)))
 
 (defn- v2-content-has-text?
   [content]

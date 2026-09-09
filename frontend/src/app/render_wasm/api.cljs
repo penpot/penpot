@@ -1278,22 +1278,18 @@
 
       (if (< index total)
         (let [paragraph (nth paragraphs index)
-              spans    (get paragraph :children)]
-          (if (empty? (seq spans))
-            (recur (inc index)
-                   emoji?
-                   langs)
+              spans     (or (seq (get paragraph :children))
+                            [(assoc (select-keys paragraph txt/text-node-attrs) :text "")])
+              text      (apply str (map :text spans))
+              emoji?    (if emoji? emoji? (t/contains-emoji? text))
+              langs     (t/collect-used-languages langs text)]
 
-            (let [text   (apply str (map :text spans))
-                  emoji? (if emoji? emoji? (t/contains-emoji? text))
-                  langs  (t/collect-used-languages langs text)]
+          ;; FIXME: this should probably be somewhere else
+          (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
 
-              ;; FIXME: this should probably be somewhere else
-              (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
-
-              (recur (inc index)
-                     emoji?
-                     langs))))
+          (recur (inc index)
+                 emoji?
+                 langs))
 
         (let [updated-fonts
               (-> #{}
