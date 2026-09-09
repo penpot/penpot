@@ -114,3 +114,10 @@
                                         :expires-in "200h"})]
       (t/is (th/ex-of-type? error :validation))
       (t/is (th/ex-of-code? error :invalid-expires-in)))))
+
+(t/deftest create-demo-profile-rejects-non-duration-expires-in
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
+                                        :expires-in "yes"})]
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :params-validation)))))
