@@ -176,6 +176,50 @@
                               :plugin-id (uuid/uuid plugin-id-1)})]
         (t/is (nil? (:error out)))))))
 
+(t/deftest add-profile-plugin-rejects-51st-plugin
+  ;; The registry holds at most 50 plugins; the 51st (new id) must fail
+  (let [profile (th/create-profile* 1)]
+    ;; Seed 50 plugins
+    (doseq [i (range 50)]
+      (let [plugin (assoc valid-plugin
+                          :plugin-id (str (uuid/next))
+                          :name (str "Plugin " i))
+            out    (th/command! {::th/type :add-profile-plugin
+                                 ::rpc/profile-id (:id profile)
+                                 :plugin plugin})]
+        (t/is (nil? (:error out)) (str "seed plugin " i " should install"))))
+    ;; The 51st must fail with a specific error
+    (let [extra (assoc valid-plugin
+                       :plugin-id (str (uuid/next))
+                       :name "One Too Many")
+          out   (th/command! {::th/type :add-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin extra})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :too-many-plugins)))
+    ;; And nothing extra was persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (= 50 (count (get-in props [:props :plugins :ids])))))))
+
+(t/deftest add-profile-plugin-updates-existing-at-limit
+  ;; Re-adding an existing id at the limit is an update, not a new entry
+  (let [profile (th/create-profile* 1)
+        ids     (mapv (fn [_] (str (uuid/next))) (range 50))]
+    (doseq [[i pid] (map-indexed vector ids)]
+      (th/command! {::th/type :add-profile-plugin
+                    ::rpc/profile-id (:id profile)
+                    :plugin (assoc valid-plugin :plugin-id pid :name (str "Plugin " i))}))
+    (let [out (th/command! {::th/type :add-profile-plugin
+                            ::rpc/profile-id (:id profile)
+                            :plugin (assoc valid-plugin :plugin-id (first ids) :name "Renamed")})]
+      (t/is (nil? (:error out)))
+      (let [saved (th/db-get :profile {:id (:id profile)})
+            props (profile/decode-row saved)]
+        (t/is (= 50 (count (get-in props [:props :plugins :ids]))))
+        (t/is (= "Renamed" (get-in props [:props :plugins :data (first ids) :name])))))))
+
 (t/deftest update-profile-props-rejects-plugins
   (let [profile (th/create-profile* 1)
         data    {::th/type :update-profile-props

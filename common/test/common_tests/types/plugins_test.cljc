@@ -34,6 +34,23 @@
   (t/is (false? (sm/validate ctp/schema:registry-entry
                              (assoc valid-entry :host (apply str (repeat 501 "x")))))))
 
+(t/deftest registry-entry-rejects-oversized-description
+  (t/is (false? (sm/validate ctp/schema:registry-entry
+                             (assoc valid-entry :description (apply str (repeat 4097 "x")))))))
+
+(t/deftest registry-entry-rejects-oversized-icon
+  (t/is (false? (sm/validate ctp/schema:registry-entry
+                             (assoc valid-entry :icon (apply str (repeat 262145 "x")))))))
+
+(t/deftest registry-entry-accepts-values-at-max
+  (t/is (true? (sm/validate ctp/schema:registry-entry
+                            (assoc valid-entry
+                                   :name (apply str (repeat 500 "x"))
+                                   :host (apply str (repeat 500 "x"))
+                                   :description (apply str (repeat 4096 "x"))
+                                   :icon (apply str (repeat 262144 "x"))
+                                   :code (apply str (repeat 1048576 "x")))))))
+
 (defn- make-registry
   [n]
   (let [ids (mapv #(str "plugin-" %) (range n))]
