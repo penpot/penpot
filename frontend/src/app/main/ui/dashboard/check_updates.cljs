@@ -69,6 +69,39 @@
         (let [items (parse-section-items subsection)]
           (when (seq items) items))))))
 
+(def ^:private inline-md-re
+  #"\[([^\]]+)\]\(((?:\([^)]*\)|[^)\s])*)\)|\*\*([^*]+)\*\*")
+
+(defn- http-url?
+  [url]
+  (boolean (re-matches #"https?://.*" (or url ""))))
+
+(defn parse-highlight-item
+  "Parse one highlight string with inline markdown (links, bold) into a
+  vector of {:type :text/:link/:bold, :text ..., :href ...} descriptors.
+  Anything unrecognized degrades to :text. Total over strings; nil and
+  empty input return []."
+  [text]
+  (if (or (not (string? text)) (= "" text))
+    []
+    (loop [out [] s text]
+      (if (= "" s)
+        out
+        (if-let [[m link-text link-href bold-text] (re-find inline-md-re s)]
+          (let [idx    (cstr/index-of s m)
+                before (subs s 0 idx)
+                after  (subs s (+ idx (count m)))
+                out    (if (= "" before) out (conj out {:type :text :text before}))]
+            (cond
+              (some? link-text)
+              (if (http-url? link-href)
+                (recur (conj out {:type :link :text link-text :href link-href}) after)
+                (recur (conj out {:type :text :text m}) after))
+
+              :else
+              (recur (conj out {:type :bold :text bold-text}) after)))
+          (conj out {:type :text :text s}))))))
+
 (defn parse-highlights
   "Parse CHANGES.md into released version sections with bullet items from
   the :rocket: Epics and highlights subsection. Skips Unreleased headings,
@@ -318,7 +351,19 @@
                  (for [item items]
                    [:li {:key item
                          :class (stl/css :highlights-item)}
-                    item])]]))]])]
+                    (for [[idx frag] (map-indexed vector (parse-highlight-item item))]
+                      (case (:type frag)
+                        :link
+                        [:a {:key idx
+                             :href (:href frag)
+                             :target "_blank"
+                             :rel "noopener noreferrer"}
+                         (:text frag)]
+
+                        :bold
+                        [:strong {:key idx} (:text frag)]
+
+                        (:text frag)))])]]))]])]
 
       [:div {:class (stl/css :modal-footer :modal-footer-available)}
        [:> button* {:variant "secondary"
