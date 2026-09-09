@@ -116,11 +116,12 @@
    [:is-disabled {:optional true} [:maybe :boolean]]
    [:on-action {:optional true} [:maybe fn?]]
    [:max-width {:optional true} [:maybe [:or :int :string]]]
-   [:is-dense {:optional true} [:maybe :boolean]]])
+   [:is-dense {:optional true} [:maybe :boolean]]
+   [:on-open-change {:optional true} [:maybe fn?]]])
 
 (mf/defc context-menu*
   {::mf/schema schema:context-menu}
-  [{:keys [class aria-label trigger placement is-disabled on-action max-width is-dense children] :rest props}]
+  [{:keys [class aria-label trigger placement is-disabled on-action max-width is-dense on-open-change children] :rest props}]
   (let [placement (d/nilv placement "bottom start")
         props
         (mf/spread-props props
@@ -131,6 +132,7 @@
                           :is-disabled is-disabled
                           :on-action on-action
                           :max-width max-width
-                          :is-dense is-dense})]
+                          :is-dense is-dense
+                          :on-open-change on-open-change})]
     [:> menu/ContextMenu props
      children]))
