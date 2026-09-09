@@ -117,6 +117,6 @@ fn emit_text_image_fill(
     builder.finish_clip_path_fragment(&clip_id, canvas);
 
     let href = xml_escape_attr(url);
-    emit_linked_image_element(builder, shape, image_fill, &href, &clip_id);
+    emit_linked_image_element(builder, shape, image_fill, shape.selrect(), &href, &clip_id);
     Ok(())
 }
