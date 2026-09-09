@@ -176,7 +176,8 @@
 (defn install-plugin!
   [plugin]
   (let [plugin-id (:plugin-id plugin)
-        previous  (get-plugin plugin-id)]
+        previous  (get-plugin plugin-id)
+        prev-idx  (.indexOf (vec (:ids @registry)) plugin-id)]
     (when-not (contains? @in-flight plugin-id)
       (track! plugin-id)
       (letfn [(update-ids [ids]
@@ -192,10 +193,16 @@
                        (fn [err]
                          (release! plugin-id)
                          (if (validation-error? err)
-                           ;; The server kept the previous version (if any):
-                           ;; restore it instead of dropping the entry.
+                           ;; The server kept the previous version (if any)
+                           ;; in its original position: drop the optimistic
+                           ;; entry and restore both position and data.
                            (if previous
-                             (swap! registry assoc-in [:data plugin-id] previous)
+                             (swap! registry #(-> %
+                                                  (update :ids (fn [ids]
+                                                                 (insert-at (remove (partial = plugin-id) ids)
+                                                                            prev-idx
+                                                                            plugin-id)))
+                                                  (assoc-in [:data plugin-id] previous)))
                              (drop-local! plugin))
                            ;; One-shot compensating write with terminal
                            ;; callbacks: never re-arms tracking or rollback.

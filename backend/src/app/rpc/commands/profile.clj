@@ -36,6 +36,7 @@
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
+(declare check-props-size!)
 (declare decode-row)
 (declare filter-props)
 (declare get-profile)
@@ -284,6 +285,8 @@
         props
         (-> (get profile :props)
             (assoc :notifications notifications))]
+
+    (check-props-size! (:props profile) props)
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
