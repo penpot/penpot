@@ -23,11 +23,13 @@
              "bottom" "bottom start" "bottom end"
              "left" "left top" "left bottom"
              "right" "right top" "right bottom"]]]
-   [:on-action {:optional true} [:maybe fn?]]])
+   [:on-action {:optional true} [:maybe fn?]]
+   [:max-width {:optional true} [:maybe [:or :int :string]]]
+   [:is-dense {:optional true} [:maybe :boolean]]])
 
 (mf/defc menu*
   {::mf/schema schema:menu}
-  [{:keys [class is-open on-open-change trigger placement on-action children] :rest props}]
+  [{:keys [class is-open on-open-change trigger placement on-action max-width is-dense children] :rest props}]
   (let [placement (d/nilv placement "bottom start")
         props
         (mf/spread-props props
@@ -36,7 +38,9 @@
                           :on-open-change on-open-change
                           :trigger trigger
                           :placement placement
-                          :on-action on-action})]
+                          :on-action on-action
+                          :max-width max-width
+                          :is-dense is-dense})]
     [:> menu/Menu props
      children]))
 
@@ -69,11 +73,12 @@
    [:is-disabled {:optional true} [:maybe :boolean]]
    [:text-value {:optional true} [:maybe :string]]
    [:on-action {:optional true} [:maybe fn?]]
-   [:variant {:optional true} [:maybe [:enum "flyout" "drilldown"]]]])
+   [:variant {:optional true} [:maybe [:enum "flyout" "drilldown"]]]
+   [:max-width {:optional true} [:maybe [:or :int :string]]]])
 
 (mf/defc sub-menu*
   {::mf/schema schema:sub-menu}
-  [{:keys [id class trigger is-disabled text-value on-action variant children] :rest props}]
+  [{:keys [id class trigger is-disabled text-value on-action variant max-width children] :rest props}]
   (let [variant (d/nilv variant "flyout")
         props
         (mf/spread-props props
@@ -83,7 +88,8 @@
                           :is-disabled is-disabled
                           :text-value text-value
                           :on-action on-action
-                          :variant variant})]
+                          :variant variant
+                          :max-width max-width})]
     [:> menu/SubMenu props
      children]))
 
@@ -108,11 +114,13 @@
              "left" "left top" "left bottom"
              "right" "right top" "right bottom"]]]
    [:is-disabled {:optional true} [:maybe :boolean]]
-   [:on-action {:optional true} [:maybe fn?]]])
+   [:on-action {:optional true} [:maybe fn?]]
+   [:max-width {:optional true} [:maybe [:or :int :string]]]
+   [:is-dense {:optional true} [:maybe :boolean]]])
 
 (mf/defc context-menu*
   {::mf/schema schema:context-menu}
-  [{:keys [class aria-label trigger placement is-disabled on-action children] :rest props}]
+  [{:keys [class aria-label trigger placement is-disabled on-action max-width is-dense children] :rest props}]
   (let [placement (d/nilv placement "bottom start")
         props
         (mf/spread-props props
@@ -121,6 +129,8 @@
                           :trigger trigger
                           :placement placement
                           :is-disabled is-disabled
-                          :on-action on-action})]
+                          :on-action on-action
+                          :max-width max-width
+                          :is-dense is-dense})]
     [:> menu/ContextMenu props
      children]))

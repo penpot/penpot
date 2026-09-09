@@ -26,6 +26,14 @@ A menu displays a list of actions or options that a user can choose from. It ope
 
 <Canvas of={Menu.WithDrilldownSubMenu} />
 
+### Dense
+
+<Canvas of={Menu.Dense} />
+
+### With a max width
+
+<Canvas of={Menu.WithMaxWidth} />
+
 ---
 
 # Usage
@@ -91,6 +99,20 @@ Options
 
 "top", "top start", "top end", "bottom", "bottom start" (default), "bottom end", "left", "left top", "left bottom", "right", "right top", "right bottom"
 
+## max-width
+
+Caps how wide the menu (and every flyout submenu nested in it) can grow. The existing minimum width still wins if it's larger than this.
+
+Type: number (pixels) | string (any CSS length)
+
+Default: 250
+
+## is-dense
+
+Shrinks every item — this menu's own and every nested flyout submenu's — to a 28px row, for lists dense enough that the default 32px adds up.
+
+Default: false
+
 ## class
 
 Additional CSS class applied to the menu.
@@ -142,7 +164,7 @@ Selecting any item inside a submenu closes the whole menu, not just that submenu
 
 ## variant
 
-`"flyout"` (default) opens a nested popover next to the trigger item. `"drilldown"` replaces the parent menu's content with this submenu's items and adds a back item — use it for deep or wide trees, e.g. move-to-project's team → project nesting. Nested drilldowns keep drilling into the same list.
+`"flyout"` (default) opens a nested popover next to the trigger item. `"drilldown"` replaces the parent menu's content with this submenu's items and adds a back item — use it for deep or wide trees, e.g. move-to-project's team → project nesting. Nested drilldowns keep drilling into the same list, which is never sized smaller than the root level it was entered from.
 
 ```clojure
 [:> sub-menu* {:trigger "Move to" :variant "drilldown"}
@@ -184,6 +206,14 @@ Type: function
 Plain-text representation of the trigger, used for typeahead. Required when `trigger` isn't a plain string.
 
 Type: string
+
+## max-width
+
+Only meaningful for the `"flyout"` variant: its nested popover is its own menu, independent of the root's. A `"drilldown"` submenu has no popover of its own to size — it renders into the root's, sized by the root Menu/ContextMenu's own `max-width` instead.
+
+Type: number (pixels) | string (any CSS length)
+
+Default: 250
 
 ## class
 

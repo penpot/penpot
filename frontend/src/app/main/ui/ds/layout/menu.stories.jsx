@@ -76,6 +76,12 @@ export default {
         "right bottom",
       ],
     },
+    maxWidth: {
+      control: { type: "number" },
+    },
+    isDense: {
+      control: { type: "boolean" },
+    },
   },
   parameters: {
     controls: { exclude: ["isOpen", "onOpenChange", "trigger", "children"] },
@@ -143,6 +149,24 @@ export const WithSubMenu = {
 
 export const WithDrilldownSubMenu = {
   args: { children: drilldownChildren },
+};
+
+export const Dense = {
+  args: { isDense: true },
+};
+
+export const WithMaxWidth = {
+  args: {
+    maxWidth: 160,
+    children: (
+      <>
+        <MenuItem id="rename">Rename this file completely</MenuItem>
+        <MenuItem id="duplicate">Duplicate</MenuItem>
+        <MenuSeparator />
+        <MenuItem id="delete">Delete</MenuItem>
+      </>
+    ),
+  },
 };
 
 export const Placement = {
@@ -312,5 +336,135 @@ export const TestClosesOnEscapeAndOutsideClick = {
       await userEvent.click(document.body);
       await expectMenuClosed();
     });
+  },
+};
+
+export const TestDenseShrinksItems = {
+  args: { isDense: true },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step("Every item renders at the dense row height", async () => {
+      await userEvent.click(trigger);
+      const item = await screen.findByRole("menuitem", { name: "Rename" });
+
+      expect(getComputedStyle(item).blockSize).toBe("28px");
+    });
+  },
+};
+
+export const TestMaxWidthCapsPopoverWidth = {
+  args: {
+    maxWidth: 160,
+    children: (
+      <>
+        <MenuItem id="rename">Rename this file completely</MenuItem>
+        <MenuSeparator />
+        <MenuItem id="delete">Delete</MenuItem>
+      </>
+    ),
+  },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step("The popover never grows past maxWidth", async () => {
+      await userEvent.click(trigger);
+      const menu = await screen.findByRole("menu");
+
+      await waitFor(() =>
+        expect(menu.getBoundingClientRect().width).toBeLessThanOrEqual(160),
+      );
+    });
+  },
+};
+
+export const TestDrilldownNeverShrinksBelowRoot = {
+  args: {
+    // Deliberately wider and taller at the root than the level drilled into,
+    // so a regression (sizing the popover off whichever level is current,
+    // rather than pinning it to the root) would show up as a shrink.
+    children: (
+      <>
+        <MenuItem id="rename">Rename this file completely</MenuItem>
+        <MenuItem id="duplicate">Duplicate</MenuItem>
+        <MenuItem id="restore">Restore from trash</MenuItem>
+        <MenuSeparator />
+        <SubMenu trigger="Move to" variant="drilldown">
+          <MenuItem id="project-a">A</MenuItem>
+        </SubMenu>
+      </>
+    ),
+  },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+    let rootSize;
+
+    await step("Measure the root level's content size", async () => {
+      await userEvent.click(trigger);
+      const menu = await screen.findByRole("menu");
+      // scrollWidth/scrollHeight, not getBoundingClientRect: the popover's
+      // own max-block-size is recomputed by react-aria against the trigger's
+      // position and can be transiently smaller right after opening, which
+      // would make this assert against the wrong (clipped) baseline.
+      rootSize = { width: menu.scrollWidth, height: menu.scrollHeight };
+    });
+
+    await step("Drilling in sets a min-size pinned to the root", async () => {
+      await userEvent.click(screen.getByRole("menuitem", { name: "Move to" }));
+      const menu = await screen.findByRole("menu");
+      await screen.findByRole("menuitem", { name: "A" });
+
+      // Checked against the min-inline-size/min-block-size this sets, not
+      // the rendered box: that box is still subject to the same transient
+      // max-block-size react-aria computes for the popover, independent of
+      // whether the fix under test applied the right floor underneath it.
+      await waitFor(() => {
+        expect(parseFloat(menu.style.minInlineSize)).toBeCloseTo(
+          rootSize.width,
+          0,
+        );
+        expect(parseFloat(menu.style.minBlockSize)).toBeCloseTo(
+          rootSize.height,
+          0,
+        );
+      });
+    });
+  },
+};
+
+export const TestLongLabelEllipsesInsteadOfWrapping = {
+  args: {
+    maxWidth: 160,
+    children: (
+      <>
+        <MenuItem id="rename">
+          A veeeery long option name that would otherwise wrap onto several
+          lines
+        </MenuItem>
+        <MenuItem id="delete">Delete</MenuItem>
+      </>
+    ),
+  },
+  play: async ({ canvasElement, step }) => {
+    const trigger = getTrigger(canvasElement);
+
+    await step(
+      "The long label clips to a single line instead of wrapping",
+      async () => {
+        await userEvent.click(trigger);
+        const item = await screen.findByRole("menuitem", {
+          name: /veeeery long/i,
+        });
+        const label = item.firstElementChild;
+
+        expect(getComputedStyle(label).whiteSpace).toBe("nowrap");
+        expect(getComputedStyle(label).textOverflow).toBe("ellipsis");
+        // The row itself must stay a single line's height — if the label
+        // weren't kept to nowrap, the flex row would grow to fit the wrapped
+        // text instead of clipping it.
+        expect(item.getBoundingClientRect().height).toBeLessThan(40);
+        expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+      },
+    );
   },
 };
