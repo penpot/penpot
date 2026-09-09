@@ -22,6 +22,22 @@ import {
 import { createPortal } from "react-dom";
 import styles from "./Menu.module.scss";
 
+// A number is treated as a pixel count, so callers can pass either a plain
+// number (320) or any other valid CSS length ("20rem").
+type CssLength = number | string;
+
+function cssLength(value: CssLength | undefined): string | undefined {
+  if (value == null) return undefined;
+  return typeof value === "number" ? `${value}px` : value;
+}
+
+// SubMenu's own nested flyout popover renders an independent RACMenu (see
+// below), so a density set on the root Menu/ContextMenu wouldn't otherwise
+// reach it — this carries it down so every level of a menu, flyouts
+// included, stays visually consistent without repeating the prop on each
+// SubMenu.
+const MenuDensityContext = createContext(false);
+
 type Placement =
   | "top"
   | "top start"
@@ -84,15 +100,39 @@ interface NavigationLevel {
 // stack is current, and provides drillIn to the rest of `children`. Shared
 // between Menu and ContextMenu, which each keep their own stack (a
 // drilldown inside one popover has no bearing on the other).
+//
+// A drilled-in level replaces the root's content in the same popover, which
+// otherwise lets it shrink to fit a shorter/narrower list than the level the
+// user started from — jarring mid-navigation. menuRef/style let the caller
+// pin the popover to at least the root's own rendered size for as long as
+// any level is drilled in.
 function useMenuNavigation(children: ReactNode, isOpen: boolean | undefined) {
   const [stack, setStack] = useState<NavigationLevel[]>([]);
   const nextLevelKey = useRef(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const rootSize = useRef<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
-    if (!isOpen) setStack([]);
+    if (!isOpen) {
+      setStack([]);
+      rootSize.current = null;
+    }
   }, [isOpen]);
 
   const drillIn = useCallback((label: ReactNode, content: ReactNode) => {
+    // Captured once, from the root level, the first time it's left — every
+    // level drilled into after that is measured against the same baseline,
+    // not whichever level was current just before it.
+    if (!rootSize.current && menuRef.current) {
+      // scrollWidth/scrollHeight (the laid-out content size) rather than
+      // getBoundingClientRect (the rendered, possibly-clipped box): the
+      // popover's own max-block-size is recalculated by react-aria against
+      // the trigger's position and can transiently be smaller right around
+      // an interaction, which would otherwise bake an artificially small
+      // baseline into every level drilled in after this one.
+      const el = menuRef.current;
+      rootSize.current = { width: el.scrollWidth, height: el.scrollHeight };
+    }
     nextLevelKey.current += 1;
     const key = `level-${nextLevelKey.current}`;
     setStack((prev) => [...prev, { key, label, content }]);
@@ -130,7 +170,7 @@ function useMenuNavigation(children: ReactNode, isOpen: boolean | undefined) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className={styles.backLabel}>{current.label}</span>
+              <span className={styles.menuItemLabel}>{current.label}</span>
             </MenuItem>
             <MenuSeparator />
           </>
@@ -140,7 +180,15 @@ function useMenuNavigation(children: ReactNode, isOpen: boolean | undefined) {
     </MenuNavigationContext.Provider>
   );
 
-  return content;
+  const style =
+    current && rootSize.current
+      ? {
+          minInlineSize: `${rootSize.current.width}px`,
+          minBlockSize: `${rootSize.current.height}px`,
+        }
+      : undefined;
+
+  return { content, menuRef, style };
 }
 
 // Menu/ContextMenu deliberately don't use react-aria-components' own
@@ -214,6 +262,14 @@ interface MenuProps {
   placement?: Placement;
   className?: string;
   onAction?: (key: Key) => void;
+  // Caps how wide the popover (and every flyout SubMenu nested in it) can
+  // grow. A number is a pixel count; the existing min-inline-size still
+  // wins if it's larger than this.
+  // @default 250
+  maxWidth?: CssLength;
+  // Shrinks every item (this menu's own and every nested flyout SubMenu's)
+  // to a 28px row, for lists dense enough that the default 32px adds up.
+  isDense?: boolean;
 }
 
 // MenuTrigger normally locates the trigger's DOM node by requiring its
@@ -231,12 +287,18 @@ export function Menu({
   placement = "bottom start",
   className,
   onAction,
+  maxWidth = 250,
+  isDense = false,
 }: MenuProps) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerId = useId();
   const [shouldSkipAnimation, setShouldSkipAnimation] = useState(false);
-  const navigationContent = useMenuNavigation(children, isOpen);
+  const {
+    content: navigationContent,
+    menuRef,
+    style: navigationStyle,
+  } = useMenuNavigation(children, isOpen);
 
   useEffect(() => {
     if (isOpen) setShouldSkipAnimation(false);
@@ -303,13 +365,17 @@ export function Menu({
         shouldCloseOnInteractOutside={(el) => !triggerRef.current?.contains(el)}
       >
         <RACMenu
+          ref={menuRef}
           aria-labelledby={triggerId}
-          className={`${styles.menu} ${className ?? ""}`}
+          className={`${styles.menu} ${isDense ? styles.menuDense : ""} ${className ?? ""}`}
+          style={{ ...navigationStyle, maxInlineSize: cssLength(maxWidth) }}
           onAction={onAction}
           onClose={() => handleOpenChange(false)}
           autoFocus="first"
         >
-          {navigationContent}
+          <MenuDensityContext.Provider value={isDense}>
+            {navigationContent}
+          </MenuDensityContext.Provider>
         </RACMenu>
       </Popover>
     </MenuCloseContext.Provider>
@@ -347,7 +413,18 @@ export function MenuItem({
       shouldCloseOnSelect={shouldCloseOnSelect}
       className={`${styles.menuItem} ${className ?? ""}`}
     >
-      {children}
+      {
+        // Only a plain string is wrapped for truncation: a SubMenu trigger's
+        // children (subMenuLabel + subMenuChevron, see SubMenuTriggerContent
+        // below) already truncate on their own, and wrapping that Fragment
+        // in a second nowrap/ellipsis box here would clip the chevron along
+        // with the label instead of leaving it visible.
+        typeof children === "string" ? (
+          <span className={styles.menuItemLabel}>{children}</span>
+        ) : (
+          children
+        )
+      }
     </RACMenuItem>
   );
 }
@@ -390,6 +467,12 @@ interface SubMenuProps {
   // in the same RACMenu as everything else, so the root Menu/ContextMenu's
   // own onAction already sees them selected.
   variant?: "flyout" | "drilldown";
+  // Only meaningful for the "flyout" variant: its nested popover is its own
+  // RACMenu (see below), independent of the root's. A "drilldown" submenu
+  // has no popover of its own to size — it renders straight into the root's,
+  // which is sized by the root Menu/ContextMenu's own maxWidth instead.
+  // @default 250
+  maxWidth?: CssLength;
 }
 
 // The submenu's own trigger is always a MenuItem, which — unlike the
@@ -407,9 +490,11 @@ export function SubMenu({
   className,
   onAction,
   variant = "flyout",
+  maxWidth = 250,
 }: SubMenuProps) {
   const closeController = useContext(MenuCloseContext);
   const navigation = useContext(MenuNavigationContext);
+  const isDense = useContext(MenuDensityContext);
 
   if (variant === "drilldown") {
     return (
@@ -445,7 +530,8 @@ export function SubMenu({
         isNonModal
       >
         <RACMenu
-          className={`${styles.menu} ${className ?? ""}`}
+          className={`${styles.menu} ${isDense ? styles.menuDense : ""} ${className ?? ""}`}
+          style={{ maxInlineSize: cssLength(maxWidth) }}
           onAction={(key) => {
             onAction?.(key);
             closeController?.closeAll();
@@ -475,6 +561,9 @@ interface ContextMenuProps {
   className?: string;
   isDisabled?: boolean;
   onAction?: (key: Key) => void;
+  // See the same props on Menu above.
+  maxWidth?: CssLength;
+  isDense?: boolean;
 }
 
 // MenuTrigger's built-in press/context-menu detection only works when its
@@ -491,12 +580,18 @@ export function ContextMenu({
   className,
   isDisabled,
   onAction,
+  maxWidth = 250,
+  isDense = false,
 }: ContextMenuProps) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [shouldSkipAnimation, setShouldSkipAnimation] = useState(false);
-  const navigationContent = useMenuNavigation(children, isOpen);
+  const {
+    content: navigationContent,
+    menuRef,
+    style: navigationStyle,
+  } = useMenuNavigation(children, isOpen);
 
   useEffect(() => {
     if (isOpen) setShouldSkipAnimation(false);
@@ -566,13 +661,17 @@ export function ContextMenu({
         isNonModal
       >
         <RACMenu
+          ref={menuRef}
           aria-label={ariaLabel}
-          className={`${styles.menu} ${className ?? ""}`}
+          className={`${styles.menu} ${isDense ? styles.menuDense : ""} ${className ?? ""}`}
+          style={{ ...navigationStyle, maxInlineSize: cssLength(maxWidth) }}
           onAction={onAction}
           onClose={() => handleOpenChange(false)}
           autoFocus="first"
         >
-          {navigationContent}
+          <MenuDensityContext.Provider value={isDense}>
+            {navigationContent}
+          </MenuDensityContext.Provider>
         </RACMenu>
       </Popover>
     </MenuCloseContext.Provider>

@@ -67,6 +67,14 @@
   }
 }
 
+// Cascades into every flyout SubMenu's own .menu too (Menu.tsx threads the
+// density down through context so nested flyouts don't need it repeated).
+.menuDense {
+  .menuItem {
+    block-size: $sz-28;
+  }
+}
+
 .subMenuItem {
   justify-content: space-between;
 
@@ -77,6 +85,8 @@
 
 .subMenuLabel {
   display: flex;
+  flex: 1 1 auto;
+  min-inline-size: 0;
   align-items: center;
   gap: var(--sp-s);
   overflow: hidden;
@@ -95,7 +105,11 @@
   color: var(--color-foreground-secondary);
 }
 
-.backLabel {
+// Shared by the back item's own label and by MenuItem's plain-string
+// children (see MenuItem in Menu.tsx) — anything else (icons, a SubMenu
+// trigger's own subMenuLabel/subMenuChevron pair) handles its own
+// truncation instead of being wrapped in this a second time.
+.menuItemLabel {
   flex: 1 1 auto;
   min-inline-size: 0;
   overflow: hidden;
