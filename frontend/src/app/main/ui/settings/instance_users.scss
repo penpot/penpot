@@ -1,0 +1,160 @@
+@use "ds/mixins.scss" as *;
+@use "ds/borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/sizes.scss" as *;
+@use "../ds/buttons/buttons" as *;
+
+.users {
+  @include t.use-typography("body-medium");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  padding: var(--sp-l);
+  overflow: auto;
+  color: var(--color-foreground-primary);
+}
+
+.users table {
+  border-collapse: collapse;
+}
+
+.users th,
+.users td {
+  padding: var(--sp-s);
+  text-align: start;
+  border-bottom: $b-1 solid var(--color-background-tertiary);
+}
+
+.users input,
+.users select {
+  padding: var(--sp-xs);
+  color: var(--color-foreground-primary);
+  background: var(--color-background-secondary);
+  border: $b-1 solid var(--color-foreground-secondary);
+  border-radius: $br-4;
+}
+
+.users button:disabled {
+  opacity: 0.5;
+}
+
+.search,
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.editor,
+.add-membership {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.add-membership label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.memberships {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: 0;
+  list-style: none;
+}
+
+.memberships li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.users h2 {
+  margin: 0;
+}
+
+.button {
+  @extend %base-button;
+  @extend %base-button-secondary;
+  @include t.use-typography("body-medium");
+
+  padding-inline: var(--sp-m);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: default;
+}
+
+.search-button {
+  @extend %base-button-primary;
+}
+
+.search {
+  flex-wrap: wrap;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  width: min(100%, #{$sz-400});
+  height: $sz-32;
+  padding-inline: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background: var(--color-background-primary);
+}
+
+.search-field:focus-within {
+  border-color: var(--color-accent-primary);
+}
+
+.search-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+
+.search-field input::placeholder {
+  color: var(--color-foreground-secondary);
+}
+
+.search-icon {
+  display: flex;
+  color: var(--color-foreground-secondary);
+}
+
+.search-icon svg {
+  width: $sz-16;
+  height: $sz-16;
+}
+
+.error-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-m);
+  padding: var(--sp-m);
+  background: var(--color-background-secondary);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+}
+
+.error-notice p {
+  margin: 0;
+}
+
+.pagination {
+  justify-content: flex-end;
+}

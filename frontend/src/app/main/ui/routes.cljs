@@ -88,6 +88,8 @@
    (when (contains? cf/flags :admin-console)
      ["/subscribe-nitrate" :nitrate-entry])
 
+   ["/admin/users" :settings-instance-users]
+
    ["/settings"
     ["/profile"       :settings-profile]
     ["/password"      :settings-password]
