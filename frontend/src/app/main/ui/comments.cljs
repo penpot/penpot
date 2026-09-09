@@ -146,11 +146,7 @@
 
 (defn- blank-content?
   [content]
-  (let [content (str/trim content)]
-    (or (str/blank? content)
-        (str/empty? content)
-        (and (= (count content) 1)
-             (= (first content) zero-width-space)))))
+  (not (dcm/valid-comment-content? content)))
 
 ;; Component that renders the component content
 (mf/defc comment-content*

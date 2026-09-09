@@ -25,7 +25,7 @@
 ;; :layout-justify-content  ;; :start :center :end :space-between :space-around :space-evenly
 ;; :layout-wrap-type        ;; :wrap, :nowrap
 ;; :layout-padding-type     ;; :simple, :multiple
-;; :layout-padding          ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
+;; :layout-padding          ;; {:p1 num :p2 num :p3 num :p4 num}
 
 ;; layout-grid-rows         ;; vector of grid-track
 ;; layout-grid-columns      ;; vector of grid-track
@@ -103,7 +103,7 @@
 (def ^:private schema:grid-track
   [:map {:title "GridTrack"}
    [:type [::sm/one-of grid-track-types]]
-   [:value {:optional true} [:maybe ::sm/safe-number]]])
+   [:value {:optional true} [:maybe ::sm/non-negative-safe-number]]])
 
 (def schema:layout-attrs
   [:map {:title "LayoutAttrs"}
@@ -111,17 +111,17 @@
    [:layout-flex-dir {:optional true} [::sm/one-of flex-direction-types]]
    [:layout-gap {:optional true}
     [:map
-     [:row-gap {:optional true} ::sm/safe-number]
-     [:column-gap {:optional true} ::sm/safe-number]]]
+     [:row-gap {:optional true} ::sm/non-negative-safe-number]
+     [:column-gap {:optional true} ::sm/non-negative-safe-number]]]
    [:layout-gap-type {:optional true} [::sm/one-of gap-types]]
    [:layout-wrap-type {:optional true} [::sm/one-of wrap-types]]
    [:layout-padding-type {:optional true} [::sm/one-of padding-type]]
    [:layout-padding {:optional true}
     [:map
-     [:p1 ::sm/safe-number]
-     [:p2 ::sm/safe-number]
-     [:p3 ::sm/safe-number]
-     [:p4 ::sm/safe-number]]]
+     [:p1 ::sm/non-negative-safe-number]
+     [:p2 ::sm/non-negative-safe-number]
+     [:p3 ::sm/non-negative-safe-number]
+     [:p4 ::sm/non-negative-safe-number]]]
    [:layout-justify-content {:optional true} [::sm/one-of justify-content-types]]
    [:layout-justify-items {:optional true} [::sm/one-of justify-items-types]]
    [:layout-align-content {:optional true} [::sm/one-of align-content-types]]
@@ -163,10 +163,10 @@
      [:m2 {:optional true} ::sm/safe-number]
      [:m3 {:optional true} ::sm/safe-number]
      [:m4 {:optional true} ::sm/safe-number]]]
-   [:layout-item-max-h {:optional true} ::sm/safe-number]
-   [:layout-item-min-h {:optional true} ::sm/safe-number]
-   [:layout-item-max-w {:optional true} ::sm/safe-number]
-   [:layout-item-min-w {:optional true} ::sm/safe-number]
+   [:layout-item-max-h {:optional true} ::sm/non-negative-safe-number]
+   [:layout-item-min-h {:optional true} ::sm/non-negative-safe-number]
+   [:layout-item-max-w {:optional true} ::sm/non-negative-safe-number]
+   [:layout-item-min-w {:optional true} ::sm/non-negative-safe-number]
    [:layout-item-h-sizing {:optional true} [::sm/one-of item-h-sizing-types]]
    [:layout-item-v-sizing {:optional true} [::sm/one-of item-v-sizing-types]]
    [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]

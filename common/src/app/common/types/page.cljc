@@ -14,7 +14,8 @@
    [app.common.types.grid :as ctg]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -72,6 +73,24 @@
 
 (def check-page
   (sm/check-fn schema:page))
+
+(defn normalize-page-name
+  [name]
+  (some-> name str/trim))
+
+(defn valid-page-name?
+  [name]
+  (let [name (normalize-page-name name)]
+    (and (string? name) (not (str/blank? name)))))
+
+(defn valid-flow-starting-frame?
+  [page frame-id flow-id]
+  (let [frame (get-in page [:objects frame-id])]
+    (and (= :frame (:type frame))
+         (not-any? (fn [[id flow]]
+                     (and (not= id flow-id)
+                          (= frame-id (:starting-frame flow))))
+                   (:flows page)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INIT & HELPERS

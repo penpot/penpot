@@ -190,7 +190,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -208,7 +208,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -226,7 +226,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -244,7 +244,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -262,7 +262,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -280,7 +280,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -298,7 +298,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -316,7 +316,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -356,7 +356,7 @@
           (u/not-valid plugin-id :addRow-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (sm/valid-safe-number? value)))
+               (not (sm/valid-non-negative-safe-number? value)))
           (u/not-valid plugin-id :addRow-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -383,7 +383,7 @@
           (u/not-valid plugin-id :addRowAtIndex-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (sm/valid-safe-number? value)))
+               (not (sm/valid-non-negative-safe-number? value)))
           (u/not-valid plugin-id :addRowAtIndex-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -402,8 +402,8 @@
           (not (contains? ctl/grid-track-types type))
           (u/not-valid plugin-id :addColumn-type type)
 
-          (and (or (= :percent type) (= :flex type) (= :lex type))
-               (not (sm/valid-safe-number? value)))
+          (and (or (= :percent type) (= :flex type) (= :fixed type))
+               (not (sm/valid-non-negative-safe-number? value)))
           (u/not-valid plugin-id :addColumn-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -430,7 +430,7 @@
           (u/not-valid plugin-id :addColumnAtIndex-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (sm/valid-safe-number? value)))
+               (not (sm/valid-non-negative-safe-number? value)))
           (u/not-valid plugin-id :addColumnAtIndex-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -495,7 +495,7 @@
           (u/not-valid plugin-id :setColumn-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (sm/valid-safe-number? value)))
+               (not (sm/valid-non-negative-safe-number? value)))
           (u/not-valid plugin-id :setColumn-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -522,7 +522,7 @@
           (u/not-valid plugin-id :setRow-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (sm/valid-safe-number? value)))
+               (not (sm/valid-non-negative-safe-number? value)))
           (u/not-valid plugin-id :setRow-value value)
 
           (not (r/check-permission plugin-id "content:write"))
