@@ -171,14 +171,25 @@ Some naming conventions:
            segments))
 
 (defn- group-by-first-segment
-  "Groups segments by their first path segment and update segment name."
+  "Groups segments by their first path segment and update segment name.
+
+   Segments whose name is rewritten to a rest-path are marked with
+   ::remaining? so `build-tree-node` can tell a still-nested remaining
+   path apart from a token whose path actually ends at the current node.
+   The marker is removed once the remaining path is fully consumed."
   [segments separator]
   (reduce (fn [acc segment]
             (let [[first-segment & remaining-segments] (split-path (:name segment) :separator separator)
                   rest-path (when (seq remaining-segments) (join-path remaining-segments :separator separator :with-spaces? false))]
               (update acc first-segment (fnil conj [])
-                      (if rest-path
-                        (assoc segment :name rest-path)
+                      (cond
+                        rest-path
+                        (assoc segment :name rest-path ::remaining? true)
+
+                        (::remaining? segment)
+                        (dissoc segment ::remaining?)
+
+                        :else
                         segment))))
           {}
           segments))
@@ -199,11 +210,15 @@ Some naming conventions:
 
         is-leaf? (and (seq remaining-segments)
                       (every? (fn [segment]
-                                (let [remaining-segment-name (first (split-path (:name segment) :separator separator))]
-                                  (= segment-name remaining-segment-name)))
+                                (and (not (::remaining? segment))
+                                     (let [remaining-segment-name (first (split-path (:name segment) :separator separator))]
+                                       (= segment-name remaining-segment-name))))
                               remaining-segments))
 
-        leaf-segment (when is-leaf? (first remaining-segments))
+        ;; Leaf segments never carry the internal marker (is-leaf?
+        ;; requires every segment to be unmarked), the dissoc only
+        ;; guards the UI-consumed :leaf map against leaking it.
+        leaf-segment (when is-leaf? (dissoc (first remaining-segments) ::remaining?))
         node {:name segment-name
               :path current-path
               :depth depth
