@@ -12,8 +12,8 @@ use common::GetBounds;
 use crate::error::Result;
 use crate::shapes;
 use crate::shapes::{
-    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry,
-    TransformEntrySource, Type,
+    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, PixelPrecision, Shape,
+    TransformEntry, TransformEntrySource, Type,
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
@@ -139,36 +139,84 @@ fn calculate_bool_bounds(
     Some(result)
 }
 
-fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
-    let tr = bounds.transform_matrix().unwrap_or_default();
-    let tr_inv = tr.invert().unwrap_or_default();
+/// Which parts of the geometry a pixel-grid correction rounds: only the ones
+/// the transform changes, so a move keeps its dimensions and a resize keeps
+/// its anchored corner.
+#[derive(PartialEq, Debug, Clone, Copy)]
+struct SnapGeometry {
+    x: bool,
+    y: bool,
+    width: bool,
+    height: bool,
+}
 
-    let x = bounds.min_x().round();
-    let y = bounds.min_y().round();
+impl SnapGeometry {
+    /// Flags the properties that differ between the two bounds. The axis mask
+    /// in `precision` applies to the position only.
+    fn new(before: &Bounds, after: &Bounds, precision: PixelPrecision) -> Self {
+        SnapGeometry {
+            x: precision.rounds_x() && !is_close_to(before.min_x(), after.min_x()),
+            y: precision.rounds_y() && !is_close_to(before.min_y(), after.min_y()),
+            width: !is_close_to(before.width(), after.width()),
+            height: !is_close_to(before.height(), after.height()),
+        }
+    }
 
-    let width = bounds.width();
-    let height = bounds.height();
+    fn resized(&self) -> bool {
+        self.width || self.height
+    }
 
-    let target_width = bounds.width().round();
-    let target_height = bounds.height().round();
+    fn any(&self) -> bool {
+        self.x || self.y || self.resized()
+    }
+}
 
-    let scale_width = if width > 0.1 {
-        f32::max(0.01, target_width / width)
+/// Rounds a transform so the parts of the shape the gesture changed land on
+/// the pixel grid, leaving everything else exactly where it is.
+fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds, snap: SnapGeometry) {
+    // Target corner, taken before the size correction: that correction scales
+    // about the bounds center, and the translation below undoes the corner
+    // displacement it causes. An unsnapped axis targets its own value.
+    let x = if snap.x {
+        bounds.min_x().round()
     } else {
-        1.0
+        bounds.min_x()
     };
-    let scale_height = if height > 0.1 {
-        f32::max(0.01, target_height / height)
+    let y = if snap.y {
+        bounds.min_y().round()
     } else {
-        1.0
+        bounds.min_y()
     };
 
-    if f32::is_finite(scale_width) && f32::is_finite(scale_height) {
-        let mut round_transform = Matrix::scale((scale_width, scale_height));
-        round_transform.post_concat(&tr);
-        round_transform.pre_concat(&tr_inv);
-        transform.post_concat(&round_transform);
-        bounds.transform_mut(&round_transform);
+    if snap.resized() {
+        let tr = bounds.transform_matrix().unwrap_or_default();
+        let tr_inv = tr.invert().unwrap_or_default();
+
+        let width = bounds.width();
+        let height = bounds.height();
+
+        // A rounded dimension is never smaller than one pixel.
+        let target_width = f32::max(1.0, width.round());
+        let target_height = f32::max(1.0, height.round());
+
+        let scale_width = if snap.width && width > 0.1 {
+            f32::max(0.01, target_width / width)
+        } else {
+            1.0
+        };
+        let scale_height = if snap.height && height > 0.1 {
+            f32::max(0.01, target_height / height)
+        } else {
+            1.0
+        };
+
+        if f32::is_finite(scale_width) && f32::is_finite(scale_height) {
+            let mut round_transform = Matrix::scale((scale_width, scale_height));
+            round_transform.post_concat(&tr);
+            round_transform.pre_concat(&tr_inv);
+            transform.post_concat(&round_transform);
+            bounds.transform_mut(&round_transform);
+        }
     }
 
     let dx = x - bounds.min_x();
@@ -184,7 +232,7 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
 #[allow(clippy::too_many_arguments)]
 fn propagate_transform(
     entry: TransformEntry,
-    pixel_precision: bool,
+    pixel_precision: PixelPrecision,
     state: &State,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
@@ -286,8 +334,11 @@ fn propagate_transform(
         }
     }
 
-    if pixel_precision {
-        set_pixel_precision(&mut transform, &mut shape_bounds_after);
+    if pixel_precision.enabled() {
+        let snap = SnapGeometry::new(&shape_bounds_before, &shape_bounds_after, pixel_precision);
+        if snap.any() {
+            set_pixel_precision(&mut transform, &mut shape_bounds_after, snap);
+        }
     }
 
     if entry.propagate {
@@ -417,10 +468,15 @@ fn reflow_shape(
     Ok(())
 }
 
+/// Propagates a set of transforms through the shape tree, returning one
+/// transform per affected shape.
+///
+/// The transforms are relative to the committed geometry, so callers clear
+/// any transform modifier of their own before propagating.
 pub fn propagate_modifiers(
     state: &State,
     modifiers: &[TransformEntry],
-    pixel_precision: bool,
+    pixel_precision: PixelPrecision,
 ) -> Result<Vec<TransformEntry>> {
     let mut entries: VecDeque<_> = modifiers
         .iter()
@@ -565,6 +621,249 @@ mod tests {
         .unwrap();
 
         assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn test_pixel_precision_move_keeps_size() {
+        let bounds = Bounds::from_rect(&math::Rect::from_xywh(10.4, 20.6, 100.5, 50.3));
+        let mut bounds_after = bounds.transform(&Matrix::translate((5.2, 3.7)));
+        let mut transform = Matrix::translate((5.2, 3.7));
+
+        let snap = SnapGeometry::new(&bounds, &bounds_after, PixelPrecision::Both);
+        set_pixel_precision(&mut transform, &mut bounds_after, snap);
+
+        assert!(is_close_to(bounds_after.width(), 100.5));
+        assert!(is_close_to(bounds_after.height(), 50.3));
+        assert!(is_close_to(bounds_after.min_x(), 16.0));
+        assert!(is_close_to(bounds_after.min_y(), 24.0));
+        assert!(math::is_move_only_matrix(&transform));
+    }
+
+    #[test]
+    fn test_pixel_precision_resize_rounds_size() {
+        let bounds = Bounds::from_rect(&math::Rect::from_xywh(10.4, 20.6, 100.5, 50.3));
+        let mut bounds_after = bounds.transform(&Matrix::scale((1.1, 1.1)));
+        let mut transform = Matrix::scale((1.1, 1.1));
+
+        let snap = SnapGeometry::new(&bounds, &bounds_after, PixelPrecision::Both);
+        set_pixel_precision(&mut transform, &mut bounds_after, snap);
+
+        assert!(is_close_to(
+            bounds_after.width(),
+            bounds_after.width().round()
+        ));
+        assert!(is_close_to(
+            bounds_after.height(),
+            bounds_after.height().round()
+        ));
+        assert!(is_close_to(
+            bounds_after.min_x(),
+            bounds_after.min_x().round()
+        ));
+        assert!(is_close_to(
+            bounds_after.min_y(),
+            bounds_after.min_y().round()
+        ));
+    }
+
+    #[test]
+    fn test_propagate_pixel_precision_move_only_rounds_position() {
+        let shape_id = Uuid::new_v4();
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let shape = state.shapes.add_shape(shape_id);
+            shape.set_selrect(10.4, 20.6, 110.9, 70.9);
+        }
+
+        let entry = TransformEntry::from_input(shape_id, Matrix::translate((5.2, 3.7)));
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+
+        let transform = result
+            .iter()
+            .find(|entry| entry.id == shape_id)
+            .map(|entry| entry.transform)
+            .unwrap();
+
+        let shape = state.shapes.get(&shape_id).unwrap();
+        let bounds = shape.bounds().transform(&transform);
+
+        assert!(is_close_to(bounds.width(), 100.5));
+        assert!(is_close_to(bounds.height(), 50.3));
+        assert!(is_close_to(bounds.min_x(), 16.0));
+        assert!(is_close_to(bounds.min_y(), 24.0));
+    }
+
+    #[test]
+    fn test_propagate_pixel_precision_resize_keeps_anchored_corner() {
+        let shape_id = Uuid::new_v4();
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let shape = state.shapes.add_shape(shape_id);
+            shape.set_selrect(10.4, 20.6, 110.4, 70.6);
+        }
+
+        // Drag the bottom-right corner in small steps: the top-left corner
+        // stays put on every step.
+        for step in 1..40 {
+            let delta = step as f32 * 0.05;
+            let mut resize = Matrix::scale(((100.0 + delta) / 100.0, (50.0 + delta) / 50.0));
+            resize.post_translate(Point::new(10.4, 20.6));
+            resize.pre_translate(Point::new(-10.4, -20.6));
+
+            let entry = TransformEntry::from_input(shape_id, resize);
+            let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+
+            let transform = result
+                .iter()
+                .find(|entry| entry.id == shape_id)
+                .map(|entry| entry.transform)
+                .unwrap();
+
+            let shape = state.shapes.get(&shape_id).unwrap();
+            let bounds = shape.bounds().transform(&transform);
+
+            assert!(
+                is_close_to(bounds.min_x(), 10.4) && is_close_to(bounds.min_y(), 20.6),
+                "corner moved to ({}, {}) at delta {}",
+                bounds.min_x(),
+                bounds.min_y(),
+                delta
+            );
+            assert!(is_close_to(bounds.width(), bounds.width().round()));
+            assert!(is_close_to(bounds.height(), bounds.height().round()));
+        }
+    }
+
+    #[test]
+    fn test_pixel_precision_only_x_leaves_y_untouched() {
+        let bounds = Bounds::from_rect(&math::Rect::from_xywh(10.4, 20.6, 100.5, 50.3));
+        let mut bounds_after = bounds.transform(&Matrix::translate((5.2, 0.0)));
+        let mut transform = Matrix::translate((5.2, 0.0));
+
+        let snap = SnapGeometry::new(&bounds, &bounds_after, PixelPrecision::OnlyX);
+        set_pixel_precision(&mut transform, &mut bounds_after, snap);
+
+        assert!(is_close_to(bounds_after.min_x(), 16.0));
+        assert!(is_close_to(bounds_after.min_y(), 20.6));
+    }
+
+    #[test]
+    fn test_pixel_precision_only_y_leaves_x_untouched() {
+        let bounds = Bounds::from_rect(&math::Rect::from_xywh(10.4, 20.6, 100.5, 50.3));
+        let mut bounds_after = bounds.transform(&Matrix::translate((0.0, 3.7)));
+        let mut transform = Matrix::translate((0.0, 3.7));
+
+        let snap = SnapGeometry::new(&bounds, &bounds_after, PixelPrecision::OnlyY);
+        set_pixel_precision(&mut transform, &mut bounds_after, snap);
+
+        assert!(is_close_to(bounds_after.min_x(), 10.4));
+        assert!(is_close_to(bounds_after.min_y(), 24.0));
+    }
+
+    #[test]
+    fn test_pixel_precision_resize_never_rounds_below_one_pixel() {
+        let bounds = Bounds::from_rect(&math::Rect::from_xywh(10.0, 20.0, 0.4, 0.3));
+        let mut bounds_after = bounds.transform(&Matrix::scale((1.5, 1.5)));
+        let mut transform = Matrix::scale((1.5, 1.5));
+
+        let snap = SnapGeometry::new(&bounds, &bounds_after, PixelPrecision::Both);
+        set_pixel_precision(&mut transform, &mut bounds_after, snap);
+
+        assert!(is_close_to(bounds_after.width(), 1.0));
+        assert!(is_close_to(bounds_after.height(), 1.0));
+    }
+
+    #[test]
+    fn test_propagate_pixel_precision_snaps_every_frame_of_a_gesture() {
+        let shape_id = Uuid::new_v4();
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let shape = state.shapes.add_shape(shape_id);
+            shape.set_selrect(10.4, 20.6, 110.9, 70.9);
+        }
+
+        // One frame of a drag, as the entry point runs it: clear the
+        // modifiers, propagate the delta accumulated since the gesture
+        // started, then push the result back as the active modifier, which is
+        // what the renderer draws.
+        let frame = |state: &mut State, delta: f32| {
+            state.shapes.clear_transform_modifiers();
+
+            let entry = TransformEntry::from_input(shape_id, Matrix::translate((delta, delta)));
+            let result = propagate_modifiers(state, &[entry], PixelPrecision::Both).unwrap();
+            let transform = result
+                .iter()
+                .find(|entry| entry.id == shape_id)
+                .map(|entry| entry.transform)
+                .unwrap();
+
+            let bounds = state
+                .shapes
+                .get_raw(&shape_id)
+                .unwrap()
+                .bounds()
+                .transform(&transform);
+
+            state.set_modifiers(HashMap::from([(shape_id, transform)]));
+            bounds
+        };
+
+        // Every frame lands on the pixel grid and keeps the size.
+        for step in 1..40 {
+            let bounds = frame(&mut state, step as f32 * 0.35);
+
+            assert!(
+                is_close_to(bounds.min_x(), bounds.min_x().round())
+                    && is_close_to(bounds.min_y(), bounds.min_y().round()),
+                "shape landed off the pixel grid at ({}, {}) on frame {}",
+                bounds.min_x(),
+                bounds.min_y(),
+                step
+            );
+            assert!(is_close_to(bounds.width(), 100.5));
+            assert!(is_close_to(bounds.height(), 50.3));
+        }
+    }
+
+    #[test]
+    fn test_propagate_pixel_precision_resize_only_rounds_the_changed_dimension() {
+        let shape_id = Uuid::new_v4();
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let shape = state.shapes.add_shape(shape_id);
+            shape.set_selrect(10.4, 20.6, 110.9, 70.9);
+        }
+
+        // Drag the right edge: the width lands on the grid, the height and
+        // the top-left corner stay put.
+        let mut resize = Matrix::scale((103.3 / 100.5, 1.0));
+        resize.post_translate(Point::new(10.4, 20.6));
+        resize.pre_translate(Point::new(-10.4, -20.6));
+
+        let entry = TransformEntry::from_input(shape_id, resize);
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Both).unwrap();
+
+        let transform = result
+            .iter()
+            .find(|entry| entry.id == shape_id)
+            .map(|entry| entry.transform)
+            .unwrap();
+
+        let bounds = state
+            .shapes
+            .get_raw(&shape_id)
+            .unwrap()
+            .bounds()
+            .transform(&transform);
+
+        assert!(is_close_to(bounds.width(), 103.0));
+        assert!(is_close_to(bounds.height(), 50.3));
+        assert!(is_close_to(bounds.min_x(), 10.4));
+        assert!(is_close_to(bounds.min_y(), 20.6));
     }
 
     #[test]

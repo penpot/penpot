@@ -46,7 +46,7 @@
    the real implementations."
   []
   (set! wasm.api/propagate-modifiers
-        (fn [entries _pixel-precision]
+        (fn [entries _snap-pixel? _snap-ignore-axis]
           (swap! captured-geometry-entries into entries)
           (into []
                 (map (fn [[id data]] [id (:transform data)]))
