@@ -271,13 +271,16 @@
         menu-open*    (mf/use-state false)
         menu-open?    (deref menu-open*)
 
-        ;; The menu can open before this file has actually been added to
-        ;; selected-files yet (the very first click/right-click on it both
-        ;; selects it and opens the menu in the same event, but selection is
-        ;; applied via a store dispatch that only lands on the next render)
-        ;; — fall back to just this file so file-menu-items* never sees an
-        ;; empty list.
-        menu-files    (if (seq selected-files) (vals selected-files) [file])
+        ;; Only act on the whole selection when this file is part of it. The
+        ;; selection can legitimately hold other files instead: the click that
+        ;; opens the menu applies its selection through a store dispatch that
+        ;; only lands on the next render, and toggle-file-select is a no-op
+        ;; across projects, so a shift-click on a file in another project
+        ;; never adds it. In both cases the menu must target what the user
+        ;; actually pointed at, not whatever happens to be selected.
+        menu-files    (if (contains? selected-files file-id)
+                        (vals selected-files)
+                        [file])
 
         selected?     (contains? selected-files file-id)
         selected-num  (count selected-files)
