@@ -52,10 +52,12 @@ file (never pipe tool output through filters).
   then re-run `corepack use pnpm@<tag>` in that directory.
 - A workspace may fail with `ERR_PNPM_IGNORED_BUILDS`, and pnpm then writes
   a placeholder scaffold into its `pnpm-workspace.yaml`:
-  `allowBuilds: esbuild: set this to true or false` plus
-  `ignoredBuiltDependencies`. Repo convention is `allowBuilds: esbuild: true`.
-  Replace the placeholder and drop the `ignoredBuiltDependencies` entry,
-  then re-run.
+  `allowBuilds: esbuild: set this to true or false`. Current pnpm writes
+  only the `allowBuilds` placeholder; any legacy key still present
+  (`ignoredBuiltDependencies`, `onlyBuiltDependencies`,
+  `neverBuiltDependencies`) is ignored since pnpm 11. Repo convention is
+  `allowBuilds: esbuild: true`. Replace the placeholder and drop the
+  legacy entry, then re-run.
 - `plugins/apps/composable-test-suite` once had its own
   `pnpm-workspace.yaml` and acted as a nested workspace root. That state is
   gone on purpose: pnpm picks the nearest `pnpm-workspace.yaml` walking up,
