@@ -22,20 +22,31 @@ A menu displays a list of actions or options that a user can choose from. It ope
 
 <Canvas of={Menu.WithSubMenu} />
 
+### With a drilldown submenu
+
+<Canvas of={Menu.WithDrilldownSubMenu} />
+
 ---
 
 # Usage
 
 ```clojure
-(let [open* (mf/use-state false)]
+(let [open*          (mf/use-state false)
+      open           (deref open*)
+      trigger-ref    (mf/use-ref nil)
+      on-ref         (mf/use-fn (fn [node] (mf/set-ref-val! trigger-ref node)))
+      on-open        (mf/use-fn (fn [] (reset! open* true)))
+      on-open-change (mf/use-fn (fn [open] (reset! open* open)))
+      on-action      (mf/use-fn (fn [key] (handle-action key)))]
   [:> menu*
-   {:is-open @open*
-    :on-open-change #(reset! open* %)
+   {:is-open open
+    :on-open-change on-open-change
     :trigger (mf/html
               [:> button* {:variant "secondary"
-                           :on-click #(reset! open* true)}
+                           :on-ref on-ref
+                           :on-click on-open}
                "Open menu"])
-    :on-action (fn [key] (handle-action key))}
+    :on-action on-action}
 
    [:> menu-item* {:id "rename"} "Rename"]
    [:> menu-item* {:id "duplicate"} "Duplicate"]
@@ -43,7 +54,7 @@ A menu displays a list of actions or options that a user can choose from. It ope
    [:> menu-item* {:id "delete"} "Delete"]])
 ```
 
-`is-open`/`on-open-change` must be driven by the caller: the trigger button opens the menu through its own `on-click`, and `on-open-change` reports back closes from selection, **Escape**, or an outside click. This mirrors the modal's usage — the menu (like the modal) doesn't assume its trigger is a react-aria-aware pressable element, so it can't wire an automatic click-to-open behavior on an arbitrary trigger by itself. For a context menu triggered by a right click, skip `trigger`/`on-click` and call `on-open-change`/set `is-open` directly from the `on-context-menu` handler instead.
+`is-open` and `on-open-change` are controlled by the caller: the trigger's `on-click` opens the menu, and `on-open-change` reports closes from selection, **Escape**, or an outside click. For a context menu, skip `trigger`/`on-click` and drive `is-open` from your own `on-context-menu` handler instead.
 
 ---
 
@@ -131,7 +142,7 @@ Selecting any item inside a submenu closes the whole menu, not just that submenu
 
 ## variant
 
-`"flyout"` (default) opens a nested popover next to the trigger item, like a desktop context menu. `"drilldown"` instead replaces the parent menu's own content with this submenu's items and adds a back item above them — use it for a list too deep or too wide for a chain of flyouts, e.g. move-to-project's team → project nesting. A drilldown submenu nested inside another drilldown submenu keeps drilling into the same list, so arbitrarily deep trees stay navigable one screen at a time.
+`"flyout"` (default) opens a nested popover next to the trigger item. `"drilldown"` replaces the parent menu's content with this submenu's items and adds a back item — use it for deep or wide trees, e.g. move-to-project's team → project nesting. Nested drilldowns keep drilling into the same list.
 
 ```clojure
 [:> sub-menu* {:trigger "Move to" :variant "drilldown"}
@@ -164,7 +175,7 @@ Default: false
 
 ## on-action
 
-Callback invoked with the selected item's `id` when an item inside this submenu is chosen. Separate from the parent menu's own `on-action` — it isn't called for submenu selections. Ignored when `variant` is `"drilldown"`: those items sit inside the same list as everything else, so the parent menu's own `on-action` already sees them selected.
+Callback invoked with the selected item's `id` for actions inside this submenu. Ignored when `variant` is `"drilldown"` — those items use the parent menu's `on-action` instead.
 
 Type: function
 
