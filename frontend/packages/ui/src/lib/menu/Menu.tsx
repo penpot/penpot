@@ -412,6 +412,12 @@ export function MenuItem({
       textValue={textValue}
       shouldCloseOnSelect={shouldCloseOnSelect}
       className={`${styles.menuItem} ${className ?? ""}`}
+      // id is already a unique identifier every caller provides for its own
+      // sake (selection, on-action); reusing it here means every item is
+      // reachable in a test by that same id, with no separate prop to
+      // remember to pass. SubMenu's own trigger row is a MenuItem too (see
+      // below), so this covers it for free.
+      data-testid={id != null ? String(id) : undefined}
     >
       {
         // Only a plain string is wrapped for truncation: a SubMenu trigger's
