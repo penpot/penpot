@@ -111,15 +111,15 @@
   (let [job-id (mk-job! {})
         _      (jobs/claim! {::db/pool th/*pool*} job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         _      (mgmt! :report-job-progress {:job-id  job-id
-                                            :progress {:stage "render" :percent 50}})
+                                            :progress {:total 100 :current 50}})
         row    (get-row job-id)]
-    (t/is (= {:stage "render" :percent 50} (:progress row)))))
+    (t/is (= {:total 100 :current 50} (:progress row)))))
 
 (t/deftest report-job-progress-noop-on-terminal-row
   (let [job-id (mk-job! {:status "completed"})]
     (t/is (nil? (:error (mgmt! :report-job-progress
                                {:job-id  job-id
-                                :progress {:stage "render"}}))))
+                                :progress {:total 100 :current 100}}))))
     (t/is (nil? (:progress (get-row job-id))))))
 
 (t/deftest complete-job-marks-completed-with-result

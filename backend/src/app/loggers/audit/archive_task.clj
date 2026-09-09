@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
@@ -109,7 +110,7 @@
   "Optional overrides for the repl invocation defaults."
   [:map
    [:enabled {:optional true} :boolean]
-   [:uri {:optional true} ::sm/text]])
+   [:uri {:optional true} ::sm/uri]])
 
 (defmethod ig/init-key ::audit-log-archive-job-def
   [_ cfg]
@@ -129,6 +130,9 @@
                     (:enabled params false))
         uri     (cf/get :audit-log-archive-uri)
         uri     (or uri (:uri params))
+        ;; Normalize to an uri object; params may carry a plain string
+        ;; on direct invocations (validation only applies on submit!).
+        uri     (u/uri uri)
         cfg     (assoc cfg ::uri uri)]
     (when (and enabled (not uri))
       (ex/raise :type :internal

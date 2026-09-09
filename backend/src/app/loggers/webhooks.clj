@@ -193,15 +193,21 @@
                        :cause cause)))))))))
 
 
+(def schema:run-webhook-config
+  "Subset of the webhook row consumed by the run-webhook job. The uri
+  stays text on purpose: configs come straight from the database and
+  submit! validates raw params without coercion."
+  [:map
+   [:id ::sm/uuid]
+   [:uri ::sm/text]
+   [:mtype ::sm/text]])
+
 (def schema:run-webhook-params
   "Schema declares the uuid fields the handler consumes so the JSON
   decoder restores their types after the transit→JSON round-trip."
   [:map
    [:event [:map-of :keyword :any]]
-   [:config [:map
-             [:id ::sm/uuid]
-             [:uri ::sm/text]
-             [:mtype ::sm/text]]]])
+   [:config schema:run-webhook-config]])
 
 (defmethod ig/init-key ::run-webhook-job-def
   [_ cfg]

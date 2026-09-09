@@ -58,3 +58,11 @@ CREATE INDEX job__profile__idx
 CREATE INDEX job__name-label__idx
     ON job (name, label)
     WHERE status IN ('new', 'scheduled', 'running', 'retry');
+
+-- Partial index for the storage GC resource check (one EXISTS per
+-- candidate object): only rows carrying a resource are indexed, most
+-- rows have NULL resource_id. The `= ?` predicate implies NOT NULL,
+-- so it matches this index.
+CREATE INDEX job__resource__idx
+    ON job (resource_id)
+    WHERE resource_id IS NOT NULL;

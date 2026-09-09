@@ -240,8 +240,10 @@
   {k (merge {::min-age (ct/duration {:hours 2})} v)})
 
 (def schema:storage-gc-touched-params
-  "Params map (no params needed; cfg-provided config only)."
-  [:map {:closed true}])
+  "Optional :skip-delay processes all touched objects immediately,
+  bypassing the min-age threshold (repl-driven deletion cascades)."
+  [:map {:closed true}
+   [:skip-delay {:optional true} :boolean]])
 
 (defmethod ig/init-key ::storage-gc-touched-job-def
   [_ cfg]
@@ -255,7 +257,9 @@
   "Plain job handler: analyze the touched storage objects and freeze or
   delete them depending on their references."
   ([cfg] (execute-storage-gc-touched! cfg {}))
-  ([cfg _params]
-   (let [threshold (ct/minus (ct/now) (::min-age cfg))]
+  ([cfg params]
+   (let [threshold (if (:skip-delay params)
+                     (ct/now)
+                     (ct/minus (ct/now) (::min-age cfg)))]
      (process-touched! (assoc cfg ::timestamp threshold)))))
 

@@ -52,7 +52,7 @@
 
 (defn- send-organization-setup-sso-email!
   "Send the organization SSO setup email to a single recipient, when allowed."
-  [cfg conn organization-name {:keys [email profile]}]
+  [{:keys [::db/conn] :as cfg} organization-name {:keys [email profile]}]
   (when (or (nil? profile)
             (eml/allow-send-emails? conn profile))
     (eml/send! cfg {::eml/reuse-conn true
@@ -89,9 +89,9 @@
   [cfg organization-id]
   (let [organization-summary (nitrate/call cfg :get-organization-summary {:organization-id organization-id})]
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn]}]
+                (fn [{:keys [::db/conn] :as cfg}]
                   (doseq [recipient (get-organization-sso-notify-recipients conn cfg organization-id organization-summary)]
-                    (send-organization-setup-sso-email! cfg conn (:name organization-summary) recipient))))))
+                    (send-organization-setup-sso-email! cfg (:name organization-summary) recipient))))))
 
 (defn send-organization-setup-sso-emails-for-team!
   "Notify team members who are not in `organization-member-ids-before` and pending team invitees."
@@ -99,6 +99,6 @@
   (when (organization-sso-active? cfg organization-id)
     (let [organization-summary (nitrate/call cfg :get-organization-summary {:organization-id organization-id})]
       (db/tx-run! cfg
-                  (fn [{:keys [::db/conn]}]
+                  (fn [{:keys [::db/conn] :as cfg}]
                     (doseq [recipient (get-team-sso-notify-recipients conn team-id organization-member-ids-before)]
-                      (send-organization-setup-sso-email! cfg conn (:name organization-summary) recipient)))))))
+                      (send-organization-setup-sso-email! cfg (:name organization-summary) recipient)))))))

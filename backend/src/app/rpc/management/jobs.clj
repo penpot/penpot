@@ -34,6 +34,7 @@
   [:map {:title "claim-job-result"}
    [:action [:enum :run :skip]]
    [:name {:optional true} ::sm/text]
+   ;; Opaque per-job params blob; intentionally untyped.
    [:props {:optional true} :any]])
 
 (sv/defmethod ::claim-job
@@ -57,7 +58,10 @@
 (def ^:private schema:report-job-progress-params
   [:map {:title "report-job-progress-params"}
    [:job-id ::sm/uuid]
-   [:progress [:map-of :keyword :any]]])
+   [:progress [:map
+               [:total :int]
+               [:current :int]
+               [:stage {:optional true} ::sm/text]]]])
 
 (def ^:private schema:report-job-progress-result
   [:map {:title "report-job-progress-result"}])
@@ -76,6 +80,8 @@
 (def ^:private schema:complete-job-params
   [:map {:title "complete-job-params"}
    [:job-id ::sm/uuid]
+   ;; Opaque per-job result blob (nil when the job returns nothing);
+   ;; intentionally untyped.
    [:result {:optional true} :any]])
 
 (def ^:private schema:complete-job-result
@@ -95,7 +101,10 @@
 (def ^:private schema:fail-job-params
   [:map {:title "fail-job-params"}
    [:job-id ::sm/uuid]
-   [:error [:map-of :keyword :any]]])
+   ;; Error object with at least a code; open to worker-defined details
+   ;; such as :hint (see jobs/fail!).
+   [:error [:map
+            [:code ::sm/text]]]])
 
 (def ^:private schema:fail-job-result
   [:map {:title "fail-job-result"}])

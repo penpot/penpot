@@ -71,9 +71,11 @@
 (declare execute-jobs-gc!)
 
 (def schema:jobs-gc-params
-  "min-age: duration object in-process; text over the job pipeline."
+  "min-age: duration object, integer millis or pg-interval text
+  in-process; integer millis or text over the job pipeline (a duration
+  object does not survive JSON encoding)."
   [:map
-   [:min-age {:optional true} :any]])
+   [:min-age {:optional true} [:or :int :string ::ct/duration]]])
 
 (defmethod ig/init-key ::jobs-gc-job-def
   [_ cfg]
@@ -92,7 +94,10 @@
   instead of commit. Used for testing transactional code without side effects."
   [cfg params]
   (let [min-age (or (:min-age params)
-                    (cf/get-jobs-retention))]
+                    (cf/get-jobs-retention))
+        ;; Normalize to a duration, keeping pg-interval text as-is
+        ;; (understood by db/interval, but not by ct/duration).
+        min-age (if (string? min-age) min-age (ct/duration min-age))]
     (db/tx-run! (assoc cfg ::db/rollback (:rollback? params))
                 (fn [{:keys [::db/conn]}]
                   (let [[deleted-expired touched-expired]
