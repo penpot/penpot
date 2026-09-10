@@ -88,7 +88,7 @@
 
 ;; --- BACKEND INIT
 
-(def ^:private schema:target
+(def schema:target
   [:map {:title "s3-target"}
    [:bucket ::sm/text]
    [:region {:optional true} :keyword]
@@ -123,6 +123,17 @@
      :presigner presigner
      :close-fn  #(.close ^java.lang.AutoCloseable client)}))
 
+(defn- build-client-pair-or-cleanup
+  "Builds a client pair, closing the pairs already built when the build
+  fails so a failed backend init does not leak clients."
+  [acc params region endpoint]
+  (try
+    (build-client-pair params region endpoint)
+    (catch Throwable cause
+      (doseq [f (:close-fns acc)]
+        (ex/ignoring (f)))
+      (throw cause))))
+
 (defn- build-targets
   "Resolves the implicit `:default` target plus the declared targets, sharing
   one S3 client/presigner pair per distinct `[region endpoint]`."
@@ -140,7 +151,7 @@
                 (fn [acc id {:keys [region endpoint bucket prefix]}]
                   (let [k    [region endpoint]
                         pair (or (get-in acc [:pairs k])
-                                 (build-client-pair params region endpoint))
+                                 (build-client-pair-or-cleanup acc params region endpoint))
                         acc  (cond-> acc
                                (nil? (get-in acc [:pairs k]))
                                (-> (assoc-in [:pairs k] pair)
@@ -209,16 +220,23 @@
               (keyword? target-id) target-id
               :else                (keyword target-id))]
     (or (get (::targets backend) tid)
-        (get (::targets backend) (::default-target backend))
         (ex/raise :type :internal
                   :code :invalid-storage-target
-                  :hint "storage target not configured"
+                  :hint "storage target is not configured"
                   :target target-id
                   :available (vec (keys (::targets backend)))))))
 
 (defn- resolve-target
   [backend object]
   (resolve-target-by-id backend (target-id backend object)))
+
+(defmethod impl/target-resolvable? :s3
+  [backend target-id]
+  (let [tid (cond
+              (nil? target-id)     (::default-target backend)
+              (keyword? target-id) target-id
+              :else                (keyword target-id))]
+    (contains? (::targets backend) tid)))
 
 ;; --- API IMPL
 

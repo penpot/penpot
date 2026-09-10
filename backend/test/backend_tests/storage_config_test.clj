@@ -79,3 +79,19 @@
   (t/is (some? (load-error
                 "{:targets {:temp {:bucket \"x\"}} :routes {\"tempfile\" :temp}}"
                 {:objects-storage-backend :fs}))))
+
+(t/deftest rejects-route-pointing-to-default
+  (let [err (load-error
+             "{:targets {:temp {:bucket \"x\"}} :routes {\"tempfile\" :default}}"
+             {})]
+    (t/is (some? err))
+    (t/is (= :unknown-storage-target (:code (ex-data err))))))
+
+(t/deftest loads-empty-targets-map
+  (let [file (write-routes! "{:targets {}}")]
+    (try
+      (let [result (load-with {:objects-storage-s3-routes-file (.getAbsolutePath file)})]
+        (t/is (= {} (:targets result)))
+        (t/is (nil? (:routes result))))
+      (finally
+        (delete! file)))))

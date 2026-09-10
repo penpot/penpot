@@ -78,6 +78,29 @@
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:delete-give-up ids max-attempts])))
 
+(defn- log-refusal!
+  "Indirection over the error log so tests can capture the refusal payload."
+  [backend-id target ids]
+  (l/err :hint "storage target is not configured, deletion refused"
+         :backend (name backend-id)
+         :target target
+         :ids (mapv str ids)))
+
+(def ^:private sql:defer-unresolvable
+  "UPDATE storage_object
+      SET deleted_at = NOW() + INTERVAL '1 day'
+    WHERE id = ANY(?::uuid[])")
+
+(defn- park-unresolvable!
+  "Refuses to delete rows whose target id is not configured: logs the
+  misconfiguration and pushes `deleted_at` forward so the rows leave the
+  selection window without being deleted and without counting a deletion
+  attempt (they are therefore never subject to the give-up window)."
+  [conn backend-id target ids]
+  (log-refusal! backend-id target ids)
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:defer-unresolvable ids])))
+
 (defn- process-chunk
   "Attempt to delete a chunk of storage objects from a specific backend.
 
@@ -142,19 +165,27 @@
 
 (defn- clean-deleted!
   [cfg]
-  (loop [total 0]
-    (let [deleted (db/tx-run! cfg
-                              (fn [{:keys [::db/conn ::sto/storage]}]
-                                (let [chunk (get-deleted-chunk conn chunk-size)]
-                                  (when (seq chunk)
-                                    (let [by-route (group-by-route chunk)]
-                                      (reduce-kv (fn [acc [backend-id target] ids]
-                                                   (+ acc (process-chunk conn storage backend-id target ids)))
-                                                 0
-                                                 by-route))))))]
-      (if deleted
-        (recur (+ total deleted))
-        total))))
+  (loop [deleted 0
+         parked  0]
+    (let [result (db/tx-run! cfg
+                             (fn [{:keys [::db/conn ::sto/storage]}]
+                               (let [chunk (get-deleted-chunk conn chunk-size)]
+                                 (when (seq chunk)
+                                   (let [by-route (group-by-route chunk)]
+                                     (reduce-kv
+                                      (fn [acc [backend-id target] ids]
+                                        (if (sto/target-resolvable? storage backend-id target)
+                                          (update acc :deleted + (process-chunk conn storage backend-id target ids))
+                                          (do
+                                            (park-unresolvable! conn backend-id target ids)
+                                            (update acc :parked + (count ids)))))
+                                      {:deleted 0 :parked 0}
+                                      by-route))))))]
+      (if result
+        (recur (+ deleted (:deleted result))
+               (+ parked (:parked result)))
+        {:deleted deleted
+         :parked  parked}))))
 
 (defmethod ig/assert-key ::handler
   [_ params]
@@ -164,6 +195,7 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [_]
-    (let [total (clean-deleted! cfg)]
-      (l/inf :hint "task finished" :total total)
-      {:deleted total})))
+    (let [{:keys [deleted parked]} (clean-deleted! cfg)]
+      (l/inf :hint "task finished" :total deleted :parked parked)
+      {:deleted deleted
+       :parked  parked})))

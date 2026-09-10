@@ -24,9 +24,13 @@
 - The reserved `:default` target is implicit and built from `PENPOT_OBJECTS_STORAGE_S3_*`; declared targets inherit missing region/endpoint/prefix from it.
 - Without a routes file, `::sto/bucket->target` is nil and every object uses `:default` (unchanged behavior).
 - The chosen target id is stored in object metadata as `:storage-target` (plain string) by `put-object!`.
-- `app.storage.s3/resolve-target` reads the object metadata; missing/unknown ids fall back to `:default`.
-- One S3 client/presigner is built per distinct `[region endpoint]` and shared by targets.
-- Target ids are logged in metadata, so they must stay stable; removing one makes its old rows unreadable/unGC-able.
+- `app.storage.s3/resolve-target` reads the object metadata; `nil` (legacy) and `"default"` use the default target, an unknown non-nil id raises `:invalid-storage-target` (no fallback) on reads/serving/deletes.
+- `impl/target-resolvable?` (wrapped as `sto/target-resolvable?`) reports whether a target id is configured; `:fs` is always true.
+- GC-deleted and pending-gc refuse to delete rows whose target is not resolvable: they log `:err`, park the row (`deleted_at = now()+1d`, no attempts, no give-up) and never remove it until the target is configured again.
+- `deleted_at` doubles as the pending-gc park marker; the pending selection skips rows whose `deleted_at` is in the future.
+- One S3 client/presigner is built per distinct `[region endpoint]` and shared by targets; a failed init closes the already-built pairs.
+- Target ids are stored in metadata, so they must stay stable; removing one makes its old rows unreadable and unGC-able by design.
+- `:storage-target` metadata is load-bearing: `pending-gc` passes it via `with-meta` so `del-object` resolves the right target.
 
 ## Object Lifecycle
 

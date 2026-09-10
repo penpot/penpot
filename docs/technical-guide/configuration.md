@@ -584,8 +584,15 @@ Targets and routing are declared in an external EDN file referenced by the
   objects use the default bucket and the behavior is unchanged.
 
 The target id is stored in the object metadata, so it must stay stable. If you
-remove or rename a target id, objects already written with it can no longer be
-read or deleted.
+remove or rename a target id, objects already written with it cannot be located:
+reads and serving of those objects fail, and the garbage-collection tasks refuse
+to delete them. Those rows are parked for one day and retried on later runs,
+without counting deletion attempts and without ever reaching the give-up window,
+so the row is never removed until the routes file declares the target id again.
+
+All backend replicas must mount the same routes file with the same target ids. A
+replica with a stale file misroutes new writes and fails reads and garbage
+collection for the targets it does not declare.
 
 ### File Data Storage
 

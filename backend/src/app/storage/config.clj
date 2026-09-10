@@ -30,15 +30,18 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.storage :as sto]
+   [app.storage.s3 :as sto.s3]
    [clojure.edn :as edn]
    [clojure.java.io :as io]))
 
 (def ^:private schema:target
-  [:map {:title "s3-target"}
-   [:bucket :string]
-   [:region {:optional true} :keyword]
-   [:endpoint {:optional true} [:or :string ::sm/uri]]
-   [:prefix {:optional true} :string]])
+  "The EDN declares targets with the same shape as the S3 backend, except
+  the endpoint is accepted as a plain string and normalized to a URI by
+  `normalize-target`."
+  [:merge
+   sto.s3/schema:target
+   [:map
+    [:endpoint {:optional true} [:or :string ::sm/uri]]]])
 
 (def ^:private schema:file
   [:map {:title "storage-routes"}

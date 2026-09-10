@@ -153,3 +153,7 @@
                     (conj fail-ids id)))))
             #{} ids)))
 
+(defmethod impl/target-resolvable? :fs
+  [_backend _target]
+  true)
+

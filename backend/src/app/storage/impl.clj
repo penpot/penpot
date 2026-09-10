@@ -92,6 +92,17 @@
             :code :invalid-storage-backend
             :context cfg))
 
+(defmulti target-resolvable?
+  "Returns true when the backend can resolve `target` to a real destination.
+  GC callers must refuse deletion (and keep the row) when this is false."
+  (fn [cfg _] (::sto/type cfg)))
+
+(defmethod target-resolvable? :default
+  [cfg _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
 ;; --- HELPERS
 
 (defn uuid->hex

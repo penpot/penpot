@@ -329,6 +329,16 @@
                    (ct/is-after? (:expired-at object) (ct/now))))
       (-> (impl/get-object-url backend object nil) file-url->path))))
 
+(defn target-resolvable?
+  "Returns true when the backend referenced by `backend-id` can resolve
+  `target` to a real destination. GC callers must refuse to delete objects
+  whose target is not resolvable, so a misconfigured target never removes
+  the database row while orphaning the blob."
+  [storage backend-id target]
+  (assert (valid-storage? storage))
+  (-> (impl/resolve-backend storage backend-id)
+      (impl/target-resolvable? target)))
+
 (defn del-object!
   [storage object-or-id]
   (assert (valid-storage? storage))

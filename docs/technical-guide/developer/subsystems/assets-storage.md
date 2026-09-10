@@ -91,6 +91,10 @@ reads, URL signing, deduplication and garbage collection. Objects without a
 stored target use the default target. See the configuration guide for the
 routing file format.
 
+If an object references a target id that is not configured anymore, it cannot be
+located: reads and serving fail, and garbage collection refuses to delete the
+object, keeping the database row until the target is declared again.
+
 ## Sharing and deleting objects
 
 To save storage space, duplicated objects wre shared. So, if for example
