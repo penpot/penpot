@@ -13,7 +13,7 @@ pub(super) fn render_group(
     tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
-    let effects = effect_attrs(element);
+    let effects = effect_attrs(builder, element);
     if let Some(attrs) = &effects {
         builder.open_group(attrs);
     }

@@ -60,9 +60,10 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// composed as native SVG `<g>` wrappers. Frame `clip content` uses a native
 /// `<clipPath>`.
 ///
-/// Shadows, layer blur, masks, and text strokes still need dedicated SVG
-/// re-emission. Solid Inner/Outer and dotted/dashed strokes go out as filled
-/// outlines; image-filled strokes use a linked `<image>` clipped to the stroke.
+/// Layer blur is re-emitted as a native SVG `feGaussianBlur` filter wrapper.
+/// Shadows, masks, and text strokes still need dedicated SVG re-emission.
+/// Solid Inner/Outer and dotted/dashed strokes go out as filled outlines;
+/// image-filled strokes use a linked `<image>` clipped to the stroke.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,
@@ -186,7 +187,7 @@ fn render_leaf(
     tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
-    let effects = effect_attrs(element);
+    let effects = effect_attrs(builder, element);
     if let Some(attrs) = &effects {
         builder.open_group(attrs);
     }
