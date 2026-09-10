@@ -1535,6 +1535,10 @@ impl Shape {
             return false;
         }
 
+        if matches!(self.shape_type, Type::Group(_)) {
+            return false;
+        }
+
         // If a frame shows overflow (clip_content=false) and its visible content exceeds the
         // frame bounds, a cached crop anchored to the frame can easily become incorrect while
         // moving (children can extend beyond selrect). Be conservative and render live.
