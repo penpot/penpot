@@ -53,7 +53,7 @@ jobs:
   api-test-suite-mocked:
     if: ${{ github.event_name != 'workflow_dispatch' && !github.event.pull_request.draft }}
     name: "Run Plugin API Test Suite (mocked)"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:
@@ -95,7 +95,7 @@ jobs:
   # api-test-suite-live:
   #   if: ${{ github.event_name == 'workflow_dispatch' }}
   #   name: Run Plugin API Test Suite (live)
-  #   runs-on: penpot-runner-02
+  #   runs-on: penpot-extended-runner
   #   container:
   #     image: penpotapp/devenv:latest
   # 
