@@ -462,14 +462,14 @@
   "Resolve the binfile import limits once per job from cfg, falling back
   to the namespace defaults when the keys are absent. Returns cfg with
   `::max-text-entry-size` (per JSON/text entry cap), `::max-text-total-size` (cumulative
-  JSON/text budget), `::current-text-size` (shared atom holding the cumulative
+  JSON/text budget), `::accumulated-total-text-size` (shared atom holding the cumulative
   bytes read so far), `::max-binary-entry-size` (storage blob cap) and
   `::max-zip-entries` (zip entry count cap)."
   [cfg]
   (assoc cfg
          ::max-text-entry-size (or (::bfc/import-max-text-entry-size cfg) bfc/default-max-text-entry-size)
          ::max-text-total-size (or (::bfc/import-max-text-total-size cfg) bfc/default-max-text-total-size)
-         ::current-text-size (atom 0)
+         ::accumulated-total-text-size (atom 0)
          ::max-binary-entry-size (or (::bfc/import-max-binary-entry-size cfg) bfc/default-max-binary-entry-size)
          ::max-zip-entries (or (::bfc/import-max-zip-entries cfg) bfc/default-max-zip-entries)))
 
@@ -493,7 +493,7 @@
                 :found declared))
     (-> (zip-entry-stream input entry)
         (size-limiting-stream max-size (atom 0))
-        (size-limiting-stream (::max-text-total-size cfg) (::current-text-size cfg))
+        (size-limiting-stream (::max-text-total-size cfg) (::accumulated-total-text-size cfg))
         (io/reader :encoding "UTF-8"))))
 
 (defn- zip-entry-storage-content

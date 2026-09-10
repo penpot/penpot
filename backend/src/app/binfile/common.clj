@@ -51,7 +51,11 @@
 (def temp-file-threshold
   (* 1024 1024 2))
 
-;; A maximum (storage) object size allowed: 100MiB
+;; Maximum size allowed for a single binary entry during binfile
+;; import: 100MiB. Covers the storage blobs (`objects/` entries in v3,
+;; streams in v1), whose declared size and hash are verified against the
+;; imported bytes. Legitimate media objects fit comfortably below this;
+;; anything larger is rejected instead of being buffered into memory.
 (def ^:const default-max-binary-entry-size
   (* 1024 1024 100))
 
