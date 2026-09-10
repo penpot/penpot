@@ -98,6 +98,8 @@
 
    ;; Binfile import limits
    :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
+   :binfile-import-max-entry-text-size (* 1024 1024 20) ;; 20 MiB
+   :binfile-import-max-text-total-size (* 1024 1024 200) ;; 200 MiB
    :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
 
 (def schema:config
@@ -157,6 +159,8 @@
 
     ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
     [:binfile-import-max-object-size {:optional true} ::sm/int]
+    [:binfile-import-max-entry-text-size {:optional true} ::sm/int]
+    [:binfile-import-max-text-total-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
 
     [:deletion-delay {:optional true} ::ct/duration]

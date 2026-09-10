@@ -30,7 +30,13 @@
    [datoteka.io :as io])
   (:import
    java.io.ByteArrayInputStream
-   java.io.DataInputStream))
+   java.io.DataInputStream
+   java.io.OutputStreamWriter
+   java.io.Writer
+   java.util.zip.Deflater
+   java.util.zip.ZipEntry
+   java.util.zip.ZipFile
+   java.util.zip.ZipOutputStream))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -336,5 +342,129 @@
                 (catch Throwable e
                   (let [d (or (ex-data e) (some-> (ex-cause e) ex-data))]
                     d)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
+
+;; --- GHSA-qcw7-v626-g6cf: decompression-bomb guards on JSON/text entries
+
+(def ^:private bomb-entry-size
+  "Decompressed size of the test bomb entries. Over the 20 MiB default
+  per-entry limit, small enough to stay fast and lean under the guard."
+  (* 1024 1024 25))
+
+(defn- write-bomb-entry!
+  "Writes a zip entry whose content is a single JSON string of `size` bytes
+  made of a repeated char. Streams in chunks, so neither the writer nor the
+  (guarded) reader ever needs to hold the full payload in memory. Compresses
+  ~1:1000, like the reported exploit."
+  [^ZipOutputStream zos ^String entry-name ^long size]
+  (.putNextEntry zos (ZipEntry. entry-name))
+  (let [w     (OutputStreamWriter. zos "UTF-8")
+        chunk (apply str (repeat 8192 \A))]
+    (.write w "\"")
+    (loop [remaining size]
+      (when (pos? remaining)
+        (let [n (min remaining (count chunk))]
+          (.write ^Writer w ^String chunk (int 0) (int n))
+          (recur (- remaining n)))))
+    (.write w "\"")
+    (.flush w))
+  (.closeEntry zos))
+
+(defn- replace-zip-entry!
+  "Copies the zip at `src-path` to `dst-path`, replacing the entry
+  `entry-name` with a bomb entry of `bomb-size` decompressed bytes."
+  [src-path dst-path entry-name bomb-size]
+  (with-open [zin (ZipFile. (fs/file src-path))
+              out (io/output-stream dst-path)
+              zos (ZipOutputStream. out)]
+    (.setLevel zos Deflater/BEST_COMPRESSION)
+    (doseq [entry (iterator-seq (.entries zin))]
+      (let [entry-name' (.getName ^ZipEntry entry)]
+        (if (= entry-name' entry-name)
+          (write-bomb-entry! zos entry-name bomb-size)
+          (do
+            (.putNextEntry zos (ZipEntry. entry-name'))
+            (with-open [in (.getInputStream zin entry)]
+              (io/copy in zos))
+            (.closeEntry zos)))))))
+
+(defn- try-import-files!
+  "Runs v3/import-files! and returns the ex-data of the raised error,
+  or :no-error when the import unexpectedly succeeds."
+  [cfg]
+  (try
+    (v3/import-files! cfg)
+    :no-error
+    (catch Throwable e
+      (or (ex-data e) (some-> (ex-cause e) ex-data)))))
+
+(t/deftest import-rejects-oversized-json-entry
+  ;; GHSA-qcw7-v626-g6cf: a single files/<id>.json entry expanding beyond
+  ;; the per-entry text limit must be rejected with :max-file-size-reached
+  ;; instead of exhausting the heap. The manifest comes from a real export
+  ;; so it is valid; only the file entry is replaced by the bomb.
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-simple-file profile)
+        exported (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream exported))
+
+    (let [bombed (tmp/tempfile :suffix ".zip")]
+      (replace-zip-entry! exported bombed
+                          (str "files/" (:id file) ".json")
+                          bomb-entry-size)
+      (let [cfg (-> th/*system*
+                    (assoc ::bfc/project-id (:default-project-id profile))
+                    (assoc ::bfc/profile-id (:id profile))
+                    (assoc ::bfc/input bombed))
+            out (try-import-files! cfg)]
+        (t/is (= :validation (:type out)))
+        (t/is (= :max-file-size-reached (:code out)))))))
+
+(t/deftest get-manifest-rejects-oversized-manifest
+  ;; GHSA-qcw7-v626-g6cf: the synchronous manifest read on the RPC thread
+  ;; (v3/get-manifest) must reject a manifest.json bomb the same way.
+  ;; Decoding/validation is never reached, so the payload needs no schema.
+  (let [bombed (tmp/tempfile :suffix ".zip")]
+    (with-open [out (io/output-stream bombed)
+                zos (ZipOutputStream. out)]
+      (.setLevel zos Deflater/BEST_COMPRESSION)
+      (write-bomb-entry! zos "manifest.json" bomb-entry-size))
+    (let [out (try
+                (v3/get-manifest bombed)
+                :no-error
+                (catch Throwable e
+                  (or (ex-data e) (some-> (ex-cause e) ex-data))))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
+
+(t/deftest import-rejects-excessive-total-text-size
+  ;; The job-wide cumulative budget must reject an import whose entries,
+  ;; each individually under the per-entry cap, exceed the total limit.
+  ;; A tiny total budget over a legitimate small export proves the
+  ;; cumulative counter fires independently of the per-entry guard.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    (let [cfg (-> th/*system*
+                  (assoc ::bfc/project-id (:default-project-id profile))
+                  (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/input output)
+                  (assoc ::bfc/import-max-text-total-size 100))
+          out (try-import-files! cfg)]
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))

@@ -55,6 +55,21 @@
 (def ^:const max-object-size
   (* 1024 1024 100))
 
+;; Maximum decompressed size allowed for a single JSON/text zip entry
+;; (manifest, files, pages, shapes, colors, components, typographies,
+;; tokens, plugin-data) during binfile import: 20MiB. Legitimate entries
+;; are KB-sized, so this is deliberately much lower than max-object-size
+;; and bounds the DEFLATE amplification of any single entry.
+(def ^:const max-entry-text-size
+  (* 1024 1024 20))
+
+;; Maximum total decompressed size allowed for all JSON/text zip entries
+;; combined within a single import job: 200MiB. Bounds the case where many
+;; entries, each individually under max-entry-text-size, still sum to an
+;; unreasonable total.
+(def ^:const max-text-total-size
+  (* 1024 1024 200))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare get-resolved-file-libraries)
