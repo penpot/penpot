@@ -56,6 +56,7 @@ If your organization is scaling and needs extra support, we’re here to help. [
 
 - [Why Penpot](#why-penpot)
 - [Getting Started](#getting-started)
+- [Penpot Enterprise](#penpot-enterprise)
 - [Community](#community)
 - [Contributing](#contributing)
 - [Resources](#resources)
@@ -92,6 +93,14 @@ Penpot brings [design systems](https://penpot.app/design/design-systems) to code
 Penpot is the only design & prototype platform that is deployment agnostic. You can use it in our [SAAS](https://design.penpot.app) or deploy it anywhere.
 
 Learn how to install it with Docker, Kubernetes, Elestio or other options on [our website](https://penpot.app/self-host).
+
+
+<img width="100%" alt="Enterprise" src="https://github.com/user-attachments/assets/277a22ee-5294-450f-9369-8d1fab976b71" />
+
+
+## Penpot Enterprise ##
+
+Penpot Enterprise is our paid plan for organizations that need to scale their design work across multiple teams with advanced governance, security, and administration. Manage teams and access from a centralized **Admin Console**, configure advanced permissions, and connect your **identity provider through SSO**. Available for cloud and self-hosted environments, it combines enterprise controls with Penpot’s open-source foundation and open standards.
 
 ## Community ##
 
