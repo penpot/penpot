@@ -143,7 +143,7 @@
                                        (ctob/make-token :id token-id
                                                         :name "spacing.medium"
                                                         :type :spacing
-                                                        :value 16)))
+                                                        :value "16")))
                          :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
                         (ctho/add-frame :frame1 {:layout :flex}))
           store     (ths/setup-store file)
@@ -351,17 +351,30 @@
         (t/is (not (contains? (-> @captured second :theme :sets) "Primitives")))))))
 
 (t/deftest font-family-token-value-accepts-a-string
-  (let [file-id  (cthi/new-id! :file)
-        set-id   (cthi/new-id! :set)
-        token-id (cthi/new-id! :token)
+  ;; The setter validates the candidate token against the file tokens library,
+  ;; so the token has to live in a real library.
+  (let [set-id   (cthi/new-id! :token-set)
+        token-id (cthi/new-id! :font-token)
+        file     (-> (cthf/sample-file :file1 :page-label :page1)
+                     (ctht/add-tokens-lib)
+                     (ctht/update-tokens-lib
+                      #(-> %
+                           (ctob/add-set
+                            (ctob/make-token-set :id set-id
+                                                 :name "fonts"))
+                           (ctob/add-token
+                            set-id
+                            (ctob/make-token :id token-id
+                                             :name "font.primary"
+                                             :type :font-family
+                                             :value ["Inter"])))))
+        store    (ths/setup-store file)
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        file-id  (:id file)
         captured (atom nil)]
-    (with-redefs [u/locate-tokens-lib (constantly nil)
-                  r/check-permission (constantly true)
+    (with-redefs [r/check-permission (constantly true)
                   u/check-editable-tokens (constantly nil)
-                  u/locate-token (constantly {:id token-id
-                                              :name "font.primary"
-                                              :type :font-family
-                                              :value ["Inter"]})
                   dwtl/update-token (mock/stub (fn [set-id token-id attrs]
                                                  (reset! captured {:set-id set-id
                                                                    :token-id token-id
