@@ -266,7 +266,7 @@ impl ToPath for Shape {
             Type::Text(ref text) => {
                 let text_paths = TextPaths::new(text.new_bounds(self.selrect()));
                 let mut result = Path::default();
-                for (path, _) in text_paths.get_paths(true, self.vertical_align()) {
+                for path in text_paths.get_paths(self.vertical_align()) {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
 

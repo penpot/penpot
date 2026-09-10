@@ -10,49 +10,32 @@ use std::ops::Deref;
 
 pub struct TextPaths(TextContent);
 
-struct LineStyle {
-    start: usize,
-    paint: skia::Paint,
-}
-
 impl TextPaths {
     pub fn new(text_content: TextContent) -> Self {
         Self(text_content)
     }
-    
-    pub fn get_paths(
-        &self,
-        antialias: bool,
-        vertical_align: VerticalAlign,
-    ) -> Vec<(skia::Path, skia::Paint)> {
+
+    pub fn get_paths(&self, vertical_align: VerticalAlign) -> Vec<skia::Path> {
+        let layout_width = self.0.get_width(self.bounds.width());
         let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
-        let mut paragraphs = Vec::new();
+        let mut paragraphs: Vec<SkiaParagraph> = paragraph_builders
+            .iter_mut()
+            .filter_map(|group| group.first_mut())
+            .map(|paragraph_builder| {
+                let mut paragraph = paragraph_builder.build();
+                paragraph.layout(layout_width);
+                paragraph
+            })
+            .collect();
 
-        for (index, group) in paragraph_builders.iter_mut().enumerate() {
-            let Some(paragraph_builder) = group.first_mut() else {
-                continue;
-            };
-            let mut paragraph = paragraph_builder.build();
-            paragraph.layout(self.bounds.width());
-            paragraphs.push((index, paragraph));
-        }
-
-        let total_height: f32 = paragraphs.iter().map(|(_, p)| p.height()).sum();
-        let vertical_offset =
-            vertical_align_offset(self.bounds.height(), total_height, vertical_align);
+        let total_height: f32 = paragraphs.iter().map(|p| p.height()).sum();
+        let mut offset_y = self.bounds.y()
+            + vertical_align_offset(self.bounds.height(), total_height, vertical_align);
 
         let mut paths = Vec::new();
-        let mut offset_y = self.bounds.y() + vertical_offset;
-
-        for (index, paragraph) in paragraphs.iter_mut() {
+        for (paragraph, text_paragraph) in paragraphs.iter_mut().zip(self.0.paragraphs()) {
             let origin = Point::new(self.bounds.x(), offset_y);
-            Self::collect_paragraph_paths(
-                paragraph,
-                self.0.paragraphs().get(*index),
-                origin,
-                antialias,
-                &mut paths,
-            );
+            Self::collect_paragraph_paths(paragraph, text_paragraph, origin, &mut paths);
             offset_y += paragraph.height();
         }
 
@@ -61,35 +44,23 @@ impl TextPaths {
 
     fn collect_paragraph_paths(
         paragraph: &mut SkiaParagraph,
-        text_paragraph: Option<&Paragraph>,
+        text_paragraph: &Paragraph,
         origin: Point,
-        antialias: bool,
-        paths: &mut Vec<(skia::Path, skia::Paint)>,
+        paths: &mut Vec<skia::Path>,
     ) {
-        let line_styles = Self::line_styles(paragraph);
-
-        if let Some(text_paragraph) = text_paragraph {
-            for deco in decoration_segments(paragraph, text_paragraph, origin.x, origin.y) {
-                let mut builder = skia::PathBuilder::new();
-                builder.add_rect(deco.rect(), None, None);
-                let mut paint = deco.text_style.foreground();
-                paint.set_anti_alias(antialias);
-                paths.push((builder.detach(), paint));
-            }
+        for deco in decoration_segments(paragraph, text_paragraph, origin.x, origin.y) {
+            let mut builder = skia::PathBuilder::new();
+            builder.add_rect(deco.rect(), None, None);
+            paths.push(builder.detach());
         }
 
-        paragraph.visit(|line_index: usize, info: Option<&VisitorInfo>| {
+        paragraph.visit(|_: usize, info: Option<&VisitorInfo>| {
             let Some(info) = info else {
                 return;
             };
 
             let font = info.font();
             let run_origin = origin + info.origin();
-            let style = info
-                .utf8_starts()
-                .first()
-                .and_then(|start| Self::style_at(&line_styles, line_index, *start as usize));
-
             let mut builder = skia::PathBuilder::new();
             let mut has_glyphs = false;
 
@@ -101,46 +72,10 @@ impl TextPaths {
                 has_glyphs = true;
             }
 
-            if !has_glyphs {
-                return;
+            if has_glyphs {
+                paths.push(builder.detach());
             }
-
-            let mut paint = style
-                .map(|style| style.paint.clone())
-                .unwrap_or_else(skia::Paint::default);
-            paint.set_anti_alias(antialias);
-
-            paths.push((builder.detach(), paint));
         });
-    }
-
-    fn line_styles(paragraph: &SkiaParagraph) -> Vec<Vec<LineStyle>> {
-        paragraph
-            .get_line_metrics()
-            .iter()
-            .map(|line| {
-                line.get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .map(|(start, style_metric)| LineStyle {
-                        start,
-                        paint: style_metric.text_style.foreground(),
-                    })
-                    .collect()
-            })
-            .collect()
-    }
-
-    fn style_at(
-        line_styles: &[Vec<LineStyle>],
-        line_index: usize,
-        start: usize,
-    ) -> Option<&LineStyle> {
-        let styles = line_styles.get(line_index)?;
-        styles
-            .iter()
-            .rev()
-            .find(|style| style.start <= start)
-            .or_else(|| styles.first())
     }
 }
 

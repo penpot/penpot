@@ -371,9 +371,8 @@
                      delegate')))))
 
 (def ^:private base-fields
-  "Fields of the `Shape` record this proxy stands in for (see `cr/defrecord
-   Shape`). The record empties them on dissoc instead of removing them, and the
-   schema requires them."
+  "Base fields of the `Shape` record this proxy stands in for: `cr/defrecord`
+   nils them on dissoc instead of removing them, and the schema requires them."
   #{:name :x :y :width :height :rotation :selrect :points
     :transform :transform-inverse :parent-id :frame-id :flip-x :flip-y})
 

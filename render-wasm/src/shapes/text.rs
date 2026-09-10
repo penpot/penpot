@@ -1937,6 +1937,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn vertical_align_top_keeps_the_content_at_the_origin() {
+        assert_eq!(vertical_align_offset(200.0, 60.0, VerticalAlign::Top), 0.0);
+    }
+
+    #[test]
+    fn vertical_align_center_takes_half_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Center),
+            70.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_bottom_takes_all_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Bottom),
+            140.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_offset_is_negative_when_content_overflows() {
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Center),
+            -70.0
+        );
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Bottom),
+            -140.0
+        );
+    }
+
+    #[test]
     fn capitalize_basic_words() {
         assert_eq!(capitalize_words("hello world"), "Hello World");
     }
