@@ -358,8 +358,19 @@ pub fn try_paint_from_layout_cache(
 
 fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
     let selrect = shape.selrect();
-    let x = selrect.x();
-    let base_y = selrect.y();
+    // Absolute image/gradient shaders were baked at `layout_paint_origin`. Paint
+    // glyphs in that space and translate the canvas so both track selrect moves
+    // without rebuilding Skia paragraphs.
+    let anchor = text_content.cached_layout_paint_anchor(&selrect);
+    let offset = text_content.cached_layout_paint_offset(&selrect);
+    let needs_translate = offset.x.abs() > f32::EPSILON || offset.y.abs() > f32::EPSILON;
+    if needs_translate {
+        canvas.save();
+        canvas.translate((offset.x, offset.y));
+    }
+
+    let x = anchor.x;
+    let base_y = anchor.y;
     let paragraphs = &text_content.layout.paragraphs;
     let draw_decorations = text_content.has_text_decorations();
 
@@ -388,6 +399,10 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
             }
         }
         y_accum += paragraph.height();
+    }
+
+    if needs_translate {
+        canvas.restore();
     }
 }
 

@@ -403,8 +403,8 @@ impl Shape {
         self.invalidate_extrect();
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
+            // `update_layout` syncs bounds via set_xywh before baking fill paints.
             text.update_layout(self.selrect);
-            text.set_xywh(left, top, self.selrect.width(), self.selrect.height());
         }
     }
 
