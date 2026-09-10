@@ -152,8 +152,8 @@
     [:media-processing-service-timeout {:optional true} ::sm/int]
 
     ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
-    [:binfile-import-max-object-size {:optional true} ::sm/int]
-    [:binfile-import-max-entry-text-size {:optional true} ::sm/int]
+    [:binfile-import-max-binary-entry-size {:optional true} ::sm/int]
+    [:binfile-import-max-text-entry-size {:optional true} ::sm/int]
     [:binfile-import-max-text-total-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
 

@@ -458,19 +458,19 @@
         ([^bytes buf off len]
          (on-read (.read input buf (int off) (int len))))))))
 
-(defn- init-limits
+(defn- setup-limits
   "Resolve the binfile import limits once per job from cfg, falling back
   to the namespace defaults when the keys are absent. Returns cfg with
-  `::max-size` (per JSON/text entry cap), `::total-max` (cumulative
-  JSON/text budget), `::current-size` (shared atom holding the cumulative
-  bytes read so far), `::max-object-size` (storage blob cap) and
+  `::max-text-entry-size` (per JSON/text entry cap), `::max-text-total-size` (cumulative
+  JSON/text budget), `::current-text-size` (shared atom holding the cumulative
+  bytes read so far), `::max-binary-entry-size` (storage blob cap) and
   `::max-zip-entries` (zip entry count cap)."
   [cfg]
   (assoc cfg
-         ::max-size (or (::bfc/import-max-entry-text-size cfg) bfc/default-max-entry-text-size)
-         ::total-max (or (::bfc/import-max-text-total-size cfg) bfc/default-max-text-total-size)
-         ::current-size (atom 0)
-         ::max-object-size (or (::bfc/import-max-object-size cfg) bfc/default-max-object-size)
+         ::max-text-entry-size (or (::bfc/import-max-text-entry-size cfg) bfc/default-max-text-entry-size)
+         ::max-text-total-size (or (::bfc/import-max-text-total-size cfg) bfc/default-max-text-total-size)
+         ::current-text-size (atom 0)
+         ::max-binary-entry-size (or (::bfc/import-max-binary-entry-size cfg) bfc/default-max-binary-entry-size)
          ::max-zip-entries (or (::bfc/import-max-zip-entries cfg) bfc/default-max-zip-entries)))
 
 (defn- zip-entry-reader
@@ -483,7 +483,7 @@
   [cfg ^ZipFile input ^ZipEntry entry]
   (let [entry-name (zip-entry-name entry)
         declared   (get-zip-entry-size entry)
-        max-size   (::max-size cfg)]
+        max-size   (::max-text-entry-size cfg)]
     (when (and (not (neg? declared)) (> declared (long max-size)))
       (ex/raise :type :validation
                 :code :max-file-size-reached
@@ -493,7 +493,7 @@
                 :found declared))
     (-> (zip-entry-stream input entry)
         (size-limiting-stream max-size (atom 0))
-        (size-limiting-stream (::total-max cfg) (::current-size cfg))
+        (size-limiting-stream (::max-text-total-size cfg) (::current-text-size cfg))
         (io/reader :encoding "UTF-8"))))
 
 (defn- zip-entry-storage-content
@@ -908,7 +908,7 @@
             path    (str "objects/" id ext)
             content (zip-entry-storage-content input
                                                (get-zip-entry input path)
-                                               :max-size (::max-object-size cfg))]
+                                               :max-size (::max-binary-entry-size cfg))]
 
         (when (not= (:size object) (sto/get-size content))
           (ex/raise :type :validation
@@ -918,7 +918,7 @@
                     :expected-size (:size object)
                     :found-size (sto/get-size content)))
 
-        (let [max (::max-object-size cfg)]
+        (let [max (::max-binary-entry-size cfg)]
           (when (> (sto/get-size content) max)
             (ex/raise :type :validation
                       :code :max-file-size-reached
@@ -1006,11 +1006,11 @@
   (assert (instance? ZipFile input) "expected zip file")
   (assert (ct/inst? timestamp) "expected valid instant")
 
-  ;; Resolve all import limits once per job (see `init-limits`); every
+  ;; Resolve all import limits once per job (see `setup-limits`); every
   ;; bounded read below accounts its actual decompressed bytes against the
   ;; shared job-wide budget, so many entries each under the per-entry cap
   ;; cannot sum to an unreasonable total.
-  (let [cfg      (init-limits cfg)
+  (let [cfg      (setup-limits cfg)
         manifest (-> (read-manifest cfg input)
                      (validate-manifest))
         entries  (read-zip-entries input)
@@ -1148,8 +1148,8 @@
   import job exists), so the read is bounded by the configured
   decompressed-size limits."
   [path]
-  (let [cfg (init-limits {::bfc/import-max-entry-text-size (cf/get :binfile-import-max-entry-text-size)
-                          ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)})]
+  (let [cfg (setup-limits {::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
+                           ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)})]
     (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
       (-> (read-manifest cfg input)
           (validate-manifest)))))

@@ -238,9 +238,9 @@
       (t/is (= "penpot" (get-in imported [:metadata :referer]))))))
 
 (t/deftest read-obj-rejects-oversized-buffer
-  ;; N1-07: read-obj! must reject objects exceeding default-max-object-size
+  ;; N1-07: read-obj! must reject objects exceeding default-max-binary-entry-size
   ;; before attempting to allocate the buffer
-  (let [size (+ bfc/default-max-object-size 1)
+  (let [size (+ bfc/default-max-binary-entry-size 1)
         baos (java.io.ByteArrayOutputStream. 17)
         dos  (java.io.DataOutputStream. baos)]
     (.writeByte dos 5)
@@ -318,7 +318,7 @@
     (dissoc file :data)))
 
 (t/deftest import-rejects-oversized-object
-  ;; import must reject storage objects exceeding default-max-object-size
+  ;; import must reject storage objects exceeding default-max-binary-entry-size
   (let [profile (th/create-profile* 1)
         file    (prepare-file-with-media profile)
         output  (tmp/tempfile :suffix ".zip")]
@@ -330,12 +330,12 @@
          (assoc ::bfc/include-libraries false))
      (io/output-stream output))
 
-    ;; Import with max-object-size=1 — the media object will exceed this
+    ;; Import with max-binary-entry-size=1 — the media object will exceed this
     (let [cfg (-> th/*system*
                   (assoc ::bfc/project-id (:default-project-id profile))
                   (assoc ::bfc/profile-id (:id profile))
                   (assoc ::bfc/input output)
-                  (assoc ::bfc/import-max-object-size 1))
+                  (assoc ::bfc/import-max-binary-entry-size 1))
           out (try
                 (v3/import-files! cfg)
                 :no-error
