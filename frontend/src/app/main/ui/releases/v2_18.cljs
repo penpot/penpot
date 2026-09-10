@@ -158,7 +158,7 @@
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "Advanced permissions: An Admin Panel to rule them all"]]
+           "An Admin Panel to rule them all"]]
 
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
@@ -190,7 +190,7 @@
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "Advanced permissions: Penpot Enterprise billing"]]
+           "Penpot Enterprise billing"]]
 
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
