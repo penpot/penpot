@@ -104,8 +104,8 @@
             (assoc ::bfc/profile-id profile-id)
             (assoc ::bfc/team-id (:id team))
             (assoc ::bfc/name name)
-            (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
-            (assoc ::bfc/import-max-entry-text-size (cf/get :binfile-import-max-entry-text-size))
+            (assoc ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
+            (assoc ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
             (assoc ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
             (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
 
