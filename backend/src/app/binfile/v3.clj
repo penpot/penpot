@@ -434,54 +434,57 @@
 (defn- size-limiting-stream
   "Wraps an InputStream to enforce a maximum number of decompressed bytes.
   Raises :validation :max-file-size-reached when the limit is exceeded.
-  Accepts an optional shared counter atom so several streams can account
-  against the same cumulative budget."
-  (^InputStream
-   [input max-size]
-   (size-limiting-stream input max-size (atom 0)))
-  (^InputStream
-   [^InputStream input ^long max-size counter]
-   (let [on-read (fn [n]
-                   (when (pos? n)
-                     (when (> (swap! counter + (long n)) max-size)
-                       (ex/raise :type :validation
-                                 :code :max-file-size-reached
-                                 :hint (str "stream exceeded max size: " max-size))))
-                   n)]
-     (proxy [FilterInputStream] [input]
-       (read
-         ([]
-          (let [b (.read input)]
-            (when (pos? b) (on-read 1))
-            b))
-         ([^bytes buf]
-          (on-read (.read input buf 0 (alength buf))))
-         ([^bytes buf off]
-          (on-read (.read input buf (int off) (- (alength buf) (int off)))))
-         ([^bytes buf off len]
-          (on-read (.read input buf (int off) (int len)))))))))
+  `counter` holds the bytes accounted so far: pass a fresh atom for a
+  per-entry cap, or the shared job-wide atom for the cumulative budget."
+  ^InputStream
+  [^InputStream input ^long max-size counter]
+  (let [on-read (fn [n]
+                  (when (pos? n)
+                    (when (> (swap! counter + (long n)) max-size)
+                      (ex/raise :type :validation
+                                :code :max-file-size-reached
+                                :hint (str "stream exceeded max size: " max-size))))
+                  n)]
+    (proxy [FilterInputStream] [input]
+      (read
+        ([]
+         (let [b (.read input)]
+           (when (pos? b) (on-read 1))
+           b))
+        ([^bytes buf]
+         (on-read (.read input buf 0 (alength buf))))
+        ([^bytes buf off]
+         (on-read (.read input buf (int off) (- (alength buf) (int off)))))
+        ([^bytes buf off len]
+         (on-read (.read input buf (int off) (int len))))))))
 
-(defn- text-entry-limits
-  "Resolve the decompressed-size limits for JSON/text zip entries from cfg,
-  falling back to safe defaults when the keys are absent (e.g. callers that
-  predate the limits). Returns a map with `:max-size` (per-entry cap),
-  `:cumulative` (shared atom or nil) and `:total-max` (cumulative cap)."
+(defn- init-limits
+  "Resolve the binfile import limits once per job from cfg, falling back
+  to the namespace defaults when the keys are absent. Returns cfg with
+  `::max-size` (per JSON/text entry cap), `::total-max` (cumulative
+  JSON/text budget), `::current-size` (shared atom holding the cumulative
+  bytes read so far), `::max-object-size` (storage blob cap) and
+  `::max-zip-entries` (zip entry count cap)."
   [cfg]
-  {:max-size   (or (::bfc/import-max-entry-text-size cfg) bfc/max-entry-text-size)
-   :cumulative (::bfc/cumulative-text-bytes cfg)
-   :total-max  (or (::bfc/import-max-text-total-size cfg) bfc/max-text-total-size)})
+  (assoc cfg
+         ::max-size (or (::bfc/import-max-entry-text-size cfg) bfc/default-max-entry-text-size)
+         ::total-max (or (::bfc/import-max-text-total-size cfg) bfc/default-max-text-total-size)
+         ::current-size (atom 0)
+         ::max-object-size (or (::bfc/import-max-object-size cfg) bfc/default-max-object-size)
+         ::max-zip-entries (or (::bfc/import-max-zip-entries cfg) bfc/default-max-zip-entries)))
 
 (defn- zip-entry-reader
-  "Opens a UTF-8 reader over a zip entry, enforcing `max-size` on the actual
-  decompressed bytes streamed through it and, when `cumulative` is provided,
-  accounting the same bytes against the shared job-wide `total-max` budget.
+  "Opens a UTF-8 reader over a zip entry, enforcing the per-entry
+  decompressed-size cap on the actual bytes streamed through it and
+  accounting the same bytes against the shared job-wide budget.
   A cheap pre-check on the entry-declared size rejects obvious bombs without
   opening the stream; the streaming counters remain the authoritative guard
   because the declared size is attacker-controlled metadata."
-  [^ZipFile input ^ZipEntry entry & {:keys [max-size cumulative total-max]}]
+  [cfg ^ZipFile input ^ZipEntry entry]
   (let [entry-name (zip-entry-name entry)
-        declared   (get-zip-entry-size entry)]
-    (when (and max-size (not (neg? declared)) (> declared (long max-size)))
+        declared   (get-zip-entry-size entry)
+        max-size   (::max-size cfg)]
+    (when (and (not (neg? declared)) (> declared (long max-size)))
       (ex/raise :type :validation
                 :code :max-file-size-reached
                 :hint (str "zip entry exceeds maximum size: " entry-name)
@@ -489,8 +492,8 @@
                 :max max-size
                 :found declared))
     (-> (zip-entry-stream input entry)
-        (cond-> max-size (size-limiting-stream max-size))
-        (cond-> cumulative (size-limiting-stream total-max cumulative))
+        (size-limiting-stream max-size (atom 0))
+        (size-limiting-stream (::total-max cfg) (::current-size cfg))
         (io/reader :encoding "UTF-8"))))
 
 (defn- zip-entry-storage-content
@@ -499,7 +502,7 @@
   [input entry & {:keys [max-size]}]
   (let [stream-fn (fn []
                     (cond-> (zip-entry-stream input entry)
-                      max-size (size-limiting-stream max-size)))
+                      max-size (size-limiting-stream max-size (atom 0))))
         hash      (delay (->> (stream-fn)
                               (sto.impl/calculate-hash)))]
     (reify
@@ -523,12 +526,9 @@
         (throw (UnsupportedOperationException. "not implemented"))))))
 
 (defn- read-manifest
-  [^ZipFile input & [{:keys [max-size cumulative total-max]}]]
+  [cfg ^ZipFile input]
   (let [entry (get-zip-entry input "manifest.json")]
-    (with-open [^AutoCloseable reader (zip-entry-reader input entry
-                                                        :max-size (or max-size bfc/max-entry-text-size)
-                                                        :cumulative cumulative
-                                                        :total-max total-max)]
+    (with-open [^AutoCloseable reader (zip-entry-reader cfg input entry)]
       (let [manifest (json/read reader :key-fn json/read-kebab-key)]
         (decode-manifest manifest)))))
 
@@ -617,26 +617,17 @@
          :id (parse-uuid id)}))))
 
 (defn- read-entry
-  [^ZipFile input entry & [{:keys [max-size cumulative total-max]}]]
-  (with-open [^AutoCloseable reader (zip-entry-reader input entry
-                                                      :max-size (or max-size bfc/max-entry-text-size)
-                                                      :cumulative cumulative
-                                                      :total-max total-max)]
-    (json/read reader :key-fn json/read-kebab-key)))
-
-(defn- read-plain-entry
-  [^ZipFile input entry & [{:keys [max-size cumulative total-max]}]]
-  (with-open [^AutoCloseable reader (zip-entry-reader input entry
-                                                      :max-size (or max-size bfc/max-entry-text-size)
-                                                      :cumulative cumulative
-                                                      :total-max total-max)]
-    (json/read reader)))
+  ([cfg ^ZipFile input entry]
+   (read-entry cfg input entry json/read-kebab-key))
+  ([cfg ^ZipFile input entry key-fn]
+   (with-open [^AutoCloseable reader (zip-entry-reader cfg input entry)]
+     (json/read reader :key-fn key-fn))))
 
 (defn- read-file
   [{:keys [::bfc/input ::bfc/timestamp] :as cfg} file-id]
   (let [path  (str "files/" file-id ".json")
         entry (get-zip-entry input path)]
-    (-> (read-entry input entry (text-entry-limits cfg))
+    (-> (read-entry cfg input entry)
         (decode-file)
         (update :revn d/nilv 1)
         (update :created-at d/nilv timestamp)
@@ -648,7 +639,7 @@
   (let [path  (str "files/" file-id "/plugin-data.json")
         entry (get-zip-entry* input path)]
     (when entry
-      (-> (read-entry input entry (text-entry-limits cfg))
+      (-> (read-entry cfg input entry)
           (decode-plugin-data)
           (validate-plugin-data)))))
 
@@ -656,7 +647,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id]
   (->> (keep (match-media-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry (text-entry-limits cfg))
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-media)
                                    (validate-media))
                        object (-> object
@@ -676,7 +667,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id]
   (->> (keep (match-color-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry (text-entry-limits cfg))
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-color)
                                    (validate-color))]
                    (events/tap :progress {:section :color :id id :file-id file-id})
@@ -707,7 +698,7 @@
 
     (->> (keep (match-component-entry-fn file-id) entries)
          (reduce (fn [result {:keys [id entry]}]
-                   (let [object (->> (read-entry input entry (text-entry-limits cfg))
+                   (let [object (->> (read-entry cfg input entry)
                                      (clean-component-pre-decode)
                                      (decode-component)
                                      (clean-component-post-decode))]
@@ -722,7 +713,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id]
   (->> (keep (match-typography-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry (text-entry-limits cfg))
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-typography)
                                    (validate-typography))]
                    (events/tap :progress {:section :typography :id id :file-id file-id})
@@ -736,7 +727,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id]
   (when-let [entry (d/seek (match-tokens-lib-entry-fn file-id) entries)]
     (events/tap :progress {:section :tokens-lib :file-id file-id})
-    (->> (read-plain-entry input entry (text-entry-limits cfg))
+    (->> (read-entry cfg input entry nil)
          (decode-tokens-lib)
          (validate-tokens-lib))))
 
@@ -744,7 +735,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id page-id]
   (->> (keep (match-shape-entry-fn file-id page-id) entries)
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry (text-entry-limits cfg))
+                 (let [object (->> (read-entry cfg input entry)
                                    (bfl/clean-shape-pre-decode)
                                    (decode-shape)
                                    (bfl/clean-shape-post-decode))]
@@ -758,7 +749,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id]
   (->> (keep (match-page-entry-fn file-id) entries)
        (keep (fn [{:keys [id entry]}]
-               (let [page (->> (read-entry input entry (text-entry-limits cfg))
+               (let [page (->> (read-entry cfg input entry)
                                (decode-page))
                      page (dissoc page :options)]
                  (events/tap :progress {:section :page :id id :file-id file-id})
@@ -774,7 +765,7 @@
   [{:keys [::bfc/input ::entries] :as cfg} file-id]
   (->> (keep (match-thumbnail-entry-fn file-id) entries)
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
-                 (let [object (->> (read-entry input entry (text-entry-limits cfg))
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-file-thumbnail)
                                    (validate-file-thumbnail))]
 
@@ -908,7 +899,7 @@
         entries (keep (match-storage-entry-fn) entries)]
 
     (doseq [{:keys [id entry]} entries]
-      (let [object  (-> (read-entry input entry (text-entry-limits cfg))
+      (let [object  (-> (read-entry cfg input entry)
                         (decode-storage-object)
                         (update :bucket d/nilv sto/default-bucket)
                         (validate-storage-object))
@@ -917,7 +908,7 @@
             path    (str "objects/" id ext)
             content (zip-entry-storage-content input
                                                (get-zip-entry input path)
-                                               :max-size (::bfc/import-max-object-size cfg))]
+                                               :max-size (::max-object-size cfg))]
 
         (when (not= (:size object) (sto/get-size content))
           (ex/raise :type :validation
@@ -927,7 +918,7 @@
                     :expected-size (:size object)
                     :found-size (sto/get-size content)))
 
-        (when-let [max (::bfc/import-max-object-size cfg)]
+        (let [max (::max-object-size cfg)]
           (when (> (sto/get-size content) max)
             (ex/raise :type :validation
                       :code :max-file-size-reached
@@ -1015,21 +1006,22 @@
   (assert (instance? ZipFile input) "expected zip file")
   (assert (ct/inst? timestamp) "expected valid instant")
 
-  ;; Shared job-wide budget for all JSON/text entries: every bounded read
-  ;; below accounts its actual decompressed bytes here, so many entries
-  ;; each under the per-entry cap cannot sum to an unreasonable total.
-  (let [cfg      (assoc cfg ::bfc/cumulative-text-bytes (atom 0))
-        manifest (-> (read-manifest input (text-entry-limits cfg))
+  ;; Resolve all import limits once per job (see `init-limits`); every
+  ;; bounded read below accounts its actual decompressed bytes against the
+  ;; shared job-wide budget, so many entries each under the per-entry cap
+  ;; cannot sum to an unreasonable total.
+  (let [cfg      (init-limits cfg)
+        manifest (-> (read-manifest cfg input)
                      (validate-manifest))
         entries  (read-zip-entries input)
 
-        _        (when-let [max (::bfc/import-max-zip-entries cfg)]
-                   (when (> (count entries) max)
-                     (ex/raise :type :validation
-                               :code :too-many-zip-entries
-                               :hint (str "zip file has too many entries: " (count entries))
-                               :max max
-                               :found (count entries))))
+        max      (::max-zip-entries cfg)
+        _        (when (> (count entries) max)
+                   (ex/raise :type :validation
+                             :code :too-many-zip-entries
+                             :hint (str "zip file has too many entries: " (count entries))
+                             :max max
+                             :found (count entries)))
 
         cfg      (-> cfg
                      (assoc ::entries entries)
@@ -1154,8 +1146,10 @@
   "Reads and validates the manifest of a `.penpot` file at `path`.
   Runs synchronously on the RPC request thread (before the background
   import job exists), so the read is bounded by the configured
-  per-entry decompressed-size limit."
+  decompressed-size limits."
   [path]
-  (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
-    (-> (read-manifest input {:max-size (cf/get :binfile-import-max-entry-text-size)})
-        (validate-manifest))))
+  (let [cfg (init-limits {::bfc/import-max-entry-text-size (cf/get :binfile-import-max-entry-text-size)
+                          ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)})]
+    (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
+      (-> (read-manifest cfg input)
+          (validate-manifest)))))

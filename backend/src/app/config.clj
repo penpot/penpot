@@ -94,13 +94,7 @@
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}
-
-   ;; Binfile import limits
-   :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
-   :binfile-import-max-entry-text-size (* 1024 1024 20) ;; 20 MiB
-   :binfile-import-max-text-total-size (* 1024 1024 200) ;; 200 MiB
-   :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
+   :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:config
   (do #_sm/optional-keys
