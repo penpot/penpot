@@ -18,6 +18,13 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
+(def ^:private safe-library-envelope-keys
+  "Top-level keys a trimmed library may expose next to `:data`. Anything
+   else is design content leaking through the envelope (see F3)."
+  #{:backend :comment-thread-seqn :created-at :features :has-media-trimmed
+    :id :is-indirect :is-shared :migrations :modified-at :name :project-id
+    :revn :synced-at :team-id :vern :version})
+
 (defn- update-file!
   [& {:keys [profile-id file-id changes]}]
   (let [out (th/command! {::th/type :update-file
@@ -350,7 +357,11 @@
                             (:libraries result))]
         (t/is (nil? (:error out)))
         (t/is (not (contains? lib-pages canary)))
-        (t/is (every? #(every? #{:id :options :pages :pages-index :components} (keys (:data %)))
+        (t/is (every? #(= #{:id :options :pages :pages-index :components}
+                          (set (keys (:data %))))
+                      (:libraries result)))
+        (t/is (every? #(every? safe-library-envelope-keys
+                               (keys (dissoc % :data)))
                       (:libraries result)))))))
 
 (t/deftest share-link-bundle-library-edge-cases
@@ -607,3 +618,247 @@
         (t/is (= #{c-used c-nested}
                  (set (keys (get-in (first libs) [:data :components])))))
         (t/is (= [] (get-in (first libs) [:data :pages])))))))
+
+(t/deftest share-link-bundle-drops-components-from-disallowed-pages
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        lib     (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared true})
+        lib-page (first (get-in lib [:data :pages]))
+
+        comp    (uuid/random)
+        main    (uuid/random)
+
+        _       (update-file!
+                 :profile-id (:id owner)
+                 :file-id (:id lib)
+                 :changes [{:type :add-obj
+                            :page-id lib-page
+                            :id main
+                            :parent-id uuid/zero
+                            :frame-id uuid/zero
+                            :components-v2 true
+                            :obj (cts/setup-shape
+                                  {:id main
+                                   :name "Board"
+                                   :frame-id uuid/zero
+                                   :parent-id uuid/zero
+                                   :type :frame
+                                   :main-instance true
+                                   :component-root true
+                                   :component-file (:id lib)
+                                   :component-id comp})}
+                           {:type :add-component
+                            :path ""
+                            :name "Board"
+                            :main-instance-id main
+                            :main-instance-page lib-page
+                            :id comp
+                            :anotation nil}])
+
+        file    (th/create-file* 2 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        page-a  (first (get-in file [:data :pages]))
+        page-b  (uuid/random)
+        inst    (uuid/random)
+
+        ;; Second page, outside the share link scope.
+        _       (update-file!
+                 :profile-id (:id owner)
+                 :file-id (:id file)
+                 :changes [{:type :add-page
+                            :id page-b
+                            :page {:id page-b
+                                   :name "Hidden"
+                                   :options {}
+                                   :objects {}}}])
+
+        ;; Instance the library component only on the disallowed page.
+        _       (update-file!
+                 :profile-id (:id owner)
+                 :file-id (:id file)
+                 :changes [{:type :add-obj
+                            :page-id page-b
+                            :id inst
+                            :parent-id uuid/zero
+                            :frame-id uuid/zero
+                            :components-v2 true
+                            :obj (cts/setup-shape
+                                  {:id inst
+                                   :name "Board"
+                                   :frame-id uuid/zero
+                                   :parent-id uuid/zero
+                                   :type :frame
+                                   :main-instance false
+                                   :component-root true
+                                   :component-file (:id lib)
+                                   :component-id comp})}])
+
+        _       (th/link-file-to-library* {:file-id (:id file)
+                                           :library-id (:id lib)})
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})]
+
+    (t/testing "references from disallowed pages seed nothing"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id (get-in slink [:result :id])
+                                 :file-id (:id file)})
+            result (:result out)
+            libs   (:libraries result)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (count libs)))
+        (t/is (= {} (get-in (first libs) [:data :components])))
+        (t/is (= [] (get-in (first libs) [:data :pages])))))))
+
+(t/deftest share-link-bundle-keeps-cross-library-nested-components
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        lib2    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared true})
+        lib2-page (first (get-in lib2 [:data :pages]))
+
+        comp-b  (uuid/random)
+        b-main  (uuid/random)
+
+        _       (update-file!
+                 :profile-id (:id owner)
+                 :file-id (:id lib2)
+                 :changes [{:type :add-obj
+                            :page-id lib2-page
+                            :id b-main
+                            :parent-id uuid/zero
+                            :frame-id uuid/zero
+                            :components-v2 true
+                            :obj (cts/setup-shape
+                                  {:id b-main
+                                   :name "Leaf"
+                                   :frame-id uuid/zero
+                                   :parent-id uuid/zero
+                                   :type :frame
+                                   :main-instance true
+                                   :component-root true
+                                   :component-file (:id lib2)
+                                   :component-id comp-b})}
+                           {:type :add-component
+                            :path ""
+                            :name "leaf"
+                            :main-instance-id b-main
+                            :main-instance-page lib2-page
+                            :id comp-b
+                            :anotation nil}])
+
+        lib1    (th/create-file* 2 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared true})
+        lib1-page (first (get-in lib1 [:data :pages]))
+
+        _       (th/link-file-to-library* {:file-id (:id lib1)
+                                           :library-id (:id lib2)})
+
+        comp-a  (uuid/random)
+        a-main  (uuid/random)
+        a-child (uuid/random)
+
+        ;; Component whose main instance embeds an instance from lib2.
+        _       (update-file!
+                 :profile-id (:id owner)
+                 :file-id (:id lib1)
+                 :changes [{:type :add-obj
+                            :page-id lib1-page
+                            :id a-main
+                            :parent-id uuid/zero
+                            :frame-id uuid/zero
+                            :components-v2 true
+                            :obj (cts/setup-shape
+                                  {:id a-main
+                                   :name "Wrapper"
+                                   :frame-id uuid/zero
+                                   :parent-id uuid/zero
+                                   :type :frame
+                                   :main-instance true
+                                   :component-root true
+                                   :component-file (:id lib1)
+                                   :component-id comp-a})}
+                           {:type :add-obj
+                            :page-id lib1-page
+                            :id a-child
+                            :parent-id a-main
+                            :frame-id a-main
+                            :components-v2 true
+                            :obj (cts/setup-shape
+                                  {:id a-child
+                                   :name "Leaf"
+                                   :frame-id a-main
+                                   :parent-id a-main
+                                   :type :frame
+                                   :main-instance false
+                                   :component-root true
+                                   :component-file (:id lib2)
+                                   :component-id comp-b})}
+                           {:type :add-component
+                            :path ""
+                            :name "wrapper"
+                            :main-instance-id a-main
+                            :main-instance-page lib1-page
+                            :id comp-a
+                            :anotation nil}])
+
+        file    (th/create-file* 3 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+        main-page (first (get-in file [:data :pages]))
+        inst    (uuid/random)
+
+        _       (update-file!
+                 :profile-id (:id owner)
+                 :file-id (:id file)
+                 :changes [{:type :add-obj
+                            :page-id main-page
+                            :id inst
+                            :parent-id uuid/zero
+                            :frame-id uuid/zero
+                            :components-v2 true
+                            :obj (cts/setup-shape
+                                  {:id inst
+                                   :name "Wrapper"
+                                   :frame-id uuid/zero
+                                   :parent-id uuid/zero
+                                   :type :frame
+                                   :main-instance false
+                                   :component-root true
+                                   :component-file (:id lib1)
+                                   :component-id comp-a})}])
+
+        _       (th/link-file-to-library* {:file-id (:id file)
+                                           :library-id (:id lib1)})
+
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{main-page}
+                              :who-comment "team"
+                              :who-inspect "all"})]
+
+    (t/testing "nested references resolve across libraries"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id (get-in slink [:result :id])
+                                 :file-id (:id file)})
+            result (:result out)
+            by-id  (into {} (map (juxt :id identity)) (:libraries result))]
+        (t/is (nil? (:error out)))
+        (t/is (= 2 (count (:libraries result))))
+        (t/is (= #{comp-a}
+                 (set (keys (get-in by-id [(:id lib1) :data :components])))))
+        (t/is (= #{comp-b}
+                 (set (keys (get-in by-id [(:id lib2) :data :components])))))
+        (t/is (= [] (get-in by-id [(:id lib2) :data :pages])))))))
