@@ -177,17 +177,20 @@
                  (first @errors)))))))
 
 (t/deftest flow-starting-board-setter-checks-permission
-  (let [plugin-id "test-plugin"
-        file-id   (uuid/next)
-        page-id   (uuid/next)
-        flow-id   (uuid/next)
-        errors    (atom [])]
+  ;; The board must be a valid flow starting frame, otherwise the setter
+  ;; rejects the value before it ever checks the permission.
+  (let [result   (setup-with-board)
+        file-id  (:id (:file result))
+        page-id  (cthf/current-page-id (:file result))
+        board-id (:board-id result)
+        flow-id  (uuid/next)
+        errors   (atom [])]
     (with-redefs [r/check-permission (constantly false)
                   u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
-                  st/emit!           mock/noop
-                  shape/shape-proxy? (constantly true)]
-      (let [proxy (page/flow-proxy plugin-id file-id page-id flow-id)]
-        (set! (.-startingBoard proxy) #js {})
+                  st/emit!           mock/noop]
+      (let [proxy (page/flow-proxy plugin-id file-id page-id flow-id)
+            board (shape/shape-proxy plugin-id file-id page-id board-id)]
+        (set! (.-startingBoard proxy) board)
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :startingBoard "Plugin doesn't have 'content:write' permission"]
                  (first @errors)))))))
@@ -208,16 +211,18 @@
                  (first @errors)))))))
 
 (t/deftest create-flow-checks-permission
-  (let [plugin-id "test-plugin"
-        file-id   (uuid/next)
-        page-id   (uuid/next)
-        errors    (atom [])]
+  ;; The frame must be a valid flow starting frame, otherwise createFlow
+  ;; rejects the argument before it ever checks the permission.
+  (let [result   (setup-with-board)
+        file-id  (:id (:file result))
+        page-id  (cthf/current-page-id (:file result))
+        board-id (:board-id result)
+        errors   (atom [])]
     (with-redefs [r/check-permission (constantly false)
                   u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
-                  st/emit!           mock/noop
-                  shape/shape-proxy? (constantly true)]
+                  st/emit!           mock/noop]
       (let [proxy (page/page-proxy plugin-id file-id page-id)
-            frame #js {"$id" (uuid/next)}]
+            frame (shape/shape-proxy plugin-id file-id page-id board-id)]
         (.createFlow proxy "flow-name" frame)
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :createFlow "Plugin doesn't have 'content:write' permission"]

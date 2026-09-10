@@ -1795,9 +1795,6 @@
                (not (string? value))
                (u/not-valid plugin-id :value value)
 
-               (not (r/check-permission plugin-id "content:write"))
-               (u/not-valid plugin-id :switchVariant "Plugin doesn't have 'content:write' permission")
-
                :else
                (let [shape (u/locate-shape file-id page-id id)]
                  (if (dwv/valid-variant-switch? @st/state shape pos value)
