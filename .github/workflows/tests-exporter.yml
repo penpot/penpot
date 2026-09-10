@@ -32,7 +32,7 @@ jobs:
   test-exporter:
     if: ${{ !github.event.pull_request.draft }}
     name: "Exporter Tests"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:
