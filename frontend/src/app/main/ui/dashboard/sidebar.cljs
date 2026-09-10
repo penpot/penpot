@@ -688,24 +688,39 @@
                                                 organization-member-count-before
                                                 :on-error on-error})))))
 
+        pending-leave?* (mf/use-state false)
+        pending-leave?  (deref pending-leave?*)
+
+        show-leave-modal!
+        (mf/use-fn
+         (mf/deps leave-fn profile organization default-team-id teams-to-transfer on-error)
+         (fn []
+           (st/emit! (dnt/show-leave-organization-modal {:organization organization
+                                                         :profile profile
+                                                         :default-team-id default-team-id
+                                                         :leave-fn leave-fn
+                                                         :teams-to-transfer teams-to-transfer
+                                                         :on-error on-error}))))
+
         on-leave-clicked
         (mf/use-fn
-         (mf/deps leave-fn profile organization default-team-id teams-to-transfer on-error owned-teams-members-loaded?)
+         (mf/deps show-leave-modal! owned-teams-members-loaded? owned-teams)
          (fn []
-           (when owned-teams-members-loaded?
-             (st/emit! (dnt/show-leave-organization-modal {:organization organization
-                                                           :profile profile
-                                                           :default-team-id default-team-id
-                                                           :leave-fn leave-fn
-                                                           :teams-to-transfer teams-to-transfer
-                                                           :on-error on-error})))))]
-    (mf/use-effect
-     (mf/deps owned-teams)
-     (fn []
-       ;; Fetch members for any owned team that doesn't have them yet.
-       (doseq [team owned-teams
-               :when (not (contains? team :members))]
-         (st/emit! (dtm/fetch-members (:id team))))))
+           (if owned-teams-members-loaded?
+             (show-leave-modal!)
+             (do
+               ;; Fetch members only when leaving; needed to decide which
+               ;; owned teams to transfer vs delete.
+               (reset! pending-leave?* true)
+               (doseq [team owned-teams
+                       :when (not (contains? team :members))]
+                 (st/emit! (dtm/fetch-members (:id team))))))))]
+
+    (mf/with-effect [pending-leave? owned-teams-members-loaded? show-leave-modal!]
+      (when (and pending-leave? owned-teams-members-loaded?)
+        (reset! pending-leave?* false)
+        (show-leave-modal!)))
+
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click on-leave-clicked
