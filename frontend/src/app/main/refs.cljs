@@ -19,6 +19,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [beicon.v2.core :as rx]
+   [clojure.string :as str]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -583,13 +584,21 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
+(defn- resolved-uri?
+  "Returns true if the uri is already a fully resolved URI (blob or data)."
+  [uri]
+  (or (str/starts-with? uri "blob:")
+      (str/starts-with? uri "data:")))
+
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
    (fn [state]
      (when-let [entry (dm/get-in state [:thumbnails object-id])]
        (cond-> entry
-         (:uri entry) (update :uri cf/resolve-media))))
+         (and (:uri entry)
+              (not (resolved-uri? (:uri entry))))
+         (update :uri cf/resolve-media))))
    st/state))
 
 (def workspace-text-modifier
