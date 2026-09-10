@@ -21,9 +21,14 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
 
-(t/use-fixtures :each {:before cthi/reset-idmap!})
+(t/use-fixtures :each
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after thw/teardown-wasm-mocks!})
 
 (def ^:private get-resolved-value @#'ptok/get-resolved-value)
 
